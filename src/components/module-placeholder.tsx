@@ -2,7 +2,9 @@ import type { LucideIcon } from "lucide-react";
 import { Construction } from "lucide-react";
 
 import { ConfidenceChip } from "@/components/confidence-chip";
-import { Card } from "@/components/ui/card";
+import { PanelCard } from "@/components/panel-card";
+import { PanelHead } from "@/components/panel-head";
+import { RiskPill } from "@/components/risk-pill";
 
 export interface ModulePlaceholderProps {
   title: string;
@@ -13,9 +15,9 @@ export interface ModulePlaceholderProps {
 }
 
 /**
- * Placeholder for every operational module. The foundation sprint intentionally
- * ships no operational workflows — modules will be implemented in future
- * sprints. Every screen still carries the shell, header, and footer contract.
+ * Placeholder for every operational module. The foundation sprint ships no
+ * operational workflows — modules land in later sprints. Every screen still
+ * carries the shell, header, footer, and design-system contract.
  */
 export function ModulePlaceholder({
   title,
@@ -27,45 +29,44 @@ export function ModulePlaceholder({
   return (
     <div className="mx-auto max-w-5xl px-6 py-8">
       <div className="mb-6 flex items-start gap-4">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[color:var(--color-teal)]/10 text-[color:var(--color-teal)]">
           <Icon className="h-6 w-6" />
         </div>
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            {title}
-          </h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>
+          <h1 className="type-display text-foreground">{title}</h1>
+          <p className="type-small text-slate mt-0.5">{subtitle}</p>
         </div>
       </div>
 
-      <Card className="border-dashed p-8">
+      <PanelCard className="p-8">
+        <PanelHead title="Module Status" meta="Foundation sprint scaffold" />
+
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-            Module Status
-          </span>
           <ConfidenceChip tier="unconfirmed" />
-          <span className="text-[11px] text-muted-foreground">
+          <RiskPill level="LOW" />
+          <span className="type-small text-slate">
             Scheduled for a future sprint
           </span>
         </div>
 
-        <p className="mt-4 max-w-2xl text-sm leading-relaxed text-foreground/80">
+        <p className="mt-4 max-w-2xl type-body text-foreground/85">
           {description ??
-            "This intelligence module is part of the Seaphore roadmap. The foundation sprint establishes architecture, design system, navigation, authentication, routing, and backend scaffolding only — no operational workflows are shipped in this sprint."}
+            "This intelligence module is part of the Seaphore roadmap. The foundation sprint establishes design system, navigation, authentication, routing, and backend scaffolding only — no operational workflows are shipped in this sprint."}
         </p>
 
         {capabilities && capabilities.length > 0 && (
           <div className="mt-6">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              Planned Capabilities
-            </div>
+            <div className="type-label text-slate">Planned Capabilities</div>
             <ul className="mt-2 grid gap-1.5 sm:grid-cols-2">
               {capabilities.map((cap) => (
                 <li
                   key={cap}
-                  className="flex items-start gap-2 text-sm text-foreground/80"
+                  className="flex items-start gap-2 type-body text-foreground/85"
                 >
-                  <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-brand" />
+                  <span
+                    className="mt-2 h-1 w-1 shrink-0 rounded-full"
+                    style={{ backgroundColor: "#0E7C7B" }}
+                  />
                   <span>{cap}</span>
                 </li>
               ))}
@@ -73,11 +74,11 @@ export function ModulePlaceholder({
           </div>
         )}
 
-        <div className="mt-6 border-t border-border pt-4 text-[11px] text-muted-foreground">
-          Every number will wear a confidence chip. Every recommendation will
-          come from the system; every decision will come from the officer.
+        <div className="mt-6 border-t border-line pt-4 type-small text-slate">
+          Every number wears a confidence chip. Every recommendation comes from
+          the system; every decision comes from the officer.
         </div>
-      </Card>
+      </PanelCard>
     </div>
   );
 }

@@ -6,12 +6,8 @@ import { ModulePlaceholder } from "@/components/module-placeholder";
 export const Route = createFileRoute("/alerts-center")({
   head: () => ({ meta: [{ title: "Alerts Center · Seaphore" }] }),
   component: () => (
-    <AppShell>
-      <ModulePlaceholder
-        title="Alerts Center"
-        subtitle="Prioritized, acknowledgeable, assignable alerts"
-        icon={BellRing}
-      />
+    <AppShell title="Alerts Center" subtitle="Live alerts across every intelligence domain" mode="dark">
+      <ModulePlaceholder title="Alerts Center" subtitle="Live alerts across every intelligence domain" icon={BellRing} />
     </AppShell>
   ),
 });

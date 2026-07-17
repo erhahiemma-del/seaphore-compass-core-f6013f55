@@ -6,12 +6,8 @@ import { ModulePlaceholder } from "@/components/module-placeholder";
 export const Route = createFileRoute("/ownership-intelligence")({
   head: () => ({ meta: [{ title: "Ownership Intelligence · Seaphore" }] }),
   component: () => (
-    <AppShell>
-      <ModulePlaceholder
-        title="Ownership Intelligence"
-        subtitle="Beneficial ownership, corporate networks, agent relationships"
-        icon={Building2}
-      />
+    <AppShell title="Ownership Intelligence" subtitle="Beneficial ownership, networks, ties" mode="dark">
+      <ModulePlaceholder title="Ownership Intelligence" subtitle="Beneficial ownership, networks, ties" icon={Building2} />
     </AppShell>
   ),
 });
