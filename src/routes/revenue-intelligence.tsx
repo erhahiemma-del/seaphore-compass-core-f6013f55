@@ -6,12 +6,8 @@ import { ModulePlaceholder } from "@/components/module-placeholder";
 export const Route = createFileRoute("/revenue-intelligence")({
   head: () => ({ meta: [{ title: "Revenue Intelligence · Seaphore" }] }),
   component: () => (
-    <AppShell>
-      <ModulePlaceholder
-        title="Revenue Intelligence"
-        subtitle="Under-declaration, revenue leakage, recovery"
-        icon={DollarSign}
-      />
+    <AppShell title="Revenue Intelligence" subtitle="Duty, valuation, revenue leakage" mode="dark">
+      <ModulePlaceholder title="Revenue Intelligence" subtitle="Duty, valuation, revenue leakage" icon={DollarSign} />
     </AppShell>
   ),
 });

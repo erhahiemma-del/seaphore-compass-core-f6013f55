@@ -6,12 +6,8 @@ import { ModulePlaceholder } from "@/components/module-placeholder";
 export const Route = createFileRoute("/administration")({
   head: () => ({ meta: [{ title: "Administration · Seaphore" }] }),
   component: () => (
-    <AppShell>
-      <ModulePlaceholder
-        title="Administration"
-        subtitle="System Management · Users, Roles, Rules, Audit"
-        icon={Settings}
-      />
+    <AppShell title="Administration" subtitle="System Management" mode="light">
+      <ModulePlaceholder title="Administration" subtitle="System Management" icon={Settings} />
     </AppShell>
   ),
 });

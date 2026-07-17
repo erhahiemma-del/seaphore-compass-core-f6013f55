@@ -6,12 +6,8 @@ import { ModulePlaceholder } from "@/components/module-placeholder";
 export const Route = createFileRoute("/manifest-intelligence")({
   head: () => ({ meta: [{ title: "Manifest Intelligence · Seaphore" }] }),
   component: () => (
-    <AppShell>
-      <ModulePlaceholder
-        title="Manifest Intelligence"
-        subtitle="Bill of Lading, cargo declarations, HS-code integrity"
-        icon={FileText}
-      />
+    <AppShell title="Manifest Intelligence" subtitle="Bill of Lading · HS-code integrity" mode="dark">
+      <ModulePlaceholder title="Manifest Intelligence" subtitle="Bill of Lading, cargo declarations, HS-code integrity" icon={FileText} />
     </AppShell>
   ),
 });

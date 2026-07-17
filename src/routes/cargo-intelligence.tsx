@@ -6,12 +6,8 @@ import { ModulePlaceholder } from "@/components/module-placeholder";
 export const Route = createFileRoute("/cargo-intelligence")({
   head: () => ({ meta: [{ title: "Cargo Intelligence · Seaphore" }] }),
   component: () => (
-    <AppShell>
-      <ModulePlaceholder
-        title="Cargo Intelligence"
-        subtitle="Container movements, seal integrity, cargo changes"
-        icon={Package}
-      />
+    <AppShell title="Cargo Intelligence" subtitle="Container flows · commodity risk" mode="dark">
+      <ModulePlaceholder title="Cargo Intelligence" subtitle="Container flows, commodity risk" icon={Package} />
     </AppShell>
   ),
 });

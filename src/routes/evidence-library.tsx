@@ -6,12 +6,8 @@ import { ModulePlaceholder } from "@/components/module-placeholder";
 export const Route = createFileRoute("/evidence-library")({
   head: () => ({ meta: [{ title: "Evidence Library · Seaphore" }] }),
   component: () => (
-    <AppShell>
-      <ModulePlaceholder
-        title="Evidence Library"
-        subtitle="Immutable, chain-of-custody-preserved evidence store"
-        icon={FolderArchive}
-      />
+    <AppShell title="Evidence Library" subtitle="Source-of-truth artefacts" mode="dark">
+      <ModulePlaceholder title="Evidence Library" subtitle="Source-of-truth artefacts" icon={FolderArchive} />
     </AppShell>
   ),
 });

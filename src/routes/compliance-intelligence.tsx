@@ -6,12 +6,8 @@ import { ModulePlaceholder } from "@/components/module-placeholder";
 export const Route = createFileRoute("/compliance-intelligence")({
   head: () => ({ meta: [{ title: "Compliance Intelligence · Seaphore" }] }),
   component: () => (
-    <AppShell>
-      <ModulePlaceholder
-        title="Compliance Intelligence"
-        subtitle="Sanctions watch, high-risk countries, compliance alerts"
-        icon={ShieldCheck}
-      />
+    <AppShell title="Compliance Intelligence" subtitle="Sanctions, controls, screening" mode="dark">
+      <ModulePlaceholder title="Compliance Intelligence" subtitle="Sanctions, controls, screening" icon={ShieldCheck} />
     </AppShell>
   ),
 });
