@@ -129,7 +129,7 @@ function EvidenceCentre() {
               <RowKV k="Uploaded by"   v={selected.uploadedBy} />
               <div className="flex items-center justify-between">
                 <span className="text-slate">Confidence</span>
-                <ConfidenceChip tier={selected.confidence} size={10} />
+                <ConfidenceChip tier={selected.confidence} size={11} />
               </div>
             </div>
 
