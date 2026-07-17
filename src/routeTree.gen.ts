@@ -9,13 +9,94 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VesselRouteImport } from './routes/vessel'
+import { Route as ShareRouteImport } from './routes/share'
+import { Route as RevenueRouteImport } from './routes/revenue'
+import { Route as PortsRouteImport } from './routes/ports'
+import { Route as OwnershipRouteImport } from './routes/ownership'
+import { Route as MemoryRouteImport } from './routes/memory'
+import { Route as ManifestRouteImport } from './routes/manifest'
+import { Route as InvestigateRouteImport } from './routes/investigate'
+import { Route as EvidenceRouteImport } from './routes/evidence'
 import { Route as DetectRouteImport } from './routes/detect'
+import { Route as DecideRouteImport } from './routes/decide'
+import { Route as ComplianceRouteImport } from './routes/compliance'
+import { Route as CargoRouteImport } from './routes/cargo'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AlertsRouteImport } from './routes/alerts'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ShareIndexRouteImport } from './routes/share.index'
+import { Route as InvestigateIndexRouteImport } from './routes/investigate.index'
+import { Route as DecideIndexRouteImport } from './routes/decide.index'
+import { Route as ShareIdRouteImport } from './routes/share.$id'
+import { Route as InvestigateIdRouteImport } from './routes/investigate.$id'
+import { Route as EntityIdRouteImport } from './routes/entity.$id'
+import { Route as DecideIdRouteImport } from './routes/decide.$id'
 
+const VesselRoute = VesselRouteImport.update({
+  id: '/vessel',
+  path: '/vessel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShareRoute = ShareRouteImport.update({
+  id: '/share',
+  path: '/share',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RevenueRoute = RevenueRouteImport.update({
+  id: '/revenue',
+  path: '/revenue',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortsRoute = PortsRouteImport.update({
+  id: '/ports',
+  path: '/ports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OwnershipRoute = OwnershipRouteImport.update({
+  id: '/ownership',
+  path: '/ownership',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MemoryRoute = MemoryRouteImport.update({
+  id: '/memory',
+  path: '/memory',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ManifestRoute = ManifestRouteImport.update({
+  id: '/manifest',
+  path: '/manifest',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvestigateRoute = InvestigateRouteImport.update({
+  id: '/investigate',
+  path: '/investigate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EvidenceRoute = EvidenceRouteImport.update({
+  id: '/evidence',
+  path: '/evidence',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DetectRoute = DetectRouteImport.update({
   id: '/detect',
   path: '/detect',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DecideRoute = DecideRouteImport.update({
+  id: '/decide',
+  path: '/decide',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComplianceRoute = ComplianceRouteImport.update({
+  id: '/compliance',
+  path: '/compliance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CargoRoute = CargoRouteImport.update({
+  id: '/cargo',
+  path: '/cargo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -23,49 +104,323 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AlertsRoute = AlertsRouteImport.update({
+  id: '/alerts',
+  path: '/alerts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShareIndexRoute = ShareIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ShareRoute,
+} as any)
+const InvestigateIndexRoute = InvestigateIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => InvestigateRoute,
+} as any)
+const DecideIndexRoute = DecideIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DecideRoute,
+} as any)
+const ShareIdRoute = ShareIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ShareRoute,
+} as any)
+const InvestigateIdRoute = InvestigateIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => InvestigateRoute,
+} as any)
+const EntityIdRoute = EntityIdRouteImport.update({
+  id: '/entity/$id',
+  path: '/entity/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DecideIdRoute = DecideIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => DecideRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/alerts': typeof AlertsRoute
   '/auth': typeof AuthRoute
+  '/cargo': typeof CargoRoute
+  '/compliance': typeof ComplianceRoute
+  '/decide': typeof DecideRouteWithChildren
   '/detect': typeof DetectRoute
+  '/evidence': typeof EvidenceRoute
+  '/investigate': typeof InvestigateRouteWithChildren
+  '/manifest': typeof ManifestRoute
+  '/memory': typeof MemoryRoute
+  '/ownership': typeof OwnershipRoute
+  '/ports': typeof PortsRoute
+  '/revenue': typeof RevenueRoute
+  '/share': typeof ShareRouteWithChildren
+  '/vessel': typeof VesselRoute
+  '/decide/$id': typeof DecideIdRoute
+  '/entity/$id': typeof EntityIdRoute
+  '/investigate/$id': typeof InvestigateIdRoute
+  '/share/$id': typeof ShareIdRoute
+  '/decide/': typeof DecideIndexRoute
+  '/investigate/': typeof InvestigateIndexRoute
+  '/share/': typeof ShareIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/alerts': typeof AlertsRoute
   '/auth': typeof AuthRoute
+  '/cargo': typeof CargoRoute
+  '/compliance': typeof ComplianceRoute
   '/detect': typeof DetectRoute
+  '/evidence': typeof EvidenceRoute
+  '/manifest': typeof ManifestRoute
+  '/memory': typeof MemoryRoute
+  '/ownership': typeof OwnershipRoute
+  '/ports': typeof PortsRoute
+  '/revenue': typeof RevenueRoute
+  '/vessel': typeof VesselRoute
+  '/decide/$id': typeof DecideIdRoute
+  '/entity/$id': typeof EntityIdRoute
+  '/investigate/$id': typeof InvestigateIdRoute
+  '/share/$id': typeof ShareIdRoute
+  '/decide': typeof DecideIndexRoute
+  '/investigate': typeof InvestigateIndexRoute
+  '/share': typeof ShareIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/alerts': typeof AlertsRoute
   '/auth': typeof AuthRoute
+  '/cargo': typeof CargoRoute
+  '/compliance': typeof ComplianceRoute
+  '/decide': typeof DecideRouteWithChildren
   '/detect': typeof DetectRoute
+  '/evidence': typeof EvidenceRoute
+  '/investigate': typeof InvestigateRouteWithChildren
+  '/manifest': typeof ManifestRoute
+  '/memory': typeof MemoryRoute
+  '/ownership': typeof OwnershipRoute
+  '/ports': typeof PortsRoute
+  '/revenue': typeof RevenueRoute
+  '/share': typeof ShareRouteWithChildren
+  '/vessel': typeof VesselRoute
+  '/decide/$id': typeof DecideIdRoute
+  '/entity/$id': typeof EntityIdRoute
+  '/investigate/$id': typeof InvestigateIdRoute
+  '/share/$id': typeof ShareIdRoute
+  '/decide/': typeof DecideIndexRoute
+  '/investigate/': typeof InvestigateIndexRoute
+  '/share/': typeof ShareIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/detect'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/alerts'
+    | '/auth'
+    | '/cargo'
+    | '/compliance'
+    | '/decide'
+    | '/detect'
+    | '/evidence'
+    | '/investigate'
+    | '/manifest'
+    | '/memory'
+    | '/ownership'
+    | '/ports'
+    | '/revenue'
+    | '/share'
+    | '/vessel'
+    | '/decide/$id'
+    | '/entity/$id'
+    | '/investigate/$id'
+    | '/share/$id'
+    | '/decide/'
+    | '/investigate/'
+    | '/share/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/detect'
-  id: '__root__' | '/' | '/auth' | '/detect'
+  to:
+    | '/'
+    | '/admin'
+    | '/alerts'
+    | '/auth'
+    | '/cargo'
+    | '/compliance'
+    | '/detect'
+    | '/evidence'
+    | '/manifest'
+    | '/memory'
+    | '/ownership'
+    | '/ports'
+    | '/revenue'
+    | '/vessel'
+    | '/decide/$id'
+    | '/entity/$id'
+    | '/investigate/$id'
+    | '/share/$id'
+    | '/decide'
+    | '/investigate'
+    | '/share'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/alerts'
+    | '/auth'
+    | '/cargo'
+    | '/compliance'
+    | '/decide'
+    | '/detect'
+    | '/evidence'
+    | '/investigate'
+    | '/manifest'
+    | '/memory'
+    | '/ownership'
+    | '/ports'
+    | '/revenue'
+    | '/share'
+    | '/vessel'
+    | '/decide/$id'
+    | '/entity/$id'
+    | '/investigate/$id'
+    | '/share/$id'
+    | '/decide/'
+    | '/investigate/'
+    | '/share/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
+  AlertsRoute: typeof AlertsRoute
   AuthRoute: typeof AuthRoute
+  CargoRoute: typeof CargoRoute
+  ComplianceRoute: typeof ComplianceRoute
+  DecideRoute: typeof DecideRouteWithChildren
   DetectRoute: typeof DetectRoute
+  EvidenceRoute: typeof EvidenceRoute
+  InvestigateRoute: typeof InvestigateRouteWithChildren
+  ManifestRoute: typeof ManifestRoute
+  MemoryRoute: typeof MemoryRoute
+  OwnershipRoute: typeof OwnershipRoute
+  PortsRoute: typeof PortsRoute
+  RevenueRoute: typeof RevenueRoute
+  ShareRoute: typeof ShareRouteWithChildren
+  VesselRoute: typeof VesselRoute
+  EntityIdRoute: typeof EntityIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/vessel': {
+      id: '/vessel'
+      path: '/vessel'
+      fullPath: '/vessel'
+      preLoaderRoute: typeof VesselRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/share': {
+      id: '/share'
+      path: '/share'
+      fullPath: '/share'
+      preLoaderRoute: typeof ShareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/revenue': {
+      id: '/revenue'
+      path: '/revenue'
+      fullPath: '/revenue'
+      preLoaderRoute: typeof RevenueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ports': {
+      id: '/ports'
+      path: '/ports'
+      fullPath: '/ports'
+      preLoaderRoute: typeof PortsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ownership': {
+      id: '/ownership'
+      path: '/ownership'
+      fullPath: '/ownership'
+      preLoaderRoute: typeof OwnershipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/memory': {
+      id: '/memory'
+      path: '/memory'
+      fullPath: '/memory'
+      preLoaderRoute: typeof MemoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/manifest': {
+      id: '/manifest'
+      path: '/manifest'
+      fullPath: '/manifest'
+      preLoaderRoute: typeof ManifestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/investigate': {
+      id: '/investigate'
+      path: '/investigate'
+      fullPath: '/investigate'
+      preLoaderRoute: typeof InvestigateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/evidence': {
+      id: '/evidence'
+      path: '/evidence'
+      fullPath: '/evidence'
+      preLoaderRoute: typeof EvidenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/detect': {
       id: '/detect'
       path: '/detect'
       fullPath: '/detect'
       preLoaderRoute: typeof DetectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/decide': {
+      id: '/decide'
+      path: '/decide'
+      fullPath: '/decide'
+      preLoaderRoute: typeof DecideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compliance': {
+      id: '/compliance'
+      path: '/compliance'
+      fullPath: '/compliance'
+      preLoaderRoute: typeof ComplianceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cargo': {
+      id: '/cargo'
+      path: '/cargo'
+      fullPath: '/cargo'
+      preLoaderRoute: typeof CargoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -75,6 +430,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/alerts': {
+      id: '/alerts'
+      path: '/alerts'
+      fullPath: '/alerts'
+      preLoaderRoute: typeof AlertsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -82,13 +451,116 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/share/': {
+      id: '/share/'
+      path: '/'
+      fullPath: '/share/'
+      preLoaderRoute: typeof ShareIndexRouteImport
+      parentRoute: typeof ShareRoute
+    }
+    '/investigate/': {
+      id: '/investigate/'
+      path: '/'
+      fullPath: '/investigate/'
+      preLoaderRoute: typeof InvestigateIndexRouteImport
+      parentRoute: typeof InvestigateRoute
+    }
+    '/decide/': {
+      id: '/decide/'
+      path: '/'
+      fullPath: '/decide/'
+      preLoaderRoute: typeof DecideIndexRouteImport
+      parentRoute: typeof DecideRoute
+    }
+    '/share/$id': {
+      id: '/share/$id'
+      path: '/$id'
+      fullPath: '/share/$id'
+      preLoaderRoute: typeof ShareIdRouteImport
+      parentRoute: typeof ShareRoute
+    }
+    '/investigate/$id': {
+      id: '/investigate/$id'
+      path: '/$id'
+      fullPath: '/investigate/$id'
+      preLoaderRoute: typeof InvestigateIdRouteImport
+      parentRoute: typeof InvestigateRoute
+    }
+    '/entity/$id': {
+      id: '/entity/$id'
+      path: '/entity/$id'
+      fullPath: '/entity/$id'
+      preLoaderRoute: typeof EntityIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/decide/$id': {
+      id: '/decide/$id'
+      path: '/$id'
+      fullPath: '/decide/$id'
+      preLoaderRoute: typeof DecideIdRouteImport
+      parentRoute: typeof DecideRoute
+    }
   }
 }
 
+interface DecideRouteChildren {
+  DecideIdRoute: typeof DecideIdRoute
+  DecideIndexRoute: typeof DecideIndexRoute
+}
+
+const DecideRouteChildren: DecideRouteChildren = {
+  DecideIdRoute: DecideIdRoute,
+  DecideIndexRoute: DecideIndexRoute,
+}
+
+const DecideRouteWithChildren =
+  DecideRoute._addFileChildren(DecideRouteChildren)
+
+interface InvestigateRouteChildren {
+  InvestigateIdRoute: typeof InvestigateIdRoute
+  InvestigateIndexRoute: typeof InvestigateIndexRoute
+}
+
+const InvestigateRouteChildren: InvestigateRouteChildren = {
+  InvestigateIdRoute: InvestigateIdRoute,
+  InvestigateIndexRoute: InvestigateIndexRoute,
+}
+
+const InvestigateRouteWithChildren = InvestigateRoute._addFileChildren(
+  InvestigateRouteChildren,
+)
+
+interface ShareRouteChildren {
+  ShareIdRoute: typeof ShareIdRoute
+  ShareIndexRoute: typeof ShareIndexRoute
+}
+
+const ShareRouteChildren: ShareRouteChildren = {
+  ShareIdRoute: ShareIdRoute,
+  ShareIndexRoute: ShareIndexRoute,
+}
+
+const ShareRouteWithChildren = ShareRoute._addFileChildren(ShareRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
+  AlertsRoute: AlertsRoute,
   AuthRoute: AuthRoute,
+  CargoRoute: CargoRoute,
+  ComplianceRoute: ComplianceRoute,
+  DecideRoute: DecideRouteWithChildren,
   DetectRoute: DetectRoute,
+  EvidenceRoute: EvidenceRoute,
+  InvestigateRoute: InvestigateRouteWithChildren,
+  ManifestRoute: ManifestRoute,
+  MemoryRoute: MemoryRoute,
+  OwnershipRoute: OwnershipRoute,
+  PortsRoute: PortsRoute,
+  RevenueRoute: RevenueRoute,
+  ShareRoute: ShareRouteWithChildren,
+  VesselRoute: VesselRoute,
+  EntityIdRoute: EntityIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
