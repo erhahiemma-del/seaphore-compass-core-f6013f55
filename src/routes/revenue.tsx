@@ -7,7 +7,7 @@ import {
 } from "@/components/intel-centre/shell";
 import { KpiRibbon, Sparkline, type KpiSpec } from "@/components/intel-centre/kpi-ribbon";
 import { CentreCopilot } from "@/components/intel-centre/centre-copilot";
-import { DataTable, Section, TimelineStrip, type Column } from "@/components/intel-centre/primitives";
+import { DataTable, Section, TimelineStrip } from "@/components/intel-centre/primitives";
 import { ConfidenceChip } from "@/components/confidence-chip";
 import { NigeriaMap } from "@/components/intel-centre/nigeria-map";
 import {
