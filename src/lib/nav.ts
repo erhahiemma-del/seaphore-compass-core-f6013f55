@@ -31,9 +31,12 @@ export interface NavGroup {
 }
 
 /**
- * Seaphore navigation model — mirrors the Intelligence Lifecycle
- * (Detect → Investigate → Decide → Share → Learn) plus the domain
- * Intelligence Centers.
+ * Seaphore navigation model — canonical routes per Screen Inventory &
+ * Navigation Map (Part 05).
+ *
+ * NAV-1: sidebar lifecycle order is fixed.
+ * NAV-2: Intelligence Centres group appears BELOW the lifecycle group.
+ * NAV-3: Search is a top-bar tool, not a sidebar item.
  */
 export const NAV_GROUPS: NavGroup[] = [
   {
@@ -52,29 +55,29 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { title: "Detect", subtitle: "Intelligence Feed", url: "/detect", icon: Radar },
       { title: "Investigate", subtitle: "Case Workspace", url: "/investigate", icon: Search },
-      { title: "Decision Support", subtitle: "Recommendations", url: "/decision-support", icon: Gavel },
+      { title: "Decision Support", subtitle: "Recommendations", url: "/decide", icon: Gavel },
       { title: "Share", subtitle: "Briefings & Collaboration", url: "/share", icon: Share2 },
-      { title: "Institutional Memory", subtitle: "Knowledge & Learning", url: "/institutional-memory", icon: Library },
+      { title: "Institutional Memory", subtitle: "Knowledge & Learning", url: "/memory", icon: Library },
     ],
   },
   {
-    label: "Intelligence Centers",
+    label: "Intelligence Centres",
     items: [
-      { title: "Manifest Intelligence", url: "/manifest-intelligence", icon: FileText },
-      { title: "Cargo Intelligence", url: "/cargo-intelligence", icon: Package },
-      { title: "Revenue Intelligence", url: "/revenue-intelligence", icon: DollarSign },
-      { title: "Vessel Intelligence", url: "/vessel-intelligence", icon: Ship },
-      { title: "Port Operations", url: "/port-operations", icon: Anchor },
-      { title: "Compliance Intelligence", url: "/compliance-intelligence", icon: ShieldCheck },
-      { title: "Ownership Intelligence", url: "/ownership-intelligence", icon: Building2 },
-      { title: "Evidence Library", url: "/evidence-library", icon: FolderArchive },
-      { title: "Alerts Center", url: "/alerts-center", icon: BellRing },
+      { title: "Manifest Intelligence", url: "/manifest", icon: FileText },
+      { title: "Cargo Intelligence", url: "/cargo", icon: Package },
+      { title: "Revenue Intelligence", url: "/revenue", icon: DollarSign },
+      { title: "Vessel Intelligence", url: "/vessel", icon: Ship },
+      { title: "Port Operations", url: "/ports", icon: Anchor },
+      { title: "Ownership Intelligence", url: "/ownership", icon: Building2 },
+      { title: "Compliance Intelligence", url: "/compliance", icon: ShieldCheck },
+      { title: "Evidence Library", url: "/evidence", icon: FolderArchive },
+      { title: "Alerts Center", url: "/alerts", icon: BellRing },
     ],
   },
   {
     label: "System",
     items: [
-      { title: "Administration", subtitle: "System Management", url: "/administration", icon: Settings },
+      { title: "Administration", subtitle: "System Management", url: "/admin", icon: Settings },
     ],
   },
 ];

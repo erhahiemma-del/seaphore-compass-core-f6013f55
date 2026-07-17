@@ -110,7 +110,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              isActive={isActive("/administration")}
+              isActive={isActive("/admin")}
               tooltip="Administration"
               className={cn(
                 "text-sidebar-foreground/85 motion-fast",
@@ -118,7 +118,7 @@ export function AppSidebar() {
                 "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground",
               )}
             >
-              <Link to="/administration" className="flex items-center gap-2.5">
+              <Link to="/admin" className="flex items-center gap-2.5">
                 <Settings className="h-4 w-4 shrink-0" />
                 {!collapsed && (
                   <span className="text-[13px] font-semibold">Administration</span>

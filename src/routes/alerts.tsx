@@ -3,11 +3,11 @@ import { BellRing } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { ModulePlaceholder } from "@/components/module-placeholder";
 
-export const Route = createFileRoute("/alerts-center")({
+export const Route = createFileRoute("/alerts")({
   head: () => ({ meta: [{ title: "Alerts Center · Seaphore" }] }),
   component: () => (
-    <AppShell title="Alerts Center" subtitle="Live alerts across every intelligence domain" mode="dark">
-      <ModulePlaceholder title="Alerts Center" subtitle="Live alerts across every intelligence domain" icon={BellRing} />
+    <AppShell title="Alerts Center" subtitle="Live and acknowledged alerts" mode="light">
+      <ModulePlaceholder title="Alerts Center" subtitle="Monitor stage" icon={BellRing} />
     </AppShell>
   ),
 });

@@ -1,5 +1,5 @@
 import { Outlet, createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/share")({
+export const Route = createFileRoute("/decide")({
   component: () => <Outlet />,
 });
