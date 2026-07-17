@@ -14,7 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      audit_log: {
+        Row: {
+          action: string
+          at: string
+          entity: string
+          entity_id: string | null
+          id: string
+          ip_address: string
+          metadata: Json
+          module: string
+          officer_id: string
+          rule_refs: string[]
+        }
+        Insert: {
+          action: string
+          at?: string
+          entity: string
+          entity_id?: string | null
+          id?: string
+          ip_address: string
+          metadata?: Json
+          module: string
+          officer_id: string
+          rule_refs?: string[]
+        }
+        Update: {
+          action?: string
+          at?: string
+          entity?: string
+          entity_id?: string | null
+          id?: string
+          ip_address?: string
+          metadata?: Json
+          module?: string
+          officer_id?: string
+          rule_refs?: string[]
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
