@@ -1,16 +1,10 @@
 import { cn } from "@/lib/utils";
 
 /**
- * OC-001 Confidence Ladder
+ * OC-001 Confidence Ladder — REQUIRED on every figure.
  *
- * Every number in Seaphore wears a confidence chip. This primitive is the
- * single source of truth — never render a value without one.
- *
- * Tiers:
- *   verified    — Confirmed by authoritative source
- *   observed    — Directly observed / measured
- *   inferred    — Derived from multiple sources
- *   unconfirmed — Insufficient evidence
+ * Every number, count, aggregate, signal, and status renders this chip.
+ * A bare number is a build defect.
  */
 export type ConfidenceTier =
   | "verified"
@@ -19,10 +13,10 @@ export type ConfidenceTier =
   | "unconfirmed";
 
 export const CONFIDENCE_LABELS: Record<ConfidenceTier, string> = {
-  verified: "Verified",
-  observed: "Observed",
-  inferred: "Inferred",
-  unconfirmed: "Unconfirmed",
+  verified: "VERIFIED",
+  observed: "OBSERVED",
+  inferred: "INFERRED",
+  unconfirmed: "UNCONFIRMED",
 };
 
 export const CONFIDENCE_DESCRIPTIONS: Record<ConfidenceTier, string> = {
@@ -32,49 +26,49 @@ export const CONFIDENCE_DESCRIPTIONS: Record<ConfidenceTier, string> = {
   unconfirmed: "Insufficient evidence",
 };
 
-const TIER_CLASSES: Record<ConfidenceTier, string> = {
-  verified:
-    "bg-verified/12 text-verified border-verified/30",
-  observed:
-    "bg-observed/12 text-observed border-observed/30",
-  inferred:
-    "bg-inferred/15 text-inferred-foreground border-inferred/40",
-  unconfirmed:
-    "bg-unconfirmed/15 text-unconfirmed-foreground border-unconfirmed/40",
+/**
+ * Confidence hex values are pinned per the token reference.
+ * The chip tint is the same colour at 8% alpha — spec exact.
+ */
+const HEX: Record<ConfidenceTier, string> = {
+  verified: "#1E6B3A",
+  observed: "#2563EB",
+  inferred: "#B06A00",
+  unconfirmed: "#8A98A6",
 };
 
 export interface ConfidenceChipProps {
   tier: ConfidenceTier;
+  /** 11 = default; 9 = compact (briefings strip). */
+  size?: 11 | 9;
   className?: string;
-  showDot?: boolean;
 }
 
 export function ConfidenceChip({
   tier,
+  size = 11,
   className,
-  showDot = true,
 }: ConfidenceChipProps) {
+  const hex = HEX[tier];
+  const compact = size === 9;
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5",
-        "text-[10px] font-semibold uppercase tracking-wider",
-        TIER_CLASSES[tier],
+        "inline-flex items-center gap-1.5 rounded-sm font-bold uppercase tracking-[0.04em] whitespace-nowrap",
+        compact ? "px-1.5 py-0.5 text-[9px]" : "px-2 py-0.5 text-[11px]",
         className,
       )}
+      style={{
+        color: hex,
+        backgroundColor: `${hex}14`, // 8% alpha (0x14 ≈ 20/255)
+      }}
       title={CONFIDENCE_DESCRIPTIONS[tier]}
     >
-      {showDot && (
-        <span
-          className={cn(
-            "h-1.5 w-1.5 rounded-full",
-            tier === "verified" && "bg-verified",
-            tier === "observed" && "bg-observed",
-            tier === "inferred" && "bg-inferred",
-            tier === "unconfirmed" && "bg-unconfirmed",
-          )}
-        />
-      )}
+      <span
+        aria-hidden
+        className={cn("rounded-full", compact ? "h-1.5 w-1.5" : "h-2 w-2")}
+        style={{ backgroundColor: hex }}
+      />
       {CONFIDENCE_LABELS[tier]}
     </span>
   );

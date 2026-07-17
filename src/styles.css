@@ -5,162 +5,202 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * SEAPHORE Design System
+ * SEAPHORE Design System — Token Reference (Part 02)
  * Maritime Intelligence Operating System
  *
  * Evidence first. Explainable always. Officer decides.
  *
- * Every color and confidence signal is a semantic token.
- * Never hardcode color utilities in components.
+ * Every colour, spacing, font, radius, shadow, and component in Seaphore
+ * traces to this document. Never hard-code a hex, pixel count, or font size.
+ * Always use a token.
  */
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  /* Radius */
+  --radius-sm: var(--radius-sm-val);
+  --radius-md: var(--radius-md-val);
+  --radius-lg: var(--radius-lg-val);
+  --radius-pill: var(--radius-pill-val);
+  --radius: var(--radius-lg-val);
 
-  --font-sans:
-    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-display:
-    "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-mono:
-    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Font families */
+  --font-sans: var(--font-head);
+  --font-mono: var(--font-mono-family);
 
+  /* shadcn semantic tokens */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--foreground);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--foreground);
+  --color-primary: var(--navy);
+  --color-primary-foreground: #ffffff;
+  --color-secondary: var(--surface-2);
+  --color-secondary-foreground: var(--foreground);
+  --color-muted: var(--surface-2);
+  --color-muted-foreground: var(--slate);
+  --color-accent: var(--surface-2);
+  --color-accent-foreground: var(--foreground);
+  --color-destructive: var(--red);
+  --color-destructive-foreground: #ffffff;
+  --color-border: var(--line);
+  --color-input: var(--line);
+  --color-ring: var(--teal);
 
   /* Seaphore brand */
-  --color-brand: var(--brand);
-  --color-brand-foreground: var(--brand-foreground);
-  --color-ocean: var(--ocean);
-  --color-ocean-deep: var(--ocean-deep);
+  --color-navy: var(--navy);
+  --color-teal: var(--teal);
+  --color-gold: var(--gold);
+  --color-ink: var(--ink);
+  --color-slate: var(--slate);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
 
-  /* Evidence / Confidence Ladder (OC-001) */
-  --color-verified: var(--verified);
-  --color-verified-foreground: var(--verified-foreground);
-  --color-observed: var(--observed);
-  --color-observed-foreground: var(--observed-foreground);
-  --color-inferred: var(--inferred);
-  --color-inferred-foreground: var(--inferred-foreground);
-  --color-unconfirmed: var(--unconfirmed);
-  --color-unconfirmed-foreground: var(--unconfirmed-foreground);
+  /* Status */
+  --color-red: var(--red);
+  --color-amber: var(--amber);
+  --color-green: var(--green);
+  --color-blue: var(--blue);
+  --color-purple: var(--purple);
 
-  /* Risk levels */
-  --color-risk-high: var(--risk-high);
-  --color-risk-medium: var(--risk-medium);
-  --color-risk-low: var(--risk-low);
+  /* Confidence Ladder (reserved — decorative use is a defect) */
+  --color-verified: var(--conf-verified);
+  --color-observed: var(--conf-observed);
+  --color-inferred: var(--conf-inferred);
+  --color-unconfirmed: var(--conf-unconfirmed);
 
-  /* Sidebar */
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+  /* Risk */
+  --color-risk-high: var(--red);
+  --color-risk-medium: var(--amber);
+  --color-risk-low: var(--green);
+
+  /* Sidebar (navy in both modes — structure never changes) */
+  --color-sidebar: var(--navy);
+  --color-sidebar-foreground: #E4E8EC;
+  --color-sidebar-primary: var(--teal);
+  --color-sidebar-primary-foreground: #ffffff;
+  --color-sidebar-accent: #14314F;
+  --color-sidebar-accent-foreground: #ffffff;
+  --color-sidebar-border: #1E3048;
+  --color-sidebar-ring: var(--teal);
+
+  /* Shadows */
+  --shadow-card: 0 1px 2px rgba(11, 31, 58, 0.04);
+  --shadow-pop: 0 4px 14px rgba(0, 0, 0, 0.18);
+
+  /* Motion */
+  --ease-seaphore: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 :root {
-  --radius: 0.5rem;
+  /* Brand colours */
+  --navy: #0B1F3A;
+  --teal: #0E7C7B;
+  --gold: #B8860B;
+  --ink: #1A2733;
+  --slate: #5A6B7B;
 
-  --background: oklch(0.995 0.002 240);
-  --foreground: oklch(0.18 0.03 250);
+  --red: #C0392B;
+  --amber: #B06A00;
+  --green: #1E6B3A;
+  --blue: #2563EB;
+  --purple: #7C3AED;
 
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.03 250);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.03 250);
+  /* Confidence tokens (never used for decoration) */
+  --conf-verified: #1E6B3A;
+  --conf-observed: #2563EB;
+  --conf-inferred: #B06A00;
+  --conf-unconfirmed: #8A98A6;
 
-  /* Seaphore brand — deep maritime navy with a signal blue accent */
-  --brand: oklch(0.42 0.18 255);
-  --brand-foreground: oklch(0.99 0.005 240);
-  --ocean: oklch(0.55 0.15 240);
-  --ocean-deep: oklch(0.22 0.06 258);
+  /* Light-mode surfaces */
+  --background: #F7F9FB;
+  --foreground: var(--ink);
+  --surface: #FFFFFF;
+  --surface-2: #F0F3F6;
+  --line: #E4E8EC;
 
-  --primary: oklch(0.42 0.18 255);
-  --primary-foreground: oklch(0.99 0.005 240);
+  /* Radius */
+  --radius-sm-val: 4px;
+  --radius-md-val: 8px;
+  --radius-lg-val: 12px;
+  --radius-pill-val: 999px;
 
-  --secondary: oklch(0.96 0.01 250);
-  --secondary-foreground: oklch(0.22 0.04 258);
-
-  --muted: oklch(0.97 0.005 250);
-  --muted-foreground: oklch(0.5 0.02 255);
-
-  --accent: oklch(0.94 0.02 250);
-  --accent-foreground: oklch(0.22 0.04 258);
-
-  --destructive: oklch(0.58 0.22 27);
-  --destructive-foreground: oklch(0.99 0.005 0);
-
-  --border: oklch(0.92 0.01 250);
-  --input: oklch(0.92 0.01 250);
-  --ring: oklch(0.55 0.15 240);
-
-  /* Evidence tiers (OC-001 Confidence Ladder) */
-  --verified: oklch(0.62 0.16 150);            /* green */
-  --verified-foreground: oklch(0.99 0 0);
-  --observed: oklch(0.6 0.16 240);             /* blue */
-  --observed-foreground: oklch(0.99 0 0);
-  --inferred: oklch(0.72 0.16 65);             /* amber */
-  --inferred-foreground: oklch(0.2 0.05 65);
-  --unconfirmed: oklch(0.65 0.015 260);        /* neutral gray */
-  --unconfirmed-foreground: oklch(0.2 0.02 260);
-
-  --risk-high: oklch(0.6 0.22 25);
-  --risk-medium: oklch(0.72 0.17 65);
-  --risk-low: oklch(0.62 0.15 150);
-
-  /* Sidebar — deep maritime navy */
-  --sidebar: oklch(0.22 0.06 258);
-  --sidebar-foreground: oklch(0.9 0.02 250);
-  --sidebar-primary: oklch(0.6 0.16 240);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.28 0.06 258);
-  --sidebar-accent-foreground: oklch(0.99 0.005 240);
-  --sidebar-border: oklch(0.32 0.05 258);
-  --sidebar-ring: oklch(0.6 0.16 240);
+  /* Fonts */
+  --font-head:
+    "Segoe UI", -apple-system, BlinkMacSystemFont, system-ui, Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono-family:
+    "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
 }
 
 .dark {
-  --background: oklch(0.16 0.03 258);
-  --foreground: oklch(0.96 0.01 250);
-  --card: oklch(0.2 0.04 258);
-  --card-foreground: oklch(0.96 0.01 250);
-  --popover: oklch(0.2 0.04 258);
-  --popover-foreground: oklch(0.96 0.01 250);
-  --primary: oklch(0.6 0.16 240);
-  --primary-foreground: oklch(0.15 0.03 258);
-  --secondary: oklch(0.26 0.04 258);
-  --secondary-foreground: oklch(0.96 0.01 250);
-  --muted: oklch(0.24 0.04 258);
-  --muted-foreground: oklch(0.7 0.02 250);
-  --accent: oklch(0.28 0.05 258);
-  --accent-foreground: oklch(0.96 0.01 250);
-  --destructive: oklch(0.65 0.2 25);
-  --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.6 0.16 240);
+  /* Dark-mode surfaces — Intelligence Centres */
+  --background: #0D1B2A;
+  --foreground: #E4E8EC;
+  --surface: #132032;
+  --surface-2: #172A40;
+  --line: #1E3048;
 }
+
+/* Spacing utilities (4px base) */
+@utility p-space-1 { padding: 4px; }
+@utility p-space-2 { padding: 8px; }
+@utility p-space-3 { padding: 12px; }
+@utility p-space-4 { padding: 16px; }
+@utility p-space-5 { padding: 20px; }
+@utility p-space-6 { padding: 24px; }
+@utility p-space-8 { padding: 32px; }
+
+/* Typography utilities */
+@utility type-display {
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+@utility type-h1 {
+  font-size: 15px;
+  line-height: 1.35;
+  font-weight: 700;
+}
+@utility type-h2 {
+  font-size: 13px;
+  line-height: 1.4;
+  font-weight: 700;
+}
+@utility type-body {
+  font-size: 13px;
+  line-height: 1.5;
+  font-weight: 400;
+}
+@utility type-small {
+  font-size: 12px;
+  line-height: 1.45;
+  font-weight: 400;
+}
+@utility type-label {
+  font-size: 11px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+@utility type-mono {
+  font-family: var(--font-mono-family);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* Elevation */
+@utility shadow-card { box-shadow: var(--shadow-card); }
+@utility shadow-pop { box-shadow: var(--shadow-pop); }
+
+/* Motion durations */
+@utility motion-fast { transition-duration: 120ms; transition-timing-function: var(--ease-seaphore); }
+@utility motion-base { transition-duration: 200ms; transition-timing-function: var(--ease-seaphore); }
+@utility motion-slow { transition-duration: 320ms; transition-timing-function: var(--ease-seaphore); }
 
 @layer base {
   * {
@@ -170,7 +210,9 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: var(--font-sans);
+    font-family: var(--font-head);
+    font-size: 13px;
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
   }
 }
