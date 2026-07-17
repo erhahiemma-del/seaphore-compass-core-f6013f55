@@ -14,10 +14,8 @@ export interface TopBarProps {
 }
 
 /**
- * TopBar — page title/subtitle (left), global ⌘K search (centre),
- * status dot + clock + alerts bell + officer (right).
- *
- * Search is a tool on every screen, never a sidebar destination.
+ * TopBar — page title/subtitle (left), status dot + clock + alerts bell + officer (right).
+ * Search lives exclusively in the Mission Intelligence Command Bar on Mission Control.
  */
 export function TopBar({ title, subtitle }: TopBarProps) {
   return (
@@ -28,15 +26,11 @@ export function TopBar({ title, subtitle }: TopBarProps) {
       )}
     >
       <SidebarTrigger className="text-slate md:hidden" />
-      <div className="min-w-0 flex-shrink-0">
+      <div className="min-w-0 flex-1">
         <div className="type-h1 text-foreground truncate">{title}</div>
         {subtitle && (
           <div className="type-small text-slate truncate">{subtitle}</div>
         )}
-      </div>
-
-      <div className="mx-auto flex max-w-xl flex-1 items-center">
-        <GlobalSearch />
       </div>
 
       <div className="flex items-center gap-3">
@@ -57,27 +51,6 @@ export function TopBar({ title, subtitle }: TopBarProps) {
         <OfficerBadge />
       </div>
     </header>
-  );
-}
-
-function GlobalSearch() {
-  return (
-    <label
-      className={cn(
-        "flex w-full items-center gap-2 rounded-md border border-line bg-background px-3 py-1.5",
-        "text-slate motion-fast focus-within:border-teal",
-      )}
-    >
-      <Search className="h-4 w-4 shrink-0" />
-      <input
-        type="search"
-        placeholder="Search across every intelligence source…"
-        className="w-full bg-transparent text-[13px] text-foreground outline-none placeholder:text-slate"
-      />
-      <kbd className="hidden shrink-0 rounded border border-line bg-surface-2 px-1.5 py-0.5 text-[10px] font-semibold text-slate sm:inline">
-        ⌘K
-      </kbd>
-    </label>
   );
 }
 
