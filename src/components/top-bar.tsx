@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Bell, LogIn, LogOut, Search, User2 } from "lucide-react";
+import { Bell, LogIn, LogOut, User2 } from "lucide-react";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
