@@ -6,9 +6,14 @@
  */
 
 import { createServerFn } from "@tanstack/react-start";
+import {
+  getRequestHeader,
+  getRequestIP,
+} from "@tanstack/react-start/server";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Json } from "@/integrations/supabase/types";
 
 const auditInput = z.object({
   action: z.string().min(1).max(120),
@@ -24,10 +29,11 @@ export type AuditInput = z.infer<typeof auditInput>;
 export const writeAuditLog = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => auditInput.parse(data))
-  .handler(async ({ data, context, request }) => {
+  .handler(async ({ data, context }) => {
     const ip =
-      request.headers.get("cf-connecting-ip") ??
-      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      getRequestIP({ xForwardedFor: true }) ??
+      getRequestHeader("cf-connecting-ip") ??
+      getRequestHeader("x-forwarded-for")?.split(",")[0]?.trim() ??
       "unknown";
 
     const { data: row, error } = await context.supabase
@@ -39,7 +45,7 @@ export const writeAuditLog = createServerFn({ method: "POST" })
         entity_id: data.entityId ?? null,
         module: data.module,
         rule_refs: data.ruleRefs ?? [],
-        metadata: data.metadata ?? {},
+        metadata: (data.metadata ?? {}) as Json,
         ip_address: ip,
       })
       .select("id, at")
