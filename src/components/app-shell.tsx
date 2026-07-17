@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { TopBar } from "@/components/top-bar";
+import { GlobalCopilotLauncher } from "@/components/ai/global-copilot-launcher";
 import { cn } from "@/lib/utils";
 
 export interface AppShellProps {
@@ -58,6 +59,7 @@ export function AppShell({
           <TopBar title={title} subtitle={subtitle} />
           <main className="flex-1 overflow-x-hidden">{children}</main>
           <AppFooter />
+          <GlobalCopilotLauncher />
         </SidebarInset>
       </div>
     </SidebarProvider>
