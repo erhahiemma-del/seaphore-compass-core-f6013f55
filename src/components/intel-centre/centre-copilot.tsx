@@ -39,6 +39,8 @@ export interface CentreCopilotProps {
   recommendations: CopilotRec[];
   historical: HistoricalSim[];
   related: RelatedInv[];
+  /** Bind to the shared Copilot engine (askCopilot). Defaults to "seaphore". */
+  instance?: CopilotInstanceKey;
 }
 
 export function CentreCopilot({
@@ -47,7 +49,10 @@ export function CentreCopilot({
   recommendations,
   historical,
   related,
+  instance = "seaphore",
 }: CentreCopilotProps) {
+  const [askOpen, setAskOpen] = useState(false);
+  const [seed, setSeed] = useState("");
   return (
     <div className="space-y-3">
       <section className="rounded-lg border border-line/60 bg-surface/60 p-3">
