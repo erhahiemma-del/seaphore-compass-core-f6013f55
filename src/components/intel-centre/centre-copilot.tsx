@@ -164,16 +164,44 @@ export function CentreCopilot({
         <div className="mb-1 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-slate">
           Ask {name}
         </div>
-        <div className="flex items-center gap-1.5 rounded border border-line/60 bg-background/40 px-2 py-1.5">
+        <form
+          className="flex items-center gap-1.5 rounded border border-line/60 bg-background/40 px-2 py-1.5"
+          onSubmit={(e) => {
+            e.preventDefault();
+            setAskOpen(true);
+          }}
+        >
           <input
+            value={seed}
+            onChange={(e) => setSeed(e.target.value)}
             placeholder={`Ask ${name}…`}
             className="w-full bg-transparent text-[12px] outline-none placeholder:text-slate/70"
           />
-          <button className="rounded bg-[color:var(--color-blue)] p-1 text-white hover:opacity-90">
+          <button
+            type="submit"
+            aria-label={`Ask ${name}`}
+            className="rounded bg-[color:var(--color-blue)] p-1 text-white hover:opacity-90"
+          >
             <Send className="h-3 w-3" />
           </button>
-        </div>
+        </form>
+        <button
+          type="button"
+          onClick={() => setAskOpen(true)}
+          className="mt-2 inline-flex w-full items-center justify-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 py-1.5 text-[11.5px] font-semibold text-primary hover:bg-primary/15"
+        >
+          Open {name} <ArrowRight className="h-3 w-3" />
+        </button>
       </div>
+      <AskCopilotDialog
+        instance={instance}
+        open={askOpen}
+        onOpenChange={(o) => {
+          setAskOpen(o);
+          if (!o) setSeed("");
+        }}
+        seedQuery={seed}
+      />
     </div>
   );
 }
