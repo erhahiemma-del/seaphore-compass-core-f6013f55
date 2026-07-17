@@ -30,7 +30,7 @@ import { cn } from "@/lib/utils";
  */
 
 interface Chip {
-  key: string;
+  key: EntityType;
   label: string;
   icon: LucideIcon;
 }
@@ -48,8 +48,15 @@ const CHIPS: Chip[] = [
 
 export function MissionCommandBar() {
   const [query, setQuery] = useState("");
-  const [activeChip, setActiveChip] = useState<string | null>(null);
+  const [activeChip, setActiveChip] = useState<EntityType | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const dispatch = useCommandDispatch();
+
+  const submit = (typeOverride?: EntityType | null) => {
+    const type = typeOverride ?? activeChip ?? null;
+    if (!query.trim() && !type) return;
+    dispatch({ query, type });
+  };
 
   return (
     <section
