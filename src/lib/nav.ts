@@ -15,6 +15,7 @@ import {
   FolderArchive,
   BellRing,
   Settings,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 
@@ -47,6 +48,12 @@ export const NAV_GROUPS: NavGroup[] = [
         subtitle: "National Overview",
         url: "/",
         icon: LayoutDashboard,
+      },
+      {
+        title: "Command Center",
+        subtitle: "Mission Control AI",
+        url: "/command-center",
+        icon: Sparkles,
       },
     ],
   },
