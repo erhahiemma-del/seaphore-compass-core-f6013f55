@@ -64,6 +64,7 @@ function MissionControl() {
       mode="light"
     >
       <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-6 py-5">
+        <MissionCommandBar />
         <Ribbon />
         <ConfidenceLegend />
 
