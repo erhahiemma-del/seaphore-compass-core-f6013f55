@@ -14,7 +14,6 @@ import {
   Info,
   Minus,
   Radar,
-  Search,
   Ship,
   ShieldCheck,
   type LucideIcon,
@@ -649,5 +648,3 @@ function MicroStat({
   );
 }
 
-// Search icon import used by Ribbon empty state (kept for tree-shake awareness)
-void Search;
