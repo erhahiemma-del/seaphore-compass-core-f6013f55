@@ -25,6 +25,7 @@ import { ConfidenceChip, type ConfidenceTier } from "@/components/confidence-chi
 import { ConfidenceLegend } from "@/components/confidence-legend";
 import { RiskPill } from "@/components/risk-pill";
 import { GulfOfGuineaMap } from "@/components/gulf-of-guinea-map";
+import { MissionCommandBar } from "@/components/mission-command-bar";
 import { useHandoffNavigate } from "@/lib/nav-context";
 import { cn } from "@/lib/utils";
 import {
@@ -64,6 +65,7 @@ function MissionControl() {
       mode="light"
     >
       <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-6 py-5">
+        <MissionCommandBar />
         <Ribbon />
         <ConfidenceLegend />
 
