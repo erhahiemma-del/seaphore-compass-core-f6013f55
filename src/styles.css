@@ -215,4 +215,89 @@
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
   }
+
+  /* ============================================================
+   * Seaphore Global Scrollbar — premium overlay style.
+   * Applies to every scrollable container (sidebar, tables,
+   * timelines, evidence/copilot panels, drawers, dialogs, etc.).
+   * Auto-fades to near-invisible; brightens on hover / active.
+   * ============================================================ */
+
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(15, 23, 42, 0.18) transparent;
+  }
+  .dark *,
+  [data-theme="dark"] * {
+    scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  }
+
+  /* WebKit / Blink */
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+    background: transparent;
+  }
+  *::-webkit-scrollbar-track,
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+    border: 0;
+  }
+  *::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: rgba(15, 23, 42, 0.18);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    transition:
+      background-color 180ms var(--ease-seaphore),
+      border-color 180ms var(--ease-seaphore);
+  }
+  *:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(15, 23, 42, 0.35);
+  }
+  *::-webkit-scrollbar-thumb:active {
+    background-color: rgba(15, 23, 42, 0.45);
+  }
+
+  .dark *::-webkit-scrollbar-thumb,
+  [data-theme="dark"] *::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.18);
+  }
+  .dark *:hover::-webkit-scrollbar-thumb,
+  [data-theme="dark"] *:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.35);
+  }
+  .dark *::-webkit-scrollbar-thumb:active,
+  [data-theme="dark"] *::-webkit-scrollbar-thumb:active {
+    background-color: rgba(255, 255, 255, 0.45);
+  }
+
+  /* Sidebar gutter — inset the thumb 4–6px from the border. */
+  [data-sidebar="sidebar"] ::-webkit-scrollbar,
+  [data-slot="sidebar-inner"] ::-webkit-scrollbar,
+  aside[data-sidebar] ::-webkit-scrollbar {
+    width: 10px;
+  }
+  [data-sidebar="sidebar"] ::-webkit-scrollbar-thumb,
+  [data-slot="sidebar-inner"] ::-webkit-scrollbar-thumb,
+  aside[data-sidebar] ::-webkit-scrollbar-thumb {
+    /* 10px track − 6px thumb via 2px transparent border on each side = 4px inset */
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
 }
+
+/* Utility escape hatch: hide the scrollbar entirely on decorative scrollers. */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
