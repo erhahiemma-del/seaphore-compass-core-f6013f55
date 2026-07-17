@@ -16,6 +16,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import {
+  useCommandDispatch,
+  type EntityType,
+} from "@/lib/command-dispatch";
 import { cn } from "@/lib/utils";
 
 /**
