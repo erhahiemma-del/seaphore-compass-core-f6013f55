@@ -127,12 +127,12 @@ function VesselCentre() {
                   ["Insurer", v.insurerId ? companyById(v.insurerId)?.name ?? "—" : "—", "inferred"],
                   ["ETA", fmtTime(v.etaISO), "observed"],
                 ].map(([k, val, c]) => (
-                  <>
-                    <dt key={`k-${k}`} className="text-slate">{k}</dt>
-                    <dd key={`v-${k}`} className="flex items-center justify-end gap-1.5 text-right text-foreground/90">
+                  <div key={k as string} className="contents">
+                    <dt className="text-slate">{k}</dt>
+                    <dd className="flex items-center justify-end gap-1.5 text-right text-foreground/90">
                       {val} <ConfidenceChip tier={c as "verified" | "observed" | "inferred"} size={9} />
                     </dd>
-                  </>
+                  </div>
                 ))}
               </dl>
             </Section>
