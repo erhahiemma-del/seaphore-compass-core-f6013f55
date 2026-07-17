@@ -111,7 +111,7 @@ describe("useCommandDispatch", () => {
   });
 
   it("routes a voyage query to /vessel", () => {
-    dispatch()({ query: "VY-2026-041" });
+    dispatch()({ query: "VY-2026041" });
     expect(navigateMock).toHaveBeenCalledWith(
       expect.objectContaining({
         to: "/vessel",
