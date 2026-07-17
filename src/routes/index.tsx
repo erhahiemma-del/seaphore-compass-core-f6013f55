@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
+import { CommandBar } from "@/components/command-bar";
 import { PanelCard } from "@/components/panel-card";
 import { ConfidenceChip, type ConfidenceTier } from "@/components/confidence-chip";
 import { ConfidenceLegend } from "@/components/confidence-legend";
@@ -64,6 +65,7 @@ function MissionControl() {
       mode="light"
     >
       <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-6 py-5">
+        <CommandBar />
         <Ribbon />
         <ConfidenceLegend />
 
