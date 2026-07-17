@@ -57,20 +57,9 @@ function AuthPage() {
     }
   }
 
-  async function handleGoogle() {
-    setError(null);
-    try {
-      const { lovable } = await import("@/integrations/lovable/index");
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
-      });
-      if (result.error) setError(result.error.message ?? "Google sign-in failed");
-      if (result.redirected) return;
-      navigate({ to: "/", replace: true });
-    } catch {
-      setError("Google sign-in is not configured yet.");
-    }
-  }
+  // Social auth (Google/Apple) will be wired in a later sprint via the
+  // Lovable Cloud configure_social_auth flow.
+
 
   return (
     <div className="flex min-h-screen w-full">
