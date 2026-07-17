@@ -16,6 +16,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import {
+  useCommandDispatch,
+  type EntityType,
+} from "@/lib/command-dispatch";
 import { cn } from "@/lib/utils";
 
 /**
@@ -26,7 +30,7 @@ import { cn } from "@/lib/utils";
  */
 
 interface Chip {
-  key: string;
+  key: EntityType;
   label: string;
   icon: LucideIcon;
 }
@@ -44,8 +48,15 @@ const CHIPS: Chip[] = [
 
 export function MissionCommandBar() {
   const [query, setQuery] = useState("");
-  const [activeChip, setActiveChip] = useState<string | null>(null);
+  const [activeChip, setActiveChip] = useState<EntityType | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const dispatch = useCommandDispatch();
+
+  const submit = (typeOverride?: EntityType | null) => {
+    const type = typeOverride ?? activeChip ?? null;
+    if (!query.trim() && !type) return;
+    dispatch({ query, type });
+  };
 
   return (
     <section
@@ -54,7 +65,13 @@ export function MissionCommandBar() {
     >
       {/* Search + chips column */}
       <div className="flex min-w-0 flex-col gap-6">
-        <div className="flex items-start gap-5 pl-2">
+        <form
+          className="flex items-start gap-5 pl-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            submit();
+          }}
+        >
           <Search
             className="mt-1 h-7 w-7 shrink-0 text-slate"
             strokeWidth={1.75}
@@ -80,7 +97,7 @@ export function MissionCommandBar() {
             <VoiceButton />
             <CopilotButton />
           </div>
-        </div>
+        </form>
 
         <div className="flex flex-wrap items-center gap-2 pl-2">
           {CHIPS.map((c) => {
@@ -90,9 +107,15 @@ export function MissionCommandBar() {
               <button
                 key={c.key}
                 type="button"
-                onClick={() =>
-                  setActiveChip((prev) => (prev === c.key ? null : c.key))
-                }
+                onClick={() => {
+                  const next = active ? null : c.key;
+                  setActiveChip(next);
+                  // If the officer has typed something, dispatch immediately
+                  // with the chosen filter; otherwise open that centre.
+                  if (query.trim() || !active) {
+                    dispatch({ query, type: next });
+                  }
+                }}
                 className={cn(
                   "group inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-[12px] font-medium transition-all duration-150",
                   active
