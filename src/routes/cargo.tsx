@@ -132,6 +132,7 @@ function CargoCentre() {
       copilot={
         <CentreCopilot
           name="Cargo Truth Engine"
+          instance="cargo"
           observed={[
             { title: "HS-code drift on mobile phones",       detail: "Observed 8517.12 vs 8471.30 across 4 containers ex-China.", confidence: "observed" },
             { title: "Weight-value ratio anomaly",           detail: "Container MSCU7811203 declared 40% below HS-code median.",  confidence: "inferred" },

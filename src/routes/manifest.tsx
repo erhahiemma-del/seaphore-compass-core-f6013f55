@@ -187,6 +187,7 @@ function ManifestCentre() {
       copilot={
         <CentreCopilot
           name="Manifest Copilot"
+          instance="manifest"
           observed={[
             { title: "Spike in high-risk manifests from Apapa Port", detail: "Observed +28% vs 7-day rolling average.", confidence: "observed" },
             { title: "AIS blackout observed on MT Niger Runner",     detail: "18.7h gap prior to Calabar approach.",  confidence: "observed" },

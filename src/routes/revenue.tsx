@@ -161,6 +161,7 @@ function RevenueCentre() {
       copilot={
         <CentreCopilot
           name="Revenue Assurance Copilot"
+          instance="revenue"
           observed={[
             { title: "Leakage concentrated at Apapa", detail: "Observed 38% of at-risk revenue attributed to Apapa Port.",     confidence: "observed" },
             { title: "3% Levy shortfall on tankers",   detail: "Assessed vs expected variance ↑ 4.7% on Tanker class.",         confidence: "inferred" },
