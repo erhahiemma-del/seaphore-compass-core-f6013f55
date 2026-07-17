@@ -1,5 +1,8 @@
+import { useState } from "react";
 import { ArrowRight, Send, Sparkles } from "lucide-react";
 import { ConfidenceChip, type ConfidenceTier } from "@/components/confidence-chip";
+import { AskCopilotDialog } from "@/components/ai/ask-copilot-dialog";
+import type { CopilotInstanceKey } from "@/lib/ai/types";
 
 /**
  * Per-centre Copilot panel — Manifest Copilot, Cargo Truth Engine,
