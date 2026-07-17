@@ -21,6 +21,7 @@ import { Route as EvidenceRouteImport } from './routes/evidence'
 import { Route as DetectRouteImport } from './routes/detect'
 import { Route as DecideRouteImport } from './routes/decide'
 import { Route as ComplianceRouteImport } from './routes/compliance'
+import { Route as CommandCenterRouteImport } from './routes/command-center'
 import { Route as CargoRouteImport } from './routes/cargo'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AlertsRouteImport } from './routes/alerts'
@@ -94,6 +95,11 @@ const ComplianceRoute = ComplianceRouteImport.update({
   path: '/compliance',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CommandCenterRoute = CommandCenterRouteImport.update({
+  id: '/command-center',
+  path: '/command-center',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CargoRoute = CargoRouteImport.update({
   id: '/cargo',
   path: '/cargo',
@@ -161,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/alerts': typeof AlertsRoute
   '/auth': typeof AuthRoute
   '/cargo': typeof CargoRoute
+  '/command-center': typeof CommandCenterRoute
   '/compliance': typeof ComplianceRoute
   '/decide': typeof DecideRouteWithChildren
   '/detect': typeof DetectRoute
@@ -187,6 +194,7 @@ export interface FileRoutesByTo {
   '/alerts': typeof AlertsRoute
   '/auth': typeof AuthRoute
   '/cargo': typeof CargoRoute
+  '/command-center': typeof CommandCenterRoute
   '/compliance': typeof ComplianceRoute
   '/detect': typeof DetectRoute
   '/evidence': typeof EvidenceRoute
@@ -211,6 +219,7 @@ export interface FileRoutesById {
   '/alerts': typeof AlertsRoute
   '/auth': typeof AuthRoute
   '/cargo': typeof CargoRoute
+  '/command-center': typeof CommandCenterRoute
   '/compliance': typeof ComplianceRoute
   '/decide': typeof DecideRouteWithChildren
   '/detect': typeof DetectRoute
@@ -239,6 +248,7 @@ export interface FileRouteTypes {
     | '/alerts'
     | '/auth'
     | '/cargo'
+    | '/command-center'
     | '/compliance'
     | '/decide'
     | '/detect'
@@ -265,6 +275,7 @@ export interface FileRouteTypes {
     | '/alerts'
     | '/auth'
     | '/cargo'
+    | '/command-center'
     | '/compliance'
     | '/detect'
     | '/evidence'
@@ -288,6 +299,7 @@ export interface FileRouteTypes {
     | '/alerts'
     | '/auth'
     | '/cargo'
+    | '/command-center'
     | '/compliance'
     | '/decide'
     | '/detect'
@@ -315,6 +327,7 @@ export interface RootRouteChildren {
   AlertsRoute: typeof AlertsRoute
   AuthRoute: typeof AuthRoute
   CargoRoute: typeof CargoRoute
+  CommandCenterRoute: typeof CommandCenterRoute
   ComplianceRoute: typeof ComplianceRoute
   DecideRoute: typeof DecideRouteWithChildren
   DetectRoute: typeof DetectRoute
@@ -414,6 +427,13 @@ declare module '@tanstack/react-router' {
       path: '/compliance'
       fullPath: '/compliance'
       preLoaderRoute: typeof ComplianceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/command-center': {
+      id: '/command-center'
+      path: '/command-center'
+      fullPath: '/command-center'
+      preLoaderRoute: typeof CommandCenterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cargo': {
@@ -548,6 +568,7 @@ const rootRouteChildren: RootRouteChildren = {
   AlertsRoute: AlertsRoute,
   AuthRoute: AuthRoute,
   CargoRoute: CargoRoute,
+  CommandCenterRoute: CommandCenterRoute,
   ComplianceRoute: ComplianceRoute,
   DecideRoute: DecideRouteWithChildren,
   DetectRoute: DetectRoute,
