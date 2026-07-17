@@ -53,6 +53,12 @@ export interface CommandDispatchInput {
   query?: string;
   /** Chip explicitly selected by officer; overrides auto-detect. */
   type?: EntityType | null;
+  /**
+   * Human-readable intelligence domain label (e.g. "Manifest Intelligence").
+   * Forwarded on the URL so downstream Copilot / Gemini reasoners can
+   * scope their answers to the active intelligence context.
+   */
+  aiContext?: string;
 }
 
 /**
@@ -63,7 +69,7 @@ export interface CommandDispatchInput {
 export function useCommandDispatch() {
   const navigate = useNavigate();
 
-  return ({ query, type }: CommandDispatchInput) => {
+  return ({ query, type, aiContext }: CommandDispatchInput) => {
     const q = (query ?? "").trim();
     const resolved: EntityType = type ?? (q ? detectEntityType(q) : "vessel");
     const target = TYPE_ROUTE[resolved];
@@ -74,7 +80,9 @@ export function useCommandDispatch() {
       type: resolved,
     };
     if (q) search.q = q;
+    if (aiContext) search.aiContext = aiContext;
 
     navigate({ to: target, search });
   };
 }
+
