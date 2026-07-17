@@ -61,7 +61,7 @@ export interface Column<T> {
   width?: string;
 }
 
-export function DataTable<T extends { id?: string }>({
+export function DataTable<T>({
   columns,
   rows,
   rowKey,
