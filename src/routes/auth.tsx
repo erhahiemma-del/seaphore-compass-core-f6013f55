@@ -148,22 +148,8 @@ function AuthPage() {
             </Button>
           </form>
 
-          <div className="my-5 flex items-center gap-3">
-            <div className="h-px flex-1 bg-border" />
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              or
-            </span>
-            <div className="h-px flex-1 bg-border" />
-          </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={handleGoogle}
-          >
-            Continue with Google
-          </Button>
+
 
           <div className="mt-6 text-center text-xs text-muted-foreground">
             {mode === "signin" ? (
