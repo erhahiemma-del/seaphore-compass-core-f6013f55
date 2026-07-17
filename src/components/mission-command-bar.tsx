@@ -168,7 +168,14 @@ export function MissionCommandBar() {
               value={input}
               onChange={(e) => {
                 let v = e.target.value;
-                // Never let officers erase the prefix by accident.
+                // Allow the native search-clear (X) — and any manual empty —
+                // to fully clear the field. The prefix is re-injected on the
+                // next keystroke or on focus.
+                if (v === "") {
+                  setInput("");
+                  return;
+                }
+                // Never let officers erase the prefix by accident while typing.
                 if (!v.toUpperCase().startsWith(mode.prefix.toUpperCase())) {
                   v = mode.prefix + stripPrefix(v, mode);
                 }
@@ -176,7 +183,10 @@ export function MissionCommandBar() {
               }}
               onFocus={() => {
                 // If empty-ish, snap cursor after the prefix.
-                if (input === mode.prefix) focusAfterPrefix(mode.prefix);
+                if (input === "" || input === mode.prefix) {
+                  setInput(mode.prefix);
+                  focusAfterPrefix(mode.prefix);
+                }
               }}
               placeholder={mode.placeholder}
               aria-label={`Search — ${mode.aiContext}`}
