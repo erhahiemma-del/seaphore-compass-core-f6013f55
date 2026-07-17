@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
+import { CommandBar } from "@/components/command-bar";
 import { PanelCard } from "@/components/panel-card";
 import { ConfidenceChip, type ConfidenceTier } from "@/components/confidence-chip";
 import { ConfidenceLegend } from "@/components/confidence-legend";
