@@ -90,7 +90,7 @@ export function AppSidebar() {
                     </SidebarMenuItem>
                   );
                 })}
-              </SidebarGroup>
+              </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         ))}
