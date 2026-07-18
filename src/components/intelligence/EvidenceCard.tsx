@@ -60,19 +60,19 @@ export function EvidenceCard({ evidence, item, className }: EvidenceCardProps) {
       </span>
       <div className="min-w-0 flex-1">
         <div className="truncate text-[13px] font-semibold text-foreground">
-          {item.title}
+          {it.title}
         </div>
         <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-slate">
-          <span>{item.type}</span>
+          <span>{it.type}</span>
           <span>·</span>
-          <span className="truncate">{item.source}</span>
+          <span className="truncate">{it.source}</span>
           <span>·</span>
-          <span>{item.timestamp}</span>
+          <span>{it.timestamp}</span>
           <span>·</span>
-          <span>{item.size}</span>
+          <span>{it.size}</span>
         </div>
       </div>
-      <ConfidenceChip tier={item.confidence} size={9} />
+      <ConfidenceChip tier={it.confidence} size={9} />
     </div>
   );
 }
