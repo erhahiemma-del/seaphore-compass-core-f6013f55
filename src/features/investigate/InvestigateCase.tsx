@@ -193,13 +193,48 @@ function Workspace({ inv }: { inv: Investigation }) {
             </Link>
           </aside>
 
-          <div className="overflow-hidden rounded-lg border border-line bg-card shadow-card">
-            <KnowledgeGraph
-              nodes={GRAPH_NODES}
-              edges={GRAPH_EDGES}
-              height={540}
-            />
+          <div className="space-y-2">
+            <div className="overflow-hidden rounded-lg border border-line bg-card shadow-card">
+              <KnowledgeGraph
+                nodes={graph.nodes}
+                edges={graph.edges}
+                focalId={graph.focalId}
+                onSelectionChange={(n) => {
+                  setSelectedEntity(n);
+                  // Auto-open Evidence panel on entity focus.
+                  if (n) setLeftPanel("evidence");
+                }}
+                height={540}
+              />
+            </div>
+            {selectedEntity && (
+              <div className="flex flex-wrap items-center gap-2 rounded-md border border-line bg-surface-2/60 px-3 py-2 text-[11px]">
+                <span className="type-label text-slate">Focused entity</span>
+                <span className="font-semibold text-foreground">
+                  {selectedEntity.label}
+                </span>
+                <span className="rounded bg-surface-1 px-1.5 py-0.5 text-[10px] font-bold uppercase text-slate">
+                  {selectedEntity.kind}
+                </span>
+                {selectedEntity.confidence !== undefined && (
+                  <span className="text-slate">
+                    Confidence {selectedEntity.confidence}%
+                  </span>
+                )}
+                <span className="ml-auto text-slate">
+                  {findingsToShow.length} findings · {evidenceToShow.length} evidence
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedEntity(null)}
+                  className="rounded border border-line bg-surface-1 px-2 py-0.5 text-[10px] font-semibold text-slate hover:bg-surface-2"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
           </div>
+
 
           <CopilotPanel
             recommendations={COPILOT_RECOMMENDATIONS}
