@@ -191,9 +191,11 @@ export const KnowledgeGraph = forwardRef<
     persisted?.minimap ?? minimap,
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const skipPersistRef = useRef(false);
 
   useImperativeHandle(ref, () => ({
     reset: () => {
+      skipPersistRef.current = true;
       clearPersisted(persistKey);
       setLayout("Force");
       setZoom(1);
