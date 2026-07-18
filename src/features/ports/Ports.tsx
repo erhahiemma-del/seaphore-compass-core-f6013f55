@@ -40,14 +40,13 @@ function buildMapEntities(selectedCode: Port["code"]): IntelMapEntity[] {
     ],
   }));
 
-  const vesselEntities: IntelMapEntity[] = VESSELS.map((v, i) => {
+  const vesselEntities: IntelMapEntity[] = VESSELS.flatMap((v, i) => {
     const port = PORTS.find((p) => p.code === v.destinationPort);
-    if (!port) return null;
-    // Deterministic offset so vessels sit off the port, not stacked on it.
+    if (!port) return [];
     const angle = (i * 47) % 360;
     const rad = (angle * Math.PI) / 180;
     const offset = v.destinationPort === selectedCode ? 0.35 : 0.7;
-    return {
+    const entity: IntelMapEntity = {
       id: v.id,
       kind: "vessel",
       name: v.name,
@@ -64,8 +63,9 @@ function buildMapEntities(selectedCode: Port["code"]): IntelMapEntity[] {
         ["Risk score", String(v.riskScore)],
         ["AIS gap", `${v.aisBlackoutHours.toFixed(1)}h`],
       ],
-    } satisfies IntelMapEntity;
-  }).filter((v): v is IntelMapEntity => v !== null);
+    };
+    return [entity];
+  });
 
   return [...portEntities, ...vesselEntities];
 }
