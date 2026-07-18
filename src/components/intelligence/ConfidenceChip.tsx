@@ -37,20 +37,41 @@ const HEX: Record<ConfidenceTier, string> = {
   unconfirmed: "#8A98A6",
 };
 
+/** Build Bible spec: uppercase level labels. */
+export type ConfidenceLevel = "VERIFIED" | "OBSERVED" | "INFERRED" | "UNCONFIRMED";
+
+const LEVEL_TO_TIER: Record<ConfidenceLevel, ConfidenceTier> = {
+  VERIFIED: "verified",
+  OBSERVED: "observed",
+  INFERRED: "inferred",
+  UNCONFIRMED: "unconfirmed",
+};
+
 export interface ConfidenceChipProps {
-  tier: ConfidenceTier;
-  /** 11 = default; 9 = compact (briefings strip). */
-  size?: 11 | 9;
+  /**
+   * Build Bible prop — uppercase level. Prefer this in new code.
+   * One of `level` or `tier` must be supplied.
+   */
+  level?: ConfidenceLevel;
+  /** @deprecated Legacy lowercase tier. Use `level` in new features. */
+  tier?: ConfidenceTier;
+  /**
+   * Build Bible sizes ("sm" | "md") or legacy numeric (9 | 11).
+   * "md" ≡ 11 (default), "sm" ≡ 9 (compact briefings strip).
+   */
+  size?: "sm" | "md" | 11 | 9;
   className?: string;
 }
 
 export function ConfidenceChip({
+  level,
   tier,
-  size = 11,
+  size = "md",
   className,
 }: ConfidenceChipProps) {
-  const hex = HEX[tier];
-  const compact = size === 9;
+  const resolvedTier: ConfidenceTier = tier ?? (level ? LEVEL_TO_TIER[level] : "observed");
+  const hex = HEX[resolvedTier];
+  const compact = size === "sm" || size === 9;
   return (
     <span
       className={cn(
@@ -62,14 +83,14 @@ export function ConfidenceChip({
         color: hex,
         backgroundColor: `${hex}14`, // 8% alpha (0x14 ≈ 20/255)
       }}
-      title={CONFIDENCE_DESCRIPTIONS[tier]}
+      title={CONFIDENCE_DESCRIPTIONS[resolvedTier]}
     >
       <span
         aria-hidden
         className={cn("rounded-full", compact ? "h-1.5 w-1.5" : "h-2 w-2")}
         style={{ backgroundColor: hex }}
       />
-      {CONFIDENCE_LABELS[tier]}
+      {CONFIDENCE_LABELS[resolvedTier]}
     </span>
   );
 }
