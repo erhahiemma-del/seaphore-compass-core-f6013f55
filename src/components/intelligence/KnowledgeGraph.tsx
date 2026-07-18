@@ -191,6 +191,25 @@ export const KnowledgeGraph = forwardRef<
     persisted?.minimap ?? minimap,
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  useImperativeHandle(ref, () => ({
+    reset: () => {
+      clearPersisted(persistKey);
+      setLayout("Force");
+      setZoom(1);
+      setActiveKinds(new Set(Object.keys(KIND_COLOR) as GraphNodeKind[]));
+      setActiveRels(new Set(relTypes));
+      setRange("All");
+      setCursor(100);
+      setConfidenceFilter(0);
+      setEvidenceOnly(false);
+      setShowMinimap(minimap);
+      setSelectedId(null);
+      setPlaying(false);
+      onSelectionChange?.(null);
+    },
+  }));
+
   const [rangeStart, rangeEnd] = RANGE_WINDOW[range];
 
   // Reset cursor when range changes — skip once so a persisted cursor survives mount.
