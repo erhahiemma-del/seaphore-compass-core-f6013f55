@@ -523,6 +523,7 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
               </ul>
               <div className="mt-3">
                 <input
+                  ref={externalEmailRef}
                   value={externalEmails}
                   onChange={(e) => setExternalEmails(e.target.value)}
                   placeholder="Add external recipient email (comma-separated)"
