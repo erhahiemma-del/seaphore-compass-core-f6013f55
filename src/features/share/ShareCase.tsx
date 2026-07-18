@@ -419,9 +419,31 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
               title="4. Select Recipients"
               subtitle="Choose who will receive this briefing."
             >
+            <Card
+              title="4. Select Recipients"
+              subtitle="Choose who will receive this briefing."
+            >
+              {showRecipientError && (
+                <div
+                  role="alert"
+                  className="mb-2 rounded-md border border-[#C0392B]/40 bg-[#C0392B]/5 px-2.5 py-1.5 text-[11.5px] font-semibold text-[#C0392B]"
+                >
+                  Select at least one agency or add a valid external email.
+                </div>
+              )}
               <ul className="space-y-1.5">
                 {AGENCY_RECIPIENTS.map((a) => {
                   const meta = AGENCY_META[a.id] ?? {
+                    tone: "#475569",
+                    domain: "",
+                    initials: a.name.slice(0, 2).toUpperCase(),
+                  };
+                  const active = recipients.has(a.id);
+                  return (
+                    <li
+                      key={a.id}
+                      className="flex items-center gap-2.5 rounded-md border border-line bg-white px-2.5 py-2"
+                    >
                     tone: "#475569",
                     domain: "",
                     initials: a.name.slice(0, 2).toUpperCase(),
