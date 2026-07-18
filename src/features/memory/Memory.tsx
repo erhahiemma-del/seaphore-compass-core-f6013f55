@@ -278,12 +278,37 @@ export function MemoryPage() {
 
             {/* KPI row */}
             <div className="grid grid-cols-2 gap-6 text-right sm:grid-cols-5">
-              <Kpi label="Investigated" value={`${ENTITY_META.investigated}`} suffix="times" />
-              <Kpi label="Open Cases" value={String(ENTITY_META.openCases)} />
-              <Kpi label="Risk Score" value={`${ENTITY_META.riskScore}`} suffix="/100" tone="danger" caption={ENTITY_META.riskBand} />
-              <ConfidenceKpi pct={ENTITY_META.confidencePct} label={ENTITY_META.confidenceLabel} />
-              <Kpi label="Revenue at Risk" value={ENTITY_META.revenueAtRisk} />
+              <Kpi
+                label="Investigated"
+                value={`${ENTITY_META.investigated}`}
+                suffix="times"
+                onClick={() => openKpi(KPI_DRILLDOWNS.investigated)}
+              />
+              <Kpi
+                label="Open Cases"
+                value={String(ENTITY_META.openCases)}
+                onClick={() => openKpi(KPI_DRILLDOWNS.openCases)}
+              />
+              <Kpi
+                label="Risk Score"
+                value={`${ENTITY_META.riskScore}`}
+                suffix="/100"
+                tone="danger"
+                caption={ENTITY_META.riskBand}
+                onClick={() => openKpi(KPI_DRILLDOWNS.riskScore)}
+              />
+              <ConfidenceKpi
+                pct={ENTITY_META.confidencePct}
+                label={ENTITY_META.confidenceLabel}
+                onClick={() => openKpi(KPI_DRILLDOWNS.confidence)}
+              />
+              <Kpi
+                label="Revenue at Risk"
+                value={ENTITY_META.revenueAtRisk}
+                onClick={() => openKpi(KPI_DRILLDOWNS.revenueAtRisk)}
+              />
             </div>
+
 
             {/* Actions */}
             <div className="flex shrink-0 items-center gap-2">
