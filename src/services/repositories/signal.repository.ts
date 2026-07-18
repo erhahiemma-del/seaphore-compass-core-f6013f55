@@ -3,24 +3,27 @@ import type { ListOptions, ListResult, Repository, Id } from "./types";
 
 export interface SignalRow {
   id: string;
-  kind: string;
-  severity: "high" | "medium" | "low" | "info" | string;
+  domain: string;
+  severity: string;
   confidence: string;
   entity_id?: string | null;
   observed_at: string;
-  summary: string;
+  statement: string;
   [key: string]: unknown;
+}
+
+function unwrap<T>(env: unknown): T {
+  const asEnv = env as { data?: T };
+  return (asEnv?.data ?? (env as T));
 }
 
 export class SupabaseSignalRepository implements Repository<SignalRow> {
   async list(opts: ListOptions = {}): Promise<ListResult<SignalRow>> {
-    const rows = (await listSignals({ data: { limit: opts.limit ?? 100, offset: opts.offset ?? 0 } })) as SignalRow[];
+    const env = await listSignals({ data: { limit: opts.limit ?? 100, offset: opts.offset ?? 0 } });
+    const rows = unwrap<SignalRow[]>(env) ?? [];
     return { rows, total: rows.length };
   }
   async getById(_id: Id): Promise<SignalRow | null> {
-    // Not exposed today; Signals are surfaced through the list feed and detail
-    // panels. Add a getSignal server function when a dedicated signal detail
-    // route ships.
     return null;
   }
 }

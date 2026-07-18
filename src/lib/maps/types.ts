@@ -6,7 +6,7 @@
  * MapLibre, or the built-in mock SVG without touching feature code.
  */
 
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 export type LatLng = { lat: number; lng: number };
 
@@ -35,6 +35,6 @@ export interface MapProviderProps {
 }
 
 /** A map provider is a React component that satisfies the props contract above. */
-export type MapProviderComponent = (props: MapProviderProps) => JSX.Element;
+export type MapProviderComponent = (props: MapProviderProps) => ReactElement;
 
 export type MapProviderName = "mock" | "google" | "mapbox";

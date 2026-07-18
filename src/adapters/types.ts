@@ -9,7 +9,9 @@
  * tier of the data it returns.
  */
 
-import type { ConfidenceLevel } from "@/types/confidence.types";
+/** DB-level confidence tier — mirrors public.confidence_level enum. */
+export type ConfidenceLevel = "VERIFIED" | "AUDITED" | "CORROBORATED" | "DECLARED" | "OBSERVED" | "INFERRED";
+
 
 export interface ProviderMeta {
   /** Human-readable provider name (e.g. "MarineTraffic"). */
