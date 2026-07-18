@@ -441,6 +441,7 @@ export function MemoryPage() {
               focalId="v1"
               height={520}
               minimap
+              persistKey="memory:mv-ocean-pearl"
             />
             <div className="flex flex-wrap items-center gap-3 border-t border-line px-3 py-2 text-[10px] text-slate">
               {LEGEND.map((l) => (
