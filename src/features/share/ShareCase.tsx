@@ -624,7 +624,16 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
                 <SendShareGate
                   open={sendOpen}
                   onOpenChange={setSendOpen}
-                  onEdit={() => setSendOpen(false)}
+                  onEdit={() => {
+                    setSendOpen(false);
+                    setTimeout(() => {
+                      recipientsSectionRef.current?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                      });
+                      externalEmailRef.current?.focus();
+                    }, 50);
+                  }}
                   officer={{
                     id: inv.officer.toLowerCase().replace(/\s+/g, "."),
                     name: inv.officer,
