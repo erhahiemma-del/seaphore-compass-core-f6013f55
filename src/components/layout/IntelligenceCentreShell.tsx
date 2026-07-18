@@ -8,6 +8,8 @@ import {
 import { AppSidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { GlobalCopilotLauncher } from "@/components/ai/global-copilot-launcher";
+import { MapProviderRoot } from "@/lib/maps";
+import type { MapProviderName } from "@/lib/maps/types";
 import { cn } from "@/lib/utils";
 
 export interface AppShellProps {
