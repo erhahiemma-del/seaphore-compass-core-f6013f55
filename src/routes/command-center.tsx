@@ -548,32 +548,14 @@ function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent)
             </div>
           )}
 
-          {allDone && risk && (
-            <div className="rounded-lg border border-line bg-surface/60 p-3">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-[color:var(--color-green)]" />
-                <span className="text-[12.5px] font-semibold text-foreground">Complete</span>
-                <RiskPill level={risk} />
-                <ConfidenceChip tier="inferred" size={9} />
-              </div>
-              <p className="mt-1 text-[11px] text-slate">
-                Observed: 148 line-items · 3 HS codes · 1 duplicate BOL candidate. The officer decides.
-              </p>
-              <div className="mt-2 flex gap-2">
-                <a
-                  href="/manifest"
-                  className="inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-[11.5px] font-semibold text-primary-foreground"
-                >
-                  Open in Manifest Intelligence
-                </a>
-                <button
-                  onClick={reset}
-                  className="rounded-md border border-line px-3 py-1.5 text-[11.5px] font-semibold text-foreground/80 hover:bg-surface-2"
-                >
-                  Upload another
-                </button>
-              </div>
-            </div>
+          {allDone && risk && preview && (
+            <ManifestPreviewPanel
+              preview={preview}
+              risk={risk}
+              logged={logged}
+              onConfirm={confirmLog}
+              onDiscard={reset}
+            />
           )}
 
           {!running && !allDone && !fatalError && (
