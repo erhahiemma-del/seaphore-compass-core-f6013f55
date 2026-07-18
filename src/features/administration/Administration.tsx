@@ -369,9 +369,10 @@ interface UserRowProps {
   disabled: boolean;
   isSelf: boolean;
   onSave: (roles: Role[]) => void;
+  onViewHistory: () => void;
 }
 
-function UserRow({ user, disabled, isSelf, onSave }: UserRowProps) {
+function UserRow({ user, disabled, isSelf, onSave, onViewHistory }: UserRowProps) {
   const [selected, setSelected] = useState<Set<Role>>(new Set(user.roles));
   const original = useMemo(() => new Set(user.roles), [user.roles]);
 
