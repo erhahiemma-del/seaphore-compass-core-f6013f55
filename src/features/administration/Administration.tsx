@@ -50,6 +50,70 @@ const ROLE_DESC: Record<Role, string> = {
   admin: "User & role management, system-wide access",
 };
 
+function csvField(value: string | number | null | undefined): string {
+  const s = value === null || value === undefined ? "" : String(value);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function exportAuditCsv(
+  entries: RoleAuditEntry[],
+  filteredUser: AdminUserRow | null,
+): void {
+  if (entries.length === 0) return;
+  const header = [
+    "timestamp_utc",
+    "actor_name",
+    "actor_email",
+    "actor_id",
+    "target_name",
+    "target_email",
+    "target_id",
+    "roles_added",
+    "roles_removed",
+    "ip_address",
+    "rule_refs",
+    "audit_id",
+  ];
+  const rows = entries.map((e) => [
+    new Date(e.at).toISOString(),
+    e.actor.fullName ?? "",
+    e.actor.email ?? "",
+    e.actor.id ?? "",
+    e.target.fullName ?? "",
+    e.target.email ?? "",
+    e.target.id ?? "",
+    e.added.join("|"),
+    e.removed.join("|"),
+    e.ipAddress ?? "",
+    e.ruleRefs.join("|"),
+    e.id,
+  ]);
+  const csv = [header, ...rows]
+    .map((r) => r.map(csvField).join(","))
+    .join("\r\n");
+  // BOM for Excel UTF-8 compatibility.
+  const blob = new Blob(["\uFEFF" + csv], {
+    type: "text/csv;charset=utf-8;",
+  });
+  const url = URL.createObjectURL(blob);
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  const scope = filteredUser
+    ? `-${(filteredUser.fullName ?? filteredUser.email ?? filteredUser.id)
+        .replace(/[^a-z0-9]+/gi, "_")
+        .toLowerCase()}`
+    : "";
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `seaphore-role-audit${scope}-${stamp}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  toast.success("Audit trail exported", {
+    description: `${entries.length} entr${entries.length === 1 ? "y" : "ies"} downloaded as CSV.`,
+  });
+}
+
 export const Administration = () => {
   const allowed = usePermission("role.manage");
   return (
