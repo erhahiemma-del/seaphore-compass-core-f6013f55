@@ -71,6 +71,39 @@ function Workspace({ inv }: { inv: Investigation }) {
   const [selectedFinding, setSelectedFinding] = useState<number>(
     AI_FINDINGS[0].id,
   );
+  const [selectedEntity, setSelectedEntity] = useState<GraphNode | null>(null);
+
+  // Per-investigation subgraph — the KG reflects the case that is open.
+  const graph = graphForInvestigation(inv);
+
+  // Findings/evidence filtered by the selected KG entity, if any.
+  const filteredFindings = selectedEntity
+    ? AI_FINDINGS.filter((f) => {
+        const hay = `${f.title} ${f.explanation} ${f.keyIndicators.join(" ")}`.toLowerCase();
+        return hay.includes(selectedEntity.label.toLowerCase());
+      })
+    : AI_FINDINGS;
+  const findingsToShow = filteredFindings.length ? filteredFindings : AI_FINDINGS;
+
+  const filteredEvidence = selectedEntity
+    ? EVIDENCE_ITEMS.filter((e) =>
+        `${e.title} ${e.source}`
+          .toLowerCase()
+          .includes(selectedEntity.label.toLowerCase()),
+      )
+    : EVIDENCE_ITEMS;
+  const evidenceToShow = filteredEvidence.length ? filteredEvidence : EVIDENCE_ITEMS;
+
+  const bottomTabs = [
+    { key: "findings", label: "AI Findings", count: findingsToShow.length },
+    { key: "rules", label: "Rules Triggered", count: INV_BOTTOM_COUNTS.rules },
+    { key: "evidence", label: "Evidence", count: evidenceToShow.length },
+    { key: "audit", label: "Audit Trail" },
+    { key: "downloads", label: "Downloads" },
+  ] as const;
+
+  const finding =
+    findingsToShow.find((f) => f.id === selectedFinding) ?? findingsToShow[0];
 
   const domainTabs = [
     { key: "Overview", label: "Overview", count: 0 },
@@ -84,16 +117,7 @@ function Workspace({ inv }: { inv: Investigation }) {
     { key: "All Data", label: "All Data", count: 0 },
   ];
 
-  const bottomTabs = [
-    { key: "findings", label: "AI Findings", count: INV_BOTTOM_COUNTS.findings },
-    { key: "rules", label: "Rules Triggered", count: INV_BOTTOM_COUNTS.rules },
-    { key: "evidence", label: "Evidence", count: INV_BOTTOM_COUNTS.evidence },
-    { key: "audit", label: "Audit Trail" },
-    { key: "downloads", label: "Downloads" },
-  ] as const;
 
-  const finding =
-    AI_FINDINGS.find((f) => f.id === selectedFinding) ?? AI_FINDINGS[0];
 
   return (
     <AppShell title="Investigate" subtitle="Voyage Workspace" mode="light">
