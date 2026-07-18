@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Anchor, PanelLeftClose, Settings } from "lucide-react";
+import { Anchor, PanelLeftClose } from "lucide-react";
 
 import {
   Sidebar,
@@ -21,9 +21,9 @@ import { cn } from "@/lib/utils";
  * Seaphore sidebar — 230px fixed.
  *
  * Group order is fixed (encodes the operating model):
- *   MISSION → INTELLIGENCE LIFECYCLE → INTELLIGENCE CENTRES → FOOTER
+ *   MISSION → INTELLIGENCE LIFECYCLE → INTELLIGENCE CENTRES → SYSTEM
  *
- * Footer contains Administration + Collapse control only.
+ * Administration lives under the System group; footer contains Collapse only.
  */
 export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
@@ -107,25 +107,6 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t border-sidebar-border px-2 py-2">
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={isActive("/admin")}
-              tooltip="Administration"
-              className={cn(
-                "text-sidebar-foreground/85 motion-fast",
-                "hover:bg-sidebar-accent hover:text-sidebar-foreground",
-                "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground",
-              )}
-            >
-              <Link to="/admin" className="flex items-center gap-2.5">
-                <Settings className="h-4 w-4 shrink-0" />
-                {!collapsed && (
-                  <span className="text-[13px] font-semibold">Administration</span>
-                )}
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={toggleSidebar}
