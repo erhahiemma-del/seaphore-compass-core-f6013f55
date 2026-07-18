@@ -26,19 +26,19 @@ import { cn } from "@/lib/utils";
 import {
   AI_FINDINGS,
   AUDIT_TRAIL,
-  CASE_PROGRESS,
   COPILOT_RECOMMENDATIONS,
   EVIDENCE_ITEMS,
-  GRAPH_EDGES,
-  GRAPH_NODES,
   HISTORICAL_SIMILARITY,
   INV_BOTTOM_COUNTS,
   INVESTIGATIONS,
   RELATED_INVESTIGATIONS,
   RULES_TRIGGERED,
+  graphForInvestigation,
   investigationById,
+  type GraphNode,
   type Investigation,
 } from "@/lib/lifecycle-data";
+
 
 /**
  * INV — Investigate / Voyage Workspace.
