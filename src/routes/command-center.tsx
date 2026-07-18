@@ -298,6 +298,54 @@ interface StageState {
   error?: string;
 }
 
+type ConfidenceTier = "verified" | "observed" | "inferred" | "unconfirmed";
+interface ManifestPreview {
+  bol: string;
+  vessel: string;
+  voyage: string;
+  consignee: string;
+  shipper: string;
+  portOfLoading: string;
+  portOfDischarge: string;
+  fields: { label: string; value: string; confidence: ConfidenceTier; note?: string }[];
+  flags: { severity: "info" | "warn" | "risk"; text: string }[];
+}
+
+function buildPreview(file: File, risk: "HIGH" | "MEDIUM" | "LOW"): ManifestPreview {
+  const seed = file.name.length;
+  const bol = `BOL-${String(2400 + (seed % 900)).padStart(4, "0")}-NG`;
+  const voyage = `VOY-${2411 + (seed % 12)}-${String.fromCharCode(65 + (seed % 6))}`;
+  const vessel = ["MV Ocean Pearl", "MV Bluewave Star", "MV Sahara Trader", "MV Gulf Runner"][seed % 4];
+  const consignee = ["Zenith Petrochem Ltd", "Delta Cargo Nigeria", "Apex Freight WA", "Oceanic Lines Nig."][seed % 4];
+  const shipper = ["Rotterdam Bulk BV", "Antwerp Merchants NV", "Fujairah Trading FZE", "Singapore Marine Pte"][seed % 4];
+  const pol = ["Rotterdam", "Antwerp", "Fujairah", "Singapore"][seed % 4];
+  const pod = ["Apapa (Lagos)", "Tin Can (Lagos)", "Onne", "Port Harcourt"][seed % 4];
+  const hs = ["2710.19", "3901.10", "8481.80"].slice(0, 1 + (seed % 3));
+  return {
+    bol, vessel, voyage, consignee, shipper, portOfLoading: pol, portOfDischarge: pod,
+    fields: [
+      { label: "Bill of lading", value: bol, confidence: "verified", note: "OCR match · header block" },
+      { label: "Vessel", value: vessel, confidence: "verified", note: "Cross-checked against AIS registry" },
+      { label: "Voyage", value: voyage, confidence: "observed" },
+      { label: "Consignee", value: consignee, confidence: risk === "HIGH" ? "unconfirmed" : "observed", note: risk === "HIGH" ? "No prior filings under this TIN" : undefined },
+      { label: "Shipper", value: shipper, confidence: "observed" },
+      { label: "Port of loading", value: pol, confidence: "verified" },
+      { label: "Port of discharge", value: pod, confidence: "verified" },
+      { label: "HS codes", value: hs.join(" · "), confidence: "inferred", note: "Derived from cargo descriptions" },
+      { label: "Line items", value: "148", confidence: "verified" },
+      { label: "Containers", value: String(6 + (seed % 5)), confidence: "verified" },
+      { label: "Gross weight", value: `${(1240 + (seed % 400)).toLocaleString()} kg`, confidence: "observed" },
+    ],
+    flags: [
+      { severity: "warn", text: "1 duplicate BOL candidate observed in last 30 days" },
+      { severity: "info", text: "2 field mismatches vs prior manifest for same voyage" },
+      ...(risk === "HIGH"
+        ? [{ severity: "risk" as const, text: "Consignee has no verified filings — requires officer review" }]
+        : []),
+    ],
+  };
+}
+
 const STAGE_META: { key: StageKey; label: string; running: string; done: string }[] = [
   { key: "ocr", label: "OCR extraction", running: "Reading pages…", done: "Text and tables extracted" },
   { key: "validation", label: "AI validation", running: "Cross-checking BOL, HS codes, consignee…", done: "Fields validated against reference data" },
@@ -319,6 +367,8 @@ function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent)
   const [filename, setFilename] = useState<string | null>(null);
   const [stages, setStages] = useState<Record<StageKey, StageState>>(initialStages);
   const [risk, setRisk] = useState<"HIGH" | "MEDIUM" | "LOW" | null>(null);
+  const [preview, setPreview] = useState<ManifestPreview | null>(null);
+  const [logged, setLogged] = useState(false);
   const [fatalError, setFatalError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
 
@@ -350,10 +400,11 @@ function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent)
   const runPipeline = async (file: File) => {
     setFilename(file.name);
     setRisk(null);
+    setPreview(null);
+    setLogged(false);
     setFatalError(null);
     setStages(initialStages());
 
-    // Pre-flight validation — surfaces before any stage starts.
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
     if (!ACCEPTED_EXT.includes(ext)) {
       setFatalError(`Unsupported file type ".${ext}". Accepted: PDF, JPG, PNG, XLSX.`);
@@ -364,8 +415,6 @@ function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent)
       return;
     }
 
-    // Deterministic mock: filenames containing "corrupt" fail OCR;
-    // "sanction" fails validation. Everything else succeeds.
     const lower = file.name.toLowerCase();
     const ocrFail = lower.includes("corrupt");
     const valFail = lower.includes("sanction");
@@ -386,11 +435,8 @@ function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent)
       setRisk(level);
       updateStage("scoring", { detail: `Composite risk ${level} · score ${score}/100` });
 
-      onProcessed?.({
-        time: nowHHMM(),
-        title: `Manifest ${file.name} processed — 148 line-items · 1 duplicate BOL candidate`,
-        risk: level,
-      });
+      // Officer must review the preview before it becomes a timeline entry.
+      setPreview(buildPreview(file, level));
     } catch (err) {
       const e = err as { stage?: StageKey; message?: string };
       const stage = e.stage ?? "ocr";
@@ -401,19 +447,32 @@ function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent)
     }
   };
 
+  const confirmLog = () => {
+    if (!filename || !risk || !preview || logged) return;
+    onProcessed?.({
+      time: nowHHMM(),
+      title: `Manifest ${preview.bol} · ${preview.vessel} confirmed — 148 line-items · 1 duplicate BOL candidate`,
+      risk,
+    });
+    setLogged(true);
+  };
+
   const reset = () => {
     setFilename(null);
     setStages(initialStages());
     setRisk(null);
+    setPreview(null);
+    setLogged(false);
     setFatalError(null);
     setRunning(false);
   };
 
   const retry = () => {
-    // Retry by resetting stages; user re-uploads.
     setStages(initialStages());
     setFatalError(null);
     setRisk(null);
+    setPreview(null);
+    setLogged(false);
   };
 
   const started = filename !== null;
@@ -489,32 +548,14 @@ function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent)
             </div>
           )}
 
-          {allDone && risk && (
-            <div className="rounded-lg border border-line bg-surface/60 p-3">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-[color:var(--color-green)]" />
-                <span className="text-[12.5px] font-semibold text-foreground">Complete</span>
-                <RiskPill level={risk} />
-                <ConfidenceChip tier="inferred" size={9} />
-              </div>
-              <p className="mt-1 text-[11px] text-slate">
-                Observed: 148 line-items · 3 HS codes · 1 duplicate BOL candidate. The officer decides.
-              </p>
-              <div className="mt-2 flex gap-2">
-                <a
-                  href="/manifest"
-                  className="inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-[11.5px] font-semibold text-primary-foreground"
-                >
-                  Open in Manifest Intelligence
-                </a>
-                <button
-                  onClick={reset}
-                  className="rounded-md border border-line px-3 py-1.5 text-[11.5px] font-semibold text-foreground/80 hover:bg-surface-2"
-                >
-                  Upload another
-                </button>
-              </div>
-            </div>
+          {allDone && risk && preview && (
+            <ManifestPreviewPanel
+              preview={preview}
+              risk={risk}
+              logged={logged}
+              onConfirm={confirmLog}
+              onDiscard={reset}
+            />
           )}
 
           {!running && !allDone && !fatalError && (
@@ -581,4 +622,124 @@ function StageRow({
     </li>
   );
 }
+
+function ManifestPreviewPanel({
+  preview,
+  risk,
+  logged,
+  onConfirm,
+  onDiscard,
+}: {
+  preview: ManifestPreview;
+  risk: "HIGH" | "MEDIUM" | "LOW";
+  logged: boolean;
+  onConfirm: () => void;
+  onDiscard: () => void;
+}) {
+  const flagStyle = (sev: "info" | "warn" | "risk") =>
+    sev === "risk"
+      ? "border-[color:var(--color-red)]/40 bg-[color:var(--color-red)]/10 text-[color:var(--color-red)]"
+      : sev === "warn"
+        ? "border-[color:var(--color-amber)]/40 bg-[color:var(--color-amber)]/10 text-[color:var(--color-amber)]"
+        : "border-line bg-surface/60 text-slate";
+
+  return (
+    <div className="rounded-lg border border-line bg-surface/60 p-3">
+      <div className="mb-2 flex items-center gap-2">
+        <FileText className="h-4 w-4 text-primary" />
+        <span className="text-[12.5px] font-semibold text-foreground">
+          Manifest preview · pre-log review
+        </span>
+        <RiskPill level={risk} />
+        <ConfidenceChip tier="inferred" size={9} />
+        <span className="ml-auto text-[10px] uppercase tracking-[0.08em] text-slate">
+          {logged ? "Logged to timeline" : "Awaiting officer confirmation"}
+        </span>
+      </div>
+
+      <p className="mb-2 text-[11px] text-slate">
+        Observed extraction from OCR and AI validation. Nothing is written to the
+        Intelligence timeline until the officer confirms.
+      </p>
+
+      <div className="grid grid-cols-1 gap-1.5 md:grid-cols-2">
+        {preview.fields.map((f) => (
+          <div
+            key={f.label}
+            className="flex items-start justify-between gap-2 rounded-md border border-line bg-card px-2.5 py-1.5"
+          >
+            <div className="min-w-0">
+              <div className="text-[10px] uppercase tracking-[0.08em] text-slate">
+                {f.label}
+              </div>
+              <div className="truncate text-[12.5px] font-semibold text-foreground">
+                {f.value}
+              </div>
+              {f.note && (
+                <div className="text-[10px] text-slate">{f.note}</div>
+              )}
+            </div>
+            <ConfidenceChip tier={f.confidence} size={9} />
+          </div>
+        ))}
+      </div>
+
+      {preview.flags.length > 0 && (
+        <ul className="mt-2 space-y-1">
+          {preview.flags.map((fl, i) => (
+            <li
+              key={i}
+              className={
+                "flex items-start gap-2 rounded-md border px-2.5 py-1.5 text-[11.5px] " +
+                flagStyle(fl.severity)
+              }
+            >
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5" />
+              <span>{fl.text}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {!logged ? (
+          <>
+            <button
+              onClick={onConfirm}
+              className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-[11.5px] font-semibold text-primary-foreground"
+            >
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Confirm & log to timeline
+            </button>
+            <button
+              onClick={onDiscard}
+              className="rounded-md border border-line px-3 py-1.5 text-[11.5px] font-semibold text-foreground/80 hover:bg-surface-2"
+            >
+              Discard
+            </button>
+          </>
+        ) : (
+          <>
+            <a
+              href="/manifest"
+              className="inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-[11.5px] font-semibold text-primary-foreground"
+            >
+              Open in Manifest Intelligence
+            </a>
+            <button
+              onClick={onDiscard}
+              className="rounded-md border border-line px-3 py-1.5 text-[11.5px] font-semibold text-foreground/80 hover:bg-surface-2"
+            >
+              Upload another
+            </button>
+          </>
+        )}
+        <span className="ml-auto text-[10.5px] text-slate">
+          Evidence first. Explainable always. Officer decides.
+        </span>
+      </div>
+    </div>
+  );
+}
+
 
