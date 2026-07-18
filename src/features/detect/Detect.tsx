@@ -28,6 +28,7 @@ import { SignalTimelineChart, type TimelineRange } from "@/components/signal-tim
 import { TypeTiles } from "@/components/type-tiles";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { useHandoffNavigate } from "@/lib/nav-context";
+import { QUERY_KEYS, QUERY_STALE } from "@/lib/query-keys";
 import {
   getDetectFeed,
   SIGNAL_DOMAINS,
@@ -56,9 +57,9 @@ export function DetectPage() {
   }, []);
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["detect-feed", range, activeDomain],
+    queryKey: [...QUERY_KEYS.signals(activeDomain === "All" ? undefined : activeDomain), range],
     queryFn: () => getDetectFeed({ range, domain: activeDomain }),
-    staleTime: 30_000,
+    staleTime: QUERY_STALE.signals,
     refetchOnWindowFocus: false,
     enabled: authState === "in",
   });
