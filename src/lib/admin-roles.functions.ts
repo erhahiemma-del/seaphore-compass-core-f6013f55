@@ -135,7 +135,8 @@ export const setUserRoles = createServerFn({ method: "POST" })
       module: "administration",
       rule_refs: ["PERM-1", "HR-9"],
       metadata: { added: toAdd, removed: toRemove },
-      actor_id: context.userId,
+      officer_id: context.userId,
+      ip_address: "server",
     });
 
     return { added: toAdd, removed: toRemove };
