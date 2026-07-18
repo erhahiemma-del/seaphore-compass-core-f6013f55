@@ -627,8 +627,17 @@ export function MemoryPage() {
                   <span className="font-semibold text-foreground">10 relationships</span>
                 </span>
               </div>
+              <button
+                type="button"
+                onClick={() => kgRef.current?.reset()}
+                className="inline-flex items-center gap-1 rounded-md border border-line bg-card px-2 py-1 text-[11px] font-semibold text-foreground/80 motion-fast hover:bg-surface-2"
+                title="Reset Knowledge Graph view to defaults"
+              >
+                <RotateCcw className="h-3 w-3" /> Reset View
+              </button>
             </div>
             <KnowledgeGraph
+              ref={kgRef}
               nodes={GRAPH_NODES}
               edges={GRAPH_EDGES}
               focalId="v1"
