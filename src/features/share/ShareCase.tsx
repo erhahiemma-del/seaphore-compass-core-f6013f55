@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { SendShareGate } from "@/components/compliance/send-share-gate";
 import {
   AGENCY_RECIPIENTS,
   CLASSIFICATIONS,
