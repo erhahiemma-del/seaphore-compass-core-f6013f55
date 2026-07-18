@@ -1,5 +1,14 @@
-import { useMemo, useState } from "react";
-import { Filter, Layers, Maximize2, Minus, MoveHorizontal, Plus } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Filter,
+  Layers,
+  Maximize2,
+  Minus,
+  MoveHorizontal,
+  Pause,
+  Play,
+  Plus,
+} from "lucide-react";
 
 import type {
   GraphEdge,
@@ -26,36 +35,47 @@ const KIND_LABEL: Record<GraphNodeKind, string> = {
   manifest: "Manifests",
 };
 
-const RELATIONSHIP_TYPES = [
-  "owns",
-  "operates",
-  "beneficial owner",
-  "director of",
-  "consignee",
-  "manifested on",
-  "declares",
-  "AIS blackout",
-  "declared arrival",
-  "prior port",
-];
-
 export type GraphLayout = "Force" | "Radial" | "Hierarchy";
+export type GraphRange = "1D" | "7D" | "30D" | "All";
+
+const RANGE_WINDOW: Record<GraphRange, [number, number]> = {
+  "1D": [90, 100],
+  "7D": [70, 100],
+  "30D": [30, 100],
+  All: [0, 100],
+};
 
 /**
- * INV-4 / INV-5 / MEM-3 knowledge graph — dark-mode, interactive.
- * SVG is static-layout but nodes are clickable and edges show labels.
+ * INV-4 / INV-5 / MEM-3 knowledge graph.
+ *
+ * Interactive controls (all functional):
+ *  - Entity-type filter — hides/shows nodes by kind.
+ *  - Relationship-type filter — hides/shows edges by type.
+ *  - Confidence ≥ slider — hides nodes below threshold.
+ *  - Evidence-only — keeps only nodes with attached evidence.
+ *  - Layout selector — Force (stored coords), Radial (around focal),
+ *    Hierarchy (top-down banded by kind).
+ *  - Zoom in/out/reset — drives the SVG viewBox, so labels stay legible.
+ *  - Timeline scrubber + Play — animates edges/nodes appearing over time
+ *    within the selected range window.
+ *  - Node click — reports selection to the parent via onSelectionChange
+ *    and highlights the immediate neighbourhood.
  */
 export function KnowledgeGraph({
   nodes,
   edges,
+  focalId,
   className,
   onNodeClick,
+  onSelectionChange,
   height = 420,
   minimap = false,
 }: {
   nodes: GraphNode[];
   edges: GraphEdge[];
+  focalId?: string;
   onNodeClick?: (n: GraphNode) => void;
+  onSelectionChange?: (n: GraphNode | null) => void;
   className?: string;
   height?: number;
   minimap?: boolean;
@@ -65,29 +85,135 @@ export function KnowledgeGraph({
   const [activeKinds, setActiveKinds] = useState<Set<GraphNodeKind>>(
     new Set(Object.keys(KIND_COLOR) as GraphNodeKind[]),
   );
-  const [range, setRange] = useState<"1D" | "7D" | "30D" | "All">("30D");
-  const [confidenceFilter, setConfidenceFilter] = useState(30);
+  const relTypes = useMemo(() => {
+    const set = new Set<string>();
+    edges.forEach((e) => set.add(e.type ?? e.label));
+    return Array.from(set);
+  }, [edges]);
+  const [activeRels, setActiveRels] = useState<Set<string>>(new Set(relTypes));
+  useEffect(() => setActiveRels(new Set(relTypes)), [relTypes]);
+
+  const [range, setRange] = useState<GraphRange>("All");
+  const [cursor, setCursor] = useState(100);
+  const [playing, setPlaying] = useState(false);
+  const [confidenceFilter, setConfidenceFilter] = useState(0);
   const [evidenceOnly, setEvidenceOnly] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [rangeStart, rangeEnd] = RANGE_WINDOW[range];
+
+  // Reset cursor when the range changes so scrubbing feels natural.
+  useEffect(() => setCursor(rangeEnd), [rangeEnd]);
+
+  // Play advances the cursor across the window and stops at the end.
+  const playRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!playing) return;
+    playRef.current = window.setInterval(() => {
+      setCursor((c) => {
+        const next = c + Math.max(1, Math.round((rangeEnd - rangeStart) / 40));
+        if (next >= rangeEnd) {
+          setPlaying(false);
+          return rangeEnd;
+        }
+        return next;
+      });
+    }, 120);
+    return () => {
+      if (playRef.current) window.clearInterval(playRef.current);
+    };
+  }, [playing, rangeEnd, rangeStart]);
+
+  // Layout: compute per-node display coordinates from stored home coords.
+  const positions = useMemo(() => {
+    const map = new Map<string, { x: number; y: number }>();
+    if (layout === "Force") {
+      nodes.forEach((n) => map.set(n.id, { x: n.x, y: n.y }));
+    } else if (layout === "Radial") {
+      const focal = nodes.find((n) => n.id === (focalId ?? nodes[0]?.id));
+      const rest = nodes.filter((n) => n.id !== focal?.id);
+      if (focal) map.set(focal.id, { x: 50, y: 50 });
+      rest.forEach((n, i) => {
+        const a = (i / Math.max(1, rest.length)) * Math.PI * 2;
+        map.set(n.id, { x: 50 + Math.cos(a) * 34, y: 50 + Math.sin(a) * 34 });
+      });
+    } else {
+      const bands: GraphNodeKind[] = [
+        "person",
+        "company",
+        "vessel",
+        "manifest",
+        "cargo",
+        "port",
+      ];
+      bands.forEach((kind, row) => {
+        const layer = nodes.filter((n) => n.kind === kind);
+        const y = 10 + (row * 80) / (bands.length - 1);
+        layer.forEach((n, i) => {
+          const x = layer.length === 1 ? 50 : 10 + (i * 80) / (layer.length - 1);
+          map.set(n.id, { x, y });
+        });
+      });
+      nodes.forEach((n) => {
+        if (!map.has(n.id)) map.set(n.id, { x: n.x, y: n.y });
+      });
+    }
+    return map;
+  }, [layout, nodes, focalId]);
 
   const visibleNodes = useMemo(
-    () => nodes.filter((n) => activeKinds.has(n.kind)),
-    [nodes, activeKinds],
+    () =>
+      nodes.filter((n) => {
+        if (!activeKinds.has(n.kind)) return false;
+        if ((n.confidence ?? 100) < confidenceFilter) return false;
+        if (evidenceOnly && !n.evidence) return false;
+        const t = n.t ?? 0;
+        if (t < rangeStart || t > cursor) return false;
+        return true;
+      }),
+    [nodes, activeKinds, confidenceFilter, evidenceOnly, cursor, rangeStart],
   );
+
+  const visibleNodeIds = useMemo(
+    () => new Set(visibleNodes.map((n) => n.id)),
+    [visibleNodes],
+  );
+
   const visibleEdges = useMemo(
     () =>
       edges.filter((e) => {
-        const from = visibleNodes.find((n) => n.id === e.from);
-        const to = visibleNodes.find((n) => n.id === e.to);
-        return from && to;
+        if (!visibleNodeIds.has(e.from) || !visibleNodeIds.has(e.to))
+          return false;
+        if (!activeRels.has(e.type ?? e.label)) return false;
+        const t = e.t ?? 0;
+        return t >= rangeStart && t <= cursor;
       }),
-    [edges, visibleNodes],
+    [edges, visibleNodeIds, activeRels, cursor, rangeStart],
   );
+
+  const neighbourIds = useMemo(() => {
+    if (!selectedId) return new Set<string>();
+    const s = new Set<string>([selectedId]);
+    visibleEdges.forEach((e) => {
+      if (e.from === selectedId) s.add(e.to);
+      if (e.to === selectedId) s.add(e.from);
+    });
+    return s;
+  }, [selectedId, visibleEdges]);
 
   const nodeById = useMemo(
     () => new Map(nodes.map((n) => [n.id, n])),
     [nodes],
   );
+
+  // Zoom: shrink the viewBox around the centre — labels scale up naturally.
+  const vbSize = 100 / zoom;
+  const vbOffset = (100 - vbSize) / 2;
+
+  function selectNode(n: GraphNode | null) {
+    setSelectedId(n?.id ?? null);
+    onSelectionChange?.(n);
+    if (n) onNodeClick?.(n);
+  }
 
   return (
     <div
@@ -99,8 +225,10 @@ export function KnowledgeGraph({
     >
       {/* Header */}
       <div className="flex flex-wrap items-center gap-3 border-b border-[#1E3048] px-3 py-2 text-[11px]">
-        <span className="inline-flex items-center gap-1.5 rounded px-2 py-0.5 font-bold uppercase tracking-[0.06em]"
-          style={{ color: "#1E6B3A", backgroundColor: "#1E6B3A26" }}>
+        <span
+          className="inline-flex items-center gap-1.5 rounded px-2 py-0.5 font-bold uppercase tracking-[0.06em]"
+          style={{ color: "#1E6B3A", backgroundColor: "#1E6B3A26" }}
+        >
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#1E6B3A]" />
           LIVE
         </span>
@@ -108,6 +236,15 @@ export function KnowledgeGraph({
           Displaying <b>{visibleNodes.length}</b> entities,{" "}
           <b>{visibleEdges.length}</b> relationships
         </span>
+        {selectedId && (
+          <button
+            type="button"
+            onClick={() => selectNode(null)}
+            className="ml-1 rounded border border-[#1E3048] bg-[#132032] px-1.5 py-0.5 text-white/80 hover:bg-[#172A40]"
+          >
+            Clear selection ×
+          </button>
+        )}
         <div className="ml-auto flex items-center gap-1">
           <label className="text-white/60">Layout</label>
           <select
@@ -121,20 +258,23 @@ export function KnowledgeGraph({
           </select>
           <button
             type="button"
+            aria-label="Zoom in"
             className="ml-2 rounded border border-[#1E3048] bg-[#132032] p-1 hover:bg-[#172A40]"
-            onClick={() => setZoom((z) => Math.min(2, z + 0.1))}
+            onClick={() => setZoom((z) => Math.min(3, +(z + 0.2).toFixed(2)))}
           >
             <Plus className="h-3 w-3" />
           </button>
           <button
             type="button"
+            aria-label="Zoom out"
             className="rounded border border-[#1E3048] bg-[#132032] p-1 hover:bg-[#172A40]"
-            onClick={() => setZoom((z) => Math.max(0.5, z - 0.1))}
+            onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.2).toFixed(2)))}
           >
             <Minus className="h-3 w-3" />
           </button>
           <button
             type="button"
+            aria-label="Reset zoom"
             className="rounded border border-[#1E3048] bg-[#132032] p-1 hover:bg-[#172A40]"
             onClick={() => setZoom(1)}
           >
@@ -171,18 +311,31 @@ export function KnowledgeGraph({
             </label>
           ))}
         </div>
-        <div className="mb-1 font-semibold text-white/80">Relationship types</div>
+        <div className="mb-1 font-semibold text-white/80">
+          Relationship types
+        </div>
         <div className="max-h-24 space-y-0.5 overflow-auto pr-1">
-          {RELATIONSHIP_TYPES.slice(0, 6).map((r) => (
+          {relTypes.map((r) => (
             <label key={r} className="flex items-center gap-1.5 text-white/60">
-              <input type="checkbox" defaultChecked />
+              <input
+                type="checkbox"
+                checked={activeRels.has(r)}
+                onChange={(e) => {
+                  const next = new Set(activeRels);
+                  if (e.target.checked) next.add(r);
+                  else next.delete(r);
+                  setActiveRels(next);
+                }}
+              />
               {r}
             </label>
           ))}
         </div>
         <div className="mt-2 border-t border-[#1E3048] pt-2">
           <div className="mb-1 flex items-center justify-between font-semibold text-white/80">
-            <span className="flex items-center gap-1"><Layers className="h-3 w-3" /> Confidence ≥</span>
+            <span className="flex items-center gap-1">
+              <Layers className="h-3 w-3" /> Confidence ≥
+            </span>
             <span className="text-white">{confidenceFilter}%</span>
           </div>
           <input
@@ -210,8 +363,14 @@ export function KnowledgeGraph({
           <div className="mb-1 font-semibold text-white/80">Legend</div>
           <div className="space-y-0.5">
             {(Object.keys(KIND_COLOR) as GraphNodeKind[]).map((k) => (
-              <div key={k} className="flex items-center gap-1.5 text-white/70">
-                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: KIND_COLOR[k] }} />
+              <div
+                key={k}
+                className="flex items-center gap-1.5 text-white/70"
+              >
+                <span
+                  className="h-2 w-2 rounded-full"
+                  style={{ backgroundColor: KIND_COLOR[k] }}
+                />
                 {KIND_LABEL[k]}
               </div>
             ))}
@@ -219,57 +378,90 @@ export function KnowledgeGraph({
         </div>
         {minimap && (
           <div className="rounded-md border border-[#1E3048] bg-[#0B1420]/95 p-1 backdrop-blur">
-            <div className="mb-1 px-1 text-[10px] font-semibold text-white/60">Minimap</div>
+            <div className="mb-1 px-1 text-[10px] font-semibold text-white/60">
+              Minimap
+            </div>
             <svg viewBox="0 0 100 100" className="h-16 w-full">
               {visibleEdges.map((e, i) => {
-                const a = nodeById.get(e.from);
-                const b = nodeById.get(e.to);
+                const a = positions.get(e.from);
+                const b = positions.get(e.to);
                 if (!a || !b) return null;
-                return <line key={i} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#1E3048" strokeWidth={0.5} />;
+                return (
+                  <line
+                    key={i}
+                    x1={a.x}
+                    y1={a.y}
+                    x2={b.x}
+                    y2={b.y}
+                    stroke="#1E3048"
+                    strokeWidth={0.5}
+                  />
+                );
               })}
-              {visibleNodes.map((n) => (
-                <circle key={n.id} cx={n.x} cy={n.y} r={1.5} fill={KIND_COLOR[n.kind]} />
-              ))}
+              {visibleNodes.map((n) => {
+                const p = positions.get(n.id)!;
+                return (
+                  <circle
+                    key={n.id}
+                    cx={p.x}
+                    cy={p.y}
+                    r={1.5}
+                    fill={KIND_COLOR[n.kind]}
+                  />
+                );
+              })}
             </svg>
           </div>
         )}
       </div>
 
-      {/* Graph canvas */}
+      {/* Graph canvas — zoom via viewBox so labels stay crisp. */}
       <svg
-        viewBox="0 0 100 100"
+        viewBox={`${vbOffset} ${vbOffset} ${vbSize} ${vbSize}`}
         preserveAspectRatio="xMidYMid meet"
         className="mx-auto block"
-        style={{ height: height - 96, width: "100%", transform: `scale(${zoom})`, transition: "transform 200ms" }}
+        style={{ height: height - 96, width: "100%" }}
       >
-        {/* subtle grid */}
         <defs>
-          <pattern id="kg-grid" width="10" height="10" patternUnits="userSpaceOnUse">
-            <path d="M10 0 L0 0 L0 10" fill="none" stroke="#152944" strokeWidth="0.15" />
+          <pattern
+            id="kg-grid"
+            width="10"
+            height="10"
+            patternUnits="userSpaceOnUse"
+          >
+            <path
+              d="M10 0 L0 0 L0 10"
+              fill="none"
+              stroke="#152944"
+              strokeWidth="0.15"
+            />
           </pattern>
         </defs>
-        <rect width="100" height="100" fill="url(#kg-grid)" />
+        <rect x="0" y="0" width="100" height="100" fill="url(#kg-grid)" />
 
         {visibleEdges.map((e, i) => {
-          const a = nodeById.get(e.from)!;
-          const b = nodeById.get(e.to)!;
+          const a = positions.get(e.from)!;
+          const b = positions.get(e.to)!;
           const mx = (a.x + b.x) / 2;
           const my = (a.y + b.y) / 2;
+          const highlighted =
+            !!selectedId && (e.from === selectedId || e.to === selectedId);
+          const dim = !!selectedId && !highlighted;
           return (
-            <g key={i}>
+            <g key={i} opacity={dim ? 0.25 : 1}>
               <line
                 x1={a.x}
                 y1={a.y}
                 x2={b.x}
                 y2={b.y}
-                stroke="#2C4360"
-                strokeWidth={0.35}
+                stroke={highlighted ? "#7DD3FC" : "#2C4360"}
+                strokeWidth={highlighted ? 0.55 : 0.35}
               />
               <text
                 x={mx}
                 y={my - 0.5}
                 fontSize={1.6}
-                fill="#7B8CA0"
+                fill={highlighted ? "#E4E8EC" : "#7B8CA0"}
                 textAnchor="middle"
               >
                 {e.label}
@@ -279,31 +471,32 @@ export function KnowledgeGraph({
         })}
 
         {visibleNodes.map((n) => {
+          const p = positions.get(n.id)!;
           const isSelected = n.id === selectedId;
+          const isNeighbour = neighbourIds.has(n.id);
+          const dim = !!selectedId && !isNeighbour;
           const r = n.kind === "vessel" ? 3.2 : n.kind === "company" ? 2.8 : 2.2;
           return (
             <g
               key={n.id}
               className="cursor-pointer"
-              onClick={() => {
-                setSelectedId(n.id);
-                onNodeClick?.(n);
-              }}
+              opacity={dim ? 0.3 : 1}
+              onClick={() => selectNode(n)}
             >
               {n.risk === "HIGH" && (
-                <circle cx={n.x} cy={n.y} r={r + 1.6} fill="#C0392B33" />
+                <circle cx={p.x} cy={p.y} r={r + 1.6} fill="#C0392B33" />
               )}
               <circle
-                cx={n.x}
-                cy={n.y}
+                cx={p.x}
+                cy={p.y}
                 r={r}
                 fill={KIND_COLOR[n.kind]}
                 stroke={isSelected ? "#FFFFFF" : "#0D1B2A"}
                 strokeWidth={isSelected ? 0.8 : 0.4}
               />
               <text
-                x={n.x}
-                y={n.y + r + 2.2}
+                x={p.x}
+                y={p.y + r + 2.2}
                 fontSize={1.9}
                 fill="#E4E8EC"
                 textAnchor="middle"
@@ -318,17 +511,39 @@ export function KnowledgeGraph({
 
       {/* Timeline scrubber */}
       <div className="absolute inset-x-0 bottom-0 flex items-center gap-3 border-t border-[#1E3048] bg-[#0B1420]/90 px-3 py-2 text-[11px] backdrop-blur">
+        <button
+          type="button"
+          aria-label={playing ? "Pause timeline" : "Play timeline"}
+          onClick={() => {
+            if (cursor >= rangeEnd) setCursor(rangeStart);
+            setPlaying((p) => !p);
+          }}
+          className="rounded border border-[#1E3048] bg-[#132032] p-1 hover:bg-[#172A40]"
+        >
+          {playing ? (
+            <Pause className="h-3 w-3" />
+          ) : (
+            <Play className="h-3 w-3" />
+          )}
+        </button>
         <MoveHorizontal className="h-3.5 w-3.5 text-white/60" />
         <span className="text-white/70">Timeline</span>
         <input
           type="range"
-          min={0}
-          max={100}
-          defaultValue={70}
+          min={rangeStart}
+          max={rangeEnd}
+          value={cursor}
+          onChange={(e) => {
+            setPlaying(false);
+            setCursor(+e.target.value);
+          }}
           className="flex-1 accent-[color:var(--color-teal)]"
         />
+        <span className="type-mono text-white/70">
+          t={cursor}/{rangeEnd}
+        </span>
         <div className="flex items-center gap-1">
-          {(["1D", "7D", "30D", "All"] as const).map((r) => (
+          {(Object.keys(RANGE_WINDOW) as GraphRange[]).map((r) => (
             <button
               key={r}
               type="button"
