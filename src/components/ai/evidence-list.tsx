@@ -1,6 +1,6 @@
 import { FileText } from "lucide-react";
 
-import { ConfidenceChip } from "@/components/confidence-chip";
+import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import type { CopilotEvidence } from "@/lib/ai/types";
 import { cn } from "@/lib/utils";
 

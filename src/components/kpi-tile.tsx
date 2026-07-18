@@ -1,7 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 
-import { ConfidenceChip, type ConfidenceTier } from "@/components/confidence-chip";
+import { ConfidenceChip, type ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
 import { cn } from "@/lib/utils";
 
 /**

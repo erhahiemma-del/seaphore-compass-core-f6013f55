@@ -6,7 +6,7 @@
  * real Supabase queries when the data foundation goes live —
  * component shapes are stable.
  */
-import type { ConfidenceTier } from "@/components/confidence-chip";
+import type { ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
 
 export type RiskLevel = "high" | "medium" | "low" | "unknown";
 export type ManifestStatus = "validated" | "pending" | "duplicate" | "amended";

@@ -1,6 +1,6 @@
 import { Sparkles } from "lucide-react";
 
-import { ConfidenceChip } from "@/components/confidence-chip";
+import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { cn } from "@/lib/utils";
 
 /**

@@ -1,4 +1,4 @@
-import { CONFIDENCE_LABELS, type ConfidenceTier } from "@/components/confidence-chip";
+import { CONFIDENCE_LABELS, type ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
 import { cn } from "@/lib/utils";
 
 const HEX: Record<ConfidenceTier, string> = {

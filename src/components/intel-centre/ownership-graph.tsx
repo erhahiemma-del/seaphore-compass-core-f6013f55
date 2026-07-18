@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { COMPANIES, VESSELS, type OwnershipEdge } from "@/lib/intel-centre-data";
-import { ConfidenceChip } from "@/components/confidence-chip";
+import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 
 /** Minimal radial ownership graph for VES-3 / OWN-1. */
 export function OwnershipGraph({

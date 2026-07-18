@@ -6,8 +6,8 @@
  * respect the confidence contract — each metric is annotated with the
  * confidence tier the panel must render.
  */
-import type { ConfidenceTier } from "@/components/confidence-chip";
-import type { RiskLevel } from "@/components/risk-pill";
+import type { ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
+import type { RiskLevel } from "@/components/intelligence/RiskPill";
 import type { MapVessel } from "@/components/gulf-of-guinea-map";
 
 export interface RibbonKpi {

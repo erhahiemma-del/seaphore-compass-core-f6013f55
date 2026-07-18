@@ -1,7 +1,7 @@
 import { ChevronRight } from "lucide-react";
 
-import { ConfidenceChip } from "@/components/confidence-chip";
-import { RiskPill } from "@/components/risk-pill";
+import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
+import { RiskPill } from "@/components/intelligence/RiskPill";
 import type { Signal } from "@/lib/lifecycle-data";
 import { cn } from "@/lib/utils";
 

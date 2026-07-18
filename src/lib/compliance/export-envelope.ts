@@ -13,7 +13,7 @@
  */
 
 import { SEAPHORE_OATH } from "./rules";
-import type { ConfidenceTier } from "@/components/confidence-chip";
+import type { ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
 
 export interface EvidenceItem {
   id: string;

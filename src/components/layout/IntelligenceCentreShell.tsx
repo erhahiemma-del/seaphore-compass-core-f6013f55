@@ -5,8 +5,8 @@ import {
   SidebarInset,
   SidebarProvider,
 } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
-import { TopBar } from "@/components/top-bar";
+import { AppSidebar } from "@/components/layout/Sidebar";
+import { TopBar } from "@/components/layout/TopBar";
 import { GlobalCopilotLauncher } from "@/components/ai/global-copilot-launcher";
 import { cn } from "@/lib/utils";
 

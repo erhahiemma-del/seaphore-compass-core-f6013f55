@@ -16,7 +16,7 @@
  */
 
 import type { Database } from "@/integrations/supabase/types";
-import type { ConfidenceTier } from "@/components/confidence-chip";
+import type { ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
 
 export type ConfidenceLevel = Database["public"]["Enums"]["confidence_level"];
 

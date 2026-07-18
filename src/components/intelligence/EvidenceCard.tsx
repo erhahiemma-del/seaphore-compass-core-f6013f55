@@ -6,7 +6,7 @@ import {
   Waypoints,
 } from "lucide-react";
 
-import { ConfidenceChip } from "@/components/confidence-chip";
+import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import type { EvidenceItem } from "@/lib/lifecycle-data";
 import { cn } from "@/lib/utils";
 

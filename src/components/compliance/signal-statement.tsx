@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import {
   ConfidenceChip,
   type ConfidenceTier,
-} from "@/components/confidence-chip";
+} from "@/components/intelligence/ConfidenceChip";
 import { cn } from "@/lib/utils";
 import { assertObservedLanguage } from "@/lib/compliance/signal-language";
 
