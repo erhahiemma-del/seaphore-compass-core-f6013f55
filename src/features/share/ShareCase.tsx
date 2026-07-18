@@ -106,14 +106,26 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
     new Set(AGENCY_RECIPIENTS.map((a) => a.id)),
   );
   const [externalEmails, setExternalEmails] = useState("");
+  const [attemptedSend, setAttemptedSend] = useState(false);
 
-  const recipientCount = useMemo(() => {
-    const ext = externalEmails
-      .split(",")
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const { validExternal, invalidExternal } = useMemo(() => {
+    const tokens = externalEmails
+      .split(/[,\s;]+/)
       .map((e) => e.trim())
-      .filter(Boolean).length;
-    return recipients.size + ext;
-  }, [recipients, externalEmails]);
+      .filter(Boolean);
+    const valid: string[] = [];
+    const invalid: string[] = [];
+    for (const t of tokens) (EMAIL_RE.test(t) ? valid : invalid).push(t);
+    return { validExternal: valid, invalidExternal: invalid };
+  }, [externalEmails]);
+
+  const recipientCount = recipients.size + validExternal.length;
+  const noRecipients = recipientCount === 0;
+  const hasInvalidEmail = invalidExternal.length > 0;
+  const canSend = !noRecipients && !hasInvalidEmail;
+  const showRecipientError = attemptedSend && noRecipients;
+  const showEmailError = hasInvalidEmail && (attemptedSend || externalEmails.trim().length > 0);
 
   return (
     <AppShell title="Share" subtitle="Intelligence Briefing Workspace" mode="light">
