@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 
 import { useMapProvider } from "@/lib/maps";
 import type { MapMarker, MapViewport } from "@/lib/maps/types";
-import type { ConfidenceTier } from "@/lib/data-model/confidence";
+import type { ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { cn } from "@/lib/utils";
 
