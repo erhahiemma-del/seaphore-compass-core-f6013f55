@@ -242,7 +242,7 @@ export function SendShareGate({
             Cancel
           </Button>
           <Button onClick={handleAuthorize} disabled={!ack || busy}>
-            {busy ? "Authorizing…" : "Authorize &amp; Send"}
+            {busy ? "Authorizing…" : "Authorize & Send"}
           </Button>
         </DialogFooter>
       </DialogContent>
