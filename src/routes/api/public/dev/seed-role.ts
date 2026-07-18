@@ -92,8 +92,9 @@ export const Route = createFileRoute("/api/public/dev/seed-role")({
         await supabaseAdmin.from("profiles").upsert(
           {
             id: userId,
-            display_name: demo.display_name,
+            full_name: demo.display_name,
             email: demo.email,
+            rank: demo.title,
           },
           { onConflict: "id" },
         );
