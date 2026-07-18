@@ -363,14 +363,36 @@ function initialStages(): Record<StageKey, StageState> {
   };
 }
 
+interface UploadRun {
+  id: string;
+  filename: string;
+  file: File;
+  startedAt: Date;
+  finishedAt: Date;
+  status: "success" | "failed";
+  risk?: "HIGH" | "MEDIUM" | "LOW";
+  error?: string;
+  failedStage?: StageKey;
+  logged: boolean;
+}
+
+function formatTime(d: Date) {
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`;
+}
+
 function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent) => void }) {
   const [filename, setFilename] = useState<string | null>(null);
+  const [currentFile, setCurrentFile] = useState<File | null>(null);
   const [stages, setStages] = useState<Record<StageKey, StageState>>(initialStages);
   const [risk, setRisk] = useState<"HIGH" | "MEDIUM" | "LOW" | null>(null);
   const [preview, setPreview] = useState<ManifestPreview | null>(null);
   const [logged, setLogged] = useState(false);
   const [fatalError, setFatalError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
+  const [history, setHistory] = useState<UploadRun[]>([]);
+
+  const recordRun = (run: UploadRun) =>
+    setHistory((h) => [run, ...h].slice(0, 20));
 
   const updateStage = (k: StageKey, patch: Partial<StageState>) =>
     setStages((s) => ({ ...s, [k]: { ...s[k], ...patch } }));
