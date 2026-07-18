@@ -623,3 +623,123 @@ function StageRow({
   );
 }
 
+function ManifestPreviewPanel({
+  preview,
+  risk,
+  logged,
+  onConfirm,
+  onDiscard,
+}: {
+  preview: ManifestPreview;
+  risk: "HIGH" | "MEDIUM" | "LOW";
+  logged: boolean;
+  onConfirm: () => void;
+  onDiscard: () => void;
+}) {
+  const flagStyle = (sev: "info" | "warn" | "risk") =>
+    sev === "risk"
+      ? "border-[color:var(--color-red)]/40 bg-[color:var(--color-red)]/10 text-[color:var(--color-red)]"
+      : sev === "warn"
+        ? "border-[color:var(--color-amber)]/40 bg-[color:var(--color-amber)]/10 text-[color:var(--color-amber)]"
+        : "border-line bg-surface/60 text-slate";
+
+  return (
+    <div className="rounded-lg border border-line bg-surface/60 p-3">
+      <div className="mb-2 flex items-center gap-2">
+        <FileText className="h-4 w-4 text-primary" />
+        <span className="text-[12.5px] font-semibold text-foreground">
+          Manifest preview · pre-log review
+        </span>
+        <RiskPill level={risk} />
+        <ConfidenceChip tier="inferred" size={9} />
+        <span className="ml-auto text-[10px] uppercase tracking-[0.08em] text-slate">
+          {logged ? "Logged to timeline" : "Awaiting officer confirmation"}
+        </span>
+      </div>
+
+      <p className="mb-2 text-[11px] text-slate">
+        Observed extraction from OCR and AI validation. Nothing is written to the
+        Intelligence timeline until the officer confirms.
+      </p>
+
+      <div className="grid grid-cols-1 gap-1.5 md:grid-cols-2">
+        {preview.fields.map((f) => (
+          <div
+            key={f.label}
+            className="flex items-start justify-between gap-2 rounded-md border border-line bg-card px-2.5 py-1.5"
+          >
+            <div className="min-w-0">
+              <div className="text-[10px] uppercase tracking-[0.08em] text-slate">
+                {f.label}
+              </div>
+              <div className="truncate text-[12.5px] font-semibold text-foreground">
+                {f.value}
+              </div>
+              {f.note && (
+                <div className="text-[10px] text-slate">{f.note}</div>
+              )}
+            </div>
+            <ConfidenceChip tier={f.confidence} size={9} />
+          </div>
+        ))}
+      </div>
+
+      {preview.flags.length > 0 && (
+        <ul className="mt-2 space-y-1">
+          {preview.flags.map((fl, i) => (
+            <li
+              key={i}
+              className={
+                "flex items-start gap-2 rounded-md border px-2.5 py-1.5 text-[11.5px] " +
+                flagStyle(fl.severity)
+              }
+            >
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5" />
+              <span>{fl.text}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {!logged ? (
+          <>
+            <button
+              onClick={onConfirm}
+              className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-[11.5px] font-semibold text-primary-foreground"
+            >
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Confirm & log to timeline
+            </button>
+            <button
+              onClick={onDiscard}
+              className="rounded-md border border-line px-3 py-1.5 text-[11.5px] font-semibold text-foreground/80 hover:bg-surface-2"
+            >
+              Discard
+            </button>
+          </>
+        ) : (
+          <>
+            <a
+              href="/manifest"
+              className="inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-[11.5px] font-semibold text-primary-foreground"
+            >
+              Open in Manifest Intelligence
+            </a>
+            <button
+              onClick={onDiscard}
+              className="rounded-md border border-line px-3 py-1.5 text-[11.5px] font-semibold text-foreground/80 hover:bg-surface-2"
+            >
+              Upload another
+            </button>
+          </>
+        )}
+        <span className="ml-auto text-[10.5px] text-slate">
+          Evidence first. Explainable always. Officer decides.
+        </span>
+      </div>
+    </div>
+  );
+}
+
+
