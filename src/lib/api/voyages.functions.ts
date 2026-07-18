@@ -53,7 +53,7 @@ export const getVoyage = createServerFn({ method: "GET" })
       context.supabase.from("documents").select("*").eq("voyage_id", data.id),
     ]);
     const manifestIds = (manifests ?? []).map((m) => m.id as string);
-    let cargo: unknown[] = [];
+    let cargo: Array<Record<string, unknown>> = [];
     if (manifestIds.length) {
       const { data: c } = await context.supabase
         .from("cargo_items")
