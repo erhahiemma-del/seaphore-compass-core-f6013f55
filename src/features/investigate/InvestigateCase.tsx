@@ -205,6 +205,7 @@ function Workspace({ inv }: { inv: Investigation }) {
                   if (n) setLeftPanel("evidence");
                 }}
                 height={540}
+                persistKey={`investigate:${inv.id}`}
               />
             </div>
             {selectedEntity && (

@@ -61,6 +61,39 @@ const RANGE_WINDOW: Record<GraphRange, [number, number]> = {
  *  - Node click — reports selection to the parent via onSelectionChange
  *    and highlights the immediate neighbourhood.
  */
+interface PersistedGraphSettings {
+  layout?: GraphLayout;
+  zoom?: number;
+  activeKinds?: GraphNodeKind[];
+  activeRels?: string[];
+  confidenceFilter?: number;
+  evidenceOnly?: boolean;
+  range?: GraphRange;
+  cursor?: number;
+  minimap?: boolean;
+}
+
+const STORAGE_PREFIX = "seaphore:kg:";
+
+function readPersisted(key?: string): PersistedGraphSettings | null {
+  if (!key || typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_PREFIX + key);
+    return raw ? (JSON.parse(raw) as PersistedGraphSettings) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writePersisted(key: string, value: PersistedGraphSettings) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value));
+  } catch {
+    /* quota or disabled — silently skip */
+  }
+}
+
 export function KnowledgeGraph({
   nodes,
   edges,
@@ -70,6 +103,7 @@ export function KnowledgeGraph({
   onSelectionChange,
   height = 420,
   minimap = false,
+  persistKey,
 }: {
   nodes: GraphNode[];
   edges: GraphEdge[];
@@ -79,30 +113,95 @@ export function KnowledgeGraph({
   className?: string;
   height?: number;
   minimap?: boolean;
+  /**
+   * When provided, view settings (layout, zoom, filters, timeline range/cursor,
+   * minimap visibility) are persisted to localStorage under this key so the
+   * officer's context survives refresh and route navigation.
+   */
+  persistKey?: string;
 }) {
-  const [layout, setLayout] = useState<GraphLayout>("Force");
-  const [zoom, setZoom] = useState(1);
+  const persisted = useMemo(() => readPersisted(persistKey), [persistKey]);
+
+  const [layout, setLayout] = useState<GraphLayout>(persisted?.layout ?? "Force");
+  const [zoom, setZoom] = useState(persisted?.zoom ?? 1);
   const [activeKinds, setActiveKinds] = useState<Set<GraphNodeKind>>(
-    new Set(Object.keys(KIND_COLOR) as GraphNodeKind[]),
+    new Set(
+      (persisted?.activeKinds as GraphNodeKind[] | undefined) ??
+        (Object.keys(KIND_COLOR) as GraphNodeKind[]),
+    ),
   );
   const relTypes = useMemo(() => {
     const set = new Set<string>();
     edges.forEach((e) => set.add(e.type ?? e.label));
     return Array.from(set);
   }, [edges]);
-  const [activeRels, setActiveRels] = useState<Set<string>>(new Set(relTypes));
-  useEffect(() => setActiveRels(new Set(relTypes)), [relTypes]);
+  const [activeRels, setActiveRels] = useState<Set<string>>(() => {
+    if (persisted?.activeRels) {
+      return new Set(persisted.activeRels.filter((r) => relTypes.includes(r)));
+    }
+    return new Set(relTypes);
+  });
+  // If edges change and there's no persisted preference, refresh the visible set.
+  const relHydratedRef = useRef(false);
+  useEffect(() => {
+    if (!relHydratedRef.current && persisted?.activeRels) {
+      relHydratedRef.current = true;
+      return;
+    }
+    if (!persisted?.activeRels) setActiveRels(new Set(relTypes));
+  }, [relTypes, persisted?.activeRels]);
 
-  const [range, setRange] = useState<GraphRange>("All");
-  const [cursor, setCursor] = useState(100);
+  const [range, setRange] = useState<GraphRange>(persisted?.range ?? "All");
+  const [cursor, setCursor] = useState(persisted?.cursor ?? 100);
   const [playing, setPlaying] = useState(false);
-  const [confidenceFilter, setConfidenceFilter] = useState(0);
-  const [evidenceOnly, setEvidenceOnly] = useState(false);
+  const [confidenceFilter, setConfidenceFilter] = useState(
+    persisted?.confidenceFilter ?? 0,
+  );
+  const [evidenceOnly, setEvidenceOnly] = useState(
+    persisted?.evidenceOnly ?? false,
+  );
+  const [showMinimap, setShowMinimap] = useState<boolean>(
+    persisted?.minimap ?? minimap,
+  );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [rangeStart, rangeEnd] = RANGE_WINDOW[range];
 
-  // Reset cursor when the range changes so scrubbing feels natural.
-  useEffect(() => setCursor(rangeEnd), [rangeEnd]);
+  // Reset cursor when range changes — skip once so a persisted cursor survives mount.
+  const rangeHydratedRef = useRef(false);
+  useEffect(() => {
+    if (!rangeHydratedRef.current) {
+      rangeHydratedRef.current = true;
+      return;
+    }
+    setCursor(rangeEnd);
+  }, [rangeEnd]);
+
+  // Persist view settings whenever they change.
+  useEffect(() => {
+    if (!persistKey) return;
+    writePersisted(persistKey, {
+      layout,
+      zoom,
+      activeKinds: Array.from(activeKinds),
+      activeRels: Array.from(activeRels),
+      confidenceFilter,
+      evidenceOnly,
+      range,
+      cursor,
+      minimap: showMinimap,
+    });
+  }, [
+    persistKey,
+    layout,
+    zoom,
+    activeKinds,
+    activeRels,
+    confidenceFilter,
+    evidenceOnly,
+    range,
+    cursor,
+    showMinimap,
+  ]);
 
   // Play advances the cursor across the window and stops at the end.
   const playRef = useRef<number | null>(null);
@@ -280,6 +379,20 @@ export function KnowledgeGraph({
           >
             <Maximize2 className="h-3 w-3" />
           </button>
+          <button
+            type="button"
+            aria-label={showMinimap ? "Hide minimap" : "Show minimap"}
+            aria-pressed={showMinimap}
+            className={cn(
+              "ml-1 rounded border border-[#1E3048] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide hover:bg-[#172A40]",
+              showMinimap
+                ? "bg-[color:var(--color-teal)] text-white"
+                : "bg-[#132032] text-white/70",
+            )}
+            onClick={() => setShowMinimap((v) => !v)}
+          >
+            Minimap
+          </button>
         </div>
       </div>
 
@@ -376,7 +489,7 @@ export function KnowledgeGraph({
             ))}
           </div>
         </div>
-        {minimap && (
+        {showMinimap && (
           <div className="rounded-md border border-[#1E3048] bg-[#0B1420]/95 p-1 backdrop-blur">
             <div className="mb-1 px-1 text-[10px] font-semibold text-white/60">
               Minimap
