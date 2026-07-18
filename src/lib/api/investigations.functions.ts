@@ -40,9 +40,9 @@ export const openInvestigation = createServerFn({ method: "POST" })
         scenario: data.scenario,
         target_voyage_id: data.target_voyage_id ?? null,
         lead_officer_id: context.userId,
-        status: "open" as never,
+        status: "open",
         opened_at: new Date().toISOString(),
-      })
+      } as never)
       .select("*")
       .single();
     if (error) throw error;
@@ -85,7 +85,7 @@ export const uploadEvidence = createServerFn({ method: "POST" })
         storage_path: data.storage_path,
         collected_by: context.userId,
         collected_at: new Date().toISOString(),
-      })
+      } as never)
       .select("*")
       .single();
     if (error) throw error;

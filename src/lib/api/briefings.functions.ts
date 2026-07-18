@@ -28,7 +28,7 @@ export const createBriefing = createServerFn({ method: "POST" })
         authorized_by: context.userId,
         authorized_at: new Date().toISOString(),
         export_envelope: { investigation_id: data.investigation_id, sent: data.send },
-      })
+      } as never)
       .select("*")
       .single();
     if (error) throw error;
