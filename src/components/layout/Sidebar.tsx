@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Anchor, PanelLeftClose, Settings } from "lucide-react";
+import { Anchor, PanelLeftClose } from "lucide-react";
 
 import {
   Sidebar,
