@@ -383,20 +383,21 @@ function Workspace({ inv }: { inv: Investigation }) {
                 <div className="rounded-lg border border-line bg-surface-2/40 p-3">
                   <div className="mb-2 flex items-center justify-between">
                     <span className="text-[12px] font-semibold text-foreground">
-                      Evidence ({EVIDENCE_ITEMS.length})
+                      Evidence ({evidenceToShow.length})
                     </span>
                     <button className="text-[11px] font-semibold text-[color:var(--color-blue)] hover:underline">
                       View all
                     </button>
                   </div>
                   <div className="space-y-2">
-                    {EVIDENCE_ITEMS.slice(0, 3).map((e) => (
+                    {evidenceToShow.slice(0, 3).map((e) => (
                       <EvidenceCard key={e.id} item={e} />
                     ))}
                     <div className="pt-1 text-[11px] text-slate">
-                      + {Math.max(0, EVIDENCE_ITEMS.length - 3)} more evidence
+                      + {Math.max(0, evidenceToShow.length - 3)} more evidence
                       items
                     </div>
+
                   </div>
                 </div>
               </div>
