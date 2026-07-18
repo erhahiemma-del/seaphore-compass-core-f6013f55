@@ -31,6 +31,7 @@ import { Route as ShareIndexRouteImport } from './routes/share.index'
 import { Route as InvestigateIndexRouteImport } from './routes/investigate.index'
 import { Route as DecideIndexRouteImport } from './routes/decide.index'
 import { Route as ShareIdRouteImport } from './routes/share.$id'
+import { Route as InvestigateOpenRouteImport } from './routes/investigate.open'
 import { Route as InvestigateIdRouteImport } from './routes/investigate.$id'
 import { Route as EntityIdRouteImport } from './routes/entity.$id'
 import { Route as DecideIdRouteImport } from './routes/decide.$id'
@@ -146,6 +147,11 @@ const ShareIdRoute = ShareIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ShareRoute,
 } as any)
+const InvestigateOpenRoute = InvestigateOpenRouteImport.update({
+  id: '/open',
+  path: '/open',
+  getParentRoute: () => InvestigateRoute,
+} as any)
 const InvestigateIdRoute = InvestigateIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -189,6 +195,7 @@ export interface FileRoutesByFullPath {
   '/decide/$id': typeof DecideIdRoute
   '/entity/$id': typeof EntityIdRoute
   '/investigate/$id': typeof InvestigateIdRoute
+  '/investigate/open': typeof InvestigateOpenRoute
   '/share/$id': typeof ShareIdRoute
   '/decide/': typeof DecideIndexRoute
   '/investigate/': typeof InvestigateIndexRoute
@@ -214,6 +221,7 @@ export interface FileRoutesByTo {
   '/decide/$id': typeof DecideIdRoute
   '/entity/$id': typeof EntityIdRoute
   '/investigate/$id': typeof InvestigateIdRoute
+  '/investigate/open': typeof InvestigateOpenRoute
   '/share/$id': typeof ShareIdRoute
   '/decide': typeof DecideIndexRoute
   '/investigate': typeof InvestigateIndexRoute
@@ -243,6 +251,7 @@ export interface FileRoutesById {
   '/decide/$id': typeof DecideIdRoute
   '/entity/$id': typeof EntityIdRoute
   '/investigate/$id': typeof InvestigateIdRoute
+  '/investigate/open': typeof InvestigateOpenRoute
   '/share/$id': typeof ShareIdRoute
   '/decide/': typeof DecideIndexRoute
   '/investigate/': typeof InvestigateIndexRoute
@@ -273,6 +282,7 @@ export interface FileRouteTypes {
     | '/decide/$id'
     | '/entity/$id'
     | '/investigate/$id'
+    | '/investigate/open'
     | '/share/$id'
     | '/decide/'
     | '/investigate/'
@@ -298,6 +308,7 @@ export interface FileRouteTypes {
     | '/decide/$id'
     | '/entity/$id'
     | '/investigate/$id'
+    | '/investigate/open'
     | '/share/$id'
     | '/decide'
     | '/investigate'
@@ -326,6 +337,7 @@ export interface FileRouteTypes {
     | '/decide/$id'
     | '/entity/$id'
     | '/investigate/$id'
+    | '/investigate/open'
     | '/share/$id'
     | '/decide/'
     | '/investigate/'
@@ -512,6 +524,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShareIdRouteImport
       parentRoute: typeof ShareRoute
     }
+    '/investigate/open': {
+      id: '/investigate/open'
+      path: '/open'
+      fullPath: '/investigate/open'
+      preLoaderRoute: typeof InvestigateOpenRouteImport
+      parentRoute: typeof InvestigateRoute
+    }
     '/investigate/$id': {
       id: '/investigate/$id'
       path: '/$id'
@@ -558,11 +577,13 @@ const DecideRouteWithChildren =
 
 interface InvestigateRouteChildren {
   InvestigateIdRoute: typeof InvestigateIdRoute
+  InvestigateOpenRoute: typeof InvestigateOpenRoute
   InvestigateIndexRoute: typeof InvestigateIndexRoute
 }
 
 const InvestigateRouteChildren: InvestigateRouteChildren = {
   InvestigateIdRoute: InvestigateIdRoute,
+  InvestigateOpenRoute: InvestigateOpenRoute,
   InvestigateIndexRoute: InvestigateIndexRoute,
 }
 
