@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Anchor, Columns3, Download, LineChart } from "lucide-react";
 
 import {
@@ -9,7 +9,7 @@ import { KpiRibbon, Sparkline, type KpiSpec } from "@/components/intel-centre/kp
 import { CentreCopilot } from "@/components/intel-centre/centre-copilot";
 import { DataTable, Section, StatusBadge } from "@/components/intel-centre/primitives";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
-import { NigeriaMap } from "@/components/intel-centre/nigeria-map";
+import { IntelMap, type IntelMapEntity } from "@/components/intelligence/IntelMap";
 import { PORTS, VESSELS, sparkSeries, type Port } from "@/lib/intel-centre-data";
 
 
@@ -24,11 +24,58 @@ const KPIS: KpiSpec[] = [
   { label: "Alerts",               value: "5", delta: "+1", trend: "up", confidence: "verified", series: sparkSeries(21), emphasis: "risk" },
 ];
 
+function buildMapEntities(selectedCode: Port["code"]): IntelMapEntity[] {
+  const portEntities: IntelMapEntity[] = PORTS.map((p) => ({
+    id: `port-${p.code}`,
+    kind: "port",
+    name: p.name,
+    position: { lat: p.lat, lng: p.lng },
+    risk: p.congestionIndex > 70 ? "high" : p.congestionIndex > 45 ? "medium" : "low",
+    confidence: "verified",
+    subtitle: `${p.code} · ${p.city}`,
+    meta: [
+      ["Congestion", `${p.congestionIndex}%`],
+      ["Avg wait", `${p.avgWaitHours}h`],
+      ["Arrivals", String(p.todaysEta)],
+    ],
+  }));
+
+  const vesselEntities: IntelMapEntity[] = VESSELS.flatMap((v, i) => {
+    const port = PORTS.find((p) => p.code === v.destinationPort);
+    if (!port) return [];
+    const angle = (i * 47) % 360;
+    const rad = (angle * Math.PI) / 180;
+    const offset = v.destinationPort === selectedCode ? 0.35 : 0.7;
+    const entity: IntelMapEntity = {
+      id: v.id,
+      kind: "vessel",
+      name: v.name,
+      position: {
+        lat: port.lat - Math.abs(Math.sin(rad)) * offset - 0.2,
+        lng: port.lng + Math.cos(rad) * offset,
+      },
+      risk: v.riskLevel,
+      confidence: v.status === "validated" ? "verified" : v.sanctionsHit ? "inferred" : "observed",
+      subtitle: `${v.type} · ${v.flag} · IMO ${v.imo}`,
+      meta: [
+        ["Voyage", v.voyage],
+        ["ETA port", v.destinationPort],
+        ["Risk score", String(v.riskScore)],
+        ["AIS gap", `${v.aisBlackoutHours.toFixed(1)}h`],
+      ],
+    };
+    return [entity];
+  });
+
+  return [...portEntities, ...vesselEntities];
+}
+
 export function PortOpsCentre() {
   const [tab, setTab] = useState("workspace");
   const [selected, setSelected] = useState<Port["code"]>("APP");
   const port = PORTS.find((p) => p.code === selected)!;
   const arrivals = VESSELS.filter((v) => v.destinationPort === selected);
+  const mapEntities = useMemo(() => buildMapEntities(selected), [selected]);
 
   return (
     <IntelCentreShell
@@ -78,9 +125,15 @@ export function PortOpsCentre() {
       }
       main={
         <div className="space-y-4">
-          {/* Congestion map */}
-          <Section title="Port Congestion (POR-1)">
-            <div className="h-[320px]"><NigeriaMap variant="heatmap" vessels={VESSELS} className="h-full" /></div>
+          {/* Congestion map — vendor-neutral via MapProviderRoot (mock until keys land) */}
+          <Section title="Port Congestion & Vessel Map (POR-1)">
+            <IntelMap
+              entities={mapEntities}
+              onSelect={(e) => {
+                if (e.kind === "port") setSelected(e.id.replace(/^port-/, "") as Port["code"]);
+              }}
+              height={340}
+            />
           </Section>
 
           {/* Port summary + berth grid */}

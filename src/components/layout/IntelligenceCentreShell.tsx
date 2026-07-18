@@ -8,6 +8,8 @@ import {
 import { AppSidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { GlobalCopilotLauncher } from "@/components/ai/global-copilot-launcher";
+import { MapProviderRoot } from "@/lib/maps";
+import type { MapProviderName } from "@/lib/maps/types";
 import { cn } from "@/lib/utils";
 
 export interface AppShellProps {
@@ -46,23 +48,30 @@ export function AppShell({
     return () => root.classList.remove("dark");
   }, [mode]);
 
+  // Provider name will come from a workspace setting once map keys are provisioned.
+  // Until then, MockMapProvider satisfies every feature via useMapProvider().
+  const mapProvider: MapProviderName =
+    (import.meta.env.VITE_MAP_PROVIDER as MapProviderName | undefined) ?? "mock";
+
   return (
-    <SidebarProvider style={SIDEBAR_STYLE}>
-      <div
-        className={cn(
-          "flex min-h-screen w-full bg-background text-foreground",
-          mode === "dark" && "dark",
-        )}
-      >
-        <AppSidebar />
-        <SidebarInset className="flex min-w-0 flex-1 flex-col bg-background">
-          <TopBar title={title} subtitle={subtitle} />
-          <main className="flex-1 overflow-x-hidden">{children}</main>
-          <AppFooter />
-          <GlobalCopilotLauncher />
-        </SidebarInset>
-      </div>
-    </SidebarProvider>
+    <MapProviderRoot provider={mapProvider}>
+      <SidebarProvider style={SIDEBAR_STYLE}>
+        <div
+          className={cn(
+            "flex min-h-screen w-full bg-background text-foreground",
+            mode === "dark" && "dark",
+          )}
+        >
+          <AppSidebar />
+          <SidebarInset className="flex min-w-0 flex-1 flex-col bg-background">
+            <TopBar title={title} subtitle={subtitle} />
+            <main className="flex-1 overflow-x-hidden">{children}</main>
+            <AppFooter />
+            <GlobalCopilotLauncher />
+          </SidebarInset>
+        </div>
+      </SidebarProvider>
+    </MapProviderRoot>
   );
 }
 
