@@ -8,8 +8,8 @@
  * Every figure carries a confidence tier (OC-001 Confidence Ladder).
  */
 
-import type { ConfidenceTier } from "@/components/confidence-chip";
-import type { RiskLevel } from "@/components/risk-pill";
+import type { ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
+import type { RiskLevel } from "@/components/intelligence/RiskPill";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DET — Detect (Intelligence Feed)

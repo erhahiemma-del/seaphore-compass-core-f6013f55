@@ -14,13 +14,13 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-import { AppShell } from "@/components/app-shell";
-import { CaseHeaderBar } from "@/components/case-header-bar";
-import { ConfidenceChip } from "@/components/confidence-chip";
+import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { CaseHeaderBar } from "@/components/intelligence/InvestigationHeader";
+import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { LifecycleStepper } from "@/components/lifecycle-stepper";
 import { PanelCard } from "@/components/panel-card";
 import { PanelHead } from "@/components/panel-head";
-import { RiskPill } from "@/components/risk-pill";
+import { RiskPill } from "@/components/intelligence/RiskPill";
 import { cn } from "@/lib/utils";
 import {
   AGENCY_RECIPIENTS,

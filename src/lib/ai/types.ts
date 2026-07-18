@@ -8,8 +8,8 @@
  * OpenAI, local rules) can plug into the same contract without changing
  * the UI layer or the Copilot instance configs.
  */
-import type { ConfidenceTier } from "@/components/confidence-chip";
-import type { RiskLevel } from "@/components/risk-pill";
+import type { ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
+import type { RiskLevel } from "@/components/intelligence/RiskPill";
 
 /** The four canonical intelligence modes (Command Center Part 09). */
 export type CopilotMode = "SEARCH" | "RETRIEVE" | "INTERPRET" | "ADVISE";

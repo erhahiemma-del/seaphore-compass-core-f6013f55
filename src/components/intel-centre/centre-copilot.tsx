@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ArrowRight, Send, Sparkles } from "lucide-react";
-import { ConfidenceChip, type ConfidenceTier } from "@/components/confidence-chip";
+import { ConfidenceChip, type ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
 import { AskCopilotDialog } from "@/components/ai/ask-copilot-dialog";
 import type { CopilotInstanceKey } from "@/lib/ai/types";
 

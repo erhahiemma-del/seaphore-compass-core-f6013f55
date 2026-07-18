@@ -1,7 +1,7 @@
 import { ArrowRight, ChevronRight, Sparkles } from "lucide-react";
 
-import { ConfidenceChip } from "@/components/confidence-chip";
-import { RiskPill } from "@/components/risk-pill";
+import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
+import { RiskPill } from "@/components/intelligence/RiskPill";
 import type {
   CopilotRecommendation,
   HistoricalSimilarity,

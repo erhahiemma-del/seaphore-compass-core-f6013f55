@@ -8,7 +8,7 @@ import {
 import { KpiRibbon, type KpiSpec } from "@/components/intel-centre/kpi-ribbon";
 import { CentreCopilot } from "@/components/intel-centre/centre-copilot";
 import { DataTable, Section, StatusBadge } from "@/components/intel-centre/primitives";
-import { ConfidenceChip } from "@/components/confidence-chip";
+import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { ENTITY_DISAMBIGUATION, PEP_SCREEN, VESSELS, WATCHLISTS, sparkSeries } from "@/lib/intel-centre-data";
 
 export const Route = createFileRoute("/compliance")({

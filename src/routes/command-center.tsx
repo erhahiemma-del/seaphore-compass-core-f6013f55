@@ -15,10 +15,10 @@ import {
 } from "lucide-react";
 
 
-import { AppShell } from "@/components/app-shell";
+import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { PanelCard } from "@/components/panel-card";
-import { ConfidenceChip } from "@/components/confidence-chip";
-import { RiskPill } from "@/components/risk-pill";
+import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
+import { RiskPill } from "@/components/intelligence/RiskPill";
 import { AskCopilotDialog } from "@/components/ai/ask-copilot-dialog";
 import { ModeBadge } from "@/components/ai/mode-badge";
 import { COPILOT_MODES } from "@/lib/ai/types";

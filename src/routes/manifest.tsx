@@ -19,7 +19,7 @@ import {
   TimelineStrip,
   type Column,
 } from "@/components/intel-centre/primitives";
-import { ConfidenceChip } from "@/components/confidence-chip";
+import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import {
   EVIDENCE,
   VESSELS,

@@ -1,7 +1,7 @@
 import { Ship, Target, User, Activity } from "lucide-react";
 
-import { ConfidenceChip, type ConfidenceTier } from "@/components/confidence-chip";
-import { RiskPill, type RiskLevel } from "@/components/risk-pill";
+import { ConfidenceChip, type ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
+import { RiskPill, type RiskLevel } from "@/components/intelligence/RiskPill";
 import { cn } from "@/lib/utils";
 
 /**

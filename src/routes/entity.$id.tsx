@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Fingerprint } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
+import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { ModulePlaceholder } from "@/components/module-placeholder";
 import { useHandoffContext } from "@/lib/nav-context";
 

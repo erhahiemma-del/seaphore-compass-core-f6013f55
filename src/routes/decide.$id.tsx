@@ -1,16 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { AppShell } from "@/components/app-shell";
-import { AuditTimeline } from "@/components/audit-timeline";
-import { CaseHeaderBar } from "@/components/case-header-bar";
+import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AuditTimeline } from "@/components/intelligence/AuditTimeline";
+import { CaseHeaderBar } from "@/components/intelligence/InvestigationHeader";
 import { CaseProgressChecklist } from "@/components/case-progress-checklist";
-import { EvidenceCard } from "@/components/evidence-card";
+import { EvidenceCard } from "@/components/intelligence/EvidenceCard";
 import { LifecycleStepper } from "@/components/lifecycle-stepper";
 import { OfficerDecisionForm } from "@/components/officer-decision-form";
 import { PanelCard } from "@/components/panel-card";
 import { PanelHead } from "@/components/panel-head";
 import { RecommendationPanel } from "@/components/recommendation-panel";
-import { RiskPill } from "@/components/risk-pill";
+import { RiskPill } from "@/components/intelligence/RiskPill";
 import {
   AUDIT_TRAIL,
   CASE_PROGRESS,

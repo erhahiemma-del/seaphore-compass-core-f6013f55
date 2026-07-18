@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Search } from "lucide-react";
 
-import { AppShell } from "@/components/app-shell";
-import { ConfidenceChip } from "@/components/confidence-chip";
+import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { PanelCard } from "@/components/panel-card";
 import { PanelHead } from "@/components/panel-head";
-import { RiskPill } from "@/components/risk-pill";
+import { RiskPill } from "@/components/intelligence/RiskPill";
 import { INVESTIGATIONS } from "@/lib/lifecycle-data";
 
 export const Route = createFileRoute("/investigate/")({

@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Gavel } from "lucide-react";
 
-import { AppShell } from "@/components/app-shell";
+import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { PanelCard } from "@/components/panel-card";
 import { PanelHead } from "@/components/panel-head";
-import { RiskPill } from "@/components/risk-pill";
+import { RiskPill } from "@/components/intelligence/RiskPill";
 import { INVESTIGATIONS } from "@/lib/lifecycle-data";
 
 export const Route = createFileRoute("/decide/")({

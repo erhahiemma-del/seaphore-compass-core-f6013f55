@@ -8,9 +8,9 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { ConfidenceChip } from "@/components/confidence-chip";
+import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import type { SignalType } from "@/lib/lifecycle-data";
-import type { ConfidenceTier } from "@/components/confidence-chip";
+import type { ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
 import { cn } from "@/lib/utils";
 
 const ICONS: Record<SignalType, LucideIcon> = {

@@ -11,7 +11,7 @@ import {
   ThumbsUp,
 } from "lucide-react";
 
-import { AppShell } from "@/components/app-shell";
+import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { ConfidenceLegend } from "@/components/confidence-legend";
 import { CopilotCards } from "@/components/copilot-cards";
 import { DomainDonutChart } from "@/components/domain-donut-chart";
@@ -20,7 +20,7 @@ import { KpiTile } from "@/components/kpi-tile";
 import { PanelCard } from "@/components/panel-card";
 import { PanelHead } from "@/components/panel-head";
 import { RiskHeatmap } from "@/components/risk-heatmap";
-import { RiskPill } from "@/components/risk-pill";
+import { RiskPill } from "@/components/intelligence/RiskPill";
 import { SignalList } from "@/components/signal-list";
 import { SignalTimelineChart, type TimelineRange } from "@/components/signal-timeline-chart";
 import { TypeTiles } from "@/components/type-tiles";
@@ -40,7 +40,7 @@ import {
   type Signal,
   type SignalDomain,
 } from "@/lib/lifecycle-data";
-import { ConfidenceChip } from "@/components/confidence-chip";
+import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 
 export const Route = createFileRoute("/detect")({
   head: () => ({

@@ -2,13 +2,13 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowRight, Ship, Sparkles, Star, TrendingUp } from "lucide-react";
 
-import { AppShell } from "@/components/app-shell";
-import { AuditTimeline } from "@/components/audit-timeline";
-import { ConfidenceChip } from "@/components/confidence-chip";
-import { KnowledgeGraph } from "@/components/knowledge-graph";
+import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AuditTimeline } from "@/components/intelligence/AuditTimeline";
+import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
+import { KnowledgeGraph } from "@/components/intelligence/KnowledgeGraph";
 import { PanelCard } from "@/components/panel-card";
 import { PanelHead } from "@/components/panel-head";
-import { RiskPill } from "@/components/risk-pill";
+import { RiskPill } from "@/components/intelligence/RiskPill";
 import { cn } from "@/lib/utils";
 import {
   AUDIT_TRAIL,

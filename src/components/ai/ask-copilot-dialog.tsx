@@ -3,8 +3,8 @@ import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Send, Sparkles, X } from "lucide-react";
 
-import { ConfidenceChip } from "@/components/confidence-chip";
-import { RiskPill } from "@/components/risk-pill";
+import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
+import { RiskPill } from "@/components/intelligence/RiskPill";
 import { ModeBadge } from "@/components/ai/mode-badge";
 import { EvidenceList } from "@/components/ai/evidence-list";
 import { askCopilot } from "@/lib/ai/copilot.functions";

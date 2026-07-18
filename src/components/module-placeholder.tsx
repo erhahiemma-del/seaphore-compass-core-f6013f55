@@ -1,10 +1,10 @@
 import type { LucideIcon } from "lucide-react";
 import { Construction } from "lucide-react";
 
-import { ConfidenceChip } from "@/components/confidence-chip";
+import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { PanelCard } from "@/components/panel-card";
 import { PanelHead } from "@/components/panel-head";
-import { RiskPill } from "@/components/risk-pill";
+import { RiskPill } from "@/components/intelligence/RiskPill";
 
 export interface ModulePlaceholderProps {
   title: string;

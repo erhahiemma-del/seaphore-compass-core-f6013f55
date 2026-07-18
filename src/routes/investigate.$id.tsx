@@ -11,17 +11,17 @@ import {
   StickyNote,
 } from "lucide-react";
 
-import { AppShell } from "@/components/app-shell";
-import { AuditTimeline } from "@/components/audit-timeline";
+import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AuditTimeline } from "@/components/intelligence/AuditTimeline";
 import { CaseProgressChecklist } from "@/components/case-progress-checklist";
-import { ConfidenceChip } from "@/components/confidence-chip";
-import { CopilotPanel } from "@/components/copilot-panel";
+import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
+import { CopilotPanel } from "@/components/intelligence/CopilotPanel";
 import { DomainFilterTabs } from "@/components/domain-filter-tabs";
-import { EvidenceCard } from "@/components/evidence-card";
-import { KnowledgeGraph } from "@/components/knowledge-graph";
+import { EvidenceCard } from "@/components/intelligence/EvidenceCard";
+import { KnowledgeGraph } from "@/components/intelligence/KnowledgeGraph";
 import { PanelCard } from "@/components/panel-card";
 import { PanelHead } from "@/components/panel-head";
-import { RiskPill } from "@/components/risk-pill";
+import { RiskPill } from "@/components/intelligence/RiskPill";
 import { cn } from "@/lib/utils";
 import {
   AI_FINDINGS,
