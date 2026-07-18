@@ -110,6 +110,9 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
   const [attemptedSend, setAttemptedSend] = useState(false);
   const [sendOpen, setSendOpen] = useState(false);
 
+  const recipientsSectionRef = useRef<HTMLElement>(null);
+  const externalEmailRef = useRef<HTMLInputElement>(null);
+
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const { validExternal, invalidExternal } = useMemo(() => {
     const tokens = externalEmails
