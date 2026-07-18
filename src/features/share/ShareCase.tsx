@@ -453,7 +453,7 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
           </section>
 
           {/* RIGHT — Recipients + Delivery + Recent + Secure */}
-          <aside className="space-y-4">
+          <aside ref={recipientsSectionRef} className="space-y-4">
             <Card
               title="4. Select Recipients"
               subtitle="Choose who will receive this briefing."
