@@ -435,6 +435,16 @@ function UserRow({ user, disabled, isSelf, onSave, onViewHistory }: UserRowProps
 
         <Button
           size="sm"
+          variant="ghost"
+          onClick={onViewHistory}
+          title="View this officer's role change history"
+        >
+          <History className="mr-1 h-3.5 w-3.5" />
+          History
+        </Button>
+
+        <Button
+          size="sm"
           disabled={!dirty || disabled || wouldRevokeOwnAdmin}
           onClick={() => onSave([...selected])}
         >
