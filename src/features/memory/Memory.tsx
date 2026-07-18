@@ -779,7 +779,9 @@ export function MemoryPage() {
           </div>
         </PanelCard>
       </div>
+      <EvidenceDrilldown open={drill !== null} data={drill} onClose={() => setDrill(null)} />
     </AppShell>
+
   );
 }
 
