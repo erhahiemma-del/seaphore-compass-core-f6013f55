@@ -1,6 +1,16 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ShieldCheck, Users, AlertCircle, CheckCircle2 } from "lucide-react";
+import {
+  ShieldCheck,
+  Users,
+  AlertCircle,
+  CheckCircle2,
+  History,
+  RefreshCw,
+  X,
+  Minus,
+  Plus,
+} from "lucide-react";
 import { useServerFn as useSF } from "@tanstack/react-start";
 
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
@@ -17,6 +27,10 @@ import {
   setUserRoles,
   type AdminUserRow,
 } from "@/lib/admin-roles.functions";
+import {
+  listRoleAuditLog,
+  type RoleAuditEntry,
+} from "@/lib/admin-audit.functions";
 import type { Role } from "@/lib/permissions";
 
 const ALL_ROLES: Role[] = ["analyst", "officer", "director", "admin"];
@@ -85,6 +99,9 @@ function RoleManagementTable() {
   const { session } = useAuth();
   const currentUserId = session?.user?.id ?? null;
 
+  const [auditFilterUserId, setAuditFilterUserId] = useState<string | null>(null);
+  const auditRef = useRef<HTMLDivElement | null>(null);
+
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin", "users-with-roles"],
     queryFn: () => listFn(),
@@ -100,12 +117,27 @@ function RoleManagementTable() {
       });
       qc.invalidateQueries({ queryKey: ["admin", "users-with-roles"] });
       qc.invalidateQueries({ queryKey: ["auth", "roles"] });
+      qc.invalidateQueries({ queryKey: ["admin", "role-audit"] });
     },
     onError: (err: unknown) => {
       const message = err instanceof Error ? err.message : "Update failed";
       toast.error("Could not update roles", { description: message });
     },
   });
+
+  const users = data ?? [];
+  const usersById = useMemo(
+    () => new Map(users.map((u) => [u.id, u])),
+    [users],
+  );
+
+  const openHistoryFor = (userId: string | null) => {
+    setAuditFilterUserId(userId);
+    // Defer scroll until the panel re-renders with the new filter.
+    requestAnimationFrame(() => {
+      auditRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
 
   if (isLoading) {
     return (
@@ -126,10 +158,8 @@ function RoleManagementTable() {
     );
   }
 
-  const users = data ?? [];
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <RoleLegend />
       <div className="rounded-lg border border-line bg-surface-1 overflow-hidden">
         <div className="flex items-center gap-2 border-b border-line bg-surface-2 px-4 py-3">
@@ -148,6 +178,7 @@ function RoleManagementTable() {
               onSave={(roles) =>
                 mutation.mutate({ userId: user.id, roles })
               }
+              onViewHistory={() => openHistoryFor(user.id)}
             />
           ))}
           {users.length === 0 && (
@@ -156,6 +187,14 @@ function RoleManagementTable() {
             </div>
           )}
         </div>
+      </div>
+
+      <div ref={auditRef}>
+        <AuditTrailPanel
+          filterUserId={auditFilterUserId}
+          onClearFilter={() => setAuditFilterUserId(null)}
+          usersById={usersById}
+        />
       </div>
     </div>
   );
@@ -177,14 +216,163 @@ function RoleLegend() {
   );
 }
 
+interface AuditTrailPanelProps {
+  filterUserId: string | null;
+  onClearFilter: () => void;
+  usersById: Map<string, AdminUserRow>;
+}
+
+function AuditTrailPanel({
+  filterUserId,
+  onClearFilter,
+  usersById,
+}: AuditTrailPanelProps) {
+  const listAuditFn = useSF(listRoleAuditLog);
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
+    queryKey: ["admin", "role-audit", filterUserId ?? "all"],
+    queryFn: () =>
+      listAuditFn({ data: filterUserId ? { targetUserId: filterUserId } : {} }),
+    staleTime: 15_000,
+  });
+
+  const entries = data ?? [];
+  const filteredUser = filterUserId ? usersById.get(filterUserId) : null;
+
+  return (
+    <section className="rounded-lg border border-line bg-surface-1 overflow-hidden">
+      <div className="flex flex-wrap items-center gap-3 border-b border-line bg-surface-2 px-4 py-3">
+        <History className="h-4 w-4 text-slate" />
+        <div className="flex-1 min-w-0">
+          <div className="type-label text-foreground">
+            Role Change Audit Trail
+          </div>
+          <div className="type-small text-slate">
+            Immutable record of every role grant and revocation
+            (HR-9, PERM-1).
+          </div>
+        </div>
+        {filterUserId && (
+          <Badge variant="secondary" className="gap-1">
+            Filtered:&nbsp;
+            <span className="truncate max-w-[16ch]">
+              {filteredUser?.fullName ?? filteredUser?.email ?? filterUserId.slice(0, 8)}
+            </span>
+            <button
+              onClick={onClearFilter}
+              className="ml-1 hover:text-foreground"
+              aria-label="Clear filter"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </Badge>
+        )}
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => refetch()}
+          disabled={isFetching}
+        >
+          <RefreshCw
+            className={`mr-1 h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`}
+          />
+          Refresh
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <div className="p-8 text-center text-slate">Loading audit trail…</div>
+      ) : error ? (
+        <div className="p-6 text-danger">
+          {error instanceof Error ? error.message : "Failed to load audit trail"}
+        </div>
+      ) : entries.length === 0 ? (
+        <div className="p-8 text-center text-slate">
+          No role changes recorded yet.
+        </div>
+      ) : (
+        <ul className="divide-y divide-line">
+          {entries.map((e) => (
+            <AuditEntryRow key={e.id} entry={e} />
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function AuditEntryRow({ entry }: { entry: RoleAuditEntry }) {
+  const when = new Date(entry.at);
+  const whenStr = `${when.toISOString().replace("T", " ").slice(0, 19)} UTC`;
+  const actorLabel =
+    entry.actor.fullName ??
+    entry.actor.email ??
+    (entry.actor.id ? `${entry.actor.id.slice(0, 8)}…` : "Unknown");
+  const targetLabel =
+    entry.target.fullName ??
+    entry.target.email ??
+    `${entry.target.id.slice(0, 8)}…`;
+
+  return (
+    <li className="p-4">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="type-body text-foreground">
+            <span className="font-medium">{actorLabel}</span>{" "}
+            <span className="text-slate">changed roles for</span>{" "}
+            <span className="font-medium">{targetLabel}</span>
+          </div>
+          <div className="type-small text-slate mt-0.5">
+            {whenStr}
+            {entry.ipAddress && entry.ipAddress !== "server" && (
+              <> · IP {entry.ipAddress}</>
+            )}
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {entry.ruleRefs.map((r) => (
+            <Badge key={r} variant="outline" className="text-[10px]">
+              {r}
+            </Badge>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {entry.added.length === 0 && entry.removed.length === 0 && (
+          <span className="type-small text-slate">No net change recorded.</span>
+        )}
+        {entry.added.map((r) => (
+          <span
+            key={`a-${r}`}
+            className="inline-flex items-center gap-1 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 type-small text-emerald-700 dark:text-emerald-300"
+          >
+            <Plus className="h-3 w-3" />
+            {ROLE_LABEL[r] ?? r}
+          </span>
+        ))}
+        {entry.removed.map((r) => (
+          <span
+            key={`r-${r}`}
+            className="inline-flex items-center gap-1 rounded-md border border-danger/40 bg-danger/10 px-2 py-0.5 type-small text-danger"
+          >
+            <Minus className="h-3 w-3" />
+            {ROLE_LABEL[r] ?? r}
+          </span>
+        ))}
+      </div>
+    </li>
+  );
+}
+
 interface UserRowProps {
   user: AdminUserRow;
   disabled: boolean;
   isSelf: boolean;
   onSave: (roles: Role[]) => void;
+  onViewHistory: () => void;
 }
 
-function UserRow({ user, disabled, isSelf, onSave }: UserRowProps) {
+function UserRow({ user, disabled, isSelf, onSave, onViewHistory }: UserRowProps) {
   const [selected, setSelected] = useState<Set<Role>>(new Set(user.roles));
   const original = useMemo(() => new Set(user.roles), [user.roles]);
 
@@ -244,6 +432,16 @@ function UserRow({ user, disabled, isSelf, onSave }: UserRowProps) {
             </label>
           );
         })}
+
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={onViewHistory}
+          title="View this officer's role change history"
+        >
+          <History className="mr-1 h-3.5 w-3.5" />
+          History
+        </Button>
 
         <Button
           size="sm"
