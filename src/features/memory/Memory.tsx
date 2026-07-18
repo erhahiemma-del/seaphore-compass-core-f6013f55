@@ -645,18 +645,36 @@ function Kpi({
   suffix,
   caption,
   tone,
+  onClick,
 }: {
   label: string;
   value: string;
   suffix?: string;
   caption?: string;
   tone?: "danger";
+  onClick?: () => void;
 }) {
+  const Tag = onClick ? "button" : "div";
   return (
-    <div className="text-left">
+    <Tag
+      type={onClick ? "button" : undefined}
+      onClick={onClick}
+      className={cn(
+        "group text-left",
+        onClick && "cursor-pointer rounded-md -mx-1 px-1 py-0.5 hover:bg-surface-2/60 motion-fast",
+      )}
+      title={onClick ? "Open evidence drilldown" : undefined}
+    >
       <div className="type-label text-slate">{label}</div>
       <div className="flex items-baseline gap-1">
-        <span className="text-[20px] font-extrabold text-foreground">{value}</span>
+        <span
+          className={cn(
+            "text-[20px] font-extrabold text-foreground",
+            onClick && "group-hover:underline decoration-dotted underline-offset-2",
+          )}
+        >
+          {value}
+        </span>
         {suffix && <span className="text-[11px] font-semibold text-slate">{suffix}</span>}
       </div>
       {caption && (
@@ -669,17 +687,34 @@ function Kpi({
           {caption}
         </div>
       )}
-    </div>
+    </Tag>
   );
 }
 
-function ConfidenceKpi({ pct, label }: { pct: number; label: string }) {
+function ConfidenceKpi({
+  pct,
+  label,
+  onClick,
+}: {
+  pct: number;
+  label: string;
+  onClick?: () => void;
+}) {
   const size = 44;
   const r = 18;
   const c = 2 * Math.PI * r;
   const off = c - (pct / 100) * c;
+  const Tag = onClick ? "button" : "div";
   return (
-    <div className="text-left">
+    <Tag
+      type={onClick ? "button" : undefined}
+      onClick={onClick}
+      className={cn(
+        "group text-left",
+        onClick && "cursor-pointer rounded-md -mx-1 px-1 py-0.5 hover:bg-surface-2/60 motion-fast",
+      )}
+      title={onClick ? "Open evidence drilldown" : undefined}
+    >
       <div className="type-label text-slate">Confidence</div>
       <div className="mt-0.5 flex items-center gap-2">
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
@@ -713,9 +748,10 @@ function ConfidenceKpi({ pct, label }: { pct: number; label: string }) {
           <div className="type-label text-[color:var(--color-teal)]">{label}</div>
         </div>
       </div>
-    </div>
+    </Tag>
   );
 }
+
 
 function SnapRow({
   label,
