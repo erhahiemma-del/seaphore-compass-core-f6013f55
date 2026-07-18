@@ -9,7 +9,11 @@ import {
   FileText,
   CheckCircle2,
   Sparkles,
+  AlertTriangle,
+  Loader2,
+  RotateCw,
 } from "lucide-react";
+
 
 import { AppShell } from "@/components/app-shell";
 import { PanelCard } from "@/components/panel-card";
@@ -285,35 +289,135 @@ function CommandCenter() {
  * → Risk scoring. Result routes to Manifest Intelligence. Uses mock
  * deterministic scoring until OCR service is wired.
  */
-function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent) => void }) {
-  const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
-  const [filename, setFilename] = useState<string | null>(null);
-  const [risk, setRisk] = useState<"HIGH" | "MEDIUM" | "LOW">("MEDIUM");
+type StageKey = "ocr" | "validation" | "scoring";
+type StageStatus = "idle" | "running" | "done" | "error";
+interface StageState {
+  status: StageStatus;
+  progress: number; // 0..100
+  detail?: string;
+  error?: string;
+}
 
-  const process = (name: string) => {
-    setFilename(name);
-    setStep(1);
-    setTimeout(() => setStep(2), 700);
-    setTimeout(() => {
-      // Deterministic mock risk score.
-      const score = (name.length * 7) % 100;
-      const level: "HIGH" | "MEDIUM" | "LOW" =
-        score > 66 ? "HIGH" : score > 33 ? "MEDIUM" : "LOW";
+const STAGE_META: { key: StageKey; label: string; running: string; done: string }[] = [
+  { key: "ocr", label: "OCR extraction", running: "Reading pages…", done: "Text and tables extracted" },
+  { key: "validation", label: "AI validation", running: "Cross-checking BOL, HS codes, consignee…", done: "Fields validated against reference data" },
+  { key: "scoring", label: "Risk scoring", running: "Weighting anomalies & historical matches…", done: "Composite risk computed" },
+];
+
+const ACCEPTED_EXT = ["pdf", "jpg", "jpeg", "png", "xlsx", "xls"];
+const MAX_MB = 20;
+
+function initialStages(): Record<StageKey, StageState> {
+  return {
+    ocr: { status: "idle", progress: 0 },
+    validation: { status: "idle", progress: 0 },
+    scoring: { status: "idle", progress: 0 },
+  };
+}
+
+function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent) => void }) {
+  const [filename, setFilename] = useState<string | null>(null);
+  const [stages, setStages] = useState<Record<StageKey, StageState>>(initialStages);
+  const [risk, setRisk] = useState<"HIGH" | "MEDIUM" | "LOW" | null>(null);
+  const [fatalError, setFatalError] = useState<string | null>(null);
+  const [running, setRunning] = useState(false);
+
+  const updateStage = (k: StageKey, patch: Partial<StageState>) =>
+    setStages((s) => ({ ...s, [k]: { ...s[k], ...patch } }));
+
+  const animateStage = (k: StageKey, durationMs: number, failAt?: number) =>
+    new Promise<void>((resolve, reject) => {
+      const start = performance.now();
+      updateStage(k, { status: "running", progress: 0, detail: undefined, error: undefined });
+      const tick = (now: number) => {
+        const pct = Math.min(100, Math.round(((now - start) / durationMs) * 100));
+        if (failAt !== undefined && pct >= failAt) {
+          updateStage(k, { status: "error", progress: failAt });
+          reject(new Error("stage_failed"));
+          return;
+        }
+        updateStage(k, { progress: pct });
+        if (pct >= 100) {
+          updateStage(k, { status: "done", progress: 100 });
+          resolve();
+        } else {
+          requestAnimationFrame(tick);
+        }
+      };
+      requestAnimationFrame(tick);
+    });
+
+  const runPipeline = async (file: File) => {
+    setFilename(file.name);
+    setRisk(null);
+    setFatalError(null);
+    setStages(initialStages());
+
+    // Pre-flight validation — surfaces before any stage starts.
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+    if (!ACCEPTED_EXT.includes(ext)) {
+      setFatalError(`Unsupported file type ".${ext}". Accepted: PDF, JPG, PNG, XLSX.`);
+      return;
+    }
+    if (file.size > MAX_MB * 1024 * 1024) {
+      setFatalError(`File is ${(file.size / 1024 / 1024).toFixed(1)} MB — exceeds ${MAX_MB} MB limit.`);
+      return;
+    }
+
+    // Deterministic mock: filenames containing "corrupt" fail OCR;
+    // "sanction" fails validation. Everything else succeeds.
+    const lower = file.name.toLowerCase();
+    const ocrFail = lower.includes("corrupt");
+    const valFail = lower.includes("sanction");
+
+    setRunning(true);
+    try {
+      await animateStage("ocr", 900, ocrFail ? 60 : undefined);
+      if (ocrFail) throw { stage: "ocr", message: "OCR service could not read pages 3–5 (image quality too low)." };
+      updateStage("ocr", { detail: "12 pages · 148 line-items · 3 HS-code groups" });
+
+      await animateStage("validation", 900, valFail ? 45 : undefined);
+      if (valFail) throw { stage: "validation", message: "Consignee matched sanctions watchlist — validation halted." };
+      updateStage("validation", { detail: "2 field mismatches · 1 duplicate BOL candidate" });
+
+      await animateStage("scoring", 700);
+      const score = (file.name.length * 7) % 100;
+      const level: "HIGH" | "MEDIUM" | "LOW" = score > 66 ? "HIGH" : score > 33 ? "MEDIUM" : "LOW";
       setRisk(level);
-      setStep(3);
+      updateStage("scoring", { detail: `Composite risk ${level} · score ${score}/100` });
+
       onProcessed?.({
         time: nowHHMM(),
-        title: `Manifest ${name} processed — OCR + AI validation, 12 line-items · 1 duplicate BOL candidate`,
+        title: `Manifest ${file.name} processed — 148 line-items · 1 duplicate BOL candidate`,
         risk: level,
       });
-    }, 1400);
+    } catch (err) {
+      const e = err as { stage?: StageKey; message?: string };
+      const stage = e.stage ?? "ocr";
+      updateStage(stage, { status: "error", error: e.message ?? "Pipeline error." });
+      setFatalError(e.message ?? "Pipeline failed.");
+    } finally {
+      setRunning(false);
+    }
   };
-
 
   const reset = () => {
-    setStep(0);
     setFilename(null);
+    setStages(initialStages());
+    setRisk(null);
+    setFatalError(null);
+    setRunning(false);
   };
+
+  const retry = () => {
+    // Retry by resetting stages; user re-uploads.
+    setStages(initialStages());
+    setFatalError(null);
+    setRisk(null);
+  };
+
+  const started = filename !== null;
+  const allDone = stages.ocr.status === "done" && stages.validation.status === "done" && stages.scoring.status === "done";
 
   return (
     <PanelCard className="p-4">
@@ -322,14 +426,14 @@ function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent)
         <span className="text-[10.5px] text-slate">OCR → AI validation → Risk scoring</span>
       </div>
 
-      {step === 0 && (
+      {!started && (
         <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-line bg-surface/60 p-6 text-center hover:bg-surface-2">
           <Upload className="h-6 w-6 text-primary" />
           <div className="text-[13px] font-semibold text-foreground">
             Drop a manifest (PDF · JPG · PNG · XLSX)
           </div>
           <div className="text-[11px] text-slate">
-            Files are processed by the OCR service, then validated and risk-scored.
+            Max {MAX_MB} MB. Files are processed by OCR, validated, and risk-scored.
           </div>
           <input
             type="file"
@@ -337,7 +441,8 @@ function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent)
             className="hidden"
             onChange={(e) => {
               const f = e.target.files?.[0];
-              if (f) process(f.name);
+              if (f) runPipeline(f);
+              e.target.value = "";
             }}
           />
           <span className="mt-1 rounded-md bg-primary px-3 py-1.5 text-[11.5px] font-semibold text-primary-foreground">
@@ -346,59 +451,134 @@ function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent)
         </label>
       )}
 
-      {step > 0 && (
-        <div className="space-y-2">
-          <Step label="OCR extraction" done={step >= 1} active={step === 1} />
-          <Step label="AI validation" done={step >= 2} active={step === 2} />
-          <Step label="Risk scoring" done={step >= 3} active={step === 3} />
-        </div>
-      )}
-
-      {step === 3 && filename && (
-        <div className="mt-3 rounded-lg border border-line bg-surface/60 p-3">
-          <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-primary" />
-            <span className="text-[12.5px] font-semibold text-foreground">{filename}</span>
-            <RiskPill level={risk} />
-            <ConfidenceChip tier="inferred" size={9} />
+      {started && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 rounded-md bg-surface/60 px-2.5 py-1.5">
+            <FileText className="h-3.5 w-3.5 text-primary" />
+            <span className="truncate text-[12px] font-semibold text-foreground">{filename}</span>
+            {running && (
+              <span className="ml-auto inline-flex items-center gap-1 text-[10.5px] text-slate">
+                <Loader2 className="h-3 w-3 animate-spin" /> Processing
+              </span>
+            )}
           </div>
-          <p className="mt-1 text-[11px] text-slate">
-            Observed: 12 line-items · 3 HS codes · 1 duplicate BOL candidate. The officer decides.
-          </p>
-          <div className="mt-2 flex gap-2">
-            <a
-              href="/manifest"
-              className="inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-[11.5px] font-semibold text-primary-foreground"
-            >
-              Open in Manifest Intelligence
-            </a>
+
+          <ul className="space-y-2">
+            {STAGE_META.map((m) => (
+              <StageRow key={m.key} meta={m} state={stages[m.key]} />
+            ))}
+          </ul>
+
+          {fatalError && (
+            <div className="rounded-md border border-[color:var(--color-red)]/40 bg-[color:var(--color-red)]/10 p-2.5">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 h-4 w-4 text-[color:var(--color-red)]" />
+                <div className="flex-1">
+                  <div className="text-[12px] font-semibold text-[color:var(--color-red)]">
+                    Pipeline halted
+                  </div>
+                  <div className="text-[11px] text-foreground/80">{fatalError}</div>
+                </div>
+                <button
+                  onClick={retry}
+                  className="inline-flex items-center gap-1 rounded-md border border-line bg-surface px-2 py-1 text-[11px] font-semibold text-foreground/80 hover:bg-surface-2"
+                >
+                  <RotateCw className="h-3 w-3" /> Retry
+                </button>
+              </div>
+            </div>
+          )}
+
+          {allDone && risk && (
+            <div className="rounded-lg border border-line bg-surface/60 p-3">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-[color:var(--color-green)]" />
+                <span className="text-[12.5px] font-semibold text-foreground">Complete</span>
+                <RiskPill level={risk} />
+                <ConfidenceChip tier="inferred" size={9} />
+              </div>
+              <p className="mt-1 text-[11px] text-slate">
+                Observed: 148 line-items · 3 HS codes · 1 duplicate BOL candidate. The officer decides.
+              </p>
+              <div className="mt-2 flex gap-2">
+                <a
+                  href="/manifest"
+                  className="inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-[11.5px] font-semibold text-primary-foreground"
+                >
+                  Open in Manifest Intelligence
+                </a>
+                <button
+                  onClick={reset}
+                  className="rounded-md border border-line px-3 py-1.5 text-[11.5px] font-semibold text-foreground/80 hover:bg-surface-2"
+                >
+                  Upload another
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!running && !allDone && !fatalError && (
             <button
               onClick={reset}
-              className="rounded-md border border-line px-3 py-1.5 text-[11.5px] font-semibold text-foreground/80 hover:bg-surface-2"
+              className="rounded-md border border-line px-3 py-1.5 text-[11px] font-semibold text-foreground/80 hover:bg-surface-2"
             >
-              Upload another
+              Cancel
             </button>
-          </div>
+          )}
         </div>
       )}
     </PanelCard>
   );
 }
 
-function Step({ label, done, active }: { label: string; done: boolean; active: boolean }) {
+function StageRow({
+  meta,
+  state,
+}: {
+  meta: { key: StageKey; label: string; running: string; done: string };
+  state: StageState;
+}) {
+  const barColor =
+    state.status === "error"
+      ? "var(--color-red)"
+      : state.status === "done"
+        ? "var(--color-green)"
+        : "var(--color-blue)";
+  const caption =
+    state.status === "error"
+      ? state.error ?? "Failed"
+      : state.status === "done"
+        ? state.detail ?? meta.done
+        : state.status === "running"
+          ? meta.running
+          : "Waiting";
   return (
-    <div className="flex items-center gap-2 text-[12px]">
-      {done && !active ? (
-        <CheckCircle2 className="h-4 w-4 text-[color:var(--color-green)]" />
-      ) : (
-        <span
-          className={
-            "h-3.5 w-3.5 rounded-full border-2 " +
-            (active ? "border-primary bg-primary/30 animate-pulse" : "border-line")
-          }
+    <li className="rounded-md border border-line bg-surface/40 px-2.5 py-2">
+      <div className="flex items-center gap-2 text-[12px]">
+        {state.status === "done" && <CheckCircle2 className="h-4 w-4 text-[color:var(--color-green)]" />}
+        {state.status === "running" && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+        {state.status === "error" && <AlertTriangle className="h-4 w-4 text-[color:var(--color-red)]" />}
+        {state.status === "idle" && <span className="h-3.5 w-3.5 rounded-full border-2 border-line" />}
+        <span className="font-semibold text-foreground">{meta.label}</span>
+        <span className="ml-auto tabular-nums text-[10.5px] text-slate">
+          {state.status === "idle" ? "—" : `${state.progress}%`}
+        </span>
+      </div>
+      <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-surface-2">
+        <div
+          className="h-full rounded-full transition-[width] duration-150 ease-out"
+          style={{ width: `${state.progress}%`, backgroundColor: barColor }}
         />
-      )}
-      <span className={done ? "text-foreground" : "text-slate"}>{label}</span>
-    </div>
+      </div>
+      <div
+        className={
+          "mt-1 text-[10.5px] " +
+          (state.status === "error" ? "text-[color:var(--color-red)]" : "text-slate")
+        }
+      >
+        {caption}
+      </div>
+    </li>
   );
 }
+
