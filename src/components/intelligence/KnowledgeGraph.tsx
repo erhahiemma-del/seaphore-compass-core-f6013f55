@@ -489,7 +489,7 @@ export function KnowledgeGraph({
             ))}
           </div>
         </div>
-        {minimap && (
+        {showMinimap && (
           <div className="rounded-md border border-[#1E3048] bg-[#0B1420]/95 p-1 backdrop-blur">
             <div className="mb-1 px-1 text-[10px] font-semibold text-white/60">
               Minimap
