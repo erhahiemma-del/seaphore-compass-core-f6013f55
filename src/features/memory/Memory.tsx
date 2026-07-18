@@ -602,9 +602,14 @@ export function MemoryPage() {
               </thead>
               <tbody>
                 {bottom.rows.map((r, i) => (
-                  <tr key={i} className="border-b border-line/60 last:border-0 hover:bg-surface-2/50">
+                  <tr
+                    key={i}
+                    onClick={() => openRow(r)}
+                    className="cursor-pointer border-b border-line/60 last:border-0 hover:bg-surface-2/50"
+                    title="Open evidence drilldown"
+                  >
                     <td className="py-2 pr-4 text-slate">{r.date}</td>
-                    <td className="py-2 pr-4 font-semibold text-foreground">{r.primary}</td>
+                    <td className="py-2 pr-4 font-semibold text-[color:var(--color-blue)] underline decoration-dotted underline-offset-2">{r.primary}</td>
                     <td className="py-2 pr-4 text-foreground/85">{r.from}</td>
                     <td className="py-2 pr-4 text-foreground/85">{r.to}</td>
                     <td className="py-2 pr-4">
@@ -616,6 +621,7 @@ export function MemoryPage() {
                     <td className="py-2 pr-4 text-slate">{r.source}</td>
                   </tr>
                 ))}
+
               </tbody>
             </table>
           </div>
