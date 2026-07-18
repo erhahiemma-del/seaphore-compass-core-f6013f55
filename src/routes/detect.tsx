@@ -163,7 +163,7 @@ function DetectPage() {
                 meta="Volume by risk band · last 24h"
               />
               <SignalTimelineChart
-                data={SIGNAL_TIMELINE_24H}
+                data={range === "6H" ? SIGNAL_TIMELINE_6H : range === "7D" ? SIGNAL_TIMELINE_7D : SIGNAL_TIMELINE_24H}
                 range={range}
                 onRangeChange={setRange}
               />
