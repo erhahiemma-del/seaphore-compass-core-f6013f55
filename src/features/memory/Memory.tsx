@@ -157,8 +157,160 @@ const BOTTOM_BY_TAB: Partial<Record<EntitySubtab, { title: string; rows: BottomR
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Drilldown reference data (HR-9 / HR-11 — every figure is traceable)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const KPI_DRILLDOWNS: Record<
+  "investigated" | "openCases" | "riskScore" | "confidence" | "revenueAtRisk",
+  EvidenceDrilldownData
+> = {
+  investigated: {
+    kind: "kpi",
+    title: "Investigated",
+    subtitle: "Distinct investigations referencing MV Ocean Pearl",
+    value: `${ENTITY_META.investigated} times`,
+    confidence: "verified",
+    explanation:
+      "Count of distinct investigation records where MV Ocean Pearl is a named subject entity. Aggregated across all closed and open cases in the Seaphore case ledger.",
+    sources: [
+      { id: "s1", label: "Seaphore Case Ledger — subject_entity index", system: "Seaphore", timestamp: "2026-06-04 09:12 UTC", confidence: "verified", reference: "ledger#IMO/9457893" },
+      { id: "s2", label: "NIMASA cross-reference report", system: "NIMASA", timestamp: "2026-05-30 14:00 UTC", confidence: "verified", reference: "NR-2026-Q2-118" },
+    ],
+    audit: [
+      { at: "2026-06-04 09:12 UTC", actor: "system", action: "Aggregation refreshed", detail: "Nightly rebuild of subject_entity roll-up." },
+      { at: "2026-05-30 14:07 UTC", actor: "Cdr. J. Bello", action: "Case INV-2026-00431 linked", detail: "Vessel added as subject entity." },
+    ],
+  },
+  openCases: {
+    kind: "kpi",
+    title: "Open Cases",
+    value: String(ENTITY_META.openCases),
+    confidence: "verified",
+    explanation:
+      "Investigations with status ≠ CLOSED that name this vessel as a subject. Counted directly from the case ledger.",
+    sources: [
+      { id: "s1", label: "INV-2026-00431 · Duty variance review", system: "Seaphore", timestamp: "2026-06-04 09:12 UTC", confidence: "verified", reference: "INV-2026-00431" },
+      { id: "s2", label: "INV-2026-00427 · AIS anomaly", system: "Seaphore", timestamp: "2026-06-02 18:44 UTC", confidence: "verified", reference: "INV-2026-00427" },
+    ],
+    audit: [
+      { at: "2026-06-04 09:12 UTC", actor: "system", action: "Count refreshed" },
+      { at: "2026-06-02 18:44 UTC", actor: "Lt. K. Musa", action: "Opened INV-2026-00427" },
+    ],
+  },
+  riskScore: {
+    kind: "kpi",
+    title: "Risk Score",
+    subtitle: "Composite risk model · v2.4",
+    value: `${ENTITY_META.riskScore}/100 · ${ENTITY_META.riskBand}`,
+    confidence: "inferred",
+    explanation:
+      "Composite of 5 weighted signals: AIS blackout frequency (25%), port-call risk profile (20%), ownership opacity (20%), sanctions exposure (20%) and manifest anomaly rate (15%). Model v2.4, retrained 2026-05-01.",
+    sources: [
+      { id: "s1", label: "Risk model v2.4 · feature vector", system: "Seaphore AI", timestamp: "2026-06-04 09:12 UTC", confidence: "inferred", reference: "model:risk@v2.4" },
+      { id: "s2", label: "AIS blackout events (30d)", system: "SpireGlobal", timestamp: "2026-06-04 08:00 UTC", confidence: "observed" },
+      { id: "s3", label: "OFAC / UN sanctions match check", system: "OpenSanctions", timestamp: "2026-06-04 06:00 UTC", confidence: "verified" },
+    ],
+    audit: [
+      { at: "2026-06-04 09:12 UTC", actor: "system", action: "Score recomputed", detail: "Rose from 78 → 82 (AIS blackout weight)." },
+      { at: "2026-05-01 00:00 UTC", actor: "system", action: "Model v2.4 deployed" },
+    ],
+  },
+  confidence: {
+    kind: "kpi",
+    title: "Confidence",
+    subtitle: "Composite evidence quality · Strong",
+    value: `${ENTITY_META.confidencePct}%`,
+    confidence: "observed",
+    explanation:
+      "Blend of source diversity, recency and tier distribution across all facts linked to this entity. 62% of underlying facts are Verified, 26% Observed, 12% Inferred.",
+    sources: [
+      { id: "s1", label: "Fact tier distribution", system: "Seaphore", timestamp: "2026-06-04 09:12 UTC", confidence: "verified" },
+      { id: "s2", label: "Source diversity index", system: "Seaphore", timestamp: "2026-06-04 09:12 UTC", confidence: "observed" },
+    ],
+    audit: [
+      { at: "2026-06-04 09:12 UTC", actor: "system", action: "Confidence recomputed" },
+    ],
+  },
+  revenueAtRisk: {
+    kind: "kpi",
+    title: "Revenue at Risk",
+    subtitle: "Estimated exposure across open cases",
+    value: ENTITY_META.revenueAtRisk,
+    confidence: "inferred",
+    explanation:
+      "Sum of estimated duty and levy variance across all open investigations naming this vessel. Estimates use reference tariffs from the Nigerian Customs schedule; not a final assessment.",
+    sources: [
+      { id: "s1", label: "INV-2026-00431 · duty variance estimate", system: "Seaphore", timestamp: "2026-06-04 09:12 UTC", confidence: "inferred", reference: "INV-2026-00431" },
+      { id: "s2", label: "Nigerian Customs tariff schedule 2026", system: "NCS", timestamp: "2026-01-01", confidence: "verified" },
+    ],
+    audit: [
+      { at: "2026-06-04 09:12 UTC", actor: "system", action: "Exposure recomputed" },
+      { at: "2026-06-04 09:12 UTC", actor: "Cdr. J. Bello", action: "Reviewed estimate", detail: "Flagged as inferred pending customs adjudication." },
+    ],
+  },
+};
+
+function inferRowTier(confidencePct: number): ConfidenceTier {
+  if (confidencePct >= 90) return "verified";
+  if (confidencePct >= 75) return "observed";
+  if (confidencePct >= 50) return "inferred";
+  return "unconfirmed";
+}
+
+function rowDrilldown(
+  r: BottomRow,
+  primaryHeader: string,
+  sub: EntitySubtab,
+): EvidenceDrilldownData {
+  const tier = inferRowTier(r.confidence);
+  return {
+    kind: "row",
+    title: r.primary,
+    subtitle: `${sub} · ${r.date}`,
+    value: `${r.confidence}%`,
+    confidence: tier,
+    explanation:
+      `This ${sub.toLowerCase().replace(/s$/, "")} record links "${r.from}" to "${r.to}". ` +
+      `It was ingested from ${r.source} on ${r.date} and captured as ${r.evidence.toLowerCase()}. ` +
+      `Confidence is ${r.confidence}% based on source reliability and corroboration across independent feeds.`,
+    fields: [
+      { label: primaryHeader, value: r.primary },
+      { label: "FROM", value: r.from },
+      { label: "TO", value: r.to },
+      { label: "DATE", value: r.date },
+      { label: "EVIDENCE", value: r.evidence },
+      { label: "SOURCE", value: r.source },
+    ],
+    sources: [
+      {
+        id: "s1",
+        label: `${r.evidence} · captured by ${r.source}`,
+        system: r.source,
+        timestamp: r.date,
+        confidence: tier,
+        reference: `${sub.slice(0, 3).toUpperCase()}-${r.date.replace(/[^0-9]/g, "").slice(-6)}`,
+      },
+      {
+        id: "s2",
+        label: "Seaphore ingestion & normalization log",
+        system: "Seaphore",
+        timestamp: r.date,
+        confidence: "verified",
+      },
+    ],
+    audit: [
+      { at: r.date, actor: r.source, action: "Record ingested", detail: `Delivered via ${r.evidence}.` },
+      { at: r.date, actor: "system", action: "Confidence scored", detail: `Tier: ${tier.toUpperCase()} (${r.confidence}%).` },
+      { at: r.date, actor: "Cdr. J. Bello", action: "Reviewed & linked to entity", detail: "Attached to MV Ocean Pearl profile." },
+    ],
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Page
 // ─────────────────────────────────────────────────────────────────────────────
+
+
 
 export function MemoryPage() {
   const [tab, setTab] = useState<MemoryTabKey>("profiles");
