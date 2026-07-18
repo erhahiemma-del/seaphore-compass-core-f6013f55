@@ -429,7 +429,7 @@ function Workspace({ inv }: { inv: Investigation }) {
 
             {bottomTab === "evidence" && (
               <div className="grid gap-2 md:grid-cols-2">
-                {EVIDENCE_ITEMS.map((e) => (
+                {evidenceToShow.map((e) => (
                   <EvidenceCard key={e.id} item={e} />
                 ))}
               </div>
