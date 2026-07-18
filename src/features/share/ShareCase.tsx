@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link, useParams } from "@tanstack/react-router";
 import {
   Anchor,
@@ -109,6 +109,9 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
   const [externalEmails, setExternalEmails] = useState("");
   const [attemptedSend, setAttemptedSend] = useState(false);
   const [sendOpen, setSendOpen] = useState(false);
+
+  const recipientsSectionRef = useRef<HTMLElement>(null);
+  const externalEmailRef = useRef<HTMLInputElement>(null);
 
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const { validExternal, invalidExternal } = useMemo(() => {
@@ -450,7 +453,7 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
           </section>
 
           {/* RIGHT — Recipients + Delivery + Recent + Secure */}
-          <aside className="space-y-4">
+          <aside ref={recipientsSectionRef} className="space-y-4">
             <Card
               title="4. Select Recipients"
               subtitle="Choose who will receive this briefing."
@@ -520,6 +523,7 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
               </ul>
               <div className="mt-3">
                 <input
+                  ref={externalEmailRef}
                   value={externalEmails}
                   onChange={(e) => setExternalEmails(e.target.value)}
                   placeholder="Add external recipient email (comma-separated)"
@@ -620,7 +624,16 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
                 <SendShareGate
                   open={sendOpen}
                   onOpenChange={setSendOpen}
-                  onEdit={() => setSendOpen(false)}
+                  onEdit={() => {
+                    setSendOpen(false);
+                    setTimeout(() => {
+                      recipientsSectionRef.current?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                      });
+                      externalEmailRef.current?.focus();
+                    }, 50);
+                  }}
                   officer={{
                     id: inv.officer.toLowerCase().replace(/\s+/g, "."),
                     name: inv.officer,
