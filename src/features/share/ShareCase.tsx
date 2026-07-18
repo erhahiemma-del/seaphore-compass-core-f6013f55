@@ -108,6 +108,7 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
   );
   const [externalEmails, setExternalEmails] = useState("");
   const [attemptedSend, setAttemptedSend] = useState(false);
+  const [sendOpen, setSendOpen] = useState(false);
 
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const { validExternal, invalidExternal } = useMemo(() => {
