@@ -13,12 +13,17 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
-import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
+import { ConfidenceChip, type ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
+import {
+  EvidenceDrilldown,
+  type EvidenceDrilldownData,
+} from "@/components/intelligence/EvidenceDrilldown";
 import { KnowledgeGraph } from "@/components/intelligence/KnowledgeGraph";
 import { PanelCard } from "@/components/panel-card";
 import { PanelHead } from "@/components/panel-head";
 import { RiskPill } from "@/components/intelligence/RiskPill";
 import { cn } from "@/lib/utils";
+
 import {
   ENTITY_SUBTABS,
   GRAPH_EDGES,
