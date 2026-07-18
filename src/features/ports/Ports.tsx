@@ -75,6 +75,7 @@ export function PortOpsCentre() {
   const [selected, setSelected] = useState<Port["code"]>("APP");
   const port = PORTS.find((p) => p.code === selected)!;
   const arrivals = VESSELS.filter((v) => v.destinationPort === selected);
+  const mapEntities = useMemo(() => buildMapEntities(selected), [selected]);
 
   return (
     <IntelCentreShell
