@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import {
   AI_FINDINGS,
   AUDIT_TRAIL,
+  CASE_PROGRESS,
   COPILOT_RECOMMENDATIONS,
   EVIDENCE_ITEMS,
   HISTORICAL_SIMILARITY,
@@ -38,6 +39,7 @@ import {
   type GraphNode,
   type Investigation,
 } from "@/lib/lifecycle-data";
+
 
 
 /**
