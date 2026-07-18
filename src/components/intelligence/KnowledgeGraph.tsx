@@ -379,6 +379,20 @@ export function KnowledgeGraph({
           >
             <Maximize2 className="h-3 w-3" />
           </button>
+          <button
+            type="button"
+            aria-label={showMinimap ? "Hide minimap" : "Show minimap"}
+            aria-pressed={showMinimap}
+            className={cn(
+              "ml-1 rounded border border-[#1E3048] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide hover:bg-[#172A40]",
+              showMinimap
+                ? "bg-[color:var(--color-teal)] text-white"
+                : "bg-[#132032] text-white/70",
+            )}
+            onClick={() => setShowMinimap((v) => !v)}
+          >
+            Minimap
+          </button>
         </div>
       </div>
 
