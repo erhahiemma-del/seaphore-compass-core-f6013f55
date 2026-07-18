@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useParams } from "@tanstack/react-router";
 import {
   Check,
@@ -11,6 +11,7 @@ import {
   ListChecks,
   MoreHorizontal,
   Printer,
+  RotateCcw,
   StickyNote,
   User,
 } from "lucide-react";
@@ -20,7 +21,10 @@ import { AuditTimeline } from "@/components/intelligence/AuditTimeline";
 import { CopilotPanel } from "@/components/intelligence/CopilotPanel";
 import { DomainFilterTabs } from "@/components/domain-filter-tabs";
 import { EvidenceCard } from "@/components/intelligence/EvidenceCard";
-import { KnowledgeGraph } from "@/components/intelligence/KnowledgeGraph";
+import {
+  KnowledgeGraph,
+  type KnowledgeGraphHandle,
+} from "@/components/intelligence/KnowledgeGraph";
 import { RiskPill } from "@/components/intelligence/RiskPill";
 import { cn } from "@/lib/utils";
 import {
