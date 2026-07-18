@@ -227,6 +227,10 @@ export const KnowledgeGraph = forwardRef<
   // Persist view settings whenever they change.
   useEffect(() => {
     if (!persistKey) return;
+    if (skipPersistRef.current) {
+      skipPersistRef.current = false;
+      return;
+    }
     writePersisted(persistKey, {
       layout,
       zoom,
