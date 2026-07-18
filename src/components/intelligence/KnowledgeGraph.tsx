@@ -721,4 +721,4 @@ export const KnowledgeGraph = forwardRef<
       </div>
     </div>
   );
-}
+});
