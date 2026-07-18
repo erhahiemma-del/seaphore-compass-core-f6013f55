@@ -9,7 +9,7 @@ import { KpiRibbon, Sparkline, type KpiSpec } from "@/components/intel-centre/kp
 import { CentreCopilot } from "@/components/intel-centre/centre-copilot";
 import { DataTable, Section, StatusBadge } from "@/components/intel-centre/primitives";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
-import { NigeriaMap } from "@/components/intel-centre/nigeria-map";
+import { IntelMap, type IntelMapEntity } from "@/components/intelligence/IntelMap";
 import { PORTS, VESSELS, sparkSeries, type Port } from "@/lib/intel-centre-data";
 
 
