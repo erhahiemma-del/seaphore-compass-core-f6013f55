@@ -1,6 +1,16 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ShieldCheck, Users, AlertCircle, CheckCircle2 } from "lucide-react";
+import {
+  ShieldCheck,
+  Users,
+  AlertCircle,
+  CheckCircle2,
+  History,
+  RefreshCw,
+  X,
+  Minus,
+  Plus,
+} from "lucide-react";
 import { useServerFn as useSF } from "@tanstack/react-start";
 
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
@@ -17,6 +27,10 @@ import {
   setUserRoles,
   type AdminUserRow,
 } from "@/lib/admin-roles.functions";
+import {
+  listRoleAuditLog,
+  type RoleAuditEntry,
+} from "@/lib/admin-audit.functions";
 import type { Role } from "@/lib/permissions";
 
 const ALL_ROLES: Role[] = ["analyst", "officer", "director", "admin"];
