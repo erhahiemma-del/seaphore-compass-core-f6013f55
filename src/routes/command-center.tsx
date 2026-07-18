@@ -73,7 +73,7 @@ interface TimelineEvent {
   title: string;
   risk?: "HIGH" | "MEDIUM" | "LOW";
 }
-const TIMELINE: TimelineEvent[] = [
+const INITIAL_TIMELINE: TimelineEvent[] = [
   { time: "07:12", title: "MV Ocean Pearl AIS gap observed — 6h off Bonny", risk: "HIGH" },
   { time: "08:45", title: "5 duplicate BOL manifests detected at Apapa", risk: "HIGH" },
   { time: "09:20", title: "Revenue-at-risk delta +₦180M vs 7d average", risk: "MEDIUM" },
@@ -82,16 +82,25 @@ const TIMELINE: TimelineEvent[] = [
   { time: "11:12", title: "Historical match 82% on VOY-2411-A", risk: "LOW" },
 ];
 
+function nowHHMM() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
 function CommandCenter() {
   const [askOpen, setAskOpen] = useState(false);
   const [seedQuery, setSeedQuery] = useState("");
   const [seedMode, setSeedMode] = useState<CopilotMode | undefined>();
+  const [timeline, setTimeline] = useState<TimelineEvent[]>(INITIAL_TIMELINE);
 
   const openAsk = (q: string, mode?: CopilotMode) => {
     setSeedQuery(q);
     setSeedMode(mode);
     setAskOpen(true);
   };
+
+  const pushTimeline = (e: TimelineEvent) => setTimeline((t) => [e, ...t]);
+
 
   return (
     <AppShell title="Command Center" subtitle="Mission Control AI" mode="light">
