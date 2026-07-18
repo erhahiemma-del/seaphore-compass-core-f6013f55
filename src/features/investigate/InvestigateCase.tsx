@@ -300,7 +300,7 @@ function Workspace({ inv }: { inv: Investigation }) {
                       </tr>
                     </thead>
                     <tbody>
-                      {AI_FINDINGS.map((f, i) => (
+                      {findingsToShow.map((f, i) => (
                         <tr
                           key={f.id}
                           onClick={() => setSelectedFinding(f.id)}
