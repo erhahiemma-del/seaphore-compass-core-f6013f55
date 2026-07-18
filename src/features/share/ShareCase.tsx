@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { SendShareGate } from "@/components/compliance/send-share-gate";
 import {
   AGENCY_RECIPIENTS,
   CLASSIFICATIONS,
@@ -107,6 +108,7 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
   );
   const [externalEmails, setExternalEmails] = useState("");
   const [attemptedSend, setAttemptedSend] = useState(false);
+  const [sendOpen, setSendOpen] = useState(false);
 
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const { validExternal, invalidExternal } = useMemo(() => {
@@ -126,6 +128,40 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
   const canSend = !noRecipients && !hasInvalidEmail;
   const showRecipientError = attemptedSend && noRecipients;
   const showEmailError = hasInvalidEmail && (attemptedSend || externalEmails.trim().length > 0);
+
+  const deliveryMethod = output.includes("WhatsApp") ? "WhatsApp" : "Email";
+  const outputFormat = output.includes("Word")
+    ? "Word Document"
+    : output.includes("Pack")
+      ? "Intelligence Pack"
+      : output.includes("Brief")
+        ? "Intelligence Brief"
+        : output;
+
+  const selectedRecipients = useMemo(
+    () =>
+      AGENCY_RECIPIENTS.filter((a) => recipients.has(a.id)).map((a) => {
+        const meta = AGENCY_META[a.id] ?? {
+          tone: "#475569",
+          domain: "",
+          initials: a.name.slice(0, 2).toUpperCase(),
+        };
+        return { id: a.id, name: a.name, ...meta };
+      }),
+    [recipients],
+  );
+
+  const shareSummary = useMemo(
+    () => ({
+      briefTitle: title,
+      output: outputFormat,
+      deliveryMethod,
+      classification,
+      recipients: selectedRecipients,
+      externalEmails: validExternal,
+    }),
+    [title, outputFormat, deliveryMethod, classification, selectedRecipients, validExternal],
+  );
 
   return (
     <AppShell title="Share" subtitle="Intelligence Briefing Workspace" mode="light">
@@ -551,12 +587,9 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
               <div className="mt-3 space-y-2">
                 <button
                   type="button"
-                  onClick={(e) => {
+                  onClick={() => {
                     setAttemptedSend(true);
-                    if (!canSend) {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }
+                    if (canSend) setSendOpen(true);
                   }}
                   aria-disabled={!canSend}
                   title={
@@ -584,6 +617,22 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
                       : `Fix ${invalidExternal.length} invalid external email${invalidExternal.length > 1 ? "s" : ""} before sending.`}
                   </div>
                 )}
+                <SendShareGate
+                  open={sendOpen}
+                  onOpenChange={setSendOpen}
+                  officer={{
+                    id: inv.officer.toLowerCase().replace(/\s+/g, "."),
+                    name: inv.officer,
+                    role: "NIMASA Analyst",
+                  }}
+                  intent={`Share "${title}"`}
+                  target={`${recipientCount} recipient${recipientCount === 1 ? "" : "s"} via ${deliveryMethod}`}
+                  summary={shareSummary}
+                  onAuthorized={async () => {
+                    // Wire to briefings.functions.ts server function in production.
+                    await new Promise((resolve) => setTimeout(resolve, 800));
+                  }}
+                />
                 <button
                   type="button"
                   className="flex w-full items-center justify-center gap-1.5 rounded-md border border-line bg-white px-3 py-2.5 text-[13px] font-semibold text-foreground hover:bg-surface-2/60"
