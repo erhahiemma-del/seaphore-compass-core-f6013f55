@@ -298,6 +298,54 @@ interface StageState {
   error?: string;
 }
 
+type ConfidenceTier = "verified" | "observed" | "inferred" | "unconfirmed";
+interface ManifestPreview {
+  bol: string;
+  vessel: string;
+  voyage: string;
+  consignee: string;
+  shipper: string;
+  portOfLoading: string;
+  portOfDischarge: string;
+  fields: { label: string; value: string; confidence: ConfidenceTier; note?: string }[];
+  flags: { severity: "info" | "warn" | "risk"; text: string }[];
+}
+
+function buildPreview(file: File, risk: "HIGH" | "MEDIUM" | "LOW"): ManifestPreview {
+  const seed = file.name.length;
+  const bol = `BOL-${String(2400 + (seed % 900)).padStart(4, "0")}-NG`;
+  const voyage = `VOY-${2411 + (seed % 12)}-${String.fromCharCode(65 + (seed % 6))}`;
+  const vessel = ["MV Ocean Pearl", "MV Bluewave Star", "MV Sahara Trader", "MV Gulf Runner"][seed % 4];
+  const consignee = ["Zenith Petrochem Ltd", "Delta Cargo Nigeria", "Apex Freight WA", "Oceanic Lines Nig."][seed % 4];
+  const shipper = ["Rotterdam Bulk BV", "Antwerp Merchants NV", "Fujairah Trading FZE", "Singapore Marine Pte"][seed % 4];
+  const pol = ["Rotterdam", "Antwerp", "Fujairah", "Singapore"][seed % 4];
+  const pod = ["Apapa (Lagos)", "Tin Can (Lagos)", "Onne", "Port Harcourt"][seed % 4];
+  const hs = ["2710.19", "3901.10", "8481.80"].slice(0, 1 + (seed % 3));
+  return {
+    bol, vessel, voyage, consignee, shipper, portOfLoading: pol, portOfDischarge: pod,
+    fields: [
+      { label: "Bill of lading", value: bol, confidence: "verified", note: "OCR match · header block" },
+      { label: "Vessel", value: vessel, confidence: "verified", note: "Cross-checked against AIS registry" },
+      { label: "Voyage", value: voyage, confidence: "observed" },
+      { label: "Consignee", value: consignee, confidence: risk === "HIGH" ? "unconfirmed" : "observed", note: risk === "HIGH" ? "No prior filings under this TIN" : undefined },
+      { label: "Shipper", value: shipper, confidence: "observed" },
+      { label: "Port of loading", value: pol, confidence: "verified" },
+      { label: "Port of discharge", value: pod, confidence: "verified" },
+      { label: "HS codes", value: hs.join(" · "), confidence: "inferred", note: "Derived from cargo descriptions" },
+      { label: "Line items", value: "148", confidence: "verified" },
+      { label: "Containers", value: String(6 + (seed % 5)), confidence: "verified" },
+      { label: "Gross weight", value: `${(1240 + (seed % 400)).toLocaleString()} kg`, confidence: "observed" },
+    ],
+    flags: [
+      { severity: "warn", text: "1 duplicate BOL candidate observed in last 30 days" },
+      { severity: "info", text: "2 field mismatches vs prior manifest for same voyage" },
+      ...(risk === "HIGH"
+        ? [{ severity: "risk" as const, text: "Consignee has no verified filings — requires officer review" }]
+        : []),
+    ],
+  };
+}
+
 const STAGE_META: { key: StageKey; label: string; running: string; done: string }[] = [
   { key: "ocr", label: "OCR extraction", running: "Reading pages…", done: "Text and tables extracted" },
   { key: "validation", label: "AI validation", running: "Cross-checking BOL, HS codes, consignee…", done: "Fields validated against reference data" },
