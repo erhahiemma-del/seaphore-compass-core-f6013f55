@@ -421,19 +421,33 @@ function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent)
 
   const runPipeline = async (file: File) => {
     setFilename(file.name);
+    setCurrentFile(file);
     setRisk(null);
     setPreview(null);
     setLogged(false);
     setFatalError(null);
     setStages(initialStages());
 
+    const startedAt = new Date();
+    const runId = `run-${startedAt.getTime()}-${Math.random().toString(36).slice(2, 6)}`;
+
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
     if (!ACCEPTED_EXT.includes(ext)) {
-      setFatalError(`Unsupported file type ".${ext}". Accepted: PDF, JPG, PNG, XLSX.`);
+      const msg = `Unsupported file type ".${ext}". Accepted: PDF, JPG, PNG, XLSX.`;
+      setFatalError(msg);
+      recordRun({
+        id: runId, filename: file.name, file, startedAt, finishedAt: new Date(),
+        status: "failed", error: msg, logged: false,
+      });
       return;
     }
     if (file.size > MAX_MB * 1024 * 1024) {
-      setFatalError(`File is ${(file.size / 1024 / 1024).toFixed(1)} MB — exceeds ${MAX_MB} MB limit.`);
+      const msg = `File is ${(file.size / 1024 / 1024).toFixed(1)} MB — exceeds ${MAX_MB} MB limit.`;
+      setFatalError(msg);
+      recordRun({
+        id: runId, filename: file.name, file, startedAt, finishedAt: new Date(),
+        status: "failed", error: msg, logged: false,
+      });
       return;
     }
 
@@ -459,11 +473,20 @@ function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent)
 
       // Officer must review the preview before it becomes a timeline entry.
       setPreview(buildPreview(file, level));
+      recordRun({
+        id: runId, filename: file.name, file, startedAt, finishedAt: new Date(),
+        status: "success", risk: level, logged: false,
+      });
     } catch (err) {
       const e = err as { stage?: StageKey; message?: string };
       const stage = e.stage ?? "ocr";
-      updateStage(stage, { status: "error", error: e.message ?? "Pipeline error." });
-      setFatalError(e.message ?? "Pipeline failed.");
+      const msg = e.message ?? "Pipeline error.";
+      updateStage(stage, { status: "error", error: msg });
+      setFatalError(msg);
+      recordRun({
+        id: runId, filename: file.name, file, startedAt, finishedAt: new Date(),
+        status: "failed", error: msg, failedStage: stage, logged: false,
+      });
     } finally {
       setRunning(false);
     }
@@ -477,10 +500,19 @@ function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent)
       risk,
     });
     setLogged(true);
+    // Mark the most recent matching run as logged.
+    setHistory((h) => {
+      const idx = h.findIndex((r) => r.filename === filename && r.status === "success" && !r.logged);
+      if (idx < 0) return h;
+      const next = h.slice();
+      next[idx] = { ...next[idx], logged: true };
+      return next;
+    });
   };
 
   const reset = () => {
     setFilename(null);
+    setCurrentFile(null);
     setStages(initialStages());
     setRisk(null);
     setPreview(null);
@@ -490,12 +522,22 @@ function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent)
   };
 
   const retry = () => {
+    if (currentFile) {
+      void runPipeline(currentFile);
+      return;
+    }
     setStages(initialStages());
     setFatalError(null);
     setRisk(null);
     setPreview(null);
     setLogged(false);
   };
+
+  const retryRun = (run: UploadRun) => {
+    void runPipeline(run.file);
+  };
+
+  const clearHistory = () => setHistory([]);
 
   const started = filename !== null;
   const allDone = stages.ocr.status === "done" && stages.validation.status === "done" && stages.scoring.status === "done";
