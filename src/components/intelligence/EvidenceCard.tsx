@@ -29,15 +29,22 @@ const TYPE_COLOR = {
 /**
  * Shared evidence / file card. Used by Investigate, Decision Support, Share.
  */
-export function EvidenceCard({
-  item,
-  className,
-}: {
-  item: EvidenceItem;
+export interface EvidenceCardProps {
+  /** Build Bible: evidence record. */
+  evidence?: EvidenceItem;
+  /** @deprecated Use `evidence`. Kept for existing call sites. */
+  item?: EvidenceItem;
+  /** Build Bible: show linked investigation reference. Reserved for future rendering. */
+  showInvestigation?: boolean;
   className?: string;
-}) {
-  const Icon = TYPE_ICON[item.type];
-  const color = TYPE_COLOR[item.type];
+}
+
+export function EvidenceCard({ evidence, item, className }: EvidenceCardProps) {
+  const record = evidence ?? item;
+  if (!record) return null;
+  const Icon = TYPE_ICON[record.type];
+  const color = TYPE_COLOR[record.type];
+  const it = record;
   return (
     <div
       className={cn(
@@ -53,19 +60,19 @@ export function EvidenceCard({
       </span>
       <div className="min-w-0 flex-1">
         <div className="truncate text-[13px] font-semibold text-foreground">
-          {item.title}
+          {it.title}
         </div>
         <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-slate">
-          <span>{item.type}</span>
+          <span>{it.type}</span>
           <span>·</span>
-          <span className="truncate">{item.source}</span>
+          <span className="truncate">{it.source}</span>
           <span>·</span>
-          <span>{item.timestamp}</span>
+          <span>{it.timestamp}</span>
           <span>·</span>
-          <span>{item.size}</span>
+          <span>{it.size}</span>
         </div>
       </div>
-      <ConfidenceChip tier={item.confidence} size={9} />
+      <ConfidenceChip tier={it.confidence} size={9} />
     </div>
   );
 }
