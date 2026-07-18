@@ -291,6 +291,71 @@ export type Database = {
           },
         ]
       }
+      copilot_rate_limit: {
+        Row: {
+          count: number
+          id: string
+          officer_id: string
+          window_start: string
+        }
+        Insert: {
+          count?: number
+          id?: string
+          officer_id: string
+          window_start?: string
+        }
+        Update: {
+          count?: number
+          id?: string
+          officer_id?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
+      decisions: {
+        Row: {
+          decided_at: string
+          decision: string
+          id: string
+          immutable: boolean
+          investigation_id: string
+          notes: string | null
+          officer_id: string
+          reason: string
+          signature_data: string
+        }
+        Insert: {
+          decided_at?: string
+          decision: string
+          id?: string
+          immutable?: boolean
+          investigation_id: string
+          notes?: string | null
+          officer_id: string
+          reason: string
+          signature_data: string
+        }
+        Update: {
+          decided_at?: string
+          decision?: string
+          id?: string
+          immutable?: boolean
+          investigation_id?: string
+          notes?: string | null
+          officer_id?: string
+          reason?: string
+          signature_data?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decisions_investigation_id_fkey"
+            columns: ["investigation_id"]
+            isOneToOne: false
+            referencedRelation: "investigations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           doc_type: string
