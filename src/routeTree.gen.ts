@@ -34,6 +34,7 @@ import { Route as ShareIdRouteImport } from './routes/share.$id'
 import { Route as InvestigateOpenRouteImport } from './routes/investigate.open'
 import { Route as InvestigateIdRouteImport } from './routes/investigate.$id'
 import { Route as EntityIdRouteImport } from './routes/entity.$id'
+import { Route as DecideQueueRouteImport } from './routes/decide.queue'
 import { Route as DecideIdRouteImport } from './routes/decide.$id'
 import { Route as ApiPublicDevSeedRoleRouteImport } from './routes/api/public/dev/seed-role'
 
@@ -162,6 +163,11 @@ const EntityIdRoute = EntityIdRouteImport.update({
   path: '/entity/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DecideQueueRoute = DecideQueueRouteImport.update({
+  id: '/queue',
+  path: '/queue',
+  getParentRoute: () => DecideRoute,
+} as any)
 const DecideIdRoute = DecideIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -193,6 +199,7 @@ export interface FileRoutesByFullPath {
   '/share': typeof ShareRouteWithChildren
   '/vessel': typeof VesselRoute
   '/decide/$id': typeof DecideIdRoute
+  '/decide/queue': typeof DecideQueueRoute
   '/entity/$id': typeof EntityIdRoute
   '/investigate/$id': typeof InvestigateIdRoute
   '/investigate/open': typeof InvestigateOpenRoute
@@ -219,6 +226,7 @@ export interface FileRoutesByTo {
   '/revenue': typeof RevenueRoute
   '/vessel': typeof VesselRoute
   '/decide/$id': typeof DecideIdRoute
+  '/decide/queue': typeof DecideQueueRoute
   '/entity/$id': typeof EntityIdRoute
   '/investigate/$id': typeof InvestigateIdRoute
   '/investigate/open': typeof InvestigateOpenRoute
@@ -249,6 +257,7 @@ export interface FileRoutesById {
   '/share': typeof ShareRouteWithChildren
   '/vessel': typeof VesselRoute
   '/decide/$id': typeof DecideIdRoute
+  '/decide/queue': typeof DecideQueueRoute
   '/entity/$id': typeof EntityIdRoute
   '/investigate/$id': typeof InvestigateIdRoute
   '/investigate/open': typeof InvestigateOpenRoute
@@ -280,6 +289,7 @@ export interface FileRouteTypes {
     | '/share'
     | '/vessel'
     | '/decide/$id'
+    | '/decide/queue'
     | '/entity/$id'
     | '/investigate/$id'
     | '/investigate/open'
@@ -306,6 +316,7 @@ export interface FileRouteTypes {
     | '/revenue'
     | '/vessel'
     | '/decide/$id'
+    | '/decide/queue'
     | '/entity/$id'
     | '/investigate/$id'
     | '/investigate/open'
@@ -335,6 +346,7 @@ export interface FileRouteTypes {
     | '/share'
     | '/vessel'
     | '/decide/$id'
+    | '/decide/queue'
     | '/entity/$id'
     | '/investigate/$id'
     | '/investigate/open'
@@ -545,6 +557,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EntityIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/decide/queue': {
+      id: '/decide/queue'
+      path: '/queue'
+      fullPath: '/decide/queue'
+      preLoaderRoute: typeof DecideQueueRouteImport
+      parentRoute: typeof DecideRoute
+    }
     '/decide/$id': {
       id: '/decide/$id'
       path: '/$id'
@@ -564,11 +583,13 @@ declare module '@tanstack/react-router' {
 
 interface DecideRouteChildren {
   DecideIdRoute: typeof DecideIdRoute
+  DecideQueueRoute: typeof DecideQueueRoute
   DecideIndexRoute: typeof DecideIndexRoute
 }
 
 const DecideRouteChildren: DecideRouteChildren = {
   DecideIdRoute: DecideIdRoute,
+  DecideQueueRoute: DecideQueueRoute,
   DecideIndexRoute: DecideIndexRoute,
 }
 
