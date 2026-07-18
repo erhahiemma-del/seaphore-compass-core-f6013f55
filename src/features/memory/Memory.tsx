@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import {
   ArrowRight,
   BookOpen,
@@ -6,6 +6,7 @@ import {
   FileText,
   MoreHorizontal,
   Radio,
+  RotateCcw,
   Search,
   Ship,
   Sparkles,
@@ -18,7 +19,10 @@ import {
   EvidenceDrilldown,
   type EvidenceDrilldownData,
 } from "@/components/intelligence/EvidenceDrilldown";
-import { KnowledgeGraph } from "@/components/intelligence/KnowledgeGraph";
+import {
+  KnowledgeGraph,
+  type KnowledgeGraphHandle,
+} from "@/components/intelligence/KnowledgeGraph";
 import { PanelCard } from "@/components/panel-card";
 import { PanelHead } from "@/components/panel-head";
 import { RiskPill } from "@/components/intelligence/RiskPill";
