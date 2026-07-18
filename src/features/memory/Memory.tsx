@@ -172,6 +172,7 @@ export function MemoryPage() {
   );
   const [confidence, setConfidence] = useState(0);
   const [evidenceOnly, setEvidenceOnly] = useState(false);
+  const [drill, setDrill] = useState<EvidenceDrilldownData | null>(null);
 
   const bottom = useMemo(
     () => BOTTOM_BY_TAB[sub] ?? BOTTOM_BY_TAB.Relationships!,
@@ -179,6 +180,11 @@ export function MemoryPage() {
   );
 
   const e = MEMORY_ENTITY;
+
+  const openKpi = (data: EvidenceDrilldownData) => setDrill(data);
+  const openRow = (r: BottomRow) =>
+    setDrill(rowDrilldown(r, bottom.primaryHeader, sub));
+
 
   return (
     <AppShell title="Institutional Memory" subtitle="Knowledge & Learning" mode="light">
