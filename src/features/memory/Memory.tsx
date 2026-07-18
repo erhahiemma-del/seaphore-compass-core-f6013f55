@@ -329,6 +329,7 @@ export function MemoryPage() {
   const [confidence, setConfidence] = useState(0);
   const [evidenceOnly, setEvidenceOnly] = useState(false);
   const [drill, setDrill] = useState<EvidenceDrilldownData | null>(null);
+  const kgRef = useRef<KnowledgeGraphHandle>(null);
 
   const bottom = useMemo(
     () => BOTTOM_BY_TAB[sub] ?? BOTTOM_BY_TAB.Relationships!,
