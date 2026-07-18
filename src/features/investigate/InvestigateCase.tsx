@@ -29,16 +29,18 @@ import {
   CASE_PROGRESS,
   COPILOT_RECOMMENDATIONS,
   EVIDENCE_ITEMS,
-  GRAPH_EDGES,
-  GRAPH_NODES,
   HISTORICAL_SIMILARITY,
   INV_BOTTOM_COUNTS,
   INVESTIGATIONS,
   RELATED_INVESTIGATIONS,
   RULES_TRIGGERED,
+  graphForInvestigation,
   investigationById,
+  type GraphNode,
   type Investigation,
 } from "@/lib/lifecycle-data";
+
+
 
 /**
  * INV — Investigate / Voyage Workspace.
@@ -69,6 +71,39 @@ function Workspace({ inv }: { inv: Investigation }) {
   const [selectedFinding, setSelectedFinding] = useState<number>(
     AI_FINDINGS[0].id,
   );
+  const [selectedEntity, setSelectedEntity] = useState<GraphNode | null>(null);
+
+  // Per-investigation subgraph — the KG reflects the case that is open.
+  const graph = graphForInvestigation(inv);
+
+  // Findings/evidence filtered by the selected KG entity, if any.
+  const filteredFindings = selectedEntity
+    ? AI_FINDINGS.filter((f) => {
+        const hay = `${f.title} ${f.explanation} ${f.keyIndicators.join(" ")}`.toLowerCase();
+        return hay.includes(selectedEntity.label.toLowerCase());
+      })
+    : AI_FINDINGS;
+  const findingsToShow = filteredFindings.length ? filteredFindings : AI_FINDINGS;
+
+  const filteredEvidence = selectedEntity
+    ? EVIDENCE_ITEMS.filter((e) =>
+        `${e.title} ${e.source}`
+          .toLowerCase()
+          .includes(selectedEntity.label.toLowerCase()),
+      )
+    : EVIDENCE_ITEMS;
+  const evidenceToShow = filteredEvidence.length ? filteredEvidence : EVIDENCE_ITEMS;
+
+  const bottomTabs = [
+    { key: "findings", label: "AI Findings", count: findingsToShow.length },
+    { key: "rules", label: "Rules Triggered", count: INV_BOTTOM_COUNTS.rules },
+    { key: "evidence", label: "Evidence", count: evidenceToShow.length },
+    { key: "audit", label: "Audit Trail" },
+    { key: "downloads", label: "Downloads" },
+  ] as const;
+
+  const finding =
+    findingsToShow.find((f) => f.id === selectedFinding) ?? findingsToShow[0];
 
   const domainTabs = [
     { key: "Overview", label: "Overview", count: 0 },
@@ -82,16 +117,7 @@ function Workspace({ inv }: { inv: Investigation }) {
     { key: "All Data", label: "All Data", count: 0 },
   ];
 
-  const bottomTabs = [
-    { key: "findings", label: "AI Findings", count: INV_BOTTOM_COUNTS.findings },
-    { key: "rules", label: "Rules Triggered", count: INV_BOTTOM_COUNTS.rules },
-    { key: "evidence", label: "Evidence", count: INV_BOTTOM_COUNTS.evidence },
-    { key: "audit", label: "Audit Trail" },
-    { key: "downloads", label: "Downloads" },
-  ] as const;
 
-  const finding =
-    AI_FINDINGS.find((f) => f.id === selectedFinding) ?? AI_FINDINGS[0];
 
   return (
     <AppShell title="Investigate" subtitle="Voyage Workspace" mode="light">
@@ -167,13 +193,48 @@ function Workspace({ inv }: { inv: Investigation }) {
             </Link>
           </aside>
 
-          <div className="overflow-hidden rounded-lg border border-line bg-card shadow-card">
-            <KnowledgeGraph
-              nodes={GRAPH_NODES}
-              edges={GRAPH_EDGES}
-              height={540}
-            />
+          <div className="space-y-2">
+            <div className="overflow-hidden rounded-lg border border-line bg-card shadow-card">
+              <KnowledgeGraph
+                nodes={graph.nodes}
+                edges={graph.edges}
+                focalId={graph.focalId}
+                onSelectionChange={(n) => {
+                  setSelectedEntity(n);
+                  // Auto-open Evidence panel on entity focus.
+                  if (n) setLeftPanel("evidence");
+                }}
+                height={540}
+              />
+            </div>
+            {selectedEntity && (
+              <div className="flex flex-wrap items-center gap-2 rounded-md border border-line bg-surface-2/60 px-3 py-2 text-[11px]">
+                <span className="type-label text-slate">Focused entity</span>
+                <span className="font-semibold text-foreground">
+                  {selectedEntity.label}
+                </span>
+                <span className="rounded bg-surface-1 px-1.5 py-0.5 text-[10px] font-bold uppercase text-slate">
+                  {selectedEntity.kind}
+                </span>
+                {selectedEntity.confidence !== undefined && (
+                  <span className="text-slate">
+                    Confidence {selectedEntity.confidence}%
+                  </span>
+                )}
+                <span className="ml-auto text-slate">
+                  {findingsToShow.length} findings · {evidenceToShow.length} evidence
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedEntity(null)}
+                  className="rounded border border-line bg-surface-1 px-2 py-0.5 text-[10px] font-semibold text-slate hover:bg-surface-2"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
           </div>
+
 
           <CopilotPanel
             recommendations={COPILOT_RECOMMENDATIONS}
@@ -239,7 +300,7 @@ function Workspace({ inv }: { inv: Investigation }) {
                       </tr>
                     </thead>
                     <tbody>
-                      {AI_FINDINGS.map((f, i) => (
+                      {findingsToShow.map((f, i) => (
                         <tr
                           key={f.id}
                           onClick={() => setSelectedFinding(f.id)}
@@ -322,20 +383,21 @@ function Workspace({ inv }: { inv: Investigation }) {
                 <div className="rounded-lg border border-line bg-surface-2/40 p-3">
                   <div className="mb-2 flex items-center justify-between">
                     <span className="text-[12px] font-semibold text-foreground">
-                      Evidence ({EVIDENCE_ITEMS.length})
+                      Evidence ({evidenceToShow.length})
                     </span>
                     <button className="text-[11px] font-semibold text-[color:var(--color-blue)] hover:underline">
                       View all
                     </button>
                   </div>
                   <div className="space-y-2">
-                    {EVIDENCE_ITEMS.slice(0, 3).map((e) => (
+                    {evidenceToShow.slice(0, 3).map((e) => (
                       <EvidenceCard key={e.id} item={e} />
                     ))}
                     <div className="pt-1 text-[11px] text-slate">
-                      + {Math.max(0, EVIDENCE_ITEMS.length - 3)} more evidence
+                      + {Math.max(0, evidenceToShow.length - 3)} more evidence
                       items
                     </div>
+
                   </div>
                 </div>
               </div>
@@ -367,7 +429,7 @@ function Workspace({ inv }: { inv: Investigation }) {
 
             {bottomTab === "evidence" && (
               <div className="grid gap-2 md:grid-cols-2">
-                {EVIDENCE_ITEMS.map((e) => (
+                {evidenceToShow.map((e) => (
                   <EvidenceCard key={e.id} item={e} />
                 ))}
               </div>

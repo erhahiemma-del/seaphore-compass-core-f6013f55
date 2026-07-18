@@ -478,43 +478,112 @@ export interface GraphNode {
   id: string;
   label: string;
   kind: GraphNodeKind;
-  x: number; // 0..100
+  x: number; // 0..100 (Force layout home coordinates)
   y: number;
   risk?: RiskLevel;
+  /** 0..100 confidence score used by the KG "Confidence ≥" filter. */
+  confidence?: number;
+  /** True if this node has attached evidence — drives "Evidence only" filter. */
+  evidence?: boolean;
+  /** Timeline position 0..100 — used by the timeline scrubber & play. */
+  t?: number;
 }
 
 export interface GraphEdge {
   from: string;
   to: string;
   label: string;
+  /** Timeline position 0..100 — hidden when scrubber cursor < t. */
+  t?: number;
+  /** Optional relationship-type key for the relationship filter. */
+  type?: string;
 }
 
 export const GRAPH_NODES: GraphNode[] = [
-  { id: "v1", label: "MV Ocean Pearl", kind: "vessel", x: 50, y: 42, risk: "HIGH" },
-  { id: "co1", label: "Blue Horizon Shipping", kind: "company", x: 22, y: 24, risk: "HIGH" },
-  { id: "co2", label: "Northgate Logistics", kind: "company", x: 78, y: 26 },
-  { id: "co3", label: "Crimson Endeavour Ltd", kind: "company", x: 15, y: 62, risk: "HIGH" },
-  { id: "p1", label: "K. Adebayo (Director)", kind: "person", x: 8, y: 40 },
-  { id: "p2", label: "M. Ibrahim (Beneficial Owner)", kind: "person", x: 30, y: 78 },
-  { id: "pt1", label: "Bonny", kind: "port", x: 60, y: 74 },
-  { id: "pt2", label: "Apapa", kind: "port", x: 82, y: 60 },
-  { id: "pt3", label: "Lagos", kind: "port", x: 82, y: 82 },
-  { id: "c1", label: "Steel coils · 4,200t", kind: "cargo", x: 50, y: 12 },
-  { id: "m1", label: "BOL #MSKU8842119", kind: "manifest", x: 68, y: 20 },
+  { id: "v1", label: "MV Ocean Pearl", kind: "vessel", x: 50, y: 42, risk: "HIGH", confidence: 88, evidence: true, t: 5 },
+  { id: "co1", label: "Blue Horizon Shipping", kind: "company", x: 22, y: 24, risk: "HIGH", confidence: 82, evidence: true, t: 15 },
+  { id: "co2", label: "Northgate Logistics", kind: "company", x: 78, y: 26, confidence: 62, t: 30 },
+  { id: "co3", label: "Crimson Endeavour Ltd", kind: "company", x: 15, y: 62, risk: "HIGH", confidence: 55, t: 40 },
+  { id: "p1", label: "K. Adebayo (Director)", kind: "person", x: 8, y: 40, confidence: 50, t: 20 },
+  { id: "p2", label: "M. Ibrahim (Beneficial Owner)", kind: "person", x: 30, y: 78, confidence: 44, t: 70 },
+  { id: "pt1", label: "Bonny", kind: "port", x: 60, y: 74, confidence: 92, evidence: true, t: 50 },
+  { id: "pt2", label: "Apapa", kind: "port", x: 82, y: 60, confidence: 92, evidence: true, t: 55 },
+  { id: "pt3", label: "Lagos", kind: "port", x: 82, y: 82, confidence: 92, t: 60 },
+  { id: "c1", label: "Steel coils · 4,200t", kind: "cargo", x: 50, y: 12, confidence: 72, evidence: true, t: 35 },
+  { id: "m1", label: "BOL #MSKU8842119", kind: "manifest", x: 68, y: 20, confidence: 80, evidence: true, t: 45 },
 ];
 
 export const GRAPH_EDGES: GraphEdge[] = [
-  { from: "co1", to: "v1", label: "owns" },
-  { from: "co3", to: "v1", label: "operates" },
-  { from: "p1", to: "co1", label: "director of" },
-  { from: "p2", to: "co3", label: "beneficial owner" },
-  { from: "v1", to: "pt1", label: "AIS blackout" },
-  { from: "v1", to: "pt2", label: "declared arrival" },
-  { from: "v1", to: "pt3", label: "prior port" },
-  { from: "c1", to: "v1", label: "manifested on" },
-  { from: "m1", to: "c1", label: "declares" },
-  { from: "co2", to: "m1", label: "consignee" },
+  { from: "co1", to: "v1", label: "owns", type: "owns", t: 15 },
+  { from: "co3", to: "v1", label: "operates", type: "operates", t: 40 },
+  { from: "p1", to: "co1", label: "director of", type: "director of", t: 20 },
+  { from: "p2", to: "co3", label: "beneficial owner", type: "beneficial owner", t: 70 },
+  { from: "v1", to: "pt1", label: "AIS blackout", type: "AIS blackout", t: 50 },
+  { from: "v1", to: "pt2", label: "declared arrival", type: "declared arrival", t: 55 },
+  { from: "v1", to: "pt3", label: "prior port", type: "prior port", t: 60 },
+  { from: "c1", to: "v1", label: "manifested on", type: "manifested on", t: 35 },
+  { from: "m1", to: "c1", label: "declares", type: "declares", t: 45 },
+  { from: "co2", to: "m1", label: "consignee", type: "consignee", t: 45 },
 ];
+
+/**
+ * Deterministic per-investigation subgraph. The default MV Ocean Pearl case
+ * (INV-2026-00431) reuses GRAPH_NODES/GRAPH_EDGES; other investigations get
+ * a topology-preserving graph populated from Investigation metadata so the
+ * KG reflects the case the officer opened.
+ */
+export function graphForInvestigation(
+  inv: Investigation,
+): { nodes: GraphNode[]; edges: GraphEdge[]; focalId: string } {
+  if (inv.id === "INV-2026-00431") {
+    return { nodes: GRAPH_NODES, edges: GRAPH_EDGES, focalId: "v1" };
+  }
+  const ports = inv.route
+    .split(/→|->|,/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .slice(0, 3);
+  const portNodes: GraphNode[] = ports.map((p, i) => ({
+    id: `pt${i + 1}`,
+    label: p,
+    kind: "port",
+    x: 58 + i * 12,
+    y: 68 + (i % 2) * 12,
+    confidence: 90,
+    evidence: true,
+    t: 50 + i * 5,
+  }));
+  const portEdges: GraphEdge[] = ports.map((_, i) => ({
+    from: "v1",
+    to: `pt${i + 1}`,
+    label: i === 0 ? "AIS blackout" : i === 1 ? "declared arrival" : "prior port",
+    type: i === 0 ? "AIS blackout" : i === 1 ? "declared arrival" : "prior port",
+    t: 50 + i * 5,
+  }));
+  const nodes: GraphNode[] = [
+    { id: "v1", label: inv.vessel, kind: "vessel", x: 50, y: 42, risk: inv.risk, confidence: inv.confidencePct, evidence: true, t: 5 },
+    { id: "co1", label: `${inv.vessel.split(" ").slice(-1)[0]} Holdings`, kind: "company", x: 22, y: 24, risk: inv.risk, confidence: 78, evidence: true, t: 15 },
+    { id: "co2", label: "Declared Consignee", kind: "company", x: 78, y: 26, confidence: 60, t: 30 },
+    { id: "co3", label: `${inv.flag} Operating Co.`, kind: "company", x: 15, y: 62, risk: "MEDIUM", confidence: 55, t: 40 },
+    { id: "p1", label: "Registered Director", kind: "person", x: 8, y: 40, confidence: 52, t: 20 },
+    { id: "p2", label: "Beneficial Owner", kind: "person", x: 30, y: 78, confidence: 45, t: 70 },
+    ...portNodes,
+    { id: "c1", label: inv.cargoDeclared, kind: "cargo", x: 50, y: 12, confidence: 72, evidence: true, t: 35 },
+    { id: "m1", label: `BOL · ${inv.voyage}`, kind: "manifest", x: 68, y: 20, confidence: 80, evidence: true, t: 45 },
+  ];
+  const edges: GraphEdge[] = [
+    { from: "co1", to: "v1", label: "owns", type: "owns", t: 15 },
+    { from: "co3", to: "v1", label: "operates", type: "operates", t: 40 },
+    { from: "p1", to: "co1", label: "director of", type: "director of", t: 20 },
+    { from: "p2", to: "co3", label: "beneficial owner", type: "beneficial owner", t: 70 },
+    ...portEdges,
+    { from: "c1", to: "v1", label: "manifested on", type: "manifested on", t: 35 },
+    { from: "m1", to: "c1", label: "declares", type: "declares", t: 45 },
+    { from: "co2", to: "m1", label: "consignee", type: "consignee", t: 45 },
+  ];
+  return { nodes, edges, focalId: "v1" };
+}
+
 
 /** INV-6 copilot recommendations, similarity, entity facts. */
 export interface CopilotRecommendation {
