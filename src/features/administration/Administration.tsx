@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient, useServerFn } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ShieldCheck, Users, AlertCircle, CheckCircle2 } from "lucide-react";
-// useServerFn lives in react-start, not react-query — import correctly below.
 import { useServerFn as useSF } from "@tanstack/react-start";
 
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
