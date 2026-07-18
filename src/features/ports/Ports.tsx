@@ -24,6 +24,52 @@ const KPIS: KpiSpec[] = [
   { label: "Alerts",               value: "5", delta: "+1", trend: "up", confidence: "verified", series: sparkSeries(21), emphasis: "risk" },
 ];
 
+function buildMapEntities(selectedCode: Port["code"]): IntelMapEntity[] {
+  const portEntities: IntelMapEntity[] = PORTS.map((p) => ({
+    id: `port-${p.code}`,
+    kind: "port",
+    name: p.name,
+    position: { lat: p.lat, lng: p.lng },
+    risk: p.congestionIndex > 70 ? "high" : p.congestionIndex > 45 ? "medium" : "low",
+    confidence: "verified",
+    subtitle: `${p.code} · ${p.city}`,
+    meta: [
+      ["Congestion", `${p.congestionIndex}%`],
+      ["Avg wait", `${p.avgWaitHours}h`],
+      ["Arrivals", String(p.todaysEta)],
+    ],
+  }));
+
+  const vesselEntities: IntelMapEntity[] = VESSELS.map((v, i) => {
+    const port = PORTS.find((p) => p.code === v.destinationPort);
+    if (!port) return null;
+    // Deterministic offset so vessels sit off the port, not stacked on it.
+    const angle = (i * 47) % 360;
+    const rad = (angle * Math.PI) / 180;
+    const offset = v.destinationPort === selectedCode ? 0.35 : 0.7;
+    return {
+      id: v.id,
+      kind: "vessel",
+      name: v.name,
+      position: {
+        lat: port.lat - Math.abs(Math.sin(rad)) * offset - 0.2,
+        lng: port.lng + Math.cos(rad) * offset,
+      },
+      risk: v.riskLevel,
+      confidence: v.status === "validated" ? "verified" : v.sanctionsHit ? "inferred" : "observed",
+      subtitle: `${v.type} · ${v.flag} · IMO ${v.imo}`,
+      meta: [
+        ["Voyage", v.voyage],
+        ["ETA port", v.destinationPort],
+        ["Risk score", String(v.riskScore)],
+        ["AIS gap", `${v.aisBlackoutHours.toFixed(1)}h`],
+      ],
+    } satisfies IntelMapEntity;
+  }).filter((v): v is IntelMapEntity => v !== null);
+
+  return [...portEntities, ...vesselEntities];
+}
+
 export function PortOpsCentre() {
   const [tab, setTab] = useState("workspace");
   const [selected, setSelected] = useState<Port["code"]>("APP");
