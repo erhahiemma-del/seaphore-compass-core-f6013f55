@@ -1,26 +1,26 @@
 import { useState } from "react";
-import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { Link, useParams } from "@tanstack/react-router";
 import {
+  Check,
   Clock,
+  Copy,
   Download,
   FileClock,
   FilePlus,
   History,
   ListChecks,
+  MoreHorizontal,
   Printer,
   StickyNote,
+  User,
 } from "lucide-react";
 
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { AuditTimeline } from "@/components/intelligence/AuditTimeline";
-import { CaseProgressChecklist } from "@/components/case-progress-checklist";
-import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { CopilotPanel } from "@/components/intelligence/CopilotPanel";
 import { DomainFilterTabs } from "@/components/domain-filter-tabs";
 import { EvidenceCard } from "@/components/intelligence/EvidenceCard";
 import { KnowledgeGraph } from "@/components/intelligence/KnowledgeGraph";
-import { PanelCard } from "@/components/panel-card";
-import { PanelHead } from "@/components/panel-head";
 import { RiskPill } from "@/components/intelligence/RiskPill";
 import { cn } from "@/lib/utils";
 import {
@@ -33,18 +33,36 @@ import {
   GRAPH_NODES,
   HISTORICAL_SIMILARITY,
   INV_BOTTOM_COUNTS,
+  INVESTIGATIONS,
   RELATED_INVESTIGATIONS,
   RULES_TRIGGERED,
   investigationById,
+  type Investigation,
 } from "@/lib/lifecycle-data";
 
-
-
+/**
+ * INV — Investigate / Voyage Workspace.
+ *
+ * Primary Investigate surface: the case workspace. When no `:id` is
+ * supplied the workspace opens the first active investigation. The
+ * investigations list lives at /investigate/open.
+ */
 export function InvestigateWorkspace() {
-  const { id } = useParams({ from: "/investigate/$id" });
-  const inv = investigationById(id);
+  const params = useParams({ strict: false }) as { id?: string };
+  const inv = params.id ? investigationById(params.id) : INVESTIGATIONS[0];
+  return <Workspace inv={inv} />;
+}
 
+type LeftPanelKey =
+  | "timeline"
+  | "evidence"
+  | "documents"
+  | "history"
+  | "notes";
+
+function Workspace({ inv }: { inv: Investigation }) {
   const [domain, setDomain] = useState("Overview");
+  const [leftPanel, setLeftPanel] = useState<LeftPanelKey>("timeline");
   const [bottomTab, setBottomTab] = useState<
     "findings" | "rules" | "evidence" | "audit" | "downloads"
   >("findings");
@@ -53,21 +71,21 @@ export function InvestigateWorkspace() {
   );
 
   const domainTabs = [
-    "Overview",
-    "Manifest",
-    "Cargo",
-    "Revenue",
-    "Vessel Movement",
-    "Compliance",
-    "Ownership",
-    "Alerts",
-    "All Data",
+    { key: "Overview", label: "Overview", count: 0 },
+    { key: "Manifest", label: "Manifest", count: 0 },
+    { key: "Cargo", label: "Cargo", count: 0 },
+    { key: "Revenue", label: "Revenue", count: 0 },
+    { key: "Vessel Movement", label: "Vessel Movement", count: 0 },
+    { key: "Compliance", label: "Compliance", count: 0 },
+    { key: "Ownership", label: "Ownership", count: 0 },
+    { key: "Alerts", label: "Alerts", count: 7 },
+    { key: "All Data", label: "All Data", count: 0 },
   ];
 
   const bottomTabs = [
-    { key: "findings", label: `AI Findings (${INV_BOTTOM_COUNTS.findings})` },
-    { key: "rules", label: `Rules Triggered (${INV_BOTTOM_COUNTS.rules})` },
-    { key: "evidence", label: `Evidence (${INV_BOTTOM_COUNTS.evidence})` },
+    { key: "findings", label: "AI Findings", count: INV_BOTTOM_COUNTS.findings },
+    { key: "rules", label: "Rules Triggered", count: INV_BOTTOM_COUNTS.rules },
+    { key: "evidence", label: "Evidence", count: INV_BOTTOM_COUNTS.evidence },
     { key: "audit", label: "Audit Trail" },
     { key: "downloads", label: "Downloads" },
   ] as const;
@@ -76,59 +94,103 @@ export function InvestigateWorkspace() {
     AI_FINDINGS.find((f) => f.id === selectedFinding) ?? AI_FINDINGS[0];
 
   return (
-    <AppShell title="Investigate" subtitle={inv.id} mode="light">
+    <AppShell title="Investigate" subtitle="Voyage Workspace" mode="light">
       <div className="mx-auto max-w-[1600px] space-y-4 p-4 lg:p-6">
-        {/* INV-1 Case Header Bar (full width) */}
+        {/* INV-1 Case Header Bar */}
         <CaseHeader inv={inv} />
 
-        {/* INV-2 Domain tabs + Add Note */}
+        {/* INV-2 Domain tabs */}
         <DomainFilterTabs
           active={domain}
           onChange={setDomain}
-          tabs={domainTabs.map((d) => ({ key: d, label: d, count: 0 }))}
+          tabs={domainTabs}
           trailing={
-            <button className="inline-flex items-center gap-1 rounded-md border border-line px-2 py-1 text-[11px] font-semibold text-foreground hover:bg-surface-2">
-              <FilePlus className="h-3 w-3" /> Add Note
-            </button>
+            <>
+              <button className="inline-flex items-center gap-1 rounded-md border border-line px-2.5 py-1.5 text-[11px] font-semibold text-foreground hover:bg-surface-2">
+                <FilePlus className="h-3 w-3" /> Add Note
+              </button>
+              <button
+                className="rounded-md border border-line p-1.5 text-slate hover:bg-surface-2"
+                title="More"
+              >
+                <MoreHorizontal className="h-3.5 w-3.5" />
+              </button>
+            </>
           }
         />
 
         {/* INV-3 Left · INV-4 Centre KG · INV-6 Right Copilot */}
-        <div className="grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)_340px]">
+        <div className="grid gap-4 xl:grid-cols-[240px_minmax(0,1fr)_340px]">
           <aside className="space-y-3">
-            <PanelCard>
-              <div className="type-label mb-2 text-slate">Case Panels</div>
-              <ul className="space-y-1 text-[12px]">
-                <LeftItem icon={Clock} label="Timeline" />
-                <LeftItem icon={FileClock} label="Evidence" count={INV_BOTTOM_COUNTS.evidence} />
-                <LeftItem icon={ListChecks} label="Documents" count={7} />
-                <LeftItem icon={History} label="History" />
-                <LeftItem icon={StickyNote} label="Officer Notes" count={3} />
+            <div className="overflow-hidden rounded-lg border border-line bg-card shadow-card">
+              <ul>
+                <LeftItem
+                  icon={Clock}
+                  label="Timeline"
+                  active={leftPanel === "timeline"}
+                  onClick={() => setLeftPanel("timeline")}
+                />
+                <LeftItem
+                  icon={FileClock}
+                  label="Evidence"
+                  active={leftPanel === "evidence"}
+                  onClick={() => setLeftPanel("evidence")}
+                />
+                <LeftItem
+                  icon={ListChecks}
+                  label="Documents"
+                  count={24}
+                  active={leftPanel === "documents"}
+                  onClick={() => setLeftPanel("documents")}
+                />
+                <LeftItem
+                  icon={History}
+                  label="History"
+                  active={leftPanel === "history"}
+                  onClick={() => setLeftPanel("history")}
+                />
+                <LeftItem
+                  icon={StickyNote}
+                  label="Officer Notes"
+                  count={5}
+                  active={leftPanel === "notes"}
+                  onClick={() => setLeftPanel("notes")}
+                />
               </ul>
-            </PanelCard>
-            <CaseProgressChecklist steps={CASE_PROGRESS} />
+            </div>
+            <CaseProgress />
+            <Link
+              to="/investigate/open"
+              className="block rounded-lg border border-line bg-card px-3 py-2 text-[11px] font-semibold text-[color:var(--color-blue)] hover:bg-surface-2"
+            >
+              Open Investigations →
+            </Link>
           </aside>
 
-          <PanelCard variant="edge" className="overflow-hidden">
-            <KnowledgeGraph nodes={GRAPH_NODES} edges={GRAPH_EDGES} height={520} />
-          </PanelCard>
+          <div className="overflow-hidden rounded-lg border border-line bg-card shadow-card">
+            <KnowledgeGraph
+              nodes={GRAPH_NODES}
+              edges={GRAPH_EDGES}
+              height={540}
+            />
+          </div>
 
           <CopilotPanel
             recommendations={COPILOT_RECOMMENDATIONS}
             similarity={HISTORICAL_SIMILARITY}
             related={RELATED_INVESTIGATIONS}
             entitySummary={[
-              { label: "Vessel", value: inv.vessel },
-              { label: "IMO", value: inv.imo },
+              { label: "Vessel Type", value: "Container Ship" },
               { label: "Flag", value: inv.flag },
-              { label: "Voyage", value: inv.voyage },
-              { label: "Owner", value: "Blue Horizon Shipping" },
-              { label: "Route", value: inv.route },
+              { label: "Owner", value: "Oceanic Lines Ltd." },
+              { label: "Operator", value: "ABC Shipping Ltd." },
+              { label: "Risk Profile", value: "High" },
+              { label: "Watchlist", value: "No Match" },
             ]}
           />
         </div>
 
-        {/* INV-7 Bottom tabs */}
+        {/* INV-7 Bottom workspace */}
         <div className="rounded-lg border border-line bg-card shadow-card">
           <div className="flex flex-wrap items-center gap-1 border-b border-line px-2 py-1.5">
             {bottomTabs.map((t) => (
@@ -137,26 +199,37 @@ export function InvestigateWorkspace() {
                 type="button"
                 onClick={() => setBottomTab(t.key as typeof bottomTab)}
                 className={cn(
-                  "rounded-md px-3 py-1.5 text-[12px] font-semibold motion-fast",
+                  "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12px] font-semibold motion-fast",
                   bottomTab === t.key
                     ? "bg-[color:var(--color-navy)] text-white"
                     : "text-foreground/75 hover:bg-surface-2",
                 )}
               >
                 {t.label}
+                {"count" in t && t.count !== undefined && (
+                  <span
+                    className={cn(
+                      "rounded px-1.5 py-0.5 text-[10px] font-bold",
+                      bottomTab === t.key
+                        ? "bg-white/15 text-white"
+                        : "bg-surface-2 text-slate",
+                    )}
+                  >
+                    {t.count}
+                  </span>
+                )}
               </button>
             ))}
           </div>
 
           <div className="p-3">
             {bottomTab === "findings" && (
-              <div className="grid gap-3 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+              <div className="grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,0.9fr)]">
                 {/* INV-8 findings table */}
                 <div className="overflow-x-auto">
                   <table className="w-full text-[12px]">
                     <thead className="type-label bg-surface-2 text-slate">
                       <tr>
-                        <th className="px-3 py-2 text-left">#</th>
                         <th className="px-3 py-2 text-left">Finding</th>
                         <th className="px-3 py-2 text-left">Category</th>
                         <th className="px-3 py-2 text-left">Confidence</th>
@@ -166,27 +239,42 @@ export function InvestigateWorkspace() {
                       </tr>
                     </thead>
                     <tbody>
-                      {AI_FINDINGS.map((f) => (
+                      {AI_FINDINGS.map((f, i) => (
                         <tr
                           key={f.id}
                           onClick={() => setSelectedFinding(f.id)}
                           className={cn(
                             "cursor-pointer border-t border-line hover:bg-surface-2/60",
-                            selectedFinding === f.id && "bg-[color:var(--color-teal)]/5",
+                            selectedFinding === f.id &&
+                              "bg-[color:var(--color-teal)]/5",
                           )}
                         >
-                          <td className="px-3 py-2 type-mono text-slate">{f.id}</td>
-                          <td className="px-3 py-2 font-semibold text-foreground">{f.title}</td>
-                          <td className="px-3 py-2 text-foreground/80">{f.category}</td>
-                          <td className="px-3 py-2 font-semibold text-foreground">{f.confidencePct}%</td>
-                          <td className="px-3 py-2 text-slate">{f.evidenceCount}</td>
-                          <td className="px-3 py-2 text-slate">{f.firstObserved}</td>
+                          <td className="px-3 py-2 font-semibold text-foreground">
+                            <span className="type-mono mr-1.5 text-slate">
+                              {i + 1}.
+                            </span>
+                            {f.title}
+                          </td>
+                          <td className="px-3 py-2 text-foreground/80">
+                            {f.category}
+                          </td>
+                          <td className="px-3 py-2 font-semibold text-foreground">
+                            {f.confidencePct}%
+                          </td>
+                          <td className="px-3 py-2 text-slate">
+                            {f.evidenceCount}
+                          </td>
+                          <td className="px-3 py-2 text-slate">
+                            {f.firstObserved}
+                          </td>
                           <td className="px-3 py-2">
-                            <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${
-                              f.status === "NEW"
-                                ? "bg-[color:var(--color-blue)]/10 text-[color:var(--color-blue)]"
-                                : "bg-[color:var(--color-amber)]/10 text-[color:var(--color-amber)]"
-                            }`}>
+                            <span
+                              className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${
+                                f.status === "NEW"
+                                  ? "bg-[color:var(--color-blue)]/10 text-[color:var(--color-blue)]"
+                                  : "bg-[color:var(--color-amber)]/10 text-[color:var(--color-amber)]"
+                              }`}
+                            >
                               {f.status}
                             </span>
                           </td>
@@ -196,23 +284,29 @@ export function InvestigateWorkspace() {
                   </table>
                 </div>
 
-                {/* INV-9 finding detail panel */}
+                {/* INV-9 finding detail */}
                 <div className="rounded-lg border border-line bg-surface-2/40 p-3">
                   <div className="flex items-center justify-between">
-                    <span className="type-label text-slate">Finding Detail</span>
-                    <RiskPill level="HIGH" />
+                    <span className="text-[13px] font-semibold text-foreground">
+                      {finding.title}
+                    </span>
+                    <span className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase bg-[color:var(--color-red)]/10 text-[color:var(--color-red)]">
+                      HIGH PRIORITY
+                    </span>
                   </div>
-                  <div className="mt-1 text-[13px] font-semibold text-foreground">
-                    {finding.title}
-                  </div>
-                  <p className="mt-1 text-[12px] text-foreground/80">
-                    {finding.explanation}
+                  <p className="mt-2 text-[12px] text-foreground/80">
+                    AI model detected potential {finding.category.toLowerCase()} based on cargo value, volume, and historical patterns.
                   </p>
                   <div className="mt-3">
-                    <div className="type-label mb-1 text-slate">Key Indicators</div>
+                    <div className="type-label mb-1 text-slate">
+                      Key Indicators
+                    </div>
                     <ul className="space-y-1 text-[12px]">
                       {finding.keyIndicators.map((k) => (
-                        <li key={k} className="flex items-start gap-1.5">
+                        <li
+                          key={k}
+                          className="flex items-start gap-1.5 text-foreground/85"
+                        >
                           <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[color:var(--color-teal)]" />
                           {k}
                         </li>
@@ -222,12 +316,25 @@ export function InvestigateWorkspace() {
                   <button className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-[color:var(--color-blue)] hover:underline">
                     View Full Analysis →
                   </button>
-                  <div className="mt-4">
-                    <div className="type-label mb-1 text-slate">Evidence</div>
-                    <div className="space-y-2">
-                      {EVIDENCE_ITEMS.slice(0, 3).map((e) => (
-                        <EvidenceCard key={e.id} item={e} />
-                      ))}
+                </div>
+
+                {/* Evidence column */}
+                <div className="rounded-lg border border-line bg-surface-2/40 p-3">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-[12px] font-semibold text-foreground">
+                      Evidence ({EVIDENCE_ITEMS.length})
+                    </span>
+                    <button className="text-[11px] font-semibold text-[color:var(--color-blue)] hover:underline">
+                      View all
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {EVIDENCE_ITEMS.slice(0, 3).map((e) => (
+                      <EvidenceCard key={e.id} item={e} />
+                    ))}
+                    <div className="pt-1 text-[11px] text-slate">
+                      + {Math.max(0, EVIDENCE_ITEMS.length - 3)} more evidence
+                      items
                     </div>
                   </div>
                 </div>
@@ -237,13 +344,22 @@ export function InvestigateWorkspace() {
             {bottomTab === "rules" && (
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {RULES_TRIGGERED.map((r) => (
-                  <div key={r.id} className="rounded-md border border-line bg-surface-2/60 p-3">
+                  <div
+                    key={r.id}
+                    className="rounded-md border border-line bg-surface-2/60 p-3"
+                  >
                     <div className="flex items-center justify-between">
-                      <span className="type-mono text-[11px] font-semibold">{r.id}</span>
+                      <span className="type-mono text-[11px] font-semibold">
+                        {r.id}
+                      </span>
                       <RiskPill level={r.impact} />
                     </div>
-                    <div className="mt-1 text-[12px] font-semibold text-foreground">{r.title}</div>
-                    <div className="mt-1 text-[11px] text-slate">Hits: {r.hits}</div>
+                    <div className="mt-1 text-[12px] font-semibold text-foreground">
+                      {r.title}
+                    </div>
+                    <div className="mt-1 text-[11px] text-slate">
+                      Hits: {r.hits}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -261,7 +377,11 @@ export function InvestigateWorkspace() {
 
             {bottomTab === "downloads" && (
               <div className="grid gap-2 sm:grid-cols-3">
-                {["Case brief (PDF)", "Evidence pack (ZIP)", "Audit log (CSV)"].map((d) => (
+                {[
+                  "Case brief (PDF)",
+                  "Evidence pack (ZIP)",
+                  "Audit log (CSV)",
+                ].map((d) => (
                   <button
                     key={d}
                     className="flex items-center justify-between rounded-md border border-line bg-surface-2/60 px-3 py-2 text-[12px] font-semibold text-foreground hover:bg-surface-2"
@@ -280,7 +400,11 @@ export function InvestigateWorkspace() {
           <Link
             to="/decide/$id"
             params={{ id: inv.id }}
-            search={{ entityId: inv.entityId, fromStage: "Investigate", fromRoute: `/investigate/${inv.id}` }}
+            search={{
+              entityId: inv.entityId,
+              fromStage: "Investigate",
+              fromRoute: `/investigate/${inv.id}`,
+            }}
             className="inline-flex items-center gap-1.5 rounded-md bg-[color:var(--color-navy)] px-4 py-2 text-[13px] font-semibold text-white hover:bg-[color:var(--color-navy)]/90"
           >
             Hand off to Decision Support →
@@ -291,19 +415,188 @@ export function InvestigateWorkspace() {
   );
 }
 
+// ─────────────────────────────────────────────────────────────
+// Header
+// ─────────────────────────────────────────────────────────────
+
+function CaseHeader({ inv }: { inv: Investigation }) {
+  return (
+    <div className="rounded-lg border border-line bg-card px-4 py-3 shadow-card">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+        <HeaderField label="Mission">
+          <span className="flex items-center gap-1.5 text-[13px] font-semibold text-foreground">
+            <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--color-red)]" />
+            {inv.mission}
+          </span>
+        </HeaderField>
+
+        <HeaderField label="Investigation">
+          <span className="flex items-center gap-1.5">
+            <span className="type-mono text-[13px] font-semibold text-foreground">
+              {inv.id}
+            </span>
+            <button
+              className="text-slate hover:text-foreground"
+              title="Copy ID"
+              type="button"
+            >
+              <Copy className="h-3 w-3" />
+            </button>
+          </span>
+        </HeaderField>
+
+        <HeaderField label="Primary Subject">
+          <span className="text-[13px] font-semibold text-foreground">
+            {inv.vessel}{" "}
+            <span className="type-mono text-slate">IMO {inv.imo}</span>
+          </span>
+        </HeaderField>
+
+        <HeaderField label="Risk Level">
+          <RiskPill level={inv.risk} />
+        </HeaderField>
+
+        <HeaderField label="Confidence">
+          <div className="flex items-center gap-2">
+            <ConfidenceRing pct={inv.confidencePct} />
+            <span className="text-[13px] font-bold text-foreground">
+              {inv.confidencePct}%
+            </span>
+          </div>
+        </HeaderField>
+
+        <HeaderField label="Assigned Officer">
+          <span className="flex items-center gap-2">
+            <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[color:var(--color-navy)]/10 text-[color:var(--color-navy)]">
+              <User className="h-3 w-3" />
+            </span>
+            <span className="flex flex-col leading-tight">
+              <span className="text-[13px] font-semibold text-foreground">
+                {inv.officer}
+              </span>
+              <span className="text-[10px] text-slate">NIMASA Analyst</span>
+            </span>
+          </span>
+        </HeaderField>
+
+        <HeaderField label="Case Status">
+          <span className="inline-flex rounded-md bg-[color:var(--color-green)]/15 px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.06em] text-[color:var(--color-green)]">
+            {inv.status === "In Review" ? "ACTIVE" : inv.status.toUpperCase()}
+          </span>
+        </HeaderField>
+
+        <HeaderField label="Timeline">
+          <span className="flex flex-col leading-tight">
+            <span className="text-[12px] font-semibold text-foreground">
+              {inv.opened}
+            </span>
+            <span className="type-mono text-[11px] text-slate">
+              {inv.updated}
+            </span>
+          </span>
+        </HeaderField>
+
+        <div className="ml-auto flex items-center gap-1">
+          <button
+            className="rounded-md border border-line p-1.5 hover:bg-surface-2"
+            title="Download"
+          >
+            <Download className="h-3.5 w-3.5" />
+          </button>
+          <button
+            className="rounded-md border border-line p-1.5 hover:bg-surface-2"
+            title="Print"
+          >
+            <Printer className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HeaderField({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex min-w-0 flex-col">
+      <span className="type-label text-[10px] uppercase tracking-[0.08em] text-slate">
+        {label}
+      </span>
+      <span className="mt-0.5">{children}</span>
+    </div>
+  );
+}
+
+function ConfidenceRing({ pct }: { pct: number }) {
+  const r = 14;
+  const c = 2 * Math.PI * r;
+  const off = c - (pct / 100) * c;
+  return (
+    <svg width="34" height="34" viewBox="0 0 36 36">
+      <circle
+        cx="18"
+        cy="18"
+        r={r}
+        fill="none"
+        stroke="var(--color-line)"
+        strokeWidth="3.5"
+      />
+      <circle
+        cx="18"
+        cy="18"
+        r={r}
+        fill="none"
+        stroke="var(--color-teal)"
+        strokeWidth="3.5"
+        strokeDasharray={c}
+        strokeDashoffset={off}
+        strokeLinecap="round"
+        transform="rotate(-90 18 18)"
+      />
+    </svg>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Left panel
+// ─────────────────────────────────────────────────────────────
+
 function LeftItem({
   icon: Icon,
   label,
   count,
+  active,
+  onClick,
 }: {
   icon: React.ElementType;
   label: string;
   count?: number;
+  active?: boolean;
+  onClick?: () => void;
 }) {
   return (
     <li>
-      <button className="flex w-full items-center gap-2 rounded px-2 py-1 text-[12px] font-medium text-foreground/85 motion-fast hover:bg-surface-2">
-        <Icon className="h-3.5 w-3.5 text-slate" />
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+          "flex w-full items-center gap-2 border-l-2 px-3 py-2 text-[12px] font-medium motion-fast",
+          active
+            ? "border-[color:var(--color-blue)] bg-[color:var(--color-blue)]/5 text-foreground"
+            : "border-transparent text-foreground/80 hover:bg-surface-2",
+        )}
+      >
+        <Icon
+          className={cn(
+            "h-3.5 w-3.5",
+            active ? "text-[color:var(--color-blue)]" : "text-slate",
+          )}
+        />
         <span className="flex-1 text-left">{label}</span>
         {count !== undefined && (
           <span className="rounded bg-surface-2 px-1.5 text-[10px] font-bold text-slate">
@@ -315,73 +608,82 @@ function LeftItem({
   );
 }
 
-function CaseHeader({ inv }: { inv: ReturnType<typeof investigationById> }) {
-  return (
-    <div className="rounded-lg border border-line bg-card px-4 py-3 shadow-card">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 sm:flex sm:flex-wrap sm:gap-6">
-        <div className="min-w-0">
-          <div className="type-label text-slate">{inv.mission}</div>
-          <div className="type-mono text-[13px] font-semibold text-foreground">{inv.id}</div>
-        </div>
-        <div className="min-w-0">
-          <div className="type-label text-slate">Primary Subject</div>
-          <div className="truncate text-[13px] font-semibold text-foreground">
-            {inv.vessel} · <span className="type-mono">IMO {inv.imo}</span>
-          </div>
-        </div>
-        <div>
-          <div className="type-label text-slate">Risk</div>
-          <RiskPill level={inv.risk} />
-        </div>
-        <div className="flex items-center gap-2">
-          <ConfidenceRing pct={inv.confidencePct} />
-          <div>
-            <div className="type-label text-slate">Confidence</div>
-            <div className="text-[13px] font-bold">{inv.confidencePct}%</div>
-          </div>
-        </div>
-        <div>
-          <div className="type-label text-slate">Assigned Officer</div>
-          <div className="text-[13px] font-semibold text-foreground">{inv.officer}</div>
-        </div>
-        <div>
-          <div className="type-label text-slate">Status</div>
-          <div className="text-[13px] font-semibold text-foreground">{inv.status}</div>
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          <span className="text-[11px] text-slate">Opened {inv.opened} · Updated {inv.updated}</span>
-          <button className="rounded-md border border-line p-1.5 hover:bg-surface-2" title="Download">
-            <Download className="h-3.5 w-3.5" />
-          </button>
-          <button className="rounded-md border border-line p-1.5 hover:bg-surface-2" title="Print">
-            <Printer className="h-3.5 w-3.5" />
-          </button>
-          <ConfidenceChip tier="inferred" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ConfidenceRing({ pct }: { pct: number }) {
-  const r = 14;
+function CaseProgress() {
+  const done = CASE_PROGRESS.filter((s) => s.done).length;
+  const total = CASE_PROGRESS.length;
+  const pct = Math.round((done / total) * 100);
+  const r = 26;
   const c = 2 * Math.PI * r;
   const off = c - (pct / 100) * c;
   return (
-    <svg width="36" height="36" viewBox="0 0 36 36">
-      <circle cx="18" cy="18" r={r} fill="none" stroke="var(--color-line)" strokeWidth="3" />
-      <circle
-        cx="18"
-        cy="18"
-        r={r}
-        fill="none"
-        stroke="var(--color-teal)"
-        strokeWidth="3"
-        strokeDasharray={c}
-        strokeDashoffset={off}
-        strokeLinecap="round"
-        transform="rotate(-90 18 18)"
-      />
-    </svg>
+    <div className="rounded-lg border border-line bg-card p-3 shadow-card">
+      <div className="mb-1 flex items-center justify-between">
+        <span className="type-h2 text-foreground">Case Progress</span>
+        <button className="text-[10px] font-semibold text-[color:var(--color-blue)] hover:underline">
+          View all
+        </button>
+      </div>
+      <div className="mb-2 text-[11px] text-slate">
+        {done} of {total} completed
+      </div>
+      <div className="flex justify-center">
+        <div className="relative">
+          <svg width="80" height="80" viewBox="0 0 64 64">
+            <circle
+              cx="32"
+              cy="32"
+              r={r}
+              fill="none"
+              stroke="var(--color-line)"
+              strokeWidth="5"
+            />
+            <circle
+              cx="32"
+              cy="32"
+              r={r}
+              fill="none"
+              stroke="var(--color-teal)"
+              strokeWidth="5"
+              strokeDasharray={c}
+              strokeDashoffset={off}
+              strokeLinecap="round"
+              transform="rotate(-90 32 32)"
+            />
+          </svg>
+          <div className="absolute inset-0 grid place-items-center text-[13px] font-bold text-foreground">
+            {pct}%
+          </div>
+        </div>
+      </div>
+      <ol className="mt-3 space-y-1">
+        {CASE_PROGRESS.map((s) => (
+          <li
+            key={s.label}
+            className="flex items-center justify-between gap-2 text-[11.5px]"
+          >
+            <span
+              className={cn(
+                s.done ? "text-foreground/80" : "text-foreground font-semibold",
+              )}
+            >
+              {s.label}
+            </span>
+            <span
+              className={cn(
+                "grid h-4 w-4 shrink-0 place-items-center rounded-full",
+                s.done
+                  ? "bg-[color:var(--color-green)] text-white"
+                  : "border border-line bg-surface",
+              )}
+            >
+              {s.done && <Check className="h-2.5 w-2.5" />}
+            </span>
+          </li>
+        ))}
+      </ol>
+      <button className="mt-3 block w-full text-center text-[11px] font-semibold text-[color:var(--color-blue)] hover:underline">
+        View Workflow →
+      </button>
+    </div>
   );
 }
