@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
   Bell,
@@ -24,43 +24,34 @@ import { RiskPill } from "@/components/intelligence/RiskPill";
 import { SignalList } from "@/components/signal-list";
 import { SignalTimelineChart, type TimelineRange } from "@/components/signal-timeline-chart";
 import { TypeTiles } from "@/components/type-tiles";
+import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { useHandoffNavigate } from "@/lib/nav-context";
 import {
-  AI_SIGNAL_SUMMARY,
-  RISK_HEATMAP,
-  SIGNALS,
-  SIGNALS_BY_DOMAIN,
+  getDetectFeed,
   SIGNAL_DOMAINS,
-  SIGNAL_RIBBON,
-  SIGNAL_TIMELINE_24H,
-  SIGNAL_TIMELINE_6H,
-  SIGNAL_TIMELINE_7D,
-  SIGNAL_TYPE_TILES,
-  signalCountsByDomain,
   type Signal,
   type SignalDomain,
-} from "@/lib/lifecycle-data";
-import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
-
-
+} from "@/services/detect.service";
 
 export function DetectPage() {
-  const counts = signalCountsByDomain();
   const [activeDomain, setActiveDomain] = useState<"All" | SignalDomain>("All");
   const [range, setRange] = useState<TimelineRange>("24H");
   const handoff = useHandoffNavigate();
 
-  const filtered = useMemo(
-    () =>
-      activeDomain === "All"
-        ? SIGNALS
-        : SIGNALS.filter((s) => s.domain === activeDomain),
-    [activeDomain],
-  );
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["detect-feed", range, activeDomain],
+    queryFn: () => getDetectFeed({ range, domain: activeDomain }),
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
+
+  const signals = data?.signals ?? [];
+  const counts = data?.countsByDomain ?? ({ All: 0 } as Record<SignalDomain | "All", number>);
+  const ribbon = data?.ribbon;
 
   const topHigh = useMemo(
-    () => filtered.filter((s) => s.risk === "HIGH").slice(0, 5),
-    [filtered],
+    () => signals.filter((s) => s.risk === "HIGH").slice(0, 5),
+    [signals],
   );
 
   const openSignal = (s: Signal) =>
@@ -87,61 +78,43 @@ export function DetectPage() {
           active={activeDomain}
           onChange={(k) => setActiveDomain(k as "All" | SignalDomain)}
           tabs={[
-            { key: "All", label: "All Signals", count: counts.All },
-            ...SIGNAL_DOMAINS.map((d) => ({ key: d, label: d, count: counts[d] })),
+            { key: "All", label: "All Signals", count: counts.All ?? 0 },
+            ...SIGNAL_DOMAINS.map((d) => ({ key: d, label: d, count: counts[d] ?? 0 })),
           ]}
         />
+
+        {isError ? (
+          <PanelCard>
+            <PanelHead title="Signal feed unavailable" meta="Retry" />
+            <p className="text-[12px] text-slate">
+              The Detect service could not reach the signal store. This may be a network
+              issue or session expiry.
+            </p>
+            <button
+              type="button"
+              className="mt-2 rounded-md border border-line px-3 py-1 text-[12px] hover:bg-surface-2"
+              onClick={() => refetch()}
+            >
+              Retry
+            </button>
+          </PanelCard>
+        ) : null}
 
         {/* DET-2 Signal ribbon + confidence legend */}
         <section className="space-y-3">
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
             <KpiTile
               label="Total Signals"
-              value={SIGNAL_RIBBON.total.value}
-              delta={SIGNAL_RIBBON.total.delta}
-              confidence={SIGNAL_RIBBON.confidence}
+              value={ribbon?.total.value ?? 0}
+              delta={ribbon?.total.delta ?? 0}
+              confidence={ribbon?.confidence ?? "observed"}
               icon={Radar}
             />
-            <KpiTile
-              label="High Risk"
-              value={SIGNAL_RIBBON.high.value}
-              delta={SIGNAL_RIBBON.high.delta}
-              confidence="observed"
-              icon={AlertTriangle}
-              accentHex="#C0392B"
-            />
-            <KpiTile
-              label="Medium Risk"
-              value={SIGNAL_RIBBON.medium.value}
-              delta={SIGNAL_RIBBON.medium.delta}
-              confidence="observed"
-              icon={Gauge}
-              accentHex="#B06A00"
-            />
-            <KpiTile
-              label="Low Risk"
-              value={SIGNAL_RIBBON.low.value}
-              delta={SIGNAL_RIBBON.low.delta}
-              confidence="observed"
-              icon={ThumbsUp}
-              accentHex="#1E6B3A"
-            />
-            <KpiTile
-              label="New Signals"
-              value={SIGNAL_RIBBON.fresh.value}
-              delta={SIGNAL_RIBBON.fresh.delta}
-              confidence="observed"
-              icon={BellRing}
-              accentHex="#2563EB"
-            />
-            <KpiTile
-              label="Acknowledged"
-              value={SIGNAL_RIBBON.ack.value}
-              delta={SIGNAL_RIBBON.ack.delta}
-              confidence="observed"
-              icon={CheckCheck}
-              accentHex="#0E7C7B"
-            />
+            <KpiTile label="High Risk" value={ribbon?.high.value ?? 0} delta={ribbon?.high.delta ?? 0} confidence="observed" icon={AlertTriangle} accentHex="#C0392B" />
+            <KpiTile label="Medium Risk" value={ribbon?.medium.value ?? 0} delta={ribbon?.medium.delta ?? 0} confidence="observed" icon={Gauge} accentHex="#B06A00" />
+            <KpiTile label="Low Risk" value={ribbon?.low.value ?? 0} delta={ribbon?.low.delta ?? 0} confidence="observed" icon={ThumbsUp} accentHex="#1E6B3A" />
+            <KpiTile label="New Signals" value={ribbon?.fresh.value ?? 0} delta={ribbon?.fresh.delta ?? 0} confidence="observed" icon={BellRing} accentHex="#2563EB" />
+            <KpiTile label="Acknowledged" value={ribbon?.ack.value ?? 0} delta={ribbon?.ack.delta ?? 0} confidence="observed" icon={CheckCheck} accentHex="#0E7C7B" />
           </div>
           <ConfidenceLegend />
         </section>
@@ -150,32 +123,26 @@ export function DetectPage() {
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
           <div className="grid gap-4 lg:grid-cols-2">
             <PanelCard>
-              <PanelHead
-                title="Signal Timeline"
-                meta="Volume by risk band · last 24h"
-              />
+              <PanelHead title="Signal Timeline" meta={`Volume by risk band · ${range}`} />
               <SignalTimelineChart
-                data={range === "6H" ? SIGNAL_TIMELINE_6H : range === "7D" ? SIGNAL_TIMELINE_7D : SIGNAL_TIMELINE_24H}
+                data={data?.timeline ?? []}
                 range={range}
                 onRangeChange={setRange}
               />
             </PanelCard>
             <PanelCard>
               <PanelHead title="Signals by Domain" meta="Share of total volume" />
-              <DomainDonutChart data={SIGNALS_BY_DOMAIN} />
+              <DomainDonutChart data={data?.domainSlice ?? []} />
             </PanelCard>
           </div>
 
           {/* DET-7 */}
           <PanelCard>
-            <PanelHead
-              title="Top High-Risk Signals"
-              meta="Click to investigate"
-            />
-            {topHigh.length === 0 ? (
-              <div className="type-small text-slate">
-                No high-risk signals in the selected domain.
-              </div>
+            <PanelHead title="Top High-Risk Signals" meta="Click to investigate" />
+            {isLoading ? (
+              <div className="type-small text-slate">Loading signals…</div>
+            ) : topHigh.length === 0 ? (
+              <div className="type-small text-slate">No high-risk signals in the selected domain.</div>
             ) : (
               <SignalList signals={topHigh} onOpen={openSignal} />
             )}
@@ -186,17 +153,17 @@ export function DetectPage() {
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
           <PanelCard>
             <PanelHead title="Signal Risk Heatmap" meta="Domains × risk levels" />
-            <RiskHeatmap rows={RISK_HEATMAP} />
+            <RiskHeatmap rows={data?.heatmap ?? []} />
           </PanelCard>
           <PanelCard>
             <PanelHead title="Signals by Type" meta="Distribution across signal types" />
-            <TypeTiles items={SIGNAL_TYPE_TILES} />
+            <TypeTiles items={data?.typeTiles ?? []} />
           </PanelCard>
         </div>
 
         {/* DET-8 Recent signals table */}
         <PanelCard>
-          <PanelHead title="Recent Signals" meta={`${filtered.length} in view`} />
+          <PanelHead title="Recent Signals" meta={`${signals.length} in view`} />
           <div className="overflow-x-auto">
             <table className="w-full text-[12px]">
               <thead className="type-label bg-surface-2 text-slate">
@@ -210,7 +177,7 @@ export function DetectPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((s) => (
+                {signals.map((s) => (
                   <tr
                     key={s.id}
                     className="border-t border-line hover:bg-surface-2/60 cursor-pointer"
@@ -235,6 +202,13 @@ export function DetectPage() {
                     </td>
                   </tr>
                 ))}
+                {!isLoading && signals.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-3 py-6 text-center text-slate text-[12px]">
+                      No signals observed for the current filter.
+                    </td>
+                  </tr>
+                ) : null}
               </tbody>
             </table>
           </div>
@@ -249,7 +223,7 @@ export function DetectPage() {
               · Copilot Insights, observed language, evidence-linked
             </span>
           </div>
-          <CopilotCards cards={AI_SIGNAL_SUMMARY} />
+          <CopilotCards cards={data?.aiSummary ?? []} />
         </section>
 
         {/* DET-10 Footer */}
