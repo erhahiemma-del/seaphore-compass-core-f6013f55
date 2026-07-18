@@ -73,7 +73,7 @@ interface TimelineEvent {
   title: string;
   risk?: "HIGH" | "MEDIUM" | "LOW";
 }
-const TIMELINE: TimelineEvent[] = [
+const INITIAL_TIMELINE: TimelineEvent[] = [
   { time: "07:12", title: "MV Ocean Pearl AIS gap observed — 6h off Bonny", risk: "HIGH" },
   { time: "08:45", title: "5 duplicate BOL manifests detected at Apapa", risk: "HIGH" },
   { time: "09:20", title: "Revenue-at-risk delta +₦180M vs 7d average", risk: "MEDIUM" },
@@ -82,16 +82,25 @@ const TIMELINE: TimelineEvent[] = [
   { time: "11:12", title: "Historical match 82% on VOY-2411-A", risk: "LOW" },
 ];
 
+function nowHHMM() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
 function CommandCenter() {
   const [askOpen, setAskOpen] = useState(false);
   const [seedQuery, setSeedQuery] = useState("");
   const [seedMode, setSeedMode] = useState<CopilotMode | undefined>();
+  const [timeline, setTimeline] = useState<TimelineEvent[]>(INITIAL_TIMELINE);
 
   const openAsk = (q: string, mode?: CopilotMode) => {
     setSeedQuery(q);
     setSeedMode(mode);
     setAskOpen(true);
   };
+
+  const pushTimeline = (e: TimelineEvent) => setTimeline((t) => [e, ...t]);
+
 
   return (
     <AppShell title="Command Center" subtitle="Mission Control AI" mode="light">
@@ -175,7 +184,7 @@ function CommandCenter() {
             </PanelCard>
 
             {/* Upload Manifest workflow */}
-            <UploadManifestPanel />
+            <UploadManifestPanel onProcessed={pushTimeline} />
 
             {/* Intelligence timeline */}
             <PanelCard className="p-4">
@@ -184,7 +193,8 @@ function CommandCenter() {
                 <ConfidenceChip tier="observed" />
               </div>
               <ol className="relative border-l border-line pl-4">
-                {TIMELINE.map((e, i) => (
+                {timeline.map((e, i) => (
+
                   <li key={i} className="mb-3 last:mb-0">
                     <span className="absolute -left-1.5 mt-1 h-3 w-3 rounded-full border-2 border-card bg-primary" />
                     <div className="flex items-center gap-2">
@@ -275,7 +285,7 @@ function CommandCenter() {
  * → Risk scoring. Result routes to Manifest Intelligence. Uses mock
  * deterministic scoring until OCR service is wired.
  */
-function UploadManifestPanel() {
+function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent) => void }) {
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
   const [filename, setFilename] = useState<string | null>(null);
   const [risk, setRisk] = useState<"HIGH" | "MEDIUM" | "LOW">("MEDIUM");
@@ -287,10 +297,18 @@ function UploadManifestPanel() {
     setTimeout(() => {
       // Deterministic mock risk score.
       const score = (name.length * 7) % 100;
-      setRisk(score > 66 ? "HIGH" : score > 33 ? "MEDIUM" : "LOW");
+      const level: "HIGH" | "MEDIUM" | "LOW" =
+        score > 66 ? "HIGH" : score > 33 ? "MEDIUM" : "LOW";
+      setRisk(level);
       setStep(3);
+      onProcessed?.({
+        time: nowHHMM(),
+        title: `Manifest ${name} processed — OCR + AI validation, 12 line-items · 1 duplicate BOL candidate`,
+        risk: level,
+      });
     }, 1400);
   };
+
 
   const reset = () => {
     setStep(0);
