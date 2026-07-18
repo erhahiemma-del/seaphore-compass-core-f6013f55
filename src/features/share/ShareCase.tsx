@@ -486,9 +486,37 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
                 <input
                   value={externalEmails}
                   onChange={(e) => setExternalEmails(e.target.value)}
-                  placeholder="Add external recipient email"
-                  className="mb-1.5 w-full rounded-md border border-line bg-white px-2.5 py-1.5 text-[12px] outline-none focus:border-[color:var(--color-blue,#2563eb)]"
+                  placeholder="Add external recipient email (comma-separated)"
+                  aria-invalid={showEmailError}
+                  aria-describedby="external-email-help"
+                  className={`mb-1.5 w-full rounded-md border bg-white px-2.5 py-1.5 text-[12px] outline-none focus:ring-1 ${
+                    showEmailError
+                      ? "border-[#C0392B] focus:border-[#C0392B] focus:ring-[#C0392B]/30"
+                      : "border-line focus:border-[color:var(--color-blue,#2563eb)] focus:ring-[color:var(--color-blue,#2563eb)]/30"
+                  }`}
                 />
+                {showEmailError ? (
+                  <div
+                    id="external-email-help"
+                    role="alert"
+                    className="mb-1 text-[11px] font-semibold text-[#C0392B]"
+                  >
+                    Invalid email{invalidExternal.length > 1 ? "s" : ""}:{" "}
+                    <span className="font-mono">{invalidExternal.join(", ")}</span>
+                  </div>
+                ) : validExternal.length > 0 ? (
+                  <div
+                    id="external-email-help"
+                    className="mb-1 text-[11px] text-[#1E6B3A]"
+                  >
+                    {validExternal.length} valid external recipient
+                    {validExternal.length > 1 ? "s" : ""}.
+                  </div>
+                ) : (
+                  <div id="external-email-help" className="mb-1 text-[11px] text-slate">
+                    Separate multiple emails with commas.
+                  </div>
+                )}
                 <button
                   type="button"
                   className="flex items-center gap-1 text-[12px] font-semibold text-[color:var(--color-blue,#2563eb)] hover:underline"
