@@ -367,6 +367,8 @@ function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent)
   const [filename, setFilename] = useState<string | null>(null);
   const [stages, setStages] = useState<Record<StageKey, StageState>>(initialStages);
   const [risk, setRisk] = useState<"HIGH" | "MEDIUM" | "LOW" | null>(null);
+  const [preview, setPreview] = useState<ManifestPreview | null>(null);
+  const [logged, setLogged] = useState(false);
   const [fatalError, setFatalError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
 
