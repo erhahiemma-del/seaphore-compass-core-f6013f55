@@ -419,10 +419,6 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
               title="4. Select Recipients"
               subtitle="Choose who will receive this briefing."
             >
-            <Card
-              title="4. Select Recipients"
-              subtitle="Choose who will receive this briefing."
-            >
               {showRecipientError && (
                 <div
                   role="alert"
