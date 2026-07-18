@@ -400,10 +400,11 @@ function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent)
   const runPipeline = async (file: File) => {
     setFilename(file.name);
     setRisk(null);
+    setPreview(null);
+    setLogged(false);
     setFatalError(null);
     setStages(initialStages());
 
-    // Pre-flight validation — surfaces before any stage starts.
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
     if (!ACCEPTED_EXT.includes(ext)) {
       setFatalError(`Unsupported file type ".${ext}". Accepted: PDF, JPG, PNG, XLSX.`);
@@ -414,8 +415,6 @@ function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent)
       return;
     }
 
-    // Deterministic mock: filenames containing "corrupt" fail OCR;
-    // "sanction" fails validation. Everything else succeeds.
     const lower = file.name.toLowerCase();
     const ocrFail = lower.includes("corrupt");
     const valFail = lower.includes("sanction");
@@ -436,11 +435,8 @@ function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent)
       setRisk(level);
       updateStage("scoring", { detail: `Composite risk ${level} · score ${score}/100` });
 
-      onProcessed?.({
-        time: nowHHMM(),
-        title: `Manifest ${file.name} processed — 148 line-items · 1 duplicate BOL candidate`,
-        risk: level,
-      });
+      // Officer must review the preview before it becomes a timeline entry.
+      setPreview(buildPreview(file, level));
     } catch (err) {
       const e = err as { stage?: StageKey; message?: string };
       const stage = e.stage ?? "ocr";
@@ -451,19 +447,32 @@ function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent)
     }
   };
 
+  const confirmLog = () => {
+    if (!filename || !risk || !preview || logged) return;
+    onProcessed?.({
+      time: nowHHMM(),
+      title: `Manifest ${preview.bol} · ${preview.vessel} confirmed — 148 line-items · 1 duplicate BOL candidate`,
+      risk,
+    });
+    setLogged(true);
+  };
+
   const reset = () => {
     setFilename(null);
     setStages(initialStages());
     setRisk(null);
+    setPreview(null);
+    setLogged(false);
     setFatalError(null);
     setRunning(false);
   };
 
   const retry = () => {
-    // Retry by resetting stages; user re-uploads.
     setStages(initialStages());
     setFatalError(null);
     setRisk(null);
+    setPreview(null);
+    setLogged(false);
   };
 
   const started = filename !== null;
