@@ -21,9 +21,9 @@ import { cn } from "@/lib/utils";
  * Seaphore sidebar — 230px fixed.
  *
  * Group order is fixed (encodes the operating model):
- *   MISSION → INTELLIGENCE LIFECYCLE → INTELLIGENCE CENTRES → FOOTER
+ *   MISSION → INTELLIGENCE LIFECYCLE → INTELLIGENCE CENTRES → SYSTEM
  *
- * Footer contains Administration + Collapse control only.
+ * Administration lives under the System group; footer contains Collapse only.
  */
 export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
