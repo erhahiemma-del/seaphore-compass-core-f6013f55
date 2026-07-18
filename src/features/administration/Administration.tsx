@@ -270,6 +270,16 @@ function AuditTrailPanel({
         <Button
           size="sm"
           variant="outline"
+          onClick={() => exportAuditCsv(entries, filteredUser ?? null)}
+          disabled={entries.length === 0}
+          title="Download audit trail as CSV for compliance sharing"
+        >
+          <Download className="mr-1 h-3.5 w-3.5" />
+          Export CSV
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
           onClick={() => refetch()}
           disabled={isFetching}
         >
