@@ -29,15 +29,22 @@ const TYPE_COLOR = {
 /**
  * Shared evidence / file card. Used by Investigate, Decision Support, Share.
  */
-export function EvidenceCard({
-  item,
-  className,
-}: {
-  item: EvidenceItem;
+export interface EvidenceCardProps {
+  /** Build Bible: evidence record. */
+  evidence?: EvidenceItem;
+  /** @deprecated Use `evidence`. Kept for existing call sites. */
+  item?: EvidenceItem;
+  /** Build Bible: show linked investigation reference. Reserved for future rendering. */
+  showInvestigation?: boolean;
   className?: string;
-}) {
-  const Icon = TYPE_ICON[item.type];
-  const color = TYPE_COLOR[item.type];
+}
+
+export function EvidenceCard({ evidence, item, className }: EvidenceCardProps) {
+  const record = evidence ?? item;
+  if (!record) return null;
+  const Icon = TYPE_ICON[record.type];
+  const color = TYPE_COLOR[record.type];
+  const it = record;
   return (
     <div
       className={cn(
