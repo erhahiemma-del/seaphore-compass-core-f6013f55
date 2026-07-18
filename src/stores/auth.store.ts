@@ -8,7 +8,7 @@
  */
 import { create } from "zustand";
 
-export type OfficerRole = "viewer" | "officer" | "director" | "admin";
+export type OfficerRole = "analyst" | "officer" | "director" | "admin";
 
 export interface AuthOfficer {
   userId: string;
