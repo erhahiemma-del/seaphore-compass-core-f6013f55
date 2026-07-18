@@ -200,7 +200,18 @@ function Workspace({ inv }: { inv: Investigation }) {
 
           <div className="space-y-2">
             <div className="overflow-hidden rounded-lg border border-line bg-card shadow-card">
+              <div className="flex items-center justify-end border-b border-line bg-card px-3 py-1.5">
+                <button
+                  type="button"
+                  onClick={() => kgRef.current?.reset()}
+                  className="inline-flex items-center gap-1 rounded-md border border-line px-2 py-1 text-[11px] font-semibold text-foreground/80 motion-fast hover:bg-surface-2"
+                  title="Reset Knowledge Graph view to defaults"
+                >
+                  <RotateCcw className="h-3 w-3" /> Reset View
+                </button>
+              </div>
               <KnowledgeGraph
+                ref={kgRef}
                 nodes={graph.nodes}
                 edges={graph.edges}
                 focalId={graph.focalId}
