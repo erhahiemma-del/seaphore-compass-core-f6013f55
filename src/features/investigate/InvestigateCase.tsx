@@ -76,6 +76,7 @@ function Workspace({ inv }: { inv: Investigation }) {
     AI_FINDINGS[0].id,
   );
   const [selectedEntity, setSelectedEntity] = useState<GraphNode | null>(null);
+  const kgRef = useRef<KnowledgeGraphHandle>(null);
 
   // Per-investigation subgraph — the KG reflects the case that is open.
   const graph = graphForInvestigation(inv);
