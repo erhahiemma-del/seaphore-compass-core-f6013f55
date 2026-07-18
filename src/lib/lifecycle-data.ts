@@ -232,6 +232,25 @@ export const SIGNAL_TIMELINE_24H: TimelineBucket[] = [
   { label: "22", High: 1, Medium: 0, Low: 1, Info: 2 },
 ];
 
+export const SIGNAL_TIMELINE_6H: TimelineBucket[] = [
+  { label: "04:00", High: 0, Medium: 1, Low: 1, Info: 2 },
+  { label: "05:00", High: 1, Medium: 0, Low: 2, Info: 1 },
+  { label: "06:00", High: 0, Medium: 2, Low: 1, Info: 2 },
+  { label: "07:00", High: 2, Medium: 1, Low: 1, Info: 3 },
+  { label: "08:00", High: 1, Medium: 2, Low: 2, Info: 2 },
+  { label: "09:00", High: 3, Medium: 1, Low: 1, Info: 2 },
+];
+
+export const SIGNAL_TIMELINE_7D: TimelineBucket[] = [
+  { label: "May 29", High: 6, Medium: 12, Low: 9, Info: 14 },
+  { label: "May 30", High: 4, Medium: 10, Low: 11, Info: 12 },
+  { label: "May 31", High: 8, Medium: 9, Low: 8, Info: 10 },
+  { label: "Jun 01", High: 5, Medium: 14, Low: 10, Info: 13 },
+  { label: "Jun 02", High: 9, Medium: 11, Low: 7, Info: 15 },
+  { label: "Jun 03", High: 7, Medium: 13, Low: 12, Info: 11 },
+  { label: "Jun 04", High: 10, Medium: 8, Low: 9, Info: 12 },
+];
+
 /** DET-4 domain distribution. */
 export interface DomainSlice {
   domain: SignalDomain;
