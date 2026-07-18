@@ -1,4 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Navigate } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
@@ -38,11 +40,27 @@ export function DetectPage() {
   const [range, setRange] = useState<TimelineRange>("24H");
   const handoff = useHandoffNavigate();
 
+  const [authState, setAuthState] = useState<"loading" | "in" | "out">("loading");
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (mounted) setAuthState(data.session ? "in" : "out");
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setAuthState(session ? "in" : "out");
+    });
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["detect-feed", range, activeDomain],
     queryFn: () => getDetectFeed({ range, domain: activeDomain }),
     staleTime: 30_000,
     refetchOnWindowFocus: false,
+    enabled: authState === "in",
   });
 
   const signals = data?.signals ?? [];
@@ -69,6 +87,8 @@ export function DetectPage() {
         fromRoute: "/detect",
       },
     });
+
+  if (authState === "out") return <Navigate to="/auth" />;
 
   return (
     <AppShell title="Detect" subtitle="Intelligence Feed" mode="light">
