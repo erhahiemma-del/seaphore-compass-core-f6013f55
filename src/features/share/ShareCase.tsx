@@ -620,6 +620,7 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
                 <SendShareGate
                   open={sendOpen}
                   onOpenChange={setSendOpen}
+                  onEdit={() => setSendOpen(false)}
                   officer={{
                     id: inv.officer.toLowerCase().replace(/\s+/g, "."),
                     name: inv.officer,

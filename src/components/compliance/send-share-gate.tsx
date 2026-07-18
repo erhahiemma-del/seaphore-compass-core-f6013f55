@@ -52,6 +52,8 @@ export interface SendShareGateProps {
   summary?: ShareSummary;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /** Return to the share workspace to adjust recipients / delivery options. */
+  onEdit?: () => void;
 }
 
 export function SendShareGate({
@@ -63,6 +65,7 @@ export function SendShareGate({
   summary,
   open: controlledOpen,
   onOpenChange,
+  onEdit,
 }: SendShareGateProps) {
   const isControlled = controlledOpen !== undefined;
   const [internalOpen, setInternalOpen] = useState(false);
@@ -241,6 +244,18 @@ export function SendShareGate({
           <Button variant="ghost" onClick={() => setOpen(false)} disabled={busy}>
             Cancel
           </Button>
+          {onEdit && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                setOpen(false);
+                onEdit();
+              }}
+              disabled={busy}
+            >
+              Edit Recipients &amp; Delivery
+            </Button>
+          )}
           <Button onClick={handleAuthorize} disabled={!ack || busy}>
             {busy ? "Authorizing…" : "Authorize & Send"}
           </Button>
