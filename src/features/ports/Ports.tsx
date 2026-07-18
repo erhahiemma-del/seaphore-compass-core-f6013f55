@@ -125,9 +125,15 @@ export function PortOpsCentre() {
       }
       main={
         <div className="space-y-4">
-          {/* Congestion map */}
-          <Section title="Port Congestion (POR-1)">
-            <div className="h-[320px]"><NigeriaMap variant="heatmap" vessels={VESSELS} className="h-full" /></div>
+          {/* Congestion map — vendor-neutral via MapProviderRoot (mock until keys land) */}
+          <Section title="Port Congestion & Vessel Map (POR-1)">
+            <IntelMap
+              entities={mapEntities}
+              onSelect={(e) => {
+                if (e.kind === "port") setSelected(e.id.replace(/^port-/, "") as Port["code"]);
+              }}
+              height={340}
+            />
           </Section>
 
           {/* Port summary + berth grid */}
