@@ -61,6 +61,39 @@ const RANGE_WINDOW: Record<GraphRange, [number, number]> = {
  *  - Node click — reports selection to the parent via onSelectionChange
  *    and highlights the immediate neighbourhood.
  */
+interface PersistedGraphSettings {
+  layout?: GraphLayout;
+  zoom?: number;
+  activeKinds?: GraphNodeKind[];
+  activeRels?: string[];
+  confidenceFilter?: number;
+  evidenceOnly?: boolean;
+  range?: GraphRange;
+  cursor?: number;
+  minimap?: boolean;
+}
+
+const STORAGE_PREFIX = "seaphore:kg:";
+
+function readPersisted(key?: string): PersistedGraphSettings | null {
+  if (!key || typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_PREFIX + key);
+    return raw ? (JSON.parse(raw) as PersistedGraphSettings) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writePersisted(key: string, value: PersistedGraphSettings) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value));
+  } catch {
+    /* quota or disabled — silently skip */
+  }
+}
+
 export function KnowledgeGraph({
   nodes,
   edges,
@@ -70,6 +103,7 @@ export function KnowledgeGraph({
   onSelectionChange,
   height = 420,
   minimap = false,
+  persistKey,
 }: {
   nodes: GraphNode[];
   edges: GraphEdge[];
@@ -79,7 +113,15 @@ export function KnowledgeGraph({
   className?: string;
   height?: number;
   minimap?: boolean;
+  /**
+   * When provided, view settings (layout, zoom, filters, timeline range/cursor,
+   * minimap visibility) are persisted to localStorage under this key so the
+   * officer's context survives refresh and route navigation.
+   */
+  persistKey?: string;
 }) {
+  const persisted = useMemo(() => readPersisted(persistKey), [persistKey]);
+
   const [layout, setLayout] = useState<GraphLayout>("Force");
   const [zoom, setZoom] = useState(1);
   const [activeKinds, setActiveKinds] = useState<Set<GraphNodeKind>>(
