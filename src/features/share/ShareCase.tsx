@@ -440,16 +440,6 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
                       key={a.id}
                       className="flex items-center gap-2.5 rounded-md border border-line bg-white px-2.5 py-2"
                     >
-                    tone: "#475569",
-                    domain: "",
-                    initials: a.name.slice(0, 2).toUpperCase(),
-                  };
-                  const active = recipients.has(a.id);
-                  return (
-                    <li
-                      key={a.id}
-                      className="flex items-center gap-2.5 rounded-md border border-line bg-white px-2.5 py-2"
-                    >
                       <input
                         type="checkbox"
                         checked={active}
