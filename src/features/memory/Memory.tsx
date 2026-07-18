@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import {
   ArrowRight,
   BookOpen,
@@ -6,6 +6,7 @@ import {
   FileText,
   MoreHorizontal,
   Radio,
+  RotateCcw,
   Search,
   Ship,
   Sparkles,
@@ -18,7 +19,10 @@ import {
   EvidenceDrilldown,
   type EvidenceDrilldownData,
 } from "@/components/intelligence/EvidenceDrilldown";
-import { KnowledgeGraph } from "@/components/intelligence/KnowledgeGraph";
+import {
+  KnowledgeGraph,
+  type KnowledgeGraphHandle,
+} from "@/components/intelligence/KnowledgeGraph";
 import { PanelCard } from "@/components/panel-card";
 import { PanelHead } from "@/components/panel-head";
 import { RiskPill } from "@/components/intelligence/RiskPill";
@@ -325,6 +329,7 @@ export function MemoryPage() {
   const [confidence, setConfidence] = useState(0);
   const [evidenceOnly, setEvidenceOnly] = useState(false);
   const [drill, setDrill] = useState<EvidenceDrilldownData | null>(null);
+  const kgRef = useRef<KnowledgeGraphHandle>(null);
 
   const bottom = useMemo(
     () => BOTTOM_BY_TAB[sub] ?? BOTTOM_BY_TAB.Relationships!,
@@ -622,8 +627,17 @@ export function MemoryPage() {
                   <span className="font-semibold text-foreground">10 relationships</span>
                 </span>
               </div>
+              <button
+                type="button"
+                onClick={() => kgRef.current?.reset()}
+                className="inline-flex items-center gap-1 rounded-md border border-line bg-card px-2 py-1 text-[11px] font-semibold text-foreground/80 motion-fast hover:bg-surface-2"
+                title="Reset Knowledge Graph view to defaults"
+              >
+                <RotateCcw className="h-3 w-3" /> Reset View
+              </button>
             </div>
             <KnowledgeGraph
+              ref={kgRef}
               nodes={GRAPH_NODES}
               edges={GRAPH_EDGES}
               focalId="v1"

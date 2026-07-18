@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Filter,
   Layers,
@@ -94,32 +101,52 @@ function writePersisted(key: string, value: PersistedGraphSettings) {
   }
 }
 
-export function KnowledgeGraph({
-  nodes,
-  edges,
-  focalId,
-  className,
-  onNodeClick,
-  onSelectionChange,
-  height = 420,
-  minimap = false,
-  persistKey,
-}: {
-  nodes: GraphNode[];
-  edges: GraphEdge[];
-  focalId?: string;
-  onNodeClick?: (n: GraphNode) => void;
-  onSelectionChange?: (n: GraphNode | null) => void;
-  className?: string;
-  height?: number;
-  minimap?: boolean;
-  /**
-   * When provided, view settings (layout, zoom, filters, timeline range/cursor,
-   * minimap visibility) are persisted to localStorage under this key so the
-   * officer's context survives refresh and route navigation.
-   */
-  persistKey?: string;
-}) {
+function clearPersisted(key?: string) {
+  if (!key || typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(STORAGE_PREFIX + key);
+  } catch {
+    /* silently skip */
+  }
+}
+
+export interface KnowledgeGraphHandle {
+  /** Clears persisted view settings for this workspace and restores defaults. */
+  reset: () => void;
+}
+
+export const KnowledgeGraph = forwardRef<
+  KnowledgeGraphHandle,
+  {
+    nodes: GraphNode[];
+    edges: GraphEdge[];
+    focalId?: string;
+    onNodeClick?: (n: GraphNode) => void;
+    onSelectionChange?: (n: GraphNode | null) => void;
+    className?: string;
+    height?: number;
+    minimap?: boolean;
+    /**
+     * When provided, view settings (layout, zoom, filters, timeline range/cursor,
+     * minimap visibility) are persisted to localStorage under this key so the
+     * officer's context survives refresh and route navigation.
+     */
+    persistKey?: string;
+  }
+>(function KnowledgeGraph(
+  {
+    nodes,
+    edges,
+    focalId,
+    className,
+    onNodeClick,
+    onSelectionChange,
+    height = 420,
+    minimap = false,
+    persistKey,
+  },
+  ref,
+) {
   const persisted = useMemo(() => readPersisted(persistKey), [persistKey]);
 
   const [layout, setLayout] = useState<GraphLayout>(persisted?.layout ?? "Force");
@@ -164,6 +191,27 @@ export function KnowledgeGraph({
     persisted?.minimap ?? minimap,
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const skipPersistRef = useRef(false);
+
+  useImperativeHandle(ref, () => ({
+    reset: () => {
+      skipPersistRef.current = true;
+      clearPersisted(persistKey);
+      setLayout("Force");
+      setZoom(1);
+      setActiveKinds(new Set(Object.keys(KIND_COLOR) as GraphNodeKind[]));
+      setActiveRels(new Set(relTypes));
+      setRange("All");
+      setCursor(100);
+      setConfidenceFilter(0);
+      setEvidenceOnly(false);
+      setShowMinimap(minimap);
+      setSelectedId(null);
+      setPlaying(false);
+      onSelectionChange?.(null);
+    },
+  }));
+
   const [rangeStart, rangeEnd] = RANGE_WINDOW[range];
 
   // Reset cursor when range changes — skip once so a persisted cursor survives mount.
@@ -179,6 +227,10 @@ export function KnowledgeGraph({
   // Persist view settings whenever they change.
   useEffect(() => {
     if (!persistKey) return;
+    if (skipPersistRef.current) {
+      skipPersistRef.current = false;
+      return;
+    }
     writePersisted(persistKey, {
       layout,
       zoom,
@@ -675,4 +727,4 @@ export function KnowledgeGraph({
       </div>
     </div>
   );
-}
+});

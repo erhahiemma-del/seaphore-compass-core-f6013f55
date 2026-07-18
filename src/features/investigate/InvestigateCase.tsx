@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useParams } from "@tanstack/react-router";
 import {
   Check,
@@ -11,6 +11,7 @@ import {
   ListChecks,
   MoreHorizontal,
   Printer,
+  RotateCcw,
   StickyNote,
   User,
 } from "lucide-react";
@@ -20,7 +21,10 @@ import { AuditTimeline } from "@/components/intelligence/AuditTimeline";
 import { CopilotPanel } from "@/components/intelligence/CopilotPanel";
 import { DomainFilterTabs } from "@/components/domain-filter-tabs";
 import { EvidenceCard } from "@/components/intelligence/EvidenceCard";
-import { KnowledgeGraph } from "@/components/intelligence/KnowledgeGraph";
+import {
+  KnowledgeGraph,
+  type KnowledgeGraphHandle,
+} from "@/components/intelligence/KnowledgeGraph";
 import { RiskPill } from "@/components/intelligence/RiskPill";
 import { cn } from "@/lib/utils";
 import {
@@ -72,6 +76,7 @@ function Workspace({ inv }: { inv: Investigation }) {
     AI_FINDINGS[0].id,
   );
   const [selectedEntity, setSelectedEntity] = useState<GraphNode | null>(null);
+  const kgRef = useRef<KnowledgeGraphHandle>(null);
 
   // Per-investigation subgraph — the KG reflects the case that is open.
   const graph = graphForInvestigation(inv);
@@ -195,7 +200,18 @@ function Workspace({ inv }: { inv: Investigation }) {
 
           <div className="space-y-2">
             <div className="overflow-hidden rounded-lg border border-line bg-card shadow-card">
+              <div className="flex items-center justify-end border-b border-line bg-card px-3 py-1.5">
+                <button
+                  type="button"
+                  onClick={() => kgRef.current?.reset()}
+                  className="inline-flex items-center gap-1 rounded-md border border-line px-2 py-1 text-[11px] font-semibold text-foreground/80 motion-fast hover:bg-surface-2"
+                  title="Reset Knowledge Graph view to defaults"
+                >
+                  <RotateCcw className="h-3 w-3" /> Reset View
+                </button>
+              </div>
               <KnowledgeGraph
+                ref={kgRef}
                 nodes={graph.nodes}
                 edges={graph.edges}
                 focalId={graph.focalId}
