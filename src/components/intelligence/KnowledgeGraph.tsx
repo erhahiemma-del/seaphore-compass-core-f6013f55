@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Filter,
   Layers,
@@ -94,32 +101,52 @@ function writePersisted(key: string, value: PersistedGraphSettings) {
   }
 }
 
-export function KnowledgeGraph({
-  nodes,
-  edges,
-  focalId,
-  className,
-  onNodeClick,
-  onSelectionChange,
-  height = 420,
-  minimap = false,
-  persistKey,
-}: {
-  nodes: GraphNode[];
-  edges: GraphEdge[];
-  focalId?: string;
-  onNodeClick?: (n: GraphNode) => void;
-  onSelectionChange?: (n: GraphNode | null) => void;
-  className?: string;
-  height?: number;
-  minimap?: boolean;
-  /**
-   * When provided, view settings (layout, zoom, filters, timeline range/cursor,
-   * minimap visibility) are persisted to localStorage under this key so the
-   * officer's context survives refresh and route navigation.
-   */
-  persistKey?: string;
-}) {
+function clearPersisted(key?: string) {
+  if (!key || typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(STORAGE_PREFIX + key);
+  } catch {
+    /* silently skip */
+  }
+}
+
+export interface KnowledgeGraphHandle {
+  /** Clears persisted view settings for this workspace and restores defaults. */
+  reset: () => void;
+}
+
+export const KnowledgeGraph = forwardRef<
+  KnowledgeGraphHandle,
+  {
+    nodes: GraphNode[];
+    edges: GraphEdge[];
+    focalId?: string;
+    onNodeClick?: (n: GraphNode) => void;
+    onSelectionChange?: (n: GraphNode | null) => void;
+    className?: string;
+    height?: number;
+    minimap?: boolean;
+    /**
+     * When provided, view settings (layout, zoom, filters, timeline range/cursor,
+     * minimap visibility) are persisted to localStorage under this key so the
+     * officer's context survives refresh and route navigation.
+     */
+    persistKey?: string;
+  }
+>(function KnowledgeGraph(
+  {
+    nodes,
+    edges,
+    focalId,
+    className,
+    onNodeClick,
+    onSelectionChange,
+    height = 420,
+    minimap = false,
+    persistKey,
+  },
+  ref,
+) {
   const persisted = useMemo(() => readPersisted(persistKey), [persistKey]);
 
   const [layout, setLayout] = useState<GraphLayout>(persisted?.layout ?? "Force");
