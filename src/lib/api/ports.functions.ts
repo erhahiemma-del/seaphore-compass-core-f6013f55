@@ -9,10 +9,10 @@ import { envelope } from "./envelope";
 export const portsCongestion = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: ports } = await context.supabase.from("ports").select("id, name");
+    const { data: ports } = await context.supabase.from("ports").select("id, unlocode");
     const rows = (ports ?? []).map((p) => ({
       port_id: p.id,
-      name: p.name,
+      unlocode: p.unlocode,
       congestion_index: null,
     }));
     return envelope(rows, { confidence: "inferred", sources: ["ports"] });

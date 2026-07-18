@@ -26,7 +26,9 @@ export const listVoyages = createServerFn({ method: "GET" })
     if (data.vesselId) q = q.eq("vessel_id", data.vesselId);
     if (data.status) q = q.eq("status", data.status as never);
     if (data.portId)
-      q = q.or(`origin_port_id.eq.${data.portId},dest_port_id.eq.${data.portId}`);
+      q = q.or(
+        `origin_port_id.eq.${data.portId},destination_port_id.eq.${data.portId}`,
+      );
     if (data.from) q = q.gte("etd", data.from);
     if (data.to) q = q.lte("eta", data.to);
     const { data: rows, error, count } = await q;
@@ -51,11 +53,13 @@ export const getVoyage = createServerFn({ method: "GET" })
       context.supabase.from("documents").select("*").eq("voyage_id", data.id),
     ]);
     const manifestIds = (manifests ?? []).map((m) => m.id as string);
-    const { data: cargo } = manifestIds.length
-      ? await context.supabase
-          .from("cargo_items")
-          .select("*")
-          .in("manifest_id", manifestIds)
-      : { data: [] as unknown[] };
+    let cargo: unknown[] = [];
+    if (manifestIds.length) {
+      const { data: c } = await context.supabase
+        .from("cargo_items")
+        .select("*")
+        .in("manifest_id", manifestIds);
+      cargo = c ?? [];
+    }
     return envelope({ ...voyage, manifests, cargo, documents });
   });

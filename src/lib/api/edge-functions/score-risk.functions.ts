@@ -22,15 +22,15 @@ export const scoreRisk = createServerFn({ method: "POST" })
       ? { column: "entity_id" as const, value: data.entity_id }
       : { column: "entity_id" as const, value: null };
     // Pull recent signals scoped to the target entity (voyages resolve to a vessel entity in future work).
-    const q = context.supabase.from("signals").select("risk_level, confidence");
+    const q = context.supabase.from("signals").select("severity, confidence");
     const { data: signals } = data.entity_id
       ? await q.eq(filter.column, filter.value as string)
       : await q.limit(50);
     const weights: Record<string, number> = { critical: 40, high: 25, medium: 12, low: 3 };
     const decomposed = (signals ?? []).map((s) => ({
-      risk_level: s.risk_level,
+      severity: s.severity,
       confidence: s.confidence,
-      contribution: weights[String(s.risk_level ?? "low")] ?? 3,
+      contribution: weights[String(s.severity ?? "low")] ?? 3,
     }));
     const score = Math.min(
       100,
