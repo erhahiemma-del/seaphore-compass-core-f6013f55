@@ -34,6 +34,7 @@ import { Route as ShareIdRouteImport } from './routes/share.$id'
 import { Route as InvestigateIdRouteImport } from './routes/investigate.$id'
 import { Route as EntityIdRouteImport } from './routes/entity.$id'
 import { Route as DecideIdRouteImport } from './routes/decide.$id'
+import { Route as ApiPublicDevSeedRoleRouteImport } from './routes/api/public/dev/seed-role'
 
 const VesselRoute = VesselRouteImport.update({
   id: '/vessel',
@@ -160,6 +161,11 @@ const DecideIdRoute = DecideIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => DecideRoute,
 } as any)
+const ApiPublicDevSeedRoleRoute = ApiPublicDevSeedRoleRouteImport.update({
+  id: '/api/public/dev/seed-role',
+  path: '/api/public/dev/seed-role',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -187,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/decide/': typeof DecideIndexRoute
   '/investigate/': typeof InvestigateIndexRoute
   '/share/': typeof ShareIndexRoute
+  '/api/public/dev/seed-role': typeof ApiPublicDevSeedRoleRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -211,6 +218,7 @@ export interface FileRoutesByTo {
   '/decide': typeof DecideIndexRoute
   '/investigate': typeof InvestigateIndexRoute
   '/share': typeof ShareIndexRoute
+  '/api/public/dev/seed-role': typeof ApiPublicDevSeedRoleRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -239,6 +247,7 @@ export interface FileRoutesById {
   '/decide/': typeof DecideIndexRoute
   '/investigate/': typeof InvestigateIndexRoute
   '/share/': typeof ShareIndexRoute
+  '/api/public/dev/seed-role': typeof ApiPublicDevSeedRoleRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -268,6 +277,7 @@ export interface FileRouteTypes {
     | '/decide/'
     | '/investigate/'
     | '/share/'
+    | '/api/public/dev/seed-role'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -292,6 +302,7 @@ export interface FileRouteTypes {
     | '/decide'
     | '/investigate'
     | '/share'
+    | '/api/public/dev/seed-role'
   id:
     | '__root__'
     | '/'
@@ -319,6 +330,7 @@ export interface FileRouteTypes {
     | '/decide/'
     | '/investigate/'
     | '/share/'
+    | '/api/public/dev/seed-role'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -341,6 +353,7 @@ export interface RootRouteChildren {
   ShareRoute: typeof ShareRouteWithChildren
   VesselRoute: typeof VesselRoute
   EntityIdRoute: typeof EntityIdRoute
+  ApiPublicDevSeedRoleRoute: typeof ApiPublicDevSeedRoleRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -520,6 +533,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DecideIdRouteImport
       parentRoute: typeof DecideRoute
     }
+    '/api/public/dev/seed-role': {
+      id: '/api/public/dev/seed-role'
+      path: '/api/public/dev/seed-role'
+      fullPath: '/api/public/dev/seed-role'
+      preLoaderRoute: typeof ApiPublicDevSeedRoleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -582,6 +602,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShareRoute: ShareRouteWithChildren,
   VesselRoute: VesselRoute,
   EntityIdRoute: EntityIdRoute,
+  ApiPublicDevSeedRoleRoute: ApiPublicDevSeedRoleRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
