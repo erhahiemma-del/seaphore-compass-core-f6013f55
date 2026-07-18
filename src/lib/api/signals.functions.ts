@@ -5,22 +5,26 @@ import { envelope } from "./envelope";
 
 const ListInput = z.object({
   domain: z.string().optional(),
-  riskLevel: z.string().optional(),
-  status: z.string().optional(),
   from: z.string().datetime().optional(),
   to: z.string().datetime().optional(),
+  limit: z.number().int().min(1).max(500).optional(),
 });
 
+/**
+ * DET data source — reads directly from public.signals via RLS.
+ * The Detect Intelligence Centre routes through this via signalRepository →
+ * detectService; no UI component imports signal rows or aggregates from mocks.
+ */
 export const listSignals = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => ListInput.parse(d))
+  .inputValidator((d: unknown) => ListInput.parse(d ?? {}))
   .handler(async ({ data, context }) => {
     let q = context.supabase
       .from("signals")
       .select("*")
       .order("observed_at", { ascending: false })
-      .limit(200);
-    if (data.domain) q = q.eq("domain", data.domain);
+      .limit(data.limit ?? 200);
+    if (data.domain && data.domain !== "All") q = q.eq("domain", data.domain);
     if (data.from) q = q.gte("observed_at", data.from);
     if (data.to) q = q.lte("observed_at", data.to);
     const { data: rows, error } = await q;
