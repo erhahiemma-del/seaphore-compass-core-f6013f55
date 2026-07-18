@@ -587,12 +587,9 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
               <div className="mt-3 space-y-2">
                 <button
                   type="button"
-                  onClick={(e) => {
+                  onClick={() => {
                     setAttemptedSend(true);
-                    if (!canSend) {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }
+                    if (canSend) setSendOpen(true);
                   }}
                   aria-disabled={!canSend}
                   title={
@@ -620,6 +617,22 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
                       : `Fix ${invalidExternal.length} invalid external email${invalidExternal.length > 1 ? "s" : ""} before sending.`}
                   </div>
                 )}
+                <SendShareGate
+                  open={sendOpen}
+                  onOpenChange={setSendOpen}
+                  officer={{
+                    id: inv.officer.toLowerCase().replace(/\s+/g, "."),
+                    name: inv.officer,
+                    role: "NIMASA Analyst",
+                  }}
+                  intent={`Share "${title}"`}
+                  target={`${recipientCount} recipient${recipientCount === 1 ? "" : "s"} via ${deliveryMethod}`}
+                  summary={shareSummary}
+                  onAuthorized={async () => {
+                    // Wire to briefings.functions.ts server function in production.
+                    await new Promise((resolve) => setTimeout(resolve, 800));
+                  }}
+                />
                 <button
                   type="button"
                   className="flex w-full items-center justify-center gap-1.5 rounded-md border border-line bg-white px-3 py-2.5 text-[13px] font-semibold text-foreground hover:bg-surface-2/60"
