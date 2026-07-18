@@ -551,10 +551,39 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
               <div className="mt-3 space-y-2">
                 <button
                   type="button"
-                  className="flex w-full items-center justify-center gap-1.5 rounded-md bg-[color:var(--color-blue,#2563eb)] px-3 py-2.5 text-[13px] font-semibold text-white hover:bg-[color:var(--color-blue,#2563eb)]/90"
+                  onClick={(e) => {
+                    setAttemptedSend(true);
+                    if (!canSend) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }
+                  }}
+                  aria-disabled={!canSend}
+                  title={
+                    noRecipients
+                      ? "Select at least one recipient"
+                      : hasInvalidEmail
+                        ? "Fix invalid external email(s) before sending"
+                        : undefined
+                  }
+                  className={`flex w-full items-center justify-center gap-1.5 rounded-md px-3 py-2.5 text-[13px] font-semibold text-white ${
+                    canSend
+                      ? "bg-[color:var(--color-blue,#2563eb)] hover:bg-[color:var(--color-blue,#2563eb)]/90"
+                      : "cursor-not-allowed bg-slate/40"
+                  }`}
                 >
                   <Send className="h-4 w-4" /> Send &amp; Share Brief
                 </button>
+                {attemptedSend && !canSend && (
+                  <div
+                    role="alert"
+                    className="rounded-md border border-[#C0392B]/40 bg-[#C0392B]/5 px-2.5 py-1.5 text-[11.5px] font-semibold text-[#C0392B]"
+                  >
+                    {noRecipients
+                      ? "Add at least one recipient before sending."
+                      : `Fix ${invalidExternal.length} invalid external email${invalidExternal.length > 1 ? "s" : ""} before sending.`}
+                  </div>
+                )}
                 <button
                   type="button"
                   className="flex w-full items-center justify-center gap-1.5 rounded-md border border-line bg-white px-3 py-2.5 text-[13px] font-semibold text-foreground hover:bg-surface-2/60"
