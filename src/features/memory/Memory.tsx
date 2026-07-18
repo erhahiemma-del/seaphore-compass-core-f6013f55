@@ -13,12 +13,17 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
-import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
+import { ConfidenceChip, type ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
+import {
+  EvidenceDrilldown,
+  type EvidenceDrilldownData,
+} from "@/components/intelligence/EvidenceDrilldown";
 import { KnowledgeGraph } from "@/components/intelligence/KnowledgeGraph";
 import { PanelCard } from "@/components/panel-card";
 import { PanelHead } from "@/components/panel-head";
 import { RiskPill } from "@/components/intelligence/RiskPill";
 import { cn } from "@/lib/utils";
+
 import {
   ENTITY_SUBTABS,
   GRAPH_EDGES,
@@ -152,8 +157,160 @@ const BOTTOM_BY_TAB: Partial<Record<EntitySubtab, { title: string; rows: BottomR
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Drilldown reference data (HR-9 / HR-11 — every figure is traceable)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const KPI_DRILLDOWNS: Record<
+  "investigated" | "openCases" | "riskScore" | "confidence" | "revenueAtRisk",
+  EvidenceDrilldownData
+> = {
+  investigated: {
+    kind: "kpi",
+    title: "Investigated",
+    subtitle: "Distinct investigations referencing MV Ocean Pearl",
+    value: `${ENTITY_META.investigated} times`,
+    confidence: "verified",
+    explanation:
+      "Count of distinct investigation records where MV Ocean Pearl is a named subject entity. Aggregated across all closed and open cases in the Seaphore case ledger.",
+    sources: [
+      { id: "s1", label: "Seaphore Case Ledger — subject_entity index", system: "Seaphore", timestamp: "2026-06-04 09:12 UTC", confidence: "verified", reference: "ledger#IMO/9457893" },
+      { id: "s2", label: "NIMASA cross-reference report", system: "NIMASA", timestamp: "2026-05-30 14:00 UTC", confidence: "verified", reference: "NR-2026-Q2-118" },
+    ],
+    audit: [
+      { at: "2026-06-04 09:12 UTC", actor: "system", action: "Aggregation refreshed", detail: "Nightly rebuild of subject_entity roll-up." },
+      { at: "2026-05-30 14:07 UTC", actor: "Cdr. J. Bello", action: "Case INV-2026-00431 linked", detail: "Vessel added as subject entity." },
+    ],
+  },
+  openCases: {
+    kind: "kpi",
+    title: "Open Cases",
+    value: String(ENTITY_META.openCases),
+    confidence: "verified",
+    explanation:
+      "Investigations with status ≠ CLOSED that name this vessel as a subject. Counted directly from the case ledger.",
+    sources: [
+      { id: "s1", label: "INV-2026-00431 · Duty variance review", system: "Seaphore", timestamp: "2026-06-04 09:12 UTC", confidence: "verified", reference: "INV-2026-00431" },
+      { id: "s2", label: "INV-2026-00427 · AIS anomaly", system: "Seaphore", timestamp: "2026-06-02 18:44 UTC", confidence: "verified", reference: "INV-2026-00427" },
+    ],
+    audit: [
+      { at: "2026-06-04 09:12 UTC", actor: "system", action: "Count refreshed" },
+      { at: "2026-06-02 18:44 UTC", actor: "Lt. K. Musa", action: "Opened INV-2026-00427" },
+    ],
+  },
+  riskScore: {
+    kind: "kpi",
+    title: "Risk Score",
+    subtitle: "Composite risk model · v2.4",
+    value: `${ENTITY_META.riskScore}/100 · ${ENTITY_META.riskBand}`,
+    confidence: "inferred",
+    explanation:
+      "Composite of 5 weighted signals: AIS blackout frequency (25%), port-call risk profile (20%), ownership opacity (20%), sanctions exposure (20%) and manifest anomaly rate (15%). Model v2.4, retrained 2026-05-01.",
+    sources: [
+      { id: "s1", label: "Risk model v2.4 · feature vector", system: "Seaphore AI", timestamp: "2026-06-04 09:12 UTC", confidence: "inferred", reference: "model:risk@v2.4" },
+      { id: "s2", label: "AIS blackout events (30d)", system: "SpireGlobal", timestamp: "2026-06-04 08:00 UTC", confidence: "observed" },
+      { id: "s3", label: "OFAC / UN sanctions match check", system: "OpenSanctions", timestamp: "2026-06-04 06:00 UTC", confidence: "verified" },
+    ],
+    audit: [
+      { at: "2026-06-04 09:12 UTC", actor: "system", action: "Score recomputed", detail: "Rose from 78 → 82 (AIS blackout weight)." },
+      { at: "2026-05-01 00:00 UTC", actor: "system", action: "Model v2.4 deployed" },
+    ],
+  },
+  confidence: {
+    kind: "kpi",
+    title: "Confidence",
+    subtitle: "Composite evidence quality · Strong",
+    value: `${ENTITY_META.confidencePct}%`,
+    confidence: "observed",
+    explanation:
+      "Blend of source diversity, recency and tier distribution across all facts linked to this entity. 62% of underlying facts are Verified, 26% Observed, 12% Inferred.",
+    sources: [
+      { id: "s1", label: "Fact tier distribution", system: "Seaphore", timestamp: "2026-06-04 09:12 UTC", confidence: "verified" },
+      { id: "s2", label: "Source diversity index", system: "Seaphore", timestamp: "2026-06-04 09:12 UTC", confidence: "observed" },
+    ],
+    audit: [
+      { at: "2026-06-04 09:12 UTC", actor: "system", action: "Confidence recomputed" },
+    ],
+  },
+  revenueAtRisk: {
+    kind: "kpi",
+    title: "Revenue at Risk",
+    subtitle: "Estimated exposure across open cases",
+    value: ENTITY_META.revenueAtRisk,
+    confidence: "inferred",
+    explanation:
+      "Sum of estimated duty and levy variance across all open investigations naming this vessel. Estimates use reference tariffs from the Nigerian Customs schedule; not a final assessment.",
+    sources: [
+      { id: "s1", label: "INV-2026-00431 · duty variance estimate", system: "Seaphore", timestamp: "2026-06-04 09:12 UTC", confidence: "inferred", reference: "INV-2026-00431" },
+      { id: "s2", label: "Nigerian Customs tariff schedule 2026", system: "NCS", timestamp: "2026-01-01", confidence: "verified" },
+    ],
+    audit: [
+      { at: "2026-06-04 09:12 UTC", actor: "system", action: "Exposure recomputed" },
+      { at: "2026-06-04 09:12 UTC", actor: "Cdr. J. Bello", action: "Reviewed estimate", detail: "Flagged as inferred pending customs adjudication." },
+    ],
+  },
+};
+
+function inferRowTier(confidencePct: number): ConfidenceTier {
+  if (confidencePct >= 90) return "verified";
+  if (confidencePct >= 75) return "observed";
+  if (confidencePct >= 50) return "inferred";
+  return "unconfirmed";
+}
+
+function rowDrilldown(
+  r: BottomRow,
+  primaryHeader: string,
+  sub: EntitySubtab,
+): EvidenceDrilldownData {
+  const tier = inferRowTier(r.confidence);
+  return {
+    kind: "row",
+    title: r.primary,
+    subtitle: `${sub} · ${r.date}`,
+    value: `${r.confidence}%`,
+    confidence: tier,
+    explanation:
+      `This ${sub.toLowerCase().replace(/s$/, "")} record links "${r.from}" to "${r.to}". ` +
+      `It was ingested from ${r.source} on ${r.date} and captured as ${r.evidence.toLowerCase()}. ` +
+      `Confidence is ${r.confidence}% based on source reliability and corroboration across independent feeds.`,
+    fields: [
+      { label: primaryHeader, value: r.primary },
+      { label: "FROM", value: r.from },
+      { label: "TO", value: r.to },
+      { label: "DATE", value: r.date },
+      { label: "EVIDENCE", value: r.evidence },
+      { label: "SOURCE", value: r.source },
+    ],
+    sources: [
+      {
+        id: "s1",
+        label: `${r.evidence} · captured by ${r.source}`,
+        system: r.source,
+        timestamp: r.date,
+        confidence: tier,
+        reference: `${sub.slice(0, 3).toUpperCase()}-${r.date.replace(/[^0-9]/g, "").slice(-6)}`,
+      },
+      {
+        id: "s2",
+        label: "Seaphore ingestion & normalization log",
+        system: "Seaphore",
+        timestamp: r.date,
+        confidence: "verified",
+      },
+    ],
+    audit: [
+      { at: r.date, actor: r.source, action: "Record ingested", detail: `Delivered via ${r.evidence}.` },
+      { at: r.date, actor: "system", action: "Confidence scored", detail: `Tier: ${tier.toUpperCase()} (${r.confidence}%).` },
+      { at: r.date, actor: "Cdr. J. Bello", action: "Reviewed & linked to entity", detail: "Attached to MV Ocean Pearl profile." },
+    ],
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Page
 // ─────────────────────────────────────────────────────────────────────────────
+
+
 
 export function MemoryPage() {
   const [tab, setTab] = useState<MemoryTabKey>("profiles");
@@ -167,6 +324,7 @@ export function MemoryPage() {
   );
   const [confidence, setConfidence] = useState(0);
   const [evidenceOnly, setEvidenceOnly] = useState(false);
+  const [drill, setDrill] = useState<EvidenceDrilldownData | null>(null);
 
   const bottom = useMemo(
     () => BOTTOM_BY_TAB[sub] ?? BOTTOM_BY_TAB.Relationships!,
@@ -174,6 +332,11 @@ export function MemoryPage() {
   );
 
   const e = MEMORY_ENTITY;
+
+  const openKpi = (data: EvidenceDrilldownData) => setDrill(data);
+  const openRow = (r: BottomRow) =>
+    setDrill(rowDrilldown(r, bottom.primaryHeader, sub));
+
 
   return (
     <AppShell title="Institutional Memory" subtitle="Knowledge & Learning" mode="light">
@@ -267,12 +430,37 @@ export function MemoryPage() {
 
             {/* KPI row */}
             <div className="grid grid-cols-2 gap-6 text-right sm:grid-cols-5">
-              <Kpi label="Investigated" value={`${ENTITY_META.investigated}`} suffix="times" />
-              <Kpi label="Open Cases" value={String(ENTITY_META.openCases)} />
-              <Kpi label="Risk Score" value={`${ENTITY_META.riskScore}`} suffix="/100" tone="danger" caption={ENTITY_META.riskBand} />
-              <ConfidenceKpi pct={ENTITY_META.confidencePct} label={ENTITY_META.confidenceLabel} />
-              <Kpi label="Revenue at Risk" value={ENTITY_META.revenueAtRisk} />
+              <Kpi
+                label="Investigated"
+                value={`${ENTITY_META.investigated}`}
+                suffix="times"
+                onClick={() => openKpi(KPI_DRILLDOWNS.investigated)}
+              />
+              <Kpi
+                label="Open Cases"
+                value={String(ENTITY_META.openCases)}
+                onClick={() => openKpi(KPI_DRILLDOWNS.openCases)}
+              />
+              <Kpi
+                label="Risk Score"
+                value={`${ENTITY_META.riskScore}`}
+                suffix="/100"
+                tone="danger"
+                caption={ENTITY_META.riskBand}
+                onClick={() => openKpi(KPI_DRILLDOWNS.riskScore)}
+              />
+              <ConfidenceKpi
+                pct={ENTITY_META.confidencePct}
+                label={ENTITY_META.confidenceLabel}
+                onClick={() => openKpi(KPI_DRILLDOWNS.confidence)}
+              />
+              <Kpi
+                label="Revenue at Risk"
+                value={ENTITY_META.revenueAtRisk}
+                onClick={() => openKpi(KPI_DRILLDOWNS.revenueAtRisk)}
+              />
             </div>
+
 
             {/* Actions */}
             <div className="flex shrink-0 items-center gap-2">
@@ -566,9 +754,14 @@ export function MemoryPage() {
               </thead>
               <tbody>
                 {bottom.rows.map((r, i) => (
-                  <tr key={i} className="border-b border-line/60 last:border-0 hover:bg-surface-2/50">
+                  <tr
+                    key={i}
+                    onClick={() => openRow(r)}
+                    className="cursor-pointer border-b border-line/60 last:border-0 hover:bg-surface-2/50"
+                    title="Open evidence drilldown"
+                  >
                     <td className="py-2 pr-4 text-slate">{r.date}</td>
-                    <td className="py-2 pr-4 font-semibold text-foreground">{r.primary}</td>
+                    <td className="py-2 pr-4 font-semibold text-[color:var(--color-blue)] underline decoration-dotted underline-offset-2">{r.primary}</td>
                     <td className="py-2 pr-4 text-foreground/85">{r.from}</td>
                     <td className="py-2 pr-4 text-foreground/85">{r.to}</td>
                     <td className="py-2 pr-4">
@@ -580,12 +773,15 @@ export function MemoryPage() {
                     <td className="py-2 pr-4 text-slate">{r.source}</td>
                   </tr>
                 ))}
+
               </tbody>
             </table>
           </div>
         </PanelCard>
       </div>
+      <EvidenceDrilldown open={drill !== null} data={drill} onClose={() => setDrill(null)} />
     </AppShell>
+
   );
 }
 
@@ -603,18 +799,36 @@ function Kpi({
   suffix,
   caption,
   tone,
+  onClick,
 }: {
   label: string;
   value: string;
   suffix?: string;
   caption?: string;
   tone?: "danger";
+  onClick?: () => void;
 }) {
+  const Tag = onClick ? "button" : "div";
   return (
-    <div className="text-left">
+    <Tag
+      type={onClick ? "button" : undefined}
+      onClick={onClick}
+      className={cn(
+        "group text-left",
+        onClick && "cursor-pointer rounded-md -mx-1 px-1 py-0.5 hover:bg-surface-2/60 motion-fast",
+      )}
+      title={onClick ? "Open evidence drilldown" : undefined}
+    >
       <div className="type-label text-slate">{label}</div>
       <div className="flex items-baseline gap-1">
-        <span className="text-[20px] font-extrabold text-foreground">{value}</span>
+        <span
+          className={cn(
+            "text-[20px] font-extrabold text-foreground",
+            onClick && "group-hover:underline decoration-dotted underline-offset-2",
+          )}
+        >
+          {value}
+        </span>
         {suffix && <span className="text-[11px] font-semibold text-slate">{suffix}</span>}
       </div>
       {caption && (
@@ -627,17 +841,34 @@ function Kpi({
           {caption}
         </div>
       )}
-    </div>
+    </Tag>
   );
 }
 
-function ConfidenceKpi({ pct, label }: { pct: number; label: string }) {
+function ConfidenceKpi({
+  pct,
+  label,
+  onClick,
+}: {
+  pct: number;
+  label: string;
+  onClick?: () => void;
+}) {
   const size = 44;
   const r = 18;
   const c = 2 * Math.PI * r;
   const off = c - (pct / 100) * c;
+  const Tag = onClick ? "button" : "div";
   return (
-    <div className="text-left">
+    <Tag
+      type={onClick ? "button" : undefined}
+      onClick={onClick}
+      className={cn(
+        "group text-left",
+        onClick && "cursor-pointer rounded-md -mx-1 px-1 py-0.5 hover:bg-surface-2/60 motion-fast",
+      )}
+      title={onClick ? "Open evidence drilldown" : undefined}
+    >
       <div className="type-label text-slate">Confidence</div>
       <div className="mt-0.5 flex items-center gap-2">
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
@@ -671,9 +902,10 @@ function ConfidenceKpi({ pct, label }: { pct: number; label: string }) {
           <div className="type-label text-[color:var(--color-teal)]">{label}</div>
         </div>
       </div>
-    </div>
+    </Tag>
   );
 }
+
 
 function SnapRow({
   label,
