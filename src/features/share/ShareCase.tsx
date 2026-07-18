@@ -106,14 +106,26 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
     new Set(AGENCY_RECIPIENTS.map((a) => a.id)),
   );
   const [externalEmails, setExternalEmails] = useState("");
+  const [attemptedSend, setAttemptedSend] = useState(false);
 
-  const recipientCount = useMemo(() => {
-    const ext = externalEmails
-      .split(",")
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const { validExternal, invalidExternal } = useMemo(() => {
+    const tokens = externalEmails
+      .split(/[,\s;]+/)
       .map((e) => e.trim())
-      .filter(Boolean).length;
-    return recipients.size + ext;
-  }, [recipients, externalEmails]);
+      .filter(Boolean);
+    const valid: string[] = [];
+    const invalid: string[] = [];
+    for (const t of tokens) (EMAIL_RE.test(t) ? valid : invalid).push(t);
+    return { validExternal: valid, invalidExternal: invalid };
+  }, [externalEmails]);
+
+  const recipientCount = recipients.size + validExternal.length;
+  const noRecipients = recipientCount === 0;
+  const hasInvalidEmail = invalidExternal.length > 0;
+  const canSend = !noRecipients && !hasInvalidEmail;
+  const showRecipientError = attemptedSend && noRecipients;
+  const showEmailError = hasInvalidEmail && (attemptedSend || externalEmails.trim().length > 0);
 
   return (
     <AppShell title="Share" subtitle="Intelligence Briefing Workspace" mode="light">
@@ -407,6 +419,14 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
               title="4. Select Recipients"
               subtitle="Choose who will receive this briefing."
             >
+              {showRecipientError && (
+                <div
+                  role="alert"
+                  className="mb-2 rounded-md border border-[#C0392B]/40 bg-[#C0392B]/5 px-2.5 py-1.5 text-[11.5px] font-semibold text-[#C0392B]"
+                >
+                  Select at least one agency or add a valid external email.
+                </div>
+              )}
               <ul className="space-y-1.5">
                 {AGENCY_RECIPIENTS.map((a) => {
                   const meta = AGENCY_META[a.id] ?? {
@@ -466,9 +486,37 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
                 <input
                   value={externalEmails}
                   onChange={(e) => setExternalEmails(e.target.value)}
-                  placeholder="Add external recipient email"
-                  className="mb-1.5 w-full rounded-md border border-line bg-white px-2.5 py-1.5 text-[12px] outline-none focus:border-[color:var(--color-blue,#2563eb)]"
+                  placeholder="Add external recipient email (comma-separated)"
+                  aria-invalid={showEmailError}
+                  aria-describedby="external-email-help"
+                  className={`mb-1.5 w-full rounded-md border bg-white px-2.5 py-1.5 text-[12px] outline-none focus:ring-1 ${
+                    showEmailError
+                      ? "border-[#C0392B] focus:border-[#C0392B] focus:ring-[#C0392B]/30"
+                      : "border-line focus:border-[color:var(--color-blue,#2563eb)] focus:ring-[color:var(--color-blue,#2563eb)]/30"
+                  }`}
                 />
+                {showEmailError ? (
+                  <div
+                    id="external-email-help"
+                    role="alert"
+                    className="mb-1 text-[11px] font-semibold text-[#C0392B]"
+                  >
+                    Invalid email{invalidExternal.length > 1 ? "s" : ""}:{" "}
+                    <span className="font-mono">{invalidExternal.join(", ")}</span>
+                  </div>
+                ) : validExternal.length > 0 ? (
+                  <div
+                    id="external-email-help"
+                    className="mb-1 text-[11px] text-[#1E6B3A]"
+                  >
+                    {validExternal.length} valid external recipient
+                    {validExternal.length > 1 ? "s" : ""}.
+                  </div>
+                ) : (
+                  <div id="external-email-help" className="mb-1 text-[11px] text-slate">
+                    Separate multiple emails with commas.
+                  </div>
+                )}
                 <button
                   type="button"
                   className="flex items-center gap-1 text-[12px] font-semibold text-[color:var(--color-blue,#2563eb)] hover:underline"
@@ -503,10 +551,39 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
               <div className="mt-3 space-y-2">
                 <button
                   type="button"
-                  className="flex w-full items-center justify-center gap-1.5 rounded-md bg-[color:var(--color-blue,#2563eb)] px-3 py-2.5 text-[13px] font-semibold text-white hover:bg-[color:var(--color-blue,#2563eb)]/90"
+                  onClick={(e) => {
+                    setAttemptedSend(true);
+                    if (!canSend) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }
+                  }}
+                  aria-disabled={!canSend}
+                  title={
+                    noRecipients
+                      ? "Select at least one recipient"
+                      : hasInvalidEmail
+                        ? "Fix invalid external email(s) before sending"
+                        : undefined
+                  }
+                  className={`flex w-full items-center justify-center gap-1.5 rounded-md px-3 py-2.5 text-[13px] font-semibold text-white ${
+                    canSend
+                      ? "bg-[color:var(--color-blue,#2563eb)] hover:bg-[color:var(--color-blue,#2563eb)]/90"
+                      : "cursor-not-allowed bg-slate/40"
+                  }`}
                 >
                   <Send className="h-4 w-4" /> Send &amp; Share Brief
                 </button>
+                {attemptedSend && !canSend && (
+                  <div
+                    role="alert"
+                    className="rounded-md border border-[#C0392B]/40 bg-[#C0392B]/5 px-2.5 py-1.5 text-[11.5px] font-semibold text-[#C0392B]"
+                  >
+                    {noRecipients
+                      ? "Add at least one recipient before sending."
+                      : `Fix ${invalidExternal.length} invalid external email${invalidExternal.length > 1 ? "s" : ""} before sending.`}
+                  </div>
+                )}
                 <button
                   type="button"
                   className="flex w-full items-center justify-center gap-1.5 rounded-md border border-line bg-white px-3 py-2.5 text-[13px] font-semibold text-foreground hover:bg-surface-2/60"
