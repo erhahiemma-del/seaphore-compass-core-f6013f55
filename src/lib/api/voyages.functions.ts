@@ -53,13 +53,11 @@ export const getVoyage = createServerFn({ method: "GET" })
       context.supabase.from("documents").select("*").eq("voyage_id", data.id),
     ]);
     const manifestIds = (manifests ?? []).map((m) => m.id as string);
-    let cargo: Array<Record<string, unknown>> = [];
-    if (manifestIds.length) {
-      const { data: c } = await context.supabase
-        .from("cargo_items")
-        .select("*")
-        .in("manifest_id", manifestIds);
-      cargo = c ?? [];
-    }
-    return envelope({ ...voyage, manifests, cargo, documents });
+    const { data: cargo } = manifestIds.length
+      ? await context.supabase
+          .from("cargo_items")
+          .select("*")
+          .in("manifest_id", manifestIds)
+      : { data: [] };
+    return envelope({ ...voyage, manifests, cargo: cargo ?? [], documents });
   });
