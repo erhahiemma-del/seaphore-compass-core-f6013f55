@@ -22,10 +22,8 @@ import type { Role } from "@/lib/permissions";
 const ROLE_VALUES = ["analyst", "officer", "director", "admin"] as const;
 const roleSchema = z.enum(ROLE_VALUES);
 
-async function assertCallerIsAdmin(context: {
-  supabase: { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }> };
-  userId: string;
-}): Promise<void> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function assertCallerIsAdmin(context: { supabase: any; userId: string }): Promise<void> {
   const { data, error } = await context.supabase.rpc("has_role", {
     _user_id: context.userId,
     _role: "admin",
