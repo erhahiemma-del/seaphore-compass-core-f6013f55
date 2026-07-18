@@ -129,6 +129,40 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
   const showRecipientError = attemptedSend && noRecipients;
   const showEmailError = hasInvalidEmail && (attemptedSend || externalEmails.trim().length > 0);
 
+  const deliveryMethod = output.includes("WhatsApp") ? "WhatsApp" : "Email";
+  const outputFormat = output.includes("Word")
+    ? "Word Document"
+    : output.includes("Pack")
+      ? "Intelligence Pack"
+      : output.includes("Brief")
+        ? "Intelligence Brief"
+        : output;
+
+  const selectedRecipients = useMemo(
+    () =>
+      AGENCY_RECIPIENTS.filter((a) => recipients.has(a.id)).map((a) => {
+        const meta = AGENCY_META[a.id] ?? {
+          tone: "#475569",
+          domain: "",
+          initials: a.name.slice(0, 2).toUpperCase(),
+        };
+        return { id: a.id, name: a.name, ...meta };
+      }),
+    [recipients],
+  );
+
+  const shareSummary = useMemo(
+    () => ({
+      briefTitle: title,
+      output: outputFormat,
+      deliveryMethod,
+      classification,
+      recipients: selectedRecipients,
+      externalEmails: validExternal,
+    }),
+    [title, outputFormat, deliveryMethod, classification, selectedRecipients, validExternal],
+  );
+
   return (
     <AppShell title="Share" subtitle="Intelligence Briefing Workspace" mode="light">
       <div className="mx-auto max-w-[1600px] space-y-4 p-4 lg:p-6">
