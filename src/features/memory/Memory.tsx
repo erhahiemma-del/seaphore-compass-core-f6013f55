@@ -681,7 +681,7 @@ function SnapRow({
 }: {
   label: string;
   value?: string;
-  custom?: React.ReactNode;
+  custom?: ReactNode;
 }) {
   return (
     <div className="flex items-center justify-between border-b border-line/60 pb-1 last:border-0">
