@@ -12,12 +12,15 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
 import type { Role } from "@/lib/permissions";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function assertCallerIsAdmin(context: { supabase: any; userId: string }): Promise<void> {
+type AuthedContext = { supabase: SupabaseClient<Database>; userId: string };
+
+async function assertCallerIsAdmin(context: AuthedContext): Promise<void> {
   const { data, error } = await context.supabase.rpc("has_role", {
     _user_id: context.userId,
     _role: "admin",

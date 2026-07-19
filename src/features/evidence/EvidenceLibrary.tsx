@@ -24,6 +24,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { listEvidence } from "@/services/evidence.service";
+import { QUERY_KEYS } from "@/lib/query-keys";
 import {
   EVIDENCE_LIBRARY, AUDIT_ENTRIES, portName, vesselName,
   type EvidenceItem, type EvidenceCategory,
@@ -74,7 +75,7 @@ export function EvidenceCentre() {
   useEffect(() => { persistFilters(filters); }, [filters]);
 
   const { data: allEvidence = EVIDENCE_LIBRARY, isLoading, error } = useQuery({
-    queryKey: ["evidence", "library"],
+    queryKey: QUERY_KEYS.evidenceLibrary(),
     queryFn: listEvidence,
     initialData: EVIDENCE_LIBRARY,
     staleTime: 30_000,

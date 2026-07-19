@@ -84,6 +84,7 @@ import { listRoleAuditLog } from "@/lib/admin-audit.functions";
 import { listUsersWithRoles } from "@/lib/admin-roles.functions";
 import { RoleManagementTable } from "@/features/administration/Administration";
 import { can, type Role } from "@/lib/permissions";
+import { QUERY_KEYS } from "@/lib/query-keys";
 import { DataSourceMatrixPanel } from "@/components/data-sources/data-source-matrix-panel";
 
 // ---------- Types & constants ----------
@@ -512,7 +513,7 @@ function LinkAction({ label }: { label: string }) {
 
 function KPIRow({ role }: { role: PreviewRole }) {
   const { data: users } = useQuery({
-    queryKey: ["admin", "kpi-users"],
+    queryKey: QUERY_KEYS.adminKpiUsers(),
     queryFn: async () => {
       // Best-effort — fails silently if caller lacks admin.
       const fn = listUsersWithRoles;
@@ -1314,7 +1315,7 @@ function RolesSection() {
 function AuditCentreSection() {
   const listFn = useSF(listRoleAuditLog);
   const { data, isLoading, isFetching, error, refetch } = useQuery({
-    queryKey: ["admin", "role-audit", "centre"],
+    queryKey: QUERY_KEYS.adminRoleAudit("centre"),
     queryFn: () => listFn({ data: {} }),
     staleTime: 15_000,
   });

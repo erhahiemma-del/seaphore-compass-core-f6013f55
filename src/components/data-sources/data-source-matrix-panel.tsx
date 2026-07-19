@@ -9,6 +9,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
 import { useDataSources } from "@/hooks/use-data-sources";
 import { runDataSourceHealthChecks } from "@/lib/data-sources.functions";
+import { QUERY_KEYS } from "@/lib/query-keys";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SourceStatusBadge } from "./source-status-badge";
@@ -25,7 +26,7 @@ export function DataSourceMatrixPanel() {
     try {
       const res = await runChecks({});
       toast.success(`Health check complete — ${res.checked} sources probed`);
-      await qc.invalidateQueries({ queryKey: ["data-sources"] });
+      await qc.invalidateQueries({ queryKey: QUERY_KEYS.dataSources() });
       await refetch();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Health check failed");
