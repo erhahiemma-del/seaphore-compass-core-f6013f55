@@ -9,6 +9,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
 import { useDataSources } from "@/hooks/use-data-sources";
 import { runDataSourceHealthChecks } from "@/lib/data-sources.functions";
+import { QUERY_KEYS } from "@/lib/query-keys";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SourceStatusBadge } from "./source-status-badge";
