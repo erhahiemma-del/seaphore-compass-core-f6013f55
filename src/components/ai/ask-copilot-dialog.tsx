@@ -131,6 +131,7 @@ export function AskCopilotDialog({
     setListening(true);
     rec.start();
   };
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   const suggestions = useMemo(() => inst.exampleQueries.slice(0, 3), [inst]);
   const hasConversation = turns.length > 0;
