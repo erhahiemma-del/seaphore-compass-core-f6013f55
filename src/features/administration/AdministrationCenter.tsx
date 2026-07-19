@@ -382,6 +382,7 @@ function SectionContent({
   if (section === "overview") return <OverviewSection role={role} search={search} />;
   if (section === "roles") return <RolesSection />;
   if (section === "audit") return <AuditCentreSection />;
+  if (section === "data-sources") return <DataSourceMatrixPanel />;
   return <PlaceholderSection section={section} />;
 }
 
