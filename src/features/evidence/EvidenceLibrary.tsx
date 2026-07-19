@@ -1066,3 +1066,297 @@ function FieldSelect({ label, value, onChange, options }: { label: string; value
 void ConfidenceChip;
 void FilterIcon;
 void Bell;
+
+/* ============================================================
+ * Version history + compare viewer
+ *
+ * Evidence is versioned every time an officer replaces the file, changes
+ * classification, re-tags, or the AI upgrades confidence after re-scan.
+ * The reference UI does not persist versions per row yet, so we derive a
+ * deterministic three-version history from the current item — enough to
+ * demonstrate the diff surface. When the DB grows a versions table the
+ * service layer swaps this for real rows without changing the modal.
+ * ============================================================ */
+
+interface EvidenceVersion {
+  version: string;               // "1.2"
+  changedAt: string;
+  changedBy: string;
+  changeType: "Initial upload" | "Metadata update" | "Re-classification" | "AI re-scan" | "Officer correction";
+  note: string;
+  // Snapshot of the diff-relevant fields at this version.
+  fields: {
+    kind: string;
+    classification: string;
+    source: string;
+    confidence: string;
+    confidenceScore: number;
+    sizeKb: number;
+    linkedInvestigation: string;
+    tags: string[];
+    description: string;
+  };
+}
+
+function buildVersions(item: EvidenceItem): EvidenceVersion[] {
+  // v1.2 = current
+  const current: EvidenceVersion = {
+    version: "1.2",
+    changedAt: item.uploadedAt,
+    changedBy: item.uploadedBy,
+    changeType: "AI re-scan",
+    note: "Copilot re-scored confidence after cross-referencing 2 sibling manifests.",
+    fields: {
+      kind: item.kind,
+      classification: item.classification,
+      source: item.source,
+      confidence: item.confidence.toUpperCase(),
+      confidenceScore: item.confidenceScore,
+      sizeKb: item.sizeKb,
+      linkedInvestigation: item.linkedInvestigation ?? "—",
+      tags: [...item.tags],
+      description: item.description,
+    },
+  };
+  // v1.1 — officer re-classification a day earlier
+  const prev: EvidenceVersion = {
+    version: "1.1",
+    changedAt: new Date(new Date(item.uploadedAt).getTime() - 24 * 3600_000).toISOString(),
+    changedBy: "Mary Akinyemi",
+    changeType: "Metadata update",
+    note: "Added port linkage and one additional tag after dock-side review.",
+    fields: {
+      ...current.fields,
+      confidenceScore: Math.max(50, item.confidenceScore - 6),
+      confidence: item.confidence === "verified" ? "OBSERVED" : current.fields.confidence,
+      tags: current.fields.tags.slice(0, Math.max(1, current.fields.tags.length - 1)),
+      description: current.fields.description.replace(/\.$/, "") + " (initial officer notes).",
+    },
+  };
+  // v1.0 — initial upload two days earlier
+  const initial: EvidenceVersion = {
+    version: "1.0",
+    changedAt: new Date(new Date(item.uploadedAt).getTime() - 48 * 3600_000).toISOString(),
+    changedBy: item.uploadedBy,
+    changeType: "Initial upload",
+    note: "First submission from field officer, awaiting verification.",
+    fields: {
+      ...prev.fields,
+      classification: "Field Capture",
+      source: "Officer Camera",
+      confidenceScore: Math.max(40, item.confidenceScore - 15),
+      confidence: "UNCONFIRMED",
+      linkedInvestigation: "—",
+      tags: prev.fields.tags.slice(0, 1),
+      description: "Initial capture pending validation.",
+    },
+  };
+  return [current, prev, initial];
+}
+
+type DiffKind = "added" | "removed" | "changed" | "same";
+interface DiffRow {
+  key: string;
+  label: string;
+  left: string;
+  right: string;
+  kind: DiffKind;
+}
+
+function diffVersions(left: EvidenceVersion, right: EvidenceVersion): DiffRow[] {
+  const rows: Array<[string, string, string | number, string | number]> = [
+    ["kind", "Evidence Type", left.fields.kind, right.fields.kind],
+    ["classification", "Classification", left.fields.classification, right.fields.classification],
+    ["source", "Source", left.fields.source, right.fields.source],
+    ["confidence", "Confidence Level", left.fields.confidence, right.fields.confidence],
+    ["confidenceScore", "Confidence Score", `${left.fields.confidenceScore}%`, `${right.fields.confidenceScore}%`],
+    ["sizeKb", "File Size", `${(left.fields.sizeKb / 1024).toFixed(2)} MB`, `${(right.fields.sizeKb / 1024).toFixed(2)} MB`],
+    ["linkedInvestigation", "Investigation", left.fields.linkedInvestigation, right.fields.linkedInvestigation],
+    ["tags", "Tags", left.fields.tags.join(", ") || "—", right.fields.tags.join(", ") || "—"],
+    ["description", "Description", left.fields.description, right.fields.description],
+  ];
+  return rows.map(([key, label, l, r]) => {
+    const ls = String(l), rs = String(r);
+    let kind: DiffKind = "same";
+    if (ls === rs) kind = "same";
+    else if (!ls || ls === "—") kind = "added";
+    else if (!rs || rs === "—") kind = "removed";
+    else kind = "changed";
+    return { key, label, left: ls, right: rs, kind };
+  });
+}
+
+function VersionCompareModal({
+  item, versions, onClose,
+}: { item: EvidenceItem; versions: EvidenceVersion[]; onClose: () => void }) {
+  // Left = older, Right = newer by default: pick v1.1 vs v1.2.
+  const [leftVer, setLeftVer] = useState(versions[1]?.version ?? versions[0]!.version);
+  const [rightVer, setRightVer] = useState(versions[0]!.version);
+  const left = versions.find((v) => v.version === leftVer)!;
+  const right = versions.find((v) => v.version === rightVer)!;
+  const diff = useMemo(() => diffVersions(left, right), [left, right]);
+  const changed = diff.filter((d) => d.kind !== "same").length;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
+      <div
+        className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-lg border border-line/60 bg-surface-1 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="flex items-center justify-between border-b border-line/60 px-4 py-3">
+          <div>
+            <div className="flex items-center gap-2 text-[13px] font-semibold text-foreground">
+              <GitCompareArrows className="h-4 w-4 text-[color:var(--color-blue)]" />
+              Compare Versions — {item.refNumber}
+            </div>
+            <div className="text-[11px] text-slate">
+              {item.kind} · {versions.length} versions on record · {changed} field{changed === 1 ? "" : "s"} changed between selected versions
+            </div>
+          </div>
+          <button onClick={onClose} className="rounded p-1 text-slate hover:bg-surface-2/60"><X className="h-4 w-4" /></button>
+        </header>
+
+        <div className="grid grid-cols-12 gap-4 border-b border-line/60 bg-surface-2/20 p-3">
+          {/* Version timeline */}
+          <div className="col-span-12 lg:col-span-4">
+            <div className="mb-2 flex items-center gap-1 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-slate">
+              <History className="h-3 w-3" /> Version History
+            </div>
+            <ol className="space-y-1.5">
+              {versions.map((v) => {
+                const isLeft = v.version === leftVer;
+                const isRight = v.version === rightVer;
+                return (
+                  <li key={v.version} className={cn(
+                    "rounded-md border p-2 text-[11px]",
+                    (isLeft || isRight) ? "border-[color:var(--color-blue)]/60 bg-[color:var(--color-blue)]/10" : "border-line/40 bg-surface-2/30",
+                  )}>
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono font-bold text-foreground">v{v.version}</span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setLeftVer(v.version)}
+                          className={cn(
+                            "rounded px-1.5 py-[1px] text-[9.5px] font-semibold uppercase",
+                            isLeft ? "bg-rose-500/25 text-rose-200" : "border border-line/60 text-slate hover:bg-surface-2/60",
+                          )}
+                        >Left</button>
+                        <button
+                          onClick={() => setRightVer(v.version)}
+                          className={cn(
+                            "rounded px-1.5 py-[1px] text-[9.5px] font-semibold uppercase",
+                            isRight ? "bg-emerald-500/25 text-emerald-200" : "border border-line/60 text-slate hover:bg-surface-2/60",
+                          )}
+                        >Right</button>
+                      </div>
+                    </div>
+                    <div className="mt-1 text-slate">
+                      {new Date(v.changedAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })} · {v.changedBy}
+                    </div>
+                    <div className="text-[10.5px] text-foreground/80">{v.changeType}</div>
+                    <div className="text-[10px] italic text-slate">{v.note}</div>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+
+          {/* Summary counters */}
+          <div className="col-span-12 lg:col-span-8">
+            <div className="mb-2 flex items-center gap-1 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-slate">
+              <GitCompareArrows className="h-3 w-3" /> Change Summary
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              <SummaryTile icon={<Equal className="h-3 w-3" />} label="Unchanged" value={diff.filter((d) => d.kind === "same").length} tone="text-slate" />
+              <SummaryTile icon={<Minus className="h-3 w-3" />} label="Removed" value={diff.filter((d) => d.kind === "removed").length} tone="text-rose-300" />
+              <SummaryTile icon={<Plus className="h-3 w-3" />} label="Added" value={diff.filter((d) => d.kind === "added").length} tone="text-emerald-300" />
+              <SummaryTile icon={<GitCompareArrows className="h-3 w-3" />} label="Modified" value={diff.filter((d) => d.kind === "changed").length} tone="text-amber-300" />
+            </div>
+            <div className="mt-2 flex items-center justify-between rounded-md border border-line/40 bg-surface-2/30 px-2 py-1.5 text-[10.5px] text-slate">
+              <span>
+                Comparing <span className="font-mono text-rose-300">v{left.version}</span> ({left.changeType})
+                <ArrowRight className="mx-1 inline h-3 w-3 text-slate" />
+                <span className="font-mono text-emerald-300">v{right.version}</span> ({right.changeType})
+              </span>
+              <span className="text-[10px] italic">Officer decides. All version changes are logged (HR-9).</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Diff table */}
+        <div className="flex-1 overflow-auto">
+          <table className="w-full text-[11.5px]">
+            <thead className="sticky top-0 z-10 bg-surface-1 shadow-sm">
+              <tr className="border-b border-line/60 text-[10.5px] uppercase tracking-[0.06em] text-slate">
+                <th className="w-[160px] p-2 text-left font-semibold">Field</th>
+                <th className="p-2 text-left font-semibold">
+                  <span className="mr-1 rounded bg-rose-500/20 px-1.5 py-[1px] text-rose-200">v{left.version}</span>
+                  {left.changedBy}
+                </th>
+                <th className="p-2 text-left font-semibold">
+                  <span className="mr-1 rounded bg-emerald-500/20 px-1.5 py-[1px] text-emerald-200">v{right.version}</span>
+                  {right.changedBy}
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line/40">
+              {diff.map((row) => (
+                <tr key={row.key} className={cn("align-top", row.kind !== "same" && "bg-surface-2/20")}>
+                  <td className="p-2 text-slate">
+                    <div className="flex items-center gap-1.5">
+                      <DiffIcon kind={row.kind} />
+                      <span className="text-foreground/90">{row.label}</span>
+                    </div>
+                  </td>
+                  <td className={cn("p-2 font-mono", row.kind === "changed" || row.kind === "removed" ? "bg-rose-500/10 text-rose-100" : "text-foreground/80")}>
+                    {row.left || "—"}
+                  </td>
+                  <td className={cn("p-2 font-mono", row.kind === "changed" || row.kind === "added" ? "bg-emerald-500/10 text-emerald-100" : "text-foreground/80")}>
+                    {row.right || "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <footer className="flex items-center justify-between border-t border-line/60 px-4 py-2 text-[11px]">
+          <span className="text-slate">
+            {changed} of {diff.length} fields differ. Version diffs are read-only — restore actions are logged and require officer sign-off.
+          </span>
+          <div className="flex items-center gap-2">
+            <button className="inline-flex items-center gap-1 rounded-md border border-line/60 bg-surface-2/50 px-3 py-1.5 text-[11px] text-foreground hover:bg-surface-2/70">
+              <Download className="h-3 w-3" /> Export Diff
+            </button>
+            <button
+              disabled={left.version === right.version || right.version >= left.version}
+              className="inline-flex items-center gap-1 rounded-md bg-[color:var(--color-blue)]/90 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-[color:var(--color-blue)] disabled:opacity-40"
+              title="Restore the left version as a new version"
+            >
+              <History className="h-3 w-3" /> Restore v{left.version} as new
+            </button>
+            <button onClick={onClose} className="rounded-md border border-line/60 px-3 py-1.5 text-[11px] text-foreground hover:bg-surface-2/60">
+              Close
+            </button>
+          </div>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+function SummaryTile({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: number; tone: string }) {
+  return (
+    <div className="rounded-md border border-line/40 bg-surface-2/30 p-2">
+      <div className={cn("flex items-center gap-1 text-[10px] uppercase tracking-[0.06em]", tone)}>{icon} {label}</div>
+      <div className="mt-0.5 text-[16px] font-bold text-foreground leading-none">{value}</div>
+    </div>
+  );
+}
+
+function DiffIcon({ kind }: { kind: DiffKind }) {
+  if (kind === "added") return <Plus className="h-3 w-3 text-emerald-300" />;
+  if (kind === "removed") return <Minus className="h-3 w-3 text-rose-300" />;
+  if (kind === "changed") return <GitCompareArrows className="h-3 w-3 text-amber-300" />;
+  return <Equal className="h-3 w-3 text-slate" />;
+}
