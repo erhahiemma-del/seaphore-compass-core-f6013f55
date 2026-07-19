@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState, useTransition } from "react";
 import {
   ShieldCheck,
   ShieldAlert,
@@ -471,45 +471,97 @@ function EvidenceSnapshotPanel() {
 
 /* ------------------------------------------------------------
  * Map — builds entities from vessels + ports and filters by layers
+ *
+ * Perf safeguards for large Supabase datasets:
+ *  - Vessel classifications (highRisk / sanctioned / detained / inspected /
+ *    watchlist) are precomputed ONCE at module scope. Layer toggles then do
+ *    O(n) boolean checks instead of re-scanning nested arrays every keystroke.
+ *  - Layer state is represented as a numeric bitmask so React memoization and
+ *    equality checks are constant-time (no Set identity churn).
+ *  - The visible-entities computation is wrapped in `useDeferredValue` and
+ *    driven by `useTransition`, so rapid toggle clicks stay responsive and
+ *    heavy renders never block input.
+ *  - Rendered markers are capped at MAX_MARKERS, ranked by risk score. This
+ *    keeps the map surface bounded even when the underlying dataset scales to
+ *    tens of thousands of vessels.
  * ---------------------------------------------------------- */
 
-function buildComplianceMapEntities(layers: Set<LayerKey>): IntelMapEntity[] {
+const LAYER_BIT: Record<LayerKey, number> = {
+  hra: 1 << 0,
+  insp: 1 << 1,
+  detained: 1 << 2,
+  watch: 1 << 3,
+  sanction: 1 << 4,
+  ports: 1 << 5,
+  traffic: 1 << 6,
+};
+
+const DEFAULT_LAYER_MASK =
+  LAYER_BIT.hra | LAYER_BIT.insp | LAYER_BIT.detained | LAYER_BIT.watch | LAYER_BIT.sanction | LAYER_BIT.ports;
+
+/** Cap map markers so extremely large datasets never freeze the SVG surface. */
+const MAX_MARKERS = 500;
+
+/** Precomputed vessel classification — evaluated once per dataset load. */
+const CLASSIFIED_VESSELS = VESSELS.map((v, i) => {
+  const port = PORTS.find((p) => p.code === v.destinationPort);
+  const inspections = v.pscInspections?.length ?? 0;
+  const rad = ((i * 47) % 360) * Math.PI / 180;
+  return {
+    vessel: v,
+    port,
+    highRisk: v.riskLevel === "high",
+    sanctioned: !!v.sanctionsHit,
+    detained: !!v.pscInspections?.some((x) => x.result === "Detained"),
+    inspected: inspections > 0,
+    watchlist: v.riskScore > 60,
+    sinRad: Math.abs(Math.sin(rad)),
+    cosRad: Math.cos(rad),
+  };
+}).filter((c) => c.port);
+
+const PORT_ENTITIES: IntelMapEntity[] = PORTS.map((p) => ({
+  id: `port-${p.code}`,
+  kind: "port",
+  name: p.name,
+  position: { lat: p.lat, lng: p.lng },
+  risk: "unknown",
+  confidence: "verified",
+  subtitle: `${p.code} · ${p.city}`,
+}));
+
+function buildComplianceMapEntities(mask: number): IntelMapEntity[] {
   const out: IntelMapEntity[] = [];
-  if (layers.has("ports")) {
-    PORTS.forEach((p) => out.push({
-      id: `port-${p.code}`,
-      kind: "port",
-      name: p.name,
-      position: { lat: p.lat, lng: p.lng },
-      risk: "unknown",
-      confidence: "verified",
-      subtitle: `${p.code} · ${p.city}`,
-    }));
-  }
-  VESSELS.forEach((v, i) => {
-    const port = PORTS.find((p) => p.code === v.destinationPort);
-    if (!port) return;
-    const highRisk = v.riskLevel === "high";
-    const sanctioned = v.sanctionsHit;
-    const detained = v.pscInspections?.some((x) => x.result === "Detained");
+  if (mask & LAYER_BIT.ports) out.push(...PORT_ENTITIES);
 
+  const showHra = (mask & LAYER_BIT.hra) !== 0;
+  const showSanction = (mask & LAYER_BIT.sanction) !== 0;
+  const showDetained = (mask & LAYER_BIT.detained) !== 0;
+  const showInsp = (mask & LAYER_BIT.insp) !== 0;
+  const showWatch = (mask & LAYER_BIT.watch) !== 0;
+
+  // Rank by risk score so the MAX_MARKERS cap keeps the most relevant vessels.
+  const candidates: typeof CLASSIFIED_VESSELS = [];
+  for (const c of CLASSIFIED_VESSELS) {
     const show =
-      (layers.has("hra") && highRisk) ||
-      (layers.has("sanction") && sanctioned) ||
-      (layers.has("detained") && detained) ||
-      (layers.has("insp") && (v.pscInspections?.length ?? 0) > 0) ||
-      (layers.has("watch") && v.riskScore > 60);
-    if (!show) return;
+      (showHra && c.highRisk) ||
+      (showSanction && c.sanctioned) ||
+      (showDetained && c.detained) ||
+      (showInsp && c.inspected) ||
+      (showWatch && c.watchlist);
+    if (show) candidates.push(c);
+  }
+  candidates.sort((a, b) => b.vessel.riskScore - a.vessel.riskScore);
 
-    const rad = ((i * 47) % 360) * Math.PI / 180;
+  const limit = Math.min(candidates.length, MAX_MARKERS);
+  for (let i = 0; i < limit; i++) {
+    const { vessel: v, port, sinRad, cosRad } = candidates[i];
+    if (!port) continue;
     out.push({
       id: v.id,
       kind: "vessel",
       name: v.name,
-      position: {
-        lat: port.lat - Math.abs(Math.sin(rad)) * 0.4 - 0.15,
-        lng: port.lng + Math.cos(rad) * 0.4,
-      },
+      position: { lat: port.lat - sinRad * 0.4 - 0.15, lng: port.lng + cosRad * 0.4 },
       risk: v.riskLevel,
       confidence: v.sanctionsHit ? "inferred" : v.status === "validated" ? "verified" : "observed",
       subtitle: `${v.type} · IMO ${v.imo}`,
@@ -519,7 +571,7 @@ function buildComplianceMapEntities(layers: Set<LayerKey>): IntelMapEntity[] {
         ["Voyage", v.voyage],
       ],
     });
-  });
+  }
   return out;
 }
 
@@ -529,19 +581,26 @@ function buildComplianceMapEntities(layers: Set<LayerKey>): IntelMapEntity[] {
 
 export function ComplianceCentre() {
   const [tab, setTab] = useState<TabKey>("overview");
-  const [layers, setLayers] = useState<Set<LayerKey>>(
-    () => new Set<LayerKey>(["hra", "insp", "detained", "watch", "sanction", "ports"])
-  );
+  const [layerMask, setLayerMask] = useState<number>(DEFAULT_LAYER_MASK);
+  const [, startTransition] = useTransition();
+
+  // Deferred mask keeps toggle clicks instant; heavy recomputation trails behind.
+  const deferredMask = useDeferredValue(layerMask);
 
   const toggleLayer = (k: LayerKey) => {
-    setLayers((prev) => {
-      const next = new Set(prev);
-      next.has(k) ? next.delete(k) : next.add(k);
-      return next;
+    startTransition(() => {
+      setLayerMask((prev) => prev ^ LAYER_BIT[k]);
     });
   };
 
-  const mapEntities = useMemo(() => buildComplianceMapEntities(layers), [layers]);
+  const mapEntities = useMemo(
+    () => buildComplianceMapEntities(deferredMask),
+    [deferredMask],
+  );
+
+  const layerOn = (k: LayerKey) => (layerMask & LAYER_BIT[k]) !== 0;
+
+
 
   return (
     <AppShell
@@ -603,7 +662,7 @@ export function ComplianceCentre() {
                 <div className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-slate">Map Layers</div>
                 <ul className="mt-2 space-y-1.5">
                   {MAP_LAYERS.map((l) => {
-                    const on = layers.has(l.key);
+                    const on = layerOn(l.key);
                     return (
                       <li key={l.key} className="flex items-center justify-between text-[11.5px] text-foreground/90">
                         <span className="flex items-center gap-1.5">
