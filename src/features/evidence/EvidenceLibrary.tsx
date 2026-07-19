@@ -29,6 +29,7 @@ import {
   type EvidenceItem, type EvidenceCategory,
 } from "@/features/evidence/data";
 import { cn } from "@/lib/utils";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
   EvidenceFilterSidebar, EMPTY_FILTERS, loadPersistedFilters, persistFilters,
   applyEvidenceFilters, activeFilterCount, type EvidenceFilters,
