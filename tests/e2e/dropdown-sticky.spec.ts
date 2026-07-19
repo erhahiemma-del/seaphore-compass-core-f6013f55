@@ -83,6 +83,9 @@ test.describe("Searchable dropdowns keep the search input pinned", () => {
         // input's offset within the popover, not its absolute viewport y —
         // Radix may reposition the whole popover if the option list resizes,
         // which is fine as long as the input stays at the top inside it.
+        // Wait a beat so the Radix open animation is complete before we
+        // capture the baseline offset (scale/translate can shift measured y).
+        await page.waitForTimeout(250);
         const offsetBefore = await popover.evaluate((pop, sel) => {
           const inp = pop.querySelector(sel) as HTMLElement;
           return inp.getBoundingClientRect().top - pop.getBoundingClientRect().top;
@@ -91,7 +94,8 @@ test.describe("Searchable dropdowns keep the search input pinned", () => {
         // Scroll the option list container all the way down. If there are
         // few options this is a no-op — the invariant still holds.
         await listbox.evaluate((el) => { el.scrollTop = el.scrollHeight; });
-        await page.waitForTimeout(120);
+        await page.waitForTimeout(200);
+
 
         const offsetAfter = await popover.evaluate((pop, sel) => {
           const inp = pop.querySelector(sel) as HTMLElement;
