@@ -142,10 +142,28 @@ export type SectionKind =
   | "evidence_sources"
   | "next_questions";
 
-export interface BriefingSection {
-  kind: SectionKind;
+export type SectionPayloads = {
+  classification: { typeBadge: string; matrix: ConfidenceMatrix; evidenceStrength: "weak" | "moderate" | "strong" };
+  executive: { text: string };
+  why_this_matters: { chain: Array<{ step: string; from: string; to: string }> };
+  critical_findings: { findings: Array<{ priority: string; title: string; grade: EvidenceGrade; source: string }> };
+  verified_evidence: { items: string[] };
+  observed_patterns: { patterns: Array<{ pattern: string; caseRefs: string[] }> };
+  analytical_assessment: { text: string };
+  explainability_chain: { chain: Array<{ step: string; from: string; to: string }> };
+  counter_hypotheses: { list: string[] };
+  intelligence_gaps: { list: string[] };
+  decision_impact: { revenue: number; security: number; operational: number; cargo: number };
+  decision_required: { deadline: string; risk: string };
+  officer_actions: { actions: Array<{ id: string; label: string }> };
+  evidence_sources: { queried: number; responded: number; corroborated: number };
+  next_questions: { questions: string[] };
+};
+
+export interface BriefingSection<K extends SectionKind = SectionKind> {
+  kind: K;
   title: string;
-  payload: unknown;
+  payload: K extends keyof SectionPayloads ? SectionPayloads[K] : never;
 }
 
 export interface Briefing {
