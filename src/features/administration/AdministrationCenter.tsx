@@ -84,7 +84,7 @@ import { toast } from "sonner";
 import { listRoleAuditLog } from "@/lib/admin-audit.functions";
 import { listUsersWithRoles } from "@/lib/admin-roles.functions";
 import { RoleManagementTable } from "@/features/administration/Administration";
-import type { Role } from "@/lib/permissions";
+import { can, type Role } from "@/lib/permissions";
 
 // ---------- Types & constants ----------
 
