@@ -123,10 +123,10 @@ test.describe("Compliance Intelligence Centre", () => {
     for (const mode of ["dark", "light"] as const) {
       await forceTheme(page, mode);
       for (const entity of MATRIX_ENTITIES) {
-        const row = page.getByRole("cell", { name: entity, exact: false }).first()
-          .or(page.getByText(entity, { exact: true }).first());
-        await expect(row).toBeVisible();
+        const cell = page.getByText(entity, { exact: true }).first();
+        await expect(cell).toBeVisible();
       }
+
       // Status pills must render at least one PASS / REVIEW / FAIL badge.
       for (const status of ["PASS", "REVIEW", "FAIL"]) {
         await expect(page.getByText(status, { exact: true }).first()).toBeVisible();
