@@ -26,7 +26,7 @@ export function DataSourceMatrixPanel() {
     try {
       const res = await runChecks({});
       toast.success(`Health check complete — ${res.checked} sources probed`);
-      await qc.invalidateQueries({ queryKey: ["data-sources"] });
+      await qc.invalidateQueries({ queryKey: QUERY_KEYS.dataSources() });
       await refetch();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Health check failed");
