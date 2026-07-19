@@ -32,6 +32,8 @@ import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { AskCopilotDialog } from "@/components/ai/ask-copilot-dialog";
 import { COMPANIES, OWNERSHIP_EDGES, VESSELS, companyById } from "@/lib/intel-centre-data";
+import { exportOwnershipReport } from "./export-report";
+import { useAuth } from "@/hooks/use-auth";
 import {
   OWNERSHIP_KPIS,
   OWNERSHIP_EVENTS,
