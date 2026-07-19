@@ -123,7 +123,7 @@ describe("Ownership Evidence Report — structure", () => {
       "KEY INSIGHTS",
       "RECOMMENDED ACTIONS (SYSTEM GENERATED)",
       "OWNERSHIP TIMELINE",
-      "EVIDENCE PROVENANCE",
+      "Evidence Provenance",
       "AUDIT TRAIL",
       "SEAPHORE OATH",
     ]) {
