@@ -38,6 +38,7 @@ import {
 } from "@/services/detect.service";
 
 export function DetectPage() {
+  useRenderTrace("signals.render", { surface: "detect" });
   const [activeDomain, setActiveDomain] = useState<"All" | SignalDomain>("All");
   const [range, setRange] = useState<TimelineRange>("24H");
   const handoff = useHandoffNavigate();
