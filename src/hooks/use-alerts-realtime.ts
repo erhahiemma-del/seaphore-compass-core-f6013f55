@@ -115,6 +115,7 @@ export function useAlertsRealtime({
       });
 
       if (!localId || !knownRef.current.has(localId)) return;
+      setRecentUpdates((prev) => ({ ...prev, [localId]: Date.now() }));
       const nextStatus = statusFromDb(row.status);
       if (nextStatus) onStatusRef.current?.(localId, nextStatus);
       const assignee = typeof meta.assignedTo === "string" ? meta.assignedTo : null;
