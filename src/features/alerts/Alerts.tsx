@@ -531,10 +531,11 @@ function CheckList({ options, checked, onToggle }: { options: string[]; checked:
 
 /* ------------- Alert Queue ------------- */
 function AlertQueue({
-  alerts, total, selectedId, onSelect,
+  alerts, total, selectedId, onSelect, live,
 }: {
   alerts: ExtAlert[]; total: number; selectedId?: string;
   onSelect: (id: string) => void;
+  live: ReturnType<typeof useAlertsRealtime>;
 }) {
   const [page, setPage] = useState(1);
   const per = 6;
@@ -544,8 +545,9 @@ function AlertQueue({
   return (
     <div className="flex h-full flex-col rounded-lg border border-line/60 bg-surface-1/70">
       <header className="flex items-center justify-between border-b border-line/60 px-3 py-2">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate">
-          Alert Queue <span className="text-foreground">({total})</span>
+        <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate">
+          <span>Alert Queue <span className="text-foreground">({total})</span></span>
+          <PanelLive lastEvent={live.lastEvent} status={live.status} kinds={["alert"]} />
         </div>
         <label className="flex items-center gap-1.5 text-[11px] text-slate">
           Select All <input type="checkbox" className="h-3 w-3 accent-[color:var(--color-blue)]" />
