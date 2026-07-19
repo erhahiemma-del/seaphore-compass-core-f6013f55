@@ -31,15 +31,17 @@ const KPI_LABELS = [
 
 const TAB_LABELS = [
   "Overview",
-  "Sanctions",
-  "Certificates",
+  "Violations",
   "Inspections",
+  "Certificates",
+  "Sanctions",
   "Watchlists",
   "Regulations",
   "Evidence",
   "Investigations",
   "Timeline",
 ];
+
 
 const MATRIX_ENTITIES = [
   "MV Ocean Pearl",
