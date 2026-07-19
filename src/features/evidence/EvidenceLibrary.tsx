@@ -490,6 +490,8 @@ function ConfidenceBadge({ tier, className }: { tier: EvidenceItem["confidence"]
  * ============================================================ */
 
 function EvidencePreview({ item }: { item: EvidenceItem }) {
+  const [compareOpen, setCompareOpen] = useState(false);
+  const versions = useMemo(() => buildVersions(item), [item]);
   return (
     <section className="rounded-lg border border-line/60 bg-surface-1/70">
       <header className="flex items-center justify-between border-b border-line/60 px-3 py-2">
@@ -497,9 +499,23 @@ function EvidencePreview({ item }: { item: EvidenceItem }) {
         <div className="flex items-center gap-2 text-[11px] text-foreground">
           <span className="font-semibold">{item.kind}</span>
           <span className="font-mono text-slate">{item.refNumber}</span>
+          <span className="ml-2 rounded border border-line/60 bg-surface-2/60 px-1.5 py-[1px] text-[10px] font-semibold text-[color:var(--color-blue)]">
+            v{versions[0]!.version}
+          </span>
+          <button
+            onClick={() => setCompareOpen(true)}
+            className="ml-1 inline-flex items-center gap-1 rounded-md border border-line/60 bg-surface-2/50 px-2 py-1 text-[10.5px] font-semibold text-foreground hover:bg-surface-2/70"
+            title="Compare versions of this evidence"
+          >
+            <GitCompareArrows className="h-3 w-3 text-[color:var(--color-blue)]" /> Compare Versions
+            <span className="rounded-full bg-[color:var(--color-blue)]/20 px-1 text-[9px] text-[color:var(--color-blue)]">{versions.length}</span>
+          </button>
           <ChevronDown className="h-3 w-3 text-slate" />
         </div>
       </header>
+      {compareOpen && (
+        <VersionCompareModal item={item} versions={versions} onClose={() => setCompareOpen(false)} />
+      )}
       <div className="grid grid-cols-12 gap-3 p-3">
         {/* Document viewer */}
         <div className="col-span-12 md:col-span-4">
