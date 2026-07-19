@@ -32,7 +32,7 @@
   --color-foreground: var(--foreground);
   --color-card: var(--surface);
   --color-card-foreground: var(--foreground);
-  --color-popover: var(--surface);
+  --color-popover: var(--surface-1);
   --color-popover-foreground: var(--foreground);
   --color-primary: var(--navy);
   --color-primary-foreground: #ffffff;
