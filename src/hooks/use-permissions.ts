@@ -10,6 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { QUERY_KEYS } from "@/lib/query-keys";
 import {
   can,
   highestRole,
@@ -26,7 +27,7 @@ export function useRoles(): {
   const userId = session?.user?.id ?? null;
 
   const query = useQuery({
-    queryKey: ["auth", "roles", userId],
+    queryKey: QUERY_KEYS.authRoles(userId ?? undefined),
     enabled: !!userId,
     staleTime: 5 * 60_000,
     queryFn: async (): Promise<Role[]> => {
