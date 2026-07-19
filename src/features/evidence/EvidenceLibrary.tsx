@@ -75,7 +75,7 @@ export function EvidenceCentre() {
   useEffect(() => { persistFilters(filters); }, [filters]);
 
   const { data: allEvidence = EVIDENCE_LIBRARY, isLoading, error } = useQuery({
-    queryKey: ["evidence", "library"],
+    queryKey: QUERY_KEYS.evidenceLibrary(),
     queryFn: listEvidence,
     initialData: EVIDENCE_LIBRARY,
     staleTime: 30_000,
