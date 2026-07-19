@@ -555,7 +555,13 @@ function AlertQueue({
       </header>
       <ul className="flex-1 divide-y divide-line/40">
         {shown.map((a) => (
-          <QueueRow key={a.id} alert={a} selected={a.id === selectedId} onClick={() => onSelect(a.id)} />
+          <QueueRow
+            key={a.id}
+            alert={a}
+            selected={a.id === selectedId}
+            onClick={() => onSelect(a.id)}
+            fresh={live.wasRecentlyUpdated(a.alertId)}
+          />
         ))}
         {shown.length === 0 && (
           <li className="p-8 text-center text-[12px] text-slate">No alerts match the current filters.</li>
