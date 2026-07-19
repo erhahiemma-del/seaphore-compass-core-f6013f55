@@ -35,8 +35,10 @@ vi.mock("jspdf", () => {
   class FakePDF {
     internal = {
       pageSize: { getWidth: () => 595, getHeight: () => 842 },
-      getCurrentPageInfo: () => ({ pageNumber: pageCount }),
     };
+    getCurrentPageInfo() {
+      return { pageNumber: pageCount };
+    }
     setFont() {}
     setFontSize() {}
     setTextColor() {}
