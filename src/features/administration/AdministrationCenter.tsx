@@ -84,6 +84,7 @@ import { listRoleAuditLog } from "@/lib/admin-audit.functions";
 import { listUsersWithRoles } from "@/lib/admin-roles.functions";
 import { RoleManagementTable } from "@/features/administration/Administration";
 import { can, type Role } from "@/lib/permissions";
+import { DataSourceMatrixPanel } from "@/components/data-sources/data-source-matrix-panel";
 
 // ---------- Types & constants ----------
 
