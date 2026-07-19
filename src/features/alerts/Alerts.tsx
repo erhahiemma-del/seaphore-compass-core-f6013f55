@@ -161,12 +161,28 @@ export function AlertsCentre() {
   }, [filtered, selectedId]);
 
   const setStatus = (id: string, s: AlertStatus) => setStatusMap((p) => ({ ...p, [id]: s }));
+  const setAssignee = (id: string, who: string) => setAssignMap((p) => ({ ...p, [id]: who }));
+
+  // Live database stream — mirrors DB updates into workspace state so queue,
+  // details, timeline and correlation panels all reflect changes without a refresh.
+  const knownAlertIds = useMemo(() => ALL_ALERTS.map((a) => a.alertId), []);
+  const live = useAlertsRealtime({
+    knownAlertIds,
+    onStatusChange: (alertId, next) => {
+      const local = ALL_ALERTS.find((a) => a.alertId === alertId);
+      if (local) setStatus(local.id, next);
+    },
+    onAssignChange: (alertId, who) => {
+      const local = ALL_ALERTS.find((a) => a.alertId === alertId);
+      if (local) setAssignee(local.id, who);
+    },
+  });
 
   return (
     <AppShell title="Alerts Center" subtitle="Triage. Prioritize. Act. Close the loop." mode="dark">
       <div className="min-h-full space-y-4 px-6 py-4">
         {/* Global search bar (page-level) */}
-        <PageSearchBar query={query} onQuery={setQuery} />
+        <PageSearchBar query={query} onQuery={setQuery} live={live} />
 
         {/* KPI Ribbon */}
         <KpiRibbon />
