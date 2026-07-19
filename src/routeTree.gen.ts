@@ -20,6 +20,7 @@ import { Route as InvestigateRouteImport } from './routes/investigate'
 import { Route as EvidenceRouteImport } from './routes/evidence'
 import { Route as DetectRouteImport } from './routes/detect'
 import { Route as DecideRouteImport } from './routes/decide'
+import { Route as CopilotRouteImport } from './routes/copilot'
 import { Route as ComplianceRouteImport } from './routes/compliance'
 import { Route as CommandCenterRouteImport } from './routes/command-center'
 import { Route as CargoRouteImport } from './routes/cargo'
@@ -37,6 +38,7 @@ import { Route as InvestigateIdRouteImport } from './routes/investigate.$id'
 import { Route as EntityIdRouteImport } from './routes/entity.$id'
 import { Route as DecideQueueRouteImport } from './routes/decide.queue'
 import { Route as DecideIdRouteImport } from './routes/decide.$id'
+import { Route as ApiPublicWorkflowsRouteImport } from './routes/api/public/workflows'
 import { Route as ApiPublicDevSeedRoleRouteImport } from './routes/api/public/dev/seed-role'
 
 const VesselRoute = VesselRouteImport.update({
@@ -92,6 +94,11 @@ const DetectRoute = DetectRouteImport.update({
 const DecideRoute = DecideRouteImport.update({
   id: '/decide',
   path: '/decide',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CopilotRoute = CopilotRouteImport.update({
+  id: '/copilot',
+  path: '/copilot',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ComplianceRoute = ComplianceRouteImport.update({
@@ -179,6 +186,11 @@ const DecideIdRoute = DecideIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => DecideRoute,
 } as any)
+const ApiPublicWorkflowsRoute = ApiPublicWorkflowsRouteImport.update({
+  id: '/api/public/workflows',
+  path: '/api/public/workflows',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicDevSeedRoleRoute = ApiPublicDevSeedRoleRouteImport.update({
   id: '/api/public/dev/seed-role',
   path: '/api/public/dev/seed-role',
@@ -193,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/cargo': typeof CargoRoute
   '/command-center': typeof CommandCenterRoute
   '/compliance': typeof ComplianceRoute
+  '/copilot': typeof CopilotRoute
   '/decide': typeof DecideRouteWithChildren
   '/detect': typeof DetectRoute
   '/evidence': typeof EvidenceRoute
@@ -214,6 +227,7 @@ export interface FileRoutesByFullPath {
   '/decide/': typeof DecideIndexRoute
   '/investigate/': typeof InvestigateIndexRoute
   '/share/': typeof ShareIndexRoute
+  '/api/public/workflows': typeof ApiPublicWorkflowsRoute
   '/api/public/dev/seed-role': typeof ApiPublicDevSeedRoleRoute
 }
 export interface FileRoutesByTo {
@@ -224,6 +238,7 @@ export interface FileRoutesByTo {
   '/cargo': typeof CargoRoute
   '/command-center': typeof CommandCenterRoute
   '/compliance': typeof ComplianceRoute
+  '/copilot': typeof CopilotRoute
   '/detect': typeof DetectRoute
   '/evidence': typeof EvidenceRoute
   '/manifest': typeof ManifestRoute
@@ -242,6 +257,7 @@ export interface FileRoutesByTo {
   '/decide': typeof DecideIndexRoute
   '/investigate': typeof InvestigateIndexRoute
   '/share': typeof ShareIndexRoute
+  '/api/public/workflows': typeof ApiPublicWorkflowsRoute
   '/api/public/dev/seed-role': typeof ApiPublicDevSeedRoleRoute
 }
 export interface FileRoutesById {
@@ -253,6 +269,7 @@ export interface FileRoutesById {
   '/cargo': typeof CargoRoute
   '/command-center': typeof CommandCenterRoute
   '/compliance': typeof ComplianceRoute
+  '/copilot': typeof CopilotRoute
   '/decide': typeof DecideRouteWithChildren
   '/detect': typeof DetectRoute
   '/evidence': typeof EvidenceRoute
@@ -274,6 +291,7 @@ export interface FileRoutesById {
   '/decide/': typeof DecideIndexRoute
   '/investigate/': typeof InvestigateIndexRoute
   '/share/': typeof ShareIndexRoute
+  '/api/public/workflows': typeof ApiPublicWorkflowsRoute
   '/api/public/dev/seed-role': typeof ApiPublicDevSeedRoleRoute
 }
 export interface FileRouteTypes {
@@ -286,6 +304,7 @@ export interface FileRouteTypes {
     | '/cargo'
     | '/command-center'
     | '/compliance'
+    | '/copilot'
     | '/decide'
     | '/detect'
     | '/evidence'
@@ -307,6 +326,7 @@ export interface FileRouteTypes {
     | '/decide/'
     | '/investigate/'
     | '/share/'
+    | '/api/public/workflows'
     | '/api/public/dev/seed-role'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -317,6 +337,7 @@ export interface FileRouteTypes {
     | '/cargo'
     | '/command-center'
     | '/compliance'
+    | '/copilot'
     | '/detect'
     | '/evidence'
     | '/manifest'
@@ -335,6 +356,7 @@ export interface FileRouteTypes {
     | '/decide'
     | '/investigate'
     | '/share'
+    | '/api/public/workflows'
     | '/api/public/dev/seed-role'
   id:
     | '__root__'
@@ -345,6 +367,7 @@ export interface FileRouteTypes {
     | '/cargo'
     | '/command-center'
     | '/compliance'
+    | '/copilot'
     | '/decide'
     | '/detect'
     | '/evidence'
@@ -366,6 +389,7 @@ export interface FileRouteTypes {
     | '/decide/'
     | '/investigate/'
     | '/share/'
+    | '/api/public/workflows'
     | '/api/public/dev/seed-role'
   fileRoutesById: FileRoutesById
 }
@@ -377,6 +401,7 @@ export interface RootRouteChildren {
   CargoRoute: typeof CargoRoute
   CommandCenterRoute: typeof CommandCenterRoute
   ComplianceRoute: typeof ComplianceRoute
+  CopilotRoute: typeof CopilotRoute
   DecideRoute: typeof DecideRouteWithChildren
   DetectRoute: typeof DetectRoute
   EvidenceRoute: typeof EvidenceRoute
@@ -389,6 +414,7 @@ export interface RootRouteChildren {
   ShareRoute: typeof ShareRouteWithChildren
   VesselRoute: typeof VesselRoute
   EntityIdRoute: typeof EntityIdRoute
+  ApiPublicWorkflowsRoute: typeof ApiPublicWorkflowsRoute
   ApiPublicDevSeedRoleRoute: typeof ApiPublicDevSeedRoleRoute
 }
 
@@ -469,6 +495,13 @@ declare module '@tanstack/react-router' {
       path: '/decide'
       fullPath: '/decide'
       preLoaderRoute: typeof DecideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/copilot': {
+      id: '/copilot'
+      path: '/copilot'
+      fullPath: '/copilot'
+      preLoaderRoute: typeof CopilotRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/compliance': {
@@ -590,6 +623,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DecideIdRouteImport
       parentRoute: typeof DecideRoute
     }
+    '/api/public/workflows': {
+      id: '/api/public/workflows'
+      path: '/api/public/workflows'
+      fullPath: '/api/public/workflows'
+      preLoaderRoute: typeof ApiPublicWorkflowsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/dev/seed-role': {
       id: '/api/public/dev/seed-role'
       path: '/api/public/dev/seed-role'
@@ -653,6 +693,7 @@ const rootRouteChildren: RootRouteChildren = {
   CargoRoute: CargoRoute,
   CommandCenterRoute: CommandCenterRoute,
   ComplianceRoute: ComplianceRoute,
+  CopilotRoute: CopilotRoute,
   DecideRoute: DecideRouteWithChildren,
   DetectRoute: DetectRoute,
   EvidenceRoute: EvidenceRoute,
@@ -665,6 +706,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShareRoute: ShareRouteWithChildren,
   VesselRoute: VesselRoute,
   EntityIdRoute: EntityIdRoute,
+  ApiPublicWorkflowsRoute: ApiPublicWorkflowsRoute,
   ApiPublicDevSeedRoleRoute: ApiPublicDevSeedRoleRoute,
 }
 export const routeTree = rootRouteImport
