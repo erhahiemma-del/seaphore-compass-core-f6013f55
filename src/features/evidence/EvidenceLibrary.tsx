@@ -315,75 +315,7 @@ function ViewSwitcher({ view, setView }: { view: "cards" | "grid" | "list"; setV
   );
 }
 
-/* ============================================================
- * Filter sidebar
- * ============================================================ */
-
-const TYPE_OPTIONS = ["Bill of Lading", "Import Manifest", "Invoice", "Container List", "Cargo Declaration", "Inspection Report", "Photo", "AIS Track", "Certificate", "Payment Receipt"];
-const LEVEL_OPTIONS: Array<{ key: string; label: string }> = [
-  { key: "verified", label: "Verified" },
-  { key: "observed", label: "Observed" },
-  { key: "inferred", label: "Inferred" },
-  { key: "unconfirmed", label: "Unconfirmed" },
-];
-const CLASSIFICATION_OPTIONS = ["Official Document", "Field Capture", "System Ingest", "Third-Party Feed", "OSINT"];
-
-function FilterSidebar({
-  types, setTypes, levels, setLevels, classifications, setClassifications,
-}: {
-  types: string[]; setTypes: (v: string[]) => void;
-  levels: string[]; setLevels: (v: string[]) => void;
-  classifications: string[]; setClassifications: (v: string[]) => void;
-}) {
-  const total = types.length + levels.length + classifications.length;
-  const clear = () => { setTypes([]); setLevels([]); setClassifications([]); };
-  return (
-    <aside className="rounded-lg border border-line/60 bg-surface-1/70">
-      <header className="flex items-center justify-between border-b border-line/60 px-3 py-2">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate">Filter Evidence</span>
-        <button onClick={clear} className="text-[10.5px] text-[color:var(--color-blue)] hover:underline">Clear All</button>
-      </header>
-      <div className="space-y-3 p-3">
-        <FilterBox icon={<Search className="h-3 w-3" />} label="Search filters..." />
-        <FilterSelect label="Evidence Type" hint="All Types" />
-        <FilterSelect label="Confidence Level" hint="All Levels" />
-        <FilterSelect label="Investigation" hint="All Investigations" />
-        <FilterSelect label="Entity" hint="All Entities" />
-        <FilterSelect label="Port" hint="All Ports" />
-        <FilterSelect label="Date Range" hint="May 20, 2026 - May 27, 2026" />
-        <FilterSelect label="Uploaded By" hint="All Officers" />
-        <FilterSelect label="Classification" hint="All Classifications" />
-        <FilterSelect label="Tags" hint="All Tags" />
-        <button className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md bg-[color:var(--color-blue)]/90 px-3 py-2 text-[11.5px] font-semibold text-white hover:bg-[color:var(--color-blue)]">
-          Apply Filters ({Math.max(total, 8)})
-        </button>
-        <button className="flex w-full items-center justify-center gap-1.5 rounded-md border border-line/60 bg-surface-2/40 px-3 py-2 text-[11.5px] text-foreground hover:bg-surface-2/60">
-          <Save className="h-3 w-3" /> Save View
-        </button>
-      </div>
-    </aside>
-  );
-}
-
-function FilterBox({ icon, label }: { icon: React.ReactNode; label: string }) {
-  return (
-    <div className="relative">
-      <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-slate">{icon}</span>
-      <input placeholder={label} className="w-full rounded-md border border-line/50 bg-surface-2/40 py-1.5 pl-7 pr-2 text-[11.5px] text-foreground placeholder:text-slate focus:outline-none focus:ring-1 focus:ring-[color:var(--color-blue)]" />
-    </div>
-  );
-}
-function FilterSelect({ label, hint }: { label: string; hint: string }) {
-  return (
-    <div>
-      <div className="mb-1 text-[10.5px] uppercase tracking-[0.06em] text-slate">{label}</div>
-      <button className="flex w-full items-center justify-between rounded-md border border-line/60 bg-surface-2/40 px-2 py-1.5 text-[11.5px] text-foreground hover:bg-surface-2/60">
-        <span className="truncate">{hint}</span>
-        <ChevronDown className="h-3 w-3 text-slate" />
-      </button>
-    </div>
-  );
-}
+/* Filter sidebar moved to ./filters.tsx (production-ready dropdowns). */
 
 /* ============================================================
  * Evidence Explorer (cards)
