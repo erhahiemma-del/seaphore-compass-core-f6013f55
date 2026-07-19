@@ -32,7 +32,7 @@
   --color-foreground: var(--foreground);
   --color-card: var(--surface);
   --color-card-foreground: var(--foreground);
-  --color-popover: var(--surface);
+  --color-popover: var(--surface-1);
   --color-popover-foreground: var(--foreground);
   --color-primary: var(--navy);
   --color-primary-foreground: #ffffff;
@@ -55,6 +55,7 @@
   --color-ink: var(--ink);
   --color-slate: var(--slate);
   --color-surface: var(--surface);
+  --color-surface-1: var(--surface-1);
   --color-surface-2: var(--surface-2);
   --color-line: var(--line);
 
@@ -118,6 +119,7 @@
   --background: #F7F9FB;
   --foreground: var(--ink);
   --surface: #FFFFFF;
+  --surface-1: #FFFFFF;
   --surface-2: #F0F3F6;
   --line: #E4E8EC;
 
@@ -140,8 +142,9 @@
   --background: #0D1B2A;
   --foreground: #E4E8EC;
   --surface: #132032;
+  --surface-1: #151E32;
   --surface-2: #172A40;
-  --line: #1E3048;
+  --line: #243247;
 }
 
 /* Spacing utilities (4px base) */
