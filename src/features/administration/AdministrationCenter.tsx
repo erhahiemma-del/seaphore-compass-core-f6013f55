@@ -9,7 +9,7 @@
  * on the underlying tables and by the entry RBAC check.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { startTransition, useEffect, useMemo, useState } from "react";
 import type { ComponentType, ReactNode, SVGProps } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn as useSF } from "@tanstack/react-start";
