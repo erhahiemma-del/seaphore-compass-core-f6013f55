@@ -50,7 +50,6 @@ function record(trace: PerfTrace) {
   if (trace.overBudget) {
     alertListeners.forEach((l) => l(trace));
     if (typeof console !== "undefined") {
-      // eslint-disable-next-line no-console
       console.warn(
         `[perf] ${trace.name} ${trace.durationMs.toFixed(1)}ms exceeds ${trace.budgetMs}ms`,
         trace.meta ?? {},
@@ -130,7 +129,10 @@ export function getRecentTraces(limit = 50): PerfTrace[] {
 }
 
 export function getRecentAlerts(limit = 20): PerfTrace[] {
-  return traces.filter((t) => t.overBudget).slice(-limit).reverse();
+  return traces
+    .filter((t) => t.overBudget)
+    .slice(-limit)
+    .reverse();
 }
 
 export function clearTraces(): void {
@@ -138,7 +140,10 @@ export function clearTraces(): void {
 }
 
 /** Convenience: aggregate p50/p95/max by trace name over the ring. */
-export function summarize(): Record<string, { count: number; p50: number; p95: number; max: number; breaches: number }> {
+export function summarize(): Record<
+  string,
+  { count: number; p50: number; p95: number; max: number; breaches: number }
+> {
   const groups = new Map<string, number[]>();
   const breaches = new Map<string, number>();
   for (const t of traces) {

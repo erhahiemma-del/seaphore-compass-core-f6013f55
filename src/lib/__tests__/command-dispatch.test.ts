@@ -75,6 +75,7 @@ describe("TYPE_ROUTE mapping", () => {
 });
 
 describe("useCommandDispatch", () => {
+  // eslint-disable-next-line react-hooks/rules-of-hooks -- test helper wraps hook for imperative invocation
   const dispatch = () => useCommandDispatch();
 
   it("routes an IMO query to /vessel with handoff context", () => {

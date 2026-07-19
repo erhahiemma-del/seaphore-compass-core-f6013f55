@@ -25,12 +25,7 @@ export function RecommendationPanel({
   className?: string;
 }) {
   return (
-    <section
-      className={cn(
-        "rounded-lg border border-line bg-card p-4 shadow-card",
-        className,
-      )}
-    >
+    <section className={cn("rounded-lg border border-line bg-card p-4 shadow-card", className)}>
       <header className="flex flex-wrap items-center gap-2">
         <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[color:var(--color-purple)]/10 text-[color:var(--color-purple)]">
           <Sparkles className="h-4 w-4" />

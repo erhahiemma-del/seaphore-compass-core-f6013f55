@@ -22,12 +22,11 @@ describe("Data Source Matrix", () => {
     const planned = DATA_SOURCE_MATRIX.filter((e) => e.status === "PLANNED");
     expect(planned.length).toBeGreaterThan(0);
     for (const entry of planned) {
-      const adapter = getAdapter(entry.id) as unknown as Record<string, (...args: unknown[]) => Promise<unknown>>;
-      const method =
-        adapter.getLatestPosition ||
-        adapter.spot ||
-        adapter.lookup ||
-        adapter.observe;
+      const adapter = getAdapter(entry.id) as unknown as Record<
+        string,
+        (...args: unknown[]) => Promise<unknown>
+      >;
+      const method = adapter.getLatestPosition || adapter.spot || adapter.lookup || adapter.observe;
       expect(method, `adapter ${entry.id} must expose a fetch method`).toBeTypeOf("function");
       await expect(method.call(adapter, "TEST")).rejects.toBeInstanceOf(PlannedSourceError);
     }

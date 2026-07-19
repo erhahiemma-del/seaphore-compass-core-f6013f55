@@ -1,27 +1,7 @@
-import {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import {
-  Filter,
-  Layers,
-  Maximize2,
-  Minus,
-  MoveHorizontal,
-  Pause,
-  Play,
-  Plus,
-} from "lucide-react";
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { Filter, Layers, Maximize2, Minus, MoveHorizontal, Pause, Play, Plus } from "lucide-react";
 
-import type {
-  GraphEdge,
-  GraphNode,
-  GraphNodeKind,
-} from "@/lib/lifecycle-data";
+import type { GraphEdge, GraphNode, GraphNodeKind } from "@/lib/lifecycle-data";
 import { cn } from "@/lib/utils";
 
 const KIND_COLOR: Record<GraphNodeKind, string> = {
@@ -181,15 +161,9 @@ export const KnowledgeGraph = forwardRef<
   const [range, setRange] = useState<GraphRange>(persisted?.range ?? "All");
   const [cursor, setCursor] = useState(persisted?.cursor ?? 100);
   const [playing, setPlaying] = useState(false);
-  const [confidenceFilter, setConfidenceFilter] = useState(
-    persisted?.confidenceFilter ?? 0,
-  );
-  const [evidenceOnly, setEvidenceOnly] = useState(
-    persisted?.evidenceOnly ?? false,
-  );
-  const [showMinimap, setShowMinimap] = useState<boolean>(
-    persisted?.minimap ?? minimap,
-  );
+  const [confidenceFilter, setConfidenceFilter] = useState(persisted?.confidenceFilter ?? 0);
+  const [evidenceOnly, setEvidenceOnly] = useState(persisted?.evidenceOnly ?? false);
+  const [showMinimap, setShowMinimap] = useState<boolean>(persisted?.minimap ?? minimap);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const skipPersistRef = useRef(false);
 
@@ -288,14 +262,7 @@ export const KnowledgeGraph = forwardRef<
         map.set(n.id, { x: 50 + Math.cos(a) * 34, y: 50 + Math.sin(a) * 34 });
       });
     } else {
-      const bands: GraphNodeKind[] = [
-        "person",
-        "company",
-        "vessel",
-        "manifest",
-        "cargo",
-        "port",
-      ];
+      const bands: GraphNodeKind[] = ["person", "company", "vessel", "manifest", "cargo", "port"];
       bands.forEach((kind, row) => {
         const layer = nodes.filter((n) => n.kind === kind);
         const y = 10 + (row * 80) / (bands.length - 1);
@@ -324,16 +291,12 @@ export const KnowledgeGraph = forwardRef<
     [nodes, activeKinds, confidenceFilter, evidenceOnly, cursor, rangeStart],
   );
 
-  const visibleNodeIds = useMemo(
-    () => new Set(visibleNodes.map((n) => n.id)),
-    [visibleNodes],
-  );
+  const visibleNodeIds = useMemo(() => new Set(visibleNodes.map((n) => n.id)), [visibleNodes]);
 
   const visibleEdges = useMemo(
     () =>
       edges.filter((e) => {
-        if (!visibleNodeIds.has(e.from) || !visibleNodeIds.has(e.to))
-          return false;
+        if (!visibleNodeIds.has(e.from) || !visibleNodeIds.has(e.to)) return false;
         if (!activeRels.has(e.type ?? e.label)) return false;
         const t = e.t ?? 0;
         return t >= rangeStart && t <= cursor;
@@ -351,10 +314,7 @@ export const KnowledgeGraph = forwardRef<
     return s;
   }, [selectedId, visibleEdges]);
 
-  const nodeById = useMemo(
-    () => new Map(nodes.map((n) => [n.id, n])),
-    [nodes],
-  );
+  const nodeById = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
 
   // Zoom: shrink the viewBox around the centre — labels scale up naturally.
   const vbSize = 100 / zoom;
@@ -384,8 +344,8 @@ export const KnowledgeGraph = forwardRef<
           LIVE
         </span>
         <span className="text-white/80">
-          Displaying <b>{visibleNodes.length}</b> entities,{" "}
-          <b>{visibleEdges.length}</b> relationships
+          Displaying <b>{visibleNodes.length}</b> entities, <b>{visibleEdges.length}</b>{" "}
+          relationships
         </span>
         {selectedId && (
           <button
@@ -476,9 +436,7 @@ export const KnowledgeGraph = forwardRef<
             </label>
           ))}
         </div>
-        <div className="mb-1 font-semibold text-white/80">
-          Relationship types
-        </div>
+        <div className="mb-1 font-semibold text-white/80">Relationship types</div>
         <div className="max-h-24 space-y-0.5 overflow-auto pr-1">
           {relTypes.map((r) => (
             <label key={r} className="flex items-center gap-1.5 text-white/60">
@@ -528,14 +486,8 @@ export const KnowledgeGraph = forwardRef<
           <div className="mb-1 font-semibold text-white/80">Legend</div>
           <div className="space-y-0.5">
             {(Object.keys(KIND_COLOR) as GraphNodeKind[]).map((k) => (
-              <div
-                key={k}
-                className="flex items-center gap-1.5 text-white/70"
-              >
-                <span
-                  className="h-2 w-2 rounded-full"
-                  style={{ backgroundColor: KIND_COLOR[k] }}
-                />
+              <div key={k} className="flex items-center gap-1.5 text-white/70">
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: KIND_COLOR[k] }} />
                 {KIND_LABEL[k]}
               </div>
             ))}
@@ -543,9 +495,7 @@ export const KnowledgeGraph = forwardRef<
         </div>
         {showMinimap && (
           <div className="rounded-md border border-[#1E3048] bg-[#0B1420]/95 p-1 backdrop-blur">
-            <div className="mb-1 px-1 text-[10px] font-semibold text-white/60">
-              Minimap
-            </div>
+            <div className="mb-1 px-1 text-[10px] font-semibold text-white/60">Minimap</div>
             <svg viewBox="0 0 100 100" className="h-16 w-full">
               {visibleEdges.map((e, i) => {
                 const a = positions.get(e.from);
@@ -565,15 +515,7 @@ export const KnowledgeGraph = forwardRef<
               })}
               {visibleNodes.map((n) => {
                 const p = positions.get(n.id)!;
-                return (
-                  <circle
-                    key={n.id}
-                    cx={p.x}
-                    cy={p.y}
-                    r={1.5}
-                    fill={KIND_COLOR[n.kind]}
-                  />
-                );
+                return <circle key={n.id} cx={p.x} cy={p.y} r={1.5} fill={KIND_COLOR[n.kind]} />;
               })}
             </svg>
           </div>
@@ -588,18 +530,8 @@ export const KnowledgeGraph = forwardRef<
         style={{ height: height - 96, width: "100%" }}
       >
         <defs>
-          <pattern
-            id="kg-grid"
-            width="10"
-            height="10"
-            patternUnits="userSpaceOnUse"
-          >
-            <path
-              d="M10 0 L0 0 L0 10"
-              fill="none"
-              stroke="#152944"
-              strokeWidth="0.15"
-            />
+          <pattern id="kg-grid" width="10" height="10" patternUnits="userSpaceOnUse">
+            <path d="M10 0 L0 0 L0 10" fill="none" stroke="#152944" strokeWidth="0.15" />
           </pattern>
         </defs>
         <rect x="0" y="0" width="100" height="100" fill="url(#kg-grid)" />
@@ -609,8 +541,7 @@ export const KnowledgeGraph = forwardRef<
           const b = positions.get(e.to)!;
           const mx = (a.x + b.x) / 2;
           const my = (a.y + b.y) / 2;
-          const highlighted =
-            !!selectedId && (e.from === selectedId || e.to === selectedId);
+          const highlighted = !!selectedId && (e.from === selectedId || e.to === selectedId);
           const dim = !!selectedId && !highlighted;
           return (
             <g key={i} opacity={dim ? 0.25 : 1}>
@@ -648,9 +579,7 @@ export const KnowledgeGraph = forwardRef<
               opacity={dim ? 0.3 : 1}
               onClick={() => selectNode(n)}
             >
-              {n.risk === "HIGH" && (
-                <circle cx={p.x} cy={p.y} r={r + 1.6} fill="#C0392B33" />
-              )}
+              {n.risk === "HIGH" && <circle cx={p.x} cy={p.y} r={r + 1.6} fill="#C0392B33" />}
               <circle
                 cx={p.x}
                 cy={p.y}
@@ -685,11 +614,7 @@ export const KnowledgeGraph = forwardRef<
           }}
           className="rounded border border-[#1E3048] bg-[#132032] p-1 hover:bg-[#172A40]"
         >
-          {playing ? (
-            <Pause className="h-3 w-3" />
-          ) : (
-            <Play className="h-3 w-3" />
-          )}
+          {playing ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
         </button>
         <MoveHorizontal className="h-3.5 w-3.5 text-white/60" />
         <span className="text-white/70">Timeline</span>

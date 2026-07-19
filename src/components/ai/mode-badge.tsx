@@ -8,13 +8,7 @@ const HEX: Record<CopilotMode, string> = {
   ADVISE: "#B06A00",
 };
 
-export function ModeBadge({
-  mode,
-  className,
-}: {
-  mode: CopilotMode;
-  className?: string;
-}) {
+export function ModeBadge({ mode, className }: { mode: CopilotMode; className?: string }) {
   const hex = HEX[mode];
   return (
     <span
@@ -24,11 +18,7 @@ export function ModeBadge({
       )}
       style={{ color: hex, backgroundColor: `${hex}18` }}
     >
-      <span
-        aria-hidden
-        className="h-1.5 w-1.5 rounded-full"
-        style={{ backgroundColor: hex }}
-      />
+      <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: hex }} />
       {mode}
     </span>
   );

@@ -78,7 +78,8 @@ export function buildBriefing(args: {
     grade: e.grade,
     source: e.source_system,
   }));
-  if (findings.length) sections.push({ kind: "critical_findings", title: "Critical Findings", payload: { findings } });
+  if (findings.length)
+    sections.push({ kind: "critical_findings", title: "Critical Findings", payload: { findings } });
 
   // 9. Verified Evidence
   if (assessment.verifiedFacts.length) {
@@ -193,8 +194,8 @@ export function buildBriefing(args: {
     fused.sources_responded === 0
       ? "insufficient"
       : fused.sources_responded < fused.sources_queried
-      ? "partial"
-      : "complete";
+        ? "partial"
+        : "complete";
 
   return {
     id: crypto.randomUUID(),
@@ -224,8 +225,7 @@ function deriveNextQuestions(intent: Intent, assessment: Assessment): string[] {
   const q: string[] = [];
   if (assessment.intelligenceGaps.length)
     q.push(`Corroborate the ${intent.capabilities[0]?.toLowerCase().replace(/_/g, " ")} finding`);
-  if (intent.entities.length)
-    q.push(`Show relationship network for ${intent.entities[0].value}`);
+  if (intent.entities.length) q.push(`Show relationship network for ${intent.entities[0].value}`);
   q.push("What historical cases match this pattern?");
   return q.slice(0, 4);
 }

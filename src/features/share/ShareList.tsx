@@ -6,8 +6,6 @@ import { PanelCard } from "@/components/panel-card";
 import { PanelHead } from "@/components/panel-head";
 import { INVESTIGATIONS, RECENT_SHARES } from "@/lib/lifecycle-data";
 
-
-
 export function ShareList() {
   return (
     <AppShell title="Share" subtitle="Briefings & Collaboration" mode="light">
@@ -19,7 +17,8 @@ export function ShareList() {
           <div>
             <h1 className="type-display text-foreground">Officer-authorised briefings</h1>
             <p className="type-small text-slate">
-              No share leaves Seaphore without the evidence envelope and explicit officer authorisation.
+              No share leaves Seaphore without the evidence envelope and explicit officer
+              authorisation.
             </p>
           </div>
         </div>

@@ -17,10 +17,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import {
-  useCommandDispatch,
-  type EntityType,
-} from "@/lib/command-dispatch";
+import { useCommandDispatch, type EntityType } from "@/lib/command-dispatch";
 import {
   DEFAULT_MODE,
   INTELLIGENCE_MODES,

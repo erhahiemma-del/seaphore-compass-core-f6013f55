@@ -21,15 +21,7 @@ export interface IntelligenceMode {
   /** Chip label shown to officers. */
   label: string;
   /** Icon slot key (bound to a lucide icon in the UI). */
-  icon:
-    | "hash"
-    | "anchor"
-    | "building"
-    | "manifest"
-    | "container"
-    | "bol"
-    | "voyage"
-    | "port";
+  icon: "hash" | "anchor" | "building" | "manifest" | "container" | "bol" | "voyage" | "port";
   /** Alt+N shortcut number (1-based, 0 = no shortcut). */
   shortcut: number;
   /** Search input placeholder. */
@@ -70,12 +62,7 @@ export const INTELLIGENCE_MODES: IntelligenceMode[] = [
     helper: "Search vessels by name or registration.",
     prefix: "VESSEL: ",
     aiContext: "Vessel Intelligence",
-    suggestions: [
-      "Behavioural anomalies",
-      "Port call history",
-      "Flag changes",
-      "AIS gaps",
-    ],
+    suggestions: ["Behavioural anomalies", "Port call history", "Flag changes", "AIS gaps"],
   },
   {
     key: "company",
@@ -118,12 +105,7 @@ export const INTELLIGENCE_MODES: IntelligenceMode[] = [
     helper: "Track individual containers across voyages.",
     prefix: "CONTAINER: ",
     aiContext: "Container Intelligence",
-    suggestions: [
-      "Track container",
-      "Seal verification",
-      "Cargo history",
-      "Inspection records",
-    ],
+    suggestions: ["Track container", "Seal verification", "Cargo history", "Inspection records"],
   },
   {
     key: "bol",
@@ -150,12 +132,7 @@ export const INTELLIGENCE_MODES: IntelligenceMode[] = [
     helper: "Explore voyages, legs, and deviations.",
     prefix: "VOYAGE: ",
     aiContext: "Voyage Intelligence",
-    suggestions: [
-      "Route deviations",
-      "STS events",
-      "Dark periods",
-      "ETA vs actual",
-    ],
+    suggestions: ["Route deviations", "STS events", "Dark periods", "ETA vs actual"],
   },
   {
     key: "port",
@@ -166,20 +143,13 @@ export const INTELLIGENCE_MODES: IntelligenceMode[] = [
     helper: "Search ports and port intelligence.",
     prefix: "PORT: ",
     aiContext: "Port Intelligence",
-    suggestions: [
-      "Congestion analysis",
-      "Risk heatmap",
-      "Expected arrivals",
-      "Compliance alerts",
-    ],
+    suggestions: ["Congestion analysis", "Risk heatmap", "Expected arrivals", "Compliance alerts"],
   },
 ];
 
-export const MODE_BY_KEY: Record<EntityType, IntelligenceMode> =
-  Object.fromEntries(INTELLIGENCE_MODES.map((m) => [m.key, m])) as Record<
-    EntityType,
-    IntelligenceMode
-  >;
+export const MODE_BY_KEY: Record<EntityType, IntelligenceMode> = Object.fromEntries(
+  INTELLIGENCE_MODES.map((m) => [m.key, m]),
+) as Record<EntityType, IntelligenceMode>;
 
 export const DEFAULT_MODE: EntityType = "imo";
 

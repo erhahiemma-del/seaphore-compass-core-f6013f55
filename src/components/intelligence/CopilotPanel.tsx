@@ -33,8 +33,10 @@ export function CopilotPanel({
             <Sparkles className="h-3.5 w-3.5" />
           </span>
           <span className="type-h2 text-foreground">Seaphore Copilot</span>
-          <span className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em]"
-            style={{ color: "#7C3AED", backgroundColor: "#7C3AED14" }}>
+          <span
+            className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em]"
+            style={{ color: "#7C3AED", backgroundColor: "#7C3AED14" }}
+          >
             BETA
           </span>
         </header>
@@ -82,12 +84,14 @@ export function CopilotPanel({
                   {h.matchPct}% match
                 </span>
               </div>
-              <div className="mt-0.5 text-[12px] text-foreground/85">
-                {h.summary}
-              </div>
+              <div className="mt-0.5 text-[12px] text-foreground/85">{h.summary}</div>
               <div className="mt-1 flex gap-3 text-[11px] text-slate">
-                <span>Revenue loss <b className="text-foreground">{h.revenueLoss}</b></span>
-                <span>· Outcome <b className="text-foreground">{h.outcome}</b></span>
+                <span>
+                  Revenue loss <b className="text-foreground">{h.revenueLoss}</b>
+                </span>
+                <span>
+                  · Outcome <b className="text-foreground">{h.outcome}</b>
+                </span>
               </div>
             </li>
           ))}
@@ -110,7 +114,9 @@ export function CopilotPanel({
               <tr key={r.id} className="border-t border-line">
                 <td className="py-1.5 type-mono text-[11px] font-semibold">{r.id}</td>
                 <td className="py-1.5 truncate">{r.entity}</td>
-                <td className="py-1.5"><RiskPill level={r.risk} /></td>
+                <td className="py-1.5">
+                  <RiskPill level={r.risk} />
+                </td>
                 <td className="py-1.5 text-slate">{r.status}</td>
               </tr>
             ))}

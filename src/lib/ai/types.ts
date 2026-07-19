@@ -37,14 +37,7 @@ export const COPILOT_MODES: {
     key: "RETRIEVE",
     ordinal: "02",
     question: "What happened?",
-    capabilities: [
-      "Timeline",
-      "Events",
-      "Documents",
-      "Transactions",
-      "Inspections",
-      "Alerts",
-    ],
+    capabilities: ["Timeline", "Events", "Documents", "Transactions", "Inspections", "Alerts"],
   },
   {
     key: "INTERPRET",

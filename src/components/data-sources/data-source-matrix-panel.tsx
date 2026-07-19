@@ -12,10 +12,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronRight, RefreshCw } from "lucide-react";
 import { useDataSources } from "@/hooks/use-data-sources";
 import { runDataSourceHealthChecks } from "@/lib/data-sources.functions";
-import {
-  listSourceHealthHistory,
-  type HealthCheckRecord,
-} from "@/services/data-sources.service";
+import { listSourceHealthHistory, type HealthCheckRecord } from "@/services/data-sources.service";
 import { QUERY_KEYS } from "@/lib/query-keys";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -95,9 +92,7 @@ function HealthHistoryRow({ sourceId }: { sourceId: string }) {
                   <td className="py-1 pr-3 tabular-nums">
                     {h.latencyMs != null ? `${h.latencyMs} ms` : "—"}
                   </td>
-                  <td className="py-1 pr-3 font-mono text-[11px]">
-                    {h.errorCode ?? "—"}
-                  </td>
+                  <td className="py-1 pr-3 font-mono text-[11px]">{h.errorCode ?? "—"}</td>
                   <td className="py-1 pr-3 text-muted-foreground max-w-md">
                     {h.errorMessage ?? "—"}
                   </td>
@@ -141,7 +136,8 @@ export function DataSourceMatrixPanel() {
         <div>
           <CardTitle className="text-base">Data Source Matrix</CardTitle>
           <p className="text-xs text-muted-foreground mt-1">
-            Reality over Assumption — {sources?.length ?? 0} sources tracked. Click a row to inspect its health-check run history.
+            Reality over Assumption — {sources?.length ?? 0} sources tracked. Click a row to inspect
+            its health-check run history.
           </p>
         </div>
         <Button size="sm" variant="outline" onClick={trigger} disabled={busy}>
@@ -213,7 +209,9 @@ export function DataSourceMatrixPanel() {
                             "no check yet"
                           )}
                         </td>
-                        <td className="py-2 pr-4 text-xs text-muted-foreground max-w-md">{s.notes}</td>
+                        <td className="py-2 pr-4 text-xs text-muted-foreground max-w-md">
+                          {s.notes}
+                        </td>
                       </tr>
                       {isOpen && <HealthHistoryRow sourceId={s.id} />}
                     </Fragment>

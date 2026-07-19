@@ -167,7 +167,9 @@ export function IntelCentreShell({
                       {t.count}
                     </span>
                   )}
-                  {active && <span className="absolute inset-x-2 -bottom-px h-[2px] rounded-full bg-[color:var(--color-blue)]" />}
+                  {active && (
+                    <span className="absolute inset-x-2 -bottom-px h-[2px] rounded-full bg-[color:var(--color-blue)]" />
+                  )}
                 </button>
               );
             })}
@@ -178,7 +180,9 @@ export function IntelCentreShell({
         {/* Bottom audit bar — confidence legend + view full audit */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line/60 bg-surface-2/50 px-5 py-2.5 text-[11.5px]">
           <div className="flex flex-wrap items-center gap-2 text-slate">
-            <span className="font-semibold uppercase tracking-[0.08em] text-slate/80">Confidence</span>
+            <span className="font-semibold uppercase tracking-[0.08em] text-slate/80">
+              Confidence
+            </span>
             {(["verified", "observed", "inferred", "unconfirmed"] as ConfidenceTier[]).map((t) => (
               <ConfidenceChip key={t} tier={t} size={9} />
             ))}
@@ -231,7 +235,13 @@ export function SavedViewList({ views }: { views: string[] }) {
   );
 }
 
-export function CheckList({ options, defaultChecked = [] }: { options: string[]; defaultChecked?: string[] }) {
+export function CheckList({
+  options,
+  defaultChecked = [],
+}: {
+  options: string[];
+  defaultChecked?: string[];
+}) {
   return (
     <ul className="space-y-1">
       {options.map((o) => (

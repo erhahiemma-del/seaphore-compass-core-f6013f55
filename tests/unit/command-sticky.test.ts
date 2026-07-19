@@ -11,10 +11,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const source = readFileSync(
-  resolve(__dirname, "../../src/components/ui/command.tsx"),
-  "utf8",
-);
+const source = readFileSync(resolve(__dirname, "../../src/components/ui/command.tsx"), "utf8");
 
 describe("CommandInput sticky styling", () => {
   it("wraps the input in a sticky, opaque, top-anchored container", () => {

@@ -99,8 +99,7 @@ export function GulfOfGuineaMap({
         <div
           className="absolute inset-0"
           style={{
-            background:
-              "radial-gradient(circle at 30% 40%, #123a63 0%, #0a1e37 60%, #071528 100%)",
+            background: "radial-gradient(circle at 30% 40%, #123a63 0%, #0a1e37 60%, #071528 100%)",
           }}
         />
         {/* Grid */}
@@ -169,7 +168,10 @@ export function GulfOfGuineaMap({
         </svg>
 
         {/* Vessels */}
-        <div className="absolute inset-0" style={{ transform: `scale(${zoom})`, transformOrigin: "center" }}>
+        <div
+          className="absolute inset-0"
+          style={{ transform: `scale(${zoom})`, transformOrigin: "center" }}
+        >
           {filtered.map((v) => (
             <button
               key={v.id}
@@ -192,10 +194,18 @@ export function GulfOfGuineaMap({
 
         {/* Controls */}
         <div className="absolute right-3 top-3 flex flex-col gap-1 rounded-md border border-white/10 bg-black/40 p-1 backdrop-blur">
-          <IconBtn onClick={() => setZoom((z) => Math.min(z + 0.25, 2))} label="Zoom in"><Plus className="h-3.5 w-3.5" /></IconBtn>
-          <IconBtn onClick={() => setZoom((z) => Math.max(z - 0.25, 0.75))} label="Zoom out"><Minus className="h-3.5 w-3.5" /></IconBtn>
-          <IconBtn onClick={() => setZoom(1)} label="Recenter"><Locate className="h-3.5 w-3.5" /></IconBtn>
-          <IconBtn onClick={() => {}} label="Layers"><Layers className="h-3.5 w-3.5" /></IconBtn>
+          <IconBtn onClick={() => setZoom((z) => Math.min(z + 0.25, 2))} label="Zoom in">
+            <Plus className="h-3.5 w-3.5" />
+          </IconBtn>
+          <IconBtn onClick={() => setZoom((z) => Math.max(z - 0.25, 0.75))} label="Zoom out">
+            <Minus className="h-3.5 w-3.5" />
+          </IconBtn>
+          <IconBtn onClick={() => setZoom(1)} label="Recenter">
+            <Locate className="h-3.5 w-3.5" />
+          </IconBtn>
+          <IconBtn onClick={() => {}} label="Layers">
+            <Layers className="h-3.5 w-3.5" />
+          </IconBtn>
         </div>
 
         {/* Vessels Live inset */}
@@ -203,15 +213,29 @@ export function GulfOfGuineaMap({
           <div className="text-[9px] font-bold uppercase tracking-[0.08em] text-white/60">
             Vessels Live
           </div>
-          <div className="type-mono text-[18px] font-bold leading-tight">
-            {vessels.length}
-          </div>
+          <div className="type-mono text-[18px] font-bold leading-tight">{vessels.length}</div>
           <div className="mt-1 grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px]">
             {[
-              { k: "High Risk", n: vessels.filter((v) => v.risk === "high").length, c: RISK_HEX.high },
-              { k: "Sanctioned", n: vessels.filter((v) => v.risk === "sanctioned").length, c: RISK_HEX.sanctioned },
-              { k: "Under Watch", n: vessels.filter((v) => v.watchlist).length, c: RISK_HEX.medium },
-              { k: "Normal", n: vessels.filter((v) => v.risk === "normal").length, c: RISK_HEX.normal },
+              {
+                k: "High Risk",
+                n: vessels.filter((v) => v.risk === "high").length,
+                c: RISK_HEX.high,
+              },
+              {
+                k: "Sanctioned",
+                n: vessels.filter((v) => v.risk === "sanctioned").length,
+                c: RISK_HEX.sanctioned,
+              },
+              {
+                k: "Under Watch",
+                n: vessels.filter((v) => v.watchlist).length,
+                c: RISK_HEX.medium,
+              },
+              {
+                k: "Normal",
+                n: vessels.filter((v) => v.risk === "normal").length,
+                c: RISK_HEX.normal,
+              },
             ].map((r) => (
               <div key={r.k} className="flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: r.c }} />

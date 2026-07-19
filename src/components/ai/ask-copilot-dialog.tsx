@@ -8,11 +8,7 @@ import { RiskPill } from "@/components/intelligence/RiskPill";
 import { ModeBadge } from "@/components/ai/mode-badge";
 import { EvidenceList } from "@/components/ai/evidence-list";
 import { askCopilot } from "@/lib/ai/copilot.functions";
-import type {
-  CopilotInstanceKey,
-  CopilotMode,
-  CopilotResponse,
-} from "@/lib/ai/types";
+import type { CopilotInstanceKey, CopilotMode, CopilotResponse } from "@/lib/ai/types";
 import { COPILOT_REGISTRY } from "@/lib/ai/copilots";
 import { classifyMode } from "@/lib/ai/nlq";
 import { cn } from "@/lib/utils";
@@ -183,9 +179,7 @@ export function AskCopilotDialog({
           )}
         >
           {!hasConversation && (
-            <p className="mb-4 text-center text-[15px] font-semibold text-slate-800">
-              {subtitle}
-            </p>
+            <p className="mb-4 text-center text-[15px] font-semibold text-slate-800">{subtitle}</p>
           )}
 
           {hasConversation && (

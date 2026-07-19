@@ -42,7 +42,6 @@ const TAB_LABELS = [
   "Timeline",
 ];
 
-
 const MATRIX_ENTITIES = [
   "MV Ocean Pearl",
   "MV Crimson Endeavour",
@@ -117,9 +116,9 @@ test.describe("Compliance Intelligence Centre", () => {
     }
   });
 
-
-
-  test("Compliance Matrix drill-down lists every seeded entity in both themes", async ({ page }) => {
+  test("Compliance Matrix drill-down lists every seeded entity in both themes", async ({
+    page,
+  }) => {
     await gotoCompliance(page);
 
     for (const mode of ["dark", "light"] as const) {
@@ -138,7 +137,10 @@ test.describe("Compliance Intelligence Centre", () => {
 
   test("Evidence Snapshot renders every tile with a numeric count", async ({ page }) => {
     await gotoCompliance(page);
-    const panel = page.locator("div").filter({ hasText: /^Evidence Snapshot/ }).first();
+    const panel = page
+      .locator("div")
+      .filter({ hasText: /^Evidence Snapshot/ })
+      .first();
     await expect(panel).toBeVisible();
     for (const label of EVIDENCE_LABELS) {
       const tile = panel.getByText(label, { exact: true }).first();

@@ -4,8 +4,6 @@ import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { ModulePlaceholder } from "@/components/module-placeholder";
 import { useHandoffContext } from "@/lib/nav-context";
 
-
-
 export function EntityProfile() {
   const { id } = useParams({ from: "/entity/$id" });
   const ctx = useHandoffContext();

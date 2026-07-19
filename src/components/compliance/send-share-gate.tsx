@@ -104,27 +104,23 @@ export function SendShareGate({
     }
   }
 
-  const OutputIcon =
-    summary?.output.includes("Word")
-      ? FileText
-      : summary?.output.includes("Pack")
-        ? Package
-        : summary?.deliveryMethod === "WhatsApp"
-          ? MessageCircle
-          : Mail;
+  const OutputIcon = summary?.output.includes("Word")
+    ? FileText
+    : summary?.output.includes("Pack")
+      ? Package
+      : summary?.deliveryMethod === "WhatsApp"
+        ? MessageCircle
+        : Mail;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      {trigger && (
-        <DialogTrigger asChild>
-          {trigger}
-        </DialogTrigger>
-      )}
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Confirm send &amp; share</DialogTitle>
           <DialogDescription>
-            Review recipients and delivery options before authorizing. The system never sends automatically.
+            Review recipients and delivery options before authorizing. The system never sends
+            automatically.
           </DialogDescription>
         </DialogHeader>
 
@@ -234,9 +230,7 @@ export function SendShareGate({
               onCheckedChange={(v) => setAck(v === true)}
               aria-label="Acknowledge officer accountability"
             />
-            <span className="type-body">
-              I acknowledge I am responsible for this decision.
-            </span>
+            <span className="type-body">I acknowledge I am responsible for this decision.</span>
           </label>
         </div>
 

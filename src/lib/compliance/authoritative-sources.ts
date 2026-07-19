@@ -17,13 +17,56 @@ export interface AuthoritativeSource {
 }
 
 export const AUTHORITATIVE_SOURCES: readonly AuthoritativeSource[] = [
-  { id: "ofac-sdn",  name: "OFAC SDN List",          owner: "US Treasury OFAC", category: "sanctions", refresh: "Daily" },
-  { id: "un-sc",     name: "UN Security Council Consolidated List", owner: "United Nations", category: "sanctions", refresh: "On publication" },
-  { id: "eu-sanc",   name: "EU Consolidated Sanctions List",        owner: "European Union", category: "sanctions", refresh: "Daily" },
-  { id: "uk-hmt",    name: "UK HMT Sanctions List",   owner: "HM Treasury OFSI", category: "sanctions", refresh: "Daily" },
-  { id: "imo-gisis", name: "IMO GISIS",               owner: "International Maritime Organization", category: "vessel", refresh: "Weekly" },
-  { id: "cac-ng",    name: "Nigeria CAC Registry",    owner: "Corporate Affairs Commission (NG)", jurisdiction: "NG", category: "corporate", refresh: "Daily" },
-  { id: "audit-int", name: "Confirmed Internal Audit", owner: "Seaphore Compliance", category: "audit", refresh: "Per audit cycle" },
+  {
+    id: "ofac-sdn",
+    name: "OFAC SDN List",
+    owner: "US Treasury OFAC",
+    category: "sanctions",
+    refresh: "Daily",
+  },
+  {
+    id: "un-sc",
+    name: "UN Security Council Consolidated List",
+    owner: "United Nations",
+    category: "sanctions",
+    refresh: "On publication",
+  },
+  {
+    id: "eu-sanc",
+    name: "EU Consolidated Sanctions List",
+    owner: "European Union",
+    category: "sanctions",
+    refresh: "Daily",
+  },
+  {
+    id: "uk-hmt",
+    name: "UK HMT Sanctions List",
+    owner: "HM Treasury OFSI",
+    category: "sanctions",
+    refresh: "Daily",
+  },
+  {
+    id: "imo-gisis",
+    name: "IMO GISIS",
+    owner: "International Maritime Organization",
+    category: "vessel",
+    refresh: "Weekly",
+  },
+  {
+    id: "cac-ng",
+    name: "Nigeria CAC Registry",
+    owner: "Corporate Affairs Commission (NG)",
+    jurisdiction: "NG",
+    category: "corporate",
+    refresh: "Daily",
+  },
+  {
+    id: "audit-int",
+    name: "Confirmed Internal Audit",
+    owner: "Seaphore Compliance",
+    category: "audit",
+    refresh: "Per audit cycle",
+  },
 ] as const;
 
 const SOURCE_IDS = new Set(AUTHORITATIVE_SOURCES.map((s) => s.id));

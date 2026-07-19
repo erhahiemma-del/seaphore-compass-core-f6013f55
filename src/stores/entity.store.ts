@@ -45,8 +45,7 @@ export const useEntityStore = create<EntityState>((set) => ({
         ? [selected, ...s.recent.filter((r) => r.id !== selected.id)].slice(0, 10)
         : s.recent,
     })),
-  addToCache: (entity) =>
-    set((s) => ({ cache: { ...s.cache, [entity.id]: entity } })),
+  addToCache: (entity) => set((s) => ({ cache: { ...s.cache, [entity.id]: entity } })),
   clearRecent: () => set({ recent: [] }),
   clearCache: () => set({ cache: {} }),
 }));

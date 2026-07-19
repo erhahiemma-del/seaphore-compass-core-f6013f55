@@ -29,9 +29,7 @@ export function SignalList({
           >
             <RiskPill level={s.risk} />
             <div className="min-w-0 flex-1">
-              <div className="truncate text-[13px] font-semibold text-foreground">
-                {s.title}
-              </div>
+              <div className="truncate text-[13px] font-semibold text-foreground">{s.title}</div>
               <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate">
                 <span className="truncate">{s.detail}</span>
                 <span>·</span>

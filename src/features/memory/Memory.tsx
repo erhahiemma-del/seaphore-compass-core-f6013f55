@@ -63,7 +63,14 @@ const ENTITY_META = {
 };
 
 type EntityKind = "Vessels" | "Companies" | "Persons" | "Ports" | "Cargo" | "Manifests";
-type RelKind = "Owns" | "Operates" | "Chartered By" | "Visited" | "Shipped" | "Associated With" | "All Types";
+type RelKind =
+  | "Owns"
+  | "Operates"
+  | "Chartered By"
+  | "Visited"
+  | "Shipped"
+  | "Associated With"
+  | "All Types";
 
 const ENTITY_TYPE_COUNTS: Array<{ key: EntityKind; count: number }> = [
   { key: "Vessels", count: 11 },
@@ -96,8 +103,16 @@ const LEGEND: Array<{ label: string; color: string }> = [
 const RECOMMENDED_ACTIONS = [
   { label: "Review recent port calls", risk: "HIGH" as const, dot: "var(--color-blue)" },
   { label: "Verify beneficial ownership", risk: "HIGH" as const, dot: "var(--color-purple)" },
-  { label: "Check sanction list updates", risk: "MEDIUM" as const, dot: "var(--color-amber, #F59E0B)" },
-  { label: "Request missing manifests", risk: "MEDIUM" as const, dot: "var(--color-slate, #64748B)" },
+  {
+    label: "Check sanction list updates",
+    risk: "MEDIUM" as const,
+    dot: "var(--color-amber, #F59E0B)",
+  },
+  {
+    label: "Request missing manifests",
+    risk: "MEDIUM" as const,
+    dot: "var(--color-slate, #64748B)",
+  },
   { label: "Monitor next port: Abidjan", risk: "LOW" as const, dot: "var(--color-green)" },
 ];
 
@@ -128,35 +143,153 @@ type BottomRow = {
 };
 
 const REL_ROWS: BottomRow[] = [
-  { date: "May 26, 2026", primary: "Owned By", from: "Oceanic Lines Ltd.", to: "MV Ocean Pearl", confidence: 92, evidence: "Corporate Registry", source: "NIMASA" },
-  { date: "May 25, 2026", primary: "Chartered By", from: "Global Chartering Inc.", to: "MV Ocean Pearl", confidence: 88, evidence: "Charter Party", source: "Document" },
-  { date: "May 24, 2026", primary: "Visited", from: "MV Ocean Pearl", to: "Apapa Port", confidence: 96, evidence: "AIS Data", source: "Seaphore" },
-  { date: "May 22, 2026", primary: "Shipped", from: "MV Ocean Pearl", to: "Crude Oil (HS 2709)", confidence: 90, evidence: "Bill of Lading", source: "Customs" },
-  { date: "May 20, 2026", primary: "Associated With", from: "MV Ocean Pearl", to: "INV-2026-00431", confidence: 91, evidence: "Investigation Link", source: "Seaphore" },
+  {
+    date: "May 26, 2026",
+    primary: "Owned By",
+    from: "Oceanic Lines Ltd.",
+    to: "MV Ocean Pearl",
+    confidence: 92,
+    evidence: "Corporate Registry",
+    source: "NIMASA",
+  },
+  {
+    date: "May 25, 2026",
+    primary: "Chartered By",
+    from: "Global Chartering Inc.",
+    to: "MV Ocean Pearl",
+    confidence: 88,
+    evidence: "Charter Party",
+    source: "Document",
+  },
+  {
+    date: "May 24, 2026",
+    primary: "Visited",
+    from: "MV Ocean Pearl",
+    to: "Apapa Port",
+    confidence: 96,
+    evidence: "AIS Data",
+    source: "Seaphore",
+  },
+  {
+    date: "May 22, 2026",
+    primary: "Shipped",
+    from: "MV Ocean Pearl",
+    to: "Crude Oil (HS 2709)",
+    confidence: 90,
+    evidence: "Bill of Lading",
+    source: "Customs",
+  },
+  {
+    date: "May 20, 2026",
+    primary: "Associated With",
+    from: "MV Ocean Pearl",
+    to: "INV-2026-00431",
+    confidence: 91,
+    evidence: "Investigation Link",
+    source: "Seaphore",
+  },
 ];
 
 const HISTORY_ROWS: BottomRow[] = [
-  { date: "Jun 04, 2026", primary: "AIS Blackout", from: "MV Ocean Pearl", to: "Bonny Transit", confidence: 88, evidence: "Satellite AIS", source: "SpireGlobal" },
-  { date: "May 30, 2026", primary: "Manifest Amended", from: "MV Ocean Pearl", to: "BOL #MSKU8842119", confidence: 84, evidence: "Terminal Log", source: "APM" },
-  { date: "May 18, 2026", primary: "Port Call", from: "MV Ocean Pearl", to: "Apapa", confidence: 96, evidence: "AIS Data", source: "Seaphore" },
+  {
+    date: "Jun 04, 2026",
+    primary: "AIS Blackout",
+    from: "MV Ocean Pearl",
+    to: "Bonny Transit",
+    confidence: 88,
+    evidence: "Satellite AIS",
+    source: "SpireGlobal",
+  },
+  {
+    date: "May 30, 2026",
+    primary: "Manifest Amended",
+    from: "MV Ocean Pearl",
+    to: "BOL #MSKU8842119",
+    confidence: 84,
+    evidence: "Terminal Log",
+    source: "APM",
+  },
+  {
+    date: "May 18, 2026",
+    primary: "Port Call",
+    from: "MV Ocean Pearl",
+    to: "Apapa",
+    confidence: 96,
+    evidence: "AIS Data",
+    source: "Seaphore",
+  },
 ];
 
 const INVESTIGATION_ROWS: BottomRow[] = [
-  { date: "Jun 04, 2026", primary: "INV-2026-00431", from: "Cdr. J. Bello", to: "Open", confidence: 78, evidence: "5 items", source: "Seaphore" },
-  { date: "Apr 21, 2026", primary: "INV-2026-00220", from: "Lt. K. Musa", to: "Closed · Duty reassessed", confidence: 86, evidence: "9 items", source: "Seaphore" },
-  { date: "Feb 08, 2026", primary: "INV-2026-00091", from: "Cdr. J. Bello", to: "Closed · Fine issued", confidence: 82, evidence: "6 items", source: "Seaphore" },
+  {
+    date: "Jun 04, 2026",
+    primary: "INV-2026-00431",
+    from: "Cdr. J. Bello",
+    to: "Open",
+    confidence: 78,
+    evidence: "5 items",
+    source: "Seaphore",
+  },
+  {
+    date: "Apr 21, 2026",
+    primary: "INV-2026-00220",
+    from: "Lt. K. Musa",
+    to: "Closed · Duty reassessed",
+    confidence: 86,
+    evidence: "9 items",
+    source: "Seaphore",
+  },
+  {
+    date: "Feb 08, 2026",
+    primary: "INV-2026-00091",
+    from: "Cdr. J. Bello",
+    to: "Closed · Fine issued",
+    confidence: 82,
+    evidence: "6 items",
+    source: "Seaphore",
+  },
 ];
 
 const DOCUMENT_ROWS: BottomRow[] = [
-  { date: "Jun 04, 2026", primary: "Bill of Lading", from: "Terminal Operator", to: "BOL #MSKU8842119", confidence: 96, evidence: "PDF · 312 KB", source: "APM Terminals" },
-  { date: "May 30, 2026", primary: "Charter Party", from: "Global Chartering Inc.", to: "MV Ocean Pearl", confidence: 88, evidence: "PDF · 214 KB", source: "Document" },
-  { date: "May 18, 2026", primary: "Weighbridge Photo", from: "Apapa Terminal CCTV", to: "Gate 4", confidence: 74, evidence: "IMG · 1.4 MB", source: "CCTV" },
+  {
+    date: "Jun 04, 2026",
+    primary: "Bill of Lading",
+    from: "Terminal Operator",
+    to: "BOL #MSKU8842119",
+    confidence: 96,
+    evidence: "PDF · 312 KB",
+    source: "APM Terminals",
+  },
+  {
+    date: "May 30, 2026",
+    primary: "Charter Party",
+    from: "Global Chartering Inc.",
+    to: "MV Ocean Pearl",
+    confidence: 88,
+    evidence: "PDF · 214 KB",
+    source: "Document",
+  },
+  {
+    date: "May 18, 2026",
+    primary: "Weighbridge Photo",
+    from: "Apapa Terminal CCTV",
+    to: "Gate 4",
+    confidence: 74,
+    evidence: "IMG · 1.4 MB",
+    source: "CCTV",
+  },
 ];
 
-const BOTTOM_BY_TAB: Partial<Record<EntitySubtab, { title: string; rows: BottomRow[]; primaryHeader: string }>> = {
+const BOTTOM_BY_TAB: Partial<
+  Record<EntitySubtab, { title: string; rows: BottomRow[]; primaryHeader: string }>
+> = {
   Relationships: { title: "Recent Relationships", rows: REL_ROWS, primaryHeader: "RELATIONSHIP" },
   History: { title: "Recent History", rows: HISTORY_ROWS, primaryHeader: "EVENT" },
-  Investigations: { title: "Related Investigations", rows: INVESTIGATION_ROWS, primaryHeader: "CASE" },
+  Investigations: {
+    title: "Related Investigations",
+    rows: INVESTIGATION_ROWS,
+    primaryHeader: "CASE",
+  },
   Documents: { title: "Recent Documents", rows: DOCUMENT_ROWS, primaryHeader: "DOCUMENT" },
 };
 
@@ -177,12 +310,36 @@ const KPI_DRILLDOWNS: Record<
     explanation:
       "Count of distinct investigation records where MV Ocean Pearl is a named subject entity. Aggregated across all closed and open cases in the Seaphore case ledger.",
     sources: [
-      { id: "s1", label: "Seaphore Case Ledger — subject_entity index", system: "Seaphore", timestamp: "2026-06-04 09:12 UTC", confidence: "verified", reference: "ledger#IMO/9457893" },
-      { id: "s2", label: "NIMASA cross-reference report", system: "NIMASA", timestamp: "2026-05-30 14:00 UTC", confidence: "verified", reference: "NR-2026-Q2-118" },
+      {
+        id: "s1",
+        label: "Seaphore Case Ledger — subject_entity index",
+        system: "Seaphore",
+        timestamp: "2026-06-04 09:12 UTC",
+        confidence: "verified",
+        reference: "ledger#IMO/9457893",
+      },
+      {
+        id: "s2",
+        label: "NIMASA cross-reference report",
+        system: "NIMASA",
+        timestamp: "2026-05-30 14:00 UTC",
+        confidence: "verified",
+        reference: "NR-2026-Q2-118",
+      },
     ],
     audit: [
-      { at: "2026-06-04 09:12 UTC", actor: "system", action: "Aggregation refreshed", detail: "Nightly rebuild of subject_entity roll-up." },
-      { at: "2026-05-30 14:07 UTC", actor: "Cdr. J. Bello", action: "Case INV-2026-00431 linked", detail: "Vessel added as subject entity." },
+      {
+        at: "2026-06-04 09:12 UTC",
+        actor: "system",
+        action: "Aggregation refreshed",
+        detail: "Nightly rebuild of subject_entity roll-up.",
+      },
+      {
+        at: "2026-05-30 14:07 UTC",
+        actor: "Cdr. J. Bello",
+        action: "Case INV-2026-00431 linked",
+        detail: "Vessel added as subject entity.",
+      },
     ],
   },
   openCases: {
@@ -193,8 +350,22 @@ const KPI_DRILLDOWNS: Record<
     explanation:
       "Investigations with status ≠ CLOSED that name this vessel as a subject. Counted directly from the case ledger.",
     sources: [
-      { id: "s1", label: "INV-2026-00431 · Duty variance review", system: "Seaphore", timestamp: "2026-06-04 09:12 UTC", confidence: "verified", reference: "INV-2026-00431" },
-      { id: "s2", label: "INV-2026-00427 · AIS anomaly", system: "Seaphore", timestamp: "2026-06-02 18:44 UTC", confidence: "verified", reference: "INV-2026-00427" },
+      {
+        id: "s1",
+        label: "INV-2026-00431 · Duty variance review",
+        system: "Seaphore",
+        timestamp: "2026-06-04 09:12 UTC",
+        confidence: "verified",
+        reference: "INV-2026-00431",
+      },
+      {
+        id: "s2",
+        label: "INV-2026-00427 · AIS anomaly",
+        system: "Seaphore",
+        timestamp: "2026-06-02 18:44 UTC",
+        confidence: "verified",
+        reference: "INV-2026-00427",
+      },
     ],
     audit: [
       { at: "2026-06-04 09:12 UTC", actor: "system", action: "Count refreshed" },
@@ -210,12 +381,36 @@ const KPI_DRILLDOWNS: Record<
     explanation:
       "Composite of 5 weighted signals: AIS blackout frequency (25%), port-call risk profile (20%), ownership opacity (20%), sanctions exposure (20%) and manifest anomaly rate (15%). Model v2.4, retrained 2026-05-01.",
     sources: [
-      { id: "s1", label: "Risk model v2.4 · feature vector", system: "Seaphore AI", timestamp: "2026-06-04 09:12 UTC", confidence: "inferred", reference: "model:risk@v2.4" },
-      { id: "s2", label: "AIS blackout events (30d)", system: "SpireGlobal", timestamp: "2026-06-04 08:00 UTC", confidence: "observed" },
-      { id: "s3", label: "OFAC / UN sanctions match check", system: "OpenSanctions", timestamp: "2026-06-04 06:00 UTC", confidence: "verified" },
+      {
+        id: "s1",
+        label: "Risk model v2.4 · feature vector",
+        system: "Seaphore AI",
+        timestamp: "2026-06-04 09:12 UTC",
+        confidence: "inferred",
+        reference: "model:risk@v2.4",
+      },
+      {
+        id: "s2",
+        label: "AIS blackout events (30d)",
+        system: "SpireGlobal",
+        timestamp: "2026-06-04 08:00 UTC",
+        confidence: "observed",
+      },
+      {
+        id: "s3",
+        label: "OFAC / UN sanctions match check",
+        system: "OpenSanctions",
+        timestamp: "2026-06-04 06:00 UTC",
+        confidence: "verified",
+      },
     ],
     audit: [
-      { at: "2026-06-04 09:12 UTC", actor: "system", action: "Score recomputed", detail: "Rose from 78 → 82 (AIS blackout weight)." },
+      {
+        at: "2026-06-04 09:12 UTC",
+        actor: "system",
+        action: "Score recomputed",
+        detail: "Rose from 78 → 82 (AIS blackout weight).",
+      },
       { at: "2026-05-01 00:00 UTC", actor: "system", action: "Model v2.4 deployed" },
     ],
   },
@@ -228,12 +423,22 @@ const KPI_DRILLDOWNS: Record<
     explanation:
       "Blend of source diversity, recency and tier distribution across all facts linked to this entity. 62% of underlying facts are Verified, 26% Observed, 12% Inferred.",
     sources: [
-      { id: "s1", label: "Fact tier distribution", system: "Seaphore", timestamp: "2026-06-04 09:12 UTC", confidence: "verified" },
-      { id: "s2", label: "Source diversity index", system: "Seaphore", timestamp: "2026-06-04 09:12 UTC", confidence: "observed" },
+      {
+        id: "s1",
+        label: "Fact tier distribution",
+        system: "Seaphore",
+        timestamp: "2026-06-04 09:12 UTC",
+        confidence: "verified",
+      },
+      {
+        id: "s2",
+        label: "Source diversity index",
+        system: "Seaphore",
+        timestamp: "2026-06-04 09:12 UTC",
+        confidence: "observed",
+      },
     ],
-    audit: [
-      { at: "2026-06-04 09:12 UTC", actor: "system", action: "Confidence recomputed" },
-    ],
+    audit: [{ at: "2026-06-04 09:12 UTC", actor: "system", action: "Confidence recomputed" }],
   },
   revenueAtRisk: {
     kind: "kpi",
@@ -244,12 +449,30 @@ const KPI_DRILLDOWNS: Record<
     explanation:
       "Sum of estimated duty and levy variance across all open investigations naming this vessel. Estimates use reference tariffs from the Nigerian Customs schedule; not a final assessment.",
     sources: [
-      { id: "s1", label: "INV-2026-00431 · duty variance estimate", system: "Seaphore", timestamp: "2026-06-04 09:12 UTC", confidence: "inferred", reference: "INV-2026-00431" },
-      { id: "s2", label: "Nigerian Customs tariff schedule 2026", system: "NCS", timestamp: "2026-01-01", confidence: "verified" },
+      {
+        id: "s1",
+        label: "INV-2026-00431 · duty variance estimate",
+        system: "Seaphore",
+        timestamp: "2026-06-04 09:12 UTC",
+        confidence: "inferred",
+        reference: "INV-2026-00431",
+      },
+      {
+        id: "s2",
+        label: "Nigerian Customs tariff schedule 2026",
+        system: "NCS",
+        timestamp: "2026-01-01",
+        confidence: "verified",
+      },
     ],
     audit: [
       { at: "2026-06-04 09:12 UTC", actor: "system", action: "Exposure recomputed" },
-      { at: "2026-06-04 09:12 UTC", actor: "Cdr. J. Bello", action: "Reviewed estimate", detail: "Flagged as inferred pending customs adjudication." },
+      {
+        at: "2026-06-04 09:12 UTC",
+        actor: "Cdr. J. Bello",
+        action: "Reviewed estimate",
+        detail: "Flagged as inferred pending customs adjudication.",
+      },
     ],
   },
 };
@@ -303,9 +526,24 @@ function rowDrilldown(
       },
     ],
     audit: [
-      { at: r.date, actor: r.source, action: "Record ingested", detail: `Delivered via ${r.evidence}.` },
-      { at: r.date, actor: "system", action: "Confidence scored", detail: `Tier: ${tier.toUpperCase()} (${r.confidence}%).` },
-      { at: r.date, actor: "Cdr. J. Bello", action: "Reviewed & linked to entity", detail: "Attached to MV Ocean Pearl profile." },
+      {
+        at: r.date,
+        actor: r.source,
+        action: "Record ingested",
+        detail: `Delivered via ${r.evidence}.`,
+      },
+      {
+        at: r.date,
+        actor: "system",
+        action: "Confidence scored",
+        detail: `Tier: ${tier.toUpperCase()} (${r.confidence}%).`,
+      },
+      {
+        at: r.date,
+        actor: "Cdr. J. Bello",
+        action: "Reviewed & linked to entity",
+        detail: "Attached to MV Ocean Pearl profile.",
+      },
     ],
   };
 }
@@ -313,8 +551,6 @@ function rowDrilldown(
 // ─────────────────────────────────────────────────────────────────────────────
 // Page
 // ─────────────────────────────────────────────────────────────────────────────
-
-
 
 export function MemoryPage() {
   const [tab, setTab] = useState<MemoryTabKey>("profiles");
@@ -331,17 +567,12 @@ export function MemoryPage() {
   const [drill, setDrill] = useState<EvidenceDrilldownData | null>(null);
   const kgRef = useRef<KnowledgeGraphHandle>(null);
 
-  const bottom = useMemo(
-    () => BOTTOM_BY_TAB[sub] ?? BOTTOM_BY_TAB.Relationships!,
-    [sub],
-  );
+  const bottom = useMemo(() => BOTTOM_BY_TAB[sub] ?? BOTTOM_BY_TAB.Relationships!, [sub]);
 
   const e = MEMORY_ENTITY;
 
   const openKpi = (data: EvidenceDrilldownData) => setDrill(data);
-  const openRow = (r: BottomRow) =>
-    setDrill(rowDrilldown(r, bottom.primaryHeader, sub));
-
+  const openRow = (r: BottomRow) => setDrill(rowDrilldown(r, bottom.primaryHeader, sub));
 
   return (
     <AppShell title="Institutional Memory" subtitle="Knowledge & Learning" mode="light">
@@ -350,7 +581,9 @@ export function MemoryPage() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="type-display text-foreground">Institutional Memory</h1>
-            <p className="type-small text-slate">Capture, connect and learn from every case, entity and pattern.</p>
+            <p className="type-small text-slate">
+              Capture, connect and learn from every case, entity and pattern.
+            </p>
           </div>
           <div className="relative w-full max-w-[520px]">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate" />
@@ -360,7 +593,9 @@ export function MemoryPage() {
               placeholder="Search IMO, Vessel, Company, Voyage, Container, BOL, Port, License…"
               className="h-10 w-full rounded-md border border-line bg-card pl-9 pr-10 text-[12px] text-foreground placeholder:text-slate focus:border-[color:var(--color-blue)] focus:outline-none"
             />
-            <kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded border border-line bg-surface-2 px-1.5 py-0.5 text-[10px] font-semibold text-slate">/</kbd>
+            <kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded border border-line bg-surface-2 px-1.5 py-0.5 text-[10px] font-semibold text-slate">
+              /
+            </kbd>
           </div>
         </div>
 
@@ -406,30 +641,62 @@ export function MemoryPage() {
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="type-h1 text-foreground">{e.name}</h2>
-                <span className="rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider" style={{ color: "#DC2626", backgroundColor: "#DC262614" }}>
+                <span
+                  className="rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+                  style={{ color: "#DC2626", backgroundColor: "#DC262614" }}
+                >
                   HIGH RISK
                 </span>
-                <span className="rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider" style={{ color: "#C79A2E", backgroundColor: "#C79A2E14" }}>
+                <span
+                  className="rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+                  style={{ color: "#C79A2E", backgroundColor: "#C79A2E14" }}
+                >
                   WATCHLIST
                 </span>
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate">
-                <span><span className="text-foreground/70">IMO</span> <span className="font-semibold text-foreground">{e.imo}</span></span>
+                <span>
+                  <span className="text-foreground/70">IMO</span>{" "}
+                  <span className="font-semibold text-foreground">{e.imo}</span>
+                </span>
                 <Dot />
-                <span><span className="text-foreground/70">MMSI</span> <span className="font-semibold text-foreground">{ENTITY_META.mmsi}</span></span>
+                <span>
+                  <span className="text-foreground/70">MMSI</span>{" "}
+                  <span className="font-semibold text-foreground">{ENTITY_META.mmsi}</span>
+                </span>
                 <Dot />
-                <span><span className="text-foreground/70">Call Sign</span> <span className="font-semibold text-foreground">{ENTITY_META.callSign}</span></span>
+                <span>
+                  <span className="text-foreground/70">Call Sign</span>{" "}
+                  <span className="font-semibold text-foreground">{ENTITY_META.callSign}</span>
+                </span>
                 <Dot />
-                <span><span className="text-foreground/70">Flag</span> <span className="font-semibold text-foreground">{ENTITY_META.flag} {ENTITY_META.flagEmoji}</span></span>
+                <span>
+                  <span className="text-foreground/70">Flag</span>{" "}
+                  <span className="font-semibold text-foreground">
+                    {ENTITY_META.flag} {ENTITY_META.flagEmoji}
+                  </span>
+                </span>
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate">
-                <span><span className="text-foreground/70">Type</span> <span className="font-semibold text-foreground">{ENTITY_META.type}</span></span>
+                <span>
+                  <span className="text-foreground/70">Type</span>{" "}
+                  <span className="font-semibold text-foreground">{ENTITY_META.type}</span>
+                </span>
                 <Dot />
-                <span><span className="text-foreground/70">Built</span> <span className="font-semibold text-foreground">{ENTITY_META.built}</span></span>
+                <span>
+                  <span className="text-foreground/70">Built</span>{" "}
+                  <span className="font-semibold text-foreground">{ENTITY_META.built}</span>
+                </span>
                 <Dot />
-                <span><span className="text-foreground/70">GT</span> <span className="font-semibold text-foreground">{ENTITY_META.gt}</span></span>
+                <span>
+                  <span className="text-foreground/70">GT</span>{" "}
+                  <span className="font-semibold text-foreground">{ENTITY_META.gt}</span>
+                </span>
                 <Dot />
-                <span><span className="text-foreground/70">DWT</span> <span className="font-semibold text-foreground">{ENTITY_META.dwt}</span></span>
+                <span>
+                  <span className="text-foreground/70">DWT</span>{" "}
+                  <span className="font-semibold text-foreground">{ENTITY_META.dwt}</span>
+                </span>
               </div>
             </div>
 
@@ -465,7 +732,6 @@ export function MemoryPage() {
                 onClick={() => openKpi(KPI_DRILLDOWNS.revenueAtRisk)}
               />
             </div>
-
 
             {/* Actions */}
             <div className="flex shrink-0 items-center gap-2">
@@ -549,7 +815,8 @@ export function MemoryPage() {
                     onToggle={() =>
                       setActiveKinds((prev) => {
                         const n = new Set(prev);
-                        n.has(t.key) ? n.delete(t.key) : n.add(t.key);
+                        if (n.has(t.key)) n.delete(t.key);
+                        else n.add(t.key);
                         return n;
                       })
                     }
@@ -567,7 +834,8 @@ export function MemoryPage() {
                     onToggle={() =>
                       setActiveRels((prev) => {
                         const n = new Set(prev);
-                        n.has(t.key) ? n.delete(t.key) : n.add(t.key);
+                        if (n.has(t.key)) n.delete(t.key);
+                        else n.add(t.key);
                         return n;
                       })
                     }
@@ -657,7 +925,8 @@ export function MemoryPage() {
                 <span className="h-px w-4 bg-foreground/70" /> Direct Relationship
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <span className="h-px w-4 border-t border-dashed border-foreground/50" /> Indirect Relationship
+                <span className="h-px w-4 border-t border-dashed border-foreground/50" /> Indirect
+                Relationship
               </span>
             </div>
           </PanelCard>
@@ -670,7 +939,10 @@ export function MemoryPage() {
                   <Sparkles className="h-3.5 w-3.5" />
                 </span>
                 <span className="type-h2 flex-1 text-foreground">Seaphore Copilot</span>
-                <span className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider" style={{ color: "#7C3AED", backgroundColor: "#7C3AED14" }}>
+                <span
+                  className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
+                  style={{ color: "#7C3AED", backgroundColor: "#7C3AED14" }}
+                >
                   BETA
                 </span>
               </header>
@@ -691,7 +963,10 @@ export function MemoryPage() {
               <PanelHead title="Recommended Actions" />
               <ul className="space-y-1 text-[12px]">
                 {RECOMMENDED_ACTIONS.map((a) => (
-                  <li key={a.label} className="flex items-center gap-2 rounded-md px-1.5 py-1 hover:bg-surface-2">
+                  <li
+                    key={a.label}
+                    className="flex items-center gap-2 rounded-md px-1.5 py-1 hover:bg-surface-2"
+                  >
                     <span className="h-1.5 w-1.5 rounded-full" style={{ background: a.dot }} />
                     <span className="min-w-0 flex-1 truncate text-foreground/85">{a.label}</span>
                     <RiskPill level={a.risk} />
@@ -703,7 +978,9 @@ export function MemoryPage() {
             <PanelCard>
               <header className="mb-2 flex items-center justify-between">
                 <span className="type-h2 text-foreground">Similar Entities</span>
-                <button className="text-[11px] font-semibold text-[color:var(--color-blue)] hover:underline">View all</button>
+                <button className="text-[11px] font-semibold text-[color:var(--color-blue)] hover:underline">
+                  View all
+                </button>
               </header>
               <ul className="space-y-2 text-[12px]">
                 {SIMILAR_ENTITIES.map((s) => (
@@ -713,9 +990,13 @@ export function MemoryPage() {
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-semibold text-foreground">{s.name}</div>
-                      <div className="type-mono text-[10px] text-slate">IMO {9000000 + parseInt(s.id.slice(-5), 10)}</div>
+                      <div className="type-mono text-[10px] text-slate">
+                        IMO {9000000 + parseInt(s.id.slice(-5), 10)}
+                      </div>
                     </div>
-                    <span className="text-[11px] font-bold text-[color:var(--color-teal)]">{s.matchPct}% Similar</span>
+                    <span className="text-[11px] font-bold text-[color:var(--color-teal)]">
+                      {s.matchPct}% Similar
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -724,7 +1005,9 @@ export function MemoryPage() {
             <PanelCard>
               <header className="mb-2 flex items-center justify-between">
                 <span className="type-h2 text-foreground">Knowledge Assets (Related)</span>
-                <button className="text-[11px] font-semibold text-[color:var(--color-blue)] hover:underline">View all</button>
+                <button className="text-[11px] font-semibold text-[color:var(--color-blue)] hover:underline">
+                  View all
+                </button>
               </header>
               <ul className="space-y-2 text-[12px]">
                 {KNOWLEDGE_ASSETS.map((k) => (
@@ -751,7 +1034,9 @@ export function MemoryPage() {
                 {sub}
               </span>
             </div>
-            <button className="text-[11px] font-semibold text-[color:var(--color-blue)] hover:underline">View all</button>
+            <button className="text-[11px] font-semibold text-[color:var(--color-blue)] hover:underline">
+              View all
+            </button>
           </header>
           <div className="overflow-x-auto">
             <table className="w-full text-[12px]">
@@ -775,11 +1060,16 @@ export function MemoryPage() {
                     title="Open evidence drilldown"
                   >
                     <td className="py-2 pr-4 text-slate">{r.date}</td>
-                    <td className="py-2 pr-4 font-semibold text-[color:var(--color-blue)] underline decoration-dotted underline-offset-2">{r.primary}</td>
+                    <td className="py-2 pr-4 font-semibold text-[color:var(--color-blue)] underline decoration-dotted underline-offset-2">
+                      {r.primary}
+                    </td>
                     <td className="py-2 pr-4 text-foreground/85">{r.from}</td>
                     <td className="py-2 pr-4 text-foreground/85">{r.to}</td>
                     <td className="py-2 pr-4">
-                      <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-bold" style={{ color: "#0E7C7B", backgroundColor: "#0E7C7B14" }}>
+                      <span
+                        className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-bold"
+                        style={{ color: "#0E7C7B", backgroundColor: "#0E7C7B14" }}
+                      >
                         {r.confidence}%
                       </span>
                     </td>
@@ -787,7 +1077,6 @@ export function MemoryPage() {
                     <td className="py-2 pr-4 text-slate">{r.source}</td>
                   </tr>
                 ))}
-
               </tbody>
             </table>
           </div>
@@ -795,7 +1084,6 @@ export function MemoryPage() {
       </div>
       <EvidenceDrilldown open={drill !== null} data={drill} onClose={() => setDrill(null)} />
     </AppShell>
-
   );
 }
 
@@ -886,7 +1174,14 @@ function ConfidenceKpi({
       <div className="type-label text-slate">Confidence</div>
       <div className="mt-0.5 flex items-center gap-2">
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--color-line, #E2E8F0)" strokeWidth={4} />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke="var(--color-line, #E2E8F0)"
+            strokeWidth={4}
+          />
           <circle
             cx={size / 2}
             cy={size / 2}
@@ -920,16 +1215,7 @@ function ConfidenceKpi({
   );
 }
 
-
-function SnapRow({
-  label,
-  value,
-  custom,
-}: {
-  label: string;
-  value?: string;
-  custom?: ReactNode;
-}) {
+function SnapRow({ label, value, custom }: { label: string; value?: string; custom?: ReactNode }) {
   return (
     <div className="flex items-center justify-between border-b border-line/60 pb-1 last:border-0">
       <span className="type-label text-slate">{label}</span>

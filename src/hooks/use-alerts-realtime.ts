@@ -73,7 +73,6 @@ export function useAlertsRealtime({
   // re-render and freshness labels ("updated just now") naturally expire.
   const [, setNow] = useState(0);
 
-
   // Keep the known-ids set and callbacks in refs so we can subscribe once and
   // avoid tearing the channel down when props change (which would leak channels
   // and can trigger costly reconnect loops).
@@ -84,8 +83,12 @@ export function useAlertsRealtime({
   useEffect(() => {
     knownRef.current = new Set(knownAlertIds);
   }, [knownAlertIds]);
-  useEffect(() => { onStatusRef.current = onStatusChange; }, [onStatusChange]);
-  useEffect(() => { onAssignRef.current = onAssignChange; }, [onAssignChange]);
+  useEffect(() => {
+    onStatusRef.current = onStatusChange;
+  }, [onStatusChange]);
+  useEffect(() => {
+    onAssignRef.current = onAssignChange;
+  }, [onAssignChange]);
 
   useEffect(() => {
     let cancelled = false;
@@ -97,10 +100,7 @@ export function useAlertsRealtime({
       setLastEvent(evt);
     };
 
-    const applyAlertRow = (
-      row: AlertRow | null,
-      type: RealtimeEvent["type"],
-    ) => {
+    const applyAlertRow = (row: AlertRow | null, type: RealtimeEvent["type"]) => {
       if (!row) return;
       const meta = (row.metadata ?? {}) as Record<string, unknown>;
       const localId = typeof meta.alertId === "string" ? meta.alertId : null;
@@ -124,27 +124,19 @@ export function useAlertsRealtime({
 
     channel = supabase
       .channel("alerts-center-live")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "alerts" },
-        (payload) => {
-          const row = (payload.new ?? payload.old) as AlertRow | null;
-          applyAlertRow(row, payload.eventType as RealtimeEvent["type"]);
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "signals" },
-        (payload) => {
-          const row = (payload.new ?? payload.old) as { statement?: string } | null;
-          record({
-            kind: "signal",
-            type: payload.eventType as RealtimeEvent["type"],
-            at: new Date().toISOString(),
-            summary: `Signal ${payload.eventType} · ${row?.statement?.slice(0, 60) ?? ""}`,
-          });
-        },
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "alerts" }, (payload) => {
+        const row = (payload.new ?? payload.old) as AlertRow | null;
+        applyAlertRow(row, payload.eventType as RealtimeEvent["type"]);
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "signals" }, (payload) => {
+        const row = (payload.new ?? payload.old) as { statement?: string } | null;
+        record({
+          kind: "signal",
+          type: payload.eventType as RealtimeEvent["type"],
+          at: new Date().toISOString(),
+          summary: `Signal ${payload.eventType} · ${row?.statement?.slice(0, 60) ?? ""}`,
+        });
+      })
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "investigations" },
@@ -169,7 +161,6 @@ export function useAlertsRealtime({
       if (channel) supabase.removeChannel(channel);
     };
     // Subscribe exactly once for the lifetime of the workspace.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Prune expired recent-update entries + tick freshness labels every second.

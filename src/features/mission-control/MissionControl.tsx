@@ -44,8 +44,6 @@ import {
   type Priority,
 } from "@/lib/mission-control-data";
 
-
-
 const RIBBON_ICONS: Record<string, LucideIcon> = {
   arrivals: Ship,
   "high-risk": AlertTriangle,
@@ -57,11 +55,7 @@ const RIBBON_ICONS: Record<string, LucideIcon> = {
 
 export function MissionControl() {
   return (
-    <AppShell
-      title="Mission Control"
-      subtitle="National maritime operating picture"
-      mode="light"
-    >
+    <AppShell title="Mission Control" subtitle="National maritime operating picture" mode="light">
       <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-6 py-5">
         <MissionCommandBar />
         <Ribbon />
@@ -130,7 +124,9 @@ function Ribbon() {
             <div className="mt-2 type-mono text-[22px] font-bold text-foreground tabular-nums">
               {kpi.value}
             </div>
-            <div className={cn("mt-0.5 flex items-center gap-1 text-[11px] font-semibold", deltaColor)}>
+            <div
+              className={cn("mt-0.5 flex items-center gap-1 text-[11px] font-semibold", deltaColor)}
+            >
               <DeltaIcon className="h-3 w-3" />
               {kpi.delta}
             </div>
@@ -145,15 +141,9 @@ function Ribbon() {
         to="/detect"
         className="group flex flex-col items-start justify-between rounded-lg border border-dashed border-[color:var(--color-teal)]/60 bg-[color:var(--color-teal)]/5 p-3 motion-fast hover:bg-[color:var(--color-teal)]/10"
       >
-        <span className="type-label text-[color:var(--color-teal)]">
-          Intelligence Feed
-        </span>
-        <span className="mt-2 type-h1 text-foreground">
-          View full feed
-        </span>
-        <span className="type-small text-slate">
-          Continuous signals across every centre
-        </span>
+        <span className="type-label text-[color:var(--color-teal)]">Intelligence Feed</span>
+        <span className="mt-2 type-h1 text-foreground">View full feed</span>
+        <span className="type-small text-slate">Continuous signals across every centre</span>
         <span className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--color-teal)]">
           Open Detect <ArrowRight className="h-3.5 w-3.5" />
         </span>
@@ -224,12 +214,11 @@ function IntelligenceFeedPanel() {
                       voyageId: row.voyageId,
                       signalId: row.id,
                       investigationId: row.investigationId,
-                      confidence:
-                        row.confidence.toUpperCase() as
-                          | "VERIFIED"
-                          | "OBSERVED"
-                          | "INFERRED"
-                          | "UNCONFIRMED",
+                      confidence: row.confidence.toUpperCase() as
+                        | "VERIFIED"
+                        | "OBSERVED"
+                        | "INFERRED"
+                        | "UNCONFIRMED",
                       fromStage: "Detect",
                       fromRoute: "/",
                     },
@@ -277,9 +266,7 @@ function FeedItem({ row, onClick }: { row: FeedRow; onClick: () => void }) {
           <span className="type-h2 truncate text-foreground">{row.title}</span>
           <span className="type-mono text-[11px] text-slate">{row.time}</span>
         </span>
-        <span className="mt-0.5 block truncate type-small text-slate">
-          {row.subtitle}
-        </span>
+        <span className="mt-0.5 block truncate type-small text-slate">{row.subtitle}</span>
         <span className="mt-1.5 flex items-center gap-2">
           <RiskPill level={row.risk} />
           <ConfidenceChip tier={row.confidence} size={9} />
@@ -306,9 +293,21 @@ function RevenueAssurancePanel() {
         compact
       />
       <div className="grid grid-cols-3 gap-2">
-        <MicroStat label="Expected" value={REVENUE_ASSURANCE.expected.value} tier={REVENUE_ASSURANCE.expected.confidence} />
-        <MicroStat label="Actual" value={REVENUE_ASSURANCE.actual.value} tier={REVENUE_ASSURANCE.actual.confidence} />
-        <MicroStat label="Recovered" value={REVENUE_ASSURANCE.recovered.value} tier={REVENUE_ASSURANCE.recovered.confidence} />
+        <MicroStat
+          label="Expected"
+          value={REVENUE_ASSURANCE.expected.value}
+          tier={REVENUE_ASSURANCE.expected.confidence}
+        />
+        <MicroStat
+          label="Actual"
+          value={REVENUE_ASSURANCE.actual.value}
+          tier={REVENUE_ASSURANCE.actual.confidence}
+        />
+        <MicroStat
+          label="Recovered"
+          value={REVENUE_ASSURANCE.recovered.value}
+          tier={REVENUE_ASSURANCE.recovered.confidence}
+        />
       </div>
 
       <button
@@ -405,8 +404,8 @@ function ComplianceWatchlistPanel() {
         ))}
       </ul>
       <div className="mt-3 rounded-sm bg-surface-2 px-2 py-1.5 italic type-small text-slate">
-        Sanctions and watchlist rows are VERIFIED only. Non-verified compliance
-        metrics are INFERRED.
+        Sanctions and watchlist rows are VERIFIED only. Non-verified compliance metrics are
+        INFERRED.
       </div>
     </PanelCard>
   );
@@ -451,10 +450,7 @@ function PortBar({ port }: { port: PortCongestion }) {
           <span className="type-mono text-[12px] font-semibold text-foreground tabular-nums">
             {port.index}
           </span>
-          <span
-            className="text-[10px] font-bold uppercase tracking-[0.06em]"
-            style={{ color }}
-          >
+          <span className="text-[10px] font-bold uppercase tracking-[0.06em]" style={{ color }}>
             {port.level}
           </span>
         </span>
@@ -503,12 +499,11 @@ function TodaysPrioritiesPanel() {
                   context: {
                     investigationId: p.investigationId,
                     entityId: p.entityId,
-                    confidence:
-                      p.confidence.toUpperCase() as
-                        | "VERIFIED"
-                        | "OBSERVED"
-                        | "INFERRED"
-                        | "UNCONFIRMED",
+                    confidence: p.confidence.toUpperCase() as
+                      | "VERIFIED"
+                      | "OBSERVED"
+                      | "INFERRED"
+                      | "UNCONFIRMED",
                     fromStage: "Monitor",
                     fromRoute: "/",
                   },
@@ -518,12 +513,8 @@ function TodaysPrioritiesPanel() {
             >
               <div className="flex items-start justify-between gap-2">
                 <span className="min-w-0">
-                  <span className="type-h2 block truncate text-foreground">
-                    {p.entityName}
-                  </span>
-                  <span className="type-mono text-[11px] text-slate">
-                    {p.investigationId}
-                  </span>
+                  <span className="type-h2 block truncate text-foreground">{p.entityName}</span>
+                  <span className="type-mono text-[11px] text-slate">{p.investigationId}</span>
                 </span>
                 <span
                   className={cn(
@@ -569,9 +560,7 @@ function RecentBriefingsPanel() {
                 <FileText className="h-4 w-4" />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="type-h2 block truncate text-foreground">
-                  {b.title}
-                </span>
+                <span className="type-h2 block truncate text-foreground">{b.title}</span>
                 <span className="type-small block truncate text-slate">
                   {b.date} · by {b.author}
                 </span>
@@ -601,7 +590,22 @@ function PanelHeader({
 }: {
   title: string;
   subtitle?: string;
-  to: "/detect" | "/investigate" | "/decide" | "/share" | "/memory" | "/manifest" | "/cargo" | "/revenue" | "/vessel" | "/ports" | "/ownership" | "/compliance" | "/evidence" | "/alerts" | "/admin";
+  to:
+    | "/detect"
+    | "/investigate"
+    | "/decide"
+    | "/share"
+    | "/memory"
+    | "/manifest"
+    | "/cargo"
+    | "/revenue"
+    | "/vessel"
+    | "/ports"
+    | "/ownership"
+    | "/compliance"
+    | "/evidence"
+    | "/alerts"
+    | "/admin";
   toLabel: string;
   compact?: boolean;
 }) {
@@ -627,15 +631,7 @@ function PanelHeader({
   );
 }
 
-function MicroStat({
-  label,
-  value,
-  tier,
-}: {
-  label: string;
-  value: string;
-  tier: ConfidenceTier;
-}) {
+function MicroStat({ label, value, tier }: { label: string; value: string; tier: ConfidenceTier }) {
   return (
     <div className="rounded-md border border-line bg-surface-2 p-2">
       <div className="type-label text-slate">{label}</div>

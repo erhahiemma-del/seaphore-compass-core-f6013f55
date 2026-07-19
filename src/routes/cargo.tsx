@@ -5,7 +5,10 @@ export const Route = createFileRoute("/cargo")({
   head: () => ({
     meta: [
       { title: "Cargo Intelligence · Seaphore" },
-      { name: "description", content: "Everything inside every ship. Know your cargo. Protect revenue." },
+      {
+        name: "description",
+        content: "Everything inside every ship. Know your cargo. Protect revenue.",
+      },
     ],
   }),
   component: CargoCentre,

@@ -19,7 +19,9 @@ export interface VesselParticulars {
 }
 
 export class ImoGisisAdapter extends BaseAdapter {
-  constructor() { super("imo_gisis"); }
+  constructor() {
+    super("imo_gisis");
+  }
   async lookup(imo: string): Promise<SourcedResult<VesselParticulars>> {
     this.assertUsable();
     // The real fetch would call GISIS. In demo, callers hydrate from public.vessels.

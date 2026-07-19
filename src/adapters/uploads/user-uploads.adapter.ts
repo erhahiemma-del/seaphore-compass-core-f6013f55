@@ -7,7 +7,11 @@
 import { BaseAdapter } from "../base-adapter";
 import type { SourcedResult } from "../status";
 
-export interface UploadRef { bucket: string; path: string; contentType: string }
+export interface UploadRef {
+  bucket: string;
+  path: string;
+  contentType: string;
+}
 
 class UserUploadAdapter extends BaseAdapter {
   async attest(ref: UploadRef): Promise<SourcedResult<UploadRef>> {
@@ -16,8 +20,16 @@ class UserUploadAdapter extends BaseAdapter {
   }
 }
 
-export class ManifestUploadAdapter extends UserUploadAdapter { constructor() { super("manifest_upload"); } }
-export class BolUploadAdapter extends UserUploadAdapter { constructor() { super("bol_upload"); } }
+export class ManifestUploadAdapter extends UserUploadAdapter {
+  constructor() {
+    super("manifest_upload");
+  }
+}
+export class BolUploadAdapter extends UserUploadAdapter {
+  constructor() {
+    super("bol_upload");
+  }
+}
 
 export const manifestUpload = new ManifestUploadAdapter();
 export const bolUpload = new BolUploadAdapter();

@@ -5,7 +5,10 @@ export const Route = createFileRoute("/memory")({
   head: () => ({
     meta: [
       { title: "Institutional Memory · Seaphore" },
-      { name: "description", content: "Every closed investigation becomes a searchable precedent." },
+      {
+        name: "description",
+        content: "Every closed investigation becomes a searchable precedent.",
+      },
     ],
   }),
   component: MemoryPage,

@@ -35,7 +35,11 @@ export const Route = createFileRoute("/copilot")({
   head: () => ({
     meta: [
       { title: "NIMASA Copilot — Intelligence Orchestration Engine" },
-      { name: "description", content: "Officer-facing intelligence briefings backed by the Seaphore Orchestration Engine." },
+      {
+        name: "description",
+        content:
+          "Officer-facing intelligence briefings backed by the Seaphore Orchestration Engine.",
+      },
     ],
   }),
   component: CopilotPage,
@@ -149,9 +153,7 @@ function CopilotPage() {
         </div>
       )}
 
-      {briefing && (
-        <BriefingRenderer briefing={briefing} onOverride={handleOverride} />
-      )}
+      {briefing && <BriefingRenderer briefing={briefing} onOverride={handleOverride} />}
     </div>
   );
 }

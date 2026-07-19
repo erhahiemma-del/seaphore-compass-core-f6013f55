@@ -5,7 +5,10 @@ export const Route = createFileRoute("/evidence")({
   head: () => ({
     meta: [
       { title: "Evidence Library · Seaphore" },
-      { name: "description", content: "Document vault with audit-linked evidence for every investigation." },
+      {
+        name: "description",
+        content: "Document vault with audit-linked evidence for every investigation.",
+      },
     ],
   }),
   component: EvidenceCentre,

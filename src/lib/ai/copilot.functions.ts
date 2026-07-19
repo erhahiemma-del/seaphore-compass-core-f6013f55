@@ -22,15 +22,8 @@ import { z } from "zod";
 import { COPILOT_REGISTRY, type CopilotInstance } from "./copilots";
 import { classifyMode, extractEntities } from "./nlq";
 import { MOCK_INTELLIGENCE } from "./mock-intelligence";
-import {
-  createGateway,
-  DEFAULT_COPILOT_MODEL,
-} from "./ai-gateway.server";
-import type {
-  AskCopilotInput,
-  CopilotMode,
-  CopilotResponse,
-} from "./types";
+import { createGateway, DEFAULT_COPILOT_MODEL } from "./ai-gateway.server";
+import type { AskCopilotInput, CopilotMode, CopilotResponse } from "./types";
 
 const InputSchema = z.object({
   instance: z.enum([
@@ -84,9 +77,7 @@ function buildContextBlock(instance: CopilotInstance, query: string): string {
     query,
     "",
     `# Observed intelligence (mock retrieval)`,
-    ...bundle.observations.map(
-      (o) => `- (${o.confidence.toUpperCase()}) ${o.text}`,
-    ),
+    ...bundle.observations.map((o) => `- (${o.confidence.toUpperCase()}) ${o.text}`),
     "",
     `# Historical similarities`,
     ...bundle.historical.map(
@@ -114,14 +105,17 @@ const emptyResult = (
     recommendations: bundle.recommendations,
     historical: bundle.historical,
     related: bundle.related,
-    followUps: ["Narrow to a vessel or company", "Show today's alerts", "Explain today's revenue at risk"],
+    followUps: [
+      "Narrow to a vessel or company",
+      "Show today's alerts",
+      "Explain today's revenue at risk",
+    ],
     served: "mock",
     latencyMs: Date.now() - started,
   };
 };
 
-const clamp = (s: string, n: number) =>
-  s.length <= n ? s : s.slice(0, n - 1).trimEnd() + "…";
+const clamp = (s: string, n: number) => (s.length <= n ? s : s.slice(0, n - 1).trimEnd() + "…");
 
 export const askCopilot = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => InputSchema.parse(data))
@@ -162,9 +156,7 @@ export const askCopilot = createServerFn({ method: "POST" })
         system: buildSystemPrompt(inst, mode),
         prompt: buildContextBlock(inst, data.query),
       });
-      const followUps = (output.followUps ?? [])
-        .slice(0, 4)
-        .map((f) => clamp(f, 60));
+      const followUps = (output.followUps ?? []).slice(0, 4).map((f) => clamp(f, 60));
       return {
         instance: data.instance,
         mode,

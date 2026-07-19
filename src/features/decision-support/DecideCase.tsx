@@ -47,9 +47,7 @@ export function DecisionSupport() {
 
 /** Default workspace: opens the first case awaiting decision. */
 export function DecisionSupportDefault() {
-  const inv =
-    INVESTIGATIONS.find((i) => i.status === "Awaiting Decision") ??
-    INVESTIGATIONS[0];
+  const inv = INVESTIGATIONS.find((i) => i.status === "Awaiting Decision") ?? INVESTIGATIONS[0];
   return <DecisionWorkspace fallbackId={inv.id} />;
 }
 
@@ -77,23 +75,18 @@ function DecisionWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
   const rulesLow = 6;
 
   const topRules = useMemo(
-    () =>
-      [
-        { id: "R-REV-3.1", title: "Under-declaration below threshold", impact: "HIGH" as const },
-        { id: "R-MAN-2.4", title: "Quantity variance > 20%", impact: "HIGH" as const },
-        { id: "R-CMP-1.7", title: "Watchlist entity association", impact: "MEDIUM" as const },
-        { id: "R-HIS-4.2", title: "Historical pattern match", impact: "MEDIUM" as const },
-        { id: "R-DOC-3.3", title: "Document inconsistency", impact: "LOW" as const },
-      ],
+    () => [
+      { id: "R-REV-3.1", title: "Under-declaration below threshold", impact: "HIGH" as const },
+      { id: "R-MAN-2.4", title: "Quantity variance > 20%", impact: "HIGH" as const },
+      { id: "R-CMP-1.7", title: "Watchlist entity association", impact: "MEDIUM" as const },
+      { id: "R-HIS-4.2", title: "Historical pattern match", impact: "MEDIUM" as const },
+      { id: "R-DOC-3.3", title: "Document inconsistency", impact: "LOW" as const },
+    ],
     [],
   );
 
   return (
-    <AppShell
-      title="Decision Support"
-      subtitle="Officer Decision Workspace"
-      mode="light"
-    >
+    <AppShell title="Decision Support" subtitle="Officer Decision Workspace" mode="light">
       <div className="mx-auto max-w-[1600px] space-y-4 p-4 lg:p-6">
         {/* ── Header ─────────────────────────────────────────────────── */}
         <HeaderBar inv={inv} confidencePct={confidencePct} />
@@ -214,9 +207,7 @@ function DecisionWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
                   <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1E6B3A]">
                     <CheckCircle2 className="h-6 w-6 text-white" />
                   </span>
-                  <h3 className="text-[22px] font-bold text-foreground">
-                    Approve Clearance
-                  </h3>
+                  <h3 className="text-[22px] font-bold text-foreground">Approve Clearance</h3>
                   <span className="rounded-md bg-[#1E6B3A]/15 px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wide text-[#1E6B3A]">
                     Recommended
                   </span>
@@ -225,9 +216,7 @@ function DecisionWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
                 <div className="mx-auto mt-5 max-w-[560px]">
                   <div className="mb-1 flex items-center justify-between text-[11px] text-slate">
                     <span>Confidence in Recommendation</span>
-                    <span className="text-[12px] font-bold text-foreground">
-                      {confidencePct}%
-                    </span>
+                    <span className="text-[12px] font-bold text-foreground">{confidencePct}%</span>
                   </div>
                   <div className="h-1.5 w-full overflow-hidden rounded-full bg-line">
                     <div
@@ -247,14 +236,10 @@ function DecisionWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
 
             <Card>
               <div className="mb-1 flex items-baseline gap-2">
-                <h2 className="text-[16px] font-bold text-foreground">
-                  Officer Decision
-                </h2>
+                <h2 className="text-[16px] font-bold text-foreground">Officer Decision</h2>
                 <span className="text-[12px] text-slate">(Officer Decides)</span>
               </div>
-              <p className="mb-5 text-[12px] text-slate">
-                You are responsible for this decision.
-              </p>
+              <p className="mb-5 text-[12px] text-slate">You are responsible for this decision.</p>
 
               <div className="grid gap-5 md:grid-cols-2">
                 <div>
@@ -274,9 +259,7 @@ function DecisionWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
                         />
                         <span
                           className={
-                            decision === d
-                              ? "font-semibold text-foreground"
-                              : "text-foreground/85"
+                            decision === d ? "font-semibold text-foreground" : "text-foreground/85"
                           }
                         >
                           {d}
@@ -325,18 +308,14 @@ function DecisionWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
                     <span className="font-medium text-foreground/80">
                       Drag files here or click to upload
                     </span>
-                    <span className="text-[10.5px]">
-                      Max 10MB per file. PDF, DOC, JPG, PNG
-                    </span>
+                    <span className="text-[10.5px]">Max 10MB per file. PDF, DOC, JPG, PNG</span>
                   </button>
                   <input
                     ref={fileRef}
                     type="file"
                     multiple
                     className="hidden"
-                    onChange={(e) =>
-                      setFiles(Array.from(e.target.files ?? []).slice(0, 10))
-                    }
+                    onChange={(e) => setFiles(Array.from(e.target.files ?? []).slice(0, 10))}
                   />
                   <div className="mt-2 text-[11px] text-slate">
                     {files.length === 0
@@ -379,9 +358,7 @@ function DecisionWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
 
                   <div className="grid grid-cols-3 gap-3 self-end pb-1 text-[12px]">
                     <div>
-                      <div className="text-[11px] uppercase tracking-wide text-slate">
-                        Name
-                      </div>
+                      <div className="text-[11px] uppercase tracking-wide text-slate">Name</div>
                       <div className="font-semibold text-foreground">{inv.officer}</div>
                     </div>
                     <div>
@@ -394,9 +371,7 @@ function DecisionWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
                       <div className="text-[11px] uppercase tracking-wide text-slate">
                         Date & Time
                       </div>
-                      <div className="font-semibold text-foreground">
-                        May 27, 2026 09:21 WAT
-                      </div>
+                      <div className="font-semibold text-foreground">May 27, 2026 09:21 WAT</div>
                     </div>
                   </div>
                 </div>
@@ -428,9 +403,8 @@ function DecisionWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
             <div className="flex items-start gap-2 rounded-md border border-line bg-surface-2/40 px-4 py-3 text-[12px] text-foreground/85">
               <Info className="mt-[2px] h-4 w-4 flex-shrink-0 text-slate" />
               <div className="flex-1">
-                <b>Important:</b> You are making the final decision. Seaphore
-                provides recommendations and evidence, but you are accountable
-                for the decision.
+                <b>Important:</b> You are making the final decision. Seaphore provides
+                recommendations and evidence, but you are accountable for the decision.
               </div>
               <span className="hidden text-[11px] font-semibold text-slate md:inline">
                 Assist, never decide. Officer decides.
@@ -478,16 +452,11 @@ function DecisionWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
               </div>
               <ul className="space-y-2">
                 {topRules.map((r) => (
-                  <li
-                    key={r.id}
-                    className="flex items-center gap-2 text-[12px]"
-                  >
+                  <li key={r.id} className="flex items-center gap-2 text-[12px]">
                     <span className="font-mono text-[11px] font-semibold text-foreground">
                       {r.id}
                     </span>
-                    <span className="min-w-0 flex-1 truncate text-foreground/85">
-                      {r.title}
-                    </span>
+                    <span className="min-w-0 flex-1 truncate text-foreground/85">{r.title}</span>
                     <ImpactBadge impact={r.impact} />
                   </li>
                 ))}
@@ -539,16 +508,10 @@ function DecisionWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
                     <span className="mt-1 h-2 w-2 flex-shrink-0 rounded-full border-2 border-[color:var(--color-blue,#2563eb)]" />
                     <div className="flex-1">
                       <div className="flex items-baseline justify-between">
-                        <span className="font-mono text-[11px] text-slate">
-                          {a.at}
-                        </span>
-                        <span className="text-[10.5px] text-slate">
-                          {a.actor}
-                        </span>
+                        <span className="font-mono text-[11px] text-slate">{a.at}</span>
+                        <span className="text-[10.5px] text-slate">{a.actor}</span>
                       </div>
-                      <div className="text-[12.5px] text-foreground">
-                        {a.action}
-                      </div>
+                      <div className="text-[12.5px] text-foreground">{a.action}</div>
                     </div>
                   </li>
                 ))}
@@ -568,20 +531,12 @@ function DecisionWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Header
 // ─────────────────────────────────────────────────────────────────────────────
-function HeaderBar({
-  inv,
-  confidencePct,
-}: {
-  inv: Investigation;
-  confidencePct: number;
-}) {
+function HeaderBar({ inv, confidencePct }: { inv: Investigation; confidencePct: number }) {
   return (
     <div className="rounded-lg border border-line bg-white px-5 py-4">
       <div className="flex flex-wrap items-start gap-6">
         <div className="min-w-[220px] flex-shrink-0">
-          <h1 className="text-[22px] font-bold leading-tight text-foreground">
-            Decision Support
-          </h1>
+          <h1 className="text-[22px] font-bold leading-tight text-foreground">Decision Support</h1>
           <div className="text-[12px] text-slate">Officer Decision Workspace</div>
           <div className="mt-1 text-[11px] italic text-slate">
             Assist, never decide. Officer decides.
@@ -595,9 +550,7 @@ function HeaderBar({
           value={
             <span>
               {inv.vessel}{" "}
-              <span className="ml-1 text-[11px] font-normal text-slate">
-                IMO {inv.imo}
-              </span>
+              <span className="ml-1 text-[11px] font-normal text-slate">IMO {inv.imo}</span>
             </span>
           }
         />
@@ -614,9 +567,7 @@ function HeaderBar({
           value={
             <div className="flex items-center gap-2">
               <ConfidenceRing pct={confidencePct} />
-              <span className="text-[13px] font-bold text-foreground">
-                {confidencePct}%
-              </span>
+              <span className="text-[13px] font-bold text-foreground">{confidencePct}%</span>
             </div>
           }
         />
@@ -625,16 +576,10 @@ function HeaderBar({
           value={
             <div className="flex items-center gap-2">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[color:var(--color-navy,#0F2A44)] text-[11px] font-bold text-white">
-                {inv.officer
-                  .split(" ")
-                  .filter(Boolean)
-                  .slice(-1)[0]
-                  .charAt(0)}
+                {inv.officer.split(" ").filter(Boolean).slice(-1)[0].charAt(0)}
               </span>
               <div className="leading-tight">
-                <div className="text-[12.5px] font-semibold text-foreground">
-                  {inv.officer}
-                </div>
+                <div className="text-[12.5px] font-semibold text-foreground">{inv.officer}</div>
                 <div className="text-[10.5px] text-slate">NIMASA Analyst</div>
               </div>
             </div>
@@ -686,22 +631,14 @@ function HeaderCell({
       <div className="mb-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-slate">
         {label}
       </div>
-      <div
-        className={`text-[13px] font-semibold text-foreground ${mono ? "font-mono" : ""}`}
-      >
+      <div className={`text-[13px] font-semibold text-foreground ${mono ? "font-mono" : ""}`}>
         {value}
       </div>
     </div>
   );
 }
 
-function IconBtn({
-  children,
-  title,
-}: {
-  children: React.ReactNode;
-  title: string;
-}) {
+function IconBtn({ children, title }: { children: React.ReactNode; title: string }) {
   return (
     <button
       type="button"
@@ -810,12 +747,8 @@ function Card({
       {(title || action) && (
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-baseline gap-1.5">
-            {title && (
-              <h3 className="text-[14px] font-bold text-foreground">{title}</h3>
-            )}
-            {subtitle && (
-              <span className="text-[11px] text-slate">{subtitle}</span>
-            )}
+            {title && <h3 className="text-[14px] font-bold text-foreground">{title}</h3>}
+            {subtitle && <span className="text-[11px] text-slate">{subtitle}</span>}
           </div>
           {action && (
             <button
@@ -832,21 +765,11 @@ function Card({
   );
 }
 
-function SummaryRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: React.ReactNode;
-}) {
+function SummaryRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-3 border-b border-line/60 pb-1.5 last:border-0">
-      <span className="text-[11px] font-medium uppercase tracking-wide text-slate">
-        {label}
-      </span>
-      <span className="text-right text-[12.5px] font-semibold text-foreground">
-        {value}
-      </span>
+      <span className="text-[11px] font-medium uppercase tracking-wide text-slate">{label}</span>
+      <span className="text-right text-[12.5px] font-semibold text-foreground">{value}</span>
     </div>
   );
 }
@@ -863,33 +786,18 @@ function Metric({ label, value }: { label: string; value: number }) {
 function MiniStat({ value, label }: { value: number; label: string }) {
   return (
     <div>
-      <div className="text-[22px] font-extrabold leading-none text-foreground">
-        {value}
-      </div>
+      <div className="text-[22px] font-extrabold leading-none text-foreground">{value}</div>
       <div className="mt-1 text-[10.5px] leading-tight text-slate">{label}</div>
     </div>
   );
 }
 
-function RuleDot({
-  label,
-  count,
-  color,
-}: {
-  label: string;
-  count: number;
-  color: string;
-}) {
+function RuleDot({ label, count, color }: { label: string; count: number; color: string }) {
   return (
     <div className="text-center">
       <div className="inline-flex items-center gap-1.5">
-        <span
-          className="h-2 w-2 rounded-full"
-          style={{ backgroundColor: color }}
-        />
-        <span className="text-[15px] font-extrabold text-foreground">
-          {count}
-        </span>
+        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+        <span className="text-[15px] font-extrabold text-foreground">{count}</span>
       </div>
       <div className="text-[10.5px] leading-tight text-slate">{label}</div>
     </div>
@@ -913,13 +821,7 @@ function ImpactBadge({ impact }: { impact: "HIGH" | "MEDIUM" | "LOW" }) {
   );
 }
 
-function FieldLabel({
-  children,
-  required,
-}: {
-  children: React.ReactNode;
-  required?: boolean;
-}) {
+function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
     <div className="mb-1.5 text-[12px] font-semibold text-foreground">
       {children}

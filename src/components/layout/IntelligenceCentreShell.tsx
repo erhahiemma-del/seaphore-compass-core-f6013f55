@@ -1,10 +1,7 @@
 import type { ReactNode } from "react";
 import { useEffect } from "react";
 
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { GlobalCopilotLauncher } from "@/components/ai/global-copilot-launcher";
@@ -33,12 +30,7 @@ const SIDEBAR_STYLE = { "--sidebar-width": "230px" } as React.CSSProperties;
  * Footer principle (immutable):
  *   Evidence first. Explainable always. Officer decides.
  */
-export function AppShell({
-  children,
-  title,
-  subtitle,
-  mode = "light",
-}: AppShellProps) {
+export function AppShell({ children, title, subtitle, mode = "light" }: AppShellProps) {
   // Toggle document-level dark class so shadcn dark tokens apply everywhere,
   // including popovers/portals that render outside the shell tree.
   useEffect(() => {

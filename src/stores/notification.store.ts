@@ -20,9 +20,7 @@ interface NotificationState {
   items: AppNotification[];
   unreadCount: number;
 
-  push: (
-    n: Omit<AppNotification, "read" | "createdAt"> & { createdAt?: string },
-  ) => void;
+  push: (n: Omit<AppNotification, "read" | "createdAt"> & { createdAt?: string }) => void;
   /** Spec alias for push. */
   addNotification: (
     n: Omit<AppNotification, "read" | "createdAt"> & { createdAt?: string },
@@ -36,9 +34,7 @@ const recomputeUnread = (items: AppNotification[]) =>
   items.reduce((n, i) => (i.read ? n : n + 1), 0);
 
 export const useNotificationStore = create<NotificationState>((set) => {
-  const push = (
-    n: Omit<AppNotification, "read" | "createdAt"> & { createdAt?: string },
-  ) =>
+  const push = (n: Omit<AppNotification, "read" | "createdAt"> & { createdAt?: string }) =>
     set((s) => {
       const items = [
         { ...n, createdAt: n.createdAt ?? new Date().toISOString(), read: false },
@@ -55,9 +51,7 @@ export const useNotificationStore = create<NotificationState>((set) => {
     addNotification: push,
     markRead: (id) =>
       set((s) => {
-        const items = s.items.map((i) =>
-          i.id === id ? { ...i, read: true } : i,
-        );
+        const items = s.items.map((i) => (i.id === id ? { ...i, read: true } : i));
         return { items, unreadCount: recomputeUnread(items) };
       }),
     markAllRead: () =>

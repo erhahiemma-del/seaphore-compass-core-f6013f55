@@ -45,9 +45,7 @@ const BUNDLES: Partial<Record<CopilotInstanceKey, DomainBundle>> = {
         id: "obs-inv-2",
         text: "AIS trace on MV Ocean Pearl shows a 6h dark period observed south-west of Bonny Terminal on 12 Jul.",
         confidence: "observed",
-        evidence: [
-          ev("e3", "AIS feed (MarineTraffic)", "AIS", "observed", "IMO:9412345"),
-        ],
+        evidence: [ev("e3", "AIS feed (MarineTraffic)", "AIS", "observed", "IMO:9412345")],
       },
     ],
     recommendations: [
@@ -72,8 +70,20 @@ const BUNDLES: Partial<Record<CopilotInstanceKey, DomainBundle>> = {
       },
     ],
     related: [
-      { id: "r1", ref: "INV-8821", title: "MV Ocean Pearl — AIS gap", status: "Open", route: "/investigate/INV-8821" },
-      { id: "r2", ref: "INV-8760", title: "Oceanic Lines — ownership review", status: "Escalated", route: "/investigate/INV-8760" },
+      {
+        id: "r1",
+        ref: "INV-8821",
+        title: "MV Ocean Pearl — AIS gap",
+        status: "Open",
+        route: "/investigate/INV-8821",
+      },
+      {
+        id: "r2",
+        ref: "INV-8760",
+        title: "Oceanic Lines — ownership review",
+        status: "Escalated",
+        route: "/investigate/INV-8760",
+      },
     ],
   },
   manifest: {
@@ -123,9 +133,7 @@ const BUNDLES: Partial<Record<CopilotInstanceKey, DomainBundle>> = {
         outcome: "Closed · ₦210M assessed",
       },
     ],
-    related: [
-      { id: "r1", ref: "INV-8905", title: "Duplicate BOL cluster", status: "Open" },
-    ],
+    related: [{ id: "r1", ref: "INV-8905", title: "Duplicate BOL cluster", status: "Open" }],
   },
   cargo: {
     observations: [
@@ -235,7 +243,12 @@ const BUNDLES: Partial<Record<CopilotInstanceKey, DomainBundle>> = {
       },
     ],
     related: [
-      { id: "r1", ref: "LES-2024-11", title: "Lesson: Cross-check CAC directors on new voyages", status: "Open" },
+      {
+        id: "r1",
+        ref: "LES-2024-11",
+        title: "Lesson: Cross-check CAC directors on new voyages",
+        status: "Open",
+      },
     ],
   },
 };
@@ -245,9 +258,8 @@ export const MOCK_INTELLIGENCE: Record<CopilotInstanceKey, DomainBundle> = new P
   {
     get(target, prop: string) {
       return (
-        (target as Partial<Record<CopilotInstanceKey, DomainBundle>>)[
-          prop as CopilotInstanceKey
-        ] ?? target.seaphore
+        (target as Partial<Record<CopilotInstanceKey, DomainBundle>>)[prop as CopilotInstanceKey] ??
+        target.seaphore
       );
     },
   },

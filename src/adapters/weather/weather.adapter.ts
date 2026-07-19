@@ -5,7 +5,9 @@
 import { BaseAdapter, type HealthReport } from "../base-adapter";
 
 export class WeatherAdapter extends BaseAdapter {
-  constructor() { super("weather"); }
+  constructor() {
+    super("weather");
+  }
   async observe(): Promise<never> {
     this.assertUsable(); // always throws OutOfScopeSourceError
     throw new Error("unreachable");

@@ -3,7 +3,11 @@ import { useState } from "react";
 import { Columns3, Download, LineChart, ShieldCheck } from "lucide-react";
 
 import {
-  CheckList, FilterBlock, FilterSearch, IntelCentreShell, SavedViewList,
+  CheckList,
+  FilterBlock,
+  FilterSearch,
+  IntelCentreShell,
+  SavedViewList,
 } from "@/components/intel-centre/shell";
 import { KpiRibbon, type KpiSpec } from "@/components/intel-centre/kpi-ribbon";
 import { CentreCopilot } from "@/components/intel-centre/centre-copilot";
@@ -11,18 +15,77 @@ import { DataTable, Section, StatusBadge } from "@/components/intel-centre/primi
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { NigeriaMap } from "@/components/intel-centre/nigeria-map";
 import { OwnershipGraph } from "@/components/intel-centre/ownership-graph";
-import { OWNERSHIP_EDGES, VESSELS, companyById, fmtTime, portByCode, sparkSeries, vesselById } from "@/lib/intel-centre-data";
-
-
+import {
+  OWNERSHIP_EDGES,
+  VESSELS,
+  companyById,
+  fmtTime,
+  portByCode,
+  sparkSeries,
+  vesselById,
+} from "@/lib/intel-centre-data";
 
 const KPIS: KpiSpec[] = [
-  { label: "Vessels Tracked",        value: String(VESSELS.length), delta: "+2", trend: "up", confidence: "verified", series: sparkSeries(2) },
-  { label: "High Risk",              value: String(VESSELS.filter((v) => v.riskLevel === "high").length), delta: "+1", trend: "up", confidence: "observed", series: sparkSeries(4), emphasis: "risk" },
-  { label: "Sanctions Hits",         value: String(VESSELS.filter((v) => v.sanctionsHit).length), delta: "0", trend: "flat", confidence: "verified", series: sparkSeries(8), emphasis: "risk" },
-  { label: "AIS Blackouts (24h)",    value: String(VESSELS.filter((v) => v.aisBlackoutHours > 4).length), delta: "+1", trend: "up", confidence: "observed", series: sparkSeries(12), emphasis: "warn" },
-  { label: "PSC Detentions (30d)",   value: "2", delta: "+1", trend: "up", confidence: "verified", series: sparkSeries(16) },
-  { label: "Confidence Score",       value: "84%", delta: "+0.9%", trend: "up", confidence: "observed", series: sparkSeries(22), emphasis: "ok" },
-  { label: "Open Investigations",    value: "9", delta: "+2", trend: "up", confidence: "verified", series: sparkSeries(26) },
+  {
+    label: "Vessels Tracked",
+    value: String(VESSELS.length),
+    delta: "+2",
+    trend: "up",
+    confidence: "verified",
+    series: sparkSeries(2),
+  },
+  {
+    label: "High Risk",
+    value: String(VESSELS.filter((v) => v.riskLevel === "high").length),
+    delta: "+1",
+    trend: "up",
+    confidence: "observed",
+    series: sparkSeries(4),
+    emphasis: "risk",
+  },
+  {
+    label: "Sanctions Hits",
+    value: String(VESSELS.filter((v) => v.sanctionsHit).length),
+    delta: "0",
+    trend: "flat",
+    confidence: "verified",
+    series: sparkSeries(8),
+    emphasis: "risk",
+  },
+  {
+    label: "AIS Blackouts (24h)",
+    value: String(VESSELS.filter((v) => v.aisBlackoutHours > 4).length),
+    delta: "+1",
+    trend: "up",
+    confidence: "observed",
+    series: sparkSeries(12),
+    emphasis: "warn",
+  },
+  {
+    label: "PSC Detentions (30d)",
+    value: "2",
+    delta: "+1",
+    trend: "up",
+    confidence: "verified",
+    series: sparkSeries(16),
+  },
+  {
+    label: "Confidence Score",
+    value: "84%",
+    delta: "+0.9%",
+    trend: "up",
+    confidence: "observed",
+    series: sparkSeries(22),
+    emphasis: "ok",
+  },
+  {
+    label: "Open Investigations",
+    value: "9",
+    delta: "+2",
+    trend: "up",
+    confidence: "verified",
+    series: sparkSeries(26),
+  },
 ];
 
 export function VesselCentre() {
@@ -60,9 +123,15 @@ export function VesselCentre() {
       onTabChange={setTab}
       tabTrailing={
         <>
-          <button className="inline-flex items-center gap-1 rounded px-2 py-1 hover:bg-surface-2/50"><LineChart className="h-3 w-3" /> Analytics</button>
-          <button className="inline-flex items-center gap-1 rounded px-2 py-1 hover:bg-surface-2/50"><Download className="h-3 w-3" /> Export</button>
-          <button className="inline-flex items-center gap-1 rounded px-2 py-1 hover:bg-surface-2/50"><Columns3 className="h-3 w-3" /> Columns</button>
+          <button className="inline-flex items-center gap-1 rounded px-2 py-1 hover:bg-surface-2/50">
+            <LineChart className="h-3 w-3" /> Analytics
+          </button>
+          <button className="inline-flex items-center gap-1 rounded px-2 py-1 hover:bg-surface-2/50">
+            <Download className="h-3 w-3" /> Export
+          </button>
+          <button className="inline-flex items-center gap-1 rounded px-2 py-1 hover:bg-surface-2/50">
+            <Columns3 className="h-3 w-3" /> Columns
+          </button>
         </>
       }
       filters={
@@ -76,7 +145,9 @@ export function VesselCentre() {
                     onClick={() => setSelectedId(vv.id)}
                     className={
                       "flex w-full items-center justify-between rounded px-1.5 py-1 text-left text-[12px] " +
-                      (vv.id === selectedId ? "bg-[color:var(--color-blue)]/15 text-[color:var(--color-blue)]" : "text-foreground/80 hover:bg-surface-2/50")
+                      (vv.id === selectedId
+                        ? "bg-[color:var(--color-blue)]/15 text-[color:var(--color-blue)]"
+                        : "text-foreground/80 hover:bg-surface-2/50")
                     }
                   >
                     <span className="truncate">{vv.name}</span>
@@ -86,10 +157,18 @@ export function VesselCentre() {
               ))}
             </ul>
           </FilterBlock>
-          <FilterBlock label="Vessel type"><CheckList options={["Container", "Tanker", "Bulk Carrier", "General Cargo", "RoRo"]} /></FilterBlock>
-          <FilterBlock label="Flag"><CheckList options={["Panama", "Liberia", "Marshall Islands", "Nigeria", "Greece"]} /></FilterBlock>
-          <FilterBlock label="Watchlists"><CheckList options={["High Risk Vessels", "Sanctioned Entities", "Repeat Offenders"]} /></FilterBlock>
-          <FilterBlock label="Saved views"><SavedViewList views={["High risk fleet", "Sanctioned vessels", "AIS gaps 24h"]} /></FilterBlock>
+          <FilterBlock label="Vessel type">
+            <CheckList options={["Container", "Tanker", "Bulk Carrier", "General Cargo", "RoRo"]} />
+          </FilterBlock>
+          <FilterBlock label="Flag">
+            <CheckList options={["Panama", "Liberia", "Marshall Islands", "Nigeria", "Greece"]} />
+          </FilterBlock>
+          <FilterBlock label="Watchlists">
+            <CheckList options={["High Risk Vessels", "Sanctioned Entities", "Repeat Offenders"]} />
+          </FilterBlock>
+          <FilterBlock label="Saved views">
+            <SavedViewList views={["High risk fleet", "Sanctioned vessels", "AIS gaps 24h"]} />
+          </FilterBlock>
         </>
       }
       main={
@@ -97,7 +176,12 @@ export function VesselCentre() {
           {/* Map + profile */}
           <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_360px]">
             <div className="h-[340px]">
-              <NigeriaMap vessels={VESSELS} selectedVesselId={selectedId} onSelectVessel={(vv) => setSelectedId(vv.id)} className="h-full" />
+              <NigeriaMap
+                vessels={VESSELS}
+                selectedVesselId={selectedId}
+                onSelectVessel={(vv) => setSelectedId(vv.id)}
+                className="h-full"
+              />
             </div>
             <Section title="Vessel Profile (VES-1)">
               <div className="mb-3">
@@ -116,13 +200,18 @@ export function VesselCentre() {
                   ["Owner", companyById(v.ownerId)?.name ?? "—", "verified"],
                   ["Operator", companyById(v.operatorId)?.name ?? "—", "verified"],
                   ["Manager", companyById(v.managerId)?.name ?? "—", "observed"],
-                  ["Insurer", v.insurerId ? companyById(v.insurerId)?.name ?? "—" : "—", "inferred"],
+                  [
+                    "Insurer",
+                    v.insurerId ? (companyById(v.insurerId)?.name ?? "—") : "—",
+                    "inferred",
+                  ],
                   ["ETA", fmtTime(v.etaISO), "observed"],
                 ].map(([k, val, c]) => (
                   <div key={k as string} className="contents">
                     <dt className="text-slate">{k}</dt>
                     <dd className="flex items-center justify-end gap-1.5 text-right text-foreground/90">
-                      {val} <ConfidenceChip tier={c as "verified" | "observed" | "inferred"} size={9} />
+                      {val}{" "}
+                      <ConfidenceChip tier={c as "verified" | "observed" | "inferred"} size={9} />
                     </dd>
                   </div>
                 ))}
@@ -134,12 +223,32 @@ export function VesselCentre() {
           <Section title="Voyage History (VES-2)">
             <DataTable
               columns={[
-                { key: "vy", label: "Voyage", render: (r: typeof history[number]) => <span className="font-mono text-[11.5px]">{r.voyage}</span> },
+                {
+                  key: "vy",
+                  label: "Voyage",
+                  render: (r: (typeof history)[number]) => (
+                    <span className="font-mono text-[11.5px]">{r.voyage}</span>
+                  ),
+                },
                 { key: "dt", label: "Date", render: (r) => r.date },
                 { key: "pt", label: "Port", render: (r) => portByCode(r.port)?.name },
                 { key: "cg", label: "Cargo", render: (r) => r.cargo },
-                { key: "rv", label: "Revenue", align: "right", render: (r) => `₦${(r.revenueNGN / 1_000_000).toFixed(0)}M` },
-                { key: "rk", label: "Risk", render: (r) => <StatusBadge label={r.risk.toUpperCase()} tone={r.risk === "high" ? "risk" : r.risk === "medium" ? "warn" : "ok"} /> },
+                {
+                  key: "rv",
+                  label: "Revenue",
+                  align: "right",
+                  render: (r) => `₦${(r.revenueNGN / 1_000_000).toFixed(0)}M`,
+                },
+                {
+                  key: "rk",
+                  label: "Risk",
+                  render: (r) => (
+                    <StatusBadge
+                      label={r.risk.toUpperCase()}
+                      tone={r.risk === "high" ? "risk" : r.risk === "medium" ? "warn" : "ok"}
+                    />
+                  ),
+                },
               ]}
               rows={history}
               rowKey={(r) => r.voyage}
@@ -168,31 +277,54 @@ export function VesselCentre() {
                     No hits · verified against OFAC / UN / EU lists.
                   </div>
                 )}
-                <div className="mt-1"><ConfidenceChip tier="verified" size={9} /></div>
+                <div className="mt-1">
+                  <ConfidenceChip tier="verified" size={9} />
+                </div>
               </div>
 
               <div className="rounded-md border border-line/60 bg-surface/50 p-2.5">
-                <div className="mb-1 text-[11px] font-semibold text-foreground">PSC Inspections</div>
+                <div className="mb-1 text-[11px] font-semibold text-foreground">
+                  PSC Inspections
+                </div>
                 {v.pscInspections.length === 0 ? (
                   <div className="text-[11.5px] text-slate">No PSC record in last 12 months.</div>
                 ) : (
                   <ul className="space-y-1 text-[11.5px]">
                     {v.pscInspections.map((p, i) => (
                       <li key={i} className="flex items-center justify-between gap-2">
-                        <span className="text-foreground/90">{p.date} · {p.port}</span>
-                        <StatusBadge label={p.result} tone={p.result === "Detained" ? "risk" : p.result === "Deficiencies" ? "warn" : "ok"} />
+                        <span className="text-foreground/90">
+                          {p.date} · {p.port}
+                        </span>
+                        <StatusBadge
+                          label={p.result}
+                          tone={
+                            p.result === "Detained"
+                              ? "risk"
+                              : p.result === "Deficiencies"
+                                ? "warn"
+                                : "ok"
+                          }
+                        />
                       </li>
                     ))}
                   </ul>
                 )}
-                <div className="mt-1"><ConfidenceChip tier="verified" size={9} /></div>
+                <div className="mt-1">
+                  <ConfidenceChip tier="verified" size={9} />
+                </div>
               </div>
 
               <div className="rounded-md border border-line/60 bg-surface/50 p-2.5">
-                <div className="mb-1 text-[11px] font-semibold text-foreground">Class &amp; Flag State</div>
-                <div className="text-[11.5px] text-foreground/90">Class: {v.classSociety} · Status: In Class</div>
+                <div className="mb-1 text-[11px] font-semibold text-foreground">
+                  Class &amp; Flag State
+                </div>
+                <div className="text-[11.5px] text-foreground/90">
+                  Class: {v.classSociety} · Status: In Class
+                </div>
                 <div className="text-[11.5px] text-foreground/90">Flag: {v.flag}</div>
-                <div className="mt-1"><ConfidenceChip tier="verified" size={9} /></div>
+                <div className="mt-1">
+                  <ConfidenceChip tier="verified" size={9} />
+                </div>
               </div>
             </div>
           </Section>
@@ -202,20 +334,44 @@ export function VesselCentre() {
         <CentreCopilot
           name="Vessel Copilot"
           observed={[
-            { title: "AIS blackout observed",        detail: `${v.name}: ${v.aisBlackoutHours}h gap in last 24h.`, confidence: "observed" },
-            { title: "Sister vessels under same manager", detail: "3 vessels managed by GulfMarine Holdings show similar risk pattern.", confidence: "observed" },
-            { title: "Class deficiency trend",       detail: "PSC deficiency count up 2 vs 6-month baseline.",     confidence: "inferred" },
+            {
+              title: "AIS blackout observed",
+              detail: `${v.name}: ${v.aisBlackoutHours}h gap in last 24h.`,
+              confidence: "observed",
+            },
+            {
+              title: "Sister vessels under same manager",
+              detail: "3 vessels managed by GulfMarine Holdings show similar risk pattern.",
+              confidence: "observed",
+            },
+            {
+              title: "Class deficiency trend",
+              detail: "PSC deficiency count up 2 vs 6-month baseline.",
+              confidence: "inferred",
+            },
           ]}
           recommendations={[
-            { title: "Request MMSI validation from NIMASA", detail: "Confirm identity before berth allocation.", confidence: "observed" },
-            { title: "Escalate to Compliance Centre",       detail: "If sanctions match verified, freeze clearance.", confidence: "verified" },
+            {
+              title: "Request MMSI validation from NIMASA",
+              detail: "Confirm identity before berth allocation.",
+              confidence: "observed",
+            },
+            {
+              title: "Escalate to Compliance Centre",
+              detail: "If sanctions match verified, freeze clearance.",
+              confidence: "verified",
+            },
           ]}
           historical={[
-            { title: "Same-fleet vessel · Q3 2025", detail: "AIS gap → 62% correlation with under-declaration incidents.", similarity: 68 },
+            {
+              title: "Same-fleet vessel · Q3 2025",
+              detail: "AIS gap → 62% correlation with under-declaration incidents.",
+              similarity: 68,
+            },
           ]}
           related={[
             { ref: "INV-2412-03", title: "Niger Runner sanctions review", status: "Escalated" },
-            { ref: "INV-2412-01", title: "Ocean Pearl duty variance",     status: "Open" },
+            { ref: "INV-2412-01", title: "Ocean Pearl duty variance", status: "Open" },
           ]}
         />
       }

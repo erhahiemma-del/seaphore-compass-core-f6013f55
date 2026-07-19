@@ -63,9 +63,7 @@ class GeminiCopilotService implements AiService {
     }
 
     const answer =
-      (raw as { answer?: string; text?: string })?.answer ??
-      (raw as { text?: string })?.text ??
-      "";
+      (raw as { answer?: string; text?: string })?.answer ?? (raw as { text?: string })?.text ?? "";
     return {
       text: answer,
       confidence: "INFERRED",

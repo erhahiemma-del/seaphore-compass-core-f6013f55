@@ -7,9 +7,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const validateManifest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z.object({ manifest_id: z.string().uuid() }).parse(d),
-  )
+  .inputValidator((d: unknown) => z.object({ manifest_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const [{ data: manifest }, { data: cargo }] = await Promise.all([
       context.supabase.from("manifests").select("*").eq("id", data.manifest_id).maybeSingle(),

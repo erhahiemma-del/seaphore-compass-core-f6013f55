@@ -54,12 +54,7 @@ vi.mock("jspdf", () => {
     splitTextToSize(text: string) {
       return Array.isArray(text) ? text : [text];
     }
-    text(
-      text: string | string[],
-      x: number,
-      y: number,
-      opts?: { align?: string },
-    ) {
+    text(text: string | string[], x: number, y: number, opts?: { align?: string }) {
       const arr = Array.isArray(text) ? text : [text];
       for (const t of arr) draws.push({ text: t, x, y, align: opts?.align });
     }
@@ -243,8 +238,10 @@ describe("Ownership Evidence Report — confidence tier hygiene", () => {
   it("only uses tiers from the OC-001 ladder", () => {
     const allowed = new Set(["verified", "observed", "inferred", "unconfirmed"]);
     const tierTokens = corpus
-      .split(/[\s\[\]·,]+/)
-      .filter((t) => /^(verified|observed|inferred|unconfirmed|VERIFIED|OBSERVED|INFERRED|UNCONFIRMED)$/.test(t));
+      .split(/[\s[\]·,]+/)
+      .filter((t) =>
+        /^(verified|observed|inferred|unconfirmed|VERIFIED|OBSERVED|INFERRED|UNCONFIRMED)$/.test(t),
+      );
     expect(tierTokens.length).toBeGreaterThan(0);
     for (const t of tierTokens) expect(allowed.has(t.toLowerCase())).toBe(true);
   });

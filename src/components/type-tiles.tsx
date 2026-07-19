@@ -33,19 +33,11 @@ export function TypeTiles({
   className?: string;
 }) {
   return (
-    <div
-      className={cn(
-        "grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6",
-        className,
-      )}
-    >
+    <div className={cn("grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6", className)}>
       {items.map((it) => {
         const Icon = ICONS[it.type];
         return (
-          <div
-            key={it.type}
-            className="rounded-lg border border-line bg-surface-2/60 px-3 py-2.5"
-          >
+          <div key={it.type} className="rounded-lg border border-line bg-surface-2/60 px-3 py-2.5">
             <div className="flex items-center gap-2">
               <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[color:var(--color-teal)]/10 text-[color:var(--color-teal)]">
                 <Icon className="h-4 w-4" />
@@ -53,9 +45,7 @@ export function TypeTiles({
               <span className="type-label text-slate">{it.type}</span>
             </div>
             <div className="mt-1.5 flex items-baseline justify-between">
-              <span className="text-[20px] font-extrabold text-foreground">
-                {it.count}
-              </span>
+              <span className="text-[20px] font-extrabold text-foreground">{it.count}</span>
               <ConfidenceChip tier={it.confidence} size={9} />
             </div>
           </div>

@@ -28,9 +28,7 @@ export function TopBar({ title, subtitle }: TopBarProps) {
       <SidebarTrigger className="text-slate md:hidden" />
       <div className="min-w-0 flex-1">
         <div className="type-h1 text-foreground truncate">{title}</div>
-        {subtitle && (
-          <div className="type-small text-slate truncate">{subtitle}</div>
-        )}
+        {subtitle && <div className="type-small text-slate truncate">{subtitle}</div>}
       </div>
 
       <div className="flex items-center gap-3">
@@ -57,10 +55,7 @@ export function TopBar({ title, subtitle }: TopBarProps) {
 function StatusIndicator() {
   return (
     <div className="hidden items-center gap-1.5 md:flex">
-      <span
-        className="h-2 w-2 rounded-full"
-        style={{ backgroundColor: "#1E6B3A" }}
-      />
+      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: "#1E6B3A" }} />
       <span className="type-small text-slate">All systems operational</span>
     </div>
   );
@@ -99,12 +94,8 @@ function OfficerBadge() {
         <User2 className="h-4 w-4" />
       </div>
       <div className="hidden text-right leading-tight sm:block">
-        <div className="type-small font-semibold text-foreground">
-          {session.user.email}
-        </div>
-        <div className="text-[10px] uppercase tracking-wider text-slate">
-          Officer
-        </div>
+        <div className="type-small font-semibold text-foreground">{session.user.email}</div>
+        <div className="text-[10px] uppercase tracking-wider text-slate">Officer</div>
       </div>
       <Button
         variant="ghost"

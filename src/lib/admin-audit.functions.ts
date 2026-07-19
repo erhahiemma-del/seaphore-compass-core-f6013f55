@@ -99,9 +99,7 @@ export const listRoleAuditLog = createServerFn({ method: "GET" })
     }
 
     const roleArray = (v: unknown): Role[] =>
-      Array.isArray(v)
-        ? (v.filter((x) => typeof x === "string") as Role[])
-        : [];
+      Array.isArray(v) ? (v.filter((x) => typeof x === "string") as Role[]) : [];
 
     return (rows ?? []).map((r) => {
       const meta = (r.metadata ?? {}) as { added?: unknown; removed?: unknown };

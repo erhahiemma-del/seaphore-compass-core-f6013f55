@@ -7,7 +7,12 @@
  * without polluting the DB. Uploads still hit the DB via `recordEvidence()`.
  */
 import { supabase } from "@/integrations/supabase/client";
-import { EVIDENCE_LIBRARY, type EvidenceItem, KIND_TO_CATEGORY, type EvidenceKind } from "@/features/evidence/data";
+import {
+  EVIDENCE_LIBRARY,
+  type EvidenceItem,
+  KIND_TO_CATEGORY,
+  type EvidenceKind,
+} from "@/features/evidence/data";
 import type { ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
 
 interface EvidenceRow {

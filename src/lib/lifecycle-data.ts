@@ -261,7 +261,16 @@ export const SIGNALS_BY_DOMAIN: DomainSlice[] = SIGNAL_DOMAINS.map((d) => ({
   count:
     SIGNALS.filter((s) => s.domain === d).length +
     // pad realistic distribution
-    { Manifest: 12, Cargo: 9, Revenue: 8, "Vessel Movement": 14, "Port Operations": 6, Ownership: 5, Compliance: 7, Alerts: 3 }[d],
+    {
+      Manifest: 12,
+      Cargo: 9,
+      Revenue: 8,
+      "Vessel Movement": 14,
+      "Port Operations": 6,
+      Ownership: 5,
+      Compliance: 7,
+      Alerts: 3,
+    }[d],
 }));
 
 /** DET-5 heatmap matrix. */
@@ -313,26 +322,22 @@ export interface CopilotCard {
 export const AI_SIGNAL_SUMMARY: CopilotCard[] = [
   {
     title: "Clustering of AIS gaps near Bonny",
-    observation:
-      "6 vessels have observed transit-lane blackouts averaging 2h in the past 24h.",
+    observation: "6 vessels have observed transit-lane blackouts averaging 2h in the past 24h.",
     confidence: "observed",
   },
   {
     title: "Manifest discrepancies rising in steel-products lane",
-    observation:
-      "Declared vs. scale weights diverge by >15% on 9 filings this week.",
+    observation: "Declared vs. scale weights diverge by >15% on 9 filings this week.",
     confidence: "inferred",
   },
   {
     title: "Shell-network expansion around Crimson Endeavour Ltd",
-    observation:
-      "3 newly registered entities share a director with existing watchlist companies.",
+    observation: "3 newly registered entities share a director with existing watchlist companies.",
     confidence: "inferred",
   },
   {
     title: "Congestion at Apapa remains in critical band",
-    observation:
-      "Berth queue depth has stayed above 30 for a fourth consecutive day.",
+    observation: "Berth queue depth has stayed above 30 for a fourth consecutive day.",
     confidence: "observed",
   },
 ];
@@ -466,13 +471,7 @@ export const CASE_PROGRESS: ChecklistStep[] = [
 ];
 
 /** INV-4/INV-5 knowledge-graph nodes + edges. */
-export type GraphNodeKind =
-  | "vessel"
-  | "company"
-  | "person"
-  | "port"
-  | "cargo"
-  | "manifest";
+export type GraphNodeKind = "vessel" | "company" | "person" | "port" | "cargo" | "manifest";
 
 export interface GraphNode {
   id: string;
@@ -500,17 +499,72 @@ export interface GraphEdge {
 }
 
 export const GRAPH_NODES: GraphNode[] = [
-  { id: "v1", label: "MV Ocean Pearl", kind: "vessel", x: 50, y: 42, risk: "HIGH", confidence: 88, evidence: true, t: 5 },
-  { id: "co1", label: "Blue Horizon Shipping", kind: "company", x: 22, y: 24, risk: "HIGH", confidence: 82, evidence: true, t: 15 },
+  {
+    id: "v1",
+    label: "MV Ocean Pearl",
+    kind: "vessel",
+    x: 50,
+    y: 42,
+    risk: "HIGH",
+    confidence: 88,
+    evidence: true,
+    t: 5,
+  },
+  {
+    id: "co1",
+    label: "Blue Horizon Shipping",
+    kind: "company",
+    x: 22,
+    y: 24,
+    risk: "HIGH",
+    confidence: 82,
+    evidence: true,
+    t: 15,
+  },
   { id: "co2", label: "Northgate Logistics", kind: "company", x: 78, y: 26, confidence: 62, t: 30 },
-  { id: "co3", label: "Crimson Endeavour Ltd", kind: "company", x: 15, y: 62, risk: "HIGH", confidence: 55, t: 40 },
+  {
+    id: "co3",
+    label: "Crimson Endeavour Ltd",
+    kind: "company",
+    x: 15,
+    y: 62,
+    risk: "HIGH",
+    confidence: 55,
+    t: 40,
+  },
   { id: "p1", label: "K. Adebayo (Director)", kind: "person", x: 8, y: 40, confidence: 50, t: 20 },
-  { id: "p2", label: "M. Ibrahim (Beneficial Owner)", kind: "person", x: 30, y: 78, confidence: 44, t: 70 },
+  {
+    id: "p2",
+    label: "M. Ibrahim (Beneficial Owner)",
+    kind: "person",
+    x: 30,
+    y: 78,
+    confidence: 44,
+    t: 70,
+  },
   { id: "pt1", label: "Bonny", kind: "port", x: 60, y: 74, confidence: 92, evidence: true, t: 50 },
   { id: "pt2", label: "Apapa", kind: "port", x: 82, y: 60, confidence: 92, evidence: true, t: 55 },
   { id: "pt3", label: "Lagos", kind: "port", x: 82, y: 82, confidence: 92, t: 60 },
-  { id: "c1", label: "Steel coils · 4,200t", kind: "cargo", x: 50, y: 12, confidence: 72, evidence: true, t: 35 },
-  { id: "m1", label: "BOL #MSKU8842119", kind: "manifest", x: 68, y: 20, confidence: 80, evidence: true, t: 45 },
+  {
+    id: "c1",
+    label: "Steel coils · 4,200t",
+    kind: "cargo",
+    x: 50,
+    y: 12,
+    confidence: 72,
+    evidence: true,
+    t: 35,
+  },
+  {
+    id: "m1",
+    label: "BOL #MSKU8842119",
+    kind: "manifest",
+    x: 68,
+    y: 20,
+    confidence: 80,
+    evidence: true,
+    t: 45,
+  },
 ];
 
 export const GRAPH_EDGES: GraphEdge[] = [
@@ -532,9 +586,11 @@ export const GRAPH_EDGES: GraphEdge[] = [
  * a topology-preserving graph populated from Investigation metadata so the
  * KG reflects the case the officer opened.
  */
-export function graphForInvestigation(
-  inv: Investigation,
-): { nodes: GraphNode[]; edges: GraphEdge[]; focalId: string } {
+export function graphForInvestigation(inv: Investigation): {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  focalId: string;
+} {
   if (inv.id === "INV-2026-00431") {
     return { nodes: GRAPH_NODES, edges: GRAPH_EDGES, focalId: "v1" };
   }
@@ -561,15 +617,70 @@ export function graphForInvestigation(
     t: 50 + i * 5,
   }));
   const nodes: GraphNode[] = [
-    { id: "v1", label: inv.vessel, kind: "vessel", x: 50, y: 42, risk: inv.risk, confidence: inv.confidencePct, evidence: true, t: 5 },
-    { id: "co1", label: `${inv.vessel.split(" ").slice(-1)[0]} Holdings`, kind: "company", x: 22, y: 24, risk: inv.risk, confidence: 78, evidence: true, t: 15 },
-    { id: "co2", label: "Declared Consignee", kind: "company", x: 78, y: 26, confidence: 60, t: 30 },
-    { id: "co3", label: `${inv.flag} Operating Co.`, kind: "company", x: 15, y: 62, risk: "MEDIUM", confidence: 55, t: 40 },
+    {
+      id: "v1",
+      label: inv.vessel,
+      kind: "vessel",
+      x: 50,
+      y: 42,
+      risk: inv.risk,
+      confidence: inv.confidencePct,
+      evidence: true,
+      t: 5,
+    },
+    {
+      id: "co1",
+      label: `${inv.vessel.split(" ").slice(-1)[0]} Holdings`,
+      kind: "company",
+      x: 22,
+      y: 24,
+      risk: inv.risk,
+      confidence: 78,
+      evidence: true,
+      t: 15,
+    },
+    {
+      id: "co2",
+      label: "Declared Consignee",
+      kind: "company",
+      x: 78,
+      y: 26,
+      confidence: 60,
+      t: 30,
+    },
+    {
+      id: "co3",
+      label: `${inv.flag} Operating Co.`,
+      kind: "company",
+      x: 15,
+      y: 62,
+      risk: "MEDIUM",
+      confidence: 55,
+      t: 40,
+    },
     { id: "p1", label: "Registered Director", kind: "person", x: 8, y: 40, confidence: 52, t: 20 },
     { id: "p2", label: "Beneficial Owner", kind: "person", x: 30, y: 78, confidence: 45, t: 70 },
     ...portNodes,
-    { id: "c1", label: inv.cargoDeclared, kind: "cargo", x: 50, y: 12, confidence: 72, evidence: true, t: 35 },
-    { id: "m1", label: `BOL · ${inv.voyage}`, kind: "manifest", x: 68, y: 20, confidence: 80, evidence: true, t: 45 },
+    {
+      id: "c1",
+      label: inv.cargoDeclared,
+      kind: "cargo",
+      x: 50,
+      y: 12,
+      confidence: 72,
+      evidence: true,
+      t: 35,
+    },
+    {
+      id: "m1",
+      label: `BOL · ${inv.voyage}`,
+      kind: "manifest",
+      x: 68,
+      y: 20,
+      confidence: 80,
+      evidence: true,
+      t: 45,
+    },
   ];
   const edges: GraphEdge[] = [
     { from: "co1", to: "v1", label: "owns", type: "owns", t: 15 },
@@ -583,7 +694,6 @@ export function graphForInvestigation(
   ];
   return { nodes, edges, focalId: "v1" };
 }
-
 
 /** INV-6 copilot recommendations, similarity, entity facts. */
 export interface CopilotRecommendation {
@@ -650,7 +760,12 @@ export interface RelatedInvestigation {
 }
 
 export const RELATED_INVESTIGATIONS: RelatedInvestigation[] = [
-  { id: "INV-2026-00425", entity: "Blue Horizon Shipping", risk: "HIGH", status: "Awaiting Decision" },
+  {
+    id: "INV-2026-00425",
+    entity: "Blue Horizon Shipping",
+    risk: "HIGH",
+    status: "Awaiting Decision",
+  },
   { id: "INV-2026-00429", entity: "Crimson Endeavour Ltd", risk: "HIGH", status: "Open" },
   { id: "INV-2026-00420", entity: "MV Star of Lagos", risk: "MEDIUM", status: "Open" },
 ];
@@ -695,10 +810,7 @@ export const AI_FINDINGS: AIFinding[] = [
     status: "NEW",
     explanation:
       "Northgate Logistics duty base for HS 7213 is observed 22% below the 12-month peer median.",
-    keyIndicators: [
-      "Peer set: 8 consignees, HS 7213 lane",
-      "Rolling 3-month divergence widening",
-    ],
+    keyIndicators: ["Peer set: 8 consignees, HS 7213 lane", "Rolling 3-month divergence widening"],
   },
   {
     id: 3,
@@ -710,10 +822,7 @@ export const AI_FINDINGS: AIFinding[] = [
     status: "NEW",
     explanation:
       "Crimson Endeavour Ltd is observed connected to three newly registered entities via shared director.",
-    keyIndicators: [
-      "Shared director K. Adebayo",
-      "Entities registered in same 30-day window",
-    ],
+    keyIndicators: ["Shared director K. Adebayo", "Entities registered in same 30-day window"],
   },
   {
     id: 4,
@@ -723,8 +832,7 @@ export const AI_FINDINGS: AIFinding[] = [
     evidenceCount: 2,
     firstObserved: "03 Jun 08:00",
     status: "REVIEW",
-    explanation:
-      "BOL #MSKU8842119 is observed on two consignments filed 48h apart.",
+    explanation: "BOL #MSKU8842119 is observed on two consignments filed 48h apart.",
     keyIndicators: ["Exact BOL number match", "Different consignee IDs"],
   },
 ];
@@ -751,11 +859,51 @@ export interface EvidenceItem {
 }
 
 export const EVIDENCE_ITEMS: EvidenceItem[] = [
-  { id: "EV-1", title: "Satellite AIS extract · 04 Jun 09:00–12:00", type: "AIS", source: "SpireGlobal", timestamp: "04 Jun 12:04", confidence: "verified", size: "142 KB" },
-  { id: "EV-2", title: "Bill of Lading #MSKU8842119", type: "PDF", source: "Terminal Operator", timestamp: "04 Jun 08:42", confidence: "verified", size: "312 KB" },
-  { id: "EV-3", title: "Weighbridge photo · gate 4", type: "IMG", source: "Apapa Terminal CCTV", timestamp: "04 Jun 09:11", confidence: "observed", size: "1.4 MB" },
-  { id: "EV-4", title: "Ownership graph snapshot", type: "GRAPH", source: "Seaphore KG", timestamp: "04 Jun 10:20", confidence: "inferred", size: "—" },
-  { id: "EV-5", title: "Duty computation worksheet", type: "CSV", source: "Revenue Ledger", timestamp: "04 Jun 07:58", confidence: "verified", size: "18 KB" },
+  {
+    id: "EV-1",
+    title: "Satellite AIS extract · 04 Jun 09:00–12:00",
+    type: "AIS",
+    source: "SpireGlobal",
+    timestamp: "04 Jun 12:04",
+    confidence: "verified",
+    size: "142 KB",
+  },
+  {
+    id: "EV-2",
+    title: "Bill of Lading #MSKU8842119",
+    type: "PDF",
+    source: "Terminal Operator",
+    timestamp: "04 Jun 08:42",
+    confidence: "verified",
+    size: "312 KB",
+  },
+  {
+    id: "EV-3",
+    title: "Weighbridge photo · gate 4",
+    type: "IMG",
+    source: "Apapa Terminal CCTV",
+    timestamp: "04 Jun 09:11",
+    confidence: "observed",
+    size: "1.4 MB",
+  },
+  {
+    id: "EV-4",
+    title: "Ownership graph snapshot",
+    type: "GRAPH",
+    source: "Seaphore KG",
+    timestamp: "04 Jun 10:20",
+    confidence: "inferred",
+    size: "—",
+  },
+  {
+    id: "EV-5",
+    title: "Duty computation worksheet",
+    type: "CSV",
+    source: "Revenue Ledger",
+    timestamp: "04 Jun 07:58",
+    confidence: "verified",
+    size: "18 KB",
+  },
 ];
 
 export interface RuleTrigger {
@@ -785,13 +933,62 @@ export interface AuditEvent {
 }
 
 export const AUDIT_TRAIL: AuditEvent[] = [
-  { id: "A-1", at: "04 Jun 12:04 UTC", actor: "Seaphore Ingest", action: "Signal ingested", detail: "SIG-01142 · AIS blackout", kind: "System" },
-  { id: "A-2", at: "04 Jun 12:07 UTC", actor: "Seaphore Copilot", action: "Finding generated", detail: "F-1 · AIS gap coincides with re-declaration", kind: "System" },
-  { id: "A-3", at: "04 Jun 12:14 UTC", actor: "Cdr. J. Bello", action: "Case opened", detail: "INV-2026-00431", kind: "Officer" },
-  { id: "A-4", at: "04 Jun 12:22 UTC", actor: "Cdr. J. Bello", action: "Evidence attached", detail: "EV-1, EV-2, EV-3", kind: "Officer" },
-  { id: "A-5", at: "04 Jun 12:41 UTC", actor: "Seaphore Rules Engine", action: "Rules triggered", detail: "R-014, R-027, R-071", kind: "System" },
-  { id: "A-6", at: "04 Jun 13:02 UTC", actor: "Ownership Service", action: "Graph refreshed", detail: "+3 nodes, +5 edges", kind: "Data" },
-  { id: "A-7", at: "04 Jun 13:18 UTC", actor: "Cdr. J. Bello", action: "Note added", detail: "Requested corporate registry pull", kind: "Officer" },
+  {
+    id: "A-1",
+    at: "04 Jun 12:04 UTC",
+    actor: "Seaphore Ingest",
+    action: "Signal ingested",
+    detail: "SIG-01142 · AIS blackout",
+    kind: "System",
+  },
+  {
+    id: "A-2",
+    at: "04 Jun 12:07 UTC",
+    actor: "Seaphore Copilot",
+    action: "Finding generated",
+    detail: "F-1 · AIS gap coincides with re-declaration",
+    kind: "System",
+  },
+  {
+    id: "A-3",
+    at: "04 Jun 12:14 UTC",
+    actor: "Cdr. J. Bello",
+    action: "Case opened",
+    detail: "INV-2026-00431",
+    kind: "Officer",
+  },
+  {
+    id: "A-4",
+    at: "04 Jun 12:22 UTC",
+    actor: "Cdr. J. Bello",
+    action: "Evidence attached",
+    detail: "EV-1, EV-2, EV-3",
+    kind: "Officer",
+  },
+  {
+    id: "A-5",
+    at: "04 Jun 12:41 UTC",
+    actor: "Seaphore Rules Engine",
+    action: "Rules triggered",
+    detail: "R-014, R-027, R-071",
+    kind: "System",
+  },
+  {
+    id: "A-6",
+    at: "04 Jun 13:02 UTC",
+    actor: "Ownership Service",
+    action: "Graph refreshed",
+    detail: "+3 nodes, +5 edges",
+    kind: "Data",
+  },
+  {
+    id: "A-7",
+    at: "04 Jun 13:18 UTC",
+    actor: "Cdr. J. Bello",
+    action: "Note added",
+    detail: "Requested corporate registry pull",
+    kind: "Officer",
+  },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -819,10 +1016,7 @@ export const SHARE_OUTPUTS: OutputType[] = [
   "Archive",
 ];
 
-export type Classification =
-  | "OFFICIAL–SENSITIVE"
-  | "RESTRICTED"
-  | "CONFIDENTIAL";
+export type Classification = "OFFICIAL–SENSITIVE" | "RESTRICTED" | "CONFIDENTIAL";
 
 export const CLASSIFICATIONS: Classification[] = [
   "OFFICIAL–SENSITIVE",
@@ -851,10 +1045,30 @@ export interface RecentShare {
 }
 
 export const RECENT_SHARES: RecentShare[] = [
-  { id: "SH-2041", investigationId: "INV-2026-00425", title: "Sanctions match briefing — Blue Horizon", date: "03 Jun 2026" },
-  { id: "SH-2040", investigationId: "INV-2026-00420", title: "Revenue anomaly — MV Star of Lagos", date: "02 Jun 2026" },
-  { id: "SH-2039", investigationId: "INV-2026-00429", title: "Ownership expansion — Crimson Endeavour", date: "01 Jun 2026" },
-  { id: "SH-2038", investigationId: "INV-2026-00418", title: "Duplicate BOL brief — MSKU8842119", date: "30 May 2026" },
+  {
+    id: "SH-2041",
+    investigationId: "INV-2026-00425",
+    title: "Sanctions match briefing — Blue Horizon",
+    date: "03 Jun 2026",
+  },
+  {
+    id: "SH-2040",
+    investigationId: "INV-2026-00420",
+    title: "Revenue anomaly — MV Star of Lagos",
+    date: "02 Jun 2026",
+  },
+  {
+    id: "SH-2039",
+    investigationId: "INV-2026-00429",
+    title: "Ownership expansion — Crimson Endeavour",
+    date: "01 Jun 2026",
+  },
+  {
+    id: "SH-2038",
+    investigationId: "INV-2026-00418",
+    title: "Duplicate BOL brief — MSKU8842119",
+    date: "30 May 2026",
+  },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -911,10 +1125,22 @@ export interface KeyInsight {
 }
 
 export const MEMORY_INSIGHTS: KeyInsight[] = [
-  { observation: "Recurring AIS gaps observed on Bonny transit lane over 18 months.", confidence: "observed" },
-  { observation: "Beneficial ownership has shifted twice within the tracking window.", confidence: "inferred" },
-  { observation: "Duty base for steel-products lane is inferred below peer median.", confidence: "inferred" },
-  { observation: "No sanctions match verified in current watchlist snapshot.", confidence: "verified" },
+  {
+    observation: "Recurring AIS gaps observed on Bonny transit lane over 18 months.",
+    confidence: "observed",
+  },
+  {
+    observation: "Beneficial ownership has shifted twice within the tracking window.",
+    confidence: "inferred",
+  },
+  {
+    observation: "Duty base for steel-products lane is inferred below peer median.",
+    confidence: "inferred",
+  },
+  {
+    observation: "No sanctions match verified in current watchlist snapshot.",
+    confidence: "verified",
+  },
 ];
 
 export interface SimilarEntity {

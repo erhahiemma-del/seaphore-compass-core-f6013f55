@@ -16,8 +16,14 @@ export interface CongestionScore {
 }
 
 export class PortCongestionModel extends BaseAdapter {
-  constructor() { super("port_congestion"); }
-  async score(portId: string, queueLength: number, avgWaitHours: number): Promise<SourcedResult<CongestionScore>> {
+  constructor() {
+    super("port_congestion");
+  }
+  async score(
+    portId: string,
+    queueLength: number,
+    avgWaitHours: number,
+  ): Promise<SourcedResult<CongestionScore>> {
     this.assertUsable();
     const raw = queueLength * 6 + avgWaitHours * 2;
     const score = Math.max(0, Math.min(100, raw));

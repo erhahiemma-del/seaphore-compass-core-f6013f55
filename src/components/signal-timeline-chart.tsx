@@ -106,10 +106,35 @@ export function SignalTimelineChart({
               labelFormatter={(l) => `${l} · ${RANGE_META[range].unit}`}
               formatter={(value: number, name: string) => [`${value} signals`, name]}
             />
-            <Bar dataKey="High" stackId="s" fill={COLORS.High} isAnimationActive animationDuration={350} />
-            <Bar dataKey="Medium" stackId="s" fill={COLORS.Medium} isAnimationActive animationDuration={350} />
-            <Bar dataKey="Low" stackId="s" fill={COLORS.Low} isAnimationActive animationDuration={350} />
-            <Bar dataKey="Info" stackId="s" fill={COLORS.Info} radius={[3, 3, 0, 0]} isAnimationActive animationDuration={350} />
+            <Bar
+              dataKey="High"
+              stackId="s"
+              fill={COLORS.High}
+              isAnimationActive
+              animationDuration={350}
+            />
+            <Bar
+              dataKey="Medium"
+              stackId="s"
+              fill={COLORS.Medium}
+              isAnimationActive
+              animationDuration={350}
+            />
+            <Bar
+              dataKey="Low"
+              stackId="s"
+              fill={COLORS.Low}
+              isAnimationActive
+              animationDuration={350}
+            />
+            <Bar
+              dataKey="Info"
+              stackId="s"
+              fill={COLORS.Info}
+              radius={[3, 3, 0, 0]}
+              isAnimationActive
+              animationDuration={350}
+            />
           </BarChart>
         </ResponsiveContainer>
       </div>

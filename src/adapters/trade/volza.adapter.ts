@@ -16,7 +16,9 @@ export interface TradeRecord {
 }
 
 export class VolzaAdapter extends BaseAdapter {
-  constructor() { super("volza"); }
+  constructor() {
+    super("volza");
+  }
   async lookupByHs(hs: string): Promise<SourcedResult<TradeRecord[]>> {
     this.assertUsable();
     return this.envelope<TradeRecord[]>([], new Date().toISOString(), {

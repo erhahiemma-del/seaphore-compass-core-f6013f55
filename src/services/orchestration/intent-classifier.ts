@@ -9,9 +9,9 @@ import { WORKSPACE_CONTRACTS } from "./workspace-contracts";
 
 const MODE_HINTS = {
   investigation: [/investigat/i, /case /i, /open a case/i, /suspicious/i, /fraud/i],
-  forecast:      [/forecast/i, /predict/i, /trend/i, /next (week|month|quarter)/i],
-  assessment:    [/assess/i, /evaluat/i, /review /i, /analy(z|s)e/i, /why /i],
-  lookup:        [/what is/i, /who is/i, /lookup/i, /find /i, /show me/i],
+  forecast: [/forecast/i, /predict/i, /trend/i, /next (week|month|quarter)/i],
+  assessment: [/assess/i, /evaluat/i, /review /i, /analy(z|s)e/i, /why /i],
+  lookup: [/what is/i, /who is/i, /lookup/i, /find /i, /show me/i],
 } as const;
 
 const CAPABILITY_HINTS: Record<CapabilityId, RegExp[]> = {
@@ -48,7 +48,9 @@ export function classifyIntent(query: OfficerQuery): Intent {
 
   // Capability detection
   const capabilities: CapabilityId[] = [];
-  for (const [cap, patterns] of Object.entries(CAPABILITY_HINTS) as Array<[CapabilityId, RegExp[]]>) {
+  for (const [cap, patterns] of Object.entries(CAPABILITY_HINTS) as Array<
+    [CapabilityId, RegExp[]]
+  >) {
     if (patterns.some((p) => p.test(q))) capabilities.push(cap);
   }
   if (capabilities.length === 0) capabilities.push("EVIDENCE_SEARCH");
@@ -62,9 +64,9 @@ export function classifyIntent(query: OfficerQuery): Intent {
   // Workspace — from context if provided, else infer from dominant capability
   const workspace: Workspace | undefined =
     query.context?.workspace ??
-    (Object.values(WORKSPACE_CONTRACTS).find((w) =>
+    Object.values(WORKSPACE_CONTRACTS).find((w) =>
       w.capabilities.some((c) => capabilities.includes(c)),
-    )?.id);
+    )?.id;
 
   return {
     mode,

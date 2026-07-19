@@ -24,18 +24,22 @@ export function computeConfidenceMatrix(fused: FusedEvidence): ConfidenceMatrix 
   const freshness = ranked.length
     ? ranked.reduce((acc, e) => acc + (e.freshness ?? 0), 0) / ranked.length
     : 0;
-  const corroboration = ranked.length ? Math.min(1, sources_corroborated / Math.max(1, ranked.length / 2)) : 0;
+  const corroboration = ranked.length
+    ? Math.min(1, sources_corroborated / Math.max(1, ranked.length / 2))
+    : 0;
   const consistency = ranked.length
     ? 1 - Math.min(1, fused.conflicts.length / Math.max(1, ranked.length))
     : 0;
 
   const w = CONFIDENCE_MATRIX_WEIGHTS;
   const composite = Number(
-    (evidenceQuality * w.evidenceQuality +
+    (
+      evidenceQuality * w.evidenceQuality +
       coverage * w.coverage +
       freshness * w.freshness +
       corroboration * w.corroboration +
-      consistency * w.consistency).toFixed(3),
+      consistency * w.consistency
+    ).toFixed(3),
   );
 
   const tier: ConfidenceMatrix["tier"] =
@@ -82,7 +86,9 @@ export async function reason(
   // Deterministic scaffold of the Four-Layer Assessment. The AI Gateway is
   // consulted for narrative synthesis of the Analytical Assessment paragraph
   // only — never for facts (HR-3, HR-8).
-  const verifiedFacts = verified.slice(0, 6).map((e) => `${e.content} (source: ${e.source_system})`);
+  const verifiedFacts = verified
+    .slice(0, 6)
+    .map((e) => `${e.content} (source: ${e.source_system})`);
   const observedPatterns = observed.slice(0, 4).map((e) => ({
     pattern: e.content,
     caseRefs: e.entity_ids.slice(0, 3),
@@ -132,15 +138,32 @@ export async function reason(
   }
   if (matrix.corroboration < 0.5) intelligenceGaps.push("Corroboration is weak (<50%).");
   if (matrix.freshness < 0.5) intelligenceGaps.push("Evidence is stale (>30 days average).");
-  if (fused.conflicts.length) intelligenceGaps.push(`${fused.conflicts.length} evidence conflict(s) unresolved.`);
+  if (fused.conflicts.length)
+    intelligenceGaps.push(`${fused.conflicts.length} evidence conflict(s) unresolved.`);
 
   const propagated = propagateConfidence(matrix.composite);
   const whyChain = [
     { step: "Evidence", from: "sources", to: `${(propagated.evidence * 100).toFixed(0)}%` },
-    { step: "Relationship", from: `${(propagated.evidence * 100).toFixed(0)}%`, to: `${(propagated.relationship * 100).toFixed(0)}%` },
-    { step: "Pattern", from: `${(propagated.relationship * 100).toFixed(0)}%`, to: `${(propagated.pattern * 100).toFixed(0)}%` },
-    { step: "Assessment", from: `${(propagated.pattern * 100).toFixed(0)}%`, to: `${(propagated.assessment * 100).toFixed(0)}%` },
-    { step: "Recommendation", from: `${(propagated.assessment * 100).toFixed(0)}%`, to: `${(propagated.recommendation * 100).toFixed(0)}%` },
+    {
+      step: "Relationship",
+      from: `${(propagated.evidence * 100).toFixed(0)}%`,
+      to: `${(propagated.relationship * 100).toFixed(0)}%`,
+    },
+    {
+      step: "Pattern",
+      from: `${(propagated.relationship * 100).toFixed(0)}%`,
+      to: `${(propagated.pattern * 100).toFixed(0)}%`,
+    },
+    {
+      step: "Assessment",
+      from: `${(propagated.pattern * 100).toFixed(0)}%`,
+      to: `${(propagated.assessment * 100).toFixed(0)}%`,
+    },
+    {
+      step: "Recommendation",
+      from: `${(propagated.assessment * 100).toFixed(0)}%`,
+      to: `${(propagated.recommendation * 100).toFixed(0)}%`,
+    },
   ];
 
   // HR-2/HR-7: enforcement recommendation requires VERIFIED or CORROBORATED evidence.

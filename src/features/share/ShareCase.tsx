@@ -44,10 +44,7 @@ import {
 // (SendShareGate / briefings.functions.ts).
 // ─────────────────────────────────────────────────────────────────────────────
 
-const OUTPUT_META: Record<
-  OutputType,
-  { icon: React.ElementType; sub: string; tone: string }
-> = {
+const OUTPUT_META: Record<OutputType, { icon: React.ElementType; sub: string; tone: string }> = {
   "Generate Brief": { icon: FileText, sub: "Intelligence summary", tone: "#2563EB" },
   "Generate PDF": { icon: FileType2, sub: "Portable document", tone: "#C0392B" },
   "Generate Word": { icon: Files, sub: "Editable document", tone: "#1F4FAE" },
@@ -75,9 +72,7 @@ export function SharePage() {
 
 /** Default workspace: opens the first case ready to share. */
 export function ShareDefault() {
-  const inv =
-    INVESTIGATIONS.find((i) => i.mission === "Revenue Assurance") ??
-    INVESTIGATIONS[0];
+  const inv = INVESTIGATIONS.find((i) => i.mission === "Revenue Assurance") ?? INVESTIGATIONS[0];
   return <ShareWorkspace fallbackId={inv.id} />;
 }
 
@@ -188,9 +183,7 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
               Decision Support
             </Link>
             <ChevronRight className="h-3.5 w-3.5" />
-            <span className="font-semibold text-[color:var(--color-blue,#2563eb)]">
-              Share
-            </span>
+            <span className="font-semibold text-[color:var(--color-blue,#2563eb)]">Share</span>
           </nav>
           <div className="flex items-center gap-2">
             <IconBtn title="Help">
@@ -235,9 +228,7 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
                       >
                         <Icon className="h-4 w-4" />
                       </span>
-                      <span className="text-[12.5px] font-semibold text-foreground">
-                        {o}
-                      </span>
+                      <span className="text-[12.5px] font-semibold text-foreground">{o}</span>
                       <span className="text-[10.5px] text-slate">{meta.sub}</span>
                     </button>
                   );
@@ -245,10 +236,7 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
               </div>
             </Card>
 
-            <Card
-              title="2. Configure Briefing"
-              subtitle="Customize your briefing before sharing."
-            >
+            <Card title="2. Configure Briefing" subtitle="Customize your briefing before sharing.">
               <div className="space-y-3">
                 <div>
                   <FieldLabel required>Brief Title</FieldLabel>
@@ -304,9 +292,7 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
                         <input
                           type="checkbox"
                           checked={appendices[k]}
-                          onChange={(e) =>
-                            setAppendices({ ...appendices, [k]: e.target.checked })
-                          }
+                          onChange={(e) => setAppendices({ ...appendices, [k]: e.target.checked })}
                           className="h-3.5 w-3.5 accent-[color:var(--color-blue,#2563eb)]"
                         />
                         {k}
@@ -375,7 +361,8 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
                   <div className="type-label text-slate">Executive Summary</div>
                   <p className="mt-1 text-[13px] leading-relaxed text-foreground/85">
                     Analysis indicates potential under-declaration of cargo value, volume and type,
-                    resulting in estimated revenue at risk. Key evidence and patterns are summarized below.
+                    resulting in estimated revenue at risk. Key evidence and patterns are summarized
+                    below.
                   </p>
 
                   <div className="mt-4 grid grid-cols-4 gap-2">
@@ -409,8 +396,8 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
                   <div className="mt-5">
                     <div className="type-label text-slate">Key Finding</div>
                     <p className="mt-1 text-[13px] leading-relaxed text-foreground/85">
-                      Under-declaration of cargo value detected based on invoice comparison,
-                      market reference data and historical patterns.
+                      Under-declaration of cargo value detected based on invoice comparison, market
+                      reference data and historical patterns.
                     </p>
                   </div>
 
@@ -454,10 +441,7 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
 
           {/* RIGHT — Recipients + Delivery + Recent + Secure */}
           <aside ref={recipientsSectionRef} className="space-y-4">
-            <Card
-              title="4. Select Recipients"
-              subtitle="Choose who will receive this briefing."
-            >
+            <Card title="4. Select Recipients" subtitle="Choose who will receive this briefing.">
               {showRecipientError && (
                 <div
                   role="alert"
@@ -500,9 +484,7 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
                         <div className="truncate text-[12.5px] font-semibold text-foreground">
                           {a.name}
                         </div>
-                        <div className="truncate text-[10.5px] text-slate">
-                          {meta.domain}
-                        </div>
+                        <div className="truncate text-[10.5px] text-slate">{meta.domain}</div>
                       </div>
                       <span
                         className="rounded px-1.5 py-0.5 text-[9.5px] font-bold tracking-wider"
@@ -545,10 +527,7 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
                     <span className="font-mono">{invalidExternal.join(", ")}</span>
                   </div>
                 ) : validExternal.length > 0 ? (
-                  <div
-                    id="external-email-help"
-                    className="mb-1 text-[11px] text-[#1E6B3A]"
-                  >
+                  <div id="external-email-help" className="mb-1 text-[11px] text-[#1E6B3A]">
                     {validExternal.length} valid external recipient
                     {validExternal.length > 1 ? "s" : ""}.
                   </div>
@@ -566,10 +545,7 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
               </div>
             </Card>
 
-            <Card
-              title="5. Delivery Summary"
-              subtitle="Review delivery details before sending."
-            >
+            <Card title="5. Delivery Summary" subtitle="Review delivery details before sending.">
               <dl className="space-y-1.5 text-[12px]">
                 <SumRow label="Recipients" value={`${recipientCount} organizations`} />
                 <SumRow
@@ -656,17 +632,12 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
               </div>
             </Card>
 
-            <Card
-              title="Recent Shares"
-              action="View all"
-            >
+            <Card title="Recent Shares" action="View all">
               <ul className="divide-y divide-line">
                 {RECENT_SHARES.map((s) => (
                   <li key={s.id} className="flex items-center gap-3 py-2">
                     <div className="min-w-0 flex-1 leading-tight">
-                      <div className="font-mono text-[10.5px] text-slate">
-                        {s.investigationId}
-                      </div>
+                      <div className="font-mono text-[10.5px] text-slate">{s.investigationId}</div>
                       <div className="truncate text-[12px] font-semibold text-foreground">
                         {s.title}
                       </div>
@@ -688,9 +659,7 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
                 <ShieldCheck className="h-4 w-4" />
               </span>
               <div className="leading-snug">
-                <div className="text-[12.5px] font-bold text-foreground">
-                  Secure by Design
-                </div>
+                <div className="text-[12.5px] font-bold text-foreground">Secure by Design</div>
                 <div className="text-[11px] text-slate">
                   All transmissions are encrypted and securely logged.
                 </div>
@@ -748,9 +717,7 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
                   <it.icon className="h-4 w-4" />
                 </span>
                 <div className="leading-tight">
-                  <div className="text-[12.5px] font-bold text-foreground">
-                    {it.label}
-                  </div>
+                  <div className="text-[12.5px] font-bold text-foreground">{it.label}</div>
                   <div className="mt-0.5 text-[10.5px] text-slate">{it.sub}</div>
                 </div>
               </div>
@@ -780,9 +747,7 @@ function HeaderBar({
     <div className="rounded-lg border border-line bg-white px-5 py-4">
       <div className="flex flex-wrap items-start gap-x-6 gap-y-3">
         <div className="min-w-[220px] flex-shrink-0">
-          <h1 className="text-[22px] font-bold leading-tight text-foreground">
-            Share
-          </h1>
+          <h1 className="text-[22px] font-bold leading-tight text-foreground">Share</h1>
           <div className="text-[12.5px] font-semibold text-foreground/80">
             Share Intelligence &amp; Briefings
           </div>
@@ -799,9 +764,7 @@ function HeaderBar({
             <span>
               {primarySubject}
               <br />
-              <span className="text-[11px] font-normal text-slate">
-                IMO {primaryImo}
-              </span>
+              <span className="text-[11px] font-normal text-slate">IMO {primaryImo}</span>
             </span>
           }
         />
@@ -818,9 +781,7 @@ function HeaderBar({
           value={
             <div className="flex items-center gap-2">
               <ConfidenceRing pct={confidencePct} />
-              <span className="text-[13px] font-bold text-foreground">
-                {confidencePct}%
-              </span>
+              <span className="text-[13px] font-bold text-foreground">{confidencePct}%</span>
             </div>
           }
         />
@@ -829,16 +790,10 @@ function HeaderBar({
           value={
             <div className="flex items-center gap-2">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[color:var(--color-navy,#0F2A44)] text-[11px] font-bold text-white">
-                {inv.officer
-                  .split(" ")
-                  .filter(Boolean)
-                  .slice(-1)[0]
-                  .charAt(0)}
+                {inv.officer.split(" ").filter(Boolean).slice(-1)[0].charAt(0)}
               </span>
               <div className="leading-tight">
-                <div className="text-[12.5px] font-semibold text-foreground">
-                  {inv.officer}
-                </div>
+                <div className="text-[12.5px] font-semibold text-foreground">{inv.officer}</div>
                 <div className="text-[10.5px] text-slate">NIMASA Analyst</div>
               </div>
             </div>
@@ -881,9 +836,7 @@ function HeaderCell({
       <div className="mb-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-slate">
         {label}
       </div>
-      <div
-        className={`text-[13px] font-semibold text-foreground ${mono ? "font-mono" : ""}`}
-      >
+      <div className={`text-[13px] font-semibold text-foreground ${mono ? "font-mono" : ""}`}>
         {value}
       </div>
     </div>
@@ -909,12 +862,8 @@ function Card({
       {(title || action) && (
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>
-            {title && (
-              <h3 className="text-[14px] font-bold text-foreground">{title}</h3>
-            )}
-            {subtitle && (
-              <div className="mt-0.5 text-[11.5px] text-slate">{subtitle}</div>
-            )}
+            {title && <h3 className="text-[14px] font-bold text-foreground">{title}</h3>}
+            {subtitle && <div className="mt-0.5 text-[11.5px] text-slate">{subtitle}</div>}
           </div>
           {typeof action === "string" ? (
             <button
@@ -933,13 +882,7 @@ function Card({
   );
 }
 
-function FieldLabel({
-  children,
-  required,
-}: {
-  children: React.ReactNode;
-  required?: boolean;
-}) {
+function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
     <div className="mb-1 text-[11.5px] font-semibold text-foreground">
       {children}
@@ -951,62 +894,32 @@ function FieldLabel({
 function SumRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between border-b border-line/60 pb-1.5 last:border-0">
-      <span className="text-[11px] font-medium uppercase tracking-wide text-slate">
-        {label}
-      </span>
-      <span className="text-right text-[12.5px] font-semibold text-foreground">
-        {value}
-      </span>
+      <span className="text-[11px] font-medium uppercase tracking-wide text-slate">{label}</span>
+      <span className="text-right text-[12.5px] font-semibold text-foreground">{value}</span>
     </div>
   );
 }
 
-function PreviewMeta({
-  label,
-  value,
-  sub,
-}: {
-  label: string;
-  value: string;
-  sub?: string;
-}) {
+function PreviewMeta({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div>
-      <div className="text-[10px] font-semibold uppercase tracking-wide text-slate">
-        {label}
-      </div>
-      <div className="mt-0.5 text-[12.5px] font-semibold text-foreground">
-        {value}
-      </div>
+      <div className="text-[10px] font-semibold uppercase tracking-wide text-slate">{label}</div>
+      <div className="mt-0.5 text-[12.5px] font-semibold text-foreground">{value}</div>
       {sub && <div className="text-[10.5px] text-slate">{sub}</div>}
     </div>
   );
 }
 
-function PreviewStat({
-  label,
-  value,
-}: {
-  label: string;
-  value: React.ReactNode;
-}) {
+function PreviewStat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="rounded-md border border-line bg-white p-2 text-center">
-      <div className="text-[10px] font-semibold uppercase tracking-wide text-slate">
-        {label}
-      </div>
+      <div className="text-[10px] font-semibold uppercase tracking-wide text-slate">{label}</div>
       <div className="mt-1 flex items-center justify-center">{value}</div>
     </div>
   );
 }
 
-function IconBtn({
-  children,
-  title,
-}: {
-  children: React.ReactNode;
-  title: string;
-}) {
+function IconBtn({ children, title }: { children: React.ReactNode; title: string }) {
   return (
     <button
       type="button"

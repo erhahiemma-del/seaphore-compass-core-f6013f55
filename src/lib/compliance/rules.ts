@@ -11,15 +11,24 @@
  * If a feature cannot satisfy all three clauses, it does not ship.
  */
 
-export const SEAPHORE_OATH =
-  "Evidence first. Explainable always. Officer decides." as const;
+export const SEAPHORE_OATH = "Evidence first. Explainable always. Officer decides." as const;
 
 export const OFFICER_ACCOUNTABILITY_NOTICE =
   "You are responsible for this decision. Seaphore provides recommendations and evidence, but you are accountable." as const;
 
 export type HonestyRuleId =
-  | "HR-1" | "HR-2" | "HR-3" | "HR-4" | "HR-5" | "HR-6"
-  | "HR-7" | "HR-8" | "HR-9" | "HR-10" | "HR-11" | "HR-12";
+  | "HR-1"
+  | "HR-2"
+  | "HR-3"
+  | "HR-4"
+  | "HR-5"
+  | "HR-6"
+  | "HR-7"
+  | "HR-8"
+  | "HR-9"
+  | "HR-10"
+  | "HR-11"
+  | "HR-12";
 
 export interface HonestyRule {
   id: HonestyRuleId;
@@ -44,7 +53,7 @@ export const HONESTY_RULES: readonly HonestyRule[] = [
     title: "VERIFIED requires an authoritative source",
     statement:
       "VERIFIED is used only when the data comes from an authoritative, named source. Never VERIFIED for computed or inferred data.",
-    enforcedBy: ["<Metric tier=\"verified\" source=…>", "assertVerifiedSource()"],
+    enforcedBy: ['<Metric tier="verified" source=…>', "assertVerifiedSource()"],
   },
   {
     id: "HR-3",
@@ -74,8 +83,7 @@ export const HONESTY_RULES: readonly HonestyRule[] = [
     id: "HR-6",
     level: "MUST",
     title: "Neutral vessel names only",
-    statement:
-      "Vessel names in mock and real data are neutral. No vessel name may imply guilt.",
+    statement: "Vessel names in mock and real data are neutral. No vessel name may imply guilt.",
     enforcedBy: ["assertNeutralVesselName()"],
   },
   {

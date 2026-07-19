@@ -7,13 +7,7 @@
 
 export type BriefingMode = "lookup" | "assessment" | "investigation" | "forecast";
 
-export type Workspace =
-  | "ownership"
-  | "revenue"
-  | "compliance"
-  | "evidence"
-  | "vessel"
-  | "port";
+export type Workspace = "ownership" | "revenue" | "compliance" | "evidence" | "vessel" | "port";
 
 export type EvidenceGrade =
   | "VERIFIED"
@@ -36,13 +30,7 @@ export type CapabilityId =
   | "RISK_SCORING"
   | "RECOMMENDATION_ENGINE";
 
-export type AgentId =
-  | "ownership"
-  | "revenue"
-  | "manifest"
-  | "compliance"
-  | "evidence"
-  | "forecast";
+export type AgentId = "ownership" | "revenue" | "manifest" | "compliance" | "evidence" | "forecast";
 
 export interface QueryContext {
   investigation_id?: string;
@@ -143,10 +131,16 @@ export type SectionKind =
   | "next_questions";
 
 export type SectionPayloads = {
-  classification: { typeBadge: string; matrix: ConfidenceMatrix; evidenceStrength: "weak" | "moderate" | "strong" };
+  classification: {
+    typeBadge: string;
+    matrix: ConfidenceMatrix;
+    evidenceStrength: "weak" | "moderate" | "strong";
+  };
   executive: { text: string };
   why_this_matters: { chain: Array<{ step: string; from: string; to: string }> };
-  critical_findings: { findings: Array<{ priority: string; title: string; grade: EvidenceGrade; source: string }> };
+  critical_findings: {
+    findings: Array<{ priority: string; title: string; grade: EvidenceGrade; source: string }>;
+  };
   verified_evidence: { items: string[] };
   observed_patterns: { patterns: Array<{ pattern: string; caseRefs: string[] }> };
   analytical_assessment: { text: string };

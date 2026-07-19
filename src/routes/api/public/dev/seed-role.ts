@@ -50,29 +50,28 @@ export const Route = createFileRoute("/api/public/dev/seed-role")({
         }
         const demo = DEMO_USERS[roleKey];
 
-        const { supabaseAdmin } = await import(
-          "@/integrations/supabase/client.server"
-        );
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
         // Find or create the auth user.
         let userId: string | undefined;
-        const { data: list, error: listErr } =
-          await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
+        const { data: list, error: listErr } = await supabaseAdmin.auth.admin.listUsers({
+          page: 1,
+          perPage: 200,
+        });
         if (listErr) throw listErr;
         userId = list.users.find((u) => u.email === demo.email)?.id;
 
         if (!userId) {
-          const { data: created, error: createErr } =
-            await supabaseAdmin.auth.admin.createUser({
-              email: demo.email,
-              password: DEMO_PASSWORD,
-              email_confirm: true,
-              user_metadata: {
-                display_name: demo.display_name,
-                title: demo.title,
-                seed: "seaphore-demo",
-              },
-            });
+          const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
+            email: demo.email,
+            password: DEMO_PASSWORD,
+            email_confirm: true,
+            user_metadata: {
+              display_name: demo.display_name,
+              title: demo.title,
+              seed: "seaphore-demo",
+            },
+          });
           if (createErr) throw createErr;
           userId = created.user!.id;
         } else {
@@ -102,10 +101,7 @@ export const Route = createFileRoute("/api/public/dev/seed-role")({
         // Ensure role assignment.
         await supabaseAdmin
           .from("user_roles")
-          .upsert(
-            { user_id: userId, role: demo.role },
-            { onConflict: "user_id,role" },
-          );
+          .upsert({ user_id: userId, role: demo.role }, { onConflict: "user_id,role" });
 
         return new Response(
           JSON.stringify({

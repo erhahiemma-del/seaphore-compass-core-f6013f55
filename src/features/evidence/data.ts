@@ -11,8 +11,7 @@
 import type { ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
 import { PORTS, VESSELS } from "@/lib/intel-centre-data";
 
-const iso = (hoursAgo: number) =>
-  new Date(Date.now() - hoursAgo * 3_600_000).toISOString();
+const iso = (hoursAgo: number) => new Date(Date.now() - hoursAgo * 3_600_000).toISOString();
 
 export type EvidenceKind =
   | "Bill of Lading"
@@ -334,14 +333,14 @@ export const EVIDENCE_LIBRARY: EvidenceItem[] = [
 export const KIND_TO_CATEGORY: Record<EvidenceKind, EvidenceCategory> = {
   "Bill of Lading": "Bills of Lading",
   "Import Manifest": "Manifests",
-  "Manifest": "Manifests",
-  "Invoice": "Documents",
+  Manifest: "Manifests",
+  Invoice: "Documents",
   "Container List": "Manifests",
   "Cargo Declaration": "Documents",
   "Inspection Report": "Documents",
-  "Photo": "Media",
+  Photo: "Media",
   "AIS Track": "AIS Records",
-  "Certificate": "Documents",
+  Certificate: "Documents",
   "Payment Receipt": "Documents",
 };
 

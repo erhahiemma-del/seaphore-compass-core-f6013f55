@@ -53,13 +53,12 @@ export const getInvestigation = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const [{ data: inv }, { data: ev }, { data: audit }, { data: decisions }] =
-      await Promise.all([
-        context.supabase.from("investigations").select("*").eq("id", data.id).maybeSingle(),
-        context.supabase.from("evidence").select("*").eq("investigation_id", data.id),
-        context.supabase.from("audit_log").select("*").eq("entity_id", data.id),
-        context.supabase.from("decisions").select("*").eq("investigation_id", data.id),
-      ]);
+    const [{ data: inv }, { data: ev }, { data: audit }, { data: decisions }] = await Promise.all([
+      context.supabase.from("investigations").select("*").eq("id", data.id).maybeSingle(),
+      context.supabase.from("evidence").select("*").eq("investigation_id", data.id),
+      context.supabase.from("audit_log").select("*").eq("entity_id", data.id),
+      context.supabase.from("decisions").select("*").eq("investigation_id", data.id),
+    ]);
     return envelope({ ...inv, evidence: ev, audit_trail: audit, decisions });
   });
 

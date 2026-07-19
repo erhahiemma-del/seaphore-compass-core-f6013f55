@@ -7,8 +7,7 @@ export const Route = createFileRoute("/admin")({
       { title: "Administration & Configuration Center · Seaphore" },
       {
         name: "description",
-        content:
-          "System Management. Platform Configuration. Operational Control.",
+        content: "System Management. Platform Configuration. Operational Control.",
       },
     ],
   }),

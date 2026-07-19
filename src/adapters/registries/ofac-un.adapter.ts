@@ -17,7 +17,9 @@ export interface ScreeningHit {
 }
 
 export class OfacUnAdapter extends BaseAdapter {
-  constructor() { super("sanctions"); }
+  constructor() {
+    super("sanctions");
+  }
   async screen(name: string): Promise<SourcedResult<ScreeningHit[]>> {
     this.assertUsable();
     const t0 = performance.now();

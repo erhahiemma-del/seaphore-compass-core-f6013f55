@@ -15,7 +15,12 @@ import type { Permission } from "@/services/orchestration/policy-engine";
 interface WorkflowBody {
   officer_id: string;
   investigation_id?: string;
-  workflow: "case.create" | "notification.customs" | "request.document" | "officer.assign" | "clearance.freeze";
+  workflow:
+    | "case.create"
+    | "notification.customs"
+    | "request.document"
+    | "officer.assign"
+    | "clearance.freeze";
   payload?: Record<string, unknown>;
 }
 
@@ -54,7 +59,10 @@ export const Route = createFileRoute("/api/public/workflows")({
         }
 
         if (!body?.officer_id || !PERMISSION_MAP[body.workflow]) {
-          return Response.json({ error: "officer_id and known workflow required" }, { status: 400 });
+          return Response.json(
+            { error: "officer_id and known workflow required" },
+            { status: 400 },
+          );
         }
 
         // Verify officer holds the required role (server-side, service role).
