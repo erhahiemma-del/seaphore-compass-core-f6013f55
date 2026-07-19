@@ -312,6 +312,89 @@ export type Database = {
         }
         Relationships: []
       }
+      data_source_health: {
+        Row: {
+          checked_at: string
+          error_code: string | null
+          error_message: string | null
+          id: string
+          latency_ms: number | null
+          source_id: string
+          state: Database["public"]["Enums"]["data_source_health_state"]
+        }
+        Insert: {
+          checked_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          latency_ms?: number | null
+          source_id: string
+          state: Database["public"]["Enums"]["data_source_health_state"]
+        }
+        Update: {
+          checked_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          latency_ms?: number | null
+          source_id?: string
+          state?: Database["public"]["Enums"]["data_source_health_state"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_source_health_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "data_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      data_sources: {
+        Row: {
+          active_from: string | null
+          citation: string
+          created_at: string
+          data_type: string
+          default_confidence: string
+          id: string
+          kind: string
+          notes: string | null
+          provider: string
+          scope: string | null
+          status: Database["public"]["Enums"]["data_source_status"]
+          updated_at: string
+        }
+        Insert: {
+          active_from?: string | null
+          citation: string
+          created_at?: string
+          data_type: string
+          default_confidence: string
+          id: string
+          kind: string
+          notes?: string | null
+          provider: string
+          scope?: string | null
+          status: Database["public"]["Enums"]["data_source_status"]
+          updated_at?: string
+        }
+        Update: {
+          active_from?: string | null
+          citation?: string
+          created_at?: string
+          data_type?: string
+          default_confidence?: string
+          id?: string
+          kind?: string
+          notes?: string | null
+          provider?: string
+          scope?: string | null
+          status?: Database["public"]["Enums"]["data_source_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       decisions: {
         Row: {
           decided_at: string
@@ -1089,6 +1172,18 @@ export type Database = {
         | "CORROBORATED"
         | "VERIFIED"
         | "AUDITED"
+      data_source_health_state:
+        | "OK"
+        | "DEGRADED"
+        | "DOWN"
+        | "UNKNOWN"
+        | "NOT_APPLICABLE"
+      data_source_status:
+        | "ACTIVE"
+        | "PARTIAL"
+        | "PLANNED"
+        | "INFERRED"
+        | "NOT_IN_SCOPE"
       entity_type:
         | "vessel"
         | "company"
@@ -1251,6 +1346,20 @@ export const Constants = {
         "CORROBORATED",
         "VERIFIED",
         "AUDITED",
+      ],
+      data_source_health_state: [
+        "OK",
+        "DEGRADED",
+        "DOWN",
+        "UNKNOWN",
+        "NOT_APPLICABLE",
+      ],
+      data_source_status: [
+        "ACTIVE",
+        "PARTIAL",
+        "PLANNED",
+        "INFERRED",
+        "NOT_IN_SCOPE",
       ],
       entity_type: [
         "vessel",
