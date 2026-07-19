@@ -61,3 +61,38 @@ export async function listDataSources(): Promise<DataSourceRow[]> {
     latestHealth: latest.get(row.id) ?? null,
   }));
 }
+
+export interface HealthCheckRecord {
+  id: string;
+  state: "OK" | "DEGRADED" | "DOWN" | "UNKNOWN" | "NOT_APPLICABLE";
+  latencyMs: number | null;
+  errorCode: string | null;
+  errorMessage: string | null;
+  checkedAt: string;
+}
+
+/**
+ * Fetch the last N health checks for a single source, newest first.
+ * Powers the run-history drawer in the Data Source Matrix panel so
+ * administrators can inspect trends and error details over time (HR-3).
+ */
+export async function listSourceHealthHistory(
+  sourceId: string,
+  limit = 25,
+): Promise<HealthCheckRecord[]> {
+  const { data, error } = await supabase
+    .from("data_source_health")
+    .select("id,state,latency_ms,error_code,error_message,checked_at")
+    .eq("source_id", sourceId)
+    .order("checked_at", { ascending: false })
+    .limit(limit);
+  if (error || !data) return [];
+  return data.map((h) => ({
+    id: h.id,
+    state: h.state as HealthCheckRecord["state"],
+    latencyMs: h.latency_ms,
+    errorCode: h.error_code,
+    errorMessage: h.error_message,
+    checkedAt: h.checked_at,
+  }));
+}
