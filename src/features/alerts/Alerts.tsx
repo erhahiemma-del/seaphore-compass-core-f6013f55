@@ -916,15 +916,17 @@ function RecommendedActionsPanel({ alert, onStatus }: { alert: ExtAlert; onStatu
 }
 
 /* ------------- Live Timeline ------------- */
-function LiveTimeline({ alerts, selectedId, onSelect }: { alerts: ExtAlert[]; selectedId?: string; onSelect: (id: string) => void }) {
+function LiveTimeline({ alerts, selectedId, onSelect, live }: {
+  alerts: ExtAlert[]; selectedId?: string;
+  onSelect: (id: string) => void;
+  live: ReturnType<typeof useAlertsRealtime>;
+}) {
   const items = alerts.slice(0, 6);
   return (
     <section className="rounded-lg border border-line/60 bg-surface-1/70">
       <header className="flex items-center justify-between border-b border-line/60 px-3 py-2">
         <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate">Live Alert Timeline</span>
-        <span className="inline-flex items-center gap-1 text-[10.5px] text-[color:var(--color-green)]">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[color:var(--color-green)]" /> Real-time events
-        </span>
+        <PanelLive lastEvent={live.lastEvent} status={live.status} kinds={["signal", "alert"]} />
       </header>
       <ul className="relative px-3 py-3">
         <div className="absolute left-[52px] top-3 bottom-3 w-px bg-line/40" />
