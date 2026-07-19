@@ -38,6 +38,10 @@ export interface UseAlertsRealtimeResult {
   status: "connecting" | "live" | "error";
   eventCount: number;
   lastEvent: RealtimeEvent | null;
+  /** Map of local alertId → epoch ms of most recent matching update. */
+  recentUpdates: Record<string, number>;
+  /** True if `alertId` was updated within `withinMs` (default 8s). */
+  wasRecentlyUpdated: (alertId: string, withinMs?: number) => boolean;
 }
 
 interface AlertRow {
@@ -64,6 +68,11 @@ export function useAlertsRealtime({
   const [status, setStatus] = useState<"connecting" | "live" | "error">("connecting");
   const [eventCount, setEventCount] = useState(0);
   const [lastEvent, setLastEvent] = useState<RealtimeEvent | null>(null);
+  const [recentUpdates, setRecentUpdates] = useState<Record<string, number>>({});
+  // `now` ticks every second while there are unexpired entries so consumers
+  // re-render and freshness labels ("updated just now") naturally expire.
+  const [, setNow] = useState(0);
+
 
   // Keep the known-ids set and callbacks in refs so we can subscribe once and
   // avoid tearing the channel down when props change (which would leak channels
@@ -106,6 +115,7 @@ export function useAlertsRealtime({
       });
 
       if (!localId || !knownRef.current.has(localId)) return;
+      setRecentUpdates((prev) => ({ ...prev, [localId]: Date.now() }));
       const nextStatus = statusFromDb(row.status);
       if (nextStatus) onStatusRef.current?.(localId, nextStatus);
       const assignee = typeof meta.assignedTo === "string" ? meta.assignedTo : null;
@@ -162,5 +172,30 @@ export function useAlertsRealtime({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { status, eventCount, lastEvent };
+  // Prune expired recent-update entries + tick freshness labels every second.
+  useEffect(() => {
+    const keys = Object.keys(recentUpdates);
+    if (keys.length === 0) return;
+    const id = window.setInterval(() => {
+      const now = Date.now();
+      setRecentUpdates((prev) => {
+        let changed = false;
+        const next: Record<string, number> = {};
+        for (const [k, ts] of Object.entries(prev)) {
+          if (now - ts < 15_000) next[k] = ts;
+          else changed = true;
+        }
+        return changed ? next : prev;
+      });
+      setNow(now);
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [recentUpdates]);
+
+  const wasRecentlyUpdated = (alertId: string, withinMs = 8_000) => {
+    const ts = recentUpdates[alertId];
+    return !!ts && Date.now() - ts < withinMs;
+  };
+
+  return { status, eventCount, lastEvent, recentUpdates, wasRecentlyUpdated };
 }

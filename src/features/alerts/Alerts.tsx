@@ -555,7 +555,13 @@ function AlertQueue({
       </header>
       <ul className="flex-1 divide-y divide-line/40">
         {shown.map((a) => (
-          <QueueRow key={a.id} alert={a} selected={a.id === selectedId} onClick={() => onSelect(a.id)} />
+          <QueueRow
+            key={a.id}
+            alert={a}
+            selected={a.id === selectedId}
+            onClick={() => onSelect(a.id)}
+            fresh={live.wasRecentlyUpdated(a.alertId)}
+          />
         ))}
         {shown.length === 0 && (
           <li className="p-8 text-center text-[12px] text-slate">No alerts match the current filters.</li>
@@ -591,16 +597,17 @@ function severityTone(sev: string) {
 }
 function severityLabel(sev: string) { return sev === "high" ? "CRITICAL" : sev.toUpperCase(); }
 
-function QueueRow({ alert, selected, onClick }: { alert: ExtAlert; selected: boolean; onClick: () => void }) {
+function QueueRow({ alert, selected, onClick, fresh }: { alert: ExtAlert; selected: boolean; onClick: () => void; fresh?: boolean }) {
   const tone = severityTone(alert.severity);
   const toneCls = tone === "risk" ? "border-[color:var(--color-red)]" : tone === "warn" ? "border-[color:var(--color-amber)]" : tone === "ok" ? "border-[color:var(--color-green)]" : "border-[color:var(--color-blue)]";
   return (
     <li
       onClick={onClick}
       className={cn(
-        "grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto_auto_auto] items-center gap-3 px-3 py-2.5 transition-colors",
+        "relative grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto_auto_auto] items-center gap-3 px-3 py-2.5 transition-colors",
         selected ? "bg-[color:var(--color-blue)]/10" : "hover:bg-surface-2/40",
         selected && "border-l-2 border-l-[color:var(--color-blue)]",
+        fresh && "bg-emerald-500/10 ring-1 ring-inset ring-emerald-400/40 animate-in fade-in",
       )}
     >
       <div className={cn("flex h-8 w-8 items-center justify-center rounded-md border bg-surface-2/50", toneCls)}>
@@ -610,6 +617,12 @@ function QueueRow({ alert, selected, onClick }: { alert: ExtAlert; selected: boo
         <div className="flex items-center gap-2">
           <span className="truncate text-[12.5px] font-semibold text-foreground">{alert.title}</span>
           <SeverityBadge sev={alert.severity} />
+          {fresh && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-500/10 px-1.5 py-[1px] text-[9.5px] font-semibold uppercase tracking-[0.06em] text-emerald-300">
+              <span className="h-1 w-1 rounded-full bg-emerald-400 animate-pulse" />
+              Updated just now
+            </span>
+          )}
         </div>
         <div className="mt-0.5 truncate text-[11px] text-slate">
           {alert.vesselId ? vesselById(alert.vesselId)?.name : alert.type}
@@ -693,13 +706,25 @@ function AlertDetails({ alert, onStatus, live }: {
   live: ReturnType<typeof useAlertsRealtime>;
 }) {
   const vessel = alert.vesselId ? vesselById(alert.vesselId) : undefined;
+  const fresh = live.wasRecentlyUpdated(alert.alertId);
   return (
-    <section className="flex h-full flex-col rounded-lg border border-line/60 bg-surface-1/70">
+    <section
+      className={cn(
+        "flex h-full flex-col rounded-lg border border-line/60 bg-surface-1/70 transition-shadow",
+        fresh && "ring-1 ring-emerald-400/50 shadow-[0_0_0_3px_rgba(52,211,153,0.15)]",
+      )}
+    >
       <header className="flex items-center justify-between border-b border-line/60 px-3 py-2">
         <div className="flex items-center gap-2">
           <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate">Alert Details</span>
           <SeverityBadge sev={alert.severity} />
           <PanelLive lastEvent={live.lastEvent} status={live.status} kinds={["alert"]} />
+          {fresh && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-500/10 px-1.5 py-[1px] text-[9.5px] font-semibold uppercase tracking-[0.06em] text-emerald-300">
+              <span className="h-1 w-1 rounded-full bg-emerald-400 animate-pulse" />
+              Updated just now
+            </span>
+          )}
         </div>
         <span className="text-[10.5px] text-slate">Alert ID: {alert.alertId}</span>
       </header>
