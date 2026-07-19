@@ -38,6 +38,10 @@ export interface UseAlertsRealtimeResult {
   status: "connecting" | "live" | "error";
   eventCount: number;
   lastEvent: RealtimeEvent | null;
+  /** Map of local alertId → epoch ms of most recent matching update. */
+  recentUpdates: Record<string, number>;
+  /** True if `alertId` was updated within `withinMs` (default 8s). */
+  wasRecentlyUpdated: (alertId: string, withinMs?: number) => boolean;
 }
 
 interface AlertRow {
