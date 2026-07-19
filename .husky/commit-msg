@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Guard against WIP/fixup commits sneaking into main.
+commit_msg=$(cat "$1")
+case "$commit_msg" in
+  "fixup!"*|"squash!"*|"WIP"*|"wip"*)
+    echo "✖ Commit message starts with a WIP/fixup prefix. Amend before landing." >&2
+    exit 1
+    ;;
+esac
