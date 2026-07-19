@@ -142,8 +142,9 @@
   --background: #0D1B2A;
   --foreground: #E4E8EC;
   --surface: #132032;
+  --surface-1: #151E32;
   --surface-2: #172A40;
-  --line: #1E3048;
+  --line: #243247;
 }
 
 /* Spacing utilities (4px base) */
