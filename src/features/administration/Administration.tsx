@@ -157,7 +157,7 @@ function AccessDenied() {
   );
 }
 
-function RoleManagementTable() {
+export function RoleManagementTable() {
   const qc = useQueryClient();
   const listFn = useSF(listUsersWithRoles);
   const setFn = useSF(setUserRoles);
