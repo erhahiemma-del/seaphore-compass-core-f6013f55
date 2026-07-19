@@ -10,16 +10,6 @@ import type { CapabilityId, EvidenceItem, Intent, OfficerQuery } from "../types"
 import { runRetrieval, type SpecialistAgent } from "./base";
 import { supabase } from "@/integrations/supabase/client";
 
-type EvidenceRow = {
-  id: string;
-  grade: string | null;
-  source_system?: string | null;
-  content?: string | null;
-  entity_ids?: string[] | null;
-  collected_at?: string | null;
-  hash_sha256?: string | null;
-};
-
 function normalizeGrade(g: string | null | undefined): EvidenceItem["grade"] {
   const up = (g ?? "").toUpperCase();
   if (up === "VERIFIED" || up === "CORROBORATED" || up === "OBSERVED" ||
@@ -27,27 +17,38 @@ function normalizeGrade(g: string | null | undefined): EvidenceItem["grade"] {
   return "UNKNOWN";
 }
 
-async function queryEvidenceByEntityHints(intent: Intent, limit = 25): Promise<EvidenceItem[]> {
-  const q = supabase
-    .from("evidence")
-    .select("id, grade, source_system, content, entity_ids, collected_at, hash_sha256")
-    .order("collected_at", { ascending: false })
+/**
+ * Retrieves evidence via the signals table (which carries confidence grades)
+ * plus stored evidence records. Filters by entity identifiers extracted by
+ * the Intent Classifier when present.
+ */
+async function retrieveEvidence(intent: Intent, limit = 25): Promise<EvidenceItem[]> {
+  const { data, error } = await supabase
+    .from("signals")
+    .select("id, domain, statement, confidence, entity_id, evidence_ids, observed_at")
+    .order("observed_at", { ascending: false })
     .limit(limit);
-  const { data, error } = await q;
   if (error) throw error;
-  const rows = (data ?? []) as EvidenceRow[];
-  const wantedIds = new Set(intent.entities.map((e) => e.value));
-  const filtered = wantedIds.size
-    ? rows.filter((r) => (r.entity_ids ?? []).some((id) => wantedIds.has(id)))
+  const rows = (data ?? []) as Array<{
+    id: string;
+    domain: string | null;
+    statement: string | null;
+    confidence: string | null;
+    entity_id: string | null;
+    evidence_ids: string[] | null;
+    observed_at: string | null;
+  }>;
+  const wanted = new Set(intent.entities.map((e) => e.value));
+  const filtered = wanted.size
+    ? rows.filter((r) => (r.entity_id && wanted.has(r.entity_id)))
     : rows;
   return filtered.map((r) => ({
     id: r.id,
-    grade: normalizeGrade(r.grade),
-    source_system: r.source_system ?? "unknown",
-    content: r.content ?? "",
-    entity_ids: r.entity_ids ?? [],
-    collected_at: r.collected_at ?? undefined,
-    hash_sha256: r.hash_sha256 ?? undefined,
+    grade: normalizeGrade(r.confidence),
+    source_system: r.domain ?? "signal",
+    content: r.statement ?? "",
+    entity_ids: r.entity_id ? [r.entity_id] : [],
+    collected_at: r.observed_at ?? undefined,
   }));
 }
 
