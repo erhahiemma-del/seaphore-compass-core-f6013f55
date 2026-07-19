@@ -22,7 +22,6 @@ import {
   Zap,
   UserPlus,
   FileText,
-  Info,
 } from "lucide-react";
 import { AreaChart, Area, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
