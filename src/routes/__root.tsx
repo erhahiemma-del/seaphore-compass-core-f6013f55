@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import React, { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -146,6 +146,21 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
+      {import.meta.env.DEV ? <PerfOverlayLazy /> : null}
     </QueryClientProvider>
   );
+}
+
+function PerfOverlayLazy() {
+  const [Comp, setComp] = useState<React.ComponentType | null>(null);
+  useEffect(() => {
+    let mounted = true;
+    import("@/components/perf/PerfOverlay").then((m) => {
+      if (mounted) setComp(() => m.PerfOverlay);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+  return Comp ? <Comp /> : null;
 }
