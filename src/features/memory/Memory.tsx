@@ -815,7 +815,8 @@ export function MemoryPage() {
                     onToggle={() =>
                       setActiveKinds((prev) => {
                         const n = new Set(prev);
-                         if (n.has(t.key)) n.delete(t.key); else n.add(t.key);
+                        if (n.has(t.key)) n.delete(t.key);
+                        else n.add(t.key);
                         return n;
                       })
                     }
@@ -833,7 +834,8 @@ export function MemoryPage() {
                     onToggle={() =>
                       setActiveRels((prev) => {
                         const n = new Set(prev);
-                        if (n.has(t.key)) n.delete(t.key); else n.add(t.key);
+                        if (n.has(t.key)) n.delete(t.key);
+                        else n.add(t.key);
                         return n;
                       })
                     }
