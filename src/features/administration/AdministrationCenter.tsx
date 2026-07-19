@@ -84,7 +84,7 @@ import { toast } from "sonner";
 import { listRoleAuditLog } from "@/lib/admin-audit.functions";
 import { listUsersWithRoles } from "@/lib/admin-roles.functions";
 import { RoleManagementTable } from "@/features/administration/Administration";
-import type { Role } from "@/lib/permissions";
+import { can, type Role } from "@/lib/permissions";
 
 // ---------- Types & constants ----------
 
@@ -162,9 +162,15 @@ const PREVIEW_ROLE_LABEL: Record<PreviewRole, string> = {
 
 export function AdministrationCenter() {
   const { session, loading: authLoading } = useAuth();
-  const { loading: rolesLoading } = useRoles();
-  const allowed = usePermission("administration.view") || usePermission("role.manage");
+  const { roles, loading: rolesLoading } = useRoles();
+  const allowed = can(roles, "administration.view") || can(roles, "role.manage");
   const loading = authLoading || (!!session && rolesLoading);
+
+  let body: ReactNode;
+  if (loading) body = <LoadingState />;
+  else if (!session) body = <SignInRequired />;
+  else if (allowed) body = <CenterInner />;
+  else body = <AccessDenied />;
 
   return (
     <AppShell
@@ -172,15 +178,7 @@ export function AdministrationCenter() {
       subtitle="System Management. Platform Configuration. Operational Control."
       mode="dark"
     >
-      {loading ? (
-        <LoadingState />
-      ) : !session ? (
-        <SignInRequired />
-      ) : allowed ? (
-        <CenterInner />
-      ) : (
-        <AccessDenied />
-      )}
+      {body}
     </AppShell>
   );
 }
