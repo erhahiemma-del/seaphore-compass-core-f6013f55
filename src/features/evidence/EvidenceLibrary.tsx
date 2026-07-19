@@ -68,12 +68,11 @@ export function EvidenceCentre() {
   const [query, setQuery] = useState("");
   const [uploadOpen, setUploadOpen] = useState(false);
 
-  // Filters
-  const [types, setTypes] = useState<string[]>([]);
-  const [levels, setLevels] = useState<string[]>([]);
-  const [classifications, setClassifications] = useState<string[]>([]);
+  // Persisted filter state — survives navigation and reloads.
+  const [filters, setFilters] = useState<EvidenceFilters>(() => loadPersistedFilters());
+  useEffect(() => { persistFilters(filters); }, [filters]);
 
-  const { data: allEvidence = EVIDENCE_LIBRARY } = useQuery({
+  const { data: allEvidence = EVIDENCE_LIBRARY, isLoading, error } = useQuery({
     queryKey: ["evidence", "library"],
     queryFn: listEvidence,
     initialData: EVIDENCE_LIBRARY,
@@ -81,13 +80,8 @@ export function EvidenceCentre() {
   });
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return allEvidence.filter((e) => {
-      if (q && !`${e.refNumber} ${e.kind} ${e.description} ${e.tags.join(" ")}`.toLowerCase().includes(q)) return false;
-      if (types.length && !types.includes(e.kind)) return false;
-      if (levels.length && !levels.includes(e.confidence)) return false;
-      if (classifications.length && !classifications.includes(e.classification)) return false;
-      // Tab-driven category filter
+    const base = applyEvidenceFilters(allEvidence, filters, query);
+    return base.filter((e) => {
       if (tab === "documents" && e.category !== "Documents") return false;
       if (tab === "media" && e.category !== "Media") return false;
       if (tab === "ais" && e.category !== "AIS Records") return false;
@@ -95,9 +89,18 @@ export function EvidenceCentre() {
       if (tab === "bills" && e.category !== "Bills of Lading") return false;
       return true;
     });
-  }, [allEvidence, query, types, levels, classifications, tab]);
+  }, [allEvidence, filters, query, tab]);
+
+  const activeCount = activeFilterCount(filters) + (query.trim() ? 1 : 0);
 
   const selected = filtered.find((e) => e.id === selectedId) ?? filtered[0] ?? allEvidence[0]!;
+
+  // Keep selection valid when filters cut it out of the visible set.
+  useEffect(() => {
+    if (!filtered.find((e) => e.id === selectedId) && filtered[0]) {
+      setSelectedId(filtered[0].id);
+    }
+  }, [filtered, selectedId]);
 
   return (
     <AppShell title="Evidence Library" subtitle="Trusted evidence. Provenance. Intelligence." mode="dark">
