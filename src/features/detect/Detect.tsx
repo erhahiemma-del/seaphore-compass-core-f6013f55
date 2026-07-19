@@ -24,6 +24,7 @@ import { PanelHead } from "@/components/panel-head";
 import { RiskHeatmap } from "@/components/risk-heatmap";
 import { RiskPill } from "@/components/intelligence/RiskPill";
 import { SignalList } from "@/components/signal-list";
+import { useRenderTrace } from "@/lib/perf/hooks";
 import { SignalTimelineChart, type TimelineRange } from "@/components/signal-timeline-chart";
 import { TypeTiles } from "@/components/type-tiles";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
