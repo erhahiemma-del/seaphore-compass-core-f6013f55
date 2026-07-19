@@ -28,6 +28,7 @@ import { AreaChart, Area, ResponsiveContainer, PieChart, Pie, Cell } from "recha
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { ConfidenceChip, type ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
 import { ALERTS, vesselById, type AlertItem, type AlertStatus } from "@/lib/intel-centre-data";
+import { useAlertsRealtime } from "@/hooks/use-alerts-realtime";
 import { cn } from "@/lib/utils";
 
 /* ============================================================
