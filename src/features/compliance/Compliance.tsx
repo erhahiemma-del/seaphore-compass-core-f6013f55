@@ -662,7 +662,7 @@ export function ComplianceCentre() {
                 <div className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-slate">Map Layers</div>
                 <ul className="mt-2 space-y-1.5">
                   {MAP_LAYERS.map((l) => {
-                    const on = layers.has(l.key);
+                    const on = layerOn(l.key);
                     return (
                       <li key={l.key} className="flex items-center justify-between text-[11.5px] text-foreground/90">
                         <span className="flex items-center gap-1.5">
