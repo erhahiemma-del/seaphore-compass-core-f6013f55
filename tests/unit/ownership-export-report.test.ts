@@ -238,7 +238,7 @@ describe("Ownership Evidence Report — confidence tier hygiene", () => {
   it("only uses tiers from the OC-001 ladder", () => {
     const allowed = new Set(["verified", "observed", "inferred", "unconfirmed"]);
     const tierTokens = corpus
-      .split(/[\s\[\]·,]+/)
+      .split(/[\s[\]·,]+/)
       .filter((t) =>
         /^(verified|observed|inferred|unconfirmed|VERIFIED|OBSERVED|INFERRED|UNCONFIRMED)$/.test(t),
       );
