@@ -216,7 +216,7 @@ export function DataSourceMatrixPanel() {
                         <td className="py-2 pr-4 text-xs text-muted-foreground max-w-md">{s.notes}</td>
                       </tr>
                       {isOpen && <HealthHistoryRow sourceId={s.id} />}
-                    </>
+                    </Fragment>
                   );
                 })}
               </tbody>
