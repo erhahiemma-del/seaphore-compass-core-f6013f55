@@ -29,16 +29,7 @@ const ev = (
   entityRef?: string,
 ): CopilotEvidence => ({ id, label, source, confidence, entityRef });
 
-export const MOCK_INTELLIGENCE: Record<CopilotInstanceKey, DomainBundle> = new Proxy(
-  {} as Record<CopilotInstanceKey, DomainBundle>,
-  {
-    get(target, prop: string) {
-      return target[prop as CopilotInstanceKey] ?? target.seaphore;
-    },
-  },
-);
-
-const RAW_MOCK: Partial<Record<CopilotInstanceKey, DomainBundle>> = {
+const BUNDLES: Partial<Record<CopilotInstanceKey, DomainBundle>> = {
   seaphore: {
     observations: [
       {
