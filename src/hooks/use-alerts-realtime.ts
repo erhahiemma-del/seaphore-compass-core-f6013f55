@@ -68,6 +68,11 @@ export function useAlertsRealtime({
   const [status, setStatus] = useState<"connecting" | "live" | "error">("connecting");
   const [eventCount, setEventCount] = useState(0);
   const [lastEvent, setLastEvent] = useState<RealtimeEvent | null>(null);
+  const [recentUpdates, setRecentUpdates] = useState<Record<string, number>>({});
+  // `now` ticks every second while there are unexpired entries so consumers
+  // re-render and freshness labels ("updated just now") naturally expire.
+  const [, setNow] = useState(0);
+
 
   // Keep the known-ids set and callbacks in refs so we can subscribe once and
   // avoid tearing the channel down when props change (which would leak channels
