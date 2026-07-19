@@ -29,6 +29,7 @@ import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { ConfidenceChip, type ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
 import { ALERTS, vesselById, type AlertItem, type AlertStatus } from "@/lib/intel-centre-data";
 import { useAlertsRealtime } from "@/hooks/use-alerts-realtime";
+import { PanelLive } from "@/components/intelligence/PanelLive";
 import { cn } from "@/lib/utils";
 
 /* ============================================================
@@ -217,13 +218,14 @@ export function AlertsCentre() {
               total={128}
               selectedId={selected?.id}
               onSelect={setSelectedId}
+              live={live}
             />
           </div>
 
           <div className="col-span-12 xl:col-span-4 2xl:col-span-5">
             <div className="grid grid-cols-1 gap-4 2xl:grid-cols-5">
               <div className="2xl:col-span-3">
-                {selected && <AlertDetails alert={selected} onStatus={setStatus} />}
+                {selected && <AlertDetails alert={selected} onStatus={setStatus} live={live} />}
               </div>
               <div className="2xl:col-span-2 space-y-4">
                 {selected && <CopilotPanel alert={selected} />}
@@ -236,10 +238,10 @@ export function AlertsCentre() {
         {/* Bottom analytics row */}
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-12 md:col-span-6 xl:col-span-3">
-            <LiveTimeline alerts={decorated} selectedId={selected?.id} onSelect={setSelectedId} />
+            <LiveTimeline alerts={decorated} selectedId={selected?.id} onSelect={setSelectedId} live={live} />
           </div>
           <div className="col-span-12 md:col-span-6 xl:col-span-3">
-            <CorrelationGraph alerts={decorated} selectedId={selected?.id} onSelect={setSelectedId} />
+            <CorrelationGraph alerts={decorated} selectedId={selected?.id} onSelect={setSelectedId} live={live} />
           </div>
           <div className="col-span-12 md:col-span-6 xl:col-span-3">
             <SeverityDonut />
@@ -529,10 +531,11 @@ function CheckList({ options, checked, onToggle }: { options: string[]; checked:
 
 /* ------------- Alert Queue ------------- */
 function AlertQueue({
-  alerts, total, selectedId, onSelect,
+  alerts, total, selectedId, onSelect, live,
 }: {
   alerts: ExtAlert[]; total: number; selectedId?: string;
   onSelect: (id: string) => void;
+  live: ReturnType<typeof useAlertsRealtime>;
 }) {
   const [page, setPage] = useState(1);
   const per = 6;
@@ -542,8 +545,9 @@ function AlertQueue({
   return (
     <div className="flex h-full flex-col rounded-lg border border-line/60 bg-surface-1/70">
       <header className="flex items-center justify-between border-b border-line/60 px-3 py-2">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate">
-          Alert Queue <span className="text-foreground">({total})</span>
+        <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate">
+          <span>Alert Queue <span className="text-foreground">({total})</span></span>
+          <PanelLive lastEvent={live.lastEvent} status={live.status} kinds={["alert"]} />
         </div>
         <label className="flex items-center gap-1.5 text-[11px] text-slate">
           Select All <input type="checkbox" className="h-3 w-3 accent-[color:var(--color-blue)]" />
@@ -683,7 +687,11 @@ function IconForType({ type }: { type: string }) {
 }
 
 /* ------------- Alert Details + Mini Map ------------- */
-function AlertDetails({ alert, onStatus }: { alert: ExtAlert; onStatus: (id: string, s: AlertStatus) => void }) {
+function AlertDetails({ alert, onStatus, live }: {
+  alert: ExtAlert;
+  onStatus: (id: string, s: AlertStatus) => void;
+  live: ReturnType<typeof useAlertsRealtime>;
+}) {
   const vessel = alert.vesselId ? vesselById(alert.vesselId) : undefined;
   return (
     <section className="flex h-full flex-col rounded-lg border border-line/60 bg-surface-1/70">
@@ -691,6 +699,7 @@ function AlertDetails({ alert, onStatus }: { alert: ExtAlert; onStatus: (id: str
         <div className="flex items-center gap-2">
           <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate">Alert Details</span>
           <SeverityBadge sev={alert.severity} />
+          <PanelLive lastEvent={live.lastEvent} status={live.status} kinds={["alert"]} />
         </div>
         <span className="text-[10.5px] text-slate">Alert ID: {alert.alertId}</span>
       </header>
@@ -907,15 +916,17 @@ function RecommendedActionsPanel({ alert, onStatus }: { alert: ExtAlert; onStatu
 }
 
 /* ------------- Live Timeline ------------- */
-function LiveTimeline({ alerts, selectedId, onSelect }: { alerts: ExtAlert[]; selectedId?: string; onSelect: (id: string) => void }) {
+function LiveTimeline({ alerts, selectedId, onSelect, live }: {
+  alerts: ExtAlert[]; selectedId?: string;
+  onSelect: (id: string) => void;
+  live: ReturnType<typeof useAlertsRealtime>;
+}) {
   const items = alerts.slice(0, 6);
   return (
     <section className="rounded-lg border border-line/60 bg-surface-1/70">
       <header className="flex items-center justify-between border-b border-line/60 px-3 py-2">
         <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate">Live Alert Timeline</span>
-        <span className="inline-flex items-center gap-1 text-[10.5px] text-[color:var(--color-green)]">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[color:var(--color-green)]" /> Real-time events
-        </span>
+        <PanelLive lastEvent={live.lastEvent} status={live.status} kinds={["signal", "alert"]} />
       </header>
       <ul className="relative px-3 py-3">
         <div className="absolute left-[52px] top-3 bottom-3 w-px bg-line/40" />
@@ -952,7 +963,11 @@ function LiveTimeline({ alerts, selectedId, onSelect }: { alerts: ExtAlert[]; se
 }
 
 /* ------------- Correlation Graph ------------- */
-function CorrelationGraph({ alerts, selectedId, onSelect }: { alerts: ExtAlert[]; selectedId?: string; onSelect: (id: string) => void }) {
+function CorrelationGraph({ alerts, selectedId, onSelect, live }: {
+  alerts: ExtAlert[]; selectedId?: string;
+  onSelect: (id: string) => void;
+  live: ReturnType<typeof useAlertsRealtime>;
+}) {
   const nodes = alerts.slice(0, 6);
   // Radial layout around a central node.
   const center = { x: 150, y: 110 };
@@ -965,7 +980,10 @@ function CorrelationGraph({ alerts, selectedId, onSelect }: { alerts: ExtAlert[]
   return (
     <section className="flex h-full flex-col rounded-lg border border-line/60 bg-surface-1/70">
       <header className="flex items-center justify-between border-b border-line/60 px-3 py-2">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate">Alert Correlation Graph</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate">Alert Correlation Graph</span>
+          <PanelLive lastEvent={live.lastEvent} status={live.status} kinds={["alert", "investigation"]} />
+        </div>
         <label className="flex items-center gap-1.5 text-[10.5px] text-slate">
           Show Legend <input type="checkbox" defaultChecked className="h-3 w-3 accent-[color:var(--color-blue)]" />
         </label>
