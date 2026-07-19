@@ -317,6 +317,9 @@ function ViewSwitcher({ view, setView }: { view: "cards" | "grid" | "list"; setV
 
 /* Filter sidebar moved to ./filters.tsx (production-ready dropdowns). */
 
+const TYPE_OPTIONS = ["Bill of Lading", "Import Manifest", "Invoice", "Container List", "Cargo Declaration", "Inspection Report", "Photo", "AIS Track", "Certificate", "Payment Receipt"];
+const CLASSIFICATION_OPTIONS = ["Official Document", "Field Capture", "System Ingest", "Third-Party Feed", "OSINT"];
+
 /* ============================================================
  * Evidence Explorer (cards)
  * ============================================================ */
