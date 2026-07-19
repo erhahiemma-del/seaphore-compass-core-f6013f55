@@ -9,7 +9,7 @@
  * Data is loaded via evidenceService (Supabase-first, seed fallback) and
  * every figure carries the OC-001 confidence ladder per the Honesty Rules.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   FileText, Image as ImageIcon, Radio, ClipboardList, FileBadge, ShieldCheck,
