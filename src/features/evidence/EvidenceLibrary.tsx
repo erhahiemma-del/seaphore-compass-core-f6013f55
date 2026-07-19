@@ -143,10 +143,12 @@ export function EvidenceCentre() {
         {/* Body: filters | explorer + preview | right rail */}
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-12 xl:col-span-2">
-            <FilterSidebar
-              types={types} setTypes={setTypes}
-              levels={levels} setLevels={setLevels}
-              classifications={classifications} setClassifications={setClassifications}
+            <EvidenceFilterSidebar
+              items={allEvidence}
+              filters={filters}
+              setFilters={setFilters}
+              loading={isLoading}
+              error={error ? "Failed to load evidence" : null}
             />
           </div>
 
