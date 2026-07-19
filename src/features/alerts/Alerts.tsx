@@ -218,13 +218,14 @@ export function AlertsCentre() {
               total={128}
               selectedId={selected?.id}
               onSelect={setSelectedId}
+              live={live}
             />
           </div>
 
           <div className="col-span-12 xl:col-span-4 2xl:col-span-5">
             <div className="grid grid-cols-1 gap-4 2xl:grid-cols-5">
               <div className="2xl:col-span-3">
-                {selected && <AlertDetails alert={selected} onStatus={setStatus} />}
+                {selected && <AlertDetails alert={selected} onStatus={setStatus} live={live} />}
               </div>
               <div className="2xl:col-span-2 space-y-4">
                 {selected && <CopilotPanel alert={selected} />}
@@ -237,10 +238,10 @@ export function AlertsCentre() {
         {/* Bottom analytics row */}
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-12 md:col-span-6 xl:col-span-3">
-            <LiveTimeline alerts={decorated} selectedId={selected?.id} onSelect={setSelectedId} />
+            <LiveTimeline alerts={decorated} selectedId={selected?.id} onSelect={setSelectedId} live={live} />
           </div>
           <div className="col-span-12 md:col-span-6 xl:col-span-3">
-            <CorrelationGraph alerts={decorated} selectedId={selected?.id} onSelect={setSelectedId} />
+            <CorrelationGraph alerts={decorated} selectedId={selected?.id} onSelect={setSelectedId} live={live} />
           </div>
           <div className="col-span-12 md:col-span-6 xl:col-span-3">
             <SeverityDonut />
