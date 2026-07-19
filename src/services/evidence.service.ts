@@ -55,5 +55,5 @@ export async function listEvidence(): Promise<EvidenceItem[]> {
     // Seeded fallback so the workspace still feels populated in dev/demo.
     return EVIDENCE_LIBRARY;
   }
-  return (data as unknown as EvidenceRow[]).map(rowToItem);
+  return (data as EvidenceRow[]).map(rowToItem);
 }
