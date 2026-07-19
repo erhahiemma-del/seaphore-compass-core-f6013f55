@@ -254,7 +254,27 @@ export function AlertsCentre() {
 }
 
 /* ------------- Page search ------------- */
-function PageSearchBar({ query, onQuery }: { query: string; onQuery: (s: string) => void }) {
+function PageSearchBar({
+  query,
+  onQuery,
+  live,
+}: {
+  query: string;
+  onQuery: (s: string) => void;
+  live: ReturnType<typeof useAlertsRealtime>;
+}) {
+  const dot =
+    live.status === "live"
+      ? "bg-emerald-400 shadow-[0_0_0_3px_rgba(52,211,153,0.25)] animate-pulse"
+      : live.status === "connecting"
+      ? "bg-amber-400"
+      : "bg-red-500";
+  const label =
+    live.status === "live"
+      ? `LIVE · ${live.eventCount} update${live.eventCount === 1 ? "" : "s"}`
+      : live.status === "connecting"
+      ? "Connecting…"
+      : "Offline";
   return (
     <div className="flex items-center gap-3">
       <div className="flex flex-1 items-center gap-2 rounded-lg border border-line/60 bg-surface-1/70 px-3 py-2">
@@ -266,6 +286,13 @@ function PageSearchBar({ query, onQuery }: { query: string; onQuery: (s: string)
           className="w-full bg-transparent text-[13px] outline-none placeholder:text-slate/70"
         />
         <kbd className="rounded border border-line/60 px-1.5 py-0.5 text-[10px] text-slate">/</kbd>
+      </div>
+      <div
+        className="inline-flex items-center gap-2 rounded-md border border-line/60 bg-surface-2/40 px-2.5 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate"
+        title={live.lastEvent ? `${live.lastEvent.summary} @ ${new Date(live.lastEvent.at).toLocaleTimeString()}` : "Realtime database stream"}
+      >
+        <span className={cn("h-2 w-2 rounded-full", dot)} />
+        <span>{label}</span>
       </div>
       <button className="inline-flex items-center gap-1.5 rounded-md border border-[color:var(--color-blue)]/60 bg-[color:var(--color-blue)]/10 px-3 py-2 text-[12px] font-medium text-[color:var(--color-blue)] hover:bg-[color:var(--color-blue)]/20">
         <Sparkles className="h-3.5 w-3.5" /> AI Copilot
