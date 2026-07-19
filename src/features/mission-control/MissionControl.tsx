@@ -27,6 +27,7 @@ import { RiskPill } from "@/components/intelligence/RiskPill";
 import { GulfOfGuineaMap } from "@/components/gulf-of-guinea-map";
 import { MissionCommandBar } from "@/components/mission-command-bar";
 import { useHandoffNavigate } from "@/lib/nav-context";
+import { useRenderTrace } from "@/lib/perf/hooks";
 import { cn } from "@/lib/utils";
 import {
   COMPLIANCE_METRICS,
@@ -197,6 +198,7 @@ function LiveMapPanel() {
 /* ---------------- Intelligence Feed Panel ---------------- */
 
 function IntelligenceFeedPanel() {
+  useRenderTrace("feed.render", { surface: "mission-control" });
   const handoff = useHandoffNavigate();
   return (
     <PanelCard variant="edge" className="flex h-[520px] flex-col">

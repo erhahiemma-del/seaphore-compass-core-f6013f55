@@ -24,6 +24,7 @@ import { PanelHead } from "@/components/panel-head";
 import { RiskHeatmap } from "@/components/risk-heatmap";
 import { RiskPill } from "@/components/intelligence/RiskPill";
 import { SignalList } from "@/components/signal-list";
+import { useRenderTrace } from "@/lib/perf/hooks";
 import { SignalTimelineChart, type TimelineRange } from "@/components/signal-timeline-chart";
 import { TypeTiles } from "@/components/type-tiles";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
@@ -37,6 +38,7 @@ import {
 } from "@/services/detect.service";
 
 export function DetectPage() {
+  useRenderTrace("signals.render", { surface: "detect" });
   const [activeDomain, setActiveDomain] = useState<"All" | SignalDomain>("All");
   const [range, setRange] = useState<TimelineRange>("24H");
   const handoff = useHandoffNavigate();

@@ -4,6 +4,8 @@ import { Maximize2, Minus, Plus, RefreshCw, Radio } from "lucide-react";
 import { COMPANIES, VESSELS, OWNERSHIP_EDGES, type OwnershipEdge, PORTS } from "@/lib/intel-centre-data";
 import { PERSONS } from "./ownership-data";
 import { cn } from "@/lib/utils";
+import { startTrace } from "@/lib/perf/monitor";
+import { createBurstTracer } from "@/lib/perf/hooks";
 
 export type GraphLayout = "force" | "radial" | "hierarchy" | "timeline";
 export type GraphNodeKind = "company" | "vessel" | "person" | "port";
@@ -147,19 +149,24 @@ export function OwnershipNetworkGraph({
     return active;
   }, [nodes, asOfYear]);
 
-  // Pan handlers
+  // Pan handlers — traced as a burst (drag sessions), plus per-frame budget check.
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
+    const burst = createBurstTracer("pan.frame");
     const down = (ev: MouseEvent) => {
       dragRef.current = { x: ev.clientX - pan.x, y: ev.clientY - pan.y };
     };
     const move = (ev: MouseEvent) => {
       if (!dragRef.current) return;
+      const end = startTrace("pan.frame", { source: "ownership-graph" });
       setPan({ x: ev.clientX - dragRef.current.x, y: ev.clientY - dragRef.current.y });
+      end();
+      burst.tick({ source: "ownership-graph" });
     };
     const up = () => {
       dragRef.current = null;
+      burst.flush();
     };
     el.addEventListener("mousedown", down);
     window.addEventListener("mousemove", move);
@@ -168,6 +175,7 @@ export function OwnershipNetworkGraph({
       el.removeEventListener("mousedown", down);
       window.removeEventListener("mousemove", move);
       window.removeEventListener("mouseup", up);
+      burst.flush();
     };
   }, [pan.x, pan.y]);
 
@@ -209,10 +217,10 @@ export function OwnershipNetworkGraph({
           )}
         </div>
         <div className="pointer-events-auto flex flex-col gap-1">
-          <button onClick={() => setZoom((z) => Math.min(3, z + 0.2))} className="rounded border border-line/60 bg-surface/80 p-1 text-slate hover:text-foreground" aria-label="Zoom in">
+          <button onClick={() => { const end = startTrace("zoom.step", { dir: "in" }); setZoom((z) => Math.min(3, z + 0.2)); end(); }} className="rounded border border-line/60 bg-surface/80 p-1 text-slate hover:text-foreground" aria-label="Zoom in">
             <Plus className="h-3.5 w-3.5" />
           </button>
-          <button onClick={() => setZoom((z) => Math.max(0.4, z - 0.2))} className="rounded border border-line/60 bg-surface/80 p-1 text-slate hover:text-foreground" aria-label="Zoom out">
+          <button onClick={() => { const end = startTrace("zoom.step", { dir: "out" }); setZoom((z) => Math.max(0.4, z - 0.2)); end(); }} className="rounded border border-line/60 bg-surface/80 p-1 text-slate hover:text-foreground" aria-label="Zoom out">
             <Minus className="h-3.5 w-3.5" />
           </button>
           <button
