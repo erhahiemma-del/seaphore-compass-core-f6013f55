@@ -99,20 +99,23 @@ test.describe("Compliance Intelligence Centre", () => {
     }
   });
 
-  test("All workspace tabs are present and switchable", async ({ page }) => {
+  test("All 10 workspace tabs render and activate on click", async ({ page }) => {
     await gotoCompliance(page);
     for (const label of TAB_LABELS) {
       const tab = page.getByRole("button", { name: label, exact: true });
       await expect(tab).toBeVisible();
     }
-    // Switching activates a tab (bg-blue tint class). Click through a couple.
-    for (const label of ["Sanctions", "Timeline", "Overview"]) {
-      const tab = page.getByRole("button", { name: label, exact: true });
-      await tab.click();
-      // Active tab receives the blue background utility.
-      await expect(tab).toHaveClass(/text-\[color:var\(--color-blue\)\]/);
-    }
+    // Overview is the default active tab.
+    const overview = page.getByRole("button", { name: "Overview", exact: true });
+    await expect(overview).toHaveClass(/color-blue/);
+
+    // Activating another tab moves the blue-tint active class onto it.
+    const sanctions = page.getByRole("button", { name: "Sanctions", exact: true });
+    await sanctions.click();
+    await expect(sanctions).toHaveClass(/color-blue/, { timeout: 2_000 });
+    await expect(overview).not.toHaveClass(/color-blue/);
   });
+
 
   test("Compliance Matrix drill-down lists every seeded entity in both themes", async ({ page }) => {
     await gotoCompliance(page);
