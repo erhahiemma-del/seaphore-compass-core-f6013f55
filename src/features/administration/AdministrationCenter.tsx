@@ -73,6 +73,7 @@ import {
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { RequirePermission } from "@/components/require-permission";
 import { usePermission, useRoles } from "@/hooks/use-permissions";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
