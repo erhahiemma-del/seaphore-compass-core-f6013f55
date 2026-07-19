@@ -16,7 +16,8 @@ import {
   FolderOpen, Search, Upload, Sparkles, Filter as FilterIcon, LayoutGrid,
   Rows3, ChevronDown, ChevronLeft, ChevronRight, Download, MoreVertical,
   Bell, Ship, Anchor, Building2, MapPin, CheckCircle2, Send, ArrowRight,
-  FileDown, Save, Bookmark, ZoomIn, ZoomOut, Maximize2, X,
+  FileDown, Save, Bookmark, ZoomIn, ZoomOut, Maximize2, X, History,
+  GitCompareArrows, Plus, Minus, Equal,
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 
