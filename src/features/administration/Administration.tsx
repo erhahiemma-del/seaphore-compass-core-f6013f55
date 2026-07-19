@@ -33,6 +33,7 @@ import {
   type RoleAuditEntry,
 } from "@/lib/admin-audit.functions";
 import type { Role } from "@/lib/permissions";
+import { QUERY_KEYS } from "@/lib/query-keys";
 
 const ALL_ROLES: Role[] = ["analyst", "officer", "director", "admin"];
 
