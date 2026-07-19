@@ -80,8 +80,11 @@ export function EvidenceCentre() {
     staleTime: 30_000,
   });
 
+  // Debounce free-text search so rapid keystrokes don't re-filter on every char.
+  const debouncedQuery = useDebouncedValue(query, 250);
+
   const filtered = useMemo(() => {
-    const base = applyEvidenceFilters(allEvidence, filters, query);
+    const base = applyEvidenceFilters(allEvidence, filters, debouncedQuery);
     return base.filter((e) => {
       if (tab === "documents" && e.category !== "Documents") return false;
       if (tab === "media" && e.category !== "Media") return false;
@@ -90,7 +93,7 @@ export function EvidenceCentre() {
       if (tab === "bills" && e.category !== "Bills of Lading") return false;
       return true;
     });
-  }, [allEvidence, filters, query, tab]);
+  }, [allEvidence, filters, debouncedQuery, tab]);
 
   const activeCount = activeFilterCount(filters) + (query.trim() ? 1 : 0);
 
