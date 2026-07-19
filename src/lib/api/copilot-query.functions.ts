@@ -14,7 +14,22 @@ import { askCopilot } from "@/lib/ai/copilot.functions";
 const RATE_LIMIT_PER_HOUR = 60;
 
 const Input = z.object({
-  instance: z.enum(["seaphore", "manifest", "cargo", "revenue", "memory"]).default("seaphore"),
+  instance: z
+    .enum([
+      "seaphore",
+      "manifest",
+      "cargo",
+      "revenue",
+      "memory",
+      "vessel",
+      "ports",
+      "ownership",
+      "compliance",
+      "evidence",
+      "alerts",
+      "administration",
+    ])
+    .default("seaphore"),
   query: z.string().min(1).max(500),
 });
 
