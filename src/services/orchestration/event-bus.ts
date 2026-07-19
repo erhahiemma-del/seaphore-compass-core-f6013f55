@@ -17,7 +17,7 @@ export async function emitEvent(evt: EmittedEvent): Promise<void> {
   await supabase.from("orchestration_events").insert({
     event_type: evt.event_type,
     entity_ids: evt.entity_ids ?? [],
-    payload: evt.payload ?? {},
+    payload: (evt.payload ?? {}) as never,
     emitted_by: evt.emitted_by ?? null,
   });
 }

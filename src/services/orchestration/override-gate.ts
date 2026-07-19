@@ -23,7 +23,7 @@ export async function captureOverride(input: OverrideInput): Promise<{ id: strin
       officer_id: input.officer_id,
       decision: input.decision,
       justification: input.justification ?? null,
-      modifications: input.modifications ?? null,
+      modifications: (input.modifications ?? null) as never,
     })
     .select("id")
     .single();
