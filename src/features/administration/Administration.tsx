@@ -295,7 +295,7 @@ function AuditTrailPanel({
 }: AuditTrailPanelProps) {
   const listAuditFn = useSF(listRoleAuditLog);
   const { data, isLoading, isFetching, error, refetch } = useQuery({
-    queryKey: ["admin", "role-audit", filterUserId ?? "all"],
+    queryKey: QUERY_KEYS.adminRoleAudit(filterUserId ?? "all"),
     queryFn: () =>
       listAuditFn({ data: filterUserId ? { targetUserId: filterUserId } : {} }),
     staleTime: 15_000,
