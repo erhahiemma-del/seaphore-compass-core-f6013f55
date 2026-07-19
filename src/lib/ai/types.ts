@@ -79,7 +79,14 @@ export type CopilotInstanceKey =
   | "manifest"
   | "cargo"
   | "revenue"
-  | "memory";
+  | "memory"
+  | "vessel"
+  | "ports"
+  | "ownership"
+  | "compliance"
+  | "evidence"
+  | "alerts"
+  | "administration";
 
 /** A single piece of evidence backing an observed pattern or recommendation. */
 export interface CopilotEvidence {

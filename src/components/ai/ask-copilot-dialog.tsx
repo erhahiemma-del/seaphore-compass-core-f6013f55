@@ -1,14 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Send, Sparkles, X } from "lucide-react";
+import { ArrowRight, Mic, Search, Send, X } from "lucide-react";
 
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { RiskPill } from "@/components/intelligence/RiskPill";
 import { ModeBadge } from "@/components/ai/mode-badge";
 import { EvidenceList } from "@/components/ai/evidence-list";
 import { askCopilot } from "@/lib/ai/copilot.functions";
-import { COPILOT_MODES } from "@/lib/ai/types";
 import type {
   CopilotInstanceKey,
   CopilotMode,
@@ -17,18 +16,15 @@ import type {
 import { COPILOT_REGISTRY } from "@/lib/ai/copilots";
 import { classifyMode } from "@/lib/ai/nlq";
 import { cn } from "@/lib/utils";
+import nimasaLogo from "@/assets/nimasa-logo.png";
 
 /**
- * "Ask Copilot" natural language dialog.
+ * Universal Seaphore Copilot modal.
  *
- * Shared across every Copilot instance. Renders:
- *  • Mode chips (SEARCH / RETRIEVE / INTERPRET / ADVISE) — auto-classified,
- *    officer can override.
- *  • Free-text natural language input.
- *  • Structured response: summary + confidence + observed patterns +
- *    recommendations + historical + related — all with evidence (HR-11).
- *  • Follow-up chips for iterative refinement.
- *  • Mandatory "The officer decides" reminder in the footer.
+ * Zero state is intentionally minimal — title, subtitle, query input,
+ * mic, send, three context-aware suggested prompts, close. After the
+ * first query the modal transitions into the SEARCH → RETRIEVE →
+ * INTERPRET → ADVISE workflow while keeping the officer's conversation.
  */
 export interface AskCopilotDialogProps {
   instance: CopilotInstanceKey;
@@ -38,6 +34,28 @@ export interface AskCopilotDialogProps {
   context?: Record<string, string>;
 }
 
+interface Turn {
+  id: string;
+  query: string;
+  response?: CopilotResponse;
+  error?: boolean;
+}
+
+const SUBTITLES: Partial<Record<CopilotInstanceKey, string>> = {
+  seaphore: "Ask about vessels, cargo, ports, or companies",
+  vessel: "Ask about voyages, AIS traces, or vessel history",
+  ports: "Ask about berths, dwell time, or port throughput",
+  revenue: "Ask about leakage, exposure, or revenue-at-risk",
+  manifest: "Ask about declarations, duplicates, or HS codes",
+  cargo: "Ask about containers, seals, or declared vs observed cargo",
+  ownership: "Ask about directors, ownership graphs, or sanctions links",
+  compliance: "Ask about violations, sanctions, or overdue inspections",
+  evidence: "Ask about documents, chain-of-custody, or version history",
+  alerts: "Ask about triage queue, correlations, or SLA breaches",
+  memory: "Ask about analogous cases, precedents, or lessons",
+  administration: "Ask about roles, sign-ins, or system health",
+};
+
 export function AskCopilotDialog({
   instance,
   open,
@@ -46,11 +64,14 @@ export function AskCopilotDialog({
   context,
 }: AskCopilotDialogProps) {
   const inst = COPILOT_REGISTRY[instance];
+  const subtitle = SUBTITLES[instance] ?? SUBTITLES.seaphore!;
   const [query, setQuery] = useState(seedQuery);
-  const [mode, setMode] = useState<CopilotMode | undefined>(undefined);
-  const [modeAutoLocked, setModeAutoLocked] = useState(false);
+  const [turns, setTurns] = useState<Turn[]>([]);
+  const [listening, setListening] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const askFn = useServerFn(askCopilot);
+
   const mutation = useMutation({
     mutationFn: (input: { instance: CopilotInstanceKey; query: string; mode?: CopilotMode }) =>
       askFn({ data: { ...input, context } }),
@@ -60,91 +81,121 @@ export function AskCopilotDialog({
     if (open) {
       setQuery(seedQuery);
       setTimeout(() => inputRef.current?.focus(), 30);
+    } else {
+      // reset conversation when closed
+      setTurns([]);
+      mutation.reset();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, seedQuery]);
 
-  const effectiveMode: CopilotMode = mode ?? (query ? classifyMode(query) : "SEARCH");
+  useEffect(() => {
+    if (turns.length > 0) {
+      scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+    }
+  }, [turns]);
+
+  const submit = (raw?: string) => {
+    const q = (raw ?? query).trim();
+    if (!q) return;
+    const id = crypto.randomUUID();
+    setTurns((t) => [...t, { id, query: q }]);
+    setQuery("");
+    mutation.mutate(
+      { instance, query: q },
+      {
+        onSuccess: (response) =>
+          setTurns((t) => t.map((turn) => (turn.id === id ? { ...turn, response } : turn))),
+        onError: () =>
+          setTurns((t) => t.map((turn) => (turn.id === id ? { ...turn, error: true } : turn))),
+      },
+    );
+  };
+
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  const startVoice = () => {
+    const w = window as unknown as {
+      webkitSpeechRecognition?: new () => any;
+      SpeechRecognition?: new () => any;
+    };
+    const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
+    if (!Ctor) return;
+    const rec = new Ctor();
+    rec.lang = "en-US";
+    rec.interimResults = false;
+    rec.onresult = (e: any) => {
+      const t = e.results?.[0]?.[0]?.transcript ?? "";
+      setQuery((q) => (q ? `${q} ${t}` : t));
+    };
+    rec.onend = () => setListening(false);
+    setListening(true);
+    rec.start();
+  };
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+
+  const suggestions = useMemo(() => inst.exampleQueries.slice(0, 3), [inst]);
+  const hasConversation = turns.length > 0;
 
   if (!open) return null;
 
-  const submit = () => {
-    const q = query.trim();
-    if (!q) return;
-    mutation.mutate({ instance, query: q, mode });
-    setModeAutoLocked(true);
-  };
-
-  const response = mutation.data;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm">
-      <div className="mt-8 w-full max-w-2xl overflow-hidden rounded-xl border border-line bg-card shadow-2xl">
-        <header className="flex items-center gap-3 border-b border-line px-4 py-3">
-          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-[color:var(--color-purple)]/15 text-[color:var(--color-purple)]">
-            <Sparkles className="h-4 w-4" />
-          </span>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <h2 className="type-h2 text-foreground">{inst.name}</h2>
-              <span
-                className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em]"
-                style={{ color: "#7C3AED", backgroundColor: "#7C3AED22" }}
-              >
-                BETA
-              </span>
-              <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[color:var(--color-green)]">
-                <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--color-green)]" />
-                Active
-              </span>
-            </div>
-            <p className="type-small mt-0.5 text-slate">
-              Natural language intelligence · four modes · every answer with evidence.
-            </p>
-          </div>
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[#0B1220]/70 p-4 backdrop-blur-sm">
+      <div className="mt-8 flex w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+        {/* Header */}
+        <header className="flex items-center gap-3 border-b border-slate-200 px-6 py-4">
+          <img
+            src={nimasaLogo}
+            alt="NIMASA"
+            width={40}
+            height={40}
+            className="h-10 w-10 shrink-0 object-contain"
+          />
+          <h2 className="flex-1 text-[18px] font-bold text-slate-900">{inst.name}</h2>
           <button
-            className="rounded-md p-1.5 text-slate hover:bg-surface-2"
+            type="button"
+            className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100"
             aria-label="Close"
             onClick={() => onOpenChange(false)}
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </button>
         </header>
 
-        <div className="px-4 py-3">
-          {/* Mode chips */}
-          <div className="mb-3 flex flex-wrap gap-1.5">
-            {COPILOT_MODES.map((m) => {
-              const active = (mode ?? (query ? classifyMode(query) : "SEARCH")) === m.key;
-              return (
-                <button
-                  key={m.key}
-                  type="button"
-                  onClick={() => {
-                    setMode(m.key);
-                    setModeAutoLocked(true);
-                  }}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors",
-                    active
-                      ? "border-transparent bg-primary text-primary-foreground shadow-sm"
-                      : "border-line bg-surface text-foreground/80 hover:bg-surface-2",
-                  )}
-                  title={m.question}
-                >
-                  <span className="text-[9px] opacity-70">{m.ordinal}</span>
-                  {m.key}
-                </button>
-              );
-            })}
-            {!modeAutoLocked && query && (
-              <span className="ml-1 self-center text-[10px] italic text-slate">
-                auto: {effectiveMode.toLowerCase()}
-              </span>
-            )}
-          </div>
+        {/* Body */}
+        <div
+          ref={scrollRef}
+          className={cn(
+            "flex flex-col overflow-y-auto bg-white px-6",
+            hasConversation ? "max-h-[70vh] py-6" : "py-14",
+          )}
+        >
+          {!hasConversation && (
+            <p className="mb-4 text-center text-[15px] font-semibold text-slate-800">
+              {subtitle}
+            </p>
+          )}
 
-          {/* Input */}
-          <div className="flex items-end gap-2 rounded-lg border border-line bg-surface/70 p-2">
+          {hasConversation && (
+            <div className="space-y-6">
+              {turns.map((turn) => (
+                <TurnBlock
+                  key={turn.id}
+                  turn={turn}
+                  pending={mutation.isPending && !turn.response && !turn.error}
+                  onFollowUp={(q) => submit(q)}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Input row */}
+          <div
+            className={cn(
+              "flex items-center gap-2 rounded-xl border-2 border-[#2563EB] bg-white px-3 py-2 shadow-sm",
+              hasConversation ? "mt-6" : "",
+            )}
+          >
+            <Search className="h-5 w-5 shrink-0 text-slate-500" />
             <textarea
               ref={inputRef}
               value={query}
@@ -155,55 +206,90 @@ export function AskCopilotDialog({
                   submit();
                 }
               }}
-              rows={2}
-              placeholder={inst.exampleQueries[0]}
-              className="flex-1 resize-none bg-transparent text-[13px] leading-snug text-foreground outline-none placeholder:text-slate/70"
+              rows={1}
+              placeholder="Ask anything…"
+              className="flex-1 resize-none bg-transparent py-1.5 text-[15px] leading-snug text-slate-900 outline-none placeholder:text-slate-400"
             />
             <button
               type="button"
-              onClick={submit}
-              disabled={mutation.isPending || !query.trim()}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 text-[12px] font-semibold text-primary-foreground disabled:opacity-50"
+              onClick={startVoice}
+              aria-label="Voice input"
+              className={cn(
+                "flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50",
+                listening && "border-[#2563EB] text-[#2563EB]",
+              )}
             >
-              {mutation.isPending ? "Thinking…" : "Ask"}
-              <Send className="h-3 w-3" />
+              <Mic className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => submit()}
+              disabled={mutation.isPending || !query.trim()}
+              aria-label="Send"
+              className="flex h-9 w-11 items-center justify-center rounded-md bg-[#2563EB] text-white shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              <Send className="h-4 w-4" />
             </button>
           </div>
 
-          {/* Suggested queries */}
-          {!response && (
-            <div className="mt-3">
-              <div className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-slate">
-                Try
-              </div>
-              <div className="mt-1.5 flex flex-wrap gap-1.5">
-                {inst.exampleQueries.map((q) => (
-                  <button
-                    key={q}
-                    type="button"
-                    onClick={() => setQuery(q)}
-                    className="rounded-full border border-line bg-surface px-2.5 py-1 text-[11px] text-foreground/80 hover:bg-surface-2"
-                  >
-                    {q}
-                  </button>
+          {/* Suggestions (zero state only) */}
+          {!hasConversation && (
+            <div className="mt-6">
+              <div className="text-[13px] font-semibold text-slate-700">Try:</div>
+              <ul className="mt-2 space-y-2">
+                {suggestions.map((q) => (
+                  <li key={q}>
+                    <button
+                      type="button"
+                      onClick={() => submit(q)}
+                      className="inline-flex items-center gap-2 text-left text-[14px] font-semibold text-[#2563EB] hover:underline"
+                    >
+                      {q}
+                      <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </div>
           )}
-
-          {mutation.isError && (
-            <div className="mt-3 rounded-md border border-[color:var(--color-red)]/40 bg-[color:var(--color-red)]/10 p-2 text-[12px] text-[color:var(--color-red)]">
-              Copilot unavailable. Try again shortly.
-            </div>
-          )}
-
-          {response && <ResponseBlock response={response} onFollowUp={(q) => setQuery(q)} />}
         </div>
 
-        <footer className="border-t border-line bg-surface/60 px-4 py-2 text-[10.5px] text-slate">
-          Evidence first. Explainable always. Officer decides.
-        </footer>
+        {/* Footer */}
+        <div className="border-t border-slate-200 bg-white px-6 py-3 text-center text-[12px] text-slate-500">
+          Powered by Seaphore
+        </div>
       </div>
+    </div>
+  );
+}
+
+function TurnBlock({
+  turn,
+  pending,
+  onFollowUp,
+}: {
+  turn: Turn;
+  pending: boolean;
+  onFollowUp: (q: string) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-[#2563EB] px-4 py-2 text-[14px] font-medium text-white">
+          {turn.query}
+        </div>
+      </div>
+      {pending && (
+        <div className="text-[13px] italic text-slate-500">
+          Searching → Retrieving → Interpreting…
+        </div>
+      )}
+      {turn.error && (
+        <div className="rounded-md border border-red-200 bg-red-50 p-2 text-[13px] text-red-700">
+          Copilot unavailable. Try again shortly.
+        </div>
+      )}
+      {turn.response && <ResponseBlock response={turn.response} onFollowUp={onFollowUp} />}
     </div>
   );
 }
@@ -216,33 +302,31 @@ function ResponseBlock({
   onFollowUp: (q: string) => void;
 }) {
   return (
-    <div className="mt-4 space-y-4">
-      <section className="rounded-lg border border-line bg-surface/60 p-3">
-        <div className="mb-1.5 flex items-center gap-2">
-          <ModeBadge mode={response.mode} />
-          <ConfidenceChip tier={response.confidence} />
-          {response.insufficientEvidence && (
-            <span
-              className="rounded px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-[0.06em]"
-              style={{ color: "#8A98A6", backgroundColor: "#8A98A614" }}
-            >
-              Insufficient evidence
-            </span>
-          )}
-          <span className="ml-auto text-[10px] text-slate">
-            {response.served} · {response.latencyMs}ms
+    <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <ModeBadge mode={response.mode} />
+        <ConfidenceChip tier={response.confidence} />
+        {response.insufficientEvidence && (
+          <span
+            className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+            style={{ color: "#8A98A6", backgroundColor: "#8A98A614" }}
+          >
+            Insufficient evidence
           </span>
-        </div>
-        <p className="text-[13px] leading-snug text-foreground">{response.summary}</p>
-      </section>
+        )}
+        <span className="ml-auto text-[10.5px] text-slate-500">
+          {response.served} · {response.latencyMs}ms
+        </span>
+      </div>
+      <p className="text-[14px] leading-relaxed text-slate-900">{response.summary}</p>
 
       {response.observations.length > 0 && (
         <Section title="Observed Patterns">
-          <ul className="space-y-1.5">
+          <ul className="space-y-2">
             {response.observations.map((o) => (
-              <li key={o.id} className="rounded-md border border-line/60 bg-surface/50 p-2">
+              <li key={o.id} className="rounded-md border border-slate-200 bg-white p-2.5">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-[12px] leading-snug text-foreground">{o.text}</p>
+                  <p className="text-[13px] leading-snug text-slate-900">{o.text}</p>
                   <ConfidenceChip tier={o.confidence} size={9} />
                 </div>
                 <EvidenceList items={o.evidence} />
@@ -254,13 +338,13 @@ function ResponseBlock({
 
       {response.recommendations.length > 0 && (
         <Section title="Recommendations">
-          <ul className="space-y-1.5">
+          <ul className="space-y-2">
             {response.recommendations.map((r) => (
-              <li key={r.id} className="rounded-md border border-line/60 bg-surface/50 p-2">
+              <li key={r.id} className="rounded-md border border-slate-200 bg-white p-2.5">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <div className="text-[12.5px] font-semibold text-foreground">{r.action}</div>
-                    <div className="text-[11px] text-slate">Why: {r.rationale}</div>
+                    <div className="text-[13px] font-semibold text-slate-900">{r.action}</div>
+                    <div className="text-[12px] text-slate-500">Why: {r.rationale}</div>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1">
                     <RiskPill level={r.risk} />
@@ -271,7 +355,7 @@ function ResponseBlock({
                 {r.route && (
                   <a
                     href={r.route}
-                    className="mt-2 inline-block text-[11px] font-semibold text-[color:var(--color-blue)] hover:underline"
+                    className="mt-2 inline-block text-[12px] font-semibold text-[#2563EB] hover:underline"
                   >
                     View workspace →
                   </a>
@@ -286,13 +370,18 @@ function ResponseBlock({
         <Section title="Historical Similarities">
           <ul className="space-y-1">
             {response.historical.map((h) => (
-              <li key={h.id} className="flex items-start justify-between gap-2 rounded-md bg-surface/50 px-2 py-1.5">
+              <li
+                key={h.id}
+                className="flex items-start justify-between gap-2 rounded-md bg-white px-2.5 py-2"
+              >
                 <div className="min-w-0">
-                  <div className="type-mono text-[11px] font-semibold text-foreground">{h.caseRef}</div>
-                  <div className="truncate text-[11.5px] text-foreground/85">{h.summary}</div>
-                  <div className="text-[10.5px] text-slate">{h.outcome}</div>
+                  <div className="type-mono text-[11px] font-semibold text-slate-900">
+                    {h.caseRef}
+                  </div>
+                  <div className="truncate text-[12.5px] text-slate-800">{h.summary}</div>
+                  <div className="text-[11px] text-slate-500">{h.outcome}</div>
                 </div>
-                <span className="shrink-0 rounded bg-[color:var(--color-blue)]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[color:var(--color-blue)]">
+                <span className="shrink-0 rounded bg-[#2563EB]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[#2563EB]">
                   {h.matchPct}% match
                 </span>
               </li>
@@ -309,7 +398,7 @@ function ResponseBlock({
                 key={q}
                 type="button"
                 onClick={() => onFollowUp(q)}
-                className="rounded-full border border-line bg-surface px-2.5 py-1 text-[11px] text-foreground/85 hover:bg-surface-2"
+                className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[12px] text-slate-700 hover:bg-slate-100"
               >
                 {q}
               </button>
@@ -324,7 +413,7 @@ function ResponseBlock({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <div className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-slate">
+      <div className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
         {title}
       </div>
       {children}
