@@ -1336,7 +1336,7 @@ function AuditCentreSection() {
 
 function LiveClock() {
   const [now, setNow] = useState(() => new Date());
-  useMemo(() => {
+  useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
