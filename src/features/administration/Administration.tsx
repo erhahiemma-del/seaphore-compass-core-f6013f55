@@ -169,7 +169,7 @@ export function RoleManagementTable() {
   const auditRef = useRef<HTMLDivElement | null>(null);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["admin", "users-with-roles"],
+    queryKey: QUERY_KEYS.adminUsersWithRoles(),
     queryFn: () => listFn(),
     staleTime: 30_000,
   });
@@ -181,9 +181,9 @@ export function RoleManagementTable() {
       toast.success("Roles updated", {
         description: `${vars.roles.length} role(s) assigned.`,
       });
-      qc.invalidateQueries({ queryKey: ["admin", "users-with-roles"] });
-      qc.invalidateQueries({ queryKey: ["auth", "roles"] });
-      qc.invalidateQueries({ queryKey: ["admin", "role-audit"] });
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.adminUsersWithRoles() });
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.authRoles() });
+      qc.invalidateQueries({ queryKey: QUERY_KEYS.adminRoleAudit() });
     },
     onError: (err: unknown) => {
       const message = err instanceof Error ? err.message : "Update failed";
