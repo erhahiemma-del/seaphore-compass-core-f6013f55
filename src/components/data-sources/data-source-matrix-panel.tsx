@@ -168,7 +168,7 @@ export function DataSourceMatrixPanel() {
                 {sources?.map((s) => {
                   const isOpen = expanded === s.id;
                   return (
-                    <>
+                    <Fragment key={s.id}>
                       <tr
                         key={s.id}
                         className="border-b border-border/30 align-top cursor-pointer hover:bg-muted/30"
