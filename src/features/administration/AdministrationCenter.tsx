@@ -73,6 +73,7 @@ import {
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { RequirePermission } from "@/components/require-permission";
 import { usePermission, useRoles } from "@/hooks/use-permissions";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -160,20 +161,58 @@ const PREVIEW_ROLE_LABEL: Record<PreviewRole, string> = {
 // ---------- Entry ----------
 
 export function AdministrationCenter() {
+  const { session, loading: authLoading } = useAuth();
+  const { loading: rolesLoading } = useRoles();
   const allowed = usePermission("administration.view") || usePermission("role.manage");
+  const loading = authLoading || (!!session && rolesLoading);
+
   return (
     <AppShell
       title="Administration & Configuration Center"
       subtitle="System Management. Platform Configuration. Operational Control."
       mode="dark"
     >
-      <RequirePermission
-        permission="administration.view"
-        fallback={<AccessDenied />}
-      >
-        {allowed ? <CenterInner /> : null}
-      </RequirePermission>
+      {loading ? (
+        <LoadingState />
+      ) : !session ? (
+        <SignInRequired />
+      ) : allowed ? (
+        <CenterInner />
+      ) : (
+        <AccessDenied />
+      )}
     </AppShell>
+  );
+}
+
+function LoadingState() {
+  return (
+    <div className="p-8">
+      <div className="mx-auto max-w-lg rounded-lg border border-line bg-surface p-8 text-center">
+        <RefreshCw className="mx-auto mb-2 h-6 w-6 animate-spin text-slate" />
+        <p className="type-body text-foreground">Loading Administration Center…</p>
+      </div>
+    </div>
+  );
+}
+
+function SignInRequired() {
+  return (
+    <div className="p-8">
+      <div className="mx-auto max-w-lg rounded-lg border border-line bg-surface p-8 text-center">
+        <Lock className="mx-auto mb-2 h-6 w-6 text-amber-500" />
+        <p className="type-body text-foreground">Sign in required.</p>
+        <p className="type-small text-slate mt-1 mb-4">
+          The Administration & Configuration Center requires an authenticated Administrator session (PERM-1).
+        </p>
+        <a
+          href="/auth?redirect=/admin"
+          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 type-small font-medium text-primary-foreground hover:opacity-90"
+        >
+          Sign in to continue
+        </a>
+      </div>
+    </div>
   );
 }
 
