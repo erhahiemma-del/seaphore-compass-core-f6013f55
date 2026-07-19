@@ -208,8 +208,28 @@ export function OwnershipCentre() {
             <button onClick={() => setAskOpen(true)} className="inline-flex items-center gap-1.5 rounded-md border border-line/60 bg-surface-2/40 px-3 py-1.5 text-[12px] font-medium text-foreground hover:bg-surface-2/70">
               <Sparkles className="h-3.5 w-3.5 text-[color:var(--color-purple)]" /> AI Copilot
             </button>
-            <button className="inline-flex items-center gap-1.5 rounded-md border border-line/60 bg-surface-2/40 px-3 py-1.5 text-[12px] font-medium text-foreground hover:bg-surface-2/70">
-              <Download className="h-3.5 w-3.5" /> Export Report
+            <button
+              onClick={() => {
+                setExporting(true);
+                try {
+                  exportOwnershipReport({
+                    company: selectedCompany,
+                    riskScore,
+                    confidencePct,
+                    officer: {
+                      name: (session?.user?.user_metadata?.full_name as string) ?? session?.user?.email ?? "Officer on Duty",
+                      role: (session?.user?.user_metadata?.role as string) ?? "Intelligence Officer",
+                      id: session?.user?.id ?? "local-preview",
+                    },
+                  });
+                } finally {
+                  setExporting(false);
+                }
+              }}
+              disabled={exporting}
+              className="inline-flex items-center gap-1.5 rounded-md border border-line/60 bg-surface-2/40 px-3 py-1.5 text-[12px] font-medium text-foreground hover:bg-surface-2/70 disabled:opacity-60"
+            >
+              <Download className="h-3.5 w-3.5" /> {exporting ? "Preparing…" : "Export Report"}
             </button>
             <button className="relative rounded-md border border-line/60 bg-surface-2/40 p-1.5 text-slate hover:text-foreground" aria-label="Notifications">
               <Bell className="h-4 w-4" />
