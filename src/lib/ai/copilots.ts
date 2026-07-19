@@ -21,6 +21,9 @@ export interface CopilotInstance {
   greeting: string;
 }
 
+const BASE_GREETING =
+  "Good day, {officer}. Here's what I've observed in {domain} today. Every action remains yours.";
+
 export const COPILOT_REGISTRY: Record<CopilotInstanceKey, CopilotInstance> = {
   seaphore: {
     key: "seaphore",
