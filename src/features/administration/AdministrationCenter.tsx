@@ -71,8 +71,7 @@ import {
 } from "recharts";
 
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
-import { RequirePermission } from "@/components/require-permission";
-import { usePermission, useRoles } from "@/hooks/use-permissions";
+import { useRoles } from "@/hooks/use-permissions";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -169,7 +168,7 @@ export function AdministrationCenter() {
   let body: ReactNode;
   if (loading) body = <LoadingState />;
   else if (!session) body = <SignInRequired />;
-  else if (allowed) body = <CenterInner />;
+  else if (allowed) body = <CenterInner currentRole={roles[0] ?? null} />;
   else body = <AccessDenied />;
 
   return (
@@ -230,16 +229,17 @@ function AccessDenied() {
 
 // ---------- Inner center: sub-nav + section content ----------
 
-function CenterInner() {
+function CenterInner({ currentRole }: { currentRole: Role | null }) {
   const [section, setSection] = useState<SectionId>("overview");
   const [query, setQuery] = useState("");
-  const { role } = useRoles();
   const isDev = import.meta.env.DEV;
   const [previewRole, setPreviewRole] = useState<PreviewRole>(
-    (role as PreviewRole) ?? "admin",
+    (currentRole as PreviewRole) ?? "admin",
   );
 
-  const activeRole: PreviewRole = isDev ? previewRole : (role as PreviewRole) ?? "admin";
+  const activeRole: PreviewRole = isDev
+    ? previewRole
+    : (currentRole as PreviewRole) ?? "admin";
 
   return (
     <div className="flex min-h-[calc(100vh-8rem)] w-full">
@@ -343,7 +343,12 @@ function CenterInner() {
         </div>
 
         <div className="min-w-0 flex-1 p-6">
-          <SectionContent section={section} role={activeRole} search={query} />
+          <SectionContent
+            key={section}
+            section={section}
+            role={activeRole}
+            search={query}
+          />
         </div>
       </section>
     </div>
