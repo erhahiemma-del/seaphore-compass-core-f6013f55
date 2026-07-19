@@ -9,7 +9,7 @@
  * on the underlying tables and by the entry RBAC check.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { startTransition, useEffect, useMemo, useState } from "react";
 import type { ComponentType, ReactNode, SVGProps } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn as useSF } from "@tanstack/react-start";
@@ -283,7 +283,7 @@ function CenterInner({ currentRole }: { currentRole: Role | null }) {
                   return (
                     <button
                       key={r}
-                      onClick={() => setPreviewRole(r)}
+                      onClick={() => startTransition(() => setPreviewRole(r))}
                       className={cn(
                         "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[12px]",
                         on
@@ -344,7 +344,7 @@ function CenterInner({ currentRole }: { currentRole: Role | null }) {
 
         <div className="min-w-0 flex-1 p-6">
           <SectionContent
-            key={section}
+            key={`${section}:${activeRole}`}
             section={section}
             role={activeRole}
             search={query}
