@@ -54,13 +54,10 @@ export function PerfOverlay() {
           <div className="flex items-start gap-2">
             <AlertTriangle className="h-4 w-4 text-[color:var(--color-red)]" />
             <div className="text-[12px]">
-              <div className="font-semibold text-foreground">
-                Perf budget exceeded
-              </div>
+              <div className="font-semibold text-foreground">Perf budget exceeded</div>
               <div className="text-slate">
                 <code className="text-foreground">{flashAlert.name}</code>{" "}
-                {flashAlert.durationMs.toFixed(1)}ms &gt;{" "}
-                {flashAlert.budgetMs}ms
+                {flashAlert.durationMs.toFixed(1)}ms &gt; {flashAlert.budgetMs}ms
               </div>
             </div>
           </div>
@@ -109,7 +106,9 @@ export function PerfOverlay() {
                 Object.entries(summary).map(([name, s]) => (
                   <div key={name} className="flex items-center justify-between font-mono">
                     <span className="truncate text-foreground">{name}</span>
-                    <span className={s.breaches > 0 ? "text-[color:var(--color-red)]" : "text-slate"}>
+                    <span
+                      className={s.breaches > 0 ? "text-[color:var(--color-red)]" : "text-slate"}
+                    >
                       {s.p50.toFixed(0)} / {s.p95.toFixed(0)} / {s.max.toFixed(0)}ms
                       {s.breaches > 0 ? ` · ${s.breaches}⚠` : ""}
                     </span>

@@ -17,8 +17,13 @@ export interface OwnershipRecord {
 }
 
 export class CompaniesHouseAdapter extends BaseAdapter {
-  constructor() { super("companies_house"); }
-  async lookup(companyNumber: string, jurisdiction = "GB"): Promise<SourcedResult<OwnershipRecord>> {
+  constructor() {
+    super("companies_house");
+  }
+  async lookup(
+    companyNumber: string,
+    jurisdiction = "GB",
+  ): Promise<SourcedResult<OwnershipRecord>> {
     this.assertUsable();
     // PARTIAL: return only fields we can verify; leave beneficialOwners null.
     return this.envelope<OwnershipRecord>(
@@ -35,7 +40,11 @@ export class CompaniesHouseAdapter extends BaseAdapter {
     );
   }
   async healthCheck(): Promise<HealthReport> {
-    return { state: "DEGRADED", errorMessage: "PARTIAL — offshore feeds intermittent", checkedAt: new Date().toISOString() };
+    return {
+      state: "DEGRADED",
+      errorMessage: "PARTIAL — offshore feeds intermittent",
+      checkedAt: new Date().toISOString(),
+    };
   }
 }
 export const companiesHouse = new CompaniesHouseAdapter();

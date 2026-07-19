@@ -85,4 +85,3 @@ export function useCommandDispatch() {
     navigate({ to: target, search });
   };
 }
-

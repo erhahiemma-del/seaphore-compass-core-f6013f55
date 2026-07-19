@@ -117,7 +117,9 @@ export function CentreCopilot({
           {historical.map((h) => (
             <li key={h.title} className="rounded-md border border-line/60 bg-surface/50 p-2">
               <div className="flex items-center justify-between gap-2">
-                <span className="truncate text-[12px] font-semibold text-foreground">{h.title}</span>
+                <span className="truncate text-[12px] font-semibold text-foreground">
+                  {h.title}
+                </span>
                 <span className="rounded bg-[color:var(--color-blue)]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[color:var(--color-blue)]">
                   {h.similarity}% match
                 </span>
@@ -131,7 +133,10 @@ export function CentreCopilot({
       <Section title="Related Investigations">
         <ul className="space-y-1">
           {related.map((r) => (
-            <li key={r.ref} className="flex items-center justify-between gap-2 rounded px-1 py-1 text-[12px] hover:bg-surface/50">
+            <li
+              key={r.ref}
+              className="flex items-center justify-between gap-2 rounded px-1 py-1 text-[12px] hover:bg-surface/50"
+            >
               <span className="min-w-0 truncate">
                 <span className="mr-1.5 font-mono text-[11px] text-slate">{r.ref}</span>
                 <span className="text-foreground/90">{r.title}</span>

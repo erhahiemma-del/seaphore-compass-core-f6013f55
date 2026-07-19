@@ -3,7 +3,11 @@ import { useState } from "react";
 import { Columns3, Download, FileText, Upload } from "lucide-react";
 
 import {
-  CheckList, FilterBlock, FilterSearch, IntelCentreShell, SavedViewList,
+  CheckList,
+  FilterBlock,
+  FilterSearch,
+  IntelCentreShell,
+  SavedViewList,
 } from "@/components/intel-centre/shell";
 import { KpiRibbon, type KpiSpec } from "@/components/intel-centre/kpi-ribbon";
 import { CentreCopilot } from "@/components/intel-centre/centre-copilot";
@@ -11,16 +15,66 @@ import { DataTable, Section, StatusBadge } from "@/components/intel-centre/primi
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { EVIDENCE, fmtTime, sparkSeries, vesselById } from "@/lib/intel-centre-data";
 
-
-
 const KPIS: KpiSpec[] = [
-  { label: "Items Total",           value: String(EVIDENCE.length), delta: "+2", trend: "up", confidence: "verified", series: sparkSeries(3) },
-  { label: "Verified",              value: String(EVIDENCE.filter((e) => e.confidence === "verified").length), delta: "+1", trend: "up", confidence: "verified", series: sparkSeries(6), emphasis: "ok" },
-  { label: "Observed",              value: String(EVIDENCE.filter((e) => e.confidence === "observed").length), delta: "+1", trend: "up", confidence: "observed", series: sparkSeries(9) },
-  { label: "Investigations Linked", value: String(new Set(EVIDENCE.map((e) => e.linkedInvestigation)).size), delta: "0", trend: "flat", confidence: "verified", series: sparkSeries(12) },
-  { label: "Chain-of-Custody OK",   value: "100%", delta: "0", trend: "flat", confidence: "verified", series: sparkSeries(15), emphasis: "ok" },
-  { label: "Storage Used",          value: "512 MB", delta: "+18MB", trend: "up", confidence: "verified", series: sparkSeries(18) },
-  { label: "Confidence Score",      value: "91%", delta: "+0.4%", trend: "up", confidence: "verified", series: sparkSeries(21), emphasis: "ok" },
+  {
+    label: "Items Total",
+    value: String(EVIDENCE.length),
+    delta: "+2",
+    trend: "up",
+    confidence: "verified",
+    series: sparkSeries(3),
+  },
+  {
+    label: "Verified",
+    value: String(EVIDENCE.filter((e) => e.confidence === "verified").length),
+    delta: "+1",
+    trend: "up",
+    confidence: "verified",
+    series: sparkSeries(6),
+    emphasis: "ok",
+  },
+  {
+    label: "Observed",
+    value: String(EVIDENCE.filter((e) => e.confidence === "observed").length),
+    delta: "+1",
+    trend: "up",
+    confidence: "observed",
+    series: sparkSeries(9),
+  },
+  {
+    label: "Investigations Linked",
+    value: String(new Set(EVIDENCE.map((e) => e.linkedInvestigation)).size),
+    delta: "0",
+    trend: "flat",
+    confidence: "verified",
+    series: sparkSeries(12),
+  },
+  {
+    label: "Chain-of-Custody OK",
+    value: "100%",
+    delta: "0",
+    trend: "flat",
+    confidence: "verified",
+    series: sparkSeries(15),
+    emphasis: "ok",
+  },
+  {
+    label: "Storage Used",
+    value: "512 MB",
+    delta: "+18MB",
+    trend: "up",
+    confidence: "verified",
+    series: sparkSeries(18),
+  },
+  {
+    label: "Confidence Score",
+    value: "91%",
+    delta: "+0.4%",
+    trend: "up",
+    confidence: "verified",
+    series: sparkSeries(21),
+    emphasis: "ok",
+  },
 ];
 
 export function EvidenceCentre() {
@@ -37,24 +91,54 @@ export function EvidenceCentre() {
       tabs={[
         { key: "workspace", label: "Workspace" },
         { key: "documents", label: "Documents", count: EVIDENCE.length },
-        { key: "audit",     label: "Chain of Custody" },
+        { key: "audit", label: "Chain of Custody" },
       ]}
       activeTab={tab}
       onTabChange={setTab}
       tabTrailing={
         <>
-          <button className="inline-flex items-center gap-1 rounded px-2 py-1 hover:bg-surface-2/50"><Upload className="h-3 w-3" /> Upload</button>
-          <button className="inline-flex items-center gap-1 rounded px-2 py-1 hover:bg-surface-2/50"><Download className="h-3 w-3" /> Export</button>
-          <button className="inline-flex items-center gap-1 rounded px-2 py-1 hover:bg-surface-2/50"><Columns3 className="h-3 w-3" /> Columns</button>
+          <button className="inline-flex items-center gap-1 rounded px-2 py-1 hover:bg-surface-2/50">
+            <Upload className="h-3 w-3" /> Upload
+          </button>
+          <button className="inline-flex items-center gap-1 rounded px-2 py-1 hover:bg-surface-2/50">
+            <Download className="h-3 w-3" /> Export
+          </button>
+          <button className="inline-flex items-center gap-1 rounded px-2 py-1 hover:bg-surface-2/50">
+            <Columns3 className="h-3 w-3" /> Columns
+          </button>
         </>
       }
       filters={
         <>
           <FilterSearch placeholder="Search reference, vessel, uploader…" />
-          <FilterBlock label="Kind"><CheckList options={["Bill of Lading", "Manifest", "Invoice", "Cargo Declaration", "Inspection Report", "Photo", "AIS Snapshot", "Certificate", "Payment Receipt", "Container List"]} /></FilterBlock>
-          <FilterBlock label="Format"><CheckList options={["PDF", "XML", "CSV", "JSON", "JPG", "PNG"]} /></FilterBlock>
-          <FilterBlock label="Confidence"><CheckList options={["Verified", "Observed", "Inferred"]} defaultChecked={["Verified", "Observed"]} /></FilterBlock>
-          <FilterBlock label="Saved views"><SavedViewList views={["My uploads", "Today", "Verified only"]} /></FilterBlock>
+          <FilterBlock label="Kind">
+            <CheckList
+              options={[
+                "Bill of Lading",
+                "Manifest",
+                "Invoice",
+                "Cargo Declaration",
+                "Inspection Report",
+                "Photo",
+                "AIS Snapshot",
+                "Certificate",
+                "Payment Receipt",
+                "Container List",
+              ]}
+            />
+          </FilterBlock>
+          <FilterBlock label="Format">
+            <CheckList options={["PDF", "XML", "CSV", "JSON", "JPG", "PNG"]} />
+          </FilterBlock>
+          <FilterBlock label="Confidence">
+            <CheckList
+              options={["Verified", "Observed", "Inferred"]}
+              defaultChecked={["Verified", "Observed"]}
+            />
+          </FilterBlock>
+          <FilterBlock label="Saved views">
+            <SavedViewList views={["My uploads", "Today", "Verified only"]} />
+          </FilterBlock>
         </>
       }
       main={
@@ -80,7 +164,9 @@ export function EvidenceCentre() {
                     <div className="mt-1.5 flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.06em] text-slate">
                       <FileText className="h-3 w-3" /> {e.kind}
                     </div>
-                    <div className="mt-0.5 truncate text-[11.5px] font-semibold text-foreground">{e.refNumber}</div>
+                    <div className="mt-0.5 truncate text-[11.5px] font-semibold text-foreground">
+                      {e.refNumber}
+                    </div>
                     <div className="mt-1 flex items-center justify-between">
                       <span className="text-[10px] text-slate">{fmtTime(e.uploadedAt)}</span>
                       <ConfidenceChip tier={e.confidence} size={9} />
@@ -93,14 +179,39 @@ export function EvidenceCentre() {
             <Section title="Document Table (EVI-2)">
               <DataTable
                 columns={[
-                  { key: "r", label: "Reference", render: (r: typeof EVIDENCE[number]) => <span className="font-mono text-[11.5px]">{r.refNumber}</span> },
-                  { key: "k", label: "Kind",      render: (r) => r.kind },
-                  { key: "f", label: "Format",    render: (r) => <StatusBadge label={r.format} tone="info" /> },
-                  { key: "v", label: "Vessel",    render: (r) => r.linkedVesselId ? vesselById(r.linkedVesselId)?.name : "—" },
-                  { key: "u", label: "Uploaded",  render: (r) => fmtTime(r.uploadedAt) },
-                  { key: "b", label: "By",        render: (r) => r.uploadedBy },
-                  { key: "i", label: "Case",      render: (r) => <span className="font-mono text-[11px]">{r.linkedInvestigation ?? "—"}</span> },
-                  { key: "c", label: "Confidence", align: "right", render: (r) => <ConfidenceChip tier={r.confidence} size={9} /> },
+                  {
+                    key: "r",
+                    label: "Reference",
+                    render: (r: (typeof EVIDENCE)[number]) => (
+                      <span className="font-mono text-[11.5px]">{r.refNumber}</span>
+                    ),
+                  },
+                  { key: "k", label: "Kind", render: (r) => r.kind },
+                  {
+                    key: "f",
+                    label: "Format",
+                    render: (r) => <StatusBadge label={r.format} tone="info" />,
+                  },
+                  {
+                    key: "v",
+                    label: "Vessel",
+                    render: (r) => (r.linkedVesselId ? vesselById(r.linkedVesselId)?.name : "—"),
+                  },
+                  { key: "u", label: "Uploaded", render: (r) => fmtTime(r.uploadedAt) },
+                  { key: "b", label: "By", render: (r) => r.uploadedBy },
+                  {
+                    key: "i",
+                    label: "Case",
+                    render: (r) => (
+                      <span className="font-mono text-[11px]">{r.linkedInvestigation ?? "—"}</span>
+                    ),
+                  },
+                  {
+                    key: "c",
+                    label: "Confidence",
+                    align: "right",
+                    render: (r) => <ConfidenceChip tier={r.confidence} size={9} />,
+                  },
                 ]}
                 rows={EVIDENCE}
                 rowKey={(r) => r.id}
@@ -112,13 +223,17 @@ export function EvidenceCentre() {
 
           {/* EVI-3 detail + custody */}
           <Section title="Evidence Detail">
-            <div className="mb-2 text-[13px] font-semibold text-foreground">{selected.refNumber}</div>
-            <div className="text-[11px] text-slate">{selected.kind} · {selected.format} · {selected.sizeKb} KB</div>
+            <div className="mb-2 text-[13px] font-semibold text-foreground">
+              {selected.refNumber}
+            </div>
+            <div className="text-[11px] text-slate">
+              {selected.kind} · {selected.format} · {selected.sizeKb} KB
+            </div>
             <div className="mt-3 space-y-1.5 text-[11.5px]">
-              <RowKV k="Vessel"        v={vessel?.name ?? "—"} />
+              <RowKV k="Vessel" v={vessel?.name ?? "—"} />
               <RowKV k="Investigation" v={selected.linkedInvestigation ?? "—"} />
-              <RowKV k="Uploaded"      v={fmtTime(selected.uploadedAt)} />
-              <RowKV k="Uploaded by"   v={selected.uploadedBy} />
+              <RowKV k="Uploaded" v={fmtTime(selected.uploadedAt)} />
+              <RowKV k="Uploaded by" v={selected.uploadedBy} />
               <div className="flex items-center justify-between">
                 <span className="text-slate">Confidence</span>
                 <ConfidenceChip tier={selected.confidence} size={11} />
@@ -126,18 +241,29 @@ export function EvidenceCentre() {
             </div>
 
             <div className="mt-3">
-              <div className="mb-1 text-[10.5px] uppercase tracking-[0.06em] text-slate">Chain of Custody</div>
+              <div className="mb-1 text-[10.5px] uppercase tracking-[0.06em] text-slate">
+                Chain of Custody
+              </div>
               <ol className="space-y-1.5">
                 {[
                   { at: fmtTime(selected.uploadedAt), by: selected.uploadedBy, action: "Uploaded" },
-                  { at: fmtTime(selected.uploadedAt), by: "System",            action: "SHA-256 recorded" },
-                  { at: fmtTime(selected.uploadedAt), by: "System",            action: "Linked to " + (selected.linkedInvestigation ?? "n/a") },
+                  { at: fmtTime(selected.uploadedAt), by: "System", action: "SHA-256 recorded" },
+                  {
+                    at: fmtTime(selected.uploadedAt),
+                    by: "System",
+                    action: "Linked to " + (selected.linkedInvestigation ?? "n/a"),
+                  },
                 ].map((s, i) => (
-                  <li key={i} className="flex items-start gap-2 rounded border border-line/50 bg-surface/50 p-1.5 text-[11px]">
+                  <li
+                    key={i}
+                    className="flex items-start gap-2 rounded border border-line/50 bg-surface/50 p-1.5 text-[11px]"
+                  >
                     <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--color-blue)]" />
                     <div>
                       <div className="text-foreground/90">{s.action}</div>
-                      <div className="text-[10px] text-slate">{s.at} · {s.by}</div>
+                      <div className="text-[10px] text-slate">
+                        {s.at} · {s.by}
+                      </div>
                     </div>
                   </li>
                 ))}
@@ -150,18 +276,32 @@ export function EvidenceCentre() {
         <CentreCopilot
           name="Evidence Copilot"
           observed={[
-            { title: "Manifest + BOL agree",  detail: "MSC-OP-2412-01 hashes align across submissions.", confidence: "verified" },
-            { title: "Photo metadata intact", detail: "IMG-DS-1907-A EXIF preserved, no re-encode observed.", confidence: "observed" },
+            {
+              title: "Manifest + BOL agree",
+              detail: "MSC-OP-2412-01 hashes align across submissions.",
+              confidence: "verified",
+            },
+            {
+              title: "Photo metadata intact",
+              detail: "IMG-DS-1907-A EXIF preserved, no re-encode observed.",
+              confidence: "observed",
+            },
           ]}
           recommendations={[
-            { title: "Request additional PSC certificate", detail: "For MT Gulf Trader before berth allocation.", confidence: "observed" },
+            {
+              title: "Request additional PSC certificate",
+              detail: "For MT Gulf Trader before berth allocation.",
+              confidence: "observed",
+            },
           ]}
           historical={[
-            { title: "Similar bundle · Q1 2026", detail: "Same evidence pattern supported clean clearance.", similarity: 66 },
+            {
+              title: "Similar bundle · Q1 2026",
+              detail: "Same evidence pattern supported clean clearance.",
+              similarity: 66,
+            },
           ]}
-          related={[
-            { ref: "INV-2412-01", title: "Ocean Pearl duty variance", status: "Open" },
-          ]}
+          related={[{ ref: "INV-2412-01", title: "Ocean Pearl duty variance", status: "Open" }]}
         />
       }
     />

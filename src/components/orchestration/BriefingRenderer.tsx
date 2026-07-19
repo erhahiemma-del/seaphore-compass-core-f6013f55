@@ -10,13 +10,24 @@
  *   "Evidence first. Explainable always. Officer decides."
  */
 import { useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight,
-  ShieldAlert, Sparkles } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  ShieldAlert,
+  Sparkles,
+} from "lucide-react";
 import { EVIDENCE_GRADES } from "@/services/orchestration/constants";
-import type { Briefing, BriefingSection, EvidenceGrade,
-  OverrideDecision } from "@/services/orchestration";
+import type {
+  Briefing,
+  BriefingSection,
+  EvidenceGrade,
+  OverrideDecision,
+} from "@/services/orchestration";
 
-type SectionPayload<K extends keyof import("@/services/orchestration").SectionPayloads> = import("@/services/orchestration").SectionPayloads[K];
+type SectionPayload<K extends keyof import("@/services/orchestration").SectionPayloads> =
+  import("@/services/orchestration").SectionPayloads[K];
 
 interface Props {
   briefing: Briefing;
@@ -59,10 +70,16 @@ export function BriefingRenderer({ briefing, onOverride }: Props) {
         {byKind.has("why_this_matters") && (
           <Section title="Why This Matters">
             <div className="flex flex-wrap items-center gap-2 text-xs">
-              {(byKind.get("why_this_matters")!.payload as SectionPayload<"why_this_matters">).chain.map((step, i) => (
+              {(
+                byKind.get("why_this_matters")!.payload as SectionPayload<"why_this_matters">
+              ).chain.map((step, i) => (
                 <span key={i} className="flex items-center gap-2">
-                  <span className="rounded-md border bg-muted/40 px-2 py-1 font-medium">{step.step}</span>
-                  <span className="text-muted-foreground">{step.from} → {step.to}</span>
+                  <span className="rounded-md border bg-muted/40 px-2 py-1 font-medium">
+                    {step.step}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {step.from} → {step.to}
+                  </span>
                   {i < 4 && <ChevronRight className="h-3 w-3 text-muted-foreground" />}
                 </span>
               ))}
@@ -74,9 +91,13 @@ export function BriefingRenderer({ briefing, onOverride }: Props) {
         {byKind.has("critical_findings") && (
           <Section title="Critical Findings">
             <ul className="space-y-2">
-              {(byKind.get("critical_findings")!.payload as SectionPayload<"critical_findings">).findings.map((f, i) => (
+              {(
+                byKind.get("critical_findings")!.payload as SectionPayload<"critical_findings">
+              ).findings.map((f, i) => (
                 <li key={i} className="flex items-start gap-3 rounded-md border p-3">
-                  <PriorityBadge priority={f.priority as "immediate" | "today" | "monitor" | "archive"} />
+                  <PriorityBadge
+                    priority={f.priority as "immediate" | "today" | "monitor" | "archive"}
+                  />
                   <div className="flex-1">
                     <p className="text-sm">{f.title}</p>
                     <p className="text-xs text-muted-foreground">
@@ -93,7 +114,9 @@ export function BriefingRenderer({ briefing, onOverride }: Props) {
         {byKind.has("verified_evidence") && (
           <Section title="Verified Evidence">
             <div className="grid gap-3 md:grid-cols-2">
-              {(byKind.get("verified_evidence")!.payload as SectionPayload<"verified_evidence">).items.map((item, i) => (
+              {(
+                byKind.get("verified_evidence")!.payload as SectionPayload<"verified_evidence">
+              ).items.map((item, i) => (
                 <div key={i} className="rounded-md border bg-background p-3">
                   <div className="mb-2 flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-emerald-600" />
@@ -110,7 +133,9 @@ export function BriefingRenderer({ briefing, onOverride }: Props) {
         {byKind.has("observed_patterns") && (
           <Section title="Observed Patterns">
             <ul className="space-y-2">
-              {(byKind.get("observed_patterns")!.payload as SectionPayload<"observed_patterns">).patterns.map((p, i) => (
+              {(
+                byKind.get("observed_patterns")!.payload as SectionPayload<"observed_patterns">
+              ).patterns.map((p, i) => (
                 <li key={i} className="rounded-md border p-3">
                   <p className="text-sm">{p.pattern}</p>
                   {p.caseRefs.length > 0 && (
@@ -131,7 +156,12 @@ export function BriefingRenderer({ briefing, onOverride }: Props) {
               Analytical conclusion
             </p>
             <p className="mt-1 text-sm leading-relaxed">
-              {(byKind.get("analytical_assessment")!.payload as SectionPayload<"analytical_assessment">).text}
+              {
+                (
+                  byKind.get("analytical_assessment")!
+                    .payload as SectionPayload<"analytical_assessment">
+                ).text
+              }
             </p>
             {/* 12. Explainability Chain — collapsible below analytical assessment */}
             {byKind.has("explainability_chain") && (
@@ -140,14 +170,23 @@ export function BriefingRenderer({ briefing, onOverride }: Props) {
                 onClick={() => setChainOpen((v) => !v)}
                 className="mt-2 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
               >
-                {chainOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                {chainOpen ? (
+                  <ChevronDown className="h-3 w-3" />
+                ) : (
+                  <ChevronRight className="h-3 w-3" />
+                )}
                 Why Chain
               </button>
             )}
             {chainOpen && (
               <ol className="mt-2 list-decimal space-y-1 pl-6 text-xs text-muted-foreground">
-                {(byKind.get("explainability_chain")!.payload as SectionPayload<"explainability_chain">).chain.map((c, i) => (
-                  <li key={i}>{c.step}: {c.from} → {c.to}</li>
+                {(
+                  byKind.get("explainability_chain")!
+                    .payload as SectionPayload<"explainability_chain">
+                ).chain.map((c, i) => (
+                  <li key={i}>
+                    {c.step}: {c.from} → {c.to}
+                  </li>
                 ))}
               </ol>
             )}
@@ -162,12 +201,18 @@ export function BriefingRenderer({ briefing, onOverride }: Props) {
               onClick={() => setCounterOpen((v) => !v)}
               className="flex items-center gap-2 text-xs font-semibold text-muted-foreground"
             >
-              {counterOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+              {counterOpen ? (
+                <ChevronDown className="h-3 w-3" />
+              ) : (
+                <ChevronRight className="h-3 w-3" />
+              )}
               Counter-Hypotheses
             </button>
             {counterOpen && (
               <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-muted-foreground">
-                {(byKind.get("counter_hypotheses")!.payload as SectionPayload<"counter_hypotheses">).list.map((c, i) => (
+                {(
+                  byKind.get("counter_hypotheses")!.payload as SectionPayload<"counter_hypotheses">
+                ).list.map((c, i) => (
                   <li key={i}>{c}</li>
                 ))}
               </ul>
@@ -177,12 +222,22 @@ export function BriefingRenderer({ briefing, onOverride }: Props) {
 
         {/* 14. Intelligence Gaps */}
         {byKind.has("intelligence_gaps") && (
-          <Section title="Intelligence Gaps" icon={<AlertTriangle className="h-4 w-4 text-amber-500" />}>
+          <Section
+            title="Intelligence Gaps"
+            icon={<AlertTriangle className="h-4 w-4 text-amber-500" />}
+          >
             <ul className="space-y-1 text-sm">
-              {(byKind.get("intelligence_gaps")!.payload as SectionPayload<"intelligence_gaps">).list.map((g, i) => (
-                <li key={i} className="flex items-start justify-between gap-3 rounded-md border p-2">
+              {(
+                byKind.get("intelligence_gaps")!.payload as SectionPayload<"intelligence_gaps">
+              ).list.map((g, i) => (
+                <li
+                  key={i}
+                  className="flex items-start justify-between gap-3 rounded-md border p-2"
+                >
                   <span>{g}</span>
-                  <button type="button" className="text-xs text-primary hover:underline">Request</button>
+                  <button type="button" className="text-xs text-primary hover:underline">
+                    Request
+                  </button>
                 </li>
               ))}
             </ul>
@@ -194,7 +249,8 @@ export function BriefingRenderer({ briefing, onOverride }: Props) {
           <Section title="Decision Impact">
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
               {(["revenue", "security", "operational", "cargo"] as const).map((k) => {
-                const val = (byKind.get("decision_impact")!.payload as Record<string, number>)[k] ?? 0;
+                const val =
+                  (byKind.get("decision_impact")!.payload as Record<string, number>)[k] ?? 0;
                 return (
                   <div key={k} className="rounded-md border bg-background p-3 text-center">
                     <p className="text-[10px] uppercase text-muted-foreground">{k}</p>
@@ -212,11 +268,19 @@ export function BriefingRenderer({ briefing, onOverride }: Props) {
             <div>
               <p className="font-medium">Decision required</p>
               <p className="text-xs text-muted-foreground">
-                Deadline: {new Date((byKind.get("decision_required")!.payload as SectionPayload<"decision_required">).deadline).toUTCString()}
+                Deadline:{" "}
+                {new Date(
+                  (byKind.get("decision_required")!.payload as SectionPayload<"decision_required">)
+                    .deadline,
+                ).toUTCString()}
               </p>
             </div>
             <span className="rounded-full bg-orange-200 px-3 py-1 text-xs font-semibold uppercase text-orange-900 dark:bg-orange-800 dark:text-orange-100">
-              Risk: {(byKind.get("decision_required")!.payload as SectionPayload<"decision_required">).risk}
+              Risk:{" "}
+              {
+                (byKind.get("decision_required")!.payload as SectionPayload<"decision_required">)
+                  .risk
+              }
             </span>
           </div>
         )}
@@ -225,12 +289,16 @@ export function BriefingRenderer({ briefing, onOverride }: Props) {
         {byKind.has("officer_actions") && (
           <Section title="Officer Actions">
             <ul className="space-y-2">
-              {(byKind.get("officer_actions")!.payload as SectionPayload<"officer_actions">).actions.map((a) => {
+              {(
+                byKind.get("officer_actions")!.payload as SectionPayload<"officer_actions">
+              ).actions.map((a) => {
                 const enabled = override === "agree" || override === "modify";
                 return (
                   <li key={a.id} className="flex items-center gap-3 rounded-md border p-2">
                     <input type="checkbox" disabled={!enabled} className="h-4 w-4" />
-                    <label className={enabled ? "text-sm" : "text-sm text-muted-foreground"}>{a.label}</label>
+                    <label className={enabled ? "text-sm" : "text-sm text-muted-foreground"}>
+                      {a.label}
+                    </label>
                   </li>
                 );
               })}
@@ -274,9 +342,21 @@ export function BriefingRenderer({ briefing, onOverride }: Props) {
         {byKind.has("evidence_sources") && (
           <div className="rounded-md border bg-background p-3 text-xs text-muted-foreground">
             <ShieldAlert className="mr-2 inline h-3 w-3" />
-            {(byKind.get("evidence_sources")!.payload as SectionPayload<"evidence_sources">).queried} queried ·{" "}
-            {(byKind.get("evidence_sources")!.payload as SectionPayload<"evidence_sources">).responded} responded ·{" "}
-            {(byKind.get("evidence_sources")!.payload as SectionPayload<"evidence_sources">).corroborated} corroborated
+            {
+              (byKind.get("evidence_sources")!.payload as SectionPayload<"evidence_sources">)
+                .queried
+            }{" "}
+            queried ·{" "}
+            {
+              (byKind.get("evidence_sources")!.payload as SectionPayload<"evidence_sources">)
+                .responded
+            }{" "}
+            responded ·{" "}
+            {
+              (byKind.get("evidence_sources")!.payload as SectionPayload<"evidence_sources">)
+                .corroborated
+            }{" "}
+            corroborated
           </div>
         )}
 
@@ -284,8 +364,14 @@ export function BriefingRenderer({ briefing, onOverride }: Props) {
         {byKind.has("next_questions") && (
           <Section title="Next Intelligence Questions">
             <div className="flex flex-wrap gap-2">
-              {(byKind.get("next_questions")!.payload as SectionPayload<"next_questions">).questions.map((q, i) => (
-                <button key={i} type="button" className="rounded-full border bg-background px-3 py-1 text-xs hover:bg-muted">
+              {(
+                byKind.get("next_questions")!.payload as SectionPayload<"next_questions">
+              ).questions.map((q, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className="rounded-full border bg-background px-3 py-1 text-xs hover:bg-muted"
+                >
                   {q}
                 </button>
               ))}
@@ -310,7 +396,9 @@ function ClassificationBanner({ briefing }: { briefing: Briefing }) {
         <span className="rounded-md bg-primary/10 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
           {briefing.classification.typeBadge}
         </span>
-        <span className={`rounded-md px-2 py-1 text-xs font-medium capitalize ${tierClass(m.tier)}`}>
+        <span
+          className={`rounded-md px-2 py-1 text-xs font-medium capitalize ${tierClass(m.tier)}`}
+        >
           Confidence: {m.tier} ({Math.round(m.composite * 100)}%)
         </span>
         <span className="rounded-md border px-2 py-1 text-xs capitalize text-muted-foreground">
@@ -324,11 +412,20 @@ function ClassificationBanner({ briefing }: { briefing: Briefing }) {
   );
 }
 
-function Section({ title, icon, children }: { title: string; icon?: React.ReactNode; children: React.ReactNode }) {
+function Section({
+  title,
+  icon,
+  children,
+}: {
+  title: string;
+  icon?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <section>
       <h3 className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        {icon}{title}
+        {icon}
+        {title}
       </h3>
       {children}
     </section>
@@ -351,9 +448,9 @@ function GradeChip({ grade }: { grade: EvidenceGrade }) {
 function PriorityBadge({ priority }: { priority: "immediate" | "today" | "monitor" | "archive" }) {
   const map = {
     immediate: "bg-red-500/15 text-red-700 dark:text-red-300",
-    today:     "bg-orange-500/15 text-orange-700 dark:text-orange-300",
-    monitor:   "bg-yellow-500/15 text-yellow-800 dark:text-yellow-300",
-    archive:   "bg-muted text-muted-foreground",
+    today: "bg-orange-500/15 text-orange-700 dark:text-orange-300",
+    monitor: "bg-yellow-500/15 text-yellow-800 dark:text-yellow-300",
+    archive: "bg-muted text-muted-foreground",
   } as const;
   return (
     <span className={`rounded px-2 py-0.5 text-[10px] font-semibold uppercase ${map[priority]}`}>
@@ -366,6 +463,6 @@ function tierClass(tier: "low" | "medium" | "high") {
   return tier === "high"
     ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
     : tier === "medium"
-    ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
-    : "bg-red-500/15 text-red-700 dark:text-red-300";
+      ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+      : "bg-red-500/15 text-red-700 dark:text-red-300";
 }

@@ -18,14 +18,14 @@ import type { ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
 export interface EvidenceItem {
   id: string;
   label: string;
-  sourceId: string;     // registered in authoritative-sources when verified
+  sourceId: string; // registered in authoritative-sources when verified
   sourceName: string;
   tier: ConfidenceTier;
-  retrievedAt: string;  // ISO 8601 UTC
+  retrievedAt: string; // ISO 8601 UTC
 }
 
 export interface AuditEntry {
-  at: string;           // ISO 8601 UTC
+  at: string; // ISO 8601 UTC
   officerId: string;
   officerName: string;
   action: string;

@@ -12,18 +12,16 @@ export const QUERY_KEYS = {
   voyages: (id?: string) => (id ? (["voyages", id] as const) : (["voyages"] as const)),
   investigations: (id?: string) =>
     id ? (["investigations", id] as const) : (["investigations"] as const),
-  signals: (domain?: string) =>
-    domain ? (["signals", domain] as const) : (["signals"] as const),
-  manifests: (id?: string) =>
-    id ? (["manifests", id] as const) : (["manifests"] as const),
+  signals: (domain?: string) => (domain ? (["signals", domain] as const) : (["signals"] as const)),
+  manifests: (id?: string) => (id ? (["manifests", id] as const) : (["manifests"] as const)),
   revenue: () => ["revenue", "summary"] as const,
   ports: () => ["ports", "congestion"] as const,
   // Cross-cutting infrastructure keys
   dataSources: () => ["data-sources"] as const,
   dataSourceHealthHistory: (sourceId: string, limit?: number) =>
-    (limit != null
+    limit != null
       ? (["data-sources", "health-history", sourceId, limit] as const)
-      : (["data-sources", "health-history", sourceId] as const)),
+      : (["data-sources", "health-history", sourceId] as const),
   authRoles: (userId?: string) =>
     userId ? (["auth", "roles", userId] as const) : (["auth", "roles"] as const),
   evidenceLibrary: () => ["evidence", "library"] as const,

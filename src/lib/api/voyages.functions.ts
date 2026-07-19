@@ -19,16 +19,11 @@ export const listVoyages = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const from = (data.page - 1) * data.pageSize;
     const to = from + data.pageSize - 1;
-    let q = context.supabase
-      .from("voyages")
-      .select("*", { count: "exact" })
-      .range(from, to);
+    let q = context.supabase.from("voyages").select("*", { count: "exact" }).range(from, to);
     if (data.vesselId) q = q.eq("vessel_id", data.vesselId);
     if (data.status) q = q.eq("status", data.status as never);
     if (data.portId)
-      q = q.or(
-        `origin_port_id.eq.${data.portId},destination_port_id.eq.${data.portId}`,
-      );
+      q = q.or(`origin_port_id.eq.${data.portId},destination_port_id.eq.${data.portId}`);
     if (data.from) q = q.gte("etd", data.from);
     if (data.to) q = q.lte("eta", data.to);
     const { data: rows, error, count } = await q;
@@ -54,10 +49,7 @@ export const getVoyage = createServerFn({ method: "GET" })
     ]);
     const manifestIds = (manifests ?? []).map((m) => m.id as string);
     const { data: cargo } = manifestIds.length
-      ? await context.supabase
-          .from("cargo_items")
-          .select("*")
-          .in("manifest_id", manifestIds)
+      ? await context.supabase.from("cargo_items").select("*").in("manifest_id", manifestIds)
       : { data: [] };
     return envelope({ ...voyage, manifests, cargo: cargo ?? [], documents });
   });

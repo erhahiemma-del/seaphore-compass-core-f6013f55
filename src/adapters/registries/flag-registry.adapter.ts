@@ -7,10 +7,17 @@ import { BaseAdapter, type HealthReport } from "../base-adapter";
 import type { SourcedResult } from "../status";
 
 export type FlagState = "Panama" | "Liberia" | "Marshall Islands" | "Other";
-export interface FlagStatus { imo: string; flag: FlagState; registryStatus: "IN_GOOD_STANDING" | "UNKNOWN"; verifiedAt: string }
+export interface FlagStatus {
+  imo: string;
+  flag: FlagState;
+  registryStatus: "IN_GOOD_STANDING" | "UNKNOWN";
+  verifiedAt: string;
+}
 
 export class FlagRegistryAdapter extends BaseAdapter {
-  constructor() { super("flag_registry"); }
+  constructor() {
+    super("flag_registry");
+  }
   async verify(imo: string, flag: FlagState): Promise<SourcedResult<FlagStatus>> {
     this.assertUsable();
     return this.envelope<FlagStatus>(

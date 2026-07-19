@@ -8,8 +8,13 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { orchestrate, captureOverride, evaluatePolicy, recordActionUsage,
-  type Permission } from "@/services/orchestration";
+import {
+  orchestrate,
+  captureOverride,
+  evaluatePolicy,
+  recordActionUsage,
+  type Permission,
+} from "@/services/orchestration";
 
 interface QueryInput {
   query: string;

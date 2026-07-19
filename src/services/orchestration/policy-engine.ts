@@ -13,11 +13,11 @@ export type Permission =
   | "CAN_FREEZE_CLEARANCE";
 
 const PERMISSION_ROLES: Record<Permission, string[]> = {
-  CAN_CREATE_CASE:         ["officer", "director", "admin"],
-  CAN_NOTIFY_CUSTOMS:      ["officer", "director", "admin"],
-  CAN_REQUEST_DOCUMENTS:   ["analyst", "officer", "director", "admin"],
-  CAN_ASSIGN_OFFICERS:     ["director", "admin"],
-  CAN_FREEZE_CLEARANCE:    ["director", "admin"],
+  CAN_CREATE_CASE: ["officer", "director", "admin"],
+  CAN_NOTIFY_CUSTOMS: ["officer", "director", "admin"],
+  CAN_REQUEST_DOCUMENTS: ["analyst", "officer", "director", "admin"],
+  CAN_ASSIGN_OFFICERS: ["director", "admin"],
+  CAN_FREEZE_CLEARANCE: ["director", "admin"],
 };
 
 const DAILY_LIMIT: Record<Permission, number> = {

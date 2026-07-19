@@ -15,12 +15,7 @@
  * - NOT_IN_SCOPE → adapter refuses; feature is not shipped
  */
 
-export type SourceStatus =
-  | "ACTIVE"
-  | "PARTIAL"
-  | "PLANNED"
-  | "INFERRED"
-  | "NOT_IN_SCOPE";
+export type SourceStatus = "ACTIVE" | "PARTIAL" | "PLANNED" | "INFERRED" | "NOT_IN_SCOPE";
 
 export type SourceKind =
   | "ais"
@@ -40,12 +35,7 @@ export type SourceKind =
   | "ocr"
   | "ai";
 
-export type SourceScope =
-  | "osint"
-  | "commercial"
-  | "internal"
-  | "user"
-  | "ai";
+export type SourceScope = "osint" | "commercial" | "internal" | "user" | "ai";
 
 export type ConfidenceLabel =
   | "VERIFIED"
@@ -71,7 +61,10 @@ export interface SourceRegistryEntry {
 /** Thrown when feature code calls a PLANNED source. Never rendered as data. */
 export class PlannedSourceError extends Error {
   readonly code = "SOURCE_PLANNED";
-  constructor(public readonly sourceId: string, public readonly provider: string) {
+  constructor(
+    public readonly sourceId: string,
+    public readonly provider: string,
+  ) {
     super(
       `[Seaphore] Source "${sourceId}" (${provider}) is PLANNED. ` +
         `No live data available — UI must show last-known + timestamp.`,
@@ -92,7 +85,7 @@ export interface SourcedResult<T> {
   data: T | null;
   source: SourceRegistryEntry;
   observedAt: string; // ISO timestamp of the underlying observation
-  fetchedAt: string;  // ISO timestamp when Seaphore retrieved it
+  fetchedAt: string; // ISO timestamp when Seaphore retrieved it
   confidence: ConfidenceLabel;
   /** True when {@link data} was computed by Seaphore, not observed. */
   inferred?: boolean;

@@ -12,8 +12,14 @@ import { supabase } from "@/integrations/supabase/client";
 
 function normalizeGrade(g: string | null | undefined): EvidenceItem["grade"] {
   const up = (g ?? "").toUpperCase();
-  if (up === "VERIFIED" || up === "CORROBORATED" || up === "OBSERVED" ||
-      up === "REPORTED" || up === "INFERRED") return up;
+  if (
+    up === "VERIFIED" ||
+    up === "CORROBORATED" ||
+    up === "OBSERVED" ||
+    up === "REPORTED" ||
+    up === "INFERRED"
+  )
+    return up;
   return "UNKNOWN";
 }
 
@@ -39,9 +45,7 @@ async function retrieveEvidence(intent: Intent, limit = 25): Promise<EvidenceIte
     observed_at: string | null;
   }>;
   const wanted = new Set(intent.entities.map((e) => e.value));
-  const filtered = wanted.size
-    ? rows.filter((r) => (r.entity_id && wanted.has(r.entity_id)))
-    : rows;
+  const filtered = wanted.size ? rows.filter((r) => r.entity_id && wanted.has(r.entity_id)) : rows;
   return filtered.map((r) => ({
     id: r.id,
     grade: normalizeGrade(r.confidence),
@@ -56,8 +60,12 @@ const ownershipAgent: SpecialistAgent = {
   id: "ownership",
   handles: ["OWNERSHIP_ANALYSIS", "RELATIONSHIP_DISCOVERY", "SANCTIONS_SCREENING"],
   retrieve: (cap, intent, _q) =>
-    runRetrieval("ownership", cap, cap === "SANCTIONS_SCREENING" ? "OpenSanctions" : "CAC + IMO",
-      () => retrieveEvidence(intent)),
+    runRetrieval(
+      "ownership",
+      cap,
+      cap === "SANCTIONS_SCREENING" ? "OpenSanctions" : "CAC + IMO",
+      () => retrieveEvidence(intent),
+    ),
 };
 
 const revenueAgent: SpecialistAgent = {
@@ -91,11 +99,15 @@ const evidenceAgent: SpecialistAgent = {
 const forecastAgent: SpecialistAgent = {
   id: "forecast",
   handles: ["PATTERN_DETECTION", "RISK_SCORING"],
-  retrieve: async (cap, intent, _q) => runRetrieval("forecast", cap, "Historical Cases", async () => {
-    const evidence = await retrieveEvidence(intent, 30);
-    // Pattern agent labels its outputs INFERRED unless corroboration exists.
-    return evidence.map((e) => ({ ...e, grade: (e.grade === "VERIFIED" ? "VERIFIED" : "INFERRED") as EvidenceItem["grade"] }));
-  }),
+  retrieve: async (cap, intent, _q) =>
+    runRetrieval("forecast", cap, "Historical Cases", async () => {
+      const evidence = await retrieveEvidence(intent, 30);
+      // Pattern agent labels its outputs INFERRED unless corroboration exists.
+      return evidence.map((e) => ({
+        ...e,
+        grade: (e.grade === "VERIFIED" ? "VERIFIED" : "INFERRED") as EvidenceItem["grade"],
+      }));
+    }),
 };
 
 export const SPECIALIST_AGENTS: Record<string, SpecialistAgent> = {

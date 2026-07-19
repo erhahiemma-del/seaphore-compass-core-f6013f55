@@ -70,10 +70,7 @@ export function DetectPage() {
   const counts = data?.countsByDomain ?? ({ All: 0 } as Record<SignalDomain | "All", number>);
   const ribbon = data?.ribbon;
 
-  const topHigh = useMemo(
-    () => signals.filter((s) => s.risk === "HIGH").slice(0, 5),
-    [signals],
-  );
+  const topHigh = useMemo(() => signals.filter((s) => s.risk === "HIGH").slice(0, 5), [signals]);
 
   const openSignal = (s: Signal) =>
     handoff({
@@ -110,8 +107,8 @@ export function DetectPage() {
           <PanelCard>
             <PanelHead title="Signal feed unavailable" meta="Retry" />
             <p className="text-[12px] text-slate">
-              The Detect service could not reach the signal store. This may be a network
-              issue or session expiry.
+              The Detect service could not reach the signal store. This may be a network issue or
+              session expiry.
             </p>
             <button
               type="button"
@@ -133,11 +130,46 @@ export function DetectPage() {
               confidence={ribbon?.confidence ?? "observed"}
               icon={Radar}
             />
-            <KpiTile label="High Risk" value={ribbon?.high.value ?? 0} delta={ribbon?.high.delta ?? 0} confidence="observed" icon={AlertTriangle} accentHex="#C0392B" />
-            <KpiTile label="Medium Risk" value={ribbon?.medium.value ?? 0} delta={ribbon?.medium.delta ?? 0} confidence="observed" icon={Gauge} accentHex="#B06A00" />
-            <KpiTile label="Low Risk" value={ribbon?.low.value ?? 0} delta={ribbon?.low.delta ?? 0} confidence="observed" icon={ThumbsUp} accentHex="#1E6B3A" />
-            <KpiTile label="New Signals" value={ribbon?.fresh.value ?? 0} delta={ribbon?.fresh.delta ?? 0} confidence="observed" icon={BellRing} accentHex="#2563EB" />
-            <KpiTile label="Acknowledged" value={ribbon?.ack.value ?? 0} delta={ribbon?.ack.delta ?? 0} confidence="observed" icon={CheckCheck} accentHex="#0E7C7B" />
+            <KpiTile
+              label="High Risk"
+              value={ribbon?.high.value ?? 0}
+              delta={ribbon?.high.delta ?? 0}
+              confidence="observed"
+              icon={AlertTriangle}
+              accentHex="#C0392B"
+            />
+            <KpiTile
+              label="Medium Risk"
+              value={ribbon?.medium.value ?? 0}
+              delta={ribbon?.medium.delta ?? 0}
+              confidence="observed"
+              icon={Gauge}
+              accentHex="#B06A00"
+            />
+            <KpiTile
+              label="Low Risk"
+              value={ribbon?.low.value ?? 0}
+              delta={ribbon?.low.delta ?? 0}
+              confidence="observed"
+              icon={ThumbsUp}
+              accentHex="#1E6B3A"
+            />
+            <KpiTile
+              label="New Signals"
+              value={ribbon?.fresh.value ?? 0}
+              delta={ribbon?.fresh.delta ?? 0}
+              confidence="observed"
+              icon={BellRing}
+              accentHex="#2563EB"
+            />
+            <KpiTile
+              label="Acknowledged"
+              value={ribbon?.ack.value ?? 0}
+              delta={ribbon?.ack.delta ?? 0}
+              confidence="observed"
+              icon={CheckCheck}
+              accentHex="#0E7C7B"
+            />
           </div>
           <ConfidenceLegend />
         </section>
@@ -165,7 +197,9 @@ export function DetectPage() {
             {isLoading ? (
               <div className="type-small text-slate">Loading signals…</div>
             ) : topHigh.length === 0 ? (
-              <div className="type-small text-slate">No high-risk signals in the selected domain.</div>
+              <div className="type-small text-slate">
+                No high-risk signals in the selected domain.
+              </div>
             ) : (
               <SignalList signals={topHigh} onOpen={openSignal} />
             )}
@@ -211,15 +245,21 @@ export function DetectPage() {
                       <div className="text-[11px] text-slate">{s.detail}</div>
                     </td>
                     <td className="px-3 py-2 text-foreground/80">{s.domain}</td>
-                    <td className="px-3 py-2"><RiskPill level={s.risk} /></td>
-                    <td className="px-3 py-2"><ConfidenceChip tier={s.confidence} size={9} /></td>
+                    <td className="px-3 py-2">
+                      <RiskPill level={s.risk} />
+                    </td>
+                    <td className="px-3 py-2">
+                      <ConfidenceChip tier={s.confidence} size={9} />
+                    </td>
                     <td className="px-3 py-2 text-slate">{s.detectedLabel}</td>
                     <td className="px-3 py-2">
-                      <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${
-                        s.status === "NEW"
-                          ? "bg-[color:var(--color-blue)]/10 text-[color:var(--color-blue)]"
-                          : "bg-surface-2 text-slate"
-                      }`}>
+                      <span
+                        className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${
+                          s.status === "NEW"
+                            ? "bg-[color:var(--color-blue)]/10 text-[color:var(--color-blue)]"
+                            : "bg-surface-2 text-slate"
+                        }`}
+                      >
                         {s.status}
                       </span>
                     </td>
@@ -252,8 +292,8 @@ export function DetectPage() {
         {/* DET-10 Footer */}
         <p className="rounded-md border border-line bg-surface-2/60 px-4 py-2 text-[11px] text-slate">
           <Bell className="mr-1 inline h-3 w-3 -mt-0.5" />
-          Confidence levels are assigned per OC-001 Confidence Ladder. Click any
-          signal to view evidence and sources.
+          Confidence levels are assigned per OC-001 Confidence Ladder. Click any signal to view
+          evidence and sources.
         </p>
       </div>
     </AppShell>

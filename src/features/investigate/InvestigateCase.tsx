@@ -44,8 +44,6 @@ import {
   type Investigation,
 } from "@/lib/lifecycle-data";
 
-
-
 /**
  * INV — Investigate / Voyage Workspace.
  *
@@ -59,12 +57,7 @@ export function InvestigateWorkspace() {
   return <Workspace inv={inv} />;
 }
 
-type LeftPanelKey =
-  | "timeline"
-  | "evidence"
-  | "documents"
-  | "history"
-  | "notes";
+type LeftPanelKey = "timeline" | "evidence" | "documents" | "history" | "notes";
 
 function Workspace({ inv }: { inv: Investigation }) {
   const [domain, setDomain] = useState("Overview");
@@ -72,9 +65,7 @@ function Workspace({ inv }: { inv: Investigation }) {
   const [bottomTab, setBottomTab] = useState<
     "findings" | "rules" | "evidence" | "audit" | "downloads"
   >("findings");
-  const [selectedFinding, setSelectedFinding] = useState<number>(
-    AI_FINDINGS[0].id,
-  );
+  const [selectedFinding, setSelectedFinding] = useState<number>(AI_FINDINGS[0].id);
   const [selectedEntity, setSelectedEntity] = useState<GraphNode | null>(null);
   const kgRef = useRef<KnowledgeGraphHandle>(null);
 
@@ -92,9 +83,7 @@ function Workspace({ inv }: { inv: Investigation }) {
 
   const filteredEvidence = selectedEntity
     ? EVIDENCE_ITEMS.filter((e) =>
-        `${e.title} ${e.source}`
-          .toLowerCase()
-          .includes(selectedEntity.label.toLowerCase()),
+        `${e.title} ${e.source}`.toLowerCase().includes(selectedEntity.label.toLowerCase()),
       )
     : EVIDENCE_ITEMS;
   const evidenceToShow = filteredEvidence.length ? filteredEvidence : EVIDENCE_ITEMS;
@@ -107,8 +96,7 @@ function Workspace({ inv }: { inv: Investigation }) {
     { key: "downloads", label: "Downloads" },
   ] as const;
 
-  const finding =
-    findingsToShow.find((f) => f.id === selectedFinding) ?? findingsToShow[0];
+  const finding = findingsToShow.find((f) => f.id === selectedFinding) ?? findingsToShow[0];
 
   const domainTabs = [
     { key: "Overview", label: "Overview", count: 0 },
@@ -121,8 +109,6 @@ function Workspace({ inv }: { inv: Investigation }) {
     { key: "Alerts", label: "Alerts", count: 7 },
     { key: "All Data", label: "All Data", count: 0 },
   ];
-
-
 
   return (
     <AppShell title="Investigate" subtitle="Voyage Workspace" mode="light">
@@ -227,16 +213,12 @@ function Workspace({ inv }: { inv: Investigation }) {
             {selectedEntity && (
               <div className="flex flex-wrap items-center gap-2 rounded-md border border-line bg-surface-2/60 px-3 py-2 text-[11px]">
                 <span className="type-label text-slate">Focused entity</span>
-                <span className="font-semibold text-foreground">
-                  {selectedEntity.label}
-                </span>
+                <span className="font-semibold text-foreground">{selectedEntity.label}</span>
                 <span className="rounded bg-surface-1 px-1.5 py-0.5 text-[10px] font-bold uppercase text-slate">
                   {selectedEntity.kind}
                 </span>
                 {selectedEntity.confidence !== undefined && (
-                  <span className="text-slate">
-                    Confidence {selectedEntity.confidence}%
-                  </span>
+                  <span className="text-slate">Confidence {selectedEntity.confidence}%</span>
                 )}
                 <span className="ml-auto text-slate">
                   {findingsToShow.length} findings · {evidenceToShow.length} evidence
@@ -251,7 +233,6 @@ function Workspace({ inv }: { inv: Investigation }) {
               </div>
             )}
           </div>
-
 
           <CopilotPanel
             recommendations={COPILOT_RECOMMENDATIONS}
@@ -288,9 +269,7 @@ function Workspace({ inv }: { inv: Investigation }) {
                   <span
                     className={cn(
                       "rounded px-1.5 py-0.5 text-[10px] font-bold",
-                      bottomTab === t.key
-                        ? "bg-white/15 text-white"
-                        : "bg-surface-2 text-slate",
+                      bottomTab === t.key ? "bg-white/15 text-white" : "bg-surface-2 text-slate",
                     )}
                   >
                     {t.count}
@@ -323,28 +302,19 @@ function Workspace({ inv }: { inv: Investigation }) {
                           onClick={() => setSelectedFinding(f.id)}
                           className={cn(
                             "cursor-pointer border-t border-line hover:bg-surface-2/60",
-                            selectedFinding === f.id &&
-                              "bg-[color:var(--color-teal)]/5",
+                            selectedFinding === f.id && "bg-[color:var(--color-teal)]/5",
                           )}
                         >
                           <td className="px-3 py-2 font-semibold text-foreground">
-                            <span className="type-mono mr-1.5 text-slate">
-                              {i + 1}.
-                            </span>
+                            <span className="type-mono mr-1.5 text-slate">{i + 1}.</span>
                             {f.title}
                           </td>
-                          <td className="px-3 py-2 text-foreground/80">
-                            {f.category}
-                          </td>
+                          <td className="px-3 py-2 text-foreground/80">{f.category}</td>
                           <td className="px-3 py-2 font-semibold text-foreground">
                             {f.confidencePct}%
                           </td>
-                          <td className="px-3 py-2 text-slate">
-                            {f.evidenceCount}
-                          </td>
-                          <td className="px-3 py-2 text-slate">
-                            {f.firstObserved}
-                          </td>
+                          <td className="px-3 py-2 text-slate">{f.evidenceCount}</td>
+                          <td className="px-3 py-2 text-slate">{f.firstObserved}</td>
                           <td className="px-3 py-2">
                             <span
                               className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${
@@ -373,18 +343,14 @@ function Workspace({ inv }: { inv: Investigation }) {
                     </span>
                   </div>
                   <p className="mt-2 text-[12px] text-foreground/80">
-                    AI model detected potential {finding.category.toLowerCase()} based on cargo value, volume, and historical patterns.
+                    AI model detected potential {finding.category.toLowerCase()} based on cargo
+                    value, volume, and historical patterns.
                   </p>
                   <div className="mt-3">
-                    <div className="type-label mb-1 text-slate">
-                      Key Indicators
-                    </div>
+                    <div className="type-label mb-1 text-slate">Key Indicators</div>
                     <ul className="space-y-1 text-[12px]">
                       {finding.keyIndicators.map((k) => (
-                        <li
-                          key={k}
-                          className="flex items-start gap-1.5 text-foreground/85"
-                        >
+                        <li key={k} className="flex items-start gap-1.5 text-foreground/85">
                           <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[color:var(--color-teal)]" />
                           {k}
                         </li>
@@ -411,10 +377,8 @@ function Workspace({ inv }: { inv: Investigation }) {
                       <EvidenceCard key={e.id} item={e} />
                     ))}
                     <div className="pt-1 text-[11px] text-slate">
-                      + {Math.max(0, evidenceToShow.length - 3)} more evidence
-                      items
+                      + {Math.max(0, evidenceToShow.length - 3)} more evidence items
                     </div>
-
                   </div>
                 </div>
               </div>
@@ -423,22 +387,13 @@ function Workspace({ inv }: { inv: Investigation }) {
             {bottomTab === "rules" && (
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {RULES_TRIGGERED.map((r) => (
-                  <div
-                    key={r.id}
-                    className="rounded-md border border-line bg-surface-2/60 p-3"
-                  >
+                  <div key={r.id} className="rounded-md border border-line bg-surface-2/60 p-3">
                     <div className="flex items-center justify-between">
-                      <span className="type-mono text-[11px] font-semibold">
-                        {r.id}
-                      </span>
+                      <span className="type-mono text-[11px] font-semibold">{r.id}</span>
                       <RiskPill level={r.impact} />
                     </div>
-                    <div className="mt-1 text-[12px] font-semibold text-foreground">
-                      {r.title}
-                    </div>
-                    <div className="mt-1 text-[11px] text-slate">
-                      Hits: {r.hits}
-                    </div>
+                    <div className="mt-1 text-[12px] font-semibold text-foreground">{r.title}</div>
+                    <div className="mt-1 text-[11px] text-slate">Hits: {r.hits}</div>
                   </div>
                 ))}
               </div>
@@ -456,11 +411,7 @@ function Workspace({ inv }: { inv: Investigation }) {
 
             {bottomTab === "downloads" && (
               <div className="grid gap-2 sm:grid-cols-3">
-                {[
-                  "Case brief (PDF)",
-                  "Evidence pack (ZIP)",
-                  "Audit log (CSV)",
-                ].map((d) => (
+                {["Case brief (PDF)", "Evidence pack (ZIP)", "Audit log (CSV)"].map((d) => (
                   <button
                     key={d}
                     className="flex items-center justify-between rounded-md border border-line bg-surface-2/60 px-3 py-2 text-[12px] font-semibold text-foreground hover:bg-surface-2"
@@ -511,14 +462,8 @@ function CaseHeader({ inv }: { inv: Investigation }) {
 
         <HeaderField label="Investigation">
           <span className="flex items-center gap-1.5">
-            <span className="type-mono text-[13px] font-semibold text-foreground">
-              {inv.id}
-            </span>
-            <button
-              className="text-slate hover:text-foreground"
-              title="Copy ID"
-              type="button"
-            >
+            <span className="type-mono text-[13px] font-semibold text-foreground">{inv.id}</span>
+            <button className="text-slate hover:text-foreground" title="Copy ID" type="button">
               <Copy className="h-3 w-3" />
             </button>
           </span>
@@ -526,8 +471,7 @@ function CaseHeader({ inv }: { inv: Investigation }) {
 
         <HeaderField label="Primary Subject">
           <span className="text-[13px] font-semibold text-foreground">
-            {inv.vessel}{" "}
-            <span className="type-mono text-slate">IMO {inv.imo}</span>
+            {inv.vessel} <span className="type-mono text-slate">IMO {inv.imo}</span>
           </span>
         </HeaderField>
 
@@ -538,9 +482,7 @@ function CaseHeader({ inv }: { inv: Investigation }) {
         <HeaderField label="Confidence">
           <div className="flex items-center gap-2">
             <ConfidenceRing pct={inv.confidencePct} />
-            <span className="text-[13px] font-bold text-foreground">
-              {inv.confidencePct}%
-            </span>
+            <span className="text-[13px] font-bold text-foreground">{inv.confidencePct}%</span>
           </div>
         </HeaderField>
 
@@ -550,9 +492,7 @@ function CaseHeader({ inv }: { inv: Investigation }) {
               <User className="h-3 w-3" />
             </span>
             <span className="flex flex-col leading-tight">
-              <span className="text-[13px] font-semibold text-foreground">
-                {inv.officer}
-              </span>
+              <span className="text-[13px] font-semibold text-foreground">{inv.officer}</span>
               <span className="text-[10px] text-slate">NIMASA Analyst</span>
             </span>
           </span>
@@ -566,12 +506,8 @@ function CaseHeader({ inv }: { inv: Investigation }) {
 
         <HeaderField label="Timeline">
           <span className="flex flex-col leading-tight">
-            <span className="text-[12px] font-semibold text-foreground">
-              {inv.opened}
-            </span>
-            <span className="type-mono text-[11px] text-slate">
-              {inv.updated}
-            </span>
+            <span className="text-[12px] font-semibold text-foreground">{inv.opened}</span>
+            <span className="type-mono text-[11px] text-slate">{inv.updated}</span>
           </span>
         </HeaderField>
 
@@ -582,10 +518,7 @@ function CaseHeader({ inv }: { inv: Investigation }) {
           >
             <Download className="h-3.5 w-3.5" />
           </button>
-          <button
-            className="rounded-md border border-line p-1.5 hover:bg-surface-2"
-            title="Print"
-          >
+          <button className="rounded-md border border-line p-1.5 hover:bg-surface-2" title="Print">
             <Printer className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -594,18 +527,10 @@ function CaseHeader({ inv }: { inv: Investigation }) {
   );
 }
 
-function HeaderField({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function HeaderField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex min-w-0 flex-col">
-      <span className="type-label text-[10px] uppercase tracking-[0.08em] text-slate">
-        {label}
-      </span>
+      <span className="type-label text-[10px] uppercase tracking-[0.08em] text-slate">{label}</span>
       <span className="mt-0.5">{children}</span>
     </div>
   );
@@ -617,14 +542,7 @@ function ConfidenceRing({ pct }: { pct: number }) {
   const off = c - (pct / 100) * c;
   return (
     <svg width="34" height="34" viewBox="0 0 36 36">
-      <circle
-        cx="18"
-        cy="18"
-        r={r}
-        fill="none"
-        stroke="var(--color-line)"
-        strokeWidth="3.5"
-      />
+      <circle cx="18" cy="18" r={r} fill="none" stroke="var(--color-line)" strokeWidth="3.5" />
       <circle
         cx="18"
         cy="18"
@@ -671,10 +589,7 @@ function LeftItem({
         )}
       >
         <Icon
-          className={cn(
-            "h-3.5 w-3.5",
-            active ? "text-[color:var(--color-blue)]" : "text-slate",
-          )}
+          className={cn("h-3.5 w-3.5", active ? "text-[color:var(--color-blue)]" : "text-slate")}
         />
         <span className="flex-1 text-left">{label}</span>
         {count !== undefined && (
@@ -708,14 +623,7 @@ function CaseProgress() {
       <div className="flex justify-center">
         <div className="relative">
           <svg width="80" height="80" viewBox="0 0 64 64">
-            <circle
-              cx="32"
-              cy="32"
-              r={r}
-              fill="none"
-              stroke="var(--color-line)"
-              strokeWidth="5"
-            />
+            <circle cx="32" cy="32" r={r} fill="none" stroke="var(--color-line)" strokeWidth="5" />
             <circle
               cx="32"
               cy="32"
@@ -736,15 +644,8 @@ function CaseProgress() {
       </div>
       <ol className="mt-3 space-y-1">
         {CASE_PROGRESS.map((s) => (
-          <li
-            key={s.label}
-            className="flex items-center justify-between gap-2 text-[11.5px]"
-          >
-            <span
-              className={cn(
-                s.done ? "text-foreground/80" : "text-foreground font-semibold",
-              )}
-            >
+          <li key={s.label} className="flex items-center justify-between gap-2 text-[11.5px]">
+            <span className={cn(s.done ? "text-foreground/80" : "text-foreground font-semibold")}>
               {s.label}
             </span>
             <span

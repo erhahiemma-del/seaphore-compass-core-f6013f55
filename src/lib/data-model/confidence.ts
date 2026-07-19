@@ -30,12 +30,12 @@ export const CONFIDENCE_LEVELS = [
 ] as const satisfies readonly ConfidenceLevel[];
 
 export const CONFIDENCE_LEVEL_DESCRIPTIONS: Record<ConfidenceLevel, string> = {
-  OBSERVED:     "Directly observed in source data",
-  DECLARED:     "Stated by the declaring party (unverified)",
-  INFERRED:     "Computed or derived from multiple sources",
+  OBSERVED: "Directly observed in source data",
+  DECLARED: "Stated by the declaring party (unverified)",
+  INFERRED: "Computed or derived from multiple sources",
   CORROBORATED: "Supported by two or more independent sources",
-  VERIFIED:     "Confirmed by an authoritative external source",
-  AUDITED:      "Human-confirmed and immutably recorded",
+  VERIFIED: "Confirmed by an authoritative external source",
+  AUDITED: "Human-confirmed and immutably recorded",
 };
 
 /**

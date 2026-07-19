@@ -8,10 +8,10 @@ export interface OfficerAuthorization {
   officerId: string;
   officerName: string;
   role: string;
-  intent: string;              // human summary of what is being sent
-  target: string;              // recipient / channel
-  acknowledgedAt: string;      // ISO 8601 UTC
-  acknowledgedOath: true;      // officer confirmed the accountability notice
+  intent: string; // human summary of what is being sent
+  target: string; // recipient / channel
+  acknowledgedAt: string; // ISO 8601 UTC
+  acknowledgedOath: true; // officer confirmed the accountability notice
 }
 
 export function requireOfficerAuthorization(

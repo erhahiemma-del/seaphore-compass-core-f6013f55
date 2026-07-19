@@ -84,9 +84,7 @@ export function AppSidebar() {
                           <item.icon className="h-4 w-4 shrink-0" />
                           {!collapsed && (
                             <span className="min-w-0 leading-tight">
-                              <span className="block text-[13px] font-semibold">
-                                {item.title}
-                              </span>
+                              <span className="block text-[13px] font-semibold">{item.title}</span>
                               {item.subtitle && (
                                 <span className="block text-[11px] text-sidebar-foreground/55">
                                   {item.subtitle}
@@ -114,14 +112,9 @@ export function AppSidebar() {
               className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground motion-fast"
             >
               <PanelLeftClose
-                className={cn(
-                  "h-4 w-4 shrink-0 motion-base",
-                  collapsed && "rotate-180",
-                )}
+                className={cn("h-4 w-4 shrink-0 motion-base", collapsed && "rotate-180")}
               />
-              {!collapsed && (
-                <span className="text-[13px] font-semibold">Collapse</span>
-              )}
+              {!collapsed && <span className="text-[13px] font-semibold">Collapse</span>}
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

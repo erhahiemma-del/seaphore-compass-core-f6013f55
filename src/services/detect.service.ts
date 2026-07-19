@@ -6,7 +6,12 @@
  * timeline, domain distribution, heatmap, type tiles, AI summary) are computed
  * from real DB rows.
  */
-import { signalRepository, type Signal, type SignalDomain, type SignalType } from "@/services/repositories/signal.repository";
+import {
+  signalRepository,
+  type Signal,
+  type SignalDomain,
+  type SignalType,
+} from "@/services/repositories/signal.repository";
 import type { ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
 import type { RiskLevel } from "@/components/intelligence/RiskPill";
 import type { TimelineRange } from "@/components/signal-timeline-chart";
@@ -25,7 +30,10 @@ export const SIGNAL_DOMAINS: SignalDomain[] = [
   "Alerts",
 ];
 
-export interface RibbonMetric { value: number; delta: number }
+export interface RibbonMetric {
+  value: number;
+  delta: number;
+}
 export interface SignalRibbon {
   total: RibbonMetric;
   high: RibbonMetric;
@@ -44,15 +52,26 @@ export interface TimelineBucket {
   Info: number;
 }
 
-export interface DomainSlice { domain: SignalDomain; count: number }
+export interface DomainSlice {
+  domain: SignalDomain;
+  count: number;
+}
 export interface HeatmapRow {
   domain: SignalDomain;
   High: number;
   Medium: number;
   Low: number;
 }
-export interface TypeTile { type: SignalType; count: number; confidence: ConfidenceTier }
-export interface CopilotCard { title: string; observation: string; confidence: ConfidenceTier }
+export interface TypeTile {
+  type: SignalType;
+  count: number;
+  confidence: ConfidenceTier;
+}
+export interface CopilotCard {
+  title: string;
+  observation: string;
+  confidence: ConfidenceTier;
+}
 
 export interface DetectFeed {
   signals: Signal[];
@@ -69,14 +88,29 @@ function bucketise(signals: Signal[], range: TimelineRange): TimelineBucket[] {
   const now = Date.now();
   const cfg =
     range === "6H"
-      ? { buckets: 6, stepMs: 60 * 60_000, fmt: (d: Date) => `${String(d.getUTCHours()).padStart(2, "0")}:00` }
+      ? {
+          buckets: 6,
+          stepMs: 60 * 60_000,
+          fmt: (d: Date) => `${String(d.getUTCHours()).padStart(2, "0")}:00`,
+        }
       : range === "24H"
-      ? { buckets: 12, stepMs: 2 * 60 * 60_000, fmt: (d: Date) => String(d.getUTCHours()).padStart(2, "0") }
-      : { buckets: 7, stepMs: 24 * 60 * 60_000, fmt: (d: Date) => d.toLocaleDateString("en-GB", { month: "short", day: "2-digit" }) };
+        ? {
+            buckets: 12,
+            stepMs: 2 * 60 * 60_000,
+            fmt: (d: Date) => String(d.getUTCHours()).padStart(2, "0"),
+          }
+        : {
+            buckets: 7,
+            stepMs: 24 * 60 * 60_000,
+            fmt: (d: Date) => d.toLocaleDateString("en-GB", { month: "short", day: "2-digit" }),
+          };
   const start = now - cfg.buckets * cfg.stepMs;
   const out: TimelineBucket[] = Array.from({ length: cfg.buckets }, (_, i) => ({
     label: cfg.fmt(new Date(start + i * cfg.stepMs + cfg.stepMs)),
-    High: 0, Medium: 0, Low: 0, Info: 0,
+    High: 0,
+    Medium: 0,
+    Low: 0,
+    Info: 0,
   }));
   for (const s of signals) {
     const t = new Date(s.detectedAt).getTime();
@@ -102,18 +136,21 @@ function computeRibbon(signals: Signal[]): SignalRibbon {
   const risk = (r: RiskLevel) => signals.filter((s) => s.risk === r).length;
   const status = (v: "NEW" | "ACK") => signals.filter((s) => s.status === v).length;
   return {
-    total:  { value: signals.length,  delta: 0 },
-    high:   { value: risk("HIGH"),    delta: 0 },
-    medium: { value: risk("MEDIUM"),  delta: 0 },
-    low:    { value: risk("LOW"),     delta: 0 },
-    fresh:  { value: status("NEW"),   delta: 0 },
-    ack:    { value: status("ACK"),   delta: 0 },
+    total: { value: signals.length, delta: 0 },
+    high: { value: risk("HIGH"), delta: 0 },
+    medium: { value: risk("MEDIUM"), delta: 0 },
+    low: { value: risk("LOW"), delta: 0 },
+    fresh: { value: status("NEW"), delta: 0 },
+    ack: { value: status("ACK"), delta: 0 },
     confidence: "observed",
   };
 }
 
 function computeDomainSlice(signals: Signal[]): DomainSlice[] {
-  return SIGNAL_DOMAINS.map((d) => ({ domain: d, count: signals.filter((s) => s.domain === d).length }));
+  return SIGNAL_DOMAINS.map((d) => ({
+    domain: d,
+    count: signals.filter((s) => s.domain === d).length,
+  }));
 }
 
 function computeHeatmap(signals: Signal[]): HeatmapRow[] {
@@ -128,14 +165,29 @@ function computeHeatmap(signals: Signal[]): HeatmapRow[] {
   });
 }
 
-const ALL_TYPES: SignalType[] = ["Anomalies", "Discrepancies", "Duplicates", "Changes", "Gaps", "Matches"];
+const ALL_TYPES: SignalType[] = [
+  "Anomalies",
+  "Discrepancies",
+  "Duplicates",
+  "Changes",
+  "Gaps",
+  "Matches",
+];
 
 function computeTypeTiles(signals: Signal[]): TypeTile[] {
   return ALL_TYPES.map((t) => {
     const rows = signals.filter((s) => s.type === t);
     // Confidence for the tile = strongest observed within the type; default observed.
-    const rank: Record<ConfidenceTier, number> = { unconfirmed: 0, inferred: 1, observed: 2, verified: 3 };
-    const conf = rows.reduce<ConfidenceTier>((acc, r) => (rank[r.confidence] > rank[acc] ? r.confidence : acc), "observed");
+    const rank: Record<ConfidenceTier, number> = {
+      unconfirmed: 0,
+      inferred: 1,
+      observed: 2,
+      verified: 3,
+    };
+    const conf = rows.reduce<ConfidenceTier>(
+      (acc, r) => (rank[r.confidence] > rank[acc] ? r.confidence : acc),
+      "observed",
+    );
     return { type: t, count: rows.length, confidence: conf };
   });
 }
@@ -162,8 +214,8 @@ function computeAiSummary(signals: Signal[]): CopilotCard[] {
     const conf: ConfidenceTier = rows.some((r) => r.confidence === "verified")
       ? "verified"
       : rows.some((r) => r.confidence === "observed")
-      ? "observed"
-      : "inferred";
+        ? "observed"
+        : "inferred";
     cards.push({
       title: `${domain} activity observed in feed`,
       observation:
@@ -177,7 +229,9 @@ function computeAiSummary(signals: Signal[]): CopilotCard[] {
 }
 
 /** Primary entrypoint — Detect page consumes only this. */
-export async function getDetectFeed(input: { range: TimelineRange; domain?: SignalDomain | "All" } = { range: "24H" }): Promise<DetectFeed> {
+export async function getDetectFeed(
+  input: { range: TimelineRange; domain?: SignalDomain | "All" } = { range: "24H" },
+): Promise<DetectFeed> {
   const signals = await signalRepository.listSignals({
     domain: input.domain,
     limit: 200,

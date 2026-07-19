@@ -66,7 +66,7 @@ export interface SignalListFilters extends ListOptions {
 
 function unwrap<T>(env: unknown, fallback: T): T {
   const asEnv = env as { data?: T } | null | undefined;
-  return (asEnv?.data ?? (env as T) ?? fallback);
+  return asEnv?.data ?? (env as T) ?? fallback;
 }
 
 function relativeLabel(iso: string, now = Date.now()): string {
@@ -88,8 +88,14 @@ function severityToRisk(sev: string): RiskLevel {
 
 function domainOf(raw: string): SignalDomain {
   const allowed: SignalDomain[] = [
-    "Manifest", "Cargo", "Revenue", "Vessel Movement",
-    "Port Operations", "Ownership", "Compliance", "Alerts",
+    "Manifest",
+    "Cargo",
+    "Revenue",
+    "Vessel Movement",
+    "Port Operations",
+    "Ownership",
+    "Compliance",
+    "Alerts",
   ];
   return (allowed.find((d) => d === raw) ?? "Alerts") as SignalDomain;
 }

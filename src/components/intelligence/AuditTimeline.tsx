@@ -60,7 +60,10 @@ export function AuditTimeline({
       </div>
       <ol className="divide-y divide-line">
         {filtered.map((e) => (
-          <li key={e.id} className="grid grid-cols-[110px_1fr_auto] items-start gap-3 px-3 py-2 text-[12px]">
+          <li
+            key={e.id}
+            className="grid grid-cols-[110px_1fr_auto] items-start gap-3 px-3 py-2 text-[12px]"
+          >
             <span className="type-mono text-[11px] text-slate">{e.at}</span>
             <div className="min-w-0">
               <div className="truncate text-foreground">
@@ -68,7 +71,8 @@ export function AuditTimeline({
               </div>
               <div className="truncate text-[11px] text-slate">{e.detail}</div>
             </div>
-            <span className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+            <span
+              className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
               style={{
                 color: KIND_COLOR[e.kind],
                 backgroundColor: `${KIND_COLOR[e.kind]}14`,

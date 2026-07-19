@@ -7,15 +7,24 @@
 import { describe, it, expect } from "vitest";
 import { classifyIntent } from "@/services/orchestration/intent-classifier";
 import { fuseEvidence } from "@/services/orchestration/evidence-fusion";
-import { computeConfidenceMatrix, propagateConfidence } from "@/services/orchestration/reasoning-engine";
-import { CAPABILITY_REGISTRY, agentsForCapabilities } from "@/services/orchestration/capability-registry";
+import {
+  computeConfidenceMatrix,
+  propagateConfidence,
+} from "@/services/orchestration/reasoning-engine";
+import {
+  CAPABILITY_REGISTRY,
+  agentsForCapabilities,
+} from "@/services/orchestration/capability-registry";
 import { WORKSPACE_CONTRACTS } from "@/services/orchestration/workspace-contracts";
 import { EVIDENCE_GRADES, CONFIDENCE_STEPS } from "@/services/orchestration/constants";
 import type { EvidenceItem, RetrievalResult } from "@/services/orchestration";
 
 describe("Intent Classifier (Layer 2.2)", () => {
   it("classifies ownership queries to OWNERSHIP_ANALYSIS", () => {
-    const i = classifyIntent({ officer_id: "u1", query: "Who is the beneficial owner of MV Sample IMO 9319466?" });
+    const i = classifyIntent({
+      officer_id: "u1",
+      query: "Who is the beneficial owner of MV Sample IMO 9319466?",
+    });
     expect(i.capabilities).toContain("OWNERSHIP_ANALYSIS");
     expect(i.entities.some((e) => e.type === "vessel_imo")).toBe(true);
   });
@@ -34,12 +43,21 @@ describe("Intent Classifier (Layer 2.2)", () => {
 
 describe("Evidence Fusion Engine (Layer 2.10)", () => {
   const mkEvidence = (over: Partial<EvidenceItem>): EvidenceItem => ({
-    id: crypto.randomUUID(), grade: "VERIFIED", source_system: "CAC",
-    content: "same-fact", entity_ids: ["ent-1"], collected_at: new Date().toISOString(), ...over,
+    id: crypto.randomUUID(),
+    grade: "VERIFIED",
+    source_system: "CAC",
+    content: "same-fact",
+    entity_ids: ["ent-1"],
+    collected_at: new Date().toISOString(),
+    ...over,
   });
   const mkResult = (evidence: EvidenceItem[], source_name = "CAC"): RetrievalResult => ({
-    agent: "ownership", capability: "OWNERSHIP_ANALYSIS",
-    source_name, responded: true, evidence, latency_ms: 100,
+    agent: "ownership",
+    capability: "OWNERSHIP_ANALYSIS",
+    source_name,
+    responded: true,
+    evidence,
+    latency_ms: 100,
   });
 
   it("deduplicates within same source by content hash", () => {
@@ -82,9 +100,21 @@ describe("Confidence propagation (Layer 2.11)", () => {
 
   it("assigns tier=high when composite >= 0.75", () => {
     const fused = {
-      ranked: [{ id: "1", grade: "VERIFIED" as const, source_system: "CAC", content: "x",
-        entity_ids: [], weight: 1, freshness: 1 }],
-      conflicts: [], sources_queried: 2, sources_responded: 2, sources_corroborated: 2,
+      ranked: [
+        {
+          id: "1",
+          grade: "VERIFIED" as const,
+          source_system: "CAC",
+          content: "x",
+          entity_ids: [],
+          weight: 1,
+          freshness: 1,
+        },
+      ],
+      conflicts: [],
+      sources_queried: 2,
+      sources_responded: 2,
+      sources_corroborated: 2,
     };
     const m = computeConfidenceMatrix(fused);
     expect(m.tier).toBe("high");
@@ -92,7 +122,11 @@ describe("Confidence propagation (Layer 2.11)", () => {
 
   it("assigns tier=low when no evidence responded", () => {
     const m = computeConfidenceMatrix({
-      ranked: [], conflicts: [], sources_queried: 3, sources_responded: 0, sources_corroborated: 0,
+      ranked: [],
+      conflicts: [],
+      sources_queried: 3,
+      sources_responded: 0,
+      sources_corroborated: 0,
     });
     expect(m.tier).toBe("low");
   });

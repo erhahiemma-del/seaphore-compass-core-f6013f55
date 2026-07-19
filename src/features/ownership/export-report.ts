@@ -73,17 +73,10 @@ export function exportOwnershipReport(ctx: ExportContext) {
     doc.line(marginX, pageH - 42, pageW - marginX, pageH - 42);
     doc.setFontSize(7.5);
     doc.setTextColor(SLATE);
-    doc.text(
-      "Evidence first. Explainable always. Officer decides.",
-      marginX,
-      pageH - 28,
-    );
-    doc.text(
-      `Request ${requestId.slice(0, 8)} · Page ${page}`,
-      pageW - marginX,
-      pageH - 28,
-      { align: "right" },
-    );
+    doc.text("Evidence first. Explainable always. Officer decides.", marginX, pageH - 28);
+    doc.text(`Request ${requestId.slice(0, 8)} · Page ${page}`, pageW - marginX, pageH - 28, {
+      align: "right",
+    });
   };
 
   const h1 = (t: string) => {
@@ -207,10 +200,10 @@ export function exportOwnershipReport(ctx: ExportContext) {
   );
   y += 4;
   RECOMMENDED_ACTIONS.forEach((r, i) => {
-    body(
-      `${i + 1}. ${r.text}   [${r.severity} · confidence ${r.confidence}]`,
-      { color: severityColor(r.severity), bold: true },
-    );
+    body(`${i + 1}. ${r.text}   [${r.severity} · confidence ${r.confidence}]`, {
+      color: severityColor(r.severity),
+      bold: true,
+    });
   });
   y += 6;
 
@@ -220,9 +213,7 @@ export function exportOwnershipReport(ctx: ExportContext) {
     .sort((a, b) => (a.date < b.date ? 1 : -1))
     .slice(0, 8)
     .forEach((e) => {
-      body(
-        `${e.date} — ${e.kind}: ${e.summary}  [${e.confidence} · ${tierPct(e.confidence)}%]`,
-      );
+      body(`${e.date} — ${e.kind}: ${e.summary}  [${e.confidence} · ${tierPct(e.confidence)}%]`);
     });
   y += 6;
 
@@ -282,7 +273,7 @@ export function exportOwnershipReport(ctx: ExportContext) {
   h2("Audit Trail");
   const auditRows = [
     { at: nowIso, action: "ownership.report.export", entity: ctx.company.id },
-    { at: nowIso, action: "ownership.entity.view",   entity: ctx.company.id },
+    { at: nowIso, action: "ownership.entity.view", entity: ctx.company.id },
   ];
   auditRows.forEach((a) => {
     body(`${a.at}  ·  ${ctx.officer.name} (${ctx.officer.role})  ·  ${a.action}  ·  ${a.entity}`);

@@ -6,11 +6,7 @@ import { cn } from "@/lib/utils";
  * Every number, count, aggregate, signal, and status renders this chip.
  * A bare number is a build defect.
  */
-export type ConfidenceTier =
-  | "verified"
-  | "observed"
-  | "inferred"
-  | "unconfirmed";
+export type ConfidenceTier = "verified" | "observed" | "inferred" | "unconfirmed";
 
 export const CONFIDENCE_LABELS: Record<ConfidenceTier, string> = {
   verified: "VERIFIED",
@@ -63,12 +59,7 @@ export interface ConfidenceChipProps {
   className?: string;
 }
 
-export function ConfidenceChip({
-  level,
-  tier,
-  size = "md",
-  className,
-}: ConfidenceChipProps) {
+export function ConfidenceChip({ level, tier, size = "md", className }: ConfidenceChipProps) {
   const resolvedTier: ConfidenceTier = tier ?? (level ? LEVEL_TO_TIER[level] : "observed");
   const hex = HEX[resolvedTier];
   const compact = size === "sm" || size === 9;

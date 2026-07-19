@@ -7,10 +7,16 @@
 import { BaseAdapter, type HealthReport } from "../base-adapter";
 import type { SourcedResult } from "../status";
 
-export interface OcrResult { text: string; pages: number; confidence: number }
+export interface OcrResult {
+  text: string;
+  pages: number;
+  confidence: number;
+}
 
 export class GoogleVisionAdapter extends BaseAdapter {
-  constructor() { super("google_vision"); }
+  constructor() {
+    super("google_vision");
+  }
   async recognize(_ref: { bucket: string; path: string }): Promise<SourcedResult<OcrResult>> {
     this.assertUsable();
     return this.envelope<OcrResult>(null, new Date().toISOString(), {

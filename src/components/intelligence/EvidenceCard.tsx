@@ -1,10 +1,4 @@
-import {
-  FileText,
-  Image as ImageIcon,
-  Radar,
-  Table as TableIcon,
-  Waypoints,
-} from "lucide-react";
+import { FileText, Image as ImageIcon, Radar, Table as TableIcon, Waypoints } from "lucide-react";
 
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import type { EvidenceItem } from "@/lib/lifecycle-data";
@@ -59,9 +53,7 @@ export function EvidenceCard({ evidence, item, className }: EvidenceCardProps) {
         <Icon className="h-4 w-4" />
       </span>
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[13px] font-semibold text-foreground">
-          {it.title}
-        </div>
+        <div className="truncate text-[13px] font-semibold text-foreground">{it.title}</div>
         <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-slate">
           <span>{it.type}</span>
           <span>·</span>

@@ -39,11 +39,7 @@ export function CaseProgressChecklist({
             >
               {s.done && <Check className="h-2.5 w-2.5" />}
             </span>
-            <span
-              className={cn(
-                s.done ? "text-foreground/85" : "text-foreground font-semibold",
-              )}
-            >
+            <span className={cn(s.done ? "text-foreground/85" : "text-foreground font-semibold")}>
               {s.label}
             </span>
           </li>

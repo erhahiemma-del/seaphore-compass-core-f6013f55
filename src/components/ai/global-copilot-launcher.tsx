@@ -39,7 +39,13 @@ export function GlobalCopilotLauncher() {
         title={`Ask ${inst.name} (⌘K)`}
         className="fixed bottom-16 right-6 z-40 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-[12.5px] font-semibold text-primary-foreground shadow-lg hover:opacity-95"
       >
-        <img src={nimasaLogo} alt="" width={18} height={18} className="rounded-full bg-white/90 p-0.5" />
+        <img
+          src={nimasaLogo}
+          alt=""
+          width={18}
+          height={18}
+          className="rounded-full bg-white/90 p-0.5"
+        />
         Ask {inst.shortName}
       </button>
       <AskCopilotDialog instance={instance} open={open} onOpenChange={setOpen} />

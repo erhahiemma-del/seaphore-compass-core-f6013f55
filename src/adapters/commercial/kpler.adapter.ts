@@ -26,7 +26,13 @@ export interface CommodityFlowProvider {
 export class KplerAdapter implements CommodityFlowProvider {
   meta = KplerMeta;
 
-  async flows({ commodity, sinceIso }: { commodity: string; sinceIso: string }): Promise<CommodityFlow[]> {
+  async flows({
+    commodity,
+    sinceIso,
+  }: {
+    commodity: string;
+    sinceIso: string;
+  }): Promise<CommodityFlow[]> {
     if (!commodity) return [];
     return [
       {

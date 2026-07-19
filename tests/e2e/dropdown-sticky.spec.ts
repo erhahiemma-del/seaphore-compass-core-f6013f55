@@ -36,7 +36,10 @@ const FILTER_TESTIDS = [
 
 test.describe("Searchable dropdowns keep the search input pinned", () => {
   test.beforeEach(async ({ context, page }) => {
-    test.skip(!isAuthInjected(), "No injected Supabase session — cannot reach _authenticated routes");
+    test.skip(
+      !isAuthInjected(),
+      "No injected Supabase session — cannot reach _authenticated routes",
+    );
     await restoreSupabaseSession(context, page);
   });
 
@@ -56,7 +59,6 @@ test.describe("Searchable dropdowns keep the search input pinned", () => {
       const anchor = page.getByTestId("filter-trigger-evidence-type");
       await expect(anchor).toBeVisible({ timeout: 20_000 });
       await page.waitForTimeout(1500);
-
 
       let assertedAny = false;
 
@@ -93,9 +95,10 @@ test.describe("Searchable dropdowns keep the search input pinned", () => {
 
         // Scroll the option list container all the way down. If there are
         // few options this is a no-op — the invariant still holds.
-        await listbox.evaluate((el) => { el.scrollTop = el.scrollHeight; });
+        await listbox.evaluate((el) => {
+          el.scrollTop = el.scrollHeight;
+        });
         await page.waitForTimeout(200);
-
 
         const offsetAfter = await popover.evaluate((pop, sel) => {
           const inp = pop.querySelector(sel) as HTMLElement;
@@ -104,7 +107,6 @@ test.describe("Searchable dropdowns keep the search input pinned", () => {
 
         // Allow small sub-pixel jitter (Radix collision padding / anim).
         expect(Math.abs(offsetAfter - offsetBefore)).toBeLessThanOrEqual(4);
-
 
         // The input must sit at the top of the popover (within padding).
         expect(offsetAfter).toBeLessThanOrEqual(16);
@@ -117,7 +119,6 @@ test.describe("Searchable dropdowns keep the search input pinned", () => {
         expect(listBox).not.toBeNull();
         expect(after!.y + after!.height).toBeLessThanOrEqual(listBox!.y + 1);
 
-
         // Typing must still hit the input (it can't have been detached).
         await input.fill("z");
         await expect(input).toHaveValue("z");
@@ -125,7 +126,9 @@ test.describe("Searchable dropdowns keep the search input pinned", () => {
 
         await page.keyboard.press("Escape");
         // Wait for the popover to actually close before opening the next.
-        await expect(popover).toBeHidden({ timeout: 2_000 }).catch(() => {});
+        await expect(popover)
+          .toBeHidden({ timeout: 2_000 })
+          .catch(() => {});
         assertedAny = true;
       }
 
@@ -140,15 +143,15 @@ test.describe("Searchable dropdowns keep the search input pinned", () => {
     await page.waitForTimeout(1500);
     await trigger.click();
 
-
     const popover = page.locator("[data-radix-popper-content-wrapper]").last();
     const input = popover.locator('input[placeholder^="Search "]');
     await expect(input).toBeVisible();
 
-    const offsetOf = () => popover.evaluate((pop, sel) => {
-      const inp = pop.querySelector(sel) as HTMLElement;
-      return inp.getBoundingClientRect().top - pop.getBoundingClientRect().top;
-    }, 'input[placeholder^="Search "]');
+    const offsetOf = () =>
+      popover.evaluate((pop, sel) => {
+        const inp = pop.querySelector(sel) as HTMLElement;
+        return inp.getBoundingClientRect().top - pop.getBoundingClientRect().top;
+      }, 'input[placeholder^="Search "]');
 
     const before = await offsetOf();
     for (const ch of "abcdefghijk") await input.press(ch);
@@ -158,4 +161,3 @@ test.describe("Searchable dropdowns keep the search input pinned", () => {
     expect(Math.abs(after - before)).toBeLessThanOrEqual(1);
   });
 });
-

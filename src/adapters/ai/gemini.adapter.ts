@@ -6,10 +6,16 @@
 import { BaseAdapter, type HealthReport } from "../base-adapter";
 import type { SourcedResult } from "../status";
 
-export interface AiReasoning { promptId: string; output: string; model: string }
+export interface AiReasoning {
+  promptId: string;
+  output: string;
+  model: string;
+}
 
 export class GeminiAdapter extends BaseAdapter {
-  constructor() { super("gemini"); }
+  constructor() {
+    super("gemini");
+  }
   attach(reasoning: AiReasoning): SourcedResult<AiReasoning> {
     this.assertUsable();
     return this.envelope<AiReasoning>(reasoning, new Date().toISOString(), { inferred: true });

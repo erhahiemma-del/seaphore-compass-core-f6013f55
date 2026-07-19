@@ -17,13 +17,7 @@ const PALETTE = [
 /**
  * DET-4 signals-by-domain donut with legend.
  */
-export function DomainDonutChart({
-  data,
-  className,
-}: {
-  data: DomainSlice[];
-  className?: string;
-}) {
+export function DomainDonutChart({ data, className }: { data: DomainSlice[]; className?: string }) {
   const total = data.reduce((sum, d) => sum + d.count, 0);
   return (
     <div className={cn("grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]", className)}>
@@ -68,9 +62,7 @@ export function DomainDonutChart({
                 className="h-2 w-2 shrink-0 rounded-full"
                 style={{ backgroundColor: PALETTE[i % PALETTE.length] }}
               />
-              <span className="min-w-0 flex-1 truncate text-foreground/80">
-                {d.domain}
-              </span>
+              <span className="min-w-0 flex-1 truncate text-foreground/80">{d.domain}</span>
               <span className="font-semibold text-foreground">{pct}%</span>
             </li>
           );

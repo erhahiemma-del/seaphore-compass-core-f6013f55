@@ -1,9 +1,6 @@
 import type { ReactNode } from "react";
 
-import {
-  ConfidenceChip,
-  type ConfidenceTier,
-} from "@/components/intelligence/ConfidenceChip";
+import { ConfidenceChip, type ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
 import { PanelCard } from "@/components/panel-card";
 import { cn } from "@/lib/utils";
 import { assertObservedLanguage } from "@/lib/compliance/signal-language";

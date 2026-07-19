@@ -1,9 +1,6 @@
 import type { ReactNode } from "react";
 
-import {
-  ConfidenceChip,
-  type ConfidenceTier,
-} from "@/components/intelligence/ConfidenceChip";
+import { ConfidenceChip, type ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
 import { cn } from "@/lib/utils";
 import { assertVerifiedSource } from "@/lib/compliance/authoritative-sources";
 
@@ -41,18 +38,14 @@ export function Metric({
   assertVerifiedSource(tier, source, context);
   return (
     <div className={cn("flex flex-col gap-1", className)}>
-      {label != null && (
-        <span className="type-label text-slate">{label}</span>
-      )}
+      {label != null && <span className="type-label text-slate">{label}</span>}
       <div className="flex items-baseline gap-2">
         <span className="type-h1 font-mono tabular-nums">{value}</span>
         {unit != null && <span className="type-small text-slate">{unit}</span>}
       </div>
       <div className="flex items-center gap-2">
         <ConfidenceChip tier={tier} />
-        {caption != null && (
-          <span className="type-small text-slate">{caption}</span>
-        )}
+        {caption != null && <span className="type-small text-slate">{caption}</span>}
       </div>
     </div>
   );

@@ -9,7 +9,7 @@ const preview: Preview = {
       default: "surface",
       values: [
         { name: "surface", value: "#F7F8FA" },
-        { name: "navy",    value: "#0B1F3A" },
+        { name: "navy", value: "#0B1F3A" },
       ],
     },
   },

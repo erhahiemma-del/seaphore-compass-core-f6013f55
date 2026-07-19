@@ -29,10 +29,8 @@ export default defineConfig({
         // separate `playwright install` step. Falls through to the bundled
         // browser (via PLAYWRIGHT_BROWSERS_PATH) on developer machines.
         launchOptions: {
-          executablePath:
-            process.env.SEAPHORE_CHROMIUM || "/chromium-1194/chrome-linux/chrome",
+          executablePath: process.env.SEAPHORE_CHROMIUM || "/chromium-1194/chrome-linux/chrome",
         },
-
       },
     },
   ],

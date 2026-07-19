@@ -7,8 +7,6 @@ import { PanelHead } from "@/components/panel-head";
 import { RiskPill } from "@/components/intelligence/RiskPill";
 import { INVESTIGATIONS } from "@/lib/lifecycle-data";
 
-
-
 export function DecideList() {
   return (
     <AppShell title="Decision Support" subtitle="Officer Workspace" mode="light">
@@ -36,7 +34,9 @@ export function DecideList() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="text-[12px] text-foreground/80">{inv.keySignal}</div>
-                  <div className="text-[11px] text-slate">{inv.mission} · {inv.officer}</div>
+                  <div className="text-[11px] text-slate">
+                    {inv.mission} · {inv.officer}
+                  </div>
                 </div>
                 <RiskPill level={inv.risk} />
                 <span className="text-[12px] font-bold text-foreground">{inv.confidencePct}%</span>

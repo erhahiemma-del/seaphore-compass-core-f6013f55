@@ -30,12 +30,7 @@ export function KpiTile({
   const trendUp = (delta ?? 0) > 0;
   const trendFlat = (delta ?? 0) === 0;
   return (
-    <div
-      className={cn(
-        "rounded-lg border border-line bg-card px-4 py-3 shadow-card",
-        className,
-      )}
-    >
+    <div className={cn("rounded-lg border border-line bg-card px-4 py-3 shadow-card", className)}>
       <div className="flex items-center justify-between">
         <span className="type-label text-slate">{label}</span>
         {Icon && (
@@ -61,9 +56,7 @@ export function KpiTile({
           <span
             className={cn(
               "inline-flex items-center gap-0.5 text-[11px] font-semibold",
-              trendUp
-                ? "text-[color:var(--color-red)]"
-                : "text-[color:var(--color-green)]",
+              trendUp ? "text-[color:var(--color-red)]" : "text-[color:var(--color-green)]",
             )}
           >
             {trendUp ? (

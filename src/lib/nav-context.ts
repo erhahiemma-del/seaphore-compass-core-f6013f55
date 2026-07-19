@@ -22,20 +22,10 @@
 
 import { useNavigate, useSearch } from "@tanstack/react-router";
 
-export type LifecycleStage =
-  | "Monitor"
-  | "Detect"
-  | "Investigate"
-  | "Decide"
-  | "Share"
-  | "Learn";
+export type LifecycleStage = "Monitor" | "Detect" | "Investigate" | "Decide" | "Share" | "Learn";
 
 /** UI-facing confidence tiers (see OC-001 Confidence Ladder). */
-export type HandoffConfidence =
-  | "VERIFIED"
-  | "OBSERVED"
-  | "INFERRED"
-  | "UNCONFIRMED";
+export type HandoffConfidence = "VERIFIED" | "OBSERVED" | "INFERRED" | "UNCONFIRMED";
 
 /**
  * Handoff context — serialised into URL search params so the target
@@ -60,9 +50,7 @@ export interface HandoffCall {
 }
 
 /** Serialise HandoffContext into a query-string search object. */
-export function contextToSearch(
-  context: HandoffContext | undefined,
-): Record<string, string> {
+export function contextToSearch(context: HandoffContext | undefined): Record<string, string> {
   if (!context) return {};
   const out: Record<string, string> = {};
   for (const [k, v] of Object.entries(context)) {

@@ -64,7 +64,12 @@ export const NAV_GROUPS: NavGroup[] = [
       { title: "Investigate", subtitle: "Case Workspace", url: "/investigate", icon: Search },
       { title: "Decision Support", subtitle: "Recommendations", url: "/decide", icon: Gavel },
       { title: "Share", subtitle: "Briefings & Collaboration", url: "/share", icon: Share2 },
-      { title: "Institutional Memory", subtitle: "Knowledge & Learning", url: "/memory", icon: Library },
+      {
+        title: "Institutional Memory",
+        subtitle: "Knowledge & Learning",
+        url: "/memory",
+        icon: Library,
+      },
     ],
   },
   {

@@ -86,14 +86,15 @@ export function IntelMap({
   const surfaceStyle: CSSProperties = { height };
 
   return (
-    <div className={cn("relative overflow-hidden rounded-md border border-line/60", className)} style={surfaceStyle}>
+    <div
+      className={cn("relative overflow-hidden rounded-md border border-line/60", className)}
+      style={surfaceStyle}
+    >
       <MapProvider viewport={viewport} markers={markers} className="absolute inset-0" />
 
       <MapLegend />
 
-      {selected ? (
-        <MarkerTooltip entity={selected} onClose={() => setSelected(null)} />
-      ) : null}
+      {selected ? <MarkerTooltip entity={selected} onClose={() => setSelected(null)} /> : null}
     </div>
   );
 }

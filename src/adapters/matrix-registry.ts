@@ -46,7 +46,6 @@ const MATRIX_ADAPTERS: Record<string, BaseAdapter> = {
 // Sanity: every matrix row must have an adapter.
 for (const entry of DATA_SOURCE_MATRIX) {
   if (!MATRIX_ADAPTERS[entry.id]) {
-    // eslint-disable-next-line no-console
     console.error(`[Seaphore] Missing adapter for matrix id: ${entry.id}`);
   }
 }

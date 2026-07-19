@@ -11,12 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { QUERY_KEYS } from "@/lib/query-keys";
-import {
-  can,
-  highestRole,
-  type Permission,
-  type Role,
-} from "@/lib/permissions";
+import { can, highestRole, type Permission, type Role } from "@/lib/permissions";
 
 export function useRoles(): {
   roles: Role[];

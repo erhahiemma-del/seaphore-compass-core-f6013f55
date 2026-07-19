@@ -91,7 +91,14 @@ export function NigeriaMap({
         />
 
         {/* Country label */}
-        <text x={W * 0.5} y={H * 0.32} textAnchor="middle" fill="#1E3557" fontSize={44} fontWeight={700}>
+        <text
+          x={W * 0.5}
+          y={H * 0.32}
+          textAnchor="middle"
+          fill="#1E3557"
+          fontSize={44}
+          fontWeight={700}
+        >
           NIGERIA
         </text>
 

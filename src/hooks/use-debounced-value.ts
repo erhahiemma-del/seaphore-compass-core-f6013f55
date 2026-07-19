@@ -37,7 +37,9 @@ export function useDebouncedCallback<TArgs extends unknown[]>(
   const timerRef = React.useRef<number | null>(null);
   const lastArgsRef = React.useRef<TArgs | null>(null);
 
-  React.useEffect(() => { fnRef.current = fn; }, [fn]);
+  React.useEffect(() => {
+    fnRef.current = fn;
+  }, [fn]);
 
   const cancel = React.useCallback(() => {
     if (timerRef.current !== null) {

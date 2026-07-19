@@ -6,14 +6,23 @@
 import { BaseAdapter, type HealthReport } from "../base-adapter";
 import type { SourcedResult } from "../status";
 
-export interface LevyRecord { assessmentId: string; vesselImo: string; grossFreightUsd: number; leviedAmountUsd: number; receiptRef?: string; observedAt: string }
+export interface LevyRecord {
+  assessmentId: string;
+  vesselImo: string;
+  grossFreightUsd: number;
+  leviedAmountUsd: number;
+  receiptRef?: string;
+  observedAt: string;
+}
 
 export class NimasaLevyAdapter extends BaseAdapter {
-  constructor() { super("nimasa_levy"); }
+  constructor() {
+    super("nimasa_levy");
+  }
   attach<T extends LevyRecord | LevyRecord[]>(records: T): SourcedResult<T> {
     this.assertUsable();
     const observedAt = Array.isArray(records)
-      ? records[0]?.observedAt ?? new Date().toISOString()
+      ? (records[0]?.observedAt ?? new Date().toISOString())
       : records.observedAt;
     return this.envelope<T>(records, observedAt);
   }

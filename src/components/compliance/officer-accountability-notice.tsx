@@ -8,9 +8,7 @@ import { cn } from "@/lib/utils";
  * The string is hard-coded here; consumers cannot override it. Removing this
  * component from any decision form is a build defect.
  */
-export function OfficerAccountabilityNotice({
-  className,
-}: { className?: string }) {
+export function OfficerAccountabilityNotice({ className }: { className?: string }) {
   return (
     <div
       role="note"
@@ -20,13 +18,8 @@ export function OfficerAccountabilityNotice({
         className,
       )}
     >
-      <AlertTriangle
-        aria-hidden
-        className="mt-0.5 h-4 w-4 shrink-0 text-amber-500"
-      />
-      <p className="type-label text-foreground">
-        {OFFICER_ACCOUNTABILITY_NOTICE}
-      </p>
+      <AlertTriangle aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+      <p className="type-label text-foreground">{OFFICER_ACCOUNTABILITY_NOTICE}</p>
     </div>
   );
 }

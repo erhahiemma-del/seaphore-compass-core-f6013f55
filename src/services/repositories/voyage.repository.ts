@@ -13,7 +13,7 @@ export interface VoyageRow {
 
 function unwrap<T>(env: unknown): T {
   const asEnv = env as { data?: T };
-  return (asEnv?.data ?? (env as T));
+  return asEnv?.data ?? (env as T);
 }
 
 export class SupabaseVoyageRepository implements Repository<VoyageRow> {

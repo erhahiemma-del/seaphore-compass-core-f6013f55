@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Maximize2, Minus, Plus, RefreshCw, Radio } from "lucide-react";
 
-import { COMPANIES, VESSELS, OWNERSHIP_EDGES, type OwnershipEdge, PORTS } from "@/lib/intel-centre-data";
+import {
+  COMPANIES,
+  VESSELS,
+  OWNERSHIP_EDGES,
+  type OwnershipEdge,
+  PORTS,
+} from "@/lib/intel-centre-data";
 import { PERSONS } from "./ownership-data";
 import { cn } from "@/lib/utils";
 import { startTrace } from "@/lib/perf/monitor";
@@ -121,11 +127,13 @@ export function OwnershipNetworkGraph({
     PERSONS.forEach((p) => {
       if (!nodeIds.has(p.id) || !nodeIds.has(p.companyId)) return;
       if (!visibleRelations["beneficial-owner"] && p.role === "Beneficial Owner") return;
-      const label = (p.role === "Director"
-        ? "manages"
-        : p.role === "Shareholder"
-          ? "beneficial-owner"
-          : "beneficial-owner") as OwnershipEdge["label"];
+      const label = (
+        p.role === "Director"
+          ? "manages"
+          : p.role === "Shareholder"
+            ? "beneficial-owner"
+            : "beneficial-owner"
+      ) as OwnershipEdge["label"];
       if (!visibleRelations[label]) return;
       base.push({
         fromId: p.id,
@@ -183,26 +191,41 @@ export function OwnershipNetworkGraph({
     if (!active) return "#1A2438";
     if (n.id === centerId) return "#2563EB";
     switch (n.kind) {
-      case "vessel":  return "#0B4C8F";
-      case "person":  return "#6D4AB2";
-      case "port":    return "#1E6B3A";
-      default:        return "#274063";
+      case "vessel":
+        return "#0B4C8F";
+      case "person":
+        return "#6D4AB2";
+      case "port":
+        return "#1E6B3A";
+      default:
+        return "#274063";
     }
   };
   const nodeStroke = (n: GraphNode, active: boolean) => {
     if (!active) return "#33445E";
     if (n.id === centerId) return "#7DB8FF";
     switch (n.kind) {
-      case "vessel":  return "#7DB8FF";
-      case "person":  return "#C9B3FF";
-      case "port":    return "#8FE0A9";
-      default:        return "#8FA5C1";
+      case "vessel":
+        return "#7DB8FF";
+      case "person":
+        return "#C9B3FF";
+      case "port":
+        return "#8FE0A9";
+      default:
+        return "#8FA5C1";
     }
   };
   const edgeStroke = (c: OwnershipEdge["confidence"]) =>
-    c === "verified" ? "#1E6B3A" : c === "observed" ? "#2563EB" : c === "inferred" ? "#B06A00" : "#5A6B7B";
+    c === "verified"
+      ? "#1E6B3A"
+      : c === "observed"
+        ? "#2563EB"
+        : c === "inferred"
+          ? "#B06A00"
+          : "#5A6B7B";
 
-  const viewW = 900, viewH = 460;
+  const viewW = 900,
+    viewH = 460;
 
   return (
     <div className="relative overflow-hidden rounded-md border border-line/60 bg-[#050D1A]">
@@ -212,32 +235,64 @@ export function OwnershipNetworkGraph({
           {live && (
             <span className="inline-flex items-center gap-1">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[color:var(--color-green)]" />
-              <span className="font-semibold uppercase tracking-[0.06em] text-[color:var(--color-green)]">Live</span>
+              <span className="font-semibold uppercase tracking-[0.06em] text-[color:var(--color-green)]">
+                Live
+              </span>
             </span>
           )}
         </div>
         <div className="pointer-events-auto flex flex-col gap-1">
-          <button onClick={() => { const end = startTrace("zoom.step", { dir: "in" }); setZoom((z) => Math.min(3, z + 0.2)); end(); }} className="rounded border border-line/60 bg-surface/80 p-1 text-slate hover:text-foreground" aria-label="Zoom in">
+          <button
+            onClick={() => {
+              const end = startTrace("zoom.step", { dir: "in" });
+              setZoom((z) => Math.min(3, z + 0.2));
+              end();
+            }}
+            className="rounded border border-line/60 bg-surface/80 p-1 text-slate hover:text-foreground"
+            aria-label="Zoom in"
+          >
             <Plus className="h-3.5 w-3.5" />
           </button>
-          <button onClick={() => { const end = startTrace("zoom.step", { dir: "out" }); setZoom((z) => Math.max(0.4, z - 0.2)); end(); }} className="rounded border border-line/60 bg-surface/80 p-1 text-slate hover:text-foreground" aria-label="Zoom out">
+          <button
+            onClick={() => {
+              const end = startTrace("zoom.step", { dir: "out" });
+              setZoom((z) => Math.max(0.4, z - 0.2));
+              end();
+            }}
+            className="rounded border border-line/60 bg-surface/80 p-1 text-slate hover:text-foreground"
+            aria-label="Zoom out"
+          >
             <Minus className="h-3.5 w-3.5" />
           </button>
           <button
-            onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }}
+            onClick={() => {
+              setZoom(1);
+              setPan({ x: 0, y: 0 });
+            }}
             className="rounded border border-line/60 bg-surface/80 p-1 text-slate hover:text-foreground"
             aria-label="Fit view"
           >
             <Maximize2 className="h-3.5 w-3.5" />
           </button>
-          <button onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }} className="rounded border border-line/60 bg-surface/80 p-1 text-slate hover:text-foreground" aria-label="Reset">
+          <button
+            onClick={() => {
+              setZoom(1);
+              setPan({ x: 0, y: 0 });
+            }}
+            className="rounded border border-line/60 bg-surface/80 p-1 text-slate hover:text-foreground"
+            aria-label="Reset"
+          >
             <RefreshCw className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
 
       <div ref={wrapRef} className="relative h-[460px] w-full cursor-grab active:cursor-grabbing">
-        <svg viewBox={`0 0 ${viewW} ${viewH}`} className="h-full w-full select-none" preserveAspectRatio="xMidYMid meet">
+        <svg
+          viewBox={`0 0 ${viewW} ${viewH}`}
+          className="h-full w-full select-none"
+          preserveAspectRatio="xMidYMid meet"
+        >
           <defs>
             <radialGradient id="og-bg" cx="50%" cy="50%" r="65%">
               <stop offset="0%" stopColor="#0A1729" />
@@ -259,14 +314,18 @@ export function OwnershipNetworkGraph({
               return (
                 <g key={`${e.fromId}-${e.toId}-${i}`} opacity={active ? 0.85 : 0.15}>
                   <line
-                    x1={a.x} y1={a.y} x2={b.x} y2={b.y}
+                    x1={a.x}
+                    y1={a.y}
+                    x2={b.x}
+                    y2={b.y}
                     stroke={edgeStroke(e.confidence)}
                     strokeWidth={1.4}
                     strokeDasharray={e.confidence === "inferred" ? "5 3" : undefined}
                     markerEnd="url(#og-arrow)"
                   />
                   <text x={mx} y={my - 4} textAnchor="middle" fill="#6E8098" fontSize={8.5}>
-                    {edgeShort(e.label)}{e.sourceNote.includes("%") ? " " + e.sourceNote.match(/\d+%/)?.[0] : ""}
+                    {edgeShort(e.label)}
+                    {e.sourceNote.includes("%") ? " " + e.sourceNote.match(/\d+%/)?.[0] : ""}
                   </text>
                 </g>
               );
@@ -276,13 +335,34 @@ export function OwnershipNetworkGraph({
               const isCenter = n.id === centerId;
               const r = isCenter ? 26 : n.kind === "person" ? 16 : 18;
               return (
-                <g key={n.id} transform={`translate(${n.x}, ${n.y})`} onClick={() => onSelect?.(n.id)} className="cursor-pointer">
+                <g
+                  key={n.id}
+                  transform={`translate(${n.x}, ${n.y})`}
+                  onClick={() => onSelect?.(n.id)}
+                  className="cursor-pointer"
+                >
                   <circle r={r + 4} fill={nodeStroke(n, active)} opacity={active ? 0.18 : 0.06} />
-                  <circle r={r} fill={nodeFill(n, active)} stroke={nodeStroke(n, active)} strokeWidth={isCenter ? 2 : 1.2} />
-                  <text y={4} textAnchor="middle" fill={active ? "#E4E8EC" : "#33445E"} fontSize={9} fontWeight={700}>
+                  <circle
+                    r={r}
+                    fill={nodeFill(n, active)}
+                    stroke={nodeStroke(n, active)}
+                    strokeWidth={isCenter ? 2 : 1.2}
+                  />
+                  <text
+                    y={4}
+                    textAnchor="middle"
+                    fill={active ? "#E4E8EC" : "#33445E"}
+                    fontSize={9}
+                    fontWeight={700}
+                  >
                     {abbrev(n.kind)}
                   </text>
-                  <text y={r + 12} textAnchor="middle" fill={active ? "#B7C0C8" : "#33445E"} fontSize={9.5}>
+                  <text
+                    y={r + 12}
+                    textAnchor="middle"
+                    fill={active ? "#B7C0C8" : "#33445E"}
+                    fontSize={9.5}
+                  >
                     {truncate(n.label, isCenter ? 28 : 22)}
                   </text>
                   {n.sub && (
@@ -303,27 +383,58 @@ export function OwnershipNetworkGraph({
 }
 
 function MiniMap({
-  nodes, pan, zoom, viewW, viewH,
-}: { nodes: GraphNode[]; pan: { x: number; y: number }; zoom: number; viewW: number; viewH: number }) {
-  const w = 130, h = 90;
-  const sx = w / viewW, sy = h / viewH;
+  nodes,
+  pan,
+  zoom,
+  viewW,
+  viewH,
+}: {
+  nodes: GraphNode[];
+  pan: { x: number; y: number };
+  zoom: number;
+  viewW: number;
+  viewH: number;
+}) {
+  const w = 130,
+    h = 90;
+  const sx = w / viewW,
+    sy = h / viewH;
   return (
     <div className="absolute bottom-2 right-2 rounded-md border border-line/60 bg-surface/80 p-1">
       <svg width={w} height={h}>
         <rect width={w} height={h} fill="#0A1729" />
         {nodes.map((n) => (
-          <circle key={n.id} cx={n.x * sx + pan.x * sx * zoom} cy={n.y * sy + pan.y * sy * zoom} r={1.6} fill="#7DB8FF" opacity={0.9} />
+          <circle
+            key={n.id}
+            cx={n.x * sx + pan.x * sx * zoom}
+            cy={n.y * sy + pan.y * sy * zoom}
+            r={1.6}
+            fill="#7DB8FF"
+            opacity={0.9}
+          />
         ))}
-        <rect x={-pan.x * sx / zoom} y={-pan.y * sy / zoom} width={w / zoom} height={h / zoom} fill="none" stroke="#7DB8FF" strokeOpacity={0.6} />
+        <rect
+          x={(-pan.x * sx) / zoom}
+          y={(-pan.y * sy) / zoom}
+          width={w / zoom}
+          height={h / zoom}
+          fill="none"
+          stroke="#7DB8FF"
+          strokeOpacity={0.6}
+        />
       </svg>
     </div>
   );
 }
 
 function layoutNodes(list: GraphNode[], centerId: string, layout: GraphLayout) {
-  const cx = 450, cy = 230;
+  const cx = 450,
+    cy = 230;
   const center = list.find((n) => n.id === centerId);
-  if (center) { center.x = cx; center.y = cy; }
+  if (center) {
+    center.x = cx;
+    center.y = cy;
+  }
   const others = list.filter((n) => n.id !== centerId);
 
   if (layout === "radial" || layout === "force") {
@@ -336,7 +447,12 @@ function layoutNodes(list: GraphNode[], centerId: string, layout: GraphLayout) {
     return;
   }
   if (layout === "hierarchy") {
-    const buckets: Record<GraphNodeKind, GraphNode[]> = { company: [], vessel: [], person: [], port: [] };
+    const buckets: Record<GraphNodeKind, GraphNode[]> = {
+      company: [],
+      vessel: [],
+      person: [],
+      port: [],
+    };
     others.forEach((n) => buckets[n.kind].push(n));
     const cols: [GraphNodeKind, number][] = [
       ["person", 130],
@@ -352,11 +468,15 @@ function layoutNodes(list: GraphNode[], centerId: string, layout: GraphLayout) {
         n.y = 60 + (i + 1) * gap;
       });
     });
-    if (center) { center.x = 450; center.y = 230; }
+    if (center) {
+      center.x = 450;
+      center.y = 230;
+    }
     return;
   }
   // timeline
-  const spanX = 720, startX = 90;
+  const spanX = 720,
+    startX = 90;
   others
     .slice()
     .sort((a, b) => a.label.localeCompare(b.label))
@@ -364,7 +484,10 @@ function layoutNodes(list: GraphNode[], centerId: string, layout: GraphLayout) {
       n.x = startX + (i / Math.max(1, arr.length - 1)) * spanX;
       n.y = 100 + (i % 3) * 100;
     });
-  if (center) { center.x = 450; center.y = 260; }
+  if (center) {
+    center.x = 450;
+    center.y = 260;
+  }
 }
 
 function abbrev(k: GraphNodeKind) {
@@ -387,10 +510,10 @@ function edgeShort(l: OwnershipEdge["label"]) {
 
 // Re-export layout name helper for the toolbar
 export const LAYOUTS: { key: GraphLayout; label: string }[] = [
-  { key: "force",     label: "Force Directed" },
-  { key: "radial",    label: "Radial" },
+  { key: "force", label: "Force Directed" },
+  { key: "radial", label: "Radial" },
   { key: "hierarchy", label: "Hierarchy" },
-  { key: "timeline",  label: "Timeline" },
+  { key: "timeline", label: "Timeline" },
 ];
 
 export { Radio as LiveIcon };

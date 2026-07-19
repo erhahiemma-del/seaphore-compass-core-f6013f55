@@ -8,10 +8,19 @@
 import { BaseAdapter, type HealthReport } from "../base-adapter";
 import type { SourcedResult } from "../status";
 
-export interface AisFix { mmsi: string; lat: number; lng: number; sog?: number; cog?: number; timestamp: string }
+export interface AisFix {
+  mmsi: string;
+  lat: number;
+  lng: number;
+  sog?: number;
+  cog?: number;
+  timestamp: string;
+}
 
 export class SpireAdapter extends BaseAdapter {
-  constructor() { super("spire"); }
+  constructor() {
+    super("spire");
+  }
   async getLatestPosition(_mmsi: string): Promise<SourcedResult<AisFix>> {
     this.assertUsable(); // throws PlannedSourceError
     return this.envelope<AisFix>(null, new Date().toISOString());

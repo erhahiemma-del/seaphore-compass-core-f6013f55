@@ -28,12 +28,25 @@ type Relation =
   | "associated-with"
   | "agent-of";
 
-interface Node { id: string; kind: Kind; firstSeenYear: number }
-interface Edge { fromId: string; toId: string; label: Relation }
+interface Node {
+  id: string;
+  kind: Kind;
+  firstSeenYear: number;
+}
+interface Edge {
+  fromId: string;
+  toId: string;
+  label: Relation;
+}
 
 const RELATIONS: Relation[] = [
-  "owns", "subsidiary-of", "beneficial-owner",
-  "operates", "manages", "associated-with", "agent-of",
+  "owns",
+  "subsidiary-of",
+  "beneficial-owner",
+  "operates",
+  "manages",
+  "associated-with",
+  "agent-of",
 ];
 
 function seed(nodeCount: number, edgeCount: number) {

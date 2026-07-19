@@ -1,14 +1,5 @@
 import { useEffect, type ReactNode } from "react";
-import {
-  Clock,
-  FileText,
-  Info,
-  Link2,
-  ShieldCheck,
-  Sparkles,
-  User,
-  X,
-} from "lucide-react";
+import { Clock, FileText, Info, Link2, ShieldCheck, Sparkles, User, X } from "lucide-react";
 
 import {
   ConfidenceChip,
@@ -77,16 +68,19 @@ export function EvidenceDrilldown({
   if (!open || !data) return null;
 
   return (
-    <div className="fixed inset-0 z-[70]" role="dialog" aria-modal="true" aria-label="Evidence drilldown">
+    <div
+      className="fixed inset-0 z-[70]"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Evidence drilldown"
+    >
       <button
         type="button"
         aria-label="Close drilldown"
         onClick={onClose}
         className="absolute inset-0 bg-black/40 motion-fast"
       />
-      <aside
-        className="absolute right-0 top-0 flex h-full w-full max-w-[520px] flex-col border-l border-line bg-card shadow-2xl"
-      >
+      <aside className="absolute right-0 top-0 flex h-full w-full max-w-[520px] flex-col border-l border-line bg-card shadow-2xl">
         <header className="flex items-start gap-3 border-b border-line px-4 py-3">
           <span className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-md bg-[color:var(--color-blue)]/10 text-[color:var(--color-blue)]">
             <Info className="h-4 w-4" />
@@ -103,9 +97,7 @@ export function EvidenceDrilldown({
               )}
               <ConfidenceChip tier={data.confidence} />
             </div>
-            {data.subtitle && (
-              <div className="mt-0.5 text-[11px] text-slate">{data.subtitle}</div>
-            )}
+            {data.subtitle && <div className="mt-0.5 text-[11px] text-slate">{data.subtitle}</div>}
           </div>
           <button
             type="button"
@@ -130,9 +122,7 @@ export function EvidenceDrilldown({
 
           {/* Officer explanation (HR-9) */}
           <Section icon={<Sparkles className="h-3.5 w-3.5" />} title="How this value was derived">
-            <p className="text-[12.5px] leading-relaxed text-foreground/85">
-              {data.explanation}
-            </p>
+            <p className="text-[12.5px] leading-relaxed text-foreground/85">{data.explanation}</p>
           </Section>
 
           {/* Contextual fields for row drilldowns */}

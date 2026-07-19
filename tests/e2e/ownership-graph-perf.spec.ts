@@ -39,8 +39,12 @@ test.describe("Ownership Network Graph — stress", () => {
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
       for (let i = 0; i < 30; i++) {
-        surface.dispatchEvent(new MouseEvent("mousedown", { clientX: cx, clientY: cy, bubbles: true }));
-        window.dispatchEvent(new MouseEvent("mousemove", { clientX: cx + i * 4, clientY: cy + i * 2, bubbles: true }));
+        surface.dispatchEvent(
+          new MouseEvent("mousedown", { clientX: cx, clientY: cy, bubbles: true }),
+        );
+        window.dispatchEvent(
+          new MouseEvent("mousemove", { clientX: cx + i * 4, clientY: cy + i * 2, bubbles: true }),
+        );
         window.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
       }
       return performance.now() - t;
@@ -73,7 +77,9 @@ test.describe("Ownership Network Graph — stress", () => {
         const box = page.getByLabel(label, { exact: true }).first();
         // Some labels overlap sidebar copy; use force + noWaitAfter so we
         // never block on transitions the graph doesn't own.
-        await box.click({ force: true, noWaitAfter: true }).catch(() => { /* tolerate */ });
+        await box.click({ force: true, noWaitAfter: true }).catch(() => {
+          /* tolerate */
+        });
       }
     }
     const elapsed = Date.now() - start;
@@ -125,15 +131,22 @@ test.describe("Ownership Network Graph — stress", () => {
 
     for (let i = 0; i < 5; i++) {
       await zoomIn.click({ noWaitAfter: true });
-      await page.getByLabel("Ownership", { exact: true }).first()
-        .click({ force: true, noWaitAfter: true }).catch(() => {});
-      await slider.evaluate((el, y) => {
-        const setter = Object.getOwnPropertyDescriptor(
-          window.HTMLInputElement.prototype, "value",
-        )?.set;
-        setter?.call(el, String(y));
-        el.dispatchEvent(new Event("input", { bubbles: true }));
-      }, 2013 + i * 2);
+      await page
+        .getByLabel("Ownership", { exact: true })
+        .first()
+        .click({ force: true, noWaitAfter: true })
+        .catch(() => {});
+      await slider.evaluate(
+        (el, y) => {
+          const setter = Object.getOwnPropertyDescriptor(
+            window.HTMLInputElement.prototype,
+            "value",
+          )?.set;
+          setter?.call(el, String(y));
+          el.dispatchEvent(new Event("input", { bubbles: true }));
+        },
+        2013 + i * 2,
+      );
     }
     await page.getByRole("button", { name: "Reset" }).click();
 

@@ -47,9 +47,7 @@ export function CaseHeaderBar({
         </span>
       </div>
 
-      {vessel && (
-        <Field icon={Ship} label="Vessel" value={vessel} mono />
-      )}
+      {vessel && <Field icon={Ship} label="Vessel" value={vessel} mono />}
       {mission && <Field icon={Target} label="Mission" value={mission} />}
       {officer && <Field icon={User} label="Officer" value={officer} />}
       {status && <Field icon={Activity} label="Status" value={status} />}

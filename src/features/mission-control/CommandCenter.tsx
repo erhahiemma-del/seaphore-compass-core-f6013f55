@@ -14,7 +14,6 @@ import {
   RotateCw,
 } from "lucide-react";
 
-
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { PanelCard } from "@/components/panel-card";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
@@ -24,8 +23,6 @@ import { ModeBadge } from "@/components/ai/mode-badge";
 import { COPILOT_MODES } from "@/lib/ai/types";
 import type { CopilotMode } from "@/lib/ai/types";
 import { COPILOT_REGISTRY } from "@/lib/ai/copilots";
-
-
 
 const MODE_ICON: Record<CopilotMode, React.ComponentType<{ className?: string }>> = {
   SEARCH: Radar,
@@ -52,7 +49,12 @@ interface MissionStat {
 }
 
 const MISSION_STATS: MissionStat[] = [
-  { label: "National Maritime Risk", value: "MEDIUM", confidence: "inferred", hint: "Composite of arrivals, alerts, revenue-at-risk" },
+  {
+    label: "National Maritime Risk",
+    value: "MEDIUM",
+    confidence: "inferred",
+    hint: "Composite of arrivals, alerts, revenue-at-risk",
+  },
   { label: "Today's Alerts", value: "42", confidence: "verified" },
   { label: "Revenue at Risk", value: "₦1.24B", confidence: "inferred" },
   { label: "Recovered Today", value: "₦186M", confidence: "verified" },
@@ -93,7 +95,6 @@ export function CommandCenter() {
 
   const pushTimeline = (e: TimelineEvent) => setTimeline((t) => [e, ...t]);
 
-
   return (
     <AppShell title="Command Center" subtitle="Mission Control AI" mode="light">
       <div className="mx-auto max-w-[1400px] space-y-6 px-6 py-6">
@@ -106,8 +107,10 @@ export function CommandCenter() {
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <h1 className="type-h1 text-foreground">Maritime Intelligence Command Center</h1>
-                <span className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em]"
-                  style={{ color: "#7C3AED", backgroundColor: "#7C3AED22" }}>
+                <span
+                  className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em]"
+                  style={{ color: "#7C3AED", backgroundColor: "#7C3AED22" }}
+                >
                   BETA
                 </span>
                 <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[color:var(--color-green)]">
@@ -116,7 +119,8 @@ export function CommandCenter() {
                 </span>
               </div>
               <p className="mt-1 text-[13px] text-slate">
-                Search · Retrieve · Interpret · Advise. One AI orchestrating every intelligence centre.
+                Search · Retrieve · Interpret · Advise. One AI orchestrating every intelligence
+                centre.
               </p>
             </div>
           </div>
@@ -186,7 +190,6 @@ export function CommandCenter() {
               </div>
               <ol className="relative border-l border-line pl-4">
                 {timeline.map((e, i) => (
-
                   <li key={i} className="mb-3 last:mb-0">
                     <span className="absolute -left-1.5 mt-1 h-3 w-3 rounded-full border-2 border-card bg-primary" />
                     <div className="flex items-center gap-2">
@@ -303,41 +306,103 @@ function buildPreview(file: File, risk: "HIGH" | "MEDIUM" | "LOW"): ManifestPrev
   const seed = file.name.length;
   const bol = `BOL-${String(2400 + (seed % 900)).padStart(4, "0")}-NG`;
   const voyage = `VOY-${2411 + (seed % 12)}-${String.fromCharCode(65 + (seed % 6))}`;
-  const vessel = ["MV Ocean Pearl", "MV Bluewave Star", "MV Sahara Trader", "MV Gulf Runner"][seed % 4];
-  const consignee = ["Zenith Petrochem Ltd", "Delta Cargo Nigeria", "Apex Freight WA", "Oceanic Lines Nig."][seed % 4];
-  const shipper = ["Rotterdam Bulk BV", "Antwerp Merchants NV", "Fujairah Trading FZE", "Singapore Marine Pte"][seed % 4];
+  const vessel = ["MV Ocean Pearl", "MV Bluewave Star", "MV Sahara Trader", "MV Gulf Runner"][
+    seed % 4
+  ];
+  const consignee = [
+    "Zenith Petrochem Ltd",
+    "Delta Cargo Nigeria",
+    "Apex Freight WA",
+    "Oceanic Lines Nig.",
+  ][seed % 4];
+  const shipper = [
+    "Rotterdam Bulk BV",
+    "Antwerp Merchants NV",
+    "Fujairah Trading FZE",
+    "Singapore Marine Pte",
+  ][seed % 4];
   const pol = ["Rotterdam", "Antwerp", "Fujairah", "Singapore"][seed % 4];
   const pod = ["Apapa (Lagos)", "Tin Can (Lagos)", "Onne", "Port Harcourt"][seed % 4];
   const hs = ["2710.19", "3901.10", "8481.80"].slice(0, 1 + (seed % 3));
   return {
-    bol, vessel, voyage, consignee, shipper, portOfLoading: pol, portOfDischarge: pod,
+    bol,
+    vessel,
+    voyage,
+    consignee,
+    shipper,
+    portOfLoading: pol,
+    portOfDischarge: pod,
     fields: [
-      { label: "Bill of lading", value: bol, confidence: "verified", note: "OCR match · header block" },
-      { label: "Vessel", value: vessel, confidence: "verified", note: "Cross-checked against AIS registry" },
+      {
+        label: "Bill of lading",
+        value: bol,
+        confidence: "verified",
+        note: "OCR match · header block",
+      },
+      {
+        label: "Vessel",
+        value: vessel,
+        confidence: "verified",
+        note: "Cross-checked against AIS registry",
+      },
       { label: "Voyage", value: voyage, confidence: "observed" },
-      { label: "Consignee", value: consignee, confidence: risk === "HIGH" ? "unconfirmed" : "observed", note: risk === "HIGH" ? "No prior filings under this TIN" : undefined },
+      {
+        label: "Consignee",
+        value: consignee,
+        confidence: risk === "HIGH" ? "unconfirmed" : "observed",
+        note: risk === "HIGH" ? "No prior filings under this TIN" : undefined,
+      },
       { label: "Shipper", value: shipper, confidence: "observed" },
       { label: "Port of loading", value: pol, confidence: "verified" },
       { label: "Port of discharge", value: pod, confidence: "verified" },
-      { label: "HS codes", value: hs.join(" · "), confidence: "inferred", note: "Derived from cargo descriptions" },
+      {
+        label: "HS codes",
+        value: hs.join(" · "),
+        confidence: "inferred",
+        note: "Derived from cargo descriptions",
+      },
       { label: "Line items", value: "148", confidence: "verified" },
       { label: "Containers", value: String(6 + (seed % 5)), confidence: "verified" },
-      { label: "Gross weight", value: `${(1240 + (seed % 400)).toLocaleString()} kg`, confidence: "observed" },
+      {
+        label: "Gross weight",
+        value: `${(1240 + (seed % 400)).toLocaleString()} kg`,
+        confidence: "observed",
+      },
     ],
     flags: [
       { severity: "warn", text: "1 duplicate BOL candidate observed in last 30 days" },
       { severity: "info", text: "2 field mismatches vs prior manifest for same voyage" },
       ...(risk === "HIGH"
-        ? [{ severity: "risk" as const, text: "Consignee has no verified filings — requires officer review" }]
+        ? [
+            {
+              severity: "risk" as const,
+              text: "Consignee has no verified filings — requires officer review",
+            },
+          ]
         : []),
     ],
   };
 }
 
 const STAGE_META: { key: StageKey; label: string; running: string; done: string }[] = [
-  { key: "ocr", label: "OCR extraction", running: "Reading pages…", done: "Text and tables extracted" },
-  { key: "validation", label: "AI validation", running: "Cross-checking BOL, HS codes, consignee…", done: "Fields validated against reference data" },
-  { key: "scoring", label: "Risk scoring", running: "Weighting anomalies & historical matches…", done: "Composite risk computed" },
+  {
+    key: "ocr",
+    label: "OCR extraction",
+    running: "Reading pages…",
+    done: "Text and tables extracted",
+  },
+  {
+    key: "validation",
+    label: "AI validation",
+    running: "Cross-checking BOL, HS codes, consignee…",
+    done: "Fields validated against reference data",
+  },
+  {
+    key: "scoring",
+    label: "Risk scoring",
+    running: "Weighting anomalies & historical matches…",
+    done: "Composite risk computed",
+  },
 ];
 
 const ACCEPTED_EXT = ["pdf", "jpg", "jpeg", "png", "xlsx", "xls"];
@@ -379,8 +444,7 @@ function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent)
   const [running, setRunning] = useState(false);
   const [history, setHistory] = useState<UploadRun[]>([]);
 
-  const recordRun = (run: UploadRun) =>
-    setHistory((h) => [run, ...h].slice(0, 20));
+  const recordRun = (run: UploadRun) => setHistory((h) => [run, ...h].slice(0, 20));
 
   const updateStage = (k: StageKey, patch: Partial<StageState>) =>
     setStages((s) => ({ ...s, [k]: { ...s[k], ...patch } }));
@@ -424,8 +488,14 @@ function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent)
       const msg = `Unsupported file type ".${ext}". Accepted: PDF, JPG, PNG, XLSX.`;
       setFatalError(msg);
       recordRun({
-        id: runId, filename: file.name, file, startedAt, finishedAt: new Date(),
-        status: "failed", error: msg, logged: false,
+        id: runId,
+        filename: file.name,
+        file,
+        startedAt,
+        finishedAt: new Date(),
+        status: "failed",
+        error: msg,
+        logged: false,
       });
       return;
     }
@@ -433,8 +503,14 @@ function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent)
       const msg = `File is ${(file.size / 1024 / 1024).toFixed(1)} MB — exceeds ${MAX_MB} MB limit.`;
       setFatalError(msg);
       recordRun({
-        id: runId, filename: file.name, file, startedAt, finishedAt: new Date(),
-        status: "failed", error: msg, logged: false,
+        id: runId,
+        filename: file.name,
+        file,
+        startedAt,
+        finishedAt: new Date(),
+        status: "failed",
+        error: msg,
+        logged: false,
       });
       return;
     }
@@ -446,11 +522,19 @@ function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent)
     setRunning(true);
     try {
       await animateStage("ocr", 900, ocrFail ? 60 : undefined);
-      if (ocrFail) throw { stage: "ocr", message: "OCR service could not read pages 3–5 (image quality too low)." };
+      if (ocrFail)
+        throw {
+          stage: "ocr",
+          message: "OCR service could not read pages 3–5 (image quality too low).",
+        };
       updateStage("ocr", { detail: "12 pages · 148 line-items · 3 HS-code groups" });
 
       await animateStage("validation", 900, valFail ? 45 : undefined);
-      if (valFail) throw { stage: "validation", message: "Consignee matched sanctions watchlist — validation halted." };
+      if (valFail)
+        throw {
+          stage: "validation",
+          message: "Consignee matched sanctions watchlist — validation halted.",
+        };
       updateStage("validation", { detail: "2 field mismatches · 1 duplicate BOL candidate" });
 
       await animateStage("scoring", 700);
@@ -462,8 +546,14 @@ function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent)
       // Officer must review the preview before it becomes a timeline entry.
       setPreview(buildPreview(file, level));
       recordRun({
-        id: runId, filename: file.name, file, startedAt, finishedAt: new Date(),
-        status: "success", risk: level, logged: false,
+        id: runId,
+        filename: file.name,
+        file,
+        startedAt,
+        finishedAt: new Date(),
+        status: "success",
+        risk: level,
+        logged: false,
       });
     } catch (err) {
       const e = err as { stage?: StageKey; message?: string };
@@ -472,8 +562,15 @@ function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent)
       updateStage(stage, { status: "error", error: msg });
       setFatalError(msg);
       recordRun({
-        id: runId, filename: file.name, file, startedAt, finishedAt: new Date(),
-        status: "failed", error: msg, failedStage: stage, logged: false,
+        id: runId,
+        filename: file.name,
+        file,
+        startedAt,
+        finishedAt: new Date(),
+        status: "failed",
+        error: msg,
+        failedStage: stage,
+        logged: false,
       });
     } finally {
       setRunning(false);
@@ -490,7 +587,9 @@ function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent)
     setLogged(true);
     // Mark the most recent matching run as logged.
     setHistory((h) => {
-      const idx = h.findIndex((r) => r.filename === filename && r.status === "success" && !r.logged);
+      const idx = h.findIndex(
+        (r) => r.filename === filename && r.status === "success" && !r.logged,
+      );
       if (idx < 0) return h;
       const next = h.slice();
       next[idx] = { ...next[idx], logged: true };
@@ -528,7 +627,10 @@ function UploadManifestPanel({ onProcessed }: { onProcessed?: (e: TimelineEvent)
   const clearHistory = () => setHistory([]);
 
   const started = filename !== null;
-  const allDone = stages.ocr.status === "done" && stages.validation.status === "done" && stages.scoring.status === "done";
+  const allDone =
+    stages.ocr.status === "done" &&
+    stages.validation.status === "done" &&
+    stages.scoring.status === "done";
 
   return (
     <PanelCard className="p-4">
@@ -686,7 +788,8 @@ function UploadHistoryList({
                   <span className="type-mono">{formatTime(run.startedAt)}</span>
                   {" → "}
                   <span className="type-mono">{formatTime(run.finishedAt)}</span>
-                  {" · "}{duration}
+                  {" · "}
+                  {duration}
                   {!success && run.error && <> · {run.error}</>}
                   {success && !run.logged && <> · Preview not confirmed</>}
                 </div>
@@ -721,19 +824,25 @@ function StageRow({
         : "var(--color-blue)";
   const caption =
     state.status === "error"
-      ? state.error ?? "Failed"
+      ? (state.error ?? "Failed")
       : state.status === "done"
-        ? state.detail ?? meta.done
+        ? (state.detail ?? meta.done)
         : state.status === "running"
           ? meta.running
           : "Waiting";
   return (
     <li className="rounded-md border border-line bg-surface/40 px-2.5 py-2">
       <div className="flex items-center gap-2 text-[12px]">
-        {state.status === "done" && <CheckCircle2 className="h-4 w-4 text-[color:var(--color-green)]" />}
+        {state.status === "done" && (
+          <CheckCircle2 className="h-4 w-4 text-[color:var(--color-green)]" />
+        )}
         {state.status === "running" && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
-        {state.status === "error" && <AlertTriangle className="h-4 w-4 text-[color:var(--color-red)]" />}
-        {state.status === "idle" && <span className="h-3.5 w-3.5 rounded-full border-2 border-line" />}
+        {state.status === "error" && (
+          <AlertTriangle className="h-4 w-4 text-[color:var(--color-red)]" />
+        )}
+        {state.status === "idle" && (
+          <span className="h-3.5 w-3.5 rounded-full border-2 border-line" />
+        )}
         <span className="font-semibold text-foreground">{meta.label}</span>
         <span className="ml-auto tabular-nums text-[10.5px] text-slate">
           {state.status === "idle" ? "—" : `${state.progress}%`}
@@ -792,8 +901,8 @@ function ManifestPreviewPanel({
       </div>
 
       <p className="mb-2 text-[11px] text-slate">
-        Observed extraction from OCR and AI validation. Nothing is written to the
-        Intelligence timeline until the officer confirms.
+        Observed extraction from OCR and AI validation. Nothing is written to the Intelligence
+        timeline until the officer confirms.
       </p>
 
       <div className="grid grid-cols-1 gap-1.5 md:grid-cols-2">
@@ -803,15 +912,9 @@ function ManifestPreviewPanel({
             className="flex items-start justify-between gap-2 rounded-md border border-line bg-card px-2.5 py-1.5"
           >
             <div className="min-w-0">
-              <div className="text-[10px] uppercase tracking-[0.08em] text-slate">
-                {f.label}
-              </div>
-              <div className="truncate text-[12.5px] font-semibold text-foreground">
-                {f.value}
-              </div>
-              {f.note && (
-                <div className="text-[10px] text-slate">{f.note}</div>
-              )}
+              <div className="text-[10px] uppercase tracking-[0.08em] text-slate">{f.label}</div>
+              <div className="truncate text-[12.5px] font-semibold text-foreground">{f.value}</div>
+              {f.note && <div className="text-[10px] text-slate">{f.note}</div>}
             </div>
             <ConfidenceChip tier={f.confidence} size={9} />
           </div>

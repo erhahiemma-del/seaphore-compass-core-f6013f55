@@ -32,26 +32,18 @@ export function LifecycleStepper({
           <span
             className={cn(
               "flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold",
-              step.status === "complete" &&
-                "bg-[color:var(--color-green)] text-white",
+              step.status === "complete" && "bg-[color:var(--color-green)] text-white",
               step.status === "active" &&
                 "bg-[color:var(--color-teal)] text-white ring-4 ring-[color:var(--color-teal)]/15",
-              step.status === "pending" &&
-                "bg-surface-2 text-slate ring-1 ring-line",
+              step.status === "pending" && "bg-surface-2 text-slate ring-1 ring-line",
             )}
           >
-            {step.status === "complete" ? (
-              <Check className="h-3.5 w-3.5" />
-            ) : (
-              i + 1
-            )}
+            {step.status === "complete" ? <Check className="h-3.5 w-3.5" /> : i + 1}
           </span>
           <span
             className={cn(
               "text-[12px] font-semibold",
-              step.status === "active"
-                ? "text-foreground"
-                : "text-foreground/70",
+              step.status === "active" ? "text-foreground" : "text-foreground/70",
             )}
           >
             {step.label}
@@ -61,12 +53,7 @@ export function LifecycleStepper({
               {step.status === "complete" ? "Complete" : "In Review"}
             </span>
           )}
-          {i < steps.length - 1 && (
-            <span
-              aria-hidden
-              className="mx-1 h-px w-8 bg-line sm:w-12"
-            />
-          )}
+          {i < steps.length - 1 && <span aria-hidden className="mx-1 h-px w-8 bg-line sm:w-12" />}
         </li>
       ))}
     </ol>

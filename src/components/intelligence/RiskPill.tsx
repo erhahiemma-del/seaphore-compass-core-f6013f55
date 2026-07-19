@@ -27,11 +27,7 @@ export function RiskPill({ level, className }: RiskPillProps) {
       )}
       style={{ color: hex, backgroundColor: `${hex}14` }}
     >
-      <span
-        aria-hidden
-        className="h-2 w-2 rounded-full"
-        style={{ backgroundColor: hex }}
-      />
+      <span aria-hidden className="h-2 w-2 rounded-full" style={{ backgroundColor: hex }} />
       {level}
     </span>
   );

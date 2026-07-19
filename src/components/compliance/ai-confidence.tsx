@@ -51,7 +51,9 @@ export function AiConfidence({
         >
           <span className="font-bold">{rounded}%</span>
           <span className="type-small text-slate">confidence</span>
-          <span aria-hidden className="text-slate">ⓘ</span>
+          <span aria-hidden className="text-slate">
+            ⓘ
+          </span>
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-80">
@@ -64,9 +66,7 @@ export function AiConfidence({
             <li key={i} className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="type-body">{b.factor}</div>
-                {b.note && (
-                  <div className="type-small text-slate">{b.note}</div>
-                )}
+                {b.note && <div className="type-small text-slate">{b.note}</div>}
               </div>
               <span className="type-small font-mono tabular-nums text-foreground/80">
                 {b.contribution >= 0 ? "+" : ""}

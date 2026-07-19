@@ -44,9 +44,7 @@ export function ModulePlaceholder({
         <div className="flex flex-wrap items-center gap-2">
           <ConfidenceChip tier="unconfirmed" />
           <RiskPill level="LOW" />
-          <span className="type-small text-slate">
-            Scheduled for a future sprint
-          </span>
+          <span className="type-small text-slate">Scheduled for a future sprint</span>
         </div>
 
         <p className="mt-4 max-w-2xl type-body text-foreground/85">
@@ -59,10 +57,7 @@ export function ModulePlaceholder({
             <div className="type-label text-slate">Planned Capabilities</div>
             <ul className="mt-2 grid gap-1.5 sm:grid-cols-2">
               {capabilities.map((cap) => (
-                <li
-                  key={cap}
-                  className="flex items-start gap-2 type-body text-foreground/85"
-                >
+                <li key={cap} className="flex items-start gap-2 type-body text-foreground/85">
                   <span
                     className="mt-2 h-1 w-1 shrink-0 rounded-full"
                     style={{ backgroundColor: "#0E7C7B" }}
@@ -75,8 +70,8 @@ export function ModulePlaceholder({
         )}
 
         <div className="mt-6 border-t border-line pt-4 type-small text-slate">
-          Every number wears a confidence chip. Every recommendation comes from
-          the system; every decision comes from the officer.
+          Every number wears a confidence chip. Every recommendation comes from the system; every
+          decision comes from the officer.
         </div>
       </PanelCard>
     </div>

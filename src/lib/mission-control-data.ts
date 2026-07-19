@@ -188,18 +188,48 @@ export const REVENUE_ASSURANCE = {
 };
 
 export const MANIFEST_METRICS = [
-  { key: "await", label: "Awaiting Validation", value: 62, confidence: "inferred" as ConfidenceTier },
-  { key: "discrep", label: "Discrepancies Observed", value: 24, confidence: "inferred" as ConfidenceTier },
-  { key: "changes", label: "Changes Detected", value: 17, confidence: "inferred" as ConfidenceTier },
+  {
+    key: "await",
+    label: "Awaiting Validation",
+    value: 62,
+    confidence: "inferred" as ConfidenceTier,
+  },
+  {
+    key: "discrep",
+    label: "Discrepancies Observed",
+    value: 24,
+    confidence: "inferred" as ConfidenceTier,
+  },
+  {
+    key: "changes",
+    label: "Changes Detected",
+    value: 17,
+    confidence: "inferred" as ConfidenceTier,
+  },
   { key: "dups", label: "Duplicate Manifests", value: 9, confidence: "inferred" as ConfidenceTier },
   { key: "late", label: "Late Submissions", value: 33, confidence: "inferred" as ConfidenceTier },
 ];
 
 export const COMPLIANCE_METRICS = [
-  { key: "sanct", label: "Sanctioned Entities Arrived", value: 2, confidence: "verified" as ConfidenceTier },
+  {
+    key: "sanct",
+    label: "Sanctioned Entities Arrived",
+    value: 2,
+    confidence: "verified" as ConfidenceTier,
+  },
   { key: "watch", label: "Watchlist Matches", value: 6, confidence: "verified" as ConfidenceTier },
-  { key: "alerts", label: "Compliance Alerts", value: 14, confidence: "inferred" as ConfidenceTier },
-  { key: "hrc", label: "High Risk Countries Activity", value: 11, confidence: "verified" as ConfidenceTier },
+  {
+    key: "alerts",
+    label: "Compliance Alerts",
+    value: 14,
+    confidence: "inferred" as ConfidenceTier,
+  },
+  {
+    key: "hrc",
+    label: "High Risk Countries Activity",
+    value: 11,
+    confidence: "verified" as ConfidenceTier,
+  },
 ];
 
 export interface PortCongestion {
@@ -327,7 +357,15 @@ export const RECENT_BRIEFINGS: Briefing[] = [
 export const MAP_VESSELS: MapVessel[] = [
   { id: "V1", imo: "9432187", name: "MV Ocean Pearl", x: 28, y: 44, risk: "high", watchlist: true },
   { id: "V2", imo: "9187562", name: "MV Crimson Endeavour", x: 40, y: 38, risk: "high" },
-  { id: "V3", imo: "9722145", name: "Blue Horizon", x: 46, y: 50, risk: "sanctioned", watchlist: true },
+  {
+    id: "V3",
+    imo: "9722145",
+    name: "Blue Horizon",
+    x: 46,
+    y: 50,
+    risk: "sanctioned",
+    watchlist: true,
+  },
   { id: "V4", imo: "9601028", name: "Star of Lagos", x: 34, y: 55, risk: "normal" },
   { id: "V5", imo: "9445310", name: "Delta Nomad", x: 55, y: 46, risk: "medium", watchlist: true },
   { id: "V6", imo: "9298471", name: "Niger Ranger", x: 62, y: 52, risk: "normal" },
@@ -339,6 +377,14 @@ export const MAP_VESSELS: MapVessel[] = [
   { id: "V12", imo: "9660098", name: "Gulf Sentinel", x: 50, y: 44, risk: "normal" },
   { id: "V13", imo: "9401336", name: "MV Warri Star", x: 52, y: 58, risk: "medium" },
   { id: "V14", imo: "9310022", name: "Kaduna Voyager", x: 30, y: 48, risk: "normal" },
-  { id: "V15", imo: "9877110", name: "Escravos Reach", x: 44, y: 56, risk: "medium", watchlist: true },
+  {
+    id: "V15",
+    imo: "9877110",
+    name: "Escravos Reach",
+    x: 44,
+    y: 56,
+    risk: "medium",
+    watchlist: true,
+  },
   { id: "V16", imo: "9556674", name: "Ibom Progress", x: 74, y: 66, risk: "normal" },
 ];

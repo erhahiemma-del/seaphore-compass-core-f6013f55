@@ -82,9 +82,7 @@ export function can(
   return list.some((r) => allowed.includes(r));
 }
 
-export function highestRole(
-  roles: ReadonlyArray<Role> | null | undefined,
-): Role | null {
+export function highestRole(roles: ReadonlyArray<Role> | null | undefined): Role | null {
   if (!roles || roles.length === 0) return null;
   return [...roles].sort((a, b) => ROLE_RANK[b] - ROLE_RANK[a])[0];
 }

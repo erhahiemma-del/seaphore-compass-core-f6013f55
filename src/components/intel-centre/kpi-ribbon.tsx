@@ -50,7 +50,9 @@ function KpiTile({ kpi }: { kpi: KpiSpec }) {
           <div className="truncate text-[10.5px] font-medium uppercase tracking-[0.06em] text-slate">
             {kpi.label}
           </div>
-          <div className={cn("mt-0.5 truncate text-[18px] font-semibold leading-tight", emphColour)}>
+          <div
+            className={cn("mt-0.5 truncate text-[18px] font-semibold leading-tight", emphColour)}
+          >
             {kpi.value}
           </div>
         </div>
@@ -58,14 +60,21 @@ function KpiTile({ kpi }: { kpi: KpiSpec }) {
       </div>
       <div className="mt-1.5 flex items-center justify-between gap-2">
         {kpi.delta ? (
-          <span className={cn("inline-flex items-center gap-0.5 text-[10.5px] font-medium", trendColour)}>
+          <span
+            className={cn(
+              "inline-flex items-center gap-0.5 text-[10.5px] font-medium",
+              trendColour,
+            )}
+          >
             <TrendIcon className="h-2.5 w-2.5" />
             {kpi.delta}
           </span>
         ) : (
           <span />
         )}
-        {kpi.series && kpi.series.length > 1 && <Sparkline data={kpi.series} trend={kpi.trend ?? "flat"} />}
+        {kpi.series && kpi.series.length > 1 && (
+          <Sparkline data={kpi.series} trend={kpi.trend ?? "flat"} />
+        )}
       </div>
     </div>
   );
@@ -89,11 +98,17 @@ export function Sparkline({
   const points = data
     .map((v, i) => `${(i * step).toFixed(1)},${(height - ((v - min) / range) * height).toFixed(1)}`)
     .join(" ");
-  const stroke =
-    trend === "up" ? "#C0392B" : trend === "down" ? "#1E6B3A" : "#5A6B7B";
+  const stroke = trend === "up" ? "#C0392B" : trend === "down" ? "#1E6B3A" : "#5A6B7B";
   return (
     <svg width={width} height={height} className="shrink-0">
-      <polyline points={points} fill="none" stroke={stroke} strokeWidth={1.25} strokeLinecap="round" strokeLinejoin="round" />
+      <polyline
+        points={points}
+        fill="none"
+        stroke={stroke}
+        strokeWidth={1.25}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

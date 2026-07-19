@@ -22,13 +22,7 @@ export interface PanelLiveProps {
   className?: string;
 }
 
-export function PanelLive({
-  lastEvent,
-  kinds,
-  status,
-  pulseMs = 1600,
-  className,
-}: PanelLiveProps) {
+export function PanelLive({ lastEvent, kinds, status, pulseMs = 1600, className }: PanelLiveProps) {
   const [count, setCount] = useState(0);
   const [pulsing, setPulsing] = useState(false);
   const [lastMatch, setLastMatch] = useState<RealtimeEvent | null>(null);
@@ -48,9 +42,12 @@ export function PanelLive({
     timerRef.current = window.setTimeout(() => setPulsing(false), pulseMs);
   }, [lastEvent, kinds, pulseMs]);
 
-  useEffect(() => () => {
-    if (timerRef.current) window.clearTimeout(timerRef.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+    },
+    [],
+  );
 
   const dot =
     status !== "live"
@@ -58,10 +55,10 @@ export function PanelLive({
         ? "bg-amber-400"
         : "bg-red-500"
       : pulsing
-      ? "bg-emerald-400 shadow-[0_0_0_4px_rgba(52,211,153,0.35)] animate-ping"
-      : count > 0
-      ? "bg-emerald-400"
-      : "bg-slate/50";
+        ? "bg-emerald-400 shadow-[0_0_0_4px_rgba(52,211,153,0.35)] animate-ping"
+        : count > 0
+          ? "bg-emerald-400"
+          : "bg-slate/50";
 
   const label =
     status !== "live"
@@ -69,8 +66,8 @@ export function PanelLive({
         ? "CONNECTING"
         : "OFFLINE"
       : count === 0
-      ? "LIVE"
-      : `LIVE · ${count}`;
+        ? "LIVE"
+        : `LIVE · ${count}`;
 
   return (
     <span

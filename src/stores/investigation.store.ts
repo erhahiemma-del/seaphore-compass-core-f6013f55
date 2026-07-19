@@ -10,12 +10,7 @@ import { create } from "zustand";
 
 import type { HandoffContext } from "@/lib/nav-context";
 
-export type LifecycleStage =
-  | "detect"
-  | "investigate"
-  | "decide"
-  | "share"
-  | "learn";
+export type LifecycleStage = "detect" | "investigate" | "decide" | "share" | "learn";
 
 /** Legacy convenience shape retained for existing consumers. */
 interface ActiveInvestigation {

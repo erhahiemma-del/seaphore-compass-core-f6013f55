@@ -6,8 +6,19 @@
  */
 
 const FORBIDDEN_TOKENS: readonly string[] = [
-  "fraudster", "criminal", "smuggler", "pirate", "thief", "villain",
-  "outlaw", "convict", "felon", "crook", "scam", "illicit", "guilty",
+  "fraudster",
+  "criminal",
+  "smuggler",
+  "pirate",
+  "thief",
+  "villain",
+  "outlaw",
+  "convict",
+  "felon",
+  "crook",
+  "scam",
+  "illicit",
+  "guilty",
 ];
 
 const NEUTRAL_EXAMPLES: readonly string[] = [

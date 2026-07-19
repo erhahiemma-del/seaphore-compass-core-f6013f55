@@ -23,10 +23,7 @@ export const listEntities = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const from = (data.page - 1) * data.pageSize;
     const to = from + data.pageSize - 1;
-    let q = context.supabase
-      .from("entities")
-      .select("*", { count: "exact" })
-      .range(from, to);
+    let q = context.supabase.from("entities").select("*", { count: "exact" }).range(from, to);
     if (data.type) q = q.eq("type", data.type as never);
     if (data.confidence) q = q.eq("confidence", data.confidence as never);
     if (data.riskMin !== undefined) q = q.gte("risk_score", data.riskMin);
@@ -81,9 +78,7 @@ export const listEntityRelationships = createServerFn({ method: "GET" })
 
 export const searchEntities = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z.object({ q: z.string().min(1).max(120) }).parse(d),
-  )
+  .inputValidator((d: unknown) => z.object({ q: z.string().min(1).max(120) }).parse(d))
   .handler(async ({ data, context }) => {
     const term = `%${data.q}%`;
     const { data: rows, error } = await context.supabase

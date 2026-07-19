@@ -18,12 +18,9 @@ function NotFoundComponent() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">
-          Signal not found
-        </h2>
+        <h2 className="mt-4 text-xl font-semibold text-foreground">Signal not found</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          The route you're looking for doesn't exist in the Seaphore intelligence
-          graph.
+          The route you're looking for doesn't exist in the Seaphore intelligence graph.
         </p>
         <div className="mt-6">
           <Link
@@ -52,8 +49,8 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           This screen didn't load
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong. Evidence integrity is preserved — you can retry
-          or return to Mission Control.
+          Something went wrong. Evidence integrity is preserved — you can retry or return to Mission
+          Control.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -91,8 +88,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "Seaphore · Maritime Intelligence OS" },
       {
         property: "og:description",
-        content:
-          "Detect, investigate, decide, share and learn across the maritime domain.",
+        content: "Detect, investigate, decide, share and learn across the maritime domain.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -128,11 +124,7 @@ function RootComponent() {
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (
-        event !== "SIGNED_IN" &&
-        event !== "SIGNED_OUT" &&
-        event !== "USER_UPDATED"
-      ) {
+      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") {
         return;
       }
       router.invalidate();

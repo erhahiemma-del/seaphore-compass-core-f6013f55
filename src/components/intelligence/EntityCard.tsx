@@ -79,4 +79,3 @@ export function EntityCard(props: EntityCardProps) {
 function cnJoin(...c: (string | false | undefined)[]) {
   return c.filter(Boolean).join(" ");
 }
-

@@ -6,12 +6,14 @@ export type InvestigationRow = InvestigationSummary & Record<string, unknown>;
 
 function unwrap<T>(env: unknown): T {
   const asEnv = env as { data?: T };
-  return (asEnv?.data ?? (env as T));
+  return asEnv?.data ?? (env as T);
 }
 
 export class SupabaseInvestigationRepository implements Repository<InvestigationRow> {
   async list(opts: ListOptions = {}): Promise<ListResult<InvestigationRow>> {
-    const env = await listInvestigations({ data: { limit: opts.limit ?? 50, offset: opts.offset ?? 0 } });
+    const env = await listInvestigations({
+      data: { limit: opts.limit ?? 50, offset: opts.offset ?? 0 },
+    });
     const rows = unwrap<InvestigationRow[]>(env) ?? [];
     return { rows, total: rows.length };
   }

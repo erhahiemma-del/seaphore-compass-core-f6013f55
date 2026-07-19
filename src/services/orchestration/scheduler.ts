@@ -50,7 +50,10 @@ function withTimeout<T extends RetrievalResult>(
         error: `retrieval exceeded ${ms}ms performance budget`,
       });
     }, ms);
-    p.then((r) => { clearTimeout(t); resolve(r); }).catch((err: unknown) => {
+    p.then((r) => {
+      clearTimeout(t);
+      resolve(r);
+    }).catch((err: unknown) => {
       clearTimeout(t);
       resolve({
         agent: agentId,

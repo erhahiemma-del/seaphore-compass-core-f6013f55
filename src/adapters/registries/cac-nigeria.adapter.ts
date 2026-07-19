@@ -15,7 +15,9 @@ export interface CacRecord {
 }
 
 export class CacNigeriaAdapter extends BaseAdapter {
-  constructor() { super("cac_nigeria"); }
+  constructor() {
+    super("cac_nigeria");
+  }
   async lookup(cacNumber: string): Promise<SourcedResult<CacRecord>> {
     this.assertUsable();
     return this.envelope<CacRecord>(null, new Date().toISOString(), {

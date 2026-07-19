@@ -48,9 +48,7 @@ export function DomainFilterTabs({
             <span
               className={cn(
                 "rounded px-1.5 py-0.5 text-[10px] font-bold",
-                isActive
-                  ? "bg-white/15 text-white"
-                  : "bg-surface-2 text-slate",
+                isActive ? "bg-white/15 text-white" : "bg-surface-2 text-slate",
               )}
             >
               {t.count}

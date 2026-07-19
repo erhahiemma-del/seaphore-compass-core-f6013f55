@@ -143,13 +143,7 @@ const ROLE_ICON: Record<Role | "external", ComponentType<SVGProps<SVGSVGElement>
 
 type PreviewRole = Role | "external";
 
-const PREVIEW_ROLES: PreviewRole[] = [
-  "admin",
-  "director",
-  "officer",
-  "analyst",
-  "external",
-];
+const PREVIEW_ROLES: PreviewRole[] = ["admin", "director", "officer", "analyst", "external"];
 
 const PREVIEW_ROLE_LABEL: Record<PreviewRole, string> = {
   admin: "System Administrator",
@@ -202,7 +196,8 @@ function SignInRequired() {
         <Lock className="mx-auto mb-2 h-6 w-6 text-amber-500" />
         <p className="type-body text-foreground">Sign in required.</p>
         <p className="type-small text-slate mt-1 mb-4">
-          The Administration & Configuration Center requires an authenticated Administrator session (PERM-1).
+          The Administration & Configuration Center requires an authenticated Administrator session
+          (PERM-1).
         </p>
         <a
           href="/auth?redirect=/admin"
@@ -239,9 +234,7 @@ function CenterInner({ currentRole }: { currentRole: Role | null }) {
     (currentRole as PreviewRole) ?? "admin",
   );
 
-  const activeRole: PreviewRole = isDev
-    ? previewRole
-    : (currentRole as PreviewRole) ?? "admin";
+  const activeRole: PreviewRole = isDev ? previewRole : ((currentRole as PreviewRole) ?? "admin");
 
   return (
     <div className="flex min-h-[calc(100vh-8rem)] w-full">
@@ -275,9 +268,7 @@ function CenterInner({ currentRole }: { currentRole: Role | null }) {
 
           {isDev && (
             <div className="mt-2 border-t border-line px-3 py-4">
-              <div className="type-label text-slate mb-2">
-                Quick Switch (Roles)
-              </div>
+              <div className="type-label text-slate mb-2">Quick Switch (Roles)</div>
               <div className="space-y-1">
                 {PREVIEW_ROLES.map((r) => {
                   const Icon = ROLE_ICON[r];
@@ -363,8 +354,7 @@ function RoleContextChip({ role }: { role: PreviewRole }) {
     <span className="inline-flex items-center gap-2 rounded-full border border-line bg-surface-2 px-3 py-1.5">
       <Icon className="h-3.5 w-3.5 text-[color:var(--color-teal)]" />
       <span className="type-small text-foreground">
-        Viewing as{" "}
-        <span className="font-semibold">{PREVIEW_ROLE_LABEL[role]}</span>
+        Viewing as <span className="font-semibold">{PREVIEW_ROLE_LABEL[role]}</span>
       </span>
     </span>
   );
@@ -398,9 +388,9 @@ function PlaceholderSection({ section }: { section: SectionId }) {
       </div>
       <div className="type-h2 text-foreground">{item.label}</div>
       <p className="type-small text-slate mt-1 max-w-md mx-auto">
-        This administrative surface is scaffolded and integrated with the
-        Seaphore repository layer. Configuration widgets will land in a
-        subsequent sprint — the Overview reflects live system state today.
+        This administrative surface is scaffolded and integrated with the Seaphore repository layer.
+        Configuration widgets will land in a subsequent sprint — the Overview reflects live system
+        state today.
       </p>
     </div>
   );
@@ -408,13 +398,7 @@ function PlaceholderSection({ section }: { section: SectionId }) {
 
 // ---------- Overview ----------
 
-function OverviewSection({
-  role,
-  search,
-}: {
-  role: PreviewRole;
-  search: string;
-}) {
+function OverviewSection({ role, search }: { role: PreviewRole; search: string }) {
   return (
     <div className="space-y-6">
       <KPIRow role={role} />
@@ -483,12 +467,7 @@ function Panel({
   className?: string;
 }) {
   return (
-    <section
-      className={cn(
-        "rounded-lg border border-line bg-surface overflow-hidden",
-        className,
-      )}
-    >
+    <section className={cn("rounded-lg border border-line bg-surface overflow-hidden", className)}>
       <header className="flex items-center justify-between border-b border-line px-4 py-3">
         <div className="flex items-center gap-2">
           {Icon && <Icon className="h-3.5 w-3.5 text-slate" />}
@@ -529,14 +508,50 @@ function KPIRow({ role }: { role: PreviewRole }) {
 
   const kpis = useMemo(
     () => [
-      { icon: Users, label: "Active Users", value: users ?? 312, delta: "↑ 18 vs yesterday", tone: "info" as const },
-      { icon: FileCheck, label: "Active Investigations", value: 164, delta: "↑ 12 vs yesterday", tone: "info" as const },
-      { icon: Bell, label: "Active Alerts", value: 128, delta: "↑ 18 vs yesterday", tone: "warn" as const },
-      { icon: HeartPulse, label: "System Health", value: "98%", delta: "Healthy", tone: "ok" as const },
+      {
+        icon: Users,
+        label: "Active Users",
+        value: users ?? 312,
+        delta: "↑ 18 vs yesterday",
+        tone: "info" as const,
+      },
+      {
+        icon: FileCheck,
+        label: "Active Investigations",
+        value: 164,
+        delta: "↑ 12 vs yesterday",
+        tone: "info" as const,
+      },
+      {
+        icon: Bell,
+        label: "Active Alerts",
+        value: 128,
+        delta: "↑ 18 vs yesterday",
+        tone: "warn" as const,
+      },
+      {
+        icon: HeartPulse,
+        label: "System Health",
+        value: "98%",
+        delta: "Healthy",
+        tone: "ok" as const,
+      },
       { icon: Database, label: "Data Sources", value: 23, delta: "Online", tone: "ok" as const },
       { icon: Brain, label: "AI Services", value: 3, delta: "Operational", tone: "ok" as const },
-      { icon: HardDrive, label: "Storage Usage", value: "2.34 TB", delta: "48% of 5 TB", tone: "info" as const },
-      { icon: Activity, label: "API Requests (24h)", value: "1.28M", delta: "↑ 12.4%", tone: "info" as const },
+      {
+        icon: HardDrive,
+        label: "Storage Usage",
+        value: "2.34 TB",
+        delta: "48% of 5 TB",
+        tone: "info" as const,
+      },
+      {
+        icon: Activity,
+        label: "API Requests (24h)",
+        value: "1.28M",
+        delta: "↑ 12.4%",
+        tone: "info" as const,
+      },
     ],
     [users],
   );
@@ -546,8 +561,15 @@ function KPIRow({ role }: { role: PreviewRole }) {
     role === "admin" || role === "director"
       ? kpis
       : role === "officer"
-        ? kpis.filter((k) => !["System Health", "AI Services", "Storage Usage", "API Requests (24h)"].includes(k.label))
-        : kpis.filter((k) => ["Active Investigations", "Active Alerts", "System Health"].includes(k.label));
+        ? kpis.filter(
+            (k) =>
+              !["System Health", "AI Services", "Storage Usage", "API Requests (24h)"].includes(
+                k.label,
+              ),
+          )
+        : kpis.filter((k) =>
+            ["Active Investigations", "Active Alerts", "System Health"].includes(k.label),
+          );
 
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-8">
@@ -592,9 +614,7 @@ function KPICard({
         </div>
         <div className="min-w-0">
           <div className="type-small text-slate">{label}</div>
-          <div className="type-display text-foreground mt-0.5 truncate">
-            {value}
-          </div>
+          <div className="type-display text-foreground mt-0.5 truncate">{value}</div>
           <div className={cn("type-small mt-1", toneColor)}>{delta}</div>
         </div>
       </div>
@@ -675,9 +695,30 @@ function SystemHealthPanel() {
                   }}
                 />
                 <Legend wrapperStyle={{ fontSize: 10 }} />
-                <Line type="monotone" dataKey="cpu" name="CPU" stroke="var(--color-teal)" strokeWidth={1.5} dot={false} />
-                <Line type="monotone" dataKey="mem" name="Memory" stroke="var(--color-gold)" strokeWidth={1.5} dot={false} />
-                <Line type="monotone" dataKey="net" name="Network" stroke="var(--color-green)" strokeWidth={1.5} dot={false} />
+                <Line
+                  type="monotone"
+                  dataKey="cpu"
+                  name="CPU"
+                  stroke="var(--color-teal)"
+                  strokeWidth={1.5}
+                  dot={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="mem"
+                  name="Memory"
+                  stroke="var(--color-gold)"
+                  strokeWidth={1.5}
+                  dot={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="net"
+                  name="Network"
+                  stroke="var(--color-green)"
+                  strokeWidth={1.5}
+                  dot={false}
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -740,9 +781,7 @@ function DataSourcesPanel({ search }: { search: string }) {
               {d.status}
             </span>
             <span className="type-small text-slate">{d.lastSync}</span>
-            <span className="type-small text-foreground text-right font-mono">
-              {d.usage}
-            </span>
+            <span className="type-small text-foreground text-right font-mono">{d.usage}</span>
           </div>
         ))}
         {items.length === 0 && (
@@ -804,10 +843,7 @@ function CopilotPanel() {
           <div className="type-label text-slate mb-2">Smart Suggestions</div>
           <ul className="space-y-2">
             {COPILOT_SUGGESTIONS.map((s, i) => (
-              <li
-                key={i}
-                className="rounded-md border border-line bg-surface-2 p-2.5"
-              >
+              <li key={i} className="rounded-md border border-line bg-surface-2 p-2.5">
                 <div className="flex items-start gap-2">
                   <s.icon className="mt-0.5 h-3.5 w-3.5 text-[color:var(--color-teal)]" />
                   <div className="min-w-0 flex-1">
@@ -975,11 +1011,7 @@ const ALERTS_BREAKDOWN = [
 function AlertsOverviewPanel() {
   const total = ALERTS_BREAKDOWN.reduce((a, b) => a + b.value, 0);
   return (
-    <Panel
-      title="Alerts Overview"
-      icon={Bell}
-      action={<LinkAction label="View alerts" />}
-    >
+    <Panel title="Alerts Overview" icon={Bell} action={<LinkAction label="View alerts" />}>
       <div className="grid grid-cols-[160px_1fr] gap-4 items-center">
         <div className="relative h-40">
           <ResponsiveContainer width="100%" height="100%">
@@ -1025,12 +1057,54 @@ function AlertsOverviewPanel() {
 // ---- Recent Activities ----
 
 const RECENT_ACTIVITIES = [
-  { time: "09:38", user: "John Bello", action: "User Login", target: "—", ip: "197.210.14.23", status: "Success" },
-  { time: "09:34", user: "Mary Akinyemi", action: "Investigation Created", target: "INV-2026-00431", ip: "197.210.14.27", status: "Success" },
-  { time: "09:31", user: "Ibrahim Yusuf", action: "Role Updated", target: "Intelligence Officer", ip: "197.210.14.11", status: "Success" },
-  { time: "09:18", user: "System", action: "Data Source Sync", target: "MarineTraffic", ip: "—", status: "Success" },
-  { time: "09:12", user: "Samuel Odey", action: "Alert Acknowledged", target: "ALT-2026-00845", ip: "197.210.14.33", status: "Success" },
-  { time: "09:05", user: "Grace Nwosu", action: "Report Generated", target: "Revenue Report", ip: "197.210.14.45", status: "Success" },
+  {
+    time: "09:38",
+    user: "John Bello",
+    action: "User Login",
+    target: "—",
+    ip: "197.210.14.23",
+    status: "Success",
+  },
+  {
+    time: "09:34",
+    user: "Mary Akinyemi",
+    action: "Investigation Created",
+    target: "INV-2026-00431",
+    ip: "197.210.14.27",
+    status: "Success",
+  },
+  {
+    time: "09:31",
+    user: "Ibrahim Yusuf",
+    action: "Role Updated",
+    target: "Intelligence Officer",
+    ip: "197.210.14.11",
+    status: "Success",
+  },
+  {
+    time: "09:18",
+    user: "System",
+    action: "Data Source Sync",
+    target: "MarineTraffic",
+    ip: "—",
+    status: "Success",
+  },
+  {
+    time: "09:12",
+    user: "Samuel Odey",
+    action: "Alert Acknowledged",
+    target: "ALT-2026-00845",
+    ip: "197.210.14.33",
+    status: "Success",
+  },
+  {
+    time: "09:05",
+    user: "Grace Nwosu",
+    action: "Report Generated",
+    target: "Revenue Report",
+    ip: "197.210.14.45",
+    status: "Success",
+  },
 ];
 
 function RecentActivitiesPanel() {
@@ -1043,7 +1117,9 @@ function RecentActivitiesPanel() {
     >
       <div className="grid grid-cols-[60px_1fr_1.2fr_1.2fr_1.1fr_80px] gap-x-3 gap-y-2 items-center">
         {["Time", "User", "Action", "Target", "IP Address", "Status"].map((h) => (
-          <div key={h} className="type-label text-slate">{h}</div>
+          <div key={h} className="type-label text-slate">
+            {h}
+          </div>
         ))}
         {RECENT_ACTIVITIES.map((row, i) => (
           <div key={i} className="contents">
@@ -1071,7 +1147,15 @@ function RecentActivitiesPanel() {
   );
 }
 
-function PageBtn({ label, active, onClick }: { label: string; active?: boolean; onClick?: () => void }) {
+function PageBtn({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active?: boolean;
+  onClick?: () => void;
+}) {
   return (
     <button
       onClick={onClick}
@@ -1100,11 +1184,7 @@ const AUDIT_SNAPSHOT = [
 
 function AuditSnapshotPanel() {
   return (
-    <Panel
-      title="Audit Trail Snapshot"
-      icon={History}
-      action={<LinkAction label="" />}
-    >
+    <Panel title="Audit Trail Snapshot" icon={History} action={<LinkAction label="" />}>
       <ul className="space-y-2">
         {AUDIT_SNAPSHOT.map((r) => (
           <li
@@ -1138,11 +1218,7 @@ function StorageAnalyticsPanel() {
   const total = 5;
   const pct = Math.round((used / total) * 100);
   return (
-    <Panel
-      title="System Storage"
-      icon={HardDrive}
-      action={<LinkAction label="View storage" />}
-    >
+    <Panel title="System Storage" icon={HardDrive} action={<LinkAction label="View storage" />}>
       <div className="grid grid-cols-[120px_1fr] gap-4 items-center">
         <div className="relative h-28">
           <ResponsiveContainer width="100%" height="100%">
@@ -1171,13 +1247,16 @@ function StorageAnalyticsPanel() {
         </div>
         <ul className="space-y-1 text-[12px]">
           <li className="flex justify-between text-slate">
-            <span>Used</span><span className="font-mono text-foreground">{used.toFixed(2)} TB</span>
+            <span>Used</span>
+            <span className="font-mono text-foreground">{used.toFixed(2)} TB</span>
           </li>
           <li className="flex justify-between text-slate">
-            <span>Available</span><span className="font-mono text-foreground">{(total - used).toFixed(2)} TB</span>
+            <span>Available</span>
+            <span className="font-mono text-foreground">{(total - used).toFixed(2)} TB</span>
           </li>
           <li className="flex justify-between text-slate">
-            <span>Total</span><span className="font-mono text-foreground">{total.toFixed(2)} TB</span>
+            <span>Total</span>
+            <span className="font-mono text-foreground">{total.toFixed(2)} TB</span>
           </li>
         </ul>
       </div>
@@ -1192,7 +1271,10 @@ function StorageAnalyticsPanel() {
                 {s.name}
               </span>
               <div className="h-1.5 rounded-full bg-surface-2 overflow-hidden">
-                <div className="h-full rounded-full" style={{ width: `${p}%`, background: s.color }} />
+                <div
+                  className="h-full rounded-full"
+                  style={{ width: `${p}%`, background: s.color }}
+                />
               </div>
               <span className="type-small font-mono text-slate text-right">
                 {s.value.toFixed(2)} TB
@@ -1220,10 +1302,7 @@ const QUICK_ACTIONS = [
 
 function QuickActionsPanel({ role }: { role: PreviewRole }) {
   return (
-    <Panel
-      title="Quick Actions"
-      icon={Zap}
-    >
+    <Panel title="Quick Actions" icon={Zap}>
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
         {QUICK_ACTIONS.map((a) => {
           const enabled = role === "admin" || (role === "director" && a.perm !== "role.manage");
@@ -1300,9 +1379,8 @@ function RolesSection() {
           <h2 className="type-h2 text-foreground">Role Management</h2>
         </div>
         <p className="type-small text-slate mt-1">
-          Assign Seaphore roles to officer profiles. Enforced by Row-Level
-          Security. All changes are recorded in the immutable audit log
-          (HR-9, PERM-1).
+          Assign Seaphore roles to officer profiles. Enforced by Row-Level Security. All changes are
+          recorded in the immutable audit log (HR-9, PERM-1).
         </p>
       </div>
       <RoleManagementTable />
@@ -1325,12 +1403,7 @@ function AuditCentreSection() {
       title="Immutable Audit Trail"
       icon={History}
       action={
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => refetch()}
-          disabled={isFetching}
-        >
+        <Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching}>
           <RefreshCw className={cn("mr-1 h-3.5 w-3.5", isFetching && "animate-spin")} />
           Refresh
         </Button>
@@ -1343,9 +1416,7 @@ function AuditCentreSection() {
           {error instanceof Error ? error.message : "Failed to load"}
         </div>
       ) : entries.length === 0 ? (
-        <div className="p-8 text-center text-slate">
-          No changes recorded yet.
-        </div>
+        <div className="p-8 text-center text-slate">No changes recorded yet.</div>
       ) : (
         <ul className="divide-y divide-line">
           {entries.slice(0, 20).map((e) => (
@@ -1366,7 +1437,9 @@ function AuditCentreSection() {
               </div>
               <div className="flex gap-1">
                 {e.ruleRefs.map((r) => (
-                  <Badge key={r} variant="outline" className="text-[10px]">{r}</Badge>
+                  <Badge key={r} variant="outline" className="text-[10px]">
+                    {r}
+                  </Badge>
                 ))}
               </div>
             </li>

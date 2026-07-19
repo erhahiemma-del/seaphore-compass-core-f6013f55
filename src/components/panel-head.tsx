@@ -16,13 +16,7 @@ export interface PanelHeadProps {
   className?: string;
 }
 
-export function PanelHead({
-  title,
-  meta,
-  to,
-  toLabel = "View center",
-  className,
-}: PanelHeadProps) {
+export function PanelHead({ title, meta, to, toLabel = "View center", className }: PanelHeadProps) {
   return (
     <div
       className={cn(

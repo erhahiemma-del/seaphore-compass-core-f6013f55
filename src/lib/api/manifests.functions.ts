@@ -19,10 +19,7 @@ export const listManifests = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const from = (data.page - 1) * data.pageSize;
     const to = from + data.pageSize - 1;
-    let q = context.supabase
-      .from("manifests")
-      .select("*", { count: "exact" })
-      .range(from, to);
+    let q = context.supabase.from("manifests").select("*", { count: "exact" }).range(from, to);
     if (data.voyageId) q = q.eq("voyage_id", data.voyageId);
     if (data.from) q = q.gte("submitted_at", data.from);
     if (data.to) q = q.lte("submitted_at", data.to);

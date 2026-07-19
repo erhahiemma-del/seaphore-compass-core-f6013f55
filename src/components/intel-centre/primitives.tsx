@@ -41,12 +41,17 @@ export function StatusBadge({
   const toneClass = {
     risk: "bg-[color:var(--color-red)]/15 text-[color:var(--color-red)]",
     warn: "bg-[color:var(--color-amber)]/15 text-[color:var(--color-amber)]",
-    ok:   "bg-[color:var(--color-green)]/15 text-[color:var(--color-green)]",
+    ok: "bg-[color:var(--color-green)]/15 text-[color:var(--color-green)]",
     info: "bg-[color:var(--color-blue)]/15 text-[color:var(--color-blue)]",
     neutral: "bg-slate/15 text-slate",
   }[tone];
   return (
-    <span className={cn("inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em]", toneClass)}>
+    <span
+      className={cn(
+        "inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em]",
+        toneClass,
+      )}
+    >
       {label}
     </span>
   );
@@ -77,7 +82,11 @@ export function DataTable<T>({
   compact?: boolean;
 }) {
   if (rows.length === 0) {
-    return <div className="rounded-md border border-line/60 bg-surface/40 p-6 text-center text-[12px] text-slate">{emptyLabel}</div>;
+    return (
+      <div className="rounded-md border border-line/60 bg-surface/40 p-6 text-center text-[12px] text-slate">
+        {emptyLabel}
+      </div>
+    );
   }
   return (
     <div className="overflow-hidden rounded-md border border-line/60">
@@ -88,10 +97,11 @@ export function DataTable<T>({
               {columns.map((c) => (
                 <th
                   key={c.key}
-                  className={cn("border-b border-line/60 px-2.5 py-2 font-semibold",
+                  className={cn(
+                    "border-b border-line/60 px-2.5 py-2 font-semibold",
                     c.align === "right" && "text-right",
                     c.align === "center" && "text-center",
-                    c.align === "left"   && "text-left",
+                    c.align === "left" && "text-left",
                     !c.align && "text-left",
                   )}
                   style={c.width ? { width: c.width } : undefined}
@@ -115,7 +125,8 @@ export function DataTable<T>({
                 {columns.map((c) => (
                   <td
                     key={c.key}
-                    className={cn("px-2.5 text-foreground/90",
+                    className={cn(
+                      "px-2.5 text-foreground/90",
                       c.align === "right" && "text-right",
                       c.align === "center" && "text-center",
                     )}
@@ -135,7 +146,7 @@ export function DataTable<T>({
 /** Horizontal scrollable timeline strip used by MAN-4, CAR-6, REV-9. */
 export interface TimelineItem {
   id: string;
-  time: string;   // e.g. "09:20 UTC"
+  time: string; // e.g. "09:20 UTC"
   title: string;
   subtitle?: string;
   tone: "risk" | "warn" | "ok" | "info";
@@ -163,14 +174,21 @@ export function TimelineStrip({
               onClick={() => onSelect?.(it.id)}
               className={cn(
                 "relative min-w-[180px] shrink-0 rounded-md border p-2.5 text-left transition-colors",
-                active ? "border-[color:var(--color-blue)] bg-[color:var(--color-blue)]/10" : "border-line/60 bg-surface/50 hover:bg-surface/70",
+                active
+                  ? "border-[color:var(--color-blue)] bg-[color:var(--color-blue)]/10"
+                  : "border-line/60 bg-surface/50 hover:bg-surface/70",
               )}
             >
               <div className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-slate">
-                <span className="h-2 w-2 rounded-full" style={{ background: toneColour(it.tone) }} />
+                <span
+                  className="h-2 w-2 rounded-full"
+                  style={{ background: toneColour(it.tone) }}
+                />
                 {it.time}
               </div>
-              <div className="mt-1 truncate text-[12.5px] font-semibold text-foreground">{it.title}</div>
+              <div className="mt-1 truncate text-[12.5px] font-semibold text-foreground">
+                {it.title}
+              </div>
               {it.subtitle && <div className="truncate text-[11px] text-slate">{it.subtitle}</div>}
             </button>
           );

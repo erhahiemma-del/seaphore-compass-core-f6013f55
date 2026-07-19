@@ -23,15 +23,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
-import {
-  listUsersWithRoles,
-  setUserRoles,
-  type AdminUserRow,
-} from "@/lib/admin-roles.functions";
-import {
-  listRoleAuditLog,
-  type RoleAuditEntry,
-} from "@/lib/admin-audit.functions";
+import { listUsersWithRoles, setUserRoles, type AdminUserRow } from "@/lib/admin-roles.functions";
+import { listRoleAuditLog, type RoleAuditEntry } from "@/lib/admin-audit.functions";
 import type { Role } from "@/lib/permissions";
 import { QUERY_KEYS } from "@/lib/query-keys";
 
@@ -56,10 +49,7 @@ function csvField(value: string | number | null | undefined): string {
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
-function exportAuditCsv(
-  entries: RoleAuditEntry[],
-  filteredUser: AdminUserRow | null,
-): void {
+function exportAuditCsv(entries: RoleAuditEntry[], filteredUser: AdminUserRow | null): void {
   if (entries.length === 0) return;
   const header = [
     "timestamp_utc",
@@ -89,9 +79,7 @@ function exportAuditCsv(
     e.ruleRefs.join("|"),
     e.id,
   ]);
-  const csv = [header, ...rows]
-    .map((r) => r.map(csvField).join(","))
-    .join("\r\n");
+  const csv = [header, ...rows].map((r) => r.map(csvField).join(",")).join("\r\n");
   // BOM for Excel UTF-8 compatibility.
   const blob = new Blob(["\uFEFF" + csv], {
     type: "text/csv;charset=utf-8;",
@@ -127,18 +115,14 @@ export const Administration = () => {
           <div>
             <h1 className="type-h2 text-foreground">Role Management</h1>
             <p className="type-small text-slate max-w-2xl">
-              Assign Seaphore roles to officer profiles. Access is enforced by
-              Row-Level Security; this screen is available to Administrators
-              only. All changes are recorded in the immutable audit log
-              (HR-9, PERM-1).
+              Assign Seaphore roles to officer profiles. Access is enforced by Row-Level Security;
+              this screen is available to Administrators only. All changes are recorded in the
+              immutable audit log (HR-9, PERM-1).
             </p>
           </div>
         </header>
 
-        <RequirePermission
-          permission="role.manage"
-          fallback={<AccessDenied />}
-        >
+        <RequirePermission permission="role.manage" fallback={<AccessDenied />}>
           {allowed ? <RoleManagementTable /> : null}
         </RequirePermission>
       </div>
@@ -175,8 +159,7 @@ export function RoleManagementTable() {
   });
 
   const mutation = useMutation({
-    mutationFn: (input: { userId: string; roles: Role[] }) =>
-      setFn({ data: input }),
+    mutationFn: (input: { userId: string; roles: Role[] }) => setFn({ data: input }),
     onSuccess: (_res, vars) => {
       toast.success("Roles updated", {
         description: `${vars.roles.length} role(s) assigned.`,
@@ -192,10 +175,7 @@ export function RoleManagementTable() {
   });
 
   const users = data ?? [];
-  const usersById = useMemo(
-    () => new Map(users.map((u) => [u.id, u])),
-    [users],
-  );
+  const usersById = useMemo(() => new Map(users.map((u) => [u.id, u])), [users]);
 
   const openHistoryFor = (userId: string | null) => {
     setAuditFilterUserId(userId);
@@ -241,16 +221,12 @@ export function RoleManagementTable() {
               user={user}
               disabled={mutation.isPending}
               isSelf={user.id === currentUserId}
-              onSave={(roles) =>
-                mutation.mutate({ userId: user.id, roles })
-              }
+              onSave={(roles) => mutation.mutate({ userId: user.id, roles })}
               onViewHistory={() => openHistoryFor(user.id)}
             />
           ))}
           {users.length === 0 && (
-            <div className="p-8 text-center text-slate">
-              No officer profiles found.
-            </div>
+            <div className="p-8 text-center text-slate">No officer profiles found.</div>
           )}
         </div>
       </div>
@@ -270,10 +246,7 @@ function RoleLegend() {
   return (
     <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
       {ALL_ROLES.map((r) => (
-        <div
-          key={r}
-          className="rounded-md border border-line bg-surface-1 p-3"
-        >
+        <div key={r} className="rounded-md border border-line bg-surface-1 p-3">
           <div className="type-label text-foreground">{ROLE_LABEL[r]}</div>
           <div className="type-small text-slate mt-0.5">{ROLE_DESC[r]}</div>
         </div>
@@ -288,16 +261,11 @@ interface AuditTrailPanelProps {
   usersById: Map<string, AdminUserRow>;
 }
 
-function AuditTrailPanel({
-  filterUserId,
-  onClearFilter,
-  usersById,
-}: AuditTrailPanelProps) {
+function AuditTrailPanel({ filterUserId, onClearFilter, usersById }: AuditTrailPanelProps) {
   const listAuditFn = useSF(listRoleAuditLog);
   const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: QUERY_KEYS.adminRoleAudit(filterUserId ?? "all"),
-    queryFn: () =>
-      listAuditFn({ data: filterUserId ? { targetUserId: filterUserId } : {} }),
+    queryFn: () => listAuditFn({ data: filterUserId ? { targetUserId: filterUserId } : {} }),
     staleTime: 15_000,
   });
 
@@ -309,12 +277,9 @@ function AuditTrailPanel({
       <div className="flex flex-wrap items-center gap-3 border-b border-line bg-surface-2 px-4 py-3">
         <History className="h-4 w-4 text-slate" />
         <div className="flex-1 min-w-0">
-          <div className="type-label text-foreground">
-            Role Change Audit Trail
-          </div>
+          <div className="type-label text-foreground">Role Change Audit Trail</div>
           <div className="type-small text-slate">
-            Immutable record of every role grant and revocation
-            (HR-9, PERM-1).
+            Immutable record of every role grant and revocation (HR-9, PERM-1).
           </div>
         </div>
         {filterUserId && (
@@ -342,15 +307,8 @@ function AuditTrailPanel({
           <Download className="mr-1 h-3.5 w-3.5" />
           Export CSV
         </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => refetch()}
-          disabled={isFetching}
-        >
-          <RefreshCw
-            className={`mr-1 h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`}
-          />
+        <Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching}>
+          <RefreshCw className={`mr-1 h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
           Refresh
         </Button>
       </div>
@@ -362,9 +320,7 @@ function AuditTrailPanel({
           {error instanceof Error ? error.message : "Failed to load audit trail"}
         </div>
       ) : entries.length === 0 ? (
-        <div className="p-8 text-center text-slate">
-          No role changes recorded yet.
-        </div>
+        <div className="p-8 text-center text-slate">No role changes recorded yet.</div>
       ) : (
         <ul className="divide-y divide-line">
           {entries.map((e) => (
@@ -384,9 +340,7 @@ function AuditEntryRow({ entry }: { entry: RoleAuditEntry }) {
     entry.actor.email ??
     (entry.actor.id ? `${entry.actor.id.slice(0, 8)}…` : "Unknown");
   const targetLabel =
-    entry.target.fullName ??
-    entry.target.email ??
-    `${entry.target.id.slice(0, 8)}…`;
+    entry.target.fullName ?? entry.target.email ?? `${entry.target.id.slice(0, 8)}…`;
 
   return (
     <li className="p-4">
@@ -399,9 +353,7 @@ function AuditEntryRow({ entry }: { entry: RoleAuditEntry }) {
           </div>
           <div className="type-small text-slate mt-0.5">
             {whenStr}
-            {entry.ipAddress && entry.ipAddress !== "server" && (
-              <> · IP {entry.ipAddress}</>
-            )}
+            {entry.ipAddress && entry.ipAddress !== "server" && <> · IP {entry.ipAddress}</>}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
@@ -467,8 +419,7 @@ function UserRow({ user, disabled, isSelf, onSave, onViewHistory }: UserRowProps
     });
   };
 
-  const wouldRevokeOwnAdmin =
-    isSelf && original.has("admin") && !selected.has("admin");
+  const wouldRevokeOwnAdmin = isSelf && original.has("admin") && !selected.has("admin");
 
   return (
     <div className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between">
@@ -478,15 +429,17 @@ function UserRow({ user, disabled, isSelf, onSave, onViewHistory }: UserRowProps
             {user.fullName ?? user.email ?? user.id}
           </span>
           {isSelf && (
-            <Badge variant="outline" className="text-xs">You</Badge>
+            <Badge variant="outline" className="text-xs">
+              You
+            </Badge>
           )}
           {user.rank && (
-            <Badge variant="secondary" className="text-xs">{user.rank}</Badge>
+            <Badge variant="secondary" className="text-xs">
+              {user.rank}
+            </Badge>
           )}
         </div>
-        <div className="type-small text-slate truncate">
-          {user.email ?? "—"}
-        </div>
+        <div className="type-small text-slate truncate">{user.email ?? "—"}</div>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">

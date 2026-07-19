@@ -18,13 +18,7 @@ const COL_COLOR: Record<"High" | "Medium" | "Low", string> = {
  * DET-5 signal risk heatmap — domains × risk levels.
  * Cell tint is severity colour at intensity ∝ count.
  */
-export function RiskHeatmap({
-  rows,
-  className,
-}: {
-  rows: Row[];
-  className?: string;
-}) {
+export function RiskHeatmap({ rows, className }: { rows: Row[]; className?: string }) {
   const maxByCol = {
     High: Math.max(...rows.map((r) => r.High), 1),
     Medium: Math.max(...rows.map((r) => r.Medium), 1),

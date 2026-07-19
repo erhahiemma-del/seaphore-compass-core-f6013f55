@@ -29,7 +29,8 @@ export const NON_NEGOTIABLE_RULES = [
 ] as const;
 
 /** LAYER 6.3 — System Prompt (Immutable). Copy verbatim from spec. */
-export const IMMUTABLE_SYSTEM_PROMPT = `You are the NIMASA Copilot Reasoning Engine. You are one component of a larger Intelligence Orchestration Engine. You do not chat. You do not retrieve evidence. You do not speculate. You receive ranked evidence from the Evidence Fusion Engine and produce structured analytical output.
+export const IMMUTABLE_SYSTEM_PROMPT =
+  `You are the NIMASA Copilot Reasoning Engine. You are one component of a larger Intelligence Orchestration Engine. You do not chat. You do not retrieve evidence. You do not speculate. You receive ranked evidence from the Evidence Fusion Engine and produce structured analytical output.
 
 Reasoning Policy:
 1. Always retrieve before reasoning. (You receive evidence; you do not fetch it.)
@@ -51,38 +52,38 @@ Guardrails:
 
 /** LAYER 2.9 — Evidence Grades canonical weights and colors. */
 export const EVIDENCE_GRADES = {
-  VERIFIED:     { weight: 1.0, color: "hsl(var(--success))",       label: "Verified" },
+  VERIFIED: { weight: 1.0, color: "hsl(var(--success))", label: "Verified" },
   CORROBORATED: { weight: 0.9, color: "hsl(var(--teal, 174 65% 40%))", label: "Corroborated" },
-  OBSERVED:     { weight: 0.8, color: "hsl(var(--info, 210 90% 55%))", label: "Observed" },
-  REPORTED:     { weight: 0.5, color: "hsl(var(--warning))",       label: "Reported" },
-  INFERRED:     { weight: 0.3, color: "hsl(var(--accent))",        label: "Inferred" },
-  UNKNOWN:      { weight: 0.0, color: "hsl(var(--muted-foreground))", label: "Unknown" },
+  OBSERVED: { weight: 0.8, color: "hsl(var(--info, 210 90% 55%))", label: "Observed" },
+  REPORTED: { weight: 0.5, color: "hsl(var(--warning))", label: "Reported" },
+  INFERRED: { weight: 0.3, color: "hsl(var(--accent))", label: "Inferred" },
+  UNKNOWN: { weight: 0.0, color: "hsl(var(--muted-foreground))", label: "Unknown" },
 } as const;
 
 /** LAYER 2.11 — Confidence degradation ladder through reasoning steps. */
 export const CONFIDENCE_STEPS = {
-  evidence:       0.95,
-  relationship:   0.90,
-  pattern:        0.84,
-  assessment:     0.79,
+  evidence: 0.95,
+  relationship: 0.9,
+  pattern: 0.84,
+  assessment: 0.79,
   recommendation: 0.73,
 } as const;
 
 /** LAYER 2.12 — Intelligence Confidence Matrix weights. */
 export const CONFIDENCE_MATRIX_WEIGHTS = {
-  evidenceQuality: 0.30,
-  coverage:        0.20,
-  freshness:       0.25,
-  corroboration:   0.15,
-  consistency:     0.10,
+  evidenceQuality: 0.3,
+  coverage: 0.2,
+  freshness: 0.25,
+  corroboration: 0.15,
+  consistency: 0.1,
 } as const;
 
 /** LAYER 5.4 — Performance budgets (ms). */
 export const PERF_BUDGETS = {
-  lookup:        { target: 2000, max: 3000 },
-  assessment:    { target: 5000, max: 7000 },
+  lookup: { target: 2000, max: 3000 },
+  assessment: { target: 5000, max: 7000 },
   investigation: { target: 8000, max: 12000 },
-  forecast:      { target: 12000, max: 15000 },
+  forecast: { target: 12000, max: 15000 },
 } as const;
 
 /** LAYER 5.6 — Quality metric targets. */

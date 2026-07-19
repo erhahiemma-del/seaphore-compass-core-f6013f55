@@ -119,9 +119,7 @@ function AuthPage() {
       setPassword(payload.password);
       await signIn(payload.email, payload.password);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Demo login unavailable",
-      );
+      setError(err instanceof Error ? err.message : "Demo login unavailable");
     } finally {
       setDemoLoading(null);
     }
@@ -138,9 +136,7 @@ function AuthPage() {
               <Anchor className="h-6 w-6" strokeWidth={2.25} />
             </div>
             <div className="leading-tight">
-              <div className="text-[22px] font-bold tracking-[0.14em] text-[#0B2545]">
-                SEAPHORE
-              </div>
+              <div className="text-[22px] font-bold tracking-[0.14em] text-[#0B2545]">SEAPHORE</div>
               <div className="text-[10px] uppercase tracking-[0.22em] text-slate-500">
                 Maritime Intelligence OS
               </div>
@@ -225,17 +221,13 @@ function AuthPage() {
                 Sign in to Seaphore
               </h2>
               <p className="mt-2 text-[13.5px] leading-relaxed text-slate-500">
-                Secure access for authorized NIMASA officers to the maritime
-                intelligence workspace.
+                Secure access for authorized NIMASA officers to the maritime intelligence workspace.
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-1.5">
-                <Label
-                  htmlFor="email"
-                  className="text-[13px] font-semibold text-[#0B2545]"
-                >
+                <Label htmlFor="email" className="text-[13px] font-semibold text-[#0B2545]">
                   Official email
                 </Label>
                 <div className="relative">
@@ -254,10 +246,7 @@ function AuthPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label
-                  htmlFor="password"
-                  className="text-[13px] font-semibold text-[#0B2545]"
-                >
+                <Label htmlFor="password" className="text-[13px] font-semibold text-[#0B2545]">
                   Password
                 </Label>
                 <div className="relative">
@@ -279,11 +268,7 @@ function AuthPage() {
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                     aria-label={showPw ? "Hide password" : "Show password"}
                   >
-                    {showPw ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
+                    {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
@@ -297,10 +282,7 @@ function AuthPage() {
                   />
                   Remember me
                 </label>
-                <button
-                  type="button"
-                  className="font-semibold text-[#0F5F5A] hover:underline"
-                >
+                <button type="button" className="font-semibold text-[#0F5F5A] hover:underline">
                   Forgot password?
                 </button>
               </div>
@@ -316,18 +298,14 @@ function AuthPage() {
                 disabled={submitting}
                 className="group h-12 w-full rounded-lg bg-[#0B2545] text-[14px] font-semibold text-white hover:bg-[#0B2545]/92"
               >
-                {submitting ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : null}
+                {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Sign in
                 <ArrowRight className="ml-auto h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Button>
 
               <div className="relative py-1 text-center">
                 <div className="absolute inset-0 top-1/2 h-px bg-slate-200" />
-                <span className="relative bg-white px-3 text-[12px] text-slate-400">
-                  or
-                </span>
+                <span className="relative bg-white px-3 text-[12px] text-slate-400">or</span>
               </div>
 
               <button
@@ -340,8 +318,7 @@ function AuthPage() {
 
               <p className="flex items-center justify-center gap-1.5 pt-2 text-center text-[11.5px] leading-relaxed text-slate-500">
                 <Lock className="h-3 w-3" />
-                All access is monitored and encrypted in accordance with NIMASA
-                security policies.
+                All access is monitored and encrypted in accordance with NIMASA security policies.
               </p>
             </form>
 
@@ -386,8 +363,8 @@ function AuthPage() {
                   })}
                 </div>
                 <p className="mt-3 text-[10.5px] leading-snug text-slate-500">
-                  Seeds a demo account with the selected RBAC role and signs
-                  in. Disabled in production.
+                  Seeds a demo account with the selected RBAC role and signs in. Disabled in
+                  production.
                 </p>
               </div>
             )}

@@ -8,8 +8,6 @@ import { PanelHead } from "@/components/panel-head";
 import { RiskPill } from "@/components/intelligence/RiskPill";
 import { INVESTIGATIONS } from "@/lib/lifecycle-data";
 
-
-
 export function InvestigateList() {
   return (
     <AppShell title="Investigate" subtitle="Case Workspace" mode="light">
@@ -27,7 +25,10 @@ export function InvestigateList() {
         </div>
 
         <PanelCard>
-          <PanelHead title="Active Cases" meta={`${INVESTIGATIONS.length} open · sorted by urgency`} />
+          <PanelHead
+            title="Active Cases"
+            meta={`${INVESTIGATIONS.length} open · sorted by urgency`}
+          />
           <div className="overflow-x-auto">
             <table className="w-full text-[12px]">
               <thead className="type-label bg-surface-2 text-slate">
@@ -50,9 +51,13 @@ export function InvestigateList() {
                     <td className="px-3 py-2 font-semibold text-foreground">
                       {inv.vessel} · <span className="type-mono text-slate">IMO {inv.imo}</span>
                     </td>
-                    <td className="px-3 py-2"><RiskPill level={inv.risk} /></td>
                     <td className="px-3 py-2">
-                      <span className="mr-2 text-foreground font-semibold">{inv.confidencePct}%</span>
+                      <RiskPill level={inv.risk} />
+                    </td>
+                    <td className="px-3 py-2">
+                      <span className="mr-2 text-foreground font-semibold">
+                        {inv.confidencePct}%
+                      </span>
                       <ConfidenceChip tier="inferred" size={9} />
                     </td>
                     <td className="px-3 py-2 text-foreground/80">{inv.officer}</td>
