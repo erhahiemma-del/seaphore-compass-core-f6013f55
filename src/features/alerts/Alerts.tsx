@@ -963,7 +963,11 @@ function LiveTimeline({ alerts, selectedId, onSelect, live }: {
 }
 
 /* ------------- Correlation Graph ------------- */
-function CorrelationGraph({ alerts, selectedId, onSelect }: { alerts: ExtAlert[]; selectedId?: string; onSelect: (id: string) => void }) {
+function CorrelationGraph({ alerts, selectedId, onSelect, live }: {
+  alerts: ExtAlert[]; selectedId?: string;
+  onSelect: (id: string) => void;
+  live: ReturnType<typeof useAlertsRealtime>;
+}) {
   const nodes = alerts.slice(0, 6);
   // Radial layout around a central node.
   const center = { x: 150, y: 110 };
@@ -976,7 +980,10 @@ function CorrelationGraph({ alerts, selectedId, onSelect }: { alerts: ExtAlert[]
   return (
     <section className="flex h-full flex-col rounded-lg border border-line/60 bg-surface-1/70">
       <header className="flex items-center justify-between border-b border-line/60 px-3 py-2">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate">Alert Correlation Graph</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate">Alert Correlation Graph</span>
+          <PanelLive lastEvent={live.lastEvent} status={live.status} kinds={["alert", "investigation"]} />
+        </div>
         <label className="flex items-center gap-1.5 text-[10.5px] text-slate">
           Show Legend <input type="checkbox" defaultChecked className="h-3 w-3 accent-[color:var(--color-blue)]" />
         </label>
