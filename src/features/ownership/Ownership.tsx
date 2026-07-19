@@ -109,6 +109,8 @@ export function OwnershipCentre() {
   const [, startTransition] = useTransition();
   const [askOpen, setAskOpen] = useState(false);
   const [askSeed, setAskSeed] = useState("");
+  const [exporting, setExporting] = useState(false);
+  const { session } = useAuth();
 
   const [visibleKinds, setVisibleKinds] = useState<Record<GraphNodeKind, boolean>>({
     company: true, vessel: true, person: true, port: true,
