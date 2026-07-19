@@ -11,18 +11,20 @@ export type EntityRow = EntityRef & Record<string, unknown>;
 export class SupabaseEntityRepository implements Repository<EntityRow> {
   async list(opts: ListOptions = {}): Promise<ListResult<EntityRow>> {
     if (opts.q) {
-      const env = await searchEntities({ data: { q: opts.q, limit: opts.limit ?? 50 } });
-      const rows = ((env as { data?: EntityRow[] }).data ?? (env as unknown as EntityRow[])) as EntityRow[];
+      const env = await searchEntities({ data: { q: opts.q } });
+      const rows = (env.data ?? []) as EntityRow[];
       return { rows, total: rows.length };
     }
-    const env = await listEntities({ data: { limit: opts.limit ?? 50, offset: opts.offset ?? 0 } });
-    const rows = ((env as { data?: EntityRow[] }).data ?? (env as unknown as EntityRow[])) as EntityRow[];
-    return { rows, total: rows.length };
+    const pageSize = opts.limit ?? 50;
+    const page = opts.offset ? Math.floor(opts.offset / pageSize) + 1 : 1;
+    const env = await listEntities({ data: { page, pageSize } });
+    const rows = (env.data ?? []) as EntityRow[];
+    return { rows, total: env.pagination?.total ?? rows.length };
   }
 
   async getById(id: Id): Promise<EntityRow | null> {
     const env = await getEntity({ data: { id } });
-    return ((env as { data?: EntityRow | null }).data ?? (env as unknown as EntityRow | null)) ?? null;
+    return (env.data ?? null) as EntityRow | null;
   }
 }
 
