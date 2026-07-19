@@ -33,7 +33,20 @@ import type {
 } from "./types";
 
 const InputSchema = z.object({
-  instance: z.enum(["seaphore", "manifest", "cargo", "revenue", "memory"]),
+  instance: z.enum([
+    "seaphore",
+    "manifest",
+    "cargo",
+    "revenue",
+    "memory",
+    "vessel",
+    "ports",
+    "ownership",
+    "compliance",
+    "evidence",
+    "alerts",
+    "administration",
+  ]),
   query: z.string().min(1).max(500),
   mode: z.enum(["SEARCH", "RETRIEVE", "INTERPRET", "ADVISE"]).optional(),
   context: z.record(z.string(), z.string()).optional(),
