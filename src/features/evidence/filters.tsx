@@ -17,6 +17,7 @@ import type { DateRange } from "react-day-picker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import type { EvidenceItem } from "@/features/evidence/data";
 import { portName, vesselName } from "@/features/evidence/data";
 
@@ -198,10 +199,12 @@ export function MultiSelectFilter({
 
   React.useEffect(() => { if (open) setTimeout(() => inputRef.current?.focus(), 20); }, [open]);
 
+  const debouncedQuery = useDebouncedValue(query, 200);
+
   const visible = React.useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = debouncedQuery.trim().toLowerCase();
     return q ? options.filter((o) => o.label.toLowerCase().includes(q) || o.value.toLowerCase().includes(q)) : options;
-  }, [options, query]);
+  }, [options, debouncedQuery]);
 
   const toggle = (value: string) => {
     onChange(selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]);

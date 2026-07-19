@@ -35,26 +35,53 @@ const CommandDialog = ({ children, ...props }: DialogProps) => {
   );
 };
 
+import { useDebouncedCallback } from "@/hooks/use-debounced-value";
+
+type CommandInputProps = React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input> & {
+  /**
+   * When set, `onDebouncedValueChange` is invoked only after the input has
+   * been idle for this many ms. Rapid keystrokes cancel the pending call so
+   * out-of-order or unnecessary downstream queries cannot fire.
+   */
+  debounceMs?: number;
+  /** Called with the trimmed-idle value; safe target for DB/search queries. */
+  onDebouncedValueChange?: (value: string) => void;
+};
+
 const CommandInput = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Input>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
->(({ className, ...props }, ref) => (
-  <div
-    className="sticky top-0 z-10 flex items-center border-b bg-popover px-3"
-    cmdk-input-wrapper=""
-  >
+  CommandInputProps
+>(({ className, debounceMs = 250, onDebouncedValueChange, onValueChange, ...props }, ref) => {
+  const debounced = useDebouncedCallback((next: string) => {
+    onDebouncedValueChange?.(next);
+  }, debounceMs);
 
-    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-    <CommandPrimitive.Input
-      ref={ref}
-      className={cn(
-        "flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
-        className,
-      )}
-      {...props}
-    />
-  </div>
-));
+  const handleValueChange = React.useCallback(
+    (next: string) => {
+      onValueChange?.(next);
+      if (onDebouncedValueChange) debounced(next);
+    },
+    [onValueChange, onDebouncedValueChange, debounced],
+  );
+
+  return (
+    <div
+      className="sticky top-0 z-10 flex items-center border-b bg-popover px-3"
+      cmdk-input-wrapper=""
+    >
+      <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+      <CommandPrimitive.Input
+        ref={ref}
+        className={cn(
+          "flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
+          className,
+        )}
+        onValueChange={handleValueChange}
+        {...props}
+      />
+    </div>
+  );
+});
 
 CommandInput.displayName = CommandPrimitive.Input.displayName;
 
