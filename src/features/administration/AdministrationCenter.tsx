@@ -1315,7 +1315,7 @@ function RolesSection() {
 function AuditCentreSection() {
   const listFn = useSF(listRoleAuditLog);
   const { data, isLoading, isFetching, error, refetch } = useQuery({
-    queryKey: ["admin", "role-audit", "centre"],
+    queryKey: QUERY_KEYS.adminRoleAudit("centre"),
     queryFn: () => listFn({ data: {} }),
     staleTime: 15_000,
   });
