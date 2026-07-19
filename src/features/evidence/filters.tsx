@@ -234,6 +234,7 @@ export function MultiSelectFilter({
         <PopoverTrigger asChild>
           <button
             type="button"
+            data-testid={`filter-trigger-${label.toLowerCase().replace(/\s+/g, "-")}`}
             className={cn(
               "flex w-full items-center justify-between rounded-md border border-line/60 bg-surface-2/40 px-2 py-1.5 text-[11.5px] text-foreground hover:bg-surface-2/60 focus:outline-none focus:ring-1 focus:ring-[color:var(--color-blue)]",
               selected.length > 0 && "border-[color:var(--color-blue)]/60",
