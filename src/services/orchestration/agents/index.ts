@@ -57,44 +57,44 @@ const ownershipAgent: SpecialistAgent = {
   handles: ["OWNERSHIP_ANALYSIS", "RELATIONSHIP_DISCOVERY", "SANCTIONS_SCREENING"],
   retrieve: (cap, intent, _q) =>
     runRetrieval("ownership", cap, cap === "SANCTIONS_SCREENING" ? "OpenSanctions" : "CAC + IMO",
-      () => queryEvidenceByEntityHints(intent)),
+      () => retrieveEvidence(intent)),
 };
 
 const revenueAgent: SpecialistAgent = {
   id: "revenue",
   handles: ["REVENUE_LEAKAGE_DETECTION"],
   retrieve: (cap, intent, _q) =>
-    runRetrieval("revenue", cap, "Manifest + Customs", () => queryEvidenceByEntityHints(intent)),
+    runRetrieval("revenue", cap, "Manifest + Customs", () => retrieveEvidence(intent)),
 };
 
 const manifestAgent: SpecialistAgent = {
   id: "manifest",
   handles: ["MANIFEST_CORRELATION"],
   retrieve: (cap, intent, _q) =>
-    runRetrieval("manifest", cap, "Cargo Manifests", () => queryEvidenceByEntityHints(intent)),
+    runRetrieval("manifest", cap, "Cargo Manifests", () => retrieveEvidence(intent)),
 };
 
 const complianceAgent: SpecialistAgent = {
   id: "compliance",
   handles: ["COMPLIANCE_ASSESSMENT"],
   retrieve: (cap, intent, _q) =>
-    runRetrieval("compliance", cap, "IMO GISIS + Certificates", () => queryEvidenceByEntityHints(intent)),
+    runRetrieval("compliance", cap, "IMO GISIS + Certificates", () => retrieveEvidence(intent)),
 };
 
 const evidenceAgent: SpecialistAgent = {
   id: "evidence",
   handles: ["EVIDENCE_SEARCH", "DOCUMENT_ANALYSIS"],
   retrieve: (cap, intent, _q) =>
-    runRetrieval("evidence", cap, "Evidence Library", () => queryEvidenceByEntityHints(intent, 50)),
+    runRetrieval("evidence", cap, "Evidence Library", () => retrieveEvidence(intent, 50)),
 };
 
 const forecastAgent: SpecialistAgent = {
   id: "forecast",
   handles: ["PATTERN_DETECTION", "RISK_SCORING"],
   retrieve: async (cap, intent, _q) => runRetrieval("forecast", cap, "Historical Cases", async () => {
-    const evidence = await queryEvidenceByEntityHints(intent, 30);
+    const evidence = await retrieveEvidence(intent, 30);
     // Pattern agent labels its outputs INFERRED unless corroboration exists.
-    return evidence.map((e) => ({ ...e, grade: e.grade === "VERIFIED" ? e.grade : "INFERRED" }));
+    return evidence.map((e) => ({ ...e, grade: (e.grade === "VERIFIED" ? "VERIFIED" : "INFERRED") as EvidenceItem["grade"] }));
   }),
 };
 
