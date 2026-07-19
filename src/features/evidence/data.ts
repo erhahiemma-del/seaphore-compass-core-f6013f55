@@ -9,7 +9,10 @@
  * workspace; when rows exist the service maps them onto this shape.
  */
 import type { ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
-import { PORTS, VESSELS, iso } from "@/lib/intel-centre-data";
+import { PORTS, VESSELS } from "@/lib/intel-centre-data";
+
+const iso = (hoursAgo: number) =>
+  new Date(Date.now() - hoursAgo * 3_600_000).toISOString();
 
 export type EvidenceKind =
   | "Bill of Lading"
