@@ -139,7 +139,7 @@ export function OwnershipCentre() {
       const persons = PERSONS.filter((p) => passSearch(p.name));
       const vessels = VESSELS.filter((v) => passSearch(v.name));
       return [
-        ...rows.map((c) => ({ id: c.id, name: c.name, kind: "Company", meta: c.role, country: c.country, tier: c.verified as const })),
+        ...rows.map((c) => ({ id: c.id, name: c.name, kind: "Company", meta: c.role, country: c.country, tier: c.verified })),
         ...persons.map((p) => ({ id: p.id, name: p.name, kind: "Person", meta: p.role, country: p.country, tier: p.verified })),
         ...vessels.map((v) => ({ id: v.id, name: v.name, kind: "Vessel", meta: v.type, country: v.flag, tier: "verified" as const })),
       ];
