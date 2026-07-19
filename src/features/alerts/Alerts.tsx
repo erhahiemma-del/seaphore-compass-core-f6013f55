@@ -18,7 +18,6 @@ import {
   Filter as FilterIcon,
   Bookmark,
   ChevronDown,
-  MapPin,
   Send,
   Zap,
   UserPlus,
