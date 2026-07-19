@@ -6,7 +6,7 @@
  * Preserves the existing RBAC, audit-log, and permissions architecture
  * (PERM-1, HR-9) while presenting the enterprise Administration workspace
  * defined in the design spec. Access is Administrator-only, enforced by RLS
- * on the underlying tables and by <RequirePermission permission="role.manage">.
+ * on the underlying tables and by the entry RBAC check.
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -161,14 +161,14 @@ const PREVIEW_ROLE_LABEL: Record<PreviewRole, string> = {
 
 export function AdministrationCenter() {
   const { session, loading: authLoading } = useAuth();
-  const { roles, loading: rolesLoading } = useRoles();
+  const { roles, role, loading: rolesLoading } = useRoles();
   const allowed = can(roles, "administration.view") || can(roles, "role.manage");
   const loading = authLoading || (!!session && rolesLoading);
 
   let body: ReactNode;
   if (loading) body = <LoadingState />;
   else if (!session) body = <SignInRequired />;
-  else if (allowed) body = <CenterInner currentRole={roles[0] ?? null} />;
+  else if (allowed) body = <CenterInner currentRole={role} />;
   else body = <AccessDenied />;
 
   return (
