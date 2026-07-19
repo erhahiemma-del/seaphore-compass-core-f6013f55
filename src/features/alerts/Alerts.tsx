@@ -687,7 +687,11 @@ function IconForType({ type }: { type: string }) {
 }
 
 /* ------------- Alert Details + Mini Map ------------- */
-function AlertDetails({ alert, onStatus }: { alert: ExtAlert; onStatus: (id: string, s: AlertStatus) => void }) {
+function AlertDetails({ alert, onStatus, live }: {
+  alert: ExtAlert;
+  onStatus: (id: string, s: AlertStatus) => void;
+  live: ReturnType<typeof useAlertsRealtime>;
+}) {
   const vessel = alert.vesselId ? vesselById(alert.vesselId) : undefined;
   return (
     <section className="flex h-full flex-col rounded-lg border border-line/60 bg-surface-1/70">
@@ -695,6 +699,7 @@ function AlertDetails({ alert, onStatus }: { alert: ExtAlert; onStatus: (id: str
         <div className="flex items-center gap-2">
           <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate">Alert Details</span>
           <SeverityBadge sev={alert.severity} />
+          <PanelLive lastEvent={live.lastEvent} status={live.status} kinds={["alert"]} />
         </div>
         <span className="text-[10.5px] text-slate">Alert ID: {alert.alertId}</span>
       </header>
