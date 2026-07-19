@@ -136,6 +136,44 @@ export type Database = {
         }
         Relationships: []
       }
+      briefing_overrides: {
+        Row: {
+          briefing_id: string
+          created_at: string
+          decision: string
+          id: string
+          justification: string | null
+          modifications: Json | null
+          officer_id: string
+        }
+        Insert: {
+          briefing_id: string
+          created_at?: string
+          decision: string
+          id?: string
+          justification?: string | null
+          modifications?: Json | null
+          officer_id: string
+        }
+        Update: {
+          briefing_id?: string
+          created_at?: string
+          decision?: string
+          id?: string
+          justification?: string | null
+          modifications?: Json | null
+          officer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "briefing_overrides_briefing_id_fkey"
+            columns: ["briefing_id"]
+            isOneToOne: false
+            referencedRelation: "intel_briefings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       briefings: {
         Row: {
           audience: string
@@ -174,6 +212,69 @@ export type Database = {
             columns: ["report_id"]
             isOneToOne: false
             referencedRelation: "intelligence_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      candidate_relationships: {
+        Row: {
+          confidence: number
+          created_at: string
+          evidence_ids: string[]
+          id: string
+          inferred_by: string
+          reasoning: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source_entity_id: string
+          status: Database["public"]["Enums"]["candidate_status"]
+          target_entity_id: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          confidence?: number
+          created_at?: string
+          evidence_ids?: string[]
+          id?: string
+          inferred_by: string
+          reasoning?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_entity_id: string
+          status?: Database["public"]["Enums"]["candidate_status"]
+          target_entity_id: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          confidence?: number
+          created_at?: string
+          evidence_ids?: string[]
+          id?: string
+          inferred_by?: string
+          reasoning?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_entity_id?: string
+          status?: Database["public"]["Enums"]["candidate_status"]
+          target_entity_id?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_relationships_source_entity_id_fkey"
+            columns: ["source_entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_relationships_target_entity_id_fkey"
+            columns: ["target_entity_id"]
+            isOneToOne: false
+            referencedRelation: "entities"
             referencedColumns: ["id"]
           },
         ]
@@ -635,6 +736,74 @@ export type Database = {
           },
         ]
       }
+      intel_briefings: {
+        Row: {
+          classification: Json
+          confidence_matrix: Json
+          created_at: string
+          id: string
+          intelligence_status: string
+          investigation_id: string | null
+          latency_ms: number | null
+          mode: Database["public"]["Enums"]["briefing_mode"]
+          model_used: string | null
+          officer_id: string
+          query: string
+          sections: Json
+          session_id: string | null
+          sources_corroborated: number
+          sources_queried: number
+          sources_responded: number
+          workspace: Database["public"]["Enums"]["workspace_kind"] | null
+        }
+        Insert: {
+          classification?: Json
+          confidence_matrix?: Json
+          created_at?: string
+          id?: string
+          intelligence_status?: string
+          investigation_id?: string | null
+          latency_ms?: number | null
+          mode: Database["public"]["Enums"]["briefing_mode"]
+          model_used?: string | null
+          officer_id: string
+          query: string
+          sections?: Json
+          session_id?: string | null
+          sources_corroborated?: number
+          sources_queried?: number
+          sources_responded?: number
+          workspace?: Database["public"]["Enums"]["workspace_kind"] | null
+        }
+        Update: {
+          classification?: Json
+          confidence_matrix?: Json
+          created_at?: string
+          id?: string
+          intelligence_status?: string
+          investigation_id?: string | null
+          latency_ms?: number | null
+          mode?: Database["public"]["Enums"]["briefing_mode"]
+          model_used?: string | null
+          officer_id?: string
+          query?: string
+          sections?: Json
+          session_id?: string | null
+          sources_corroborated?: number
+          sources_queried?: number
+          sources_responded?: number
+          workspace?: Database["public"]["Enums"]["workspace_kind"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intel_briefings_investigation_id_fkey"
+            columns: ["investigation_id"]
+            isOneToOne: false
+            referencedRelation: "investigations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       intelligence_reports: {
         Row: {
           classification: string
@@ -777,6 +946,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      officer_action_counters: {
+        Row: {
+          action_key: string
+          count: number
+          officer_id: string
+          window_day: string
+        }
+        Insert: {
+          action_key: string
+          count?: number
+          officer_id: string
+          window_day?: string
+        }
+        Update: {
+          action_key?: string
+          count?: number
+          officer_id?: string
+          window_day?: string
+        }
+        Relationships: []
+      }
+      orchestration_events: {
+        Row: {
+          created_at: string
+          emitted_by: string | null
+          entity_ids: string[]
+          event_type: string
+          id: string
+          payload: Json
+        }
+        Insert: {
+          created_at?: string
+          emitted_by?: string | null
+          entity_ids?: string[]
+          event_type: string
+          id?: string
+          payload?: Json
+        }
+        Update: {
+          created_at?: string
+          emitted_by?: string | null
+          entity_ids?: string[]
+          event_type?: string
+          id?: string
+          payload?: Json
+        }
+        Relationships: []
       }
       persons: {
         Row: {
@@ -1165,6 +1382,8 @@ export type Database = {
     }
     Enums: {
       app_role: "analyst" | "officer" | "director" | "admin"
+      briefing_mode: "lookup" | "assessment" | "investigation" | "forecast"
+      candidate_status: "pending" | "approved" | "rejected"
       confidence_level:
         | "OBSERVED"
         | "DECLARED"
@@ -1198,6 +1417,13 @@ export type Database = {
         | "intelligence_report"
         | "agency"
         | "regulation"
+      evidence_grade:
+        | "VERIFIED"
+        | "CORROBORATED"
+        | "OBSERVED"
+        | "REPORTED"
+        | "INFERRED"
+        | "UNKNOWN"
       investigation_status:
         | "open"
         | "active"
@@ -1211,6 +1437,13 @@ export type Database = {
         | "discharged"
         | "completed"
         | "cancelled"
+      workspace_kind:
+        | "ownership"
+        | "revenue"
+        | "compliance"
+        | "evidence"
+        | "vessel"
+        | "port"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1339,6 +1572,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["analyst", "officer", "director", "admin"],
+      briefing_mode: ["lookup", "assessment", "investigation", "forecast"],
+      candidate_status: ["pending", "approved", "rejected"],
       confidence_level: [
         "OBSERVED",
         "DECLARED",
@@ -1376,6 +1611,14 @@ export const Constants = {
         "agency",
         "regulation",
       ],
+      evidence_grade: [
+        "VERIFIED",
+        "CORROBORATED",
+        "OBSERVED",
+        "REPORTED",
+        "INFERRED",
+        "UNKNOWN",
+      ],
       investigation_status: [
         "open",
         "active",
@@ -1390,6 +1633,14 @@ export const Constants = {
         "discharged",
         "completed",
         "cancelled",
+      ],
+      workspace_kind: [
+        "ownership",
+        "revenue",
+        "compliance",
+        "evidence",
+        "vessel",
+        "port",
       ],
     },
   },
