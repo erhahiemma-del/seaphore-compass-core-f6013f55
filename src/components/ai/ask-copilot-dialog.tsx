@@ -114,16 +114,16 @@ export function AskCopilotDialog({
 
   const startVoice = () => {
     const w = window as unknown as {
-      webkitSpeechRecognition?: new () => SpeechRecognition;
-      SpeechRecognition?: new () => SpeechRecognition;
+      webkitSpeechRecognition?: new () => any;
+      SpeechRecognition?: new () => any;
     };
     const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
     if (!Ctor) return;
     const rec = new Ctor();
     rec.lang = "en-US";
     rec.interimResults = false;
-    rec.onresult = (e: SpeechRecognitionEvent) => {
-      const t = e.results[0]?.[0]?.transcript ?? "";
+    rec.onresult = (e: any) => {
+      const t = e.results?.[0]?.[0]?.transcript ?? "";
       setQuery((q) => (q ? `${q} ${t}` : t));
     };
     rec.onend = () => setListening(false);
