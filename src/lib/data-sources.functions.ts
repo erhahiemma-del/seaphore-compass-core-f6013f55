@@ -18,14 +18,15 @@ export const runDataSourceHealthChecks = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const adapters = listAdapters();
-    const rows: Array<{
+    type HealthRow = {
       source_id: string;
-      state: string;
+      state: "OK" | "DEGRADED" | "DOWN" | "UNKNOWN" | "NOT_APPLICABLE";
       latency_ms: number | null;
       error_code: string | null;
       error_message: string | null;
       checked_at: string;
-    }> = [];
+    };
+    const rows: HealthRow[] = [];
 
     for (const { id, adapter } of adapters) {
       try {
