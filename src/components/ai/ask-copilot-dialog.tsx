@@ -112,18 +112,32 @@ export function AskCopilotDialog({
     );
   };
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
+  interface SpeechRecognitionResult {
+    readonly transcript: string;
+  }
+  interface SpeechRecognitionEventLike {
+    readonly results: ArrayLike<ArrayLike<SpeechRecognitionResult>>;
+  }
+  interface SpeechRecognitionInstance {
+    lang: string;
+    interimResults: boolean;
+    onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+    onend: (() => void) | null;
+    start: () => void;
+  }
+  type SpeechRecognitionCtor = new () => SpeechRecognitionInstance;
+
   const startVoice = () => {
-    const w = window as unknown as {
-      webkitSpeechRecognition?: new () => any;
-      SpeechRecognition?: new () => any;
+    const w = window as Window & {
+      webkitSpeechRecognition?: SpeechRecognitionCtor;
+      SpeechRecognition?: SpeechRecognitionCtor;
     };
     const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
     if (!Ctor) return;
     const rec = new Ctor();
     rec.lang = "en-US";
     rec.interimResults = false;
-    rec.onresult = (e: any) => {
+    rec.onresult = (e) => {
       const t = e.results?.[0]?.[0]?.transcript ?? "";
       setQuery((q) => (q ? `${q} ${t}` : t));
     };
@@ -131,7 +145,6 @@ export function AskCopilotDialog({
     setListening(true);
     rec.start();
   };
-  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   const suggestions = useMemo(() => inst.exampleQueries.slice(0, 3), [inst]);
   const hasConversation = turns.length > 0;
