@@ -217,10 +217,10 @@ export function OwnershipNetworkGraph({
           )}
         </div>
         <div className="pointer-events-auto flex flex-col gap-1">
-          <button onClick={() => setZoom((z) => Math.min(3, z + 0.2))} className="rounded border border-line/60 bg-surface/80 p-1 text-slate hover:text-foreground" aria-label="Zoom in">
+          <button onClick={() => { const end = startTrace("zoom.step", { dir: "in" }); setZoom((z) => Math.min(3, z + 0.2)); end(); }} className="rounded border border-line/60 bg-surface/80 p-1 text-slate hover:text-foreground" aria-label="Zoom in">
             <Plus className="h-3.5 w-3.5" />
           </button>
-          <button onClick={() => setZoom((z) => Math.max(0.4, z - 0.2))} className="rounded border border-line/60 bg-surface/80 p-1 text-slate hover:text-foreground" aria-label="Zoom out">
+          <button onClick={() => { const end = startTrace("zoom.step", { dir: "out" }); setZoom((z) => Math.max(0.4, z - 0.2)); end(); }} className="rounded border border-line/60 bg-surface/80 p-1 text-slate hover:text-foreground" aria-label="Zoom out">
             <Minus className="h-3.5 w-3.5" />
           </button>
           <button
