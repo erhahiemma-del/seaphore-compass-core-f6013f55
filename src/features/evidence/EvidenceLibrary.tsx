@@ -29,6 +29,10 @@ import {
   type EvidenceItem, type EvidenceCategory,
 } from "@/features/evidence/data";
 import { cn } from "@/lib/utils";
+import {
+  EvidenceFilterSidebar, EMPTY_FILTERS, loadPersistedFilters, persistFilters,
+  applyEvidenceFilters, activeFilterCount, type EvidenceFilters,
+} from "@/features/evidence/filters";
 
 /* ============================================================
  * Types & tabs
