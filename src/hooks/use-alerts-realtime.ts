@@ -172,5 +172,30 @@ export function useAlertsRealtime({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { status, eventCount, lastEvent };
+  // Prune expired recent-update entries + tick freshness labels every second.
+  useEffect(() => {
+    const keys = Object.keys(recentUpdates);
+    if (keys.length === 0) return;
+    const id = window.setInterval(() => {
+      const now = Date.now();
+      setRecentUpdates((prev) => {
+        let changed = false;
+        const next: Record<string, number> = {};
+        for (const [k, ts] of Object.entries(prev)) {
+          if (now - ts < 15_000) next[k] = ts;
+          else changed = true;
+        }
+        return changed ? next : prev;
+      });
+      setNow(now);
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [recentUpdates]);
+
+  const wasRecentlyUpdated = (alertId: string, withinMs = 8_000) => {
+    const ts = recentUpdates[alertId];
+    return !!ts && Date.now() - ts < withinMs;
+  };
+
+  return { status, eventCount, lastEvent, recentUpdates, wasRecentlyUpdated };
 }
