@@ -18,6 +18,15 @@ export const QUERY_KEYS = {
     id ? (["manifests", id] as const) : (["manifests"] as const),
   revenue: () => ["revenue", "summary"] as const,
   ports: () => ["ports", "congestion"] as const,
+  // Cross-cutting infrastructure keys
+  dataSources: () => ["data-sources"] as const,
+  authRoles: (userId?: string) =>
+    userId ? (["auth", "roles", userId] as const) : (["auth", "roles"] as const),
+  evidenceLibrary: () => ["evidence", "library"] as const,
+  adminUsersWithRoles: () => ["admin", "users-with-roles"] as const,
+  adminRoleAudit: (filter?: string) =>
+    filter ? (["admin", "role-audit", filter] as const) : (["admin", "role-audit"] as const),
+  adminKpiUsers: () => ["admin", "kpi-users"] as const,
 } as const;
 
 /**
