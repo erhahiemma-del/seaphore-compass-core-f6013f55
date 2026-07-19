@@ -344,7 +344,7 @@ function CenterInner({ currentRole }: { currentRole: Role | null }) {
 
         <div className="min-w-0 flex-1 p-6">
           <SectionContent
-            key={section}
+            key={`${section}:${activeRole}`}
             section={section}
             role={activeRole}
             search={query}
