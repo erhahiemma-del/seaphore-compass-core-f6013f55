@@ -29,6 +29,7 @@ import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { ConfidenceChip, type ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
 import { ALERTS, vesselById, type AlertItem, type AlertStatus } from "@/lib/intel-centre-data";
 import { useAlertsRealtime } from "@/hooks/use-alerts-realtime";
+import { PanelLive } from "@/components/intelligence/PanelLive";
 import { cn } from "@/lib/utils";
 
 /* ============================================================
