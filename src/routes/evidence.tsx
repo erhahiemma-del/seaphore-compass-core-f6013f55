@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { EvidenceCentre } from "@/features/evidence/Evidence";
+import { EvidenceCentre } from "@/features/evidence/EvidenceLibrary";
 
 export const Route = createFileRoute("/evidence")({
   head: () => ({
