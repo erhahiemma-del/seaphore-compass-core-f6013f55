@@ -6,7 +6,7 @@
  * Preserves the existing RBAC, audit-log, and permissions architecture
  * (PERM-1, HR-9) while presenting the enterprise Administration workspace
  * defined in the design spec. Access is Administrator-only, enforced by RLS
- * on the underlying tables and by <RequirePermission permission="role.manage">.
+ * on the underlying tables and by the entry RBAC check.
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -71,8 +71,7 @@ import {
 } from "recharts";
 
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
-import { RequirePermission } from "@/components/require-permission";
-import { usePermission, useRoles } from "@/hooks/use-permissions";
+import { useRoles } from "@/hooks/use-permissions";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -162,14 +161,14 @@ const PREVIEW_ROLE_LABEL: Record<PreviewRole, string> = {
 
 export function AdministrationCenter() {
   const { session, loading: authLoading } = useAuth();
-  const { roles, loading: rolesLoading } = useRoles();
+  const { roles, role, loading: rolesLoading } = useRoles();
   const allowed = can(roles, "administration.view") || can(roles, "role.manage");
   const loading = authLoading || (!!session && rolesLoading);
 
   let body: ReactNode;
   if (loading) body = <LoadingState />;
   else if (!session) body = <SignInRequired />;
-  else if (allowed) body = <CenterInner />;
+  else if (allowed) body = <CenterInner currentRole={role} />;
   else body = <AccessDenied />;
 
   return (
@@ -230,16 +229,17 @@ function AccessDenied() {
 
 // ---------- Inner center: sub-nav + section content ----------
 
-function CenterInner() {
+function CenterInner({ currentRole }: { currentRole: Role | null }) {
   const [section, setSection] = useState<SectionId>("overview");
   const [query, setQuery] = useState("");
-  const { role } = useRoles();
   const isDev = import.meta.env.DEV;
   const [previewRole, setPreviewRole] = useState<PreviewRole>(
-    (role as PreviewRole) ?? "admin",
+    (currentRole as PreviewRole) ?? "admin",
   );
 
-  const activeRole: PreviewRole = isDev ? previewRole : (role as PreviewRole) ?? "admin";
+  const activeRole: PreviewRole = isDev
+    ? previewRole
+    : (currentRole as PreviewRole) ?? "admin";
 
   return (
     <div className="flex min-h-[calc(100vh-8rem)] w-full">
@@ -343,7 +343,12 @@ function CenterInner() {
         </div>
 
         <div className="min-w-0 flex-1 p-6">
-          <SectionContent section={section} role={activeRole} search={query} />
+          <SectionContent
+            key={section}
+            section={section}
+            role={activeRole}
+            search={query}
+          />
         </div>
       </section>
     </div>
