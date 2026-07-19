@@ -9,7 +9,7 @@
  * Data is loaded via evidenceService (Supabase-first, seed fallback) and
  * every figure carries the OC-001 confidence ladder per the Honesty Rules.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   FileText, Image as ImageIcon, Radio, ClipboardList, FileBadge, ShieldCheck,
@@ -29,6 +29,10 @@ import {
   type EvidenceItem, type EvidenceCategory,
 } from "@/features/evidence/data";
 import { cn } from "@/lib/utils";
+import {
+  EvidenceFilterSidebar, EMPTY_FILTERS, loadPersistedFilters, persistFilters,
+  applyEvidenceFilters, activeFilterCount, type EvidenceFilters,
+} from "@/features/evidence/filters";
 
 /* ============================================================
  * Types & tabs
@@ -64,12 +68,11 @@ export function EvidenceCentre() {
   const [query, setQuery] = useState("");
   const [uploadOpen, setUploadOpen] = useState(false);
 
-  // Filters
-  const [types, setTypes] = useState<string[]>([]);
-  const [levels, setLevels] = useState<string[]>([]);
-  const [classifications, setClassifications] = useState<string[]>([]);
+  // Persisted filter state — survives navigation and reloads.
+  const [filters, setFilters] = useState<EvidenceFilters>(() => loadPersistedFilters());
+  useEffect(() => { persistFilters(filters); }, [filters]);
 
-  const { data: allEvidence = EVIDENCE_LIBRARY } = useQuery({
+  const { data: allEvidence = EVIDENCE_LIBRARY, isLoading, error } = useQuery({
     queryKey: ["evidence", "library"],
     queryFn: listEvidence,
     initialData: EVIDENCE_LIBRARY,
@@ -77,13 +80,8 @@ export function EvidenceCentre() {
   });
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return allEvidence.filter((e) => {
-      if (q && !`${e.refNumber} ${e.kind} ${e.description} ${e.tags.join(" ")}`.toLowerCase().includes(q)) return false;
-      if (types.length && !types.includes(e.kind)) return false;
-      if (levels.length && !levels.includes(e.confidence)) return false;
-      if (classifications.length && !classifications.includes(e.classification)) return false;
-      // Tab-driven category filter
+    const base = applyEvidenceFilters(allEvidence, filters, query);
+    return base.filter((e) => {
       if (tab === "documents" && e.category !== "Documents") return false;
       if (tab === "media" && e.category !== "Media") return false;
       if (tab === "ais" && e.category !== "AIS Records") return false;
@@ -91,9 +89,18 @@ export function EvidenceCentre() {
       if (tab === "bills" && e.category !== "Bills of Lading") return false;
       return true;
     });
-  }, [allEvidence, query, types, levels, classifications, tab]);
+  }, [allEvidence, filters, query, tab]);
+
+  const activeCount = activeFilterCount(filters) + (query.trim() ? 1 : 0);
 
   const selected = filtered.find((e) => e.id === selectedId) ?? filtered[0] ?? allEvidence[0]!;
+
+  // Keep selection valid when filters cut it out of the visible set.
+  useEffect(() => {
+    if (!filtered.find((e) => e.id === selectedId) && filtered[0]) {
+      setSelectedId(filtered[0].id);
+    }
+  }, [filtered, selectedId]);
 
   return (
     <AppShell title="Evidence Library" subtitle="Trusted evidence. Provenance. Intelligence." mode="dark">
@@ -136,10 +143,12 @@ export function EvidenceCentre() {
         {/* Body: filters | explorer + preview | right rail */}
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-12 xl:col-span-2">
-            <FilterSidebar
-              types={types} setTypes={setTypes}
-              levels={levels} setLevels={setLevels}
-              classifications={classifications} setClassifications={setClassifications}
+            <EvidenceFilterSidebar
+              items={allEvidence}
+              filters={filters}
+              setFilters={setFilters}
+              loading={isLoading}
+              error={error ? "Failed to load evidence" : null}
             />
           </div>
 
@@ -306,75 +315,10 @@ function ViewSwitcher({ view, setView }: { view: "cards" | "grid" | "list"; setV
   );
 }
 
-/* ============================================================
- * Filter sidebar
- * ============================================================ */
+/* Filter sidebar moved to ./filters.tsx (production-ready dropdowns). */
 
 const TYPE_OPTIONS = ["Bill of Lading", "Import Manifest", "Invoice", "Container List", "Cargo Declaration", "Inspection Report", "Photo", "AIS Track", "Certificate", "Payment Receipt"];
-const LEVEL_OPTIONS: Array<{ key: string; label: string }> = [
-  { key: "verified", label: "Verified" },
-  { key: "observed", label: "Observed" },
-  { key: "inferred", label: "Inferred" },
-  { key: "unconfirmed", label: "Unconfirmed" },
-];
 const CLASSIFICATION_OPTIONS = ["Official Document", "Field Capture", "System Ingest", "Third-Party Feed", "OSINT"];
-
-function FilterSidebar({
-  types, setTypes, levels, setLevels, classifications, setClassifications,
-}: {
-  types: string[]; setTypes: (v: string[]) => void;
-  levels: string[]; setLevels: (v: string[]) => void;
-  classifications: string[]; setClassifications: (v: string[]) => void;
-}) {
-  const total = types.length + levels.length + classifications.length;
-  const clear = () => { setTypes([]); setLevels([]); setClassifications([]); };
-  return (
-    <aside className="rounded-lg border border-line/60 bg-surface-1/70">
-      <header className="flex items-center justify-between border-b border-line/60 px-3 py-2">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate">Filter Evidence</span>
-        <button onClick={clear} className="text-[10.5px] text-[color:var(--color-blue)] hover:underline">Clear All</button>
-      </header>
-      <div className="space-y-3 p-3">
-        <FilterBox icon={<Search className="h-3 w-3" />} label="Search filters..." />
-        <FilterSelect label="Evidence Type" hint="All Types" />
-        <FilterSelect label="Confidence Level" hint="All Levels" />
-        <FilterSelect label="Investigation" hint="All Investigations" />
-        <FilterSelect label="Entity" hint="All Entities" />
-        <FilterSelect label="Port" hint="All Ports" />
-        <FilterSelect label="Date Range" hint="May 20, 2026 - May 27, 2026" />
-        <FilterSelect label="Uploaded By" hint="All Officers" />
-        <FilterSelect label="Classification" hint="All Classifications" />
-        <FilterSelect label="Tags" hint="All Tags" />
-        <button className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md bg-[color:var(--color-blue)]/90 px-3 py-2 text-[11.5px] font-semibold text-white hover:bg-[color:var(--color-blue)]">
-          Apply Filters ({Math.max(total, 8)})
-        </button>
-        <button className="flex w-full items-center justify-center gap-1.5 rounded-md border border-line/60 bg-surface-2/40 px-3 py-2 text-[11.5px] text-foreground hover:bg-surface-2/60">
-          <Save className="h-3 w-3" /> Save View
-        </button>
-      </div>
-    </aside>
-  );
-}
-
-function FilterBox({ icon, label }: { icon: React.ReactNode; label: string }) {
-  return (
-    <div className="relative">
-      <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-slate">{icon}</span>
-      <input placeholder={label} className="w-full rounded-md border border-line/50 bg-surface-2/40 py-1.5 pl-7 pr-2 text-[11.5px] text-foreground placeholder:text-slate focus:outline-none focus:ring-1 focus:ring-[color:var(--color-blue)]" />
-    </div>
-  );
-}
-function FilterSelect({ label, hint }: { label: string; hint: string }) {
-  return (
-    <div>
-      <div className="mb-1 text-[10.5px] uppercase tracking-[0.06em] text-slate">{label}</div>
-      <button className="flex w-full items-center justify-between rounded-md border border-line/60 bg-surface-2/40 px-2 py-1.5 text-[11.5px] text-foreground hover:bg-surface-2/60">
-        <span className="truncate">{hint}</span>
-        <ChevronDown className="h-3 w-3 text-slate" />
-      </button>
-    </div>
-  );
-}
 
 /* ============================================================
  * Evidence Explorer (cards)
