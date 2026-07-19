@@ -513,7 +513,7 @@ function LinkAction({ label }: { label: string }) {
 
 function KPIRow({ role }: { role: PreviewRole }) {
   const { data: users } = useQuery({
-    queryKey: ["admin", "kpi-users"],
+    queryKey: QUERY_KEYS.adminKpiUsers(),
     queryFn: async () => {
       // Best-effort — fails silently if caller lacks admin.
       const fn = listUsersWithRoles;
