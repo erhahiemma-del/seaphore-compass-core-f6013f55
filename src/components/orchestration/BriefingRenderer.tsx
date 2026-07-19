@@ -16,7 +16,7 @@ import { EVIDENCE_GRADES } from "@/services/orchestration/constants";
 import type { Briefing, BriefingSection, EvidenceGrade,
   OverrideDecision } from "@/services/orchestration";
 
-type SectionPayload<K extends BriefingSection["kind"]> = Extract<BriefingSection, { kind: K }>["payload"];
+type SectionPayload<K extends keyof import("@/services/orchestration").SectionPayloads> = import("@/services/orchestration").SectionPayloads[K];
 
 interface Props {
   briefing: Briefing;
