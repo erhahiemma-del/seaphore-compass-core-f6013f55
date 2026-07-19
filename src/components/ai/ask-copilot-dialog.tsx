@@ -112,6 +112,7 @@ export function AskCopilotDialog({
     );
   };
 
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   const startVoice = () => {
     const w = window as unknown as {
       webkitSpeechRecognition?: new () => any;
