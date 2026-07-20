@@ -4,6 +4,7 @@ import { Bell, LogIn, LogOut, User2 } from "lucide-react";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -34,6 +35,7 @@ export function TopBar({ title, subtitle }: TopBarProps) {
       <div className="flex items-center gap-3">
         <StatusIndicator />
         <Clock />
+        <ThemeToggle />
         <button
           type="button"
           aria-label="Alerts"
