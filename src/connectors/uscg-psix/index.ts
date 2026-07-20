@@ -245,7 +245,7 @@ export class UscgPsixConnector implements ConnectorInterface {
         fromEntityType: "VESSEL",
         fromEntityId: record.entityId,
         relationship: "VESSEL_HAS_DEFICIENCY",
-        toEntityType: "DEFICIENCY",
+        toEntityType: "ALERT",
         toEntityId: `${record.entityId}-${data.inspectionDate ?? "date"}-${data.deficiencies}`,
         confidence: record.confidence,
       });
