@@ -11,7 +11,7 @@
  * | generate-brief      | `generateBrief`                                    |
  * | score-risk          | `scoreRisk`                                        |
  * | detect-duplicates   | `detectDuplicates`                                 |
- * | copilot-query       | `copilotQuery` (see ../copilot-query.functions.ts) |
+ * | copilot-query       | `copilotQueryFn` (see @/lib/orchestration.functions) |
  * | write-audit         | `writeAuditLog`  (see @/lib/audit.functions.ts)    |
  * | validate-manifest   | `validateManifest`                                 |
  */
