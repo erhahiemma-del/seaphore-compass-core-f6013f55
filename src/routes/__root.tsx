@@ -139,7 +139,9 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <Outlet />
+        <RequireAuth>
+          <Outlet />
+        </RequireAuth>
         {import.meta.env.DEV ? <PerfOverlayLazy /> : null}
       </ThemeProvider>
     </QueryClientProvider>
