@@ -174,7 +174,7 @@ export function CopilotWorkspace({
             Query
           </p>
           <p className="mb-4 text-sm text-foreground">{text}</p>
-          <StreamingStages currentStage={mapStage(stage)} />
+          <StreamingStages activeIndex={stageIndex(stage)} />
         </div>
       ) : null}
 
@@ -243,9 +243,9 @@ export function CopilotWorkspace({
   );
 }
 
-function mapStage(s: Stage): "classifying" | "retrieving" | "reasoning" | "rendering" {
-  if (s === "classifying") return "classifying";
-  if (s === "retrieving") return "retrieving";
-  if (s === "reasoning") return "reasoning";
-  return "rendering";
+function stageIndex(s: Stage): number {
+  if (s === "classifying") return 0;
+  if (s === "retrieving") return 1;
+  if (s === "reasoning") return 2;
+  return 3;
 }
