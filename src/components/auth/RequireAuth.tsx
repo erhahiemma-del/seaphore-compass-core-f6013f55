@@ -36,14 +36,15 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (loading || publicPath) return;
     if (!session) {
-      const redirect = location.pathname + location.search;
+      // TanStack Router's `location.search` is a parsed object — use `href`
+      // (already-serialized path + search + hash) for the redirect target.
       navigate({
         to: "/auth",
-        search: { redirect },
+        search: { redirect: location.href },
         replace: true,
       });
     }
-  }, [loading, publicPath, session, location.pathname, location.search, navigate]);
+  }, [loading, publicPath, session, location.href, navigate]);
 
   // While the session is loading and we're on a protected path, avoid
   // rendering children — protected UI can flash before the redirect.
