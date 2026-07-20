@@ -379,9 +379,13 @@ interface AuditTrailPanelProps {
 
 function AuditTrailPanel({ filterUserId, onClearFilter, usersById }: AuditTrailPanelProps) {
   const listAuditFn = useSF(listRoleAuditLog);
+  const devBypass = useDevModeStore((s) => s.bypassAuth) && DEV_MODE_AVAILABLE;
   const { data, isLoading, isFetching, error, refetch } = useQuery({
-    queryKey: QUERY_KEYS.adminRoleAudit(filterUserId ?? "all"),
-    queryFn: () => listAuditFn({ data: filterUserId ? { targetUserId: filterUserId } : {} }),
+    queryKey: [...QUERY_KEYS.adminRoleAudit(filterUserId ?? "all"), devBypass ? "anon" : "auth"],
+    queryFn: () =>
+      devBypass
+        ? fetchRoleAuditDirect(filterUserId ?? undefined)
+        : listAuditFn({ data: filterUserId ? { targetUserId: filterUserId } : {} }),
     staleTime: 15_000,
   });
 
