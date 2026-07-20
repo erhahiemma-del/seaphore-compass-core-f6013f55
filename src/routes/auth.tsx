@@ -32,6 +32,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import heroImage from "@/assets/auth-hero.jpg";
+import nimasaLogo from "@/assets/nimasa-logo.png.asset.json";
 import { cn } from "@/lib/utils";
 import { getPendingMfaFactor } from "@/lib/auth/mfa";
 import { MfaChallenge } from "@/components/auth/MfaChallenge";
@@ -333,9 +334,9 @@ function AuthPage() {
 
       {/* ============== LEFT PANEL ============== */}
       <div className="relative z-10 hidden w-[54%] flex-col justify-between px-12 py-10 lg:flex xl:px-16">
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-5 sm:gap-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-[#0F5F5A]/90 shadow-lg ring-1 ring-[#10E5C4]/40">
+            <div className="flex h-11 w-11 items-center justify-center rounded-md bg-[#0F5F5A]/90 shadow-lg ring-1 ring-[#10E5C4]/40">
               <Anchor className="h-5 w-5 text-white" strokeWidth={2.4} />
             </div>
             <div className="leading-tight">
@@ -346,16 +347,20 @@ function AuthPage() {
             </div>
           </div>
 
-          <div className="h-10 w-px bg-white/10" />
+          <div className="h-12 w-px bg-gradient-to-b from-transparent via-white/25 to-transparent" />
 
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#10E5C4]/40 bg-white/5 text-[#10E5C4]">
-              <ShieldCheck className="h-5 w-5" />
-            </div>
+            <img
+              src={nimasaLogo.url}
+              alt="NIMASA — Nigerian Maritime Administration and Safety Agency"
+              className="h-12 w-12 shrink-0 object-contain [filter:drop-shadow(0_1px_3px_rgba(0,0,0,0.55))]"
+              loading="eager"
+              decoding="async"
+            />
             <div className="leading-tight">
               <div className="text-[13px] font-bold tracking-wide text-white">NIMASA</div>
               <div className="text-[9px] uppercase tracking-[0.18em] text-white/60">
-                Nigeria Maritime Administration
+                Nigerian Maritime Administration
                 <br />
                 and Safety Agency
               </div>
