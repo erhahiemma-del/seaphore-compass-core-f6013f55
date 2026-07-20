@@ -147,8 +147,8 @@ function RootComponent() {
         </RequireAuth>
         <GlobalCopilotBinding />
         {import.meta.env.DEV ? <PerfOverlayLazy /> : null}
-        {import.meta.env.DEV ? <DevToolbarLazy /> : null}
-        {import.meta.env.DEV ? <DevModeBadgeLazy /> : null}
+        {!import.meta.env.PROD ? <DevToolbarLazy /> : null}
+        {!import.meta.env.PROD ? <DevModeBadgeLazy /> : null}
       </ThemeProvider>
     </QueryClientProvider>
   );
