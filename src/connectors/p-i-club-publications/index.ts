@@ -167,7 +167,7 @@ export class PiClubPublicationsConnector implements ConnectorInterface {
   readonly endpoint = IGP_ENDPOINT;
   readonly pollingIntervalMinutes = 1440;
   readonly rateLimitPerMinute = 10;
-  readonly provenance: OsintProvenance = "commercial";
+  readonly provenance: OsintProvenance = "commercial_verified";
 
   // ── SECTION 2: FETCH ─────────────────────────────────────────────
   async fetch(): Promise<RawRecord[]> {
