@@ -29,7 +29,7 @@ export class PolicyDeniedError extends Error {
 /** Build middleware bound to an engine instance (default: singleton). */
 export function requirePolicy(engine: PolicyEngine = defaultPolicyEngine) {
   return createMiddleware({ type: "function" }).server(async ({ next, data }) => {
-    const payload = data as PolicyPayload;
+    const payload = data as unknown as PolicyPayload;
     const decision = engine.evaluate(payload);
     if (!decision.allowed) throw new PolicyDeniedError(decision);
     return next({ context: { policy: decision } });
