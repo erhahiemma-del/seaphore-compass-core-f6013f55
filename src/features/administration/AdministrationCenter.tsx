@@ -82,6 +82,9 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { listRoleAuditLog } from "@/lib/admin-audit.functions";
 import { listUsersWithRoles } from "@/lib/admin-roles.functions";
+import { useDevModeStore } from "@/stores/dev-mode.store";
+import { DEV_MODE_AVAILABLE } from "@/lib/dev/dev-mode";
+
 import { RoleManagementTable } from "@/features/administration/Administration";
 import { can, type Role } from "@/lib/permissions";
 import { QUERY_KEYS } from "@/lib/query-keys";
@@ -492,13 +495,19 @@ function LinkAction({ label }: { label: string }) {
 // ---- KPI row ----
 
 function KPIRow({ role }: { role: PreviewRole }) {
+  const devBypass = useDevModeStore((s) => s.bypassAuth) && DEV_MODE_AVAILABLE;
   const { data: users } = useQuery({
-    queryKey: QUERY_KEYS.adminKpiUsers(),
+    queryKey: [...QUERY_KEYS.adminKpiUsers(), devBypass ? "anon" : "auth"],
     queryFn: async () => {
-      // Best-effort — fails silently if caller lacks admin.
-      const fn = listUsersWithRoles;
       try {
-        const res = await fn();
+        if (devBypass) {
+          const { supabase } = await import("@/integrations/supabase/client");
+          const { count } = await supabase
+            .from("user_roles")
+            .select("user_id", { count: "exact", head: true });
+          return count ?? 312;
+        }
+        const res = await listUsersWithRoles();
         return res.length;
       } catch {
         return 312;
@@ -506,6 +515,7 @@ function KPIRow({ role }: { role: PreviewRole }) {
     },
     staleTime: 60_000,
   });
+
 
   const kpis = useMemo(
     () => [
