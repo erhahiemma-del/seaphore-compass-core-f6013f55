@@ -492,13 +492,19 @@ function LinkAction({ label }: { label: string }) {
 // ---- KPI row ----
 
 function KPIRow({ role }: { role: PreviewRole }) {
+  const devBypass = useDevModeStore((s) => s.bypassAuth) && DEV_MODE_AVAILABLE;
   const { data: users } = useQuery({
-    queryKey: QUERY_KEYS.adminKpiUsers(),
+    queryKey: [...QUERY_KEYS.adminKpiUsers(), devBypass ? "anon" : "auth"],
     queryFn: async () => {
-      // Best-effort — fails silently if caller lacks admin.
-      const fn = listUsersWithRoles;
       try {
-        const res = await fn();
+        if (devBypass) {
+          const { supabase } = await import("@/integrations/supabase/client");
+          const { count } = await supabase
+            .from("user_roles")
+            .select("user_id", { count: "exact", head: true });
+          return count ?? 312;
+        }
+        const res = await listUsersWithRoles();
         return res.length;
       } catch {
         return 312;
@@ -506,6 +512,7 @@ function KPIRow({ role }: { role: PreviewRole }) {
     },
     staleTime: 60_000,
   });
+
 
   const kpis = useMemo(
     () => [
