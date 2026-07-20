@@ -12,6 +12,7 @@ import { copernicusMarineConnector } from "@/connectors/copernicus-marine--esa-"
 import { uscgPsixConnector } from "@/connectors/uscg-psix";
 import { ukCompaniesHouseConnector } from "@/connectors/uk-companies-house";
 import { cacNigeriaConnector } from "@/connectors/cac-nigeria";
+import { piClubPublicationsConnector } from "@/connectors/p-i-club-publications";
 
 registerConnector(mockAisConnector);
 registerConnector(imoGisisConnector);
@@ -22,5 +23,6 @@ registerConnector(copernicusMarineConnector);
 registerConnector(uscgPsixConnector);
 registerConnector(ukCompaniesHouseConnector);
 registerConnector(cacNigeriaConnector);
+registerConnector(piClubPublicationsConnector);
 
-export { mockAisConnector, imoGisisConnector, equasisConnector, ofacSanctionsConnector, unEuSanctionsConnector, copernicusMarineConnector, uscgPsixConnector, ukCompaniesHouseConnector, cacNigeriaConnector };
+export { mockAisConnector, imoGisisConnector, equasisConnector, ofacSanctionsConnector, unEuSanctionsConnector, copernicusMarineConnector, uscgPsixConnector, ukCompaniesHouseConnector, cacNigeriaConnector, piClubPublicationsConnector };
