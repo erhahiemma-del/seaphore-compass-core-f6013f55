@@ -85,7 +85,7 @@ export function MissionControl() {
 function Ribbon() {
   const handoff = useHandoffNavigate();
   return (
-    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
+    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
       {RIBBON_KPIS.map((kpi) => {
         const Icon = RIBBON_ICONS[kpi.key] ?? Activity;
         return (
