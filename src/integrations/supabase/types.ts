@@ -1381,7 +1381,7 @@ export type Database = {
       is_officer_or_above: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "analyst" | "officer" | "director" | "admin"
+      app_role: "analyst" | "officer" | "director" | "admin" | "external_agency"
       briefing_mode: "lookup" | "assessment" | "investigation" | "forecast"
       candidate_status: "pending" | "approved" | "rejected"
       confidence_level:
@@ -1571,7 +1571,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["analyst", "officer", "director", "admin"],
+      app_role: ["analyst", "officer", "director", "admin", "external_agency"],
       briefing_mode: ["lookup", "assessment", "investigation", "forecast"],
       candidate_status: ["pending", "approved", "rejected"],
       confidence_level: [

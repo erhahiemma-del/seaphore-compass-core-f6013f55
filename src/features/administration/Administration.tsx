@@ -28,9 +28,10 @@ import { listRoleAuditLog, type RoleAuditEntry } from "@/lib/admin-audit.functio
 import type { Role } from "@/lib/permissions";
 import { QUERY_KEYS } from "@/lib/query-keys";
 
-const ALL_ROLES: Role[] = ["analyst", "officer", "director", "admin"];
+const ALL_ROLES: Role[] = ["external_agency", "analyst", "officer", "director", "admin"];
 
 const ROLE_LABEL: Record<Role, string> = {
+  external_agency: "External Agency",
   analyst: "Analyst",
   officer: "Officer",
   director: "Director",
@@ -38,6 +39,7 @@ const ROLE_LABEL: Record<Role, string> = {
 };
 
 const ROLE_DESC: Record<Role, string> = {
+  external_agency: "Partner-agency read-only access to shared briefings",
   analyst: "Read entities, add evidence, create investigations",
   officer: "Submit decisions, close/escalate investigations",
   director: "Team & full audit visibility, sensitive briefings",

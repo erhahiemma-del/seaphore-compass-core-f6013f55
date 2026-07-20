@@ -131,27 +131,28 @@ const ROLE_LABEL: Record<Role, string> = {
   director: "Director",
   officer: "Intelligence Officer",
   analyst: "Analyst",
+  external_agency: "External Agency",
 };
 
-const ROLE_ICON: Record<Role | "external", ComponentType<SVGProps<SVGSVGElement>>> = {
+const ROLE_ICON: Record<Role, ComponentType<SVGProps<SVGSVGElement>>> = {
   admin: ShieldCheck,
   director: Compass,
   officer: Radar,
   analyst: FileText,
-  external: LifeBuoy,
+  external_agency: LifeBuoy,
 };
 
-type PreviewRole = Role | "external";
+type PreviewRole = Role;
 
-const PREVIEW_ROLES: PreviewRole[] = ["admin", "director", "officer", "analyst", "external"];
+const PREVIEW_ROLES: PreviewRole[] = [
+  "admin",
+  "director",
+  "officer",
+  "analyst",
+  "external_agency",
+];
 
-const PREVIEW_ROLE_LABEL: Record<PreviewRole, string> = {
-  admin: "System Administrator",
-  director: "Director",
-  officer: "Intelligence Officer",
-  analyst: "Analyst",
-  external: "External Agency",
-};
+const PREVIEW_ROLE_LABEL: Record<PreviewRole, string> = ROLE_LABEL;
 
 // ---------- Entry ----------
 

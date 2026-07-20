@@ -23,8 +23,26 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import heroImage from "@/assets/auth-hero.jpg";
 import { cn } from "@/lib/utils";
+import { getPendingMfaFactor } from "@/lib/auth/mfa";
+import { MfaChallenge } from "@/components/auth/MfaChallenge";
+
+/**
+ * Only accept same-origin absolute paths as the post-login redirect
+ * target. Rejects protocol-relative (`//evil`), external URLs
+ * (`https://evil`), and non-path values. Prevents open-redirect abuse.
+ */
+function sanitizeRedirect(raw: unknown): string {
+  if (typeof raw !== "string") return "/";
+  if (!raw.startsWith("/")) return "/";
+  if (raw.startsWith("//")) return "/";
+  if (raw.startsWith("/\\")) return "/";
+  return raw;
+}
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    redirect: sanitizeRedirect(search.redirect),
+  }),
   head: () => ({
     meta: [
       { title: "Sign in · Seaphore" },
@@ -67,6 +85,7 @@ const DEMO_ROLES = [
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
   const { session } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -75,11 +94,17 @@ function AuthPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [demoLoading, setDemoLoading] = useState<string | null>(null);
+  const [mfa, setMfa] = useState<{ factorId: string; factorName: string } | null>(null);
 
   const isDev = import.meta.env.DEV;
 
-  if (session) {
-    navigate({ to: "/", replace: true });
+  // Already authenticated and no MFA pending? Bounce to the intended URL.
+  if (session && !mfa) {
+    navigate({ to: redirect, replace: true });
+  }
+
+  async function goToDestination() {
+    navigate({ to: redirect, replace: true });
   }
 
   async function signIn(emailValue: string, passwordValue: string) {
@@ -88,7 +113,13 @@ function AuthPage() {
       password: passwordValue,
     });
     if (error) throw error;
-    navigate({ to: "/", replace: true });
+    // Step-up if the account has TOTP enrolled but the session is still aal1.
+    const pending = await getPendingMfaFactor();
+    if (pending) {
+      setMfa({ factorId: pending.id, factorName: pending.friendlyName });
+      return;
+    }
+    await goToDestination();
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -225,6 +256,20 @@ function AuthPage() {
               </p>
             </div>
 
+            {mfa ? (
+              <MfaChallenge
+                factorId={mfa.factorId}
+                factorName={mfa.factorName}
+                onVerified={() => {
+                  setMfa(null);
+                  void goToDestination();
+                }}
+                onCancel={() => {
+                  setMfa(null);
+                  void supabase.auth.signOut();
+                }}
+              />
+            ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-1.5">
                 <Label htmlFor="email" className="text-[13px] font-semibold text-[#0B2545]">
@@ -321,6 +366,7 @@ function AuthPage() {
                 All access is monitored and encrypted in accordance with NIMASA security policies.
               </p>
             </form>
+            )}
 
             {isDev && (
               <div className="mt-6 rounded-xl border border-dashed border-[#0F5F5A]/40 bg-[#0F5F5A]/[0.03] p-4">
