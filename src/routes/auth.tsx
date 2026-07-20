@@ -25,6 +25,8 @@ import heroImage from "@/assets/auth-hero.jpg";
 import { cn } from "@/lib/utils";
 import { getPendingMfaFactor } from "@/lib/auth/mfa";
 import { MfaChallenge } from "@/components/auth/MfaChallenge";
+import { DEV_MODE_AVAILABLE } from "@/lib/dev/dev-mode";
+import { useDevModeStore } from "@/stores/dev-mode.store";
 
 /**
  * Only accept same-origin absolute paths as the post-login redirect
