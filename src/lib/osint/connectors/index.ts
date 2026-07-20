@@ -5,8 +5,10 @@
 import { registerConnector } from "../registry";
 import { mockAisConnector } from "./mock";
 import { imoGisisConnector } from "@/connectors/imo-gisis";
+import { equasisConnector } from "@/connectors/equasis";
 
 registerConnector(mockAisConnector);
 registerConnector(imoGisisConnector);
+registerConnector(equasisConnector);
 
-export { mockAisConnector, imoGisisConnector };
+export { mockAisConnector, imoGisisConnector, equasisConnector };
