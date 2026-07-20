@@ -12,15 +12,18 @@ import {
   User,
   UserCog,
   Building2,
-  KeyRound,
   Radar,
   AlertTriangle,
   Briefcase,
   BarChart3,
   CloudDrizzle,
   ScrollText,
-  Fingerprint,
   Ship,
+  Crown,
+  Activity,
+  Workflow,
+  Sparkles,
+  Network,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -33,6 +36,7 @@ import { cn } from "@/lib/utils";
 import { getPendingMfaFactor } from "@/lib/auth/mfa";
 import { MfaChallenge } from "@/components/auth/MfaChallenge";
 import { DEV_MODE_AVAILABLE } from "@/lib/dev/dev-mode";
+import { ROLE_DASHBOARDS } from "@/lib/dev/role-dashboards";
 import { useDevModeStore } from "@/stores/dev-mode.store";
 import type { OfficerRole } from "@/stores/auth.store";
 
@@ -50,7 +54,7 @@ export const Route = createFileRoute("/auth")({
   }),
   head: () => ({
     meta: [
-      { title: "Secure Access · Seaphore Maritime Intelligence OS" },
+      { title: "Mission Access · Seaphore Maritime Intelligence OS" },
       {
         name: "description",
         content:
@@ -61,14 +65,63 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-const ROLE_TABS = [
-  { key: "admin", label: "Administrator", icon: Shield },
-  { key: "officer", label: "Officer", icon: User },
-  { key: "analyst", label: "Analyst", icon: UserCog },
-  { key: "director", label: "Director", icon: Briefcase },
-] as const;
+type RoleKey = "admin" | "director" | "officer" | "analyst";
 
-type RoleKey = (typeof ROLE_TABS)[number]["key"];
+const MISSION_ROLES: {
+  key: RoleKey;
+  label: string;
+  glyph: string;
+  icon: typeof Shield;
+  tagline: string;
+  description: string;
+  badge: string;
+  dashboard: string;
+}[] = [
+  {
+    key: "admin",
+    label: "Administrator",
+    glyph: "👑",
+    icon: Crown,
+    tagline: "Full System Control",
+    description:
+      "Configure the platform, manage users, review audit trails, and govern every intelligence surface.",
+    badge: "All Permissions",
+    dashboard: ROLE_DASHBOARDS.admin.label,
+  },
+  {
+    key: "director",
+    label: "Director",
+    glyph: "🛡",
+    icon: Shield,
+    tagline: "Strategic Command",
+    description:
+      "Approve investigations, authorize enforcement, and steer national maritime posture from a single dashboard.",
+    badge: "Approve · Escalate · Command",
+    dashboard: ROLE_DASHBOARDS.director.label,
+  },
+  {
+    key: "officer",
+    label: "Intelligence Officer",
+    glyph: "🚢",
+    icon: Ship,
+    tagline: "Operations Dashboard",
+    description:
+      "Run active cases, orchestrate the Copilot, dispatch workflows, and make signed officer decisions.",
+    badge: "Investigate · Decide · Share",
+    dashboard: ROLE_DASHBOARDS.officer.label,
+  },
+  {
+    key: "analyst",
+    label: "Analyst",
+    glyph: "📊",
+    icon: BarChart3,
+    tagline: "Intelligence Dashboard",
+    description:
+      "Triage signals, correlate evidence, and prepare briefings for officer review across the domain.",
+    badge: "Read · Analyze · Recommend",
+    dashboard: ROLE_DASHBOARDS.analyst.label,
+  },
+];
 
 const KPI_CARDS = [
   { icon: Ship, value: "482", label: "LIVE VESSELS", sub: "Tracked", tone: "teal" },
@@ -76,15 +129,17 @@ const KPI_CARDS = [
   { icon: Briefcase, value: "6", label: "ACTIVE", sub: "Investigations", tone: "teal" },
   { icon: BarChart3, value: "71%", label: "PORT CONGESTION", sub: "Lagos Port", tone: "teal" },
   { icon: ShieldCheck, value: "96%", label: "NATIONAL", sub: "COMPLIANCE", tone: "teal" },
-  { icon: KeyRound, value: "₦2.4B", label: "REVENUE", sub: "AT RISK", tone: "teal" },
+  { icon: Anchor, value: "₦2.4B", label: "REVENUE", sub: "AT RISK", tone: "teal" },
 ] as const;
 
-const TRUST_BAR = [
-  { icon: Lock, label: "ENCRYPTED", sub: "End-to-end" },
-  { icon: Building2, label: "GOVERNMENT NETWORK", sub: "Secure & Isolated" },
-  { icon: User, label: "ROLE BASED ACCESS", sub: "Strict Permissions" },
-  { icon: ScrollText, label: "AUDIT ENABLED", sub: "Every Action Tracked" },
-  { icon: Fingerprint, label: "SESSION PROTECTED", sub: "Auto Timeout" },
+// Live operational status — replaces the static security trust bar.
+const OPS_STATUS = [
+  { icon: Lock, label: "ENCRYPTION", state: "AES-256 · Active" },
+  { icon: Building2, label: "GOVERNMENT NETWORK", state: "NIMASA · Secure" },
+  { icon: ShieldCheck, label: "POLICY ENGINE", state: "Online" },
+  { icon: Workflow, label: "WORKFLOW ENGINE", state: "Ready" },
+  { icon: Sparkles, label: "COPILOT", state: "Standing By" },
+  { icon: ScrollText, label: "AUDIT LOGGING", state: "Streaming" },
 ] as const;
 
 function AuthPage() {
@@ -95,7 +150,7 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
   const [showPw, setShowPw] = useState(false);
-  const [role, setRole] = useState<RoleKey>("admin");
+  const [prodRole, setProdRole] = useState<RoleKey>("admin");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [devLoading, setDevLoading] = useState<RoleKey | null>(null);
@@ -131,7 +186,7 @@ function AuthPage() {
     }
   }
 
-  function handleQuickAccess(roleKey: RoleKey) {
+  function handleMissionAccess(roleKey: RoleKey) {
     setDevLoading(roleKey);
     const store = useDevModeStore.getState();
     store.setMockRole(roleKey as OfficerRole);
@@ -141,7 +196,8 @@ function AuthPage() {
     } catch {
       /* ignore */
     }
-    navigate({ to: redirect, replace: true });
+    const dash = ROLE_DASHBOARDS[roleKey].url;
+    navigate({ to: dash, replace: true });
   }
 
   return (
@@ -154,7 +210,6 @@ function AuthPage() {
           aria-hidden
           className="h-full w-full object-cover object-center opacity-90"
         />
-        {/* Depth gradients */}
         <div className="absolute inset-0 bg-gradient-to-r from-[#040912]/95 via-[#050B18]/60 to-[#040912]/95" />
         <div className="absolute inset-0 bg-gradient-to-b from-[#040912]/70 via-transparent to-[#040912]/90" />
 
@@ -171,8 +226,12 @@ function AuthPage() {
               <stop offset="60%" stopColor="#10E5C4" stopOpacity="0.05" />
               <stop offset="100%" stopColor="#10E5C4" stopOpacity="0" />
             </radialGradient>
+            <linearGradient id="sweep" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#10E5C4" stopOpacity="0" />
+              <stop offset="70%" stopColor="#10E5C4" stopOpacity="0.35" />
+              <stop offset="100%" stopColor="#10E5C4" stopOpacity="0.85" />
+            </linearGradient>
           </defs>
-          {/* radar rings */}
           <g stroke="#10E5C4" strokeWidth="0.6" fill="none" opacity="0.55">
             <circle cx="800" cy="620" r="120" />
             <circle cx="800" cy="620" r="220" />
@@ -180,20 +239,66 @@ function AuthPage() {
             <circle cx="800" cy="620" r="460" />
           </g>
           <circle cx="800" cy="620" r="460" fill="url(#radar)" />
-          {/* AIS tracks */}
-          <g
-            stroke="#10E5C4"
-            strokeWidth="1"
-            fill="none"
-            strokeDasharray="4 6"
-            opacity="0.7"
-          >
-            <path d="M120,780 Q420,700 800,620" />
-            <path d="M1500,760 Q1200,700 900,640" />
-            <path d="M300,900 Q560,820 780,660" />
-            <path d="M80,560 Q380,540 640,600" />
+
+          {/* Radar sweep wedge (animated) */}
+          <g transform="translate(800 620)">
+            <path
+              d="M0 0 L460 0 A460 460 0 0 1 397 230 Z"
+              fill="url(#sweep)"
+              opacity="0.55"
+              style={{ transformOrigin: "0 0", animation: "seaphore-radar-sweep 6s linear infinite" }}
+            />
           </g>
-          {/* geofence */}
+
+          {/* AIS tracks */}
+          <g stroke="#10E5C4" strokeWidth="1" fill="none" strokeDasharray="4 6" opacity="0.7">
+            <path
+              d="M120,780 Q420,700 800,620"
+              style={{ strokeDasharray: "6 10", animation: "seaphore-ais-flow 6s linear infinite" }}
+            />
+            <path
+              d="M1500,760 Q1200,700 900,640"
+              style={{ strokeDasharray: "6 10", animation: "seaphore-ais-flow 7s linear infinite" }}
+            />
+            <path
+              d="M300,900 Q560,820 780,660"
+              style={{ strokeDasharray: "6 10", animation: "seaphore-ais-flow 8s linear infinite" }}
+            />
+            <path
+              d="M80,560 Q380,540 640,600"
+              style={{ strokeDasharray: "6 10", animation: "seaphore-ais-flow 9s linear infinite" }}
+            />
+          </g>
+
+          {/* Intelligence markers */}
+          <g>
+            {[
+              { cx: 640, cy: 600 },
+              { cx: 900, cy: 640 },
+              { cx: 780, cy: 660 },
+              { cx: 1060, cy: 520 },
+              { cx: 520, cy: 820 },
+            ].map((m, i) => (
+              <g key={i}>
+                <circle cx={m.cx} cy={m.cy} r="3" fill="#10E5C4" />
+                <circle
+                  cx={m.cx}
+                  cy={m.cy}
+                  r="3"
+                  fill="none"
+                  stroke="#10E5C4"
+                  strokeWidth="1"
+                  opacity="0.7"
+                  style={{
+                    transformBox: "fill-box",
+                    transformOrigin: "center",
+                    animation: `seaphore-ping 2.4s ease-out ${i * 0.35}s infinite`,
+                  }}
+                />
+              </g>
+            ))}
+          </g>
+
           <path
             d="M540,540 L1060,520 L1160,780 L520,820 Z"
             stroke="#10E5C4"
@@ -204,11 +309,30 @@ function AuthPage() {
             opacity="0.6"
           />
         </svg>
+
+        {/* Keyframes — scoped, kept in-file so the hero is self-contained */}
+        <style>{`
+          @keyframes seaphore-radar-sweep {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+          @keyframes seaphore-ais-flow {
+            from { stroke-dashoffset: 0; }
+            to { stroke-dashoffset: -160; }
+          }
+          @keyframes seaphore-ping {
+            0% { transform: scale(1); opacity: 0.9; }
+            80% { transform: scale(6); opacity: 0; }
+            100% { transform: scale(6); opacity: 0; }
+          }
+          @media (prefers-reduced-motion: reduce) {
+            [style*="seaphore-"] { animation: none !important; }
+          }
+        `}</style>
       </div>
 
-      {/* ============== LEFT PANEL (hero content) ============== */}
-      <div className="relative z-10 hidden w-[58%] flex-col justify-between px-12 py-10 lg:flex xl:px-16">
-        {/* Brand row */}
+      {/* ============== LEFT PANEL ============== */}
+      <div className="relative z-10 hidden w-[54%] flex-col justify-between px-12 py-10 lg:flex xl:px-16">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-md bg-[#0F5F5A]/90 shadow-lg ring-1 ring-[#10E5C4]/40">
@@ -239,22 +363,19 @@ function AuthPage() {
           </div>
         </div>
 
-        {/* Headline */}
         <div className="max-w-[640px]">
           <h1 className="text-[46px] font-semibold leading-[1.05] tracking-tight text-white xl:text-[54px]">
             Nigeria's Maritime
             <br />
-            Intelligence{" "}
-            <span className="text-[#10E5C4]">Operating System</span>
+            Intelligence <span className="text-[#10E5C4]">Operating System</span>
           </h1>
           <p className="mt-5 max-w-md text-[15px] leading-relaxed text-white/70">
             Real-time maritime domain awareness.
             <br />
             Actionable intelligence.
-            <span className="ml-2 text-white/90">Secure decisions.</span>
+            <span className="ml-2 text-white/90">Officer decides.</span>
           </p>
 
-          {/* KPI cards */}
           <div className="mt-8 grid grid-cols-3 gap-3 xl:grid-cols-6 xl:gap-3">
             {KPI_CARDS.map((k) => {
               const Icon = k.icon;
@@ -288,21 +409,24 @@ function AuthPage() {
           </div>
         </div>
 
-        {/* Trust indicators */}
-        <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
-          {TRUST_BAR.map((t) => {
+        {/* Live operational status */}
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
+          {OPS_STATUS.map((t) => {
             const Icon = t.icon;
             return (
               <div
                 key={t.label}
                 className="flex items-center gap-2.5 rounded-lg border border-white/10 bg-[#0A1424]/60 px-3 py-2.5 backdrop-blur-md"
               >
-                <Icon className="h-4 w-4 text-[#10E5C4]" />
+                <div className="relative">
+                  <Icon className="h-4 w-4 text-[#10E5C4]" />
+                  <span className="absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full bg-[#10E5C4] shadow-[0_0_8px_#10E5C4] animate-pulse" />
+                </div>
                 <div className="leading-tight">
                   <div className="text-[9px] font-bold uppercase tracking-[0.1em] text-white">
                     {t.label}
                   </div>
-                  <div className="text-[9px] text-white/60">{t.sub}</div>
+                  <div className="text-[9px] text-white/60">{t.state}</div>
                 </div>
               </div>
             );
@@ -310,8 +434,8 @@ function AuthPage() {
         </div>
       </div>
 
-      {/* Floating overlays: vessel label + weather (decorative) */}
-      <div className="pointer-events-none absolute bottom-[24%] left-[38%] z-[5] hidden xl:block">
+      {/* Floating overlays */}
+      <div className="pointer-events-none absolute bottom-[24%] left-[36%] z-[5] hidden xl:block">
         <div className="rounded-md border border-[#10E5C4]/40 bg-[#0A1424]/80 px-3 py-2 text-[10px] leading-tight text-white backdrop-blur-md">
           <div className="font-bold tracking-wide text-[#10E5C4]">MV MAERSK LAGOS</div>
           <div className="text-white/70">IMO 9723451</div>
@@ -328,20 +452,31 @@ function AuthPage() {
         </div>
       </div>
 
-      {/* ============== RIGHT PANEL (auth card) ============== */}
-      <div className="relative z-10 flex flex-1 items-center justify-center px-6 py-10 lg:px-10">
-        <div className="w-full max-w-[440px]">
-          <div className="rounded-2xl border border-white/10 bg-[#0A1424]/80 p-8 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+      {/* ============== RIGHT PANEL ============== */}
+      <div className="relative z-10 flex flex-1 items-center justify-center px-6 py-10 lg:px-8">
+        <div className={cn("w-full", isDev ? "max-w-[560px]" : "max-w-[440px]")}>
+          <div className="rounded-2xl border border-white/10 bg-[#0A1424]/80 p-7 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)] backdrop-blur-xl">
             {/* Header */}
             <div className="mb-6 text-center">
               <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-lg border border-[#10E5C4]/40 bg-[#10E5C4]/10 text-[#10E5C4]">
-                <Lock className="h-5 w-5" />
+                {isDev ? <Radar className="h-5 w-5" /> : <Lock className="h-5 w-5" />}
               </div>
-              <div className="text-[11px] font-bold uppercase tracking-[0.28em] text-[#10E5C4]">
-                Secure Access
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#10E5C4]/30 bg-[#10E5C4]/5 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.28em] text-[#10E5C4]">
+                {isDev && (
+                  <span className="rounded-full bg-[#10E5C4]/20 px-1.5 py-0.5 text-[9px] tracking-widest text-[#10E5C4]">
+                    DEV
+                  </span>
+                )}
+                Mission Access
               </div>
-              <h2 className="mt-2 text-[24px] font-semibold text-white">Maritime Intelligence OS</h2>
-              <p className="mt-1 text-[12.5px] text-white/60">Authorized NIMASA Personnel Only</p>
+              <h2 className="mt-3 text-[24px] font-semibold text-white">
+                {isDev ? "Select Your Role" : "Maritime Intelligence OS"}
+              </h2>
+              <p className="mt-1 text-[12.5px] text-white/60">
+                {isDev
+                  ? "Preview mode · One-click access, no credentials required"
+                  : "Authorized NIMASA Personnel Only"}
+              </p>
             </div>
 
             {mfa ? (
@@ -357,18 +492,81 @@ function AuthPage() {
                   void supabase.auth.signOut();
                 }}
               />
+            ) : isDev ? (
+              /* ========== PREVIEW · MISSION ACCESS ROLE CARDS ========== */
+              <div className="space-y-3">
+                {MISSION_ROLES.map((r) => {
+                  const Icon = r.icon;
+                  const loading = devLoading === r.key;
+                  return (
+                    <button
+                      key={r.key}
+                      type="button"
+                      disabled={!!devLoading}
+                      onClick={() => handleMissionAccess(r.key)}
+                      className={cn(
+                        "group relative w-full overflow-hidden rounded-xl border border-white/10 bg-black/30 p-4 text-left transition-all duration-200",
+                        "hover:-translate-y-0.5 hover:border-[#10E5C4]/60 hover:bg-[#10E5C4]/[0.06] hover:shadow-[0_20px_40px_-18px_rgba(16,229,196,0.55)]",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#10E5C4]/60",
+                        "disabled:cursor-wait disabled:opacity-60",
+                      )}
+                    >
+                      <span className="pointer-events-none absolute inset-y-0 left-0 w-[3px] bg-gradient-to-b from-[#10E5C4] to-[#12B39A] opacity-0 transition-opacity group-hover:opacity-100" />
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-[#10E5C4]/30 bg-[#10E5C4]/10 text-[#10E5C4]">
+                          <span aria-hidden className="text-[18px] leading-none">
+                            {r.glyph}
+                          </span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <div className="text-[14px] font-semibold text-white">{r.label}</div>
+                            <Icon className="h-3.5 w-3.5 text-[#10E5C4]/80" />
+                          </div>
+                          <div className="text-[11px] font-medium uppercase tracking-wider text-[#10E5C4]">
+                            {r.tagline}
+                          </div>
+                          <p className="mt-1.5 text-[12px] leading-snug text-white/65">
+                            {r.description}
+                          </p>
+                          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                            <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/70">
+                              {r.badge}
+                            </span>
+                            <span className="rounded-full border border-[#10E5C4]/25 bg-[#10E5C4]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#10E5C4]">
+                              → {r.dashboard}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="mt-1 shrink-0">
+                          {loading ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-[#10E5C4]" />
+                          ) : (
+                            <ArrowRight className="h-4 w-4 text-white/40 transition-transform group-hover:translate-x-0.5 group-hover:text-[#10E5C4]" />
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+
+                <p className="flex items-center justify-center gap-1.5 pt-1 text-center text-[10.5px] leading-relaxed text-white/50">
+                  <Network className="h-3 w-3" />
+                  Preview only · Authentication bypass is disabled in production builds.
+                </p>
+              </div>
             ) : (
+              /* ========== PRODUCTION · CREDENTIAL LOGIN ========== */
               <>
-                {/* Role selector */}
                 <div className="mb-5 grid grid-cols-4 gap-1.5 rounded-xl border border-white/10 bg-black/20 p-1.5">
-                  {ROLE_TABS.map((r) => {
+                  {MISSION_ROLES.map((r) => {
                     const Icon = r.icon;
-                    const active = role === r.key;
+                    const active = prodRole === r.key;
                     return (
                       <button
                         key={r.key}
                         type="button"
-                        onClick={() => setRole(r.key)}
+                        onClick={() => setProdRole(r.key)}
                         className={cn(
                           "flex flex-col items-center gap-1 rounded-lg px-1.5 py-2 text-[10.5px] font-semibold transition-all",
                           active
@@ -377,14 +575,13 @@ function AuthPage() {
                         )}
                       >
                         <Icon className="h-4 w-4" />
-                        {r.label}
+                        {r.key === "officer" ? "Officer" : r.label}
                       </button>
                     );
                   })}
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  {/* Email */}
                   <div className="relative">
                     <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
                     <Input
@@ -399,7 +596,6 @@ function AuthPage() {
                     />
                   </div>
 
-                  {/* Password */}
                   <div className="relative">
                     <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
                     <Input
@@ -432,10 +628,7 @@ function AuthPage() {
                       />
                       Remember me
                     </label>
-                    <button
-                      type="button"
-                      className="font-semibold text-[#10E5C4] hover:underline"
-                    >
+                    <button type="button" className="font-semibold text-[#10E5C4] hover:underline">
                       Forgot password?
                     </button>
                   </div>
@@ -481,47 +674,11 @@ function AuthPage() {
             )}
           </div>
 
-          {/* Dev quick access */}
           {isDev && !mfa && (
-            <div className="mt-4 rounded-xl border border-dashed border-[#10E5C4]/30 bg-[#0A1424]/70 p-4 backdrop-blur-md">
-              <div className="mb-3 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#10E5C4]">
-                  <Radar className="h-3.5 w-3.5" />
-                  Development · Quick Access
-                </div>
-                <span className="rounded-full bg-[#10E5C4]/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-[#10E5C4]">
-                  Preview
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {ROLE_TABS.map((r) => {
-                  const Icon = r.icon;
-                  const loading = devLoading === r.key;
-                  return (
-                    <button
-                      key={r.key}
-                      type="button"
-                      disabled={loading}
-                      onClick={() => handleQuickAccess(r.key)}
-                      className="group flex items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2.5 text-left transition hover:border-[#10E5C4]/50 hover:bg-[#10E5C4]/10 disabled:opacity-60"
-                    >
-                      <Icon className="h-4 w-4 text-[#10E5C4]" />
-                      <span className="flex-1 text-[12px] font-semibold text-white">
-                        {r.label === "Officer" ? "Intelligence Officer" : r.label}
-                      </span>
-                      {loading ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin text-[#10E5C4]" />
-                      ) : (
-                        <ArrowRight className="h-3.5 w-3.5 text-white/40 transition-transform group-hover:translate-x-0.5 group-hover:text-[#10E5C4]" />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-              <p className="mt-3 text-[10px] leading-snug text-white/50">
-                Preview only. Bypass is disabled in production builds; real authentication is
-                enforced there.
-              </p>
+            <div className="mt-3 flex items-center justify-center gap-2 text-[10px] uppercase tracking-[0.2em] text-white/50">
+              <UserCog className="h-3 w-3 text-[#10E5C4]" />
+              After sign-in, use the floating Role Switcher (bottom-right) to change roles instantly.
+              <Activity className="h-3 w-3 text-[#10E5C4]" />
             </div>
           )}
         </div>
@@ -532,7 +689,7 @@ function AuthPage() {
         <span>© 2026 NIMASA. All rights reserved.</span>
         <span className="hidden items-center gap-2 md:flex">
           <Anchor className="h-3 w-3 text-[#10E5C4]" />
-          Powered by Seaphore Maritime Intelligence OS
+          Evidence first. Explainable always. Officer decides.
         </span>
         <span className="hidden items-center gap-2 md:flex">
           <span className="inline-block h-2.5 w-4 rounded-sm bg-gradient-to-b from-[#008751] via-white to-[#008751]" />
