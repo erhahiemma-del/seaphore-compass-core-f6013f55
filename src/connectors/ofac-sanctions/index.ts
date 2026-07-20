@@ -311,7 +311,7 @@ export class OfacSanctionsConnector implements ConnectorInterface {
         fromEntityType: "SANCTION",
         fromEntityId: record.entityId,
         relationship: "SANCTION_APPLIES_TO",
-        toEntityType: "COMPANY",
+        toEntityType: "OWNER",
         toEntityId: data.name,
         confidence: record.confidence,
       });
@@ -320,7 +320,7 @@ export class OfacSanctionsConnector implements ConnectorInterface {
       fromEntityType: "SANCTION",
       fromEntityId: record.entityId,
       relationship: "SANCTION_ISSUED_BY",
-      toEntityType: "AGENCY",
+      toEntityType: "AGENT",
       toEntityId: "OFAC",
       confidence: record.confidence,
     });
