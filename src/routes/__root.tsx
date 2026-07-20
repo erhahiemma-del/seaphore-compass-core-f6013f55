@@ -14,6 +14,8 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { RequireAuth } from "@/components/auth/RequireAuth";
+import { CopilotModal } from "@/components/copilot/CopilotModal";
+import { useCopilotShortcuts } from "@/hooks/use-copilot-shortcuts";
 
 function NotFoundComponent() {
   return (
@@ -143,10 +145,16 @@ function RootComponent() {
         <RequireAuth>
           <Outlet />
         </RequireAuth>
+        <GlobalCopilotBinding />
         {import.meta.env.DEV ? <PerfOverlayLazy /> : null}
       </ThemeProvider>
     </QueryClientProvider>
   );
+}
+
+function GlobalCopilotBinding() {
+  useCopilotShortcuts();
+  return <CopilotModal />;
 }
 
 function PerfOverlayLazy() {
