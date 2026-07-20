@@ -42,6 +42,7 @@ import {
 } from "@/components/ui/command";
 import { NAV_GROUPS } from "@/lib/nav";
 import { DEV_MODE_AVAILABLE, DEV_ROLES } from "@/lib/dev/dev-mode";
+import { ROLE_DASHBOARDS } from "@/lib/dev/role-dashboards";
 import { useDevModeStore } from "@/stores/dev-mode.store";
 import type { OfficerRole } from "@/stores/auth.store";
 
@@ -89,8 +90,11 @@ function DevToolbarInner() {
 
   function handleRole(role: OfficerRole) {
     setMockRole(role);
+    if (!bypassAuth) setBypassAuth(true);
     setRoleOpen(false);
     queryClient.invalidateQueries();
+    const dash = (ROLE_DASHBOARDS as Record<string, { url: string } | undefined>)[role];
+    if (dash) navigate({ to: dash.url });
     toast.success(`Mock role → ${role}`);
   }
 
