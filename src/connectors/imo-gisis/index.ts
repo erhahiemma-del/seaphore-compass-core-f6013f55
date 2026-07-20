@@ -27,7 +27,7 @@ import type {
   RawRecord,
   SeaphoreRecord,
 } from "@/lib/osint/types";
-import { NetworkError } from "@/lib/osint/errors";
+
 
 async function runSharedIngestionPipeline(
   connector: ConnectorInterface,
