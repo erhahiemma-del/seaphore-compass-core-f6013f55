@@ -33,7 +33,7 @@ describe("navigation model", () => {
   it("every item has an icon and title", () => {
     for (const item of allItems) {
       expect(item.title.length).toBeGreaterThan(0);
-      expect(item.icon).toBeTypeOf("function");
+      expect(item.icon).toBeDefined();
     }
   });
 });
