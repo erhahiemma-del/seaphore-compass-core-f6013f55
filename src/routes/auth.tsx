@@ -85,6 +85,7 @@ const DEMO_ROLES = [
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
   const { session } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -93,11 +94,17 @@ function AuthPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [demoLoading, setDemoLoading] = useState<string | null>(null);
+  const [mfa, setMfa] = useState<{ factorId: string; factorName: string } | null>(null);
 
   const isDev = import.meta.env.DEV;
 
-  if (session) {
-    navigate({ to: "/", replace: true });
+  // Already authenticated and no MFA pending? Bounce to the intended URL.
+  if (session && !mfa) {
+    navigate({ to: redirect, replace: true });
+  }
+
+  async function goToDestination() {
+    navigate({ to: redirect, replace: true });
   }
 
   async function signIn(emailValue: string, passwordValue: string) {
@@ -106,7 +113,13 @@ function AuthPage() {
       password: passwordValue,
     });
     if (error) throw error;
-    navigate({ to: "/", replace: true });
+    // Step-up if the account has TOTP enrolled but the session is still aal1.
+    const pending = await getPendingMfaFactor();
+    if (pending) {
+      setMfa({ factorId: pending.id, factorName: pending.friendlyName });
+      return;
+    }
+    await goToDestination();
   }
 
   async function handleSubmit(e: React.FormEvent) {
