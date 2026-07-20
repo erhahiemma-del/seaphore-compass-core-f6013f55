@@ -125,12 +125,48 @@ const MISSION_ROLES: {
 ];
 
 const KPI_CARDS = [
-  { icon: Ship, value: "482", label: "LIVE VESSELS", sub: "Tracked", tone: "teal" },
-  { icon: AlertTriangle, value: "12", label: "HIGH RISK", sub: "Vessels", tone: "red" },
-  { icon: Briefcase, value: "6", label: "ACTIVE", sub: "Investigations", tone: "teal" },
-  { icon: BarChart3, value: "71%", label: "PORT CONGESTION", sub: "Lagos Port", tone: "teal" },
-  { icon: ShieldCheck, value: "96%", label: "NATIONAL", sub: "COMPLIANCE", tone: "teal" },
-  { icon: Anchor, value: "₦2.4B", label: "REVENUE", sub: "AT RISK", tone: "teal" },
+  {
+    icon: ScrollText,
+    value: "18.2M",
+    label: "MANIFEST INTELLIGENCE",
+    sub: "Records Indexed",
+    tone: "teal",
+  },
+  {
+    icon: Ship,
+    value: "142K",
+    label: "VESSEL INTELLIGENCE",
+    sub: "Profiles Maintained",
+    tone: "teal",
+  },
+  {
+    icon: Briefcase,
+    value: "38.6M",
+    label: "CONTAINER INTELLIGENCE",
+    sub: "Movements Tracked",
+    tone: "teal",
+  },
+  {
+    icon: Anchor,
+    value: "₦2.4B",
+    label: "REVENUE INTELLIGENCE",
+    sub: "Leakage Identified",
+    tone: "teal",
+  },
+  {
+    icon: ShieldCheck,
+    value: "96%",
+    label: "RISK INTELLIGENCE",
+    sub: "Detection Confidence",
+    tone: "teal",
+  },
+  {
+    icon: BarChart3,
+    value: "10 YRS",
+    label: "HISTORICAL INTELLIGENCE",
+    sub: "Coverage",
+    tone: "teal",
+  },
 ] as const;
 
 // Live operational status — replaces the static security trust bar.
