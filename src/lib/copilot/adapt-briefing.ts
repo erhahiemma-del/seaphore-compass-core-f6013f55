@@ -31,12 +31,11 @@ export interface CopilotQueryResponse {
   latency_ms?: number;
 }
 
-function findSection<K extends BriefingSection["kind"]>(
-  sections: BriefingSection[],
-  kind: K,
-): Extract<BriefingSection, { kind: K }> | undefined {
+function findSection(sections: BriefingSection[], kind: BriefingSection["kind"]) {
+  // BriefingSection is a discriminated union; the caller narrows via `kind`
+  // and reads `payload` with the shape it expects for that section.
   return sections.find((s) => s.kind === kind) as
-    | Extract<BriefingSection, { kind: K }>
+    | { kind: typeof kind; title: string; payload: any } // eslint-disable-line @typescript-eslint/no-explicit-any
     | undefined;
 }
 
@@ -73,7 +72,7 @@ export function adaptBriefing(
   const next = findSection(s, "next_questions");
 
   const criticalFindings: CriticalFinding[] | undefined = critical
-    ? critical.payload.findings.map((f, i) => ({
+    ? critical.payload.findings.map((f: { priority: string; title: string; grade: string; source: string }, i: number) => ({
         id: `${response.briefing_id}-cf-${i}`,
         priority: (f.priority as CriticalFinding["priority"]) ?? "monitor",
         title: f.title,
@@ -97,7 +96,7 @@ export function adaptBriefing(
     criticalFindings,
     evidence: extras?.evidence?.map(evidenceItemToCard),
     patterns: patterns
-      ? patterns.payload.patterns.map((p, i) => ({
+      ? patterns.payload.patterns.map((p: { pattern: string; caseRefs: string[] }, i: number) => ({
           id: `${response.briefing_id}-p-${i}`,
           pattern: p.pattern,
           significance: "notable" as const,
