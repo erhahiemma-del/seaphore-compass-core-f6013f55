@@ -685,32 +685,44 @@ export type Database = {
         Row: {
           collected_at: string
           collected_by: string | null
+          content_hash: string | null
           derived_from_document_id: string | null
           evidence_type: string
           id: string
           investigation_id: string
+          provenance: Json
           source: string | null
           storage_path: string | null
+          updated_at: string
+          version_history: Json
         }
         Insert: {
           collected_at?: string
           collected_by?: string | null
+          content_hash?: string | null
           derived_from_document_id?: string | null
           evidence_type: string
-          id: string
+          id?: string
           investigation_id: string
+          provenance?: Json
           source?: string | null
           storage_path?: string | null
+          updated_at?: string
+          version_history?: Json
         }
         Update: {
           collected_at?: string
           collected_by?: string | null
+          content_hash?: string | null
           derived_from_document_id?: string | null
           evidence_type?: string
           id?: string
           investigation_id?: string
+          provenance?: Json
           source?: string | null
           storage_path?: string | null
+          updated_at?: string
+          version_history?: Json
         }
         Relationships: [
           {
@@ -857,32 +869,38 @@ export type Database = {
         Row: {
           case_number: string
           closed_at: string | null
+          deleted_at: string | null
           id: string
           lead_officer_id: string
           opened_at: string
           scenario: string | null
           status: Database["public"]["Enums"]["investigation_status"]
           target_voyage_id: string | null
+          updated_at: string
         }
         Insert: {
           case_number: string
           closed_at?: string | null
-          id: string
+          deleted_at?: string | null
+          id?: string
           lead_officer_id: string
           opened_at?: string
           scenario?: string | null
           status?: Database["public"]["Enums"]["investigation_status"]
           target_voyage_id?: string | null
+          updated_at?: string
         }
         Update: {
           case_number?: string
           closed_at?: string | null
+          deleted_at?: string | null
           id?: string
           lead_officer_id?: string
           opened_at?: string
           scenario?: string | null
           status?: Database["public"]["Enums"]["investigation_status"]
           target_voyage_id?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -1194,6 +1212,50 @@ export type Database = {
             columns: ["entity_id"]
             isOneToOne: false
             referencedRelation: "entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sessions: {
+        Row: {
+          channel: string
+          context: Json
+          created_at: string
+          ended_at: string | null
+          id: string
+          investigation_id: string | null
+          started_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          channel?: string
+          context?: Json
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          investigation_id?: string | null
+          started_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          channel?: string
+          context?: Json
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          investigation_id?: string | null
+          started_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_investigation_id_fkey"
+            columns: ["investigation_id"]
+            isOneToOne: false
+            referencedRelation: "investigations"
             referencedColumns: ["id"]
           },
         ]
