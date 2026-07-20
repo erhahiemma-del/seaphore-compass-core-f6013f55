@@ -265,7 +265,7 @@ export class ImoGisisConnector implements ConnectorInterface {
     } catch (err) {
       const latencyMs = Date.now() - started;
       const message = err instanceof Error ? err.message : String(err);
-      throw new NetworkError(`GISIS health check failed: ${message}`);
+      return { status: "down", latencyMs, message };
     } finally {
       clearTimeout(timeout);
     }
