@@ -173,7 +173,7 @@ export function CopilotWorkspace({
             Suggested starting points
           </p>
           <ul className="mt-2 flex flex-col gap-2">
-            {suggestions.slice(0, 3).map((s) => (
+            {(suggestions ?? DEFAULT_SUGGESTIONS).slice(0, 3).map((s) => (
               <li key={s}>
                 <button
                   type="button"
