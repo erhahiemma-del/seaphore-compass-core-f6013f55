@@ -4,7 +4,9 @@
  */
 import { registerConnector } from "../registry";
 import { mockAisConnector } from "./mock";
+import { imoGisisConnector } from "@/connectors/imo-gisis";
 
 registerConnector(mockAisConnector);
+registerConnector(imoGisisConnector);
 
-export { mockAisConnector };
+export { mockAisConnector, imoGisisConnector };
