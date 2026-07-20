@@ -260,18 +260,20 @@ export function RoleManagementTable() {
   const setFn = useSF(setUserRoles);
   const { session } = useAuth();
   const currentUserId = session?.user?.id ?? null;
+  const devBypass = useDevModeStore((s) => s.bypassAuth) && DEV_MODE_AVAILABLE;
 
   const [auditFilterUserId, setAuditFilterUserId] = useState<string | null>(null);
   const auditRef = useRef<HTMLDivElement | null>(null);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: QUERY_KEYS.adminUsersWithRoles(),
-    queryFn: () => listFn(),
+    queryKey: [...QUERY_KEYS.adminUsersWithRoles(), devBypass ? "anon" : "auth"],
+    queryFn: () => (devBypass ? fetchUsersWithRolesDirect() : listFn()),
     staleTime: 30_000,
   });
 
   const mutation = useMutation({
-    mutationFn: (input: { userId: string; roles: Role[] }) => setFn({ data: input }),
+    mutationFn: (input: { userId: string; roles: Role[] }) =>
+      devBypass ? setUserRolesDirect(input.userId, input.roles) : setFn({ data: input }),
     onSuccess: (_res, vars) => {
       toast.success("Roles updated", {
         description: `${vars.roles.length} role(s) assigned.`,
