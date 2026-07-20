@@ -8,11 +8,13 @@ import { imoGisisConnector } from "@/connectors/imo-gisis";
 import { equasisConnector } from "@/connectors/equasis";
 import { ofacSanctionsConnector } from "@/connectors/ofac-sanctions";
 import { unEuSanctionsConnector } from "@/connectors/un---eu-sanctions";
+import { copernicusMarineConnector } from "@/connectors/copernicus-marine--esa-";
 
 registerConnector(mockAisConnector);
 registerConnector(imoGisisConnector);
 registerConnector(equasisConnector);
 registerConnector(ofacSanctionsConnector);
 registerConnector(unEuSanctionsConnector);
+registerConnector(copernicusMarineConnector);
 
-export { mockAisConnector, imoGisisConnector, equasisConnector, ofacSanctionsConnector, unEuSanctionsConnector };
+export { mockAisConnector, imoGisisConnector, equasisConnector, ofacSanctionsConnector, unEuSanctionsConnector, copernicusMarineConnector };
