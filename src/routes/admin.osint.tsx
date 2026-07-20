@@ -14,6 +14,8 @@ import { AlertTriangle, PlayCircle, PowerOff, RefreshCw, RotateCw, ShieldAlert }
 
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { supabase } from "@/integrations/supabase/client";
+import { useDevModeStore } from "@/stores/dev-mode.store";
+import { DEV_MODE_AVAILABLE } from "@/lib/dev/dev-mode";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
