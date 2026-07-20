@@ -98,9 +98,20 @@ function AuthPage() {
   const [demoLoading, setDemoLoading] = useState<string | null>(null);
   const [mfa, setMfa] = useState<{ factorId: string; factorName: string } | null>(null);
 
-  const isDev = import.meta.env.DEV;
+  const isDev = DEV_MODE_AVAILABLE;
 
-  // Already authenticated and no MFA pending? Bounce to the intended URL.
+  function handleContinueAsAdmin() {
+    const store = useDevModeStore.getState();
+    store.setMockRole("admin");
+    store.setBypassAuth(true);
+    try {
+      localStorage.setItem("seaphore.dev.demo-seed", String(Date.now()));
+    } catch {
+      /* ignore */
+    }
+    navigate({ to: redirect, replace: true });
+  }
+
   if (session && !mfa) {
     navigate({ to: redirect, replace: true });
   }
