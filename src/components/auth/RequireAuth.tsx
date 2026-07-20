@@ -19,6 +19,7 @@ import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { useSessionTimeout } from "@/hooks/use-session-timeout";
 import { SessionTimeoutWarning } from "@/components/auth/SessionTimeoutWarning";
+import { useIsDevBypass } from "@/stores/dev-mode.store";
 
 const PUBLIC_PREFIXES = ["/auth", "/api/public"] as const;
 
@@ -27,11 +28,12 @@ function isPublicPath(pathname: string): boolean {
 }
 
 export function RequireAuth({ children }: { children: ReactNode }) {
+  const bypass = useIsDevBypass();
   const { session, loading } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const publicPath = isPublicPath(location.pathname);
+  const publicPath = bypass || isPublicPath(location.pathname);
 
   useEffect(() => {
     if (loading || publicPath) return;

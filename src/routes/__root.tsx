@@ -147,9 +147,24 @@ function RootComponent() {
         </RequireAuth>
         <GlobalCopilotBinding />
         {import.meta.env.DEV ? <PerfOverlayLazy /> : null}
+        {import.meta.env.DEV ? <DevToolbarLazy /> : null}
       </ThemeProvider>
     </QueryClientProvider>
   );
+}
+
+function DevToolbarLazy() {
+  const [Comp, setComp] = useState<React.ComponentType | null>(null);
+  useEffect(() => {
+    let mounted = true;
+    import("@/components/dev/DevToolbar").then((m) => {
+      if (mounted) setComp(() => m.DevToolbar);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+  return Comp ? <Comp /> : null;
 }
 
 function GlobalCopilotBinding() {
