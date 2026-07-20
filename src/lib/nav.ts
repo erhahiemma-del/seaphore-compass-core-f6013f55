@@ -55,6 +55,12 @@ export const NAV_GROUPS: NavGroup[] = [
         url: "/command-center",
         icon: Sparkles,
       },
+      {
+        title: "NIMASA Copilot",
+        subtitle: "Intelligence Orchestration",
+        url: "/copilot",
+        icon: Sparkles,
+      },
     ],
   },
   {
