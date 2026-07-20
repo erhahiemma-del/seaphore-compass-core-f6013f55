@@ -1,6 +1,3 @@
-// Storybook types are optional in this project — fall back to loose typing
-// when @storybook/react isn't installed so the app build stays green.
-// @ts-expect-error optional peer dep
 import type { Meta, StoryObj } from "@storybook/react";
 import { useEffect } from "react";
 
