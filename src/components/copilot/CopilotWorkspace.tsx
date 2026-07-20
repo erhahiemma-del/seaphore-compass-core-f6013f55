@@ -25,9 +25,13 @@ import { ContextBar } from "@/components/copilot/ContextBar";
 import { StreamingStages } from "@/components/copilot/StreamingStages";
 import { Button } from "@/components/ui/button";
 import { adaptBriefing, type CopilotQueryResponse } from "@/lib/copilot/adapt-briefing";
+import { DEV_MODE_AVAILABLE, MOCK_OFFICER_ID } from "@/lib/dev/dev-mode";
 import { copilotOverrideFn, copilotQueryFn } from "@/lib/orchestration.functions";
 import { cn } from "@/lib/utils";
+import { orchestrate, captureOverride } from "@/services/orchestration";
+import { useAuthStore } from "@/stores/auth.store";
 import { useCopilotStore } from "@/stores/copilot.store";
+import { useDevModeStore } from "@/stores/dev-mode.store";
 
 type Stage = "idle" | "classifying" | "retrieving" | "reasoning" | "rendering" | "ready";
 
@@ -54,6 +58,10 @@ export function CopilotWorkspace({
   const context = useCopilotStore((s) => s.context);
   const runQuery = useServerFn(copilotQueryFn);
   const submitOverride = useServerFn(copilotOverrideFn);
+  const devBypass = useDevModeStore((s) => s.bypassAuth) && DEV_MODE_AVAILABLE;
+  const authUserId = useAuthStore((s) => s.officer?.userId);
+  const officerId = devBypass ? MOCK_OFFICER_ID : (authUserId ?? MOCK_OFFICER_ID);
+
 
   const [text, setText] = useState("");
   const [stage, setStage] = useState<Stage>("idle");
@@ -75,18 +83,20 @@ export function CopilotWorkspace({
       const started = performance.now();
       await new Promise((r) => setTimeout(r, 80));
       setStage("retrieving");
-      const response = (await runQuery({
-        data: {
-          query: q,
-          context: context
-            ? {
-                investigation_id: context.kind === "investigation" ? context.label : undefined,
-                vessel: context.kind === "vessel" ? context.label : undefined,
-                port: context.kind === "port" ? context.label : undefined,
-              }
-            : undefined,
-        },
-      })) as CopilotQueryResponse;
+      const queryPayload = {
+        query: q,
+        officer_id: officerId,
+        context: context
+          ? {
+              investigation_id: context.kind === "investigation" ? context.label : undefined,
+              vessel: context.kind === "vessel" ? context.label : undefined,
+              port: context.kind === "port" ? context.label : undefined,
+            }
+          : undefined,
+      };
+      const response = devBypass
+        ? ((await orchestrate(queryPayload)) as unknown as CopilotQueryResponse)
+        : ((await runQuery({ data: queryPayload })) as CopilotQueryResponse);
       setStage("reasoning");
       const adapted = adaptBriefing(
         {
@@ -117,17 +127,27 @@ export function CopilotWorkspace({
   async function handleOverride(submission: OverrideSubmission) {
     if (!briefing) return;
     try {
-      await submitOverride({
-        data: {
+      if (devBypass) {
+        await captureOverride({
           briefing_id: briefing.id,
+          officer_id: officerId,
           decision: submission.decision,
           justification: submission.justification,
-        },
-      });
+        });
+      } else {
+        await submitOverride({
+          data: {
+            briefing_id: briefing.id,
+            decision: submission.decision,
+            justification: submission.justification,
+          },
+        });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Override submission failed");
     }
   }
+
 
   function reset() {
     setBriefing(null);
