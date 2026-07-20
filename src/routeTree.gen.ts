@@ -14,6 +14,7 @@ import { Route as ShareRouteImport } from './routes/share'
 import { Route as RevenueRouteImport } from './routes/revenue'
 import { Route as PortsRouteImport } from './routes/ports'
 import { Route as OwnershipRouteImport } from './routes/ownership'
+import { Route as ObservabilityRouteImport } from './routes/observability'
 import { Route as MemoryRouteImport } from './routes/memory'
 import { Route as ManifestRouteImport } from './routes/manifest'
 import { Route as InvestigateRouteImport } from './routes/investigate'
@@ -70,6 +71,11 @@ const PortsRoute = PortsRouteImport.update({
 const OwnershipRoute = OwnershipRouteImport.update({
   id: '/ownership',
   path: '/ownership',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ObservabilityRoute = ObservabilityRouteImport.update({
+  id: '/observability',
+  path: '/observability',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MemoryRoute = MemoryRouteImport.update({
@@ -248,6 +254,7 @@ export interface FileRoutesByFullPath {
   '/investigate': typeof InvestigateRouteWithChildren
   '/manifest': typeof ManifestRoute
   '/memory': typeof MemoryRoute
+  '/observability': typeof ObservabilityRoute
   '/ownership': typeof OwnershipRoute
   '/ports': typeof PortsRoute
   '/revenue': typeof RevenueRoute
@@ -285,6 +292,7 @@ export interface FileRoutesByTo {
   '/evidence': typeof EvidenceRoute
   '/manifest': typeof ManifestRoute
   '/memory': typeof MemoryRoute
+  '/observability': typeof ObservabilityRoute
   '/ownership': typeof OwnershipRoute
   '/ports': typeof PortsRoute
   '/revenue': typeof RevenueRoute
@@ -324,6 +332,7 @@ export interface FileRoutesById {
   '/investigate': typeof InvestigateRouteWithChildren
   '/manifest': typeof ManifestRoute
   '/memory': typeof MemoryRoute
+  '/observability': typeof ObservabilityRoute
   '/ownership': typeof OwnershipRoute
   '/ports': typeof PortsRoute
   '/revenue': typeof RevenueRoute
@@ -365,6 +374,7 @@ export interface FileRouteTypes {
     | '/investigate'
     | '/manifest'
     | '/memory'
+    | '/observability'
     | '/ownership'
     | '/ports'
     | '/revenue'
@@ -402,6 +412,7 @@ export interface FileRouteTypes {
     | '/evidence'
     | '/manifest'
     | '/memory'
+    | '/observability'
     | '/ownership'
     | '/ports'
     | '/revenue'
@@ -440,6 +451,7 @@ export interface FileRouteTypes {
     | '/investigate'
     | '/manifest'
     | '/memory'
+    | '/observability'
     | '/ownership'
     | '/ports'
     | '/revenue'
@@ -480,6 +492,7 @@ export interface RootRouteChildren {
   InvestigateRoute: typeof InvestigateRouteWithChildren
   ManifestRoute: typeof ManifestRoute
   MemoryRoute: typeof MemoryRoute
+  ObservabilityRoute: typeof ObservabilityRoute
   OwnershipRoute: typeof OwnershipRoute
   PortsRoute: typeof PortsRoute
   RevenueRoute: typeof RevenueRoute
@@ -531,6 +544,13 @@ declare module '@tanstack/react-router' {
       path: '/ownership'
       fullPath: '/ownership'
       preLoaderRoute: typeof OwnershipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/observability': {
+      id: '/observability'
+      path: '/observability'
+      fullPath: '/observability'
+      preLoaderRoute: typeof ObservabilityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/memory': {
@@ -820,6 +840,7 @@ const rootRouteChildren: RootRouteChildren = {
   InvestigateRoute: InvestigateRouteWithChildren,
   ManifestRoute: ManifestRoute,
   MemoryRoute: MemoryRoute,
+  ObservabilityRoute: ObservabilityRoute,
   OwnershipRoute: OwnershipRoute,
   PortsRoute: PortsRoute,
   RevenueRoute: RevenueRoute,
@@ -838,13 +859,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
