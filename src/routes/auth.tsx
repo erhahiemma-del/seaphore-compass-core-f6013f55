@@ -25,6 +25,8 @@ import heroImage from "@/assets/auth-hero.jpg";
 import { cn } from "@/lib/utils";
 import { getPendingMfaFactor } from "@/lib/auth/mfa";
 import { MfaChallenge } from "@/components/auth/MfaChallenge";
+import { DEV_MODE_AVAILABLE } from "@/lib/dev/dev-mode";
+import { useDevModeStore } from "@/stores/dev-mode.store";
 
 /**
  * Only accept same-origin absolute paths as the post-login redirect
@@ -96,9 +98,20 @@ function AuthPage() {
   const [demoLoading, setDemoLoading] = useState<string | null>(null);
   const [mfa, setMfa] = useState<{ factorId: string; factorName: string } | null>(null);
 
-  const isDev = import.meta.env.DEV;
+  const isDev = DEV_MODE_AVAILABLE;
 
-  // Already authenticated and no MFA pending? Bounce to the intended URL.
+  function handleContinueAsAdmin() {
+    const store = useDevModeStore.getState();
+    store.setMockRole("admin");
+    store.setBypassAuth(true);
+    try {
+      localStorage.setItem("seaphore.dev.demo-seed", String(Date.now()));
+    } catch {
+      /* ignore */
+    }
+    navigate({ to: redirect, replace: true });
+  }
+
   if (session && !mfa) {
     navigate({ to: redirect, replace: true });
   }
@@ -255,6 +268,21 @@ function AuthPage() {
                 Secure access for authorized NIMASA officers to the maritime intelligence workspace.
               </p>
             </div>
+
+            {isDev && !mfa && (
+              <button
+                type="button"
+                onClick={handleContinueAsAdmin}
+                className="mb-5 flex w-full items-center justify-center gap-2 rounded-lg border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-[13px] font-semibold text-amber-900 shadow-sm transition hover:bg-amber-500/15"
+              >
+                <ShieldCheck className="h-4 w-4" />
+                Continue as Admin
+                <span className="rounded-full bg-amber-500/25 px-2 py-0.5 text-[10px] uppercase tracking-wide">
+                  Dev
+                </span>
+              </button>
+            )}
+
 
             {mfa ? (
               <MfaChallenge

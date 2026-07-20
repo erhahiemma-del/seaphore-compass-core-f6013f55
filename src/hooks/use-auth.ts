@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 
 import { supabase } from "@/integrations/supabase/client";
-import { buildMockSession } from "@/lib/dev/dev-mode";
-import { useIsDevBypass } from "@/stores/dev-mode.store";
+import { buildMockSession, DEV_MODE_AVAILABLE } from "@/lib/dev/dev-mode";
+import { useIsDevBypass, useDevModeStore } from "@/stores/dev-mode.store";
 
 export interface AuthState {
   session: Session | null;
@@ -16,6 +16,9 @@ export interface AuthState {
  *
  * Dev bypass: when Development Preview Mode is on, returns a mock officer
  * session immediately and skips Supabase entirely (client-side only).
+ *
+ * Dev fallback: in dev builds, if Supabase getSession() fails or times out,
+ * auto-enable bypass so the app stays usable when the backend is unreachable.
  */
 export function useAuth(): AuthState {
   const bypass = useIsDevBypass();
@@ -28,14 +31,37 @@ export function useAuth(): AuthState {
       setLoading(false);
       return;
     }
+    let cancelled = false;
     const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
-      setSession(next);
+      if (!cancelled) setSession(next);
     });
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setLoading(false);
-    });
+
+    const fallbackTimer =
+      DEV_MODE_AVAILABLE && typeof window !== "undefined"
+        ? window.setTimeout(() => {
+            if (cancelled) return;
+            useDevModeStore.getState().setBypassAuth(true);
+          }, 4000)
+        : null;
+
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (cancelled) return;
+        setSession(data.session);
+        setLoading(false);
+        if (fallbackTimer !== null) window.clearTimeout(fallbackTimer);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setLoading(false);
+        if (DEV_MODE_AVAILABLE) useDevModeStore.getState().setBypassAuth(true);
+        if (fallbackTimer !== null) window.clearTimeout(fallbackTimer);
+      });
+
     return () => {
+      cancelled = true;
+      if (fallbackTimer !== null) window.clearTimeout(fallbackTimer);
       sub.subscription.unsubscribe();
     };
   }, [bypass]);

@@ -148,10 +148,26 @@ function RootComponent() {
         <GlobalCopilotBinding />
         {import.meta.env.DEV ? <PerfOverlayLazy /> : null}
         {import.meta.env.DEV ? <DevToolbarLazy /> : null}
+        {import.meta.env.DEV ? <DevModeBadgeLazy /> : null}
       </ThemeProvider>
     </QueryClientProvider>
   );
 }
+
+function DevModeBadgeLazy() {
+  const [Comp, setComp] = useState<React.ComponentType | null>(null);
+  useEffect(() => {
+    let mounted = true;
+    import("@/components/dev/DevModeBadge").then((m) => {
+      if (mounted) setComp(() => m.DevModeBadge);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+  return Comp ? <Comp /> : null;
+}
+
 
 function DevToolbarLazy() {
   const [Comp, setComp] = useState<React.ComponentType | null>(null);
