@@ -51,15 +51,15 @@ export function apiHandler<
       const auth = await requireAuth(request);
       enforceRateLimit(auth.userId, DEFAULT_POLICY);
 
-      const parsedParams = config.paramsSchema ? safeParse(config.paramsSchema, params) : (params as TParams);
-      let parsedBody: TBody = undefined as unknown as TBody;
+      const parsedParams = (config.paramsSchema ? safeParse(config.paramsSchema, params) : params) as TParams;
+      let parsedBody = undefined as unknown as TBody;
       if (config.bodySchema) {
         const raw = request.headers.get("content-type")?.includes("application/json")
           ? await request.json().catch(() => {
               throw Errors.validation("Body is not valid JSON");
             })
           : {};
-        parsedBody = safeParse(config.bodySchema, raw);
+        parsedBody = safeParse(config.bodySchema, raw) as TBody;
       }
 
       const result = await config.handler({
