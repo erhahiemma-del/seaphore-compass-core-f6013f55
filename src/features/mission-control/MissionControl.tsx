@@ -1,21 +1,18 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   Activity,
-  AlertTriangle,
-  ArrowDownRight,
   ArrowRight,
-  ArrowUpRight,
   BellRing,
-  Briefcase,
   ChevronRight,
-  DollarSign,
+  Container,
   FileText,
-  FileWarning,
+  History,
   Info,
-  Minus,
+  Landmark,
   Radar,
   Ship,
   ShieldCheck,
+  Target,
   type LucideIcon,
 } from "lucide-react";
 
@@ -45,12 +42,12 @@ import {
 } from "@/lib/mission-control-data";
 
 const RIBBON_ICONS: Record<string, LucideIcon> = {
-  arrivals: Ship,
-  "high-risk": AlertTriangle,
-  revenue: DollarSign,
-  duplicate: FileWarning,
-  ais: Radar,
-  investigations: Briefcase,
+  "manifest-intelligence": FileText,
+  "vessel-intelligence": Ship,
+  "container-intelligence": Container,
+  "revenue-intelligence": Landmark,
+  "risk-intelligence": Target,
+  "historical-intelligence": History,
 };
 
 export function MissionControl() {
