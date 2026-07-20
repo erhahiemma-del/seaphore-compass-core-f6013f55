@@ -225,7 +225,7 @@ function Composer({
   onSubmit,
   disabled,
 }: {
-  inputRef: React.RefObject<HTMLTextAreaElement>;
+  inputRef: React.RefObject<HTMLTextAreaElement | null>;
   value: string;
   onChange: (v: string) => void;
   listening: boolean;
