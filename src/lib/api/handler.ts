@@ -17,11 +17,14 @@ interface HandlerCtx<TBody, TParams> {
   request: Request;
 }
 
-interface HandlerConfig<TBody, TParams, TResp> {
-  bodySchema?: ZodTypeAny;
-  paramsSchema?: ZodTypeAny;
+interface HandlerConfig<TBodySchema extends ZodTypeAny | undefined, TParamsSchema extends ZodTypeAny | undefined, TResp> {
+  bodySchema?: TBodySchema;
+  paramsSchema?: TParamsSchema;
   handler: (
-    ctx: HandlerCtx<TBody, TParams>,
+    ctx: HandlerCtx<
+      TBodySchema extends ZodTypeAny ? z.infer<TBodySchema> : undefined,
+      TParamsSchema extends ZodTypeAny ? z.infer<TParamsSchema> : Record<string, string>
+    >,
   ) => Promise<{ data: TResp; sources?: string[]; confidence?: ApiEnvelope<TResp>["confidence"] }>;
 }
 
@@ -31,9 +34,13 @@ function safeParse<T extends ZodTypeAny>(schema: T, input: unknown): z.infer<T> 
   return result.data;
 }
 
-export function apiHandler<TBody, TParams, TResp>(
-  config: HandlerConfig<TBody, TParams, TResp>,
-) {
+export function apiHandler<
+  TBodySchema extends ZodTypeAny | undefined,
+  TParamsSchema extends ZodTypeAny | undefined,
+  TResp,
+>(config: HandlerConfig<TBodySchema, TParamsSchema, TResp>) {
+  type TBody = TBodySchema extends ZodTypeAny ? z.infer<TBodySchema> : undefined;
+  type TParams = TParamsSchema extends ZodTypeAny ? z.infer<TParamsSchema> : Record<string, string>;
   return async ({ request, params }: { request: Request; params: Record<string, string> }) => {
     const requestId = crypto.randomUUID();
     const started = Date.now();

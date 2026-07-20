@@ -38,7 +38,13 @@ import { Route as InvestigateIdRouteImport } from './routes/investigate.$id'
 import { Route as EntityIdRouteImport } from './routes/entity.$id'
 import { Route as DecideQueueRouteImport } from './routes/decide.queue'
 import { Route as DecideIdRouteImport } from './routes/decide.$id'
+import { Route as ApiSessionIdRouteImport } from './routes/api/session/$id'
+import { Route as ApiRelationshipIdRouteImport } from './routes/api/relationship/$id'
 import { Route as ApiPublicWorkflowsRouteImport } from './routes/api/public/workflows'
+import { Route as ApiInvestigationIdRouteImport } from './routes/api/investigation/$id'
+import { Route as ApiEvidenceIdRouteImport } from './routes/api/evidence/$id'
+import { Route as ApiEntityIdRouteImport } from './routes/api/entity/$id'
+import { Route as ApiCopilotQueryRouteImport } from './routes/api/copilot/query'
 import { Route as ApiPublicDevSeedRoleRouteImport } from './routes/api/public/dev/seed-role'
 
 const VesselRoute = VesselRouteImport.update({
@@ -186,9 +192,39 @@ const DecideIdRoute = DecideIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => DecideRoute,
 } as any)
+const ApiSessionIdRoute = ApiSessionIdRouteImport.update({
+  id: '/api/session/$id',
+  path: '/api/session/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRelationshipIdRoute = ApiRelationshipIdRouteImport.update({
+  id: '/api/relationship/$id',
+  path: '/api/relationship/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicWorkflowsRoute = ApiPublicWorkflowsRouteImport.update({
   id: '/api/public/workflows',
   path: '/api/public/workflows',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiInvestigationIdRoute = ApiInvestigationIdRouteImport.update({
+  id: '/api/investigation/$id',
+  path: '/api/investigation/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEvidenceIdRoute = ApiEvidenceIdRouteImport.update({
+  id: '/api/evidence/$id',
+  path: '/api/evidence/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEntityIdRoute = ApiEntityIdRouteImport.update({
+  id: '/api/entity/$id',
+  path: '/api/entity/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCopilotQueryRoute = ApiCopilotQueryRouteImport.update({
+  id: '/api/copilot/query',
+  path: '/api/copilot/query',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicDevSeedRoleRoute = ApiPublicDevSeedRoleRouteImport.update({
@@ -227,7 +263,13 @@ export interface FileRoutesByFullPath {
   '/decide/': typeof DecideIndexRoute
   '/investigate/': typeof InvestigateIndexRoute
   '/share/': typeof ShareIndexRoute
+  '/api/copilot/query': typeof ApiCopilotQueryRoute
+  '/api/entity/$id': typeof ApiEntityIdRoute
+  '/api/evidence/$id': typeof ApiEvidenceIdRoute
+  '/api/investigation/$id': typeof ApiInvestigationIdRoute
   '/api/public/workflows': typeof ApiPublicWorkflowsRoute
+  '/api/relationship/$id': typeof ApiRelationshipIdRoute
+  '/api/session/$id': typeof ApiSessionIdRoute
   '/api/public/dev/seed-role': typeof ApiPublicDevSeedRoleRoute
 }
 export interface FileRoutesByTo {
@@ -257,7 +299,13 @@ export interface FileRoutesByTo {
   '/decide': typeof DecideIndexRoute
   '/investigate': typeof InvestigateIndexRoute
   '/share': typeof ShareIndexRoute
+  '/api/copilot/query': typeof ApiCopilotQueryRoute
+  '/api/entity/$id': typeof ApiEntityIdRoute
+  '/api/evidence/$id': typeof ApiEvidenceIdRoute
+  '/api/investigation/$id': typeof ApiInvestigationIdRoute
   '/api/public/workflows': typeof ApiPublicWorkflowsRoute
+  '/api/relationship/$id': typeof ApiRelationshipIdRoute
+  '/api/session/$id': typeof ApiSessionIdRoute
   '/api/public/dev/seed-role': typeof ApiPublicDevSeedRoleRoute
 }
 export interface FileRoutesById {
@@ -291,7 +339,13 @@ export interface FileRoutesById {
   '/decide/': typeof DecideIndexRoute
   '/investigate/': typeof InvestigateIndexRoute
   '/share/': typeof ShareIndexRoute
+  '/api/copilot/query': typeof ApiCopilotQueryRoute
+  '/api/entity/$id': typeof ApiEntityIdRoute
+  '/api/evidence/$id': typeof ApiEvidenceIdRoute
+  '/api/investigation/$id': typeof ApiInvestigationIdRoute
   '/api/public/workflows': typeof ApiPublicWorkflowsRoute
+  '/api/relationship/$id': typeof ApiRelationshipIdRoute
+  '/api/session/$id': typeof ApiSessionIdRoute
   '/api/public/dev/seed-role': typeof ApiPublicDevSeedRoleRoute
 }
 export interface FileRouteTypes {
@@ -326,7 +380,13 @@ export interface FileRouteTypes {
     | '/decide/'
     | '/investigate/'
     | '/share/'
+    | '/api/copilot/query'
+    | '/api/entity/$id'
+    | '/api/evidence/$id'
+    | '/api/investigation/$id'
     | '/api/public/workflows'
+    | '/api/relationship/$id'
+    | '/api/session/$id'
     | '/api/public/dev/seed-role'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -356,7 +416,13 @@ export interface FileRouteTypes {
     | '/decide'
     | '/investigate'
     | '/share'
+    | '/api/copilot/query'
+    | '/api/entity/$id'
+    | '/api/evidence/$id'
+    | '/api/investigation/$id'
     | '/api/public/workflows'
+    | '/api/relationship/$id'
+    | '/api/session/$id'
     | '/api/public/dev/seed-role'
   id:
     | '__root__'
@@ -389,7 +455,13 @@ export interface FileRouteTypes {
     | '/decide/'
     | '/investigate/'
     | '/share/'
+    | '/api/copilot/query'
+    | '/api/entity/$id'
+    | '/api/evidence/$id'
+    | '/api/investigation/$id'
     | '/api/public/workflows'
+    | '/api/relationship/$id'
+    | '/api/session/$id'
     | '/api/public/dev/seed-role'
   fileRoutesById: FileRoutesById
 }
@@ -414,7 +486,13 @@ export interface RootRouteChildren {
   ShareRoute: typeof ShareRouteWithChildren
   VesselRoute: typeof VesselRoute
   EntityIdRoute: typeof EntityIdRoute
+  ApiCopilotQueryRoute: typeof ApiCopilotQueryRoute
+  ApiEntityIdRoute: typeof ApiEntityIdRoute
+  ApiEvidenceIdRoute: typeof ApiEvidenceIdRoute
+  ApiInvestigationIdRoute: typeof ApiInvestigationIdRoute
   ApiPublicWorkflowsRoute: typeof ApiPublicWorkflowsRoute
+  ApiRelationshipIdRoute: typeof ApiRelationshipIdRoute
+  ApiSessionIdRoute: typeof ApiSessionIdRoute
   ApiPublicDevSeedRoleRoute: typeof ApiPublicDevSeedRoleRoute
 }
 
@@ -623,11 +701,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DecideIdRouteImport
       parentRoute: typeof DecideRoute
     }
+    '/api/session/$id': {
+      id: '/api/session/$id'
+      path: '/api/session/$id'
+      fullPath: '/api/session/$id'
+      preLoaderRoute: typeof ApiSessionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/relationship/$id': {
+      id: '/api/relationship/$id'
+      path: '/api/relationship/$id'
+      fullPath: '/api/relationship/$id'
+      preLoaderRoute: typeof ApiRelationshipIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/workflows': {
       id: '/api/public/workflows'
       path: '/api/public/workflows'
       fullPath: '/api/public/workflows'
       preLoaderRoute: typeof ApiPublicWorkflowsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/investigation/$id': {
+      id: '/api/investigation/$id'
+      path: '/api/investigation/$id'
+      fullPath: '/api/investigation/$id'
+      preLoaderRoute: typeof ApiInvestigationIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/evidence/$id': {
+      id: '/api/evidence/$id'
+      path: '/api/evidence/$id'
+      fullPath: '/api/evidence/$id'
+      preLoaderRoute: typeof ApiEvidenceIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/entity/$id': {
+      id: '/api/entity/$id'
+      path: '/api/entity/$id'
+      fullPath: '/api/entity/$id'
+      preLoaderRoute: typeof ApiEntityIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/copilot/query': {
+      id: '/api/copilot/query'
+      path: '/api/copilot/query'
+      fullPath: '/api/copilot/query'
+      preLoaderRoute: typeof ApiCopilotQueryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/dev/seed-role': {
@@ -706,7 +826,13 @@ const rootRouteChildren: RootRouteChildren = {
   ShareRoute: ShareRouteWithChildren,
   VesselRoute: VesselRoute,
   EntityIdRoute: EntityIdRoute,
+  ApiCopilotQueryRoute: ApiCopilotQueryRoute,
+  ApiEntityIdRoute: ApiEntityIdRoute,
+  ApiEvidenceIdRoute: ApiEvidenceIdRoute,
+  ApiInvestigationIdRoute: ApiInvestigationIdRoute,
   ApiPublicWorkflowsRoute: ApiPublicWorkflowsRoute,
+  ApiRelationshipIdRoute: ApiRelationshipIdRoute,
+  ApiSessionIdRoute: ApiSessionIdRoute,
   ApiPublicDevSeedRoleRoute: ApiPublicDevSeedRoleRoute,
 }
 export const routeTree = rootRouteImport
