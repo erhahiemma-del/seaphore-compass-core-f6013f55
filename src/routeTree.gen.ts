@@ -27,11 +27,11 @@ import { Route as CommandCenterRouteImport } from './routes/command-center'
 import { Route as CargoRouteImport } from './routes/cargo'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AlertsRouteImport } from './routes/alerts'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShareIndexRouteImport } from './routes/share.index'
 import { Route as InvestigateIndexRouteImport } from './routes/investigate.index'
 import { Route as DecideIndexRouteImport } from './routes/decide.index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ShareQueueRouteImport } from './routes/share.queue'
 import { Route as ShareIdRouteImport } from './routes/share.$id'
 import { Route as InvestigateOpenRouteImport } from './routes/investigate.open'
@@ -139,11 +139,6 @@ const AlertsRoute = AlertsRouteImport.update({
   path: '/alerts',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -163,6 +158,11 @@ const DecideIndexRoute = DecideIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => DecideRoute,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ShareQueueRoute = ShareQueueRouteImport.update({
   id: '/queue',
@@ -200,9 +200,9 @@ const DecideIdRoute = DecideIdRouteImport.update({
   getParentRoute: () => DecideRoute,
 } as any)
 const AdminOsintRoute = AdminOsintRouteImport.update({
-  id: '/osint',
-  path: '/osint',
-  getParentRoute: () => AdminRoute,
+  id: '/admin/osint',
+  path: '/admin/osint',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSessionIdRoute = ApiSessionIdRouteImport.update({
   id: '/api/session/$id',
@@ -247,7 +247,6 @@ const ApiPublicDevSeedRoleRoute = ApiPublicDevSeedRoleRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRouteWithChildren
   '/alerts': typeof AlertsRoute
   '/auth': typeof AuthRoute
   '/cargo': typeof CargoRoute
@@ -274,6 +273,7 @@ export interface FileRoutesByFullPath {
   '/investigate/open': typeof InvestigateOpenRoute
   '/share/$id': typeof ShareIdRoute
   '/share/queue': typeof ShareQueueRoute
+  '/admin/': typeof AdminIndexRoute
   '/decide/': typeof DecideIndexRoute
   '/investigate/': typeof InvestigateIndexRoute
   '/share/': typeof ShareIndexRoute
@@ -288,7 +288,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRouteWithChildren
   '/alerts': typeof AlertsRoute
   '/auth': typeof AuthRoute
   '/cargo': typeof CargoRoute
@@ -312,6 +311,7 @@ export interface FileRoutesByTo {
   '/investigate/open': typeof InvestigateOpenRoute
   '/share/$id': typeof ShareIdRoute
   '/share/queue': typeof ShareQueueRoute
+  '/admin': typeof AdminIndexRoute
   '/decide': typeof DecideIndexRoute
   '/investigate': typeof InvestigateIndexRoute
   '/share': typeof ShareIndexRoute
@@ -327,7 +327,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRouteWithChildren
   '/alerts': typeof AlertsRoute
   '/auth': typeof AuthRoute
   '/cargo': typeof CargoRoute
@@ -354,6 +353,7 @@ export interface FileRoutesById {
   '/investigate/open': typeof InvestigateOpenRoute
   '/share/$id': typeof ShareIdRoute
   '/share/queue': typeof ShareQueueRoute
+  '/admin/': typeof AdminIndexRoute
   '/decide/': typeof DecideIndexRoute
   '/investigate/': typeof InvestigateIndexRoute
   '/share/': typeof ShareIndexRoute
@@ -370,7 +370,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/admin'
     | '/alerts'
     | '/auth'
     | '/cargo'
@@ -397,6 +396,7 @@ export interface FileRouteTypes {
     | '/investigate/open'
     | '/share/$id'
     | '/share/queue'
+    | '/admin/'
     | '/decide/'
     | '/investigate/'
     | '/share/'
@@ -411,7 +411,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/admin'
     | '/alerts'
     | '/auth'
     | '/cargo'
@@ -435,6 +434,7 @@ export interface FileRouteTypes {
     | '/investigate/open'
     | '/share/$id'
     | '/share/queue'
+    | '/admin'
     | '/decide'
     | '/investigate'
     | '/share'
@@ -449,7 +449,6 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/admin'
     | '/alerts'
     | '/auth'
     | '/cargo'
@@ -476,6 +475,7 @@ export interface FileRouteTypes {
     | '/investigate/open'
     | '/share/$id'
     | '/share/queue'
+    | '/admin/'
     | '/decide/'
     | '/investigate/'
     | '/share/'
@@ -491,7 +491,6 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRouteWithChildren
   AlertsRoute: typeof AlertsRoute
   AuthRoute: typeof AuthRoute
   CargoRoute: typeof CargoRoute
@@ -510,7 +509,9 @@ export interface RootRouteChildren {
   RevenueRoute: typeof RevenueRoute
   ShareRoute: typeof ShareRouteWithChildren
   VesselRoute: typeof VesselRoute
+  AdminOsintRoute: typeof AdminOsintRoute
   EntityIdRoute: typeof EntityIdRoute
+  AdminIndexRoute: typeof AdminIndexRoute
   ApiCopilotQueryRoute: typeof ApiCopilotQueryRoute
   ApiEntityIdRoute: typeof ApiEntityIdRoute
   ApiEvidenceIdRoute: typeof ApiEvidenceIdRoute
@@ -649,13 +650,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AlertsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -683,6 +677,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/decide/'
       preLoaderRoute: typeof DecideIndexRouteImport
       parentRoute: typeof DecideRoute
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/share/queue': {
       id: '/share/queue'
@@ -735,10 +736,10 @@ declare module '@tanstack/react-router' {
     }
     '/admin/osint': {
       id: '/admin/osint'
-      path: '/osint'
+      path: '/admin/osint'
       fullPath: '/admin/osint'
       preLoaderRoute: typeof AdminOsintRouteImport
-      parentRoute: typeof AdminRoute
+      parentRoute: typeof rootRouteImport
     }
     '/api/session/$id': {
       id: '/api/session/$id'
@@ -799,16 +800,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AdminRouteChildren {
-  AdminOsintRoute: typeof AdminOsintRoute
-}
-
-const AdminRouteChildren: AdminRouteChildren = {
-  AdminOsintRoute: AdminOsintRoute,
-}
-
-const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
-
 interface DecideRouteChildren {
   DecideIdRoute: typeof DecideIdRoute
   DecideQueueRoute: typeof DecideQueueRoute
@@ -856,7 +847,6 @@ const ShareRouteWithChildren = ShareRoute._addFileChildren(ShareRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRouteWithChildren,
   AlertsRoute: AlertsRoute,
   AuthRoute: AuthRoute,
   CargoRoute: CargoRoute,
@@ -875,7 +865,9 @@ const rootRouteChildren: RootRouteChildren = {
   RevenueRoute: RevenueRoute,
   ShareRoute: ShareRouteWithChildren,
   VesselRoute: VesselRoute,
+  AdminOsintRoute: AdminOsintRoute,
   EntityIdRoute: EntityIdRoute,
+  AdminIndexRoute: AdminIndexRoute,
   ApiCopilotQueryRoute: ApiCopilotQueryRoute,
   ApiEntityIdRoute: ApiEntityIdRoute,
   ApiEvidenceIdRoute: ApiEvidenceIdRoute,
