@@ -12,6 +12,7 @@ import React, { useEffect, useState, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
 
 function NotFoundComponent() {
   return (
@@ -137,8 +138,10 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
-      {import.meta.env.DEV ? <PerfOverlayLazy /> : null}
+      <ThemeProvider>
+        <Outlet />
+        {import.meta.env.DEV ? <PerfOverlayLazy /> : null}
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
