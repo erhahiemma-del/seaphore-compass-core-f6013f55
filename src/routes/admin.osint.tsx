@@ -14,6 +14,8 @@ import { AlertTriangle, PlayCircle, PowerOff, RefreshCw, RotateCw, ShieldAlert }
 
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { supabase } from "@/integrations/supabase/client";
+import { useDevModeStore } from "@/stores/dev-mode.store";
+import { DEV_MODE_AVAILABLE } from "@/lib/dev/dev-mode";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -67,6 +69,7 @@ function OsintDashboard() {
   const fetchConnectors = useServerFn(listOsintConnectors);
   const fetchRuns = useServerFn(listOsintSyncRuns);
   const fetchDlq = useServerFn(listOsintDeadLetters);
+  const devBypass = useDevModeStore((s) => s.bypassAuth) && DEV_MODE_AVAILABLE;
 
   // One-shot: make sure any in-code connectors are mirrored to the DB.
   useEffect(() => {
@@ -74,20 +77,60 @@ function OsintDashboard() {
   }, [bootstrap]);
 
   const connectors = useQuery({
-    queryKey: ["osint", "connectors"],
-    queryFn: () => fetchConnectors(),
+    queryKey: ["osint", "connectors", devBypass ? "anon" : "auth"],
+    queryFn: async () => {
+      if (devBypass) {
+        const { data, error } = await supabase
+          .from("osint_connectors")
+          .select("*")
+          .order("name", { ascending: true });
+        if (error) throw new Error(error.message);
+        return (data ?? []) as unknown as Awaited<ReturnType<typeof listOsintConnectors>>;
+      }
+      return fetchConnectors();
+    },
     staleTime: 15_000,
   });
   const runs = useQuery({
-    queryKey: ["osint", "runs"],
-    queryFn: () => fetchRuns(),
+    queryKey: ["osint", "runs", devBypass ? "anon" : "auth"],
+    queryFn: async () => {
+      if (devBypass) {
+        const { data, error } = await supabase
+          .from("osint_sync_runs")
+          .select("id, connector_id, started_at, completed_at, records_fetched, records_ingested, status, latency_ms, osint_connectors(name)")
+          .order("started_at", { ascending: false })
+          .limit(20);
+        if (error) throw new Error(error.message);
+        return (data ?? []).map((r) => {
+          const row = r as unknown as { id: string; connector_id: string; started_at: string; completed_at: string | null; records_fetched: number; records_ingested: number; status: string; latency_ms: number | null; osint_connectors?: { name?: string } | null };
+          return { ...row, connector_name: row.osint_connectors?.name ?? "—" };
+        }) as unknown as Awaited<ReturnType<typeof listOsintSyncRuns>>;
+      }
+      return fetchRuns();
+    },
     staleTime: 10_000,
   });
   const dlq = useQuery({
-    queryKey: ["osint", "dlq"],
-    queryFn: () => fetchDlq(),
+    queryKey: ["osint", "dlq", devBypass ? "anon" : "auth"],
+    queryFn: async () => {
+      if (devBypass) {
+        const { data, error } = await supabase
+          .from("osint_dead_letters")
+          .select("id, connector_id, source_ref, error_message, attempts, last_attempt_at, resolved, created_at, osint_connectors(name)")
+          .eq("resolved", false)
+          .order("created_at", { ascending: false })
+          .limit(50);
+        if (error) throw new Error(error.message);
+        return (data ?? []).map((r) => {
+          const row = r as unknown as { id: string; connector_id: string; source_ref: string | null; error_message: string; attempts: number; last_attempt_at: string; resolved: boolean; created_at: string; osint_connectors?: { name?: string } | null };
+          return { ...row, connector_name: row.osint_connectors?.name ?? null };
+        }) as unknown as Awaited<ReturnType<typeof listOsintDeadLetters>>;
+      }
+      return fetchDlq();
+    },
     staleTime: 10_000,
   });
+
 
   // Realtime — refresh whenever the engine writes.
   useEffect(() => {
