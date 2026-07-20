@@ -27,11 +27,11 @@ export const useThemeStore = create<ThemeState>()(
       storage: createJSONStorage(() =>
         typeof window !== "undefined"
           ? window.localStorage
-          : ({
+          : {
               getItem: () => null,
               setItem: () => undefined,
               removeItem: () => undefined,
-            } as Storage),
+            },
       ),
     },
   ),
