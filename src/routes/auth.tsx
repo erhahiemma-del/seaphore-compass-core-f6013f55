@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   Anchor,
@@ -7,17 +7,24 @@ import {
   EyeOff,
   Loader2,
   Lock,
-  Mail,
+  Shield,
   ShieldCheck,
-  Sparkles,
-  FileCheck2,
-  Fingerprint,
+  User,
+  UserCog,
+  Building2,
+  KeyRound,
+  Radar,
+  AlertTriangle,
+  Briefcase,
+  BarChart3,
+  CloudDrizzle,
   ScrollText,
+  Fingerprint,
+  Ship,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -27,12 +34,8 @@ import { getPendingMfaFactor } from "@/lib/auth/mfa";
 import { MfaChallenge } from "@/components/auth/MfaChallenge";
 import { DEV_MODE_AVAILABLE } from "@/lib/dev/dev-mode";
 import { useDevModeStore } from "@/stores/dev-mode.store";
+import type { OfficerRole } from "@/stores/auth.store";
 
-/**
- * Only accept same-origin absolute paths as the post-login redirect
- * target. Rejects protocol-relative (`//evil`), external URLs
- * (`https://evil`), and non-path values. Prevents open-redirect abuse.
- */
 function sanitizeRedirect(raw: unknown): string {
   if (typeof raw !== "string") return "/";
   if (!raw.startsWith("/")) return "/";
@@ -47,42 +50,41 @@ export const Route = createFileRoute("/auth")({
   }),
   head: () => ({
     meta: [
-      { title: "Sign in · Seaphore" },
+      { title: "Secure Access · Seaphore Maritime Intelligence OS" },
       {
         name: "description",
         content:
-          "Secure officer access to Seaphore — the Maritime Intelligence Operating System for NIMASA.",
+          "Authorized NIMASA personnel access to Seaphore — Nigeria's Maritime Intelligence Operating System.",
       },
     ],
   }),
   component: AuthPage,
 });
 
-const DEMO_ROLES = [
-  {
-    key: "admin",
-    label: "Administrator",
-    caption: "Full platform & RBAC control",
-    email: "admin@seaphore.dev",
-  },
-  {
-    key: "director",
-    label: "Director",
-    caption: "Approves briefs & decisions",
-    email: "director@seaphore.dev",
-  },
-  {
-    key: "officer",
-    label: "Intelligence Officer",
-    caption: "Investigates & decides",
-    email: "officer@seaphore.dev",
-  },
-  {
-    key: "analyst",
-    label: "Analyst",
-    caption: "Read-only, triage feeds",
-    email: "analyst@seaphore.dev",
-  },
+const ROLE_TABS = [
+  { key: "admin", label: "Administrator", icon: Shield },
+  { key: "officer", label: "Officer", icon: User },
+  { key: "analyst", label: "Analyst", icon: UserCog },
+  { key: "director", label: "Director", icon: Briefcase },
+] as const;
+
+type RoleKey = (typeof ROLE_TABS)[number]["key"];
+
+const KPI_CARDS = [
+  { icon: Ship, value: "482", label: "LIVE VESSELS", sub: "Tracked", tone: "teal" },
+  { icon: AlertTriangle, value: "12", label: "HIGH RISK", sub: "Vessels", tone: "red" },
+  { icon: Briefcase, value: "6", label: "ACTIVE", sub: "Investigations", tone: "teal" },
+  { icon: BarChart3, value: "71%", label: "PORT CONGESTION", sub: "Lagos Port", tone: "teal" },
+  { icon: ShieldCheck, value: "96%", label: "NATIONAL", sub: "COMPLIANCE", tone: "teal" },
+  { icon: KeyRound, value: "₦2.4B", label: "REVENUE", sub: "AT RISK", tone: "teal" },
+] as const;
+
+const TRUST_BAR = [
+  { icon: Lock, label: "ENCRYPTED", sub: "End-to-end" },
+  { icon: Building2, label: "GOVERNMENT NETWORK", sub: "Secure & Isolated" },
+  { icon: User, label: "ROLE BASED ACCESS", sub: "Strict Permissions" },
+  { icon: ScrollText, label: "AUDIT ENABLED", sub: "Every Action Tracked" },
+  { icon: Fingerprint, label: "SESSION PROTECTED", sub: "Auto Timeout" },
 ] as const;
 
 function AuthPage() {
@@ -93,16 +95,46 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
   const [showPw, setShowPw] = useState(false);
+  const [role, setRole] = useState<RoleKey>("admin");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [demoLoading, setDemoLoading] = useState<string | null>(null);
+  const [devLoading, setDevLoading] = useState<RoleKey | null>(null);
   const [mfa, setMfa] = useState<{ factorId: string; factorName: string } | null>(null);
 
   const isDev = DEV_MODE_AVAILABLE;
 
-  function handleContinueAsAdmin() {
+  useEffect(() => {
+    if (session && !mfa) navigate({ to: redirect, replace: true });
+  }, [session, mfa, navigate, redirect]);
+
+  async function goToDestination() {
+    navigate({ to: redirect, replace: true });
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      const pending = await getPendingMfaFactor();
+      if (pending) {
+        setMfa({ factorId: pending.id, factorName: pending.friendlyName });
+        return;
+      }
+      await goToDestination();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Authentication failed");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function handleQuickAccess(roleKey: RoleKey) {
+    setDevLoading(roleKey);
     const store = useDevModeStore.getState();
-    store.setMockRole("admin");
+    store.setMockRole(roleKey as OfficerRole);
     store.setBypassAuth(true);
     try {
       localStorage.setItem("seaphore.dev.demo-seed", String(Date.now()));
@@ -112,177 +144,205 @@ function AuthPage() {
     navigate({ to: redirect, replace: true });
   }
 
-  if (session && !mfa) {
-    navigate({ to: redirect, replace: true });
-  }
-
-  async function goToDestination() {
-    navigate({ to: redirect, replace: true });
-  }
-
-  async function signIn(emailValue: string, passwordValue: string) {
-    const { error } = await supabase.auth.signInWithPassword({
-      email: emailValue,
-      password: passwordValue,
-    });
-    if (error) throw error;
-    // Step-up if the account has TOTP enrolled but the session is still aal1.
-    const pending = await getPendingMfaFactor();
-    if (pending) {
-      setMfa({ factorId: pending.id, factorName: pending.friendlyName });
-      return;
-    }
-    await goToDestination();
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setSubmitting(true);
-    try {
-      await signIn(email, password);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Authentication failed");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  async function handleDemoLogin(roleKey: string) {
-    setError(null);
-    setDemoLoading(roleKey);
-    try {
-      const res = await fetch("/api/public/dev/seed-role", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ role: roleKey }),
-      });
-      if (!res.ok) throw new Error(`Seed failed (${res.status})`);
-      const payload = (await res.json()) as { email: string; password: string };
-      setEmail(payload.email);
-      setPassword(payload.password);
-      await signIn(payload.email, payload.password);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Demo login unavailable");
-    } finally {
-      setDemoLoading(null);
-    }
-  }
-
   return (
-    <div className="flex min-h-screen w-full bg-[#F4F6F8]">
-      {/* Left — brand + hero */}
-      <div className="relative hidden w-[52%] flex-col overflow-hidden bg-white p-10 lg:flex">
+    <div className="relative flex min-h-screen w-full overflow-hidden bg-[#050B18] text-white">
+      {/* ============== BACKGROUND HERO ============== */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src={heroImage}
+          alt=""
+          aria-hidden
+          className="h-full w-full object-cover object-center opacity-90"
+        />
+        {/* Depth gradients */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#040912]/95 via-[#050B18]/60 to-[#040912]/95" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#040912]/70 via-transparent to-[#040912]/90" />
+
+        {/* Intelligence overlays (SVG) */}
+        <svg
+          className="absolute inset-0 h-full w-full opacity-[0.35] mix-blend-screen"
+          xmlns="http://www.w3.org/2000/svg"
+          preserveAspectRatio="none"
+          viewBox="0 0 1600 1000"
+        >
+          <defs>
+            <radialGradient id="radar" cx="50%" cy="60%" r="40%">
+              <stop offset="0%" stopColor="#10E5C4" stopOpacity="0.35" />
+              <stop offset="60%" stopColor="#10E5C4" stopOpacity="0.05" />
+              <stop offset="100%" stopColor="#10E5C4" stopOpacity="0" />
+            </radialGradient>
+          </defs>
+          {/* radar rings */}
+          <g stroke="#10E5C4" strokeWidth="0.6" fill="none" opacity="0.55">
+            <circle cx="800" cy="620" r="120" />
+            <circle cx="800" cy="620" r="220" />
+            <circle cx="800" cy="620" r="340" />
+            <circle cx="800" cy="620" r="460" />
+          </g>
+          <circle cx="800" cy="620" r="460" fill="url(#radar)" />
+          {/* AIS tracks */}
+          <g
+            stroke="#10E5C4"
+            strokeWidth="1"
+            fill="none"
+            strokeDasharray="4 6"
+            opacity="0.7"
+          >
+            <path d="M120,780 Q420,700 800,620" />
+            <path d="M1500,760 Q1200,700 900,640" />
+            <path d="M300,900 Q560,820 780,660" />
+            <path d="M80,560 Q380,540 640,600" />
+          </g>
+          {/* geofence */}
+          <path
+            d="M540,540 L1060,520 L1160,780 L520,820 Z"
+            stroke="#10E5C4"
+            strokeWidth="1"
+            strokeDasharray="2 4"
+            fill="#10E5C4"
+            fillOpacity="0.04"
+            opacity="0.6"
+          />
+        </svg>
+      </div>
+
+      {/* ============== LEFT PANEL (hero content) ============== */}
+      <div className="relative z-10 hidden w-[58%] flex-col justify-between px-12 py-10 lg:flex xl:px-16">
         {/* Brand row */}
-        <div className="relative z-10 flex items-start justify-between">
+        <div className="flex items-center gap-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#0F5F5A] text-white shadow-sm">
-              <Anchor className="h-6 w-6" strokeWidth={2.25} />
+            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-[#0F5F5A]/90 shadow-lg ring-1 ring-[#10E5C4]/40">
+              <Anchor className="h-5 w-5 text-white" strokeWidth={2.4} />
             </div>
             <div className="leading-tight">
-              <div className="text-[22px] font-bold tracking-[0.14em] text-[#0B2545]">SEAPHORE</div>
-              <div className="text-[10px] uppercase tracking-[0.22em] text-slate-500">
+              <div className="text-[22px] font-bold tracking-[0.14em] text-white">SEAPHORE</div>
+              <div className="text-[10px] uppercase tracking-[0.28em] text-[#10E5C4]">
                 Maritime Intelligence OS
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#0F5F5A]">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#0F5F5A]/70 bg-white text-[#0F5F5A]">
-              <ShieldCheck className="h-6 w-6" />
+
+          <div className="h-10 w-px bg-white/10" />
+
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#10E5C4]/40 bg-white/5 text-[#10E5C4]">
+              <ShieldCheck className="h-5 w-5" />
             </div>
-            <span>NIMASA</span>
+            <div className="leading-tight">
+              <div className="text-[13px] font-bold tracking-wide text-white">NIMASA</div>
+              <div className="text-[9px] uppercase tracking-[0.18em] text-white/60">
+                Nigeria Maritime Administration
+                <br />
+                and Safety Agency
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Headline */}
-        <div className="relative z-10 mt-10 max-w-[520px]">
-          <h1 className="text-[42px] font-semibold leading-[1.1] tracking-tight text-[#0B2545]">
-            Intelligence that
+        <div className="max-w-[640px]">
+          <h1 className="text-[46px] font-semibold leading-[1.05] tracking-tight text-white xl:text-[54px]">
+            Nigeria's Maritime
             <br />
-            protects our waters<span className="text-[#0F5F5A]">.</span>
+            Intelligence{" "}
+            <span className="text-[#10E5C4]">Operating System</span>
           </h1>
-          <p className="mt-4 max-w-[440px] text-[15px] leading-relaxed text-slate-600">
-            Seaphore is the maritime intelligence operating system for NIMASA —{" "}
-            <span className="font-semibold text-[#0F5F5A]">
-              Detect. Investigate. Decide. Share. Learn.
-            </span>
+          <p className="mt-5 max-w-md text-[15px] leading-relaxed text-white/70">
+            Real-time maritime domain awareness.
+            <br />
+            Actionable intelligence.
+            <span className="ml-2 text-white/90">Secure decisions.</span>
           </p>
-        </div>
 
-        {/* Hero image */}
-        <div className="relative z-0 mt-8 flex-1 overflow-hidden rounded-2xl border border-slate-200 shadow-[0_20px_60px_-30px_rgba(11,37,69,0.4)]">
-          <img
-            src={heroImage}
-            alt="Cargo vessels tracked by maritime intelligence"
-            className="h-full w-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0B2545]/70 via-transparent to-transparent" />
-
-          {/* Trusted badge */}
-          <div className="absolute bottom-5 left-5 flex items-start gap-3 rounded-xl border border-white/10 bg-[#0B2545]/70 p-4 backdrop-blur-md">
-            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[#0F5F5A] text-white">
-              <ShieldCheck className="h-5 w-5" />
-            </div>
-            <div className="text-white">
-              <div className="text-sm font-semibold">Trusted by NIMASA</div>
-              <div className="text-[11px] leading-snug text-white/70">
-                Powering safer seas through
-                <br />
-                actionable intelligence.
-              </div>
-            </div>
+          {/* KPI cards */}
+          <div className="mt-8 grid grid-cols-3 gap-3 xl:grid-cols-6 xl:gap-3">
+            {KPI_CARDS.map((k) => {
+              const Icon = k.icon;
+              const valueColor = k.tone === "red" ? "text-[#FF6B6B]" : "text-white";
+              return (
+                <div
+                  key={k.label}
+                  className="rounded-xl border border-white/10 bg-[#0A1424]/70 p-3 backdrop-blur-md"
+                >
+                  <Icon
+                    className={cn(
+                      "mb-2 h-4 w-4",
+                      k.tone === "red" ? "text-[#FF6B6B]" : "text-[#10E5C4]",
+                    )}
+                  />
+                  <div className={cn("text-[20px] font-bold leading-none", valueColor)}>
+                    {k.value}
+                  </div>
+                  <div
+                    className={cn(
+                      "mt-1.5 text-[9px] font-bold uppercase tracking-[0.1em]",
+                      k.tone === "red" ? "text-[#FF6B6B]" : "text-[#10E5C4]",
+                    )}
+                  >
+                    {k.label}
+                  </div>
+                  <div className="text-[9px] uppercase tracking-wide text-white/60">{k.sub}</div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* Feature chips */}
-        <div className="relative z-10 mt-6 grid grid-cols-4 gap-3">
-          {[
-            { icon: FileCheck2, label: "Evidence First" },
-            { icon: Sparkles, label: "Explainable AI" },
-            { icon: Lock, label: "Secure by Design" },
-            { icon: ScrollText, label: "Audit Everything" },
-          ].map(({ icon: Icon, label }) => (
-            <div
-              key={label}
-              className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[12px] font-medium text-slate-700"
-            >
-              <Icon className="h-4 w-4 text-[#0F5F5A]" strokeWidth={2.2} />
-              {label}
-            </div>
-          ))}
+        {/* Trust indicators */}
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
+          {TRUST_BAR.map((t) => {
+            const Icon = t.icon;
+            return (
+              <div
+                key={t.label}
+                className="flex items-center gap-2.5 rounded-lg border border-white/10 bg-[#0A1424]/60 px-3 py-2.5 backdrop-blur-md"
+              >
+                <Icon className="h-4 w-4 text-[#10E5C4]" />
+                <div className="leading-tight">
+                  <div className="text-[9px] font-bold uppercase tracking-[0.1em] text-white">
+                    {t.label}
+                  </div>
+                  <div className="text-[9px] text-white/60">{t.sub}</div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* Right — form */}
-      <div className="flex flex-1 flex-col bg-[#F4F6F8]">
-        <div className="flex flex-1 items-center justify-center px-6 py-10">
-          <div className="w-full max-w-[460px] rounded-2xl bg-white p-10 shadow-[0_10px_40px_-20px_rgba(11,37,69,0.25)]">
-            <div className="mb-8">
-              <div className="text-[13px] font-semibold uppercase tracking-[0.14em] text-[#0F5F5A]">
-                Welcome back
+      {/* Floating overlays: vessel label + weather (decorative) */}
+      <div className="pointer-events-none absolute bottom-[24%] left-[38%] z-[5] hidden xl:block">
+        <div className="rounded-md border border-[#10E5C4]/40 bg-[#0A1424]/80 px-3 py-2 text-[10px] leading-tight text-white backdrop-blur-md">
+          <div className="font-bold tracking-wide text-[#10E5C4]">MV MAERSK LAGOS</div>
+          <div className="text-white/70">IMO 9723451</div>
+          <div className="text-white/70">DEST: TIN CAN ISLAND PORT</div>
+        </div>
+      </div>
+      <div className="pointer-events-none absolute right-[42%] top-[42%] z-[5] hidden xl:block">
+        <div className="flex items-start gap-2 rounded-md border border-[#FFB020]/40 bg-[#0A1424]/80 px-3 py-2 text-[10px] leading-tight text-white backdrop-blur-md">
+          <CloudDrizzle className="mt-0.5 h-3.5 w-3.5 text-[#FFB020]" />
+          <div>
+            <div className="font-bold text-[#FFB020]">WEATHER ALERT</div>
+            <div className="text-white/70">Moderate wind, 3.2 m waves</div>
+          </div>
+        </div>
+      </div>
+
+      {/* ============== RIGHT PANEL (auth card) ============== */}
+      <div className="relative z-10 flex flex-1 items-center justify-center px-6 py-10 lg:px-10">
+        <div className="w-full max-w-[440px]">
+          <div className="rounded-2xl border border-white/10 bg-[#0A1424]/80 p-8 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+            {/* Header */}
+            <div className="mb-6 text-center">
+              <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-lg border border-[#10E5C4]/40 bg-[#10E5C4]/10 text-[#10E5C4]">
+                <Lock className="h-5 w-5" />
               </div>
-              <h2 className="mt-1 text-[28px] font-semibold leading-tight text-[#0B2545]">
-                Sign in to Seaphore
-              </h2>
-              <p className="mt-2 text-[13.5px] leading-relaxed text-slate-500">
-                Secure access for authorized NIMASA officers to the maritime intelligence workspace.
-              </p>
+              <div className="text-[11px] font-bold uppercase tracking-[0.28em] text-[#10E5C4]">
+                Secure Access
+              </div>
+              <h2 className="mt-2 text-[24px] font-semibold text-white">Maritime Intelligence OS</h2>
+              <p className="mt-1 text-[12.5px] text-white/60">Authorized NIMASA Personnel Only</p>
             </div>
-
-            {isDev && !mfa && (
-              <button
-                type="button"
-                onClick={handleContinueAsAdmin}
-                className="mb-5 flex w-full items-center justify-center gap-2 rounded-lg border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-[13px] font-semibold text-amber-900 shadow-sm transition hover:bg-amber-500/15"
-              >
-                <ShieldCheck className="h-4 w-4" />
-                Continue as Admin
-                <span className="rounded-full bg-amber-500/25 px-2 py-0.5 text-[10px] uppercase tracking-wide">
-                  Dev
-                </span>
-              </button>
-            )}
-
 
             {mfa ? (
               <MfaChallenge
@@ -298,167 +358,186 @@ function AuthPage() {
                 }}
               />
             ) : (
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-[13px] font-semibold text-[#0B2545]">
-                  Official email
-                </Label>
-                <div className="relative">
-                  <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                  <Input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="name@nimasa.gov.ng"
-                    className="h-11 rounded-lg border-slate-200 pl-9 text-[14px] placeholder:text-slate-400 focus-visible:border-[#0F5F5A] focus-visible:ring-[#0F5F5A]/20"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="password" className="text-[13px] font-semibold text-[#0B2545]">
-                  Password
-                </Label>
-                <div className="relative">
-                  <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                  <Input
-                    id="password"
-                    type={showPw ? "text" : "password"}
-                    autoComplete="current-password"
-                    required
-                    minLength={8}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
-                    className="h-11 rounded-lg border-slate-200 pl-9 pr-10 text-[14px] placeholder:text-slate-400 focus-visible:border-[#0F5F5A] focus-visible:ring-[#0F5F5A]/20"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPw((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                    aria-label={showPw ? "Hide password" : "Show password"}
-                  >
-                    {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between text-[13px]">
-                <label className="flex cursor-pointer items-center gap-2 text-slate-600">
-                  <Checkbox
-                    checked={remember}
-                    onCheckedChange={(v) => setRemember(v === true)}
-                    className="border-slate-300 data-[state=checked]:border-[#0F5F5A] data-[state=checked]:bg-[#0F5F5A]"
-                  />
-                  Remember me
-                </label>
-                <button type="button" className="font-semibold text-[#0F5F5A] hover:underline">
-                  Forgot password?
-                </button>
-              </div>
-
-              {error && (
-                <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12.5px] text-red-700">
-                  {error}
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                disabled={submitting}
-                className="group h-12 w-full rounded-lg bg-[#0B2545] text-[14px] font-semibold text-white hover:bg-[#0B2545]/92"
-              >
-                {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Sign in
-                <ArrowRight className="ml-auto h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </Button>
-
-              <div className="relative py-1 text-center">
-                <div className="absolute inset-0 top-1/2 h-px bg-slate-200" />
-                <span className="relative bg-white px-3 text-[12px] text-slate-400">or</span>
-              </div>
-
-              <button
-                type="button"
-                className="flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-[#0F5F5A]/40 bg-white text-[14px] font-semibold text-[#0F5F5A] hover:bg-[#0F5F5A]/5"
-              >
-                <Fingerprint className="h-4 w-4" />
-                Sign in with NIMASA SSO
-              </button>
-
-              <p className="flex items-center justify-center gap-1.5 pt-2 text-center text-[11.5px] leading-relaxed text-slate-500">
-                <Lock className="h-3 w-3" />
-                All access is monitored and encrypted in accordance with NIMASA security policies.
-              </p>
-            </form>
-            )}
-
-            {isDev && (
-              <div className="mt-6 rounded-xl border border-dashed border-[#0F5F5A]/40 bg-[#0F5F5A]/[0.03] p-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#0F5F5A]">
-                    Development · One-click role sign-in
-                  </div>
-                  <span className="rounded-full bg-[#0F5F5A]/10 px-2 py-0.5 text-[10px] font-semibold text-[#0F5F5A]">
-                    DEV ONLY
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {DEMO_ROLES.map((r) => {
-                    const loading = demoLoading === r.key;
+              <>
+                {/* Role selector */}
+                <div className="mb-5 grid grid-cols-4 gap-1.5 rounded-xl border border-white/10 bg-black/20 p-1.5">
+                  {ROLE_TABS.map((r) => {
+                    const Icon = r.icon;
+                    const active = role === r.key;
                     return (
                       <button
                         key={r.key}
                         type="button"
-                        disabled={loading || submitting}
-                        onClick={() => handleDemoLogin(r.key)}
+                        onClick={() => setRole(r.key)}
                         className={cn(
-                          "group flex flex-col items-start gap-0.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-left transition-all hover:border-[#0F5F5A] hover:shadow-sm disabled:opacity-60",
+                          "flex flex-col items-center gap-1 rounded-lg px-1.5 py-2 text-[10.5px] font-semibold transition-all",
+                          active
+                            ? "border border-[#10E5C4]/50 bg-[#10E5C4]/10 text-[#10E5C4] shadow-[0_0_20px_-8px_rgba(16,229,196,0.6)]"
+                            : "text-white/60 hover:bg-white/5 hover:text-white/90",
                         )}
                       >
-                        <div className="flex w-full items-center justify-between">
-                          <span className="text-[12.5px] font-semibold text-[#0B2545]">
-                            {r.label}
-                          </span>
-                          {loading ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin text-[#0F5F5A]" />
-                          ) : (
-                            <ArrowRight className="h-3.5 w-3.5 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-[#0F5F5A]" />
-                          )}
-                        </div>
-                        <span className="text-[10.5px] leading-tight text-slate-500">
-                          {r.caption}
-                        </span>
+                        <Icon className="h-4 w-4" />
+                        {r.label}
                       </button>
                     );
                   })}
                 </div>
-                <p className="mt-3 text-[10.5px] leading-snug text-slate-500">
-                  Seeds a demo account with the selected RBAC role and signs in. Disabled in
-                  production.
-                </p>
-              </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {/* Email */}
+                  <div className="relative">
+                    <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+                    <Input
+                      id="email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Enter email or username"
+                      className="h-11 rounded-lg border-white/10 bg-black/30 pl-10 text-[13.5px] text-white placeholder:text-white/40 focus-visible:border-[#10E5C4] focus-visible:ring-[#10E5C4]/20"
+                    />
+                  </div>
+
+                  {/* Password */}
+                  <div className="relative">
+                    <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+                    <Input
+                      id="password"
+                      type={showPw ? "text" : "password"}
+                      autoComplete="current-password"
+                      required
+                      minLength={8}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter password"
+                      className="h-11 rounded-lg border-white/10 bg-black/30 pl-10 pr-10 text-[13.5px] text-white placeholder:text-white/40 focus-visible:border-[#10E5C4] focus-visible:ring-[#10E5C4]/20"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPw((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70"
+                      aria-label={showPw ? "Hide password" : "Show password"}
+                    >
+                      {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[12px]">
+                    <label className="flex cursor-pointer items-center gap-2 text-white/70">
+                      <Checkbox
+                        checked={remember}
+                        onCheckedChange={(v) => setRemember(v === true)}
+                        className="border-white/30 data-[state=checked]:border-[#10E5C4] data-[state=checked]:bg-[#10E5C4] data-[state=checked]:text-[#04121A]"
+                      />
+                      Remember me
+                    </label>
+                    <button
+                      type="button"
+                      className="font-semibold text-[#10E5C4] hover:underline"
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
+
+                  {error && (
+                    <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-[12px] text-red-200">
+                      {error}
+                    </div>
+                  )}
+
+                  <Button
+                    type="submit"
+                    disabled={submitting}
+                    className="group h-11 w-full rounded-lg bg-gradient-to-r from-[#10E5C4] to-[#12B39A] text-[13.5px] font-semibold text-[#04121A] shadow-[0_10px_30px_-8px_rgba(16,229,196,0.55)] hover:brightness-105"
+                  >
+                    {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Access Command Center
+                    <ArrowRight className="ml-auto h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  </Button>
+
+                  <div className="relative py-1 text-center">
+                    <div className="absolute inset-0 top-1/2 h-px bg-white/10" />
+                    <span className="relative bg-[#0A1424] px-3 text-[11px] uppercase tracking-widest text-white/40">
+                      OR
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/[0.03] text-[13px] font-semibold text-white hover:bg-white/[0.06]"
+                  >
+                    <ShieldCheck className="h-4 w-4 text-[#10E5C4]" />
+                    Sign in with NIMASA SSO
+                  </button>
+
+                  <p className="flex items-center justify-center gap-1.5 pt-1 text-center text-[10.5px] leading-relaxed text-white/50">
+                    <Lock className="h-3 w-3" />
+                    All access is monitored and encrypted in accordance with NIMASA security
+                    policies.
+                  </p>
+                </form>
+              </>
             )}
           </div>
-        </div>
 
-        <footer className="flex items-center justify-between px-8 pb-6 pt-2 text-[11px] text-slate-500">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-[#0F5F5A]" />
-            <span>© {new Date().getFullYear()} NIMASA. All rights reserved.</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <a href="#" className="hover:text-[#0B2545]">
-              Privacy Policy
-            </a>
-            <a href="#" className="hover:text-[#0B2545]">
-              Terms of Use
-            </a>
-          </div>
-        </footer>
+          {/* Dev quick access */}
+          {isDev && !mfa && (
+            <div className="mt-4 rounded-xl border border-dashed border-[#10E5C4]/30 bg-[#0A1424]/70 p-4 backdrop-blur-md">
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#10E5C4]">
+                  <Radar className="h-3.5 w-3.5" />
+                  Development · Quick Access
+                </div>
+                <span className="rounded-full bg-[#10E5C4]/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-[#10E5C4]">
+                  Preview
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {ROLE_TABS.map((r) => {
+                  const Icon = r.icon;
+                  const loading = devLoading === r.key;
+                  return (
+                    <button
+                      key={r.key}
+                      type="button"
+                      disabled={loading}
+                      onClick={() => handleQuickAccess(r.key)}
+                      className="group flex items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2.5 text-left transition hover:border-[#10E5C4]/50 hover:bg-[#10E5C4]/10 disabled:opacity-60"
+                    >
+                      <Icon className="h-4 w-4 text-[#10E5C4]" />
+                      <span className="flex-1 text-[12px] font-semibold text-white">
+                        {r.label === "Officer" ? "Intelligence Officer" : r.label}
+                      </span>
+                      {loading ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-[#10E5C4]" />
+                      ) : (
+                        <ArrowRight className="h-3.5 w-3.5 text-white/40 transition-transform group-hover:translate-x-0.5 group-hover:text-[#10E5C4]" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-3 text-[10px] leading-snug text-white/50">
+                Preview only. Bypass is disabled in production builds; real authentication is
+                enforced there.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-between px-6 py-3 text-[10.5px] uppercase tracking-widest text-white/50 lg:px-12">
+        <span>© 2026 NIMASA. All rights reserved.</span>
+        <span className="hidden items-center gap-2 md:flex">
+          <Anchor className="h-3 w-3 text-[#10E5C4]" />
+          Powered by Seaphore Maritime Intelligence OS
+        </span>
+        <span className="hidden items-center gap-2 md:flex">
+          <span className="inline-block h-2.5 w-4 rounded-sm bg-gradient-to-b from-[#008751] via-white to-[#008751]" />
+          Securing Nigeria's Maritime Domain
+        </span>
       </div>
     </div>
   );
