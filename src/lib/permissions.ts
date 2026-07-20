@@ -57,7 +57,7 @@ export type Permission =
  * Roles that satisfy each permission. Matches Part E precisely.
  */
 const MATRIX: Record<Permission, ReadonlyArray<Role>> = {
-  "entity.read": ["analyst", "officer", "director", "admin"],
+  "entity.read": ["external_agency", "analyst", "officer", "director", "admin"],
   "investigation.create": ["analyst", "officer", "director", "admin"],
   "investigation.close": ["officer", "director", "admin"],
   "investigation.escalate": ["officer", "director", "admin"],
@@ -66,14 +66,14 @@ const MATRIX: Record<Permission, ReadonlyArray<Role>> = {
   "decision.submit": ["officer", "director", "admin"],
   "briefing.send": ["analyst", "officer", "director", "admin"],
   "briefing.send.officialSensitive": ["officer", "director", "admin"],
-  "audit.read.own": ["analyst", "officer", "director", "admin"],
+  "audit.read.own": ["external_agency", "analyst", "officer", "director", "admin"],
   "audit.read.team": ["officer", "director", "admin"],
   "audit.read.all": ["director", "admin"],
   "user.manage": ["admin"],
   "role.manage": ["admin"],
   "administration.view": ["director", "admin"],
   "export.all": ["officer", "director", "admin"],
-  "export.own": ["analyst", "officer", "director", "admin"],
+  "export.own": ["external_agency", "analyst", "officer", "director", "admin"],
   "watchlist.configure": ["officer", "director", "admin"],
   "apiKey.manage": ["admin"],
 };
