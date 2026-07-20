@@ -685,32 +685,44 @@ export type Database = {
         Row: {
           collected_at: string
           collected_by: string | null
+          content_hash: string | null
           derived_from_document_id: string | null
           evidence_type: string
           id: string
           investigation_id: string
+          provenance: Json
           source: string | null
           storage_path: string | null
+          updated_at: string
+          version_history: Json
         }
         Insert: {
           collected_at?: string
           collected_by?: string | null
+          content_hash?: string | null
           derived_from_document_id?: string | null
           evidence_type: string
           id: string
           investigation_id: string
+          provenance?: Json
           source?: string | null
           storage_path?: string | null
+          updated_at?: string
+          version_history?: Json
         }
         Update: {
           collected_at?: string
           collected_by?: string | null
+          content_hash?: string | null
           derived_from_document_id?: string | null
           evidence_type?: string
           id?: string
           investigation_id?: string
+          provenance?: Json
           source?: string | null
           storage_path?: string | null
+          updated_at?: string
+          version_history?: Json
         }
         Relationships: [
           {
