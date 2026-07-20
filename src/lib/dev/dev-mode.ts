@@ -18,7 +18,10 @@ import type { Session, User } from "@supabase/supabase-js";
 
 import type { OfficerRole } from "@/stores/auth.store";
 
-export const DEV_MODE_AVAILABLE = import.meta.env.DEV;
+// Available in dev server AND in non-production builds (e.g. Lovable preview
+// `build:dev`), so the "Continue as Admin" affordance shows up on the preview
+// URL. Production builds (`import.meta.env.PROD === true`) disable it.
+export const DEV_MODE_AVAILABLE = !import.meta.env.PROD;
 
 export const DEV_ENV_BYPASS =
   DEV_MODE_AVAILABLE && String(import.meta.env.VITE_DEV_BYPASS_AUTH ?? "") === "true";
