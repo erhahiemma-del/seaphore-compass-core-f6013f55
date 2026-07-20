@@ -12,10 +12,9 @@ import type { MapVessel } from "@/components/gulf-of-guinea-map";
 
 export interface RibbonKpi {
   key: string;
-  label: string;
-  value: string;
-  delta: string;
-  deltaDirection: "up" | "down" | "flat";
+  title: string;
+  metric: string;
+  descriptor: string;
   confidence: ConfidenceTier;
   handoff: string;
   hint: string;
@@ -23,64 +22,58 @@ export interface RibbonKpi {
 
 export const RIBBON_KPIS: RibbonKpi[] = [
   {
-    key: "arrivals",
-    label: "Total Arrivals",
-    value: "247",
-    delta: "+12 vs yesterday",
-    deltaDirection: "up",
+    key: "manifest-intelligence",
+    title: "Manifest Intelligence",
+    metric: "18.2M",
+    descriptor: "Manifest Records Indexed",
     confidence: "observed",
-    handoff: "/detect",
-    hint: "Direct count from AIS/port data",
+    handoff: "/manifest",
+    hint: "Direct count of indexed manifest records",
   },
   {
-    key: "high-risk",
-    label: "High Risk Vessels",
-    value: "18",
-    delta: "+3 vs yesterday",
-    deltaDirection: "up",
-    confidence: "inferred",
-    handoff: "/detect",
-    hint: "Computed from risk signals",
+    key: "vessel-intelligence",
+    title: "Vessel Intelligence",
+    metric: "142K",
+    descriptor: "Vessel Profiles Maintained",
+    confidence: "observed",
+    handoff: "/vessel",
+    hint: "Active vessel profiles under management",
   },
   {
-    key: "revenue",
-    label: "Revenue at Risk",
-    value: "₦1.24B",
-    delta: "+₦180M vs 7d avg",
-    deltaDirection: "up",
+    key: "container-intelligence",
+    title: "Container Intelligence",
+    metric: "38.6M",
+    descriptor: "Container Movements Tracked",
+    confidence: "observed",
+    handoff: "/cargo",
+    hint: "Container movement events across ports",
+  },
+  {
+    key: "revenue-intelligence",
+    title: "Revenue Intelligence",
+    metric: "₦2.4B",
+    descriptor: "Revenue Leakage Identified",
     confidence: "inferred",
     handoff: "/revenue",
-    hint: "Aggregate estimate — opens to basis",
+    hint: "Model-estimated revenue leakage",
   },
   {
-    key: "duplicate",
-    label: "Duplicate Manifests",
-    value: "9",
-    delta: "-2 vs yesterday",
-    deltaDirection: "down",
+    key: "risk-intelligence",
+    title: "Risk Intelligence",
+    metric: "96%",
+    descriptor: "Detection Confidence",
     confidence: "inferred",
-    handoff: "/manifest",
-    hint: "Pattern-detected count",
-  },
-  {
-    key: "ais",
-    label: "AIS Anomalies",
-    value: "31",
-    delta: "+7 vs yesterday",
-    deltaDirection: "up",
-    confidence: "observed",
     handoff: "/detect",
-    hint: "Gap / blackout observations",
+    hint: "Aggregate detection confidence score",
   },
   {
-    key: "investigations",
-    label: "Open Investigations",
-    value: "42",
-    delta: "+1 vs yesterday",
-    deltaDirection: "up",
-    confidence: "inferred",
-    handoff: "/investigate",
-    hint: "Count of active cases",
+    key: "historical-intelligence",
+    title: "Historical Intelligence",
+    metric: "10 Years",
+    descriptor: "Maritime Intelligence Coverage",
+    confidence: "observed",
+    handoff: "/memory",
+    hint: "Years of historical intelligence coverage",
   },
 ];
 
