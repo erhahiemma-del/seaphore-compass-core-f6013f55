@@ -353,7 +353,7 @@ function AuthPage() {
             <img
               src={nimasaLogo.url}
               alt="NIMASA — Nigerian Maritime Administration and Safety Agency"
-              className="h-11 w-11 shrink-0 object-contain [filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.6))] [mix-blend-mode:screen]"
+              className="h-12 w-12 shrink-0 object-contain [filter:drop-shadow(0_1px_3px_rgba(0,0,0,0.55))]"
               loading="eager"
               decoding="async"
             />
