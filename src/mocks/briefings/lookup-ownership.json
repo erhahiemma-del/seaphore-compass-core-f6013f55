@@ -1,0 +1,48 @@
+{
+  "id": "brf-lookup-imo9319466",
+  "query": "Who owns IMO 9319466?",
+  "classification": {
+    "typeBadge": "Lookup",
+    "tier": "high",
+    "compositeConfidence": 0.92,
+    "evidenceStrength": "strong",
+    "latencyMs": 1240,
+    "model": "reasoning-v2"
+  },
+  "executive": {
+    "text": "IMO 9319466 (MT ATLANTIC HORIZON) is registered to Horizon Shipping Ltd, a Marshall Islands entity, with beneficial ownership held by a Cyprus-domiciled trust."
+  },
+  "entities": [
+    {
+      "id": "vsl-9319466",
+      "type": "vessel",
+      "name": "MT ATLANTIC HORIZON",
+      "identifiers": [
+        { "label": "IMO", "value": "9319466" },
+        { "label": "MMSI", "value": "636017890" }
+      ],
+      "flag": "Liberia",
+      "role": "Registered vessel",
+      "riskTier": "medium",
+      "lastSeen": "2026-07-18"
+    },
+    {
+      "id": "org-horizon",
+      "type": "company",
+      "name": "Horizon Shipping Ltd",
+      "identifiers": [{ "label": "LEI", "value": "254900MYQXP7T3F0U411" }],
+      "flag": "Marshall Islands",
+      "role": "Registered owner",
+      "riskTier": "medium"
+    }
+  ],
+  "evidenceSources": {
+    "queried": 4,
+    "responded": 4,
+    "corroborated": 3
+  },
+  "nextQuestions": [
+    "Show beneficial ownership chain",
+    "Any sanctions exposure on directors?"
+  ]
+}

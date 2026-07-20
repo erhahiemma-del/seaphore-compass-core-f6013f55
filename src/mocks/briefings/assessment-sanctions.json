@@ -1,0 +1,111 @@
+{
+  "id": "brf-assess-sanctions-2026-Q2",
+  "query": "Assess sanctions exposure for Q2 vessel calls at Onne",
+  "classification": {
+    "typeBadge": "Assessment",
+    "tier": "medium",
+    "compositeConfidence": 0.71,
+    "evidenceStrength": "moderate",
+    "latencyMs": 4820,
+    "model": "reasoning-v2"
+  },
+  "executive": {
+    "text": "Two of 147 Q2 vessel calls at Onne involved entities with indirect exposure to OFAC-designated persons. Neither vessel is itself sanctioned, and neither call independently triggers enforcement."
+  },
+  "criticalFindings": [
+    {
+      "id": "cf-1",
+      "priority": "today",
+      "title": "IMO 9412778 charterer shares director with OFAC SDN entry #26011",
+      "grade": "CORROBORATED",
+      "source": "OpenSanctions + OpenCorporates"
+    },
+    {
+      "id": "cf-2",
+      "priority": "monitor",
+      "title": "IMO 9527884 flag change 3 days before Onne arrival",
+      "grade": "OBSERVED",
+      "source": "MarineTraffic"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev-1",
+      "grade": "VERIFIED",
+      "title": "OFAC SDN list entry #26011 (Sokolov, Andrei)",
+      "source": "OFAC (2026-07-01)",
+      "observedAt": "2026-07-01",
+      "summary": "Designated under EO 13662; ownership > 50% presumption applies.",
+      "hash": "d41d8cd98f00b204e9800998ecf8427e"
+    },
+    {
+      "id": "ev-2",
+      "grade": "CORROBORATED",
+      "title": "Cross-directorship between charterer and SDN entity",
+      "source": "OpenCorporates + OpenSanctions",
+      "observedAt": "2026-07-15",
+      "summary": "Same natural person listed as director in both filings."
+    },
+    {
+      "id": "ev-3",
+      "grade": "OBSERVED",
+      "title": "Flag hopping pattern within 30 days of port call",
+      "source": "MarineTraffic",
+      "observedAt": "2026-07-12"
+    },
+    {
+      "id": "ev-4",
+      "grade": "REPORTED",
+      "title": "Broker chat mentions 'discreet routing' for the voyage",
+      "source": "OSINT — Telegram channel"
+    }
+  ],
+  "analytical": {
+    "text": "Circumstantial link is credible but does not meet the enforcement threshold. Recommend enhanced due-diligence flag with mandatory secondary review at next call."
+  },
+  "whyChain": [
+    { "step": "1", "from": "SDN entry", "to": "Natural person Sokolov" },
+    { "step": "2", "from": "Sokolov", "to": "Director of charterer" },
+    { "step": "3", "from": "Charterer", "to": "IMO 9412778 voyage 2026-Q2-014" }
+  ],
+  "counterHypotheses": [
+    "Namesake collision — two different Andrei Sokolovs share the identifier.",
+    "Historical directorship expired before the designation."
+  ],
+  "intelligenceGaps": [
+    "Passport / national ID confirming the two Sokolov records are the same person.",
+    "Beneficial-ownership share percentage above OFAC 50% presumption."
+  ],
+  "decisionImpact": {
+    "revenue": 0.15,
+    "security": 0.72,
+    "operational": 0.4,
+    "cargo": 0.3
+  },
+  "decisionRequired": {
+    "deadline": "2026-07-24T18:00:00Z",
+    "risk": "Medium"
+  },
+  "officerActions": [
+    { "id": "act-flag", "label": "Flag IMO 9412778 for enhanced due diligence" },
+    { "id": "act-review", "label": "Trigger secondary review at next port call" },
+    { "id": "act-notify", "label": "Notify NIMASA compliance desk" }
+  ],
+  "evidenceSources": {
+    "queried": 6,
+    "responded": 5,
+    "corroborated": 3,
+    "detail": [
+      { "name": "OFAC", "grade": "VERIFIED", "responded": true },
+      { "name": "OpenSanctions", "grade": "CORROBORATED", "responded": true },
+      { "name": "OpenCorporates", "grade": "CORROBORATED", "responded": true },
+      { "name": "MarineTraffic", "grade": "OBSERVED", "responded": true },
+      { "name": "OSINT feeds", "grade": "REPORTED", "responded": true },
+      { "name": "INTERPOL notices", "grade": "UNKNOWN", "responded": false }
+    ]
+  },
+  "nextQuestions": [
+    "Show all vessels associated with the charterer's director",
+    "What is the full 12-month call history at Onne for this operator?"
+  ]
+}

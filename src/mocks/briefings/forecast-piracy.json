@@ -1,0 +1,46 @@
+{
+  "id": "brf-forecast-piracy-2026-Q3",
+  "query": "Forecast piracy risk in the Gulf of Guinea for Q3 2026",
+  "classification": {
+    "typeBadge": "Forecast",
+    "tier": "low",
+    "compositeConfidence": 0.42,
+    "evidenceStrength": "weak",
+    "latencyMs": 11840,
+    "model": "reasoning-v2"
+  },
+  "executive": {
+    "text": "Baseline forecast is elevated but uncertain: incident telemetry lags 6 weeks, weather models diverge on monsoon timing, and reporting from the eastern sector is intermittent."
+  },
+  "patterns": [
+    {
+      "id": "pat-1",
+      "pattern": "Historical Q3 uplift of 22–35% versus Q2",
+      "significance": "notable",
+      "observedCount": 5,
+      "firstSeen": "2021",
+      "lastSeen": "2025"
+    }
+  ],
+  "analytical": {
+    "text": "Directional signal is real; magnitude is not defensible below moderate confidence. Recommend advisory-only publication with explicit gap disclosure."
+  },
+  "counterHypotheses": [
+    "Reporting bias — 2025 uplift reflects better sensor coverage, not more incidents.",
+    "Naval patrol schedule change may suppress Q3 attempts."
+  ],
+  "intelligenceGaps": [
+    "Real-time AIS blackout logs for the eastern sector.",
+    "Confirmed vs suspected incident reclassifications for 2025-Q3.",
+    "Fuel-price correlation dataset from ECOWAS observatory."
+  ],
+  "evidenceSources": {
+    "queried": 8,
+    "responded": 5,
+    "corroborated": 2
+  },
+  "nextQuestions": [
+    "Which sectors have the largest reporting gap?",
+    "Cross-reference with tanker charter rates for Q3"
+  ]
+}

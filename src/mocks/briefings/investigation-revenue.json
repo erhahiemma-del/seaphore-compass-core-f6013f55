@@ -1,0 +1,98 @@
+{
+  "id": "brf-invest-revenue-2026-07",
+  "query": "Investigate suspected revenue leakage on 2026-07 sugar imports at Lagos",
+  "classification": {
+    "typeBadge": "Investigation",
+    "tier": "high",
+    "compositeConfidence": 0.86,
+    "evidenceStrength": "strong",
+    "latencyMs": 7620,
+    "model": "reasoning-v2"
+  },
+  "executive": {
+    "text": "Manifest weights for 11 of 34 July sugar shipments at Lagos under-report against draft-survey estimates by an average 6.2%, corresponding to an estimated ₦412M in unpaid duty."
+  },
+  "criticalFindings": [
+    {
+      "id": "cf-1",
+      "priority": "immediate",
+      "title": "Systematic manifest / draft-survey delta on 11 shipments",
+      "grade": "CORROBORATED",
+      "source": "NIMASA manifests + independent surveyor"
+    }
+  ],
+  "entities": [
+    {
+      "id": "org-agri",
+      "type": "company",
+      "name": "AgriTrade Nigeria Ltd",
+      "identifiers": [{ "label": "RC", "value": "RC-1284591" }],
+      "role": "Importer",
+      "riskTier": "high"
+    },
+    {
+      "id": "port-lagos",
+      "type": "port",
+      "name": "Lagos (Apapa)",
+      "identifiers": [{ "label": "LOCODE", "value": "NGLOS" }]
+    }
+  ],
+  "patterns": [
+    {
+      "id": "pat-1",
+      "pattern": "Same surveyor signs off on every under-reported shipment",
+      "significance": "material",
+      "caseRefs": ["CASE-2024-118", "CASE-2025-042"],
+      "observedCount": 11,
+      "firstSeen": "2026-07-02",
+      "lastSeen": "2026-07-28"
+    },
+    {
+      "id": "pat-2",
+      "pattern": "Delta clusters between 5–8% — below the 10% audit trigger",
+      "significance": "notable",
+      "observedCount": 11
+    }
+  ],
+  "analytical": {
+    "text": "The pattern is consistent with structured under-declaration to stay below the automatic audit threshold. Enforcement threshold met for administrative review; criminal referral requires interview evidence."
+  },
+  "whyChain": [
+    { "step": "1", "from": "Draft survey", "to": "Weight estimate" },
+    { "step": "2", "from": "Weight estimate", "to": "Manifest delta" },
+    { "step": "3", "from": "Delta", "to": "Unpaid duty calculation" },
+    { "step": "4", "from": "Repeat surveyor", "to": "Structured pattern" }
+  ],
+  "counterHypotheses": [
+    "Legitimate moisture loss between load port and discharge.",
+    "Calibration drift on the port weighbridge, not under-declaration."
+  ],
+  "intelligenceGaps": [
+    "Load-port draft survey copies for cross-check.",
+    "Surveyor licensing records and prior disciplinary history."
+  ],
+  "decisionImpact": {
+    "revenue": 0.88,
+    "security": 0.2,
+    "operational": 0.45,
+    "cargo": 0.6
+  },
+  "decisionRequired": {
+    "deadline": "2026-07-22T12:00:00Z",
+    "risk": "High"
+  },
+  "officerActions": [
+    { "id": "act-audit", "label": "Open administrative audit on AgriTrade Nigeria Ltd" },
+    { "id": "act-surveyor", "label": "Request surveyor licensing file" },
+    { "id": "act-hold", "label": "Place next shipment under mandatory reweigh" }
+  ],
+  "evidenceSources": {
+    "queried": 5,
+    "responded": 5,
+    "corroborated": 4
+  },
+  "nextQuestions": [
+    "Compare AgriTrade's 2025 vs 2026 delta distribution",
+    "Which other importers use the same surveyor?"
+  ]
+}

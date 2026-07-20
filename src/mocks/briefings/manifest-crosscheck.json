@@ -1,0 +1,81 @@
+{
+  "id": "brf-invest-manifest-lookup",
+  "query": "Cross-check manifest MN-2026-07-1183 against declared cargo",
+  "classification": {
+    "typeBadge": "Investigation",
+    "tier": "medium",
+    "compositeConfidence": 0.63,
+    "evidenceStrength": "moderate",
+    "latencyMs": 3960,
+    "model": "reasoning-v2"
+  },
+  "executive": {
+    "text": "Manifest MN-2026-07-1183 declares 240 TEU of assorted electronics. OCR extraction and shipping-line records agree on TEU count; two container HS codes conflict with the shipping-line record."
+  },
+  "criticalFindings": [
+    {
+      "id": "cf-1",
+      "priority": "today",
+      "title": "HS code mismatch on 2 of 240 containers (8517.13 vs 8471.30)",
+      "grade": "OBSERVED",
+      "source": "OCR + carrier EDI"
+    }
+  ],
+  "entities": [
+    {
+      "id": "mnf-2026-07-1183",
+      "type": "manifest",
+      "name": "MN-2026-07-1183",
+      "identifiers": [
+        { "label": "BL", "value": "MSCU-8827134" },
+        { "label": "Voyage", "value": "MSC-JADE 2026-Q3-011" }
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev-1",
+      "grade": "VERIFIED",
+      "title": "Carrier EDI (MSC) container list",
+      "source": "MSC EDI (2026-07-18)"
+    },
+    {
+      "id": "ev-2",
+      "grade": "OBSERVED",
+      "title": "OCR extract of stamped paper manifest",
+      "source": "Seaphore OCR pipeline (confidence 0.94)"
+    },
+    {
+      "id": "ev-3",
+      "grade": "INFERRED",
+      "title": "HS code mismatch flagged by classification model",
+      "source": "Copilot classifier"
+    }
+  ],
+  "analytical": {
+    "text": "Two-container mismatch is small but crosses the HS-code discrepancy threshold that historically precedes reclassification for duty evasion. Recommend targeted physical inspection of the two containers only."
+  },
+  "whyChain": [
+    { "step": "1", "from": "Paper manifest OCR", "to": "Container list" },
+    { "step": "2", "from": "Container list", "to": "HS code per container" },
+    { "step": "3", "from": "Cross-check with EDI", "to": "2 mismatches" }
+  ],
+  "intelligenceGaps": [
+    "Physical inspection outcome for the two flagged containers."
+  ],
+  "decisionImpact": {
+    "revenue": 0.25,
+    "security": 0.1,
+    "operational": 0.35,
+    "cargo": 0.55
+  },
+  "officerActions": [
+    { "id": "act-inspect", "label": "Order physical inspection of containers MSCU-8827134-042 and -117" },
+    { "id": "act-hold", "label": "Place manifest on customs hold pending inspection" }
+  ],
+  "evidenceSources": {
+    "queried": 3,
+    "responded": 3,
+    "corroborated": 2
+  }
+}
