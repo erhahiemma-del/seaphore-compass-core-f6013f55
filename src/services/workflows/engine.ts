@@ -177,12 +177,12 @@ export class WorkflowEngine {
 
     const handler = HANDLERS[record.workflow];
     const parsed = handler.schema.safeParse(record.input);
+    const attemptForValidation = record.attempts + 1;
     if (!parsed.success) {
-      return this.transition(record, "running", record.attempts + 1, "Input validation started.")
-        ? this.transition(this.store.get(runId)!, "failed", record.attempts + 1, `Input validation failed: ${parsed.error.message}`, {
-            error: parsed.error.message,
-          })
-        : record;
+      const running = this.transition(record, "running", attemptForValidation, `Attempt ${attemptForValidation} started.`);
+      return this.transition(running, "failed", attemptForValidation, `Input validation failed: ${parsed.error.message}`, {
+        error: parsed.error.message,
+      });
     }
 
     const attempt = record.attempts + 1;
