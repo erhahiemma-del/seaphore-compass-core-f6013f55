@@ -67,7 +67,7 @@ function OsintDashboard() {
   const fetchConnectors = useServerFn(listOsintConnectors);
   const fetchRuns = useServerFn(listOsintSyncRuns);
   const fetchDlq = useServerFn(listOsintDeadLetters);
-  const devBypass = String(import.meta.env.VITE_DEV_BYPASS_AUTH ?? "") === "true";
+  const devBypass = useDevModeStore((s) => s.bypassAuth) && DEV_MODE_AVAILABLE;
 
   // One-shot: make sure any in-code connectors are mirrored to the DB.
   useEffect(() => {
