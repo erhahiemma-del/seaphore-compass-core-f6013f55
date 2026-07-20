@@ -7,10 +7,12 @@ import { mockAisConnector } from "./mock";
 import { imoGisisConnector } from "@/connectors/imo-gisis";
 import { equasisConnector } from "@/connectors/equasis";
 import { ofacSanctionsConnector } from "@/connectors/ofac-sanctions";
+import { unEuSanctionsConnector } from "@/connectors/un---eu-sanctions";
 
 registerConnector(mockAisConnector);
 registerConnector(imoGisisConnector);
 registerConnector(equasisConnector);
 registerConnector(ofacSanctionsConnector);
+registerConnector(unEuSanctionsConnector);
 
-export { mockAisConnector, imoGisisConnector, equasisConnector, ofacSanctionsConnector };
+export { mockAisConnector, imoGisisConnector, equasisConnector, ofacSanctionsConnector, unEuSanctionsConnector };
