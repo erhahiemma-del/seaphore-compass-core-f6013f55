@@ -85,21 +85,9 @@ export function MissionControl() {
 function Ribbon() {
   const handoff = useHandoffNavigate();
   return (
-    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
       {RIBBON_KPIS.map((kpi) => {
         const Icon = RIBBON_ICONS[kpi.key] ?? Activity;
-        const DeltaIcon =
-          kpi.deltaDirection === "up"
-            ? ArrowUpRight
-            : kpi.deltaDirection === "down"
-              ? ArrowDownRight
-              : Minus;
-        const deltaColor =
-          kpi.deltaDirection === "up"
-            ? "text-[color:var(--color-red)]"
-            : kpi.deltaDirection === "down"
-              ? "text-[color:var(--color-green)]"
-              : "text-slate";
         return (
           <button
             key={kpi.key}
@@ -117,16 +105,13 @@ function Ribbon() {
               <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[color:var(--color-teal)]/10 text-[color:var(--color-teal)]">
                 <Icon className="h-4 w-4" />
               </span>
-              <span className="type-label text-slate">{kpi.label}</span>
+              <span className="type-label text-slate">{kpi.title}</span>
             </div>
             <div className="mt-2 type-mono text-[22px] font-bold text-foreground tabular-nums">
-              {kpi.value}
+              {kpi.metric}
             </div>
-            <div
-              className={cn("mt-0.5 flex items-center gap-1 text-[11px] font-semibold", deltaColor)}
-            >
-              <DeltaIcon className="h-3 w-3" />
-              {kpi.delta}
+            <div className="mt-0.5 text-[11px] font-semibold text-slate">
+              {kpi.descriptor}
             </div>
             <div className="mt-2">
               <ConfidenceChip tier={kpi.confidence} size={9} />
