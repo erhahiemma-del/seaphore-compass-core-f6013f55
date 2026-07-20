@@ -97,14 +97,14 @@ export function createCache(
       hits++;
       return entry.value as V;
     },
-    set<V>(key, value, ttlMs = opts.ttlMs) {
+    set<V>(key: string, value: V, ttlMs: number = opts.ttlMs) {
       store.set(k(key), { value, createdAt: now(), expiresAt: now() + ttlMs });
     },
-    delete(key) {
+    delete(key: string) {
       if (store.get(k(key))) evictions++;
       store.delete(k(key));
     },
-    invalidatePrefix(prefix) {
+    invalidatePrefix(prefix: string) {
       const full = k(prefix);
       let n = 0;
       for (const key of store.keys()) {
@@ -116,7 +116,7 @@ export function createCache(
     stats() {
       return { hits, misses, evictions, expirations, size: store.size() };
     },
-    async wrap<V>(key, loader, ttlMs) {
+    async wrap<V>(key: string, loader: () => Promise<V>, ttlMs?: number): Promise<V> {
       const cached = this.get<V>(key);
       if (cached !== undefined) return cached;
       const value = await loader();
