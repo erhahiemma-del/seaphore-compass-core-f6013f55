@@ -58,6 +58,10 @@ export function CopilotWorkspace({
   const context = useCopilotStore((s) => s.context);
   const runQuery = useServerFn(copilotQueryFn);
   const submitOverride = useServerFn(copilotOverrideFn);
+  const devBypass = useDevModeStore((s) => s.bypassAuth) && DEV_MODE_AVAILABLE;
+  const authUserId = useAuthStore((s) => s.user?.id);
+  const officerId = devBypass ? MOCK_OFFICER_ID : (authUserId ?? MOCK_OFFICER_ID);
+
 
   const [text, setText] = useState("");
   const [stage, setStage] = useState<Stage>("idle");
