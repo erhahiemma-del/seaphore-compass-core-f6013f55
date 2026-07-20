@@ -269,6 +269,21 @@ function AuthPage() {
               </p>
             </div>
 
+            {isDev && !mfa && (
+              <button
+                type="button"
+                onClick={handleContinueAsAdmin}
+                className="mb-5 flex w-full items-center justify-center gap-2 rounded-lg border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-[13px] font-semibold text-amber-900 shadow-sm transition hover:bg-amber-500/15"
+              >
+                <ShieldCheck className="h-4 w-4" />
+                Continue as Admin
+                <span className="rounded-full bg-amber-500/25 px-2 py-0.5 text-[10px] uppercase tracking-wide">
+                  Dev
+                </span>
+              </button>
+            )}
+
+
             {mfa ? (
               <MfaChallenge
                 factorId={mfa.factorId}
