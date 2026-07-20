@@ -59,7 +59,7 @@ export function CopilotWorkspace({
   const runQuery = useServerFn(copilotQueryFn);
   const submitOverride = useServerFn(copilotOverrideFn);
   const devBypass = useDevModeStore((s) => s.bypassAuth) && DEV_MODE_AVAILABLE;
-  const authUserId = useAuthStore((s) => s.user?.id);
+  const authUserId = useAuthStore((s) => s.officer?.userId);
   const officerId = devBypass ? MOCK_OFFICER_ID : (authUserId ?? MOCK_OFFICER_ID);
 
 
