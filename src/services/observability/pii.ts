@@ -30,7 +30,7 @@ export function scrub(text: string): string {
   if (!text) return text;
   return text
     .replace(EMAIL, "[email]")
-    .replace(PHONE, "[phone]")
     .replace(IMO, "[imo]")
-    .replace(LONG_DIGITS, "[num]");
+    .replace(LONG_DIGITS, "[num]")
+    .replace(PHONE, "[phone]");
 }

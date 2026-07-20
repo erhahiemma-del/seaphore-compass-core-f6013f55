@@ -26,6 +26,15 @@ export interface AlertEvent {
   readonly snapshotAt: string;
 }
 
+/** Sum counters whose key starts with `prefix{` or equals `prefix`. */
+function counterSum(counters: Readonly<Record<string, number>>, prefix: string): number {
+  let sum = 0;
+  for (const [k, v] of Object.entries(counters)) {
+    if (k === prefix || k.startsWith(`${prefix}{`)) sum += v;
+  }
+  return sum;
+}
+
 /** Sprint 11 defaults — tune later. */
 export function defaultRules(): AlertRule[] {
   return [
@@ -33,7 +42,7 @@ export function defaultRules(): AlertRule[] {
       name: "error_rate_high",
       severity: "critical",
       description: "Pipeline error count exceeded 20 in the current window.",
-      evaluate: (s) => (s.counters["pipeline_errors_total"] ?? 0) > 20,
+      evaluate: (s) => counterSum(s.counters, "pipeline_errors_total") > 20,
     },
     {
       name: "latency_p95_slow",
