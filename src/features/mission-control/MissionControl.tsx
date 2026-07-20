@@ -1,4 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { getIntelligenceMetrics } from "@/lib/intelligence-metrics.functions";
 import {
   Activity,
   AlertTriangle,
@@ -84,10 +86,18 @@ export function MissionControl() {
 
 function Ribbon() {
   const handoff = useHandoffNavigate();
+  const { data: metrics } = useQuery({
+    queryKey: ["intelligence-metrics"],
+    queryFn: () => getIntelligenceMetrics(),
+    staleTime: 60_000,
+  });
   return (
     <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
       {RIBBON_KPIS.map((kpi) => {
         const Icon = RIBBON_ICONS[kpi.key] ?? Activity;
+        const live = metrics?.[kpi.metricKey];
+        const displayMetric = live?.display ?? kpi.metric;
+        const displayConfidence = live?.confidence ?? kpi.confidence;
         return (
           <button
             key={kpi.key}
@@ -108,13 +118,13 @@ function Ribbon() {
               <span className="type-label text-slate">{kpi.title}</span>
             </div>
             <div className="mt-2 type-mono text-[22px] font-bold text-foreground tabular-nums">
-              {kpi.metric}
+              {displayMetric}
             </div>
             <div className="mt-0.5 text-[11px] font-semibold text-slate">
               {kpi.descriptor}
             </div>
             <div className="mt-2">
-              <ConfidenceChip tier={kpi.confidence} size={9} />
+              <ConfidenceChip tier={displayConfidence} size={9} />
             </div>
           </button>
         );

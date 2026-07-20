@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { getIntelligenceMetrics } from "@/lib/intelligence-metrics.functions";
 import {
   Anchor,
   ArrowRight,
@@ -127,42 +129,48 @@ const MISSION_ROLES: {
 const KPI_CARDS = [
   {
     icon: ScrollText,
-    value: "18.2M",
+    metricKey: "manifest" as const,
+    fallback: "—",
     label: "MANIFEST INTELLIGENCE",
     sub: "Records Indexed",
     tone: "teal",
   },
   {
     icon: Ship,
-    value: "142K",
+    metricKey: "vessel" as const,
+    fallback: "—",
     label: "VESSEL INTELLIGENCE",
     sub: "Profiles Maintained",
     tone: "teal",
   },
   {
     icon: Briefcase,
-    value: "38.6M",
+    metricKey: "container" as const,
+    fallback: "—",
     label: "CONTAINER INTELLIGENCE",
     sub: "Movements Tracked",
     tone: "teal",
   },
   {
     icon: Anchor,
-    value: "₦2.4B",
+    metricKey: "revenue" as const,
+    fallback: "—",
     label: "REVENUE INTELLIGENCE",
     sub: "Leakage Identified",
     tone: "teal",
   },
   {
     icon: ShieldCheck,
-    value: "96%",
+    metricKey: "risk" as const,
+    fallback: "—",
     label: "RISK INTELLIGENCE",
     sub: "Detection Confidence",
     tone: "teal",
   },
   {
     icon: BarChart3,
-    value: "10 YRS",
+    metricKey: "historical" as const,
+    fallback: "—",
     label: "HISTORICAL INTELLIGENCE",
     sub: "Coverage",
     tone: "teal",
@@ -192,6 +200,11 @@ function AuthPage() {
   const [submitting, setSubmitting] = useState(false);
   const [devLoading, setDevLoading] = useState<RoleKey | null>(null);
   const [mfa, setMfa] = useState<{ factorId: string; factorName: string } | null>(null);
+  const { data: intelligenceMetrics } = useQuery({
+    queryKey: ["intelligence-metrics"],
+    queryFn: () => getIntelligenceMetrics(),
+    staleTime: 60_000,
+  });
 
   const isDev = DEV_MODE_AVAILABLE;
 
@@ -420,6 +433,8 @@ function AuthPage() {
           <div className="mt-8 grid grid-cols-3 gap-3 xl:grid-cols-6 xl:gap-3">
             {KPI_CARDS.map((k) => {
               const Icon = k.icon;
+              const live = intelligenceMetrics?.[k.metricKey];
+              const value = live?.display ?? k.fallback;
               const valueColor = k.tone === "red" ? "text-[#FF6B6B]" : "text-white";
               return (
                 <div
@@ -433,7 +448,7 @@ function AuthPage() {
                     )}
                   />
                   <div className={cn("text-[20px] font-bold leading-none", valueColor)}>
-                    {k.value}
+                    {value}
                   </div>
                   <div
                     className={cn(

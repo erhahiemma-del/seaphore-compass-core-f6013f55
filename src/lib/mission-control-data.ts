@@ -10,8 +10,17 @@ import type { ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
 import type { RiskLevel } from "@/components/intelligence/RiskPill";
 import type { MapVessel } from "@/components/gulf-of-guinea-map";
 
+export type MetricKey =
+  | "manifest"
+  | "vessel"
+  | "container"
+  | "revenue"
+  | "risk"
+  | "historical";
+
 export interface RibbonKpi {
   key: string;
+  metricKey: MetricKey;
   title: string;
   metric: string;
   descriptor: string;
@@ -23,8 +32,9 @@ export interface RibbonKpi {
 export const RIBBON_KPIS: RibbonKpi[] = [
   {
     key: "manifest-intelligence",
+    metricKey: "manifest",
     title: "Manifest Intelligence",
-    metric: "18.2M",
+    metric: "—",
     descriptor: "Manifest Records Indexed",
     confidence: "observed",
     handoff: "/manifest",
@@ -32,8 +42,9 @@ export const RIBBON_KPIS: RibbonKpi[] = [
   },
   {
     key: "vessel-intelligence",
+    metricKey: "vessel",
     title: "Vessel Intelligence",
-    metric: "142K",
+    metric: "—",
     descriptor: "Vessel Profiles Maintained",
     confidence: "observed",
     handoff: "/vessel",
@@ -41,8 +52,9 @@ export const RIBBON_KPIS: RibbonKpi[] = [
   },
   {
     key: "container-intelligence",
+    metricKey: "container",
     title: "Container Intelligence",
-    metric: "38.6M",
+    metric: "—",
     descriptor: "Container Movements Tracked",
     confidence: "observed",
     handoff: "/cargo",
@@ -50,8 +62,9 @@ export const RIBBON_KPIS: RibbonKpi[] = [
   },
   {
     key: "revenue-intelligence",
+    metricKey: "revenue",
     title: "Revenue Intelligence",
-    metric: "₦2.4B",
+    metric: "—",
     descriptor: "Revenue Leakage Identified",
     confidence: "inferred",
     handoff: "/revenue",
@@ -59,8 +72,9 @@ export const RIBBON_KPIS: RibbonKpi[] = [
   },
   {
     key: "risk-intelligence",
+    metricKey: "risk",
     title: "Risk Intelligence",
-    metric: "96%",
+    metric: "—",
     descriptor: "Detection Confidence",
     confidence: "inferred",
     handoff: "/detect",
@@ -68,8 +82,9 @@ export const RIBBON_KPIS: RibbonKpi[] = [
   },
   {
     key: "historical-intelligence",
+    metricKey: "historical",
     title: "Historical Intelligence",
-    metric: "10 Years",
+    metric: "—",
     descriptor: "Maritime Intelligence Coverage",
     confidence: "observed",
     handoff: "/memory",
