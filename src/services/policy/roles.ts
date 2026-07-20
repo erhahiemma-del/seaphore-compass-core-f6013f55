@@ -23,6 +23,10 @@ export const ROLE_PERMISSIONS: Readonly<Record<Role, ReadonlySet<Permission>>> =
     "CAN_CREATE_CASE",
     "CAN_NOTIFY_CUSTOMS",
     "CAN_REQUEST_DOCUMENTS",
+    // Officers hold assign/freeze permissions but escalation rules require
+    // director+ approval — see escalation.ts.
+    "CAN_ASSIGN_OFFICERS",
+    "CAN_FREEZE_CLEARANCE",
   ]),
   analyst: new Set<Permission>(["CAN_REQUEST_DOCUMENTS"]),
 });
