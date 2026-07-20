@@ -44,13 +44,25 @@ async function runSharedIngestionPipeline(
 ): Promise<IngestionResult> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { ingestRecords } = await import("@/lib/osint/ingestion");
-  // Sync-run id is created by the scheduler. When ingest() is called
-  // outside the scheduler (rare — e.g. backfill scripts), we generate a
-  // one-off run row so the DLQ still links to something meaningful.
+  // The scheduler normally owns the sync-run row and passes its id in.
+  // When ingest() is invoked outside the scheduler (backfill scripts,
+  // ad-hoc replays) we look up the connector row and open a one-off
+  // run so DLQ inserts still link to a real run.
+  const { data: connectorRow } = await supabaseAdmin
+    .from("osint_connectors")
+    .select("id")
+    .eq("name", connector.name)
+    .single();
+  const connectorId = (connectorRow as { id: string } | null)?.id;
+  if (!connectorId) {
+    throw new Error(
+      `Connector ${connector.name} is not registered — cannot ingest`,
+    );
+  }
   const { data: run } = await supabaseAdmin
     .from("osint_sync_runs")
     .insert({
-      connector_id: null,
+      connector_id: connectorId,
       started_at: new Date().toISOString(),
       status: "running",
     })
