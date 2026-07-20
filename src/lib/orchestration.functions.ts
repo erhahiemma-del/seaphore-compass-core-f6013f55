@@ -47,7 +47,7 @@ export const copilotQueryFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     // Hardening: per-officer token bucket at the request boundary.
     const limitKey = `copilot:${context.userId}`;
-    const rl = hardening.copilotLimiter.tryConsume(limitKey);
+    const rl = hardening.copilotLimiter.take(limitKey);
     if (!rl.allowed) {
       throw new Error(
         `[copilot] rate limit exceeded — retry in ${Math.ceil(rl.retryAfterMs / 1000)}s`,
@@ -63,7 +63,7 @@ export const copilotQueryFn = createServerFn({ method: "POST" })
     });
 
     try {
-      const briefing = await trace.stage("orchestration", () =>
+      const briefing = await trace.stage("total", () =>
         orchestrate({
           query: data.query,
           session_id: data.session_id,
@@ -85,7 +85,7 @@ export const copilotQueryFn = createServerFn({ method: "POST" })
         latency_ms: briefing.latency_ms,
       };
     } catch (err) {
-      trace.recordError(err, "orchestration");
+      trace.recordError(err, "total");
       trace.finish({ ok: false });
       throw err;
     }

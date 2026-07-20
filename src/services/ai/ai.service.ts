@@ -38,17 +38,27 @@ export interface AiService {
 /** Lovable AI Gateway implementation via the Copilot server function. */
 class GeminiCopilotService implements AiService {
   async ask(input: AiRequest): Promise<AiResponse> {
-    const raw = (await askCopilot({ data: { prompt: input.prompt } })) as {
+    const raw = (await askCopilot({ data: { prompt: input.prompt } })) as unknown as {
       answer?: string;
       text?: string;
-      confidence?: AiResponse["confidence"];
+      confidence?: string;
       citations?: AiResponse["citations"];
       unknowns?: string[];
     };
     const answer = raw?.answer ?? raw?.text ?? "";
+    const confMap: Record<string, AiResponse["confidence"]> = {
+      verified: "VERIFIED",
+      observed: "OBSERVED",
+      inferred: "INFERRED",
+      unconfirmed: "UNCONFIRMED",
+      VERIFIED: "VERIFIED",
+      OBSERVED: "OBSERVED",
+      INFERRED: "INFERRED",
+      UNCONFIRMED: "UNCONFIRMED",
+    };
     return {
       text: answer,
-      confidence: raw?.confidence ?? "INFERRED",
+      confidence: confMap[raw?.confidence ?? ""] ?? "INFERRED",
       citations: raw?.citations ?? [],
       unknowns: raw?.unknowns ?? (answer ? [] : ["The AI service returned no text; treat as UNCONFIRMED."]),
     };
