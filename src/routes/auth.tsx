@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { getIntelligenceMetrics } from "@/lib/intelligence-metrics.functions";
 import {
   Anchor,
   ArrowRight,
