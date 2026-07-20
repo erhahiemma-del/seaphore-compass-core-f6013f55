@@ -12,18 +12,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { QUERY_KEYS } from "@/lib/query-keys";
 import { can, highestRole, type Permission, type Role } from "@/lib/permissions";
+import { useIsDevBypass, useDevModeStore } from "@/stores/dev-mode.store";
 
 export function useRoles(): {
   roles: Role[];
   role: Role | null;
   loading: boolean;
 } {
+  const bypass = useIsDevBypass();
+  const mockRole = useDevModeStore((s) => s.mockRole);
   const { session, loading: authLoading } = useAuth();
   const userId = session?.user?.id ?? null;
 
   const query = useQuery({
     queryKey: QUERY_KEYS.authRoles(userId ?? undefined),
-    enabled: !!userId,
+    enabled: !!userId && !bypass,
     staleTime: 5 * 60_000,
     queryFn: async (): Promise<Role[]> => {
       if (!userId) return [];
@@ -36,12 +39,12 @@ export function useRoles(): {
     },
   });
 
-  const roles = query.data ?? [];
+  const roles = bypass ? ([mockRole] as Role[]) : (query.data ?? []);
   const role = useMemo(() => highestRole(roles), [roles]);
   return {
     roles,
     role,
-    loading: authLoading || (!!userId && query.isLoading),
+    loading: bypass ? false : authLoading || (!!userId && query.isLoading),
   };
 }
 
