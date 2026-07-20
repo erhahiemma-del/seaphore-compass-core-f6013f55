@@ -272,8 +272,10 @@ export function RoleManagementTable() {
   });
 
   const mutation = useMutation({
-    mutationFn: (input: { userId: string; roles: Role[] }) =>
-      devBypass ? setUserRolesDirect(input.userId, input.roles) : setFn({ data: input }),
+    mutationFn: async (input: { userId: string; roles: Role[] }) => {
+      if (devBypass) await setUserRolesDirect(input.userId, input.roles);
+      else await setFn({ data: input });
+    },
     onSuccess: (_res, vars) => {
       toast.success("Roles updated", {
         description: `${vars.roles.length} role(s) assigned.`,
