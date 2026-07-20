@@ -27,6 +27,116 @@ import { listUsersWithRoles, setUserRoles, type AdminUserRow } from "@/lib/admin
 import { listRoleAuditLog, type RoleAuditEntry } from "@/lib/admin-audit.functions";
 import type { Role } from "@/lib/permissions";
 import { QUERY_KEYS } from "@/lib/query-keys";
+import { supabase } from "@/integrations/supabase/client";
+import { useDevModeStore } from "@/stores/dev-mode.store";
+import { DEV_MODE_AVAILABLE } from "@/lib/dev/dev-mode";
+
+async function fetchUsersWithRolesDirect(): Promise<AdminUserRow[]> {
+  const [profilesRes, rolesRes] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, email, full_name, rank, agency_id, created_at")
+      .order("created_at", { ascending: false }),
+    supabase.from("user_roles").select("user_id, role"),
+  ]);
+  if (profilesRes.error) throw profilesRes.error;
+  if (rolesRes.error) throw rolesRes.error;
+  const rolesByUser = new Map<string, Role[]>();
+  for (const r of rolesRes.data ?? []) {
+    const list = rolesByUser.get(r.user_id) ?? [];
+    list.push(r.role as Role);
+    rolesByUser.set(r.user_id, list);
+  }
+  return (profilesRes.data ?? []).map((p) => ({
+    id: p.id,
+    email: p.email ?? null,
+    fullName: p.full_name ?? null,
+    rank: p.rank ?? null,
+    agencyId: p.agency_id ?? null,
+    roles: rolesByUser.get(p.id) ?? [],
+    createdAt: p.created_at ?? null,
+  }));
+}
+
+async function setUserRolesDirect(userId: string, roles: Role[]): Promise<void> {
+  const { data: existing, error: readErr } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId);
+  if (readErr) throw readErr;
+  const current = new Set((existing ?? []).map((r) => r.role as Role));
+  const next = new Set<Role>(roles);
+  const toAdd = [...next].filter((r) => !current.has(r));
+  const toRemove = [...current].filter((r) => !next.has(r));
+  if (toAdd.length > 0) {
+    const { error } = await supabase
+      .from("user_roles")
+      .insert(toAdd.map((role) => ({ user_id: userId, role })));
+    if (error) throw error;
+  }
+  if (toRemove.length > 0) {
+    const { error } = await supabase
+      .from("user_roles")
+      .delete()
+      .eq("user_id", userId)
+      .in("role", toRemove);
+    if (error) throw error;
+  }
+}
+
+async function fetchRoleAuditDirect(targetUserId?: string): Promise<RoleAuditEntry[]> {
+  let q = supabase
+    .from("audit_log")
+    .select("id, at, action, rule_refs, ip_address, metadata, officer_id, entity_id")
+    .eq("action", "role.manage")
+    .eq("entity", "user_roles")
+    .order("at", { ascending: false })
+    .limit(200);
+  if (targetUserId) q = q.eq("entity_id", targetUserId);
+  const { data: rows, error } = await q;
+  if (error) throw error;
+  const ids = new Set<string>();
+  for (const r of rows ?? []) {
+    if (r.officer_id) ids.add(r.officer_id);
+    if (r.entity_id) ids.add(r.entity_id);
+  }
+  let profiles = new Map<string, { email: string | null; fullName: string | null }>();
+  if (ids.size > 0) {
+    const { data: p } = await supabase
+      .from("profiles")
+      .select("id, email, full_name")
+      .in("id", [...ids]);
+    profiles = new Map(
+      (p ?? []).map((x) => [x.id, { email: x.email ?? null, fullName: x.full_name ?? null }]),
+    );
+  }
+  const asRoles = (v: unknown): Role[] =>
+    Array.isArray(v) ? (v.filter((x) => typeof x === "string") as Role[]) : [];
+  return (rows ?? []).map((r) => {
+    const meta = (r.metadata ?? {}) as { added?: unknown; removed?: unknown };
+    const a = r.officer_id ? profiles.get(r.officer_id) : undefined;
+    const t = r.entity_id ? profiles.get(r.entity_id) : undefined;
+    return {
+      id: r.id as string,
+      at: r.at as string,
+      action: r.action as string,
+      ruleRefs: (r.rule_refs ?? []) as string[],
+      ipAddress: (r.ip_address as string | null) ?? null,
+      actor: {
+        id: (r.officer_id as string | null) ?? null,
+        email: a?.email ?? null,
+        fullName: a?.fullName ?? null,
+      },
+      target: {
+        id: (r.entity_id as string) ?? "",
+        email: t?.email ?? null,
+        fullName: t?.fullName ?? null,
+      },
+      added: asRoles(meta.added),
+      removed: asRoles(meta.removed),
+    };
+  });
+}
 
 const ALL_ROLES: Role[] = ["external_agency", "analyst", "officer", "director", "admin"];
 
@@ -150,18 +260,22 @@ export function RoleManagementTable() {
   const setFn = useSF(setUserRoles);
   const { session } = useAuth();
   const currentUserId = session?.user?.id ?? null;
+  const devBypass = useDevModeStore((s) => s.bypassAuth) && DEV_MODE_AVAILABLE;
 
   const [auditFilterUserId, setAuditFilterUserId] = useState<string | null>(null);
   const auditRef = useRef<HTMLDivElement | null>(null);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: QUERY_KEYS.adminUsersWithRoles(),
-    queryFn: () => listFn(),
+    queryKey: [...QUERY_KEYS.adminUsersWithRoles(), devBypass ? "anon" : "auth"],
+    queryFn: () => (devBypass ? fetchUsersWithRolesDirect() : listFn()),
     staleTime: 30_000,
   });
 
   const mutation = useMutation({
-    mutationFn: (input: { userId: string; roles: Role[] }) => setFn({ data: input }),
+    mutationFn: async (input: { userId: string; roles: Role[] }) => {
+      if (devBypass) await setUserRolesDirect(input.userId, input.roles);
+      else await setFn({ data: input });
+    },
     onSuccess: (_res, vars) => {
       toast.success("Roles updated", {
         description: `${vars.roles.length} role(s) assigned.`,
@@ -265,9 +379,13 @@ interface AuditTrailPanelProps {
 
 function AuditTrailPanel({ filterUserId, onClearFilter, usersById }: AuditTrailPanelProps) {
   const listAuditFn = useSF(listRoleAuditLog);
+  const devBypass = useDevModeStore((s) => s.bypassAuth) && DEV_MODE_AVAILABLE;
   const { data, isLoading, isFetching, error, refetch } = useQuery({
-    queryKey: QUERY_KEYS.adminRoleAudit(filterUserId ?? "all"),
-    queryFn: () => listAuditFn({ data: filterUserId ? { targetUserId: filterUserId } : {} }),
+    queryKey: [...QUERY_KEYS.adminRoleAudit(filterUserId ?? "all"), devBypass ? "anon" : "auth"],
+    queryFn: () =>
+      devBypass
+        ? fetchRoleAuditDirect(filterUserId ?? undefined)
+        : listAuditFn({ data: filterUserId ? { targetUserId: filterUserId } : {} }),
     staleTime: 15_000,
   });
 
