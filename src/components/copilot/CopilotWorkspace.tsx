@@ -25,9 +25,13 @@ import { ContextBar } from "@/components/copilot/ContextBar";
 import { StreamingStages } from "@/components/copilot/StreamingStages";
 import { Button } from "@/components/ui/button";
 import { adaptBriefing, type CopilotQueryResponse } from "@/lib/copilot/adapt-briefing";
+import { DEV_MODE_AVAILABLE, MOCK_OFFICER_ID } from "@/lib/dev/dev-mode";
 import { copilotOverrideFn, copilotQueryFn } from "@/lib/orchestration.functions";
 import { cn } from "@/lib/utils";
+import { orchestrate, captureOverride } from "@/services/orchestration";
+import { useAuthStore } from "@/stores/auth.store";
 import { useCopilotStore } from "@/stores/copilot.store";
+import { useDevModeStore } from "@/stores/dev-mode.store";
 
 type Stage = "idle" | "classifying" | "retrieving" | "reasoning" | "rendering" | "ready";
 
