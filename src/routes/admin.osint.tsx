@@ -71,10 +71,10 @@ function OsintDashboard() {
   const fetchDlq = useServerFn(listOsintDeadLetters);
   const devBypass = useDevModeStore((s) => s.bypassAuth) && DEV_MODE_AVAILABLE;
 
-  // One-shot: make sure any in-code connectors are mirrored to the DB.
   useEffect(() => {
+    if (devBypass) return;
     bootstrap().catch((e) => console.warn("[OSINT] bootstrap failed", e));
-  }, [bootstrap]);
+  }, [bootstrap, devBypass]);
 
   const connectors = useQuery({
     queryKey: ["osint", "connectors", devBypass ? "anon" : "auth"],
