@@ -426,6 +426,8 @@ function AuthPage() {
           <div className="mt-8 grid grid-cols-3 gap-3 xl:grid-cols-6 xl:gap-3">
             {KPI_CARDS.map((k) => {
               const Icon = k.icon;
+              const live = intelligenceMetrics?.[k.metricKey];
+              const value = live?.display ?? k.fallback;
               const valueColor = k.tone === "red" ? "text-[#FF6B6B]" : "text-white";
               return (
                 <div
@@ -439,7 +441,7 @@ function AuthPage() {
                     )}
                   />
                   <div className={cn("text-[20px] font-bold leading-none", valueColor)}>
-                    {k.value}
+                    {value}
                   </div>
                   <div
                     className={cn(
