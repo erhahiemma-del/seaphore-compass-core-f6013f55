@@ -11,14 +11,21 @@ import { observability } from "@/services/observability";
 export const getObservabilitySnapshot = createServerFn({ method: "GET" }).handler(async () => {
   const snapshot = observability.snapshot();
   const alerts = observability.alerts.evaluate(observability.metrics);
-  // Serialise ring-buffer records to plain JSON to satisfy the RPC boundary.
-  const toJson = <T,>(rows: readonly T[]) => JSON.parse(JSON.stringify(rows)) as T[];
-  return {
+  // Round-trip through JSON so the payload is a plain, RPC-serialisable tree.
+  const dto = {
     at: new Date().toISOString(),
-    snapshot: JSON.parse(JSON.stringify(snapshot)) as typeof snapshot,
-    alerts: toJson(alerts),
-    recentErrors: toJson(observability.store.errors.all().slice(-20).reverse()),
-    recentFeedback: toJson(observability.store.feedback.all().slice(-20).reverse()),
-    recentQueries: toJson(observability.store.queries.all().slice(-20).reverse()),
+    snapshot,
+    alerts,
+    recentErrors: observability.store.errors.all().slice(-20).reverse(),
+    recentFeedback: observability.store.feedback.all().slice(-20).reverse(),
+    recentQueries: observability.store.queries.all().slice(-20).reverse(),
+  };
+  return JSON.parse(JSON.stringify(dto)) as {
+    at: string;
+    snapshot: typeof snapshot;
+    alerts: Array<{ at: string; rule: string; severity: string; description: string; snapshotAt: string }>;
+    recentErrors: Array<{ traceId: string; at: string; stage: string; message: string; stack?: string; context: Record<string, string> }>;
+    recentFeedback: Array<{ traceId: string; at: string; officerHash: string; outcome: string; note?: string }>;
+    recentQueries: Array<{ id: string; at: string; officerHash: string; intent: string; queryText: string; workspace?: string }>;
   };
 });
