@@ -26,7 +26,7 @@ export const DEV_MODE_AVAILABLE = !import.meta.env.PROD;
 export const DEV_ENV_BYPASS =
   DEV_MODE_AVAILABLE && String(import.meta.env.VITE_DEV_BYPASS_AUTH ?? "") === "true";
 
-export const MOCK_OFFICER_ID = "00000000-0000-0000-0000-0000000d0dev".slice(0, 36);
+export const MOCK_OFFICER_ID = "00000000-0000-0000-0000-00000000d0de";
 
 export const MOCK_OFFICER_EMAIL = "dev.officer@nimasa.local";
 export const MOCK_OFFICER_NAME = "Dev Officer (Preview Mode)";
