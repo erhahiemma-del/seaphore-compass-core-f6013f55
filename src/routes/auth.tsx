@@ -366,6 +366,7 @@ function AuthPage() {
                 All access is monitored and encrypted in accordance with NIMASA security policies.
               </p>
             </form>
+            )}
 
             {isDev && (
               <div className="mt-6 rounded-xl border border-dashed border-[#0F5F5A]/40 bg-[#0F5F5A]/[0.03] p-4">
