@@ -80,6 +80,8 @@ function Clock() {
 
 function OfficerBadge() {
   const { session, loading } = useAuth();
+  const router = useRouter();
+  const queryClient = useQueryClient();
   if (loading) return null;
   if (!session) {
     return (
