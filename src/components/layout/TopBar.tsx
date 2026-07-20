@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useRouter } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { Bell, LogIn, LogOut, User2 } from "lucide-react";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { useAuth } from "@/hooks/use-auth";
-import { supabase } from "@/integrations/supabase/client";
+import { performLogout } from "@/lib/auth/logout";
 import { cn } from "@/lib/utils";
 
 export interface TopBarProps {
@@ -102,7 +103,7 @@ function OfficerBadge() {
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => supabase.auth.signOut()}
+        onClick={() => void performLogout({ queryClient, router })}
         aria-label="Sign out"
       >
         <LogOut className="h-3.5 w-3.5" />
