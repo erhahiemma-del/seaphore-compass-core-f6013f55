@@ -256,6 +256,20 @@ function AuthPage() {
               </p>
             </div>
 
+            {mfa ? (
+              <MfaChallenge
+                factorId={mfa.factorId}
+                factorName={mfa.factorName}
+                onVerified={() => {
+                  setMfa(null);
+                  void goToDestination();
+                }}
+                onCancel={() => {
+                  setMfa(null);
+                  void supabase.auth.signOut();
+                }}
+              />
+            ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-1.5">
                 <Label htmlFor="email" className="text-[13px] font-semibold text-[#0B2545]">
