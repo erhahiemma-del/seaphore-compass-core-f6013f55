@@ -9,9 +9,15 @@
  * NEVER rely on this module for security — it is a UX layer only.
  */
 
-export type Role = "analyst" | "officer" | "director" | "admin";
+export type Role = "external_agency" | "analyst" | "officer" | "director" | "admin";
 
+/**
+ * ROLE_RANK — external_agency is a partner-agency read-only role and
+ * sits BELOW analyst so `highestRole` naturally elevates any internal
+ * role above it when a user carries both.
+ */
 export const ROLE_RANK: Record<Role, number> = {
+  external_agency: 0,
   analyst: 1,
   officer: 2,
   director: 3,
