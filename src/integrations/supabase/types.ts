@@ -1013,6 +1013,311 @@ export type Database = {
         }
         Relationships: []
       }
+      osint_connectors: {
+        Row: {
+          auth_method: string
+          avg_latency_ms: number
+          category: string
+          created_at: string
+          description: string
+          endpoint: string
+          error_rate_7d: number
+          health_status: string
+          id: string
+          is_active: boolean
+          last_sync_at: string | null
+          last_sync_status: string | null
+          name: string
+          polling_interval_minutes: number
+          rate_limit_per_minute: number
+          records_last_run: number
+          records_total: number
+          updated_at: string
+        }
+        Insert: {
+          auth_method: string
+          avg_latency_ms?: number
+          category: string
+          created_at?: string
+          description?: string
+          endpoint: string
+          error_rate_7d?: number
+          health_status?: string
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          last_sync_status?: string | null
+          name: string
+          polling_interval_minutes?: number
+          rate_limit_per_minute?: number
+          records_last_run?: number
+          records_total?: number
+          updated_at?: string
+        }
+        Update: {
+          auth_method?: string
+          avg_latency_ms?: number
+          category?: string
+          created_at?: string
+          description?: string
+          endpoint?: string
+          error_rate_7d?: number
+          health_status?: string
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          last_sync_status?: string | null
+          name?: string
+          polling_interval_minutes?: number
+          rate_limit_per_minute?: number
+          records_last_run?: number
+          records_total?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      osint_dead_letters: {
+        Row: {
+          attempts: number
+          connector_id: string | null
+          created_at: string
+          error_message: string
+          id: string
+          last_attempt_at: string
+          raw_payload: Json
+          resolved: boolean
+          source_ref: string | null
+          sync_run_id: string | null
+        }
+        Insert: {
+          attempts?: number
+          connector_id?: string | null
+          created_at?: string
+          error_message: string
+          id?: string
+          last_attempt_at?: string
+          raw_payload?: Json
+          resolved?: boolean
+          source_ref?: string | null
+          sync_run_id?: string | null
+        }
+        Update: {
+          attempts?: number
+          connector_id?: string | null
+          created_at?: string
+          error_message?: string
+          id?: string
+          last_attempt_at?: string
+          raw_payload?: Json
+          resolved?: boolean
+          source_ref?: string | null
+          sync_run_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "osint_dead_letters_connector_id_fkey"
+            columns: ["connector_id"]
+            isOneToOne: false
+            referencedRelation: "osint_connectors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "osint_dead_letters_sync_run_id_fkey"
+            columns: ["sync_run_id"]
+            isOneToOne: false
+            referencedRelation: "osint_sync_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      osint_entity_index: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          record_id: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          record_id: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          record_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "osint_entity_index_record_id_fkey"
+            columns: ["record_id"]
+            isOneToOne: false
+            referencedRelation: "osint_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      osint_graph_edges: {
+        Row: {
+          confidence: number
+          created_at: string
+          from_entity_id: string
+          from_entity_type: string
+          id: string
+          relationship: string
+          source_record_id: string | null
+          to_entity_id: string
+          to_entity_type: string
+        }
+        Insert: {
+          confidence?: number
+          created_at?: string
+          from_entity_id: string
+          from_entity_type: string
+          id?: string
+          relationship: string
+          source_record_id?: string | null
+          to_entity_id: string
+          to_entity_type: string
+        }
+        Update: {
+          confidence?: number
+          created_at?: string
+          from_entity_id?: string
+          from_entity_type?: string
+          id?: string
+          relationship?: string
+          source_record_id?: string | null
+          to_entity_id?: string
+          to_entity_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "osint_graph_edges_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "osint_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      osint_records: {
+        Row: {
+          confidence: number
+          confidence_level: string
+          created_at: string
+          data: Json
+          entity_id: string
+          entity_type: string
+          fetched_at: string
+          id: string
+          raw_data: Json
+          source_id: string
+          source_ref: string
+          sync_run_id: string | null
+          tags: string[]
+          updated_at: string
+          valid_from: string
+          valid_to: string | null
+        }
+        Insert: {
+          confidence?: number
+          confidence_level: string
+          created_at?: string
+          data?: Json
+          entity_id: string
+          entity_type: string
+          fetched_at?: string
+          id?: string
+          raw_data?: Json
+          source_id: string
+          source_ref: string
+          sync_run_id?: string | null
+          tags?: string[]
+          updated_at?: string
+          valid_from?: string
+          valid_to?: string | null
+        }
+        Update: {
+          confidence?: number
+          confidence_level?: string
+          created_at?: string
+          data?: Json
+          entity_id?: string
+          entity_type?: string
+          fetched_at?: string
+          id?: string
+          raw_data?: Json
+          source_id?: string
+          source_ref?: string
+          sync_run_id?: string | null
+          tags?: string[]
+          updated_at?: string
+          valid_from?: string
+          valid_to?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "osint_records_sync_run_id_fkey"
+            columns: ["sync_run_id"]
+            isOneToOne: false
+            referencedRelation: "osint_sync_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      osint_sync_runs: {
+        Row: {
+          completed_at: string | null
+          connector_id: string
+          created_at: string
+          errors: Json
+          id: string
+          latency_ms: number | null
+          records_fetched: number
+          records_ingested: number
+          started_at: string
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          connector_id: string
+          created_at?: string
+          errors?: Json
+          id?: string
+          latency_ms?: number | null
+          records_fetched?: number
+          records_ingested?: number
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          connector_id?: string
+          created_at?: string
+          errors?: Json
+          id?: string
+          latency_ms?: number | null
+          records_fetched?: number
+          records_ingested?: number
+          started_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "osint_sync_runs_connector_id_fkey"
+            columns: ["connector_id"]
+            isOneToOne: false
+            referencedRelation: "osint_connectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       persons: {
         Row: {
           id: string
