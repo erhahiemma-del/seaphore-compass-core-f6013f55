@@ -1,4 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { getIntelligenceMetrics } from "@/lib/intelligence-metrics.functions";
 import {
   Activity,
   AlertTriangle,
