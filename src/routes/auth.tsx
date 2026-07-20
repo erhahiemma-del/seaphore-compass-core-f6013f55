@@ -23,8 +23,26 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import heroImage from "@/assets/auth-hero.jpg";
 import { cn } from "@/lib/utils";
+import { getPendingMfaFactor } from "@/lib/auth/mfa";
+import { MfaChallenge } from "@/components/auth/MfaChallenge";
+
+/**
+ * Only accept same-origin absolute paths as the post-login redirect
+ * target. Rejects protocol-relative (`//evil`), external URLs
+ * (`https://evil`), and non-path values. Prevents open-redirect abuse.
+ */
+function sanitizeRedirect(raw: unknown): string {
+  if (typeof raw !== "string") return "/";
+  if (!raw.startsWith("/")) return "/";
+  if (raw.startsWith("//")) return "/";
+  if (raw.startsWith("/\\")) return "/";
+  return raw;
+}
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    redirect: sanitizeRedirect(search.redirect),
+  }),
   head: () => ({
     meta: [
       { title: "Sign in · Seaphore" },
