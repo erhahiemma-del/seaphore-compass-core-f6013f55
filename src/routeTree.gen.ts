@@ -200,9 +200,9 @@ const DecideIdRoute = DecideIdRouteImport.update({
   getParentRoute: () => DecideRoute,
 } as any)
 const AdminOsintRoute = AdminOsintRouteImport.update({
-  id: '/admin/osint',
-  path: '/admin/osint',
-  getParentRoute: () => rootRouteImport,
+  id: '/osint',
+  path: '/osint',
+  getParentRoute: () => AdminRoute,
 } as any)
 const ApiSessionIdRoute = ApiSessionIdRouteImport.update({
   id: '/api/session/$id',
@@ -509,7 +509,6 @@ export interface RootRouteChildren {
   RevenueRoute: typeof RevenueRoute
   ShareRoute: typeof ShareRouteWithChildren
   VesselRoute: typeof VesselRoute
-  AdminOsintRoute: typeof AdminOsintRoute
   EntityIdRoute: typeof EntityIdRoute
   AdminIndexRoute: typeof AdminIndexRoute
   ApiCopilotQueryRoute: typeof ApiCopilotQueryRoute
@@ -736,10 +735,10 @@ declare module '@tanstack/react-router' {
     }
     '/admin/osint': {
       id: '/admin/osint'
-      path: '/admin/osint'
+      path: '/osint'
       fullPath: '/admin/osint'
       preLoaderRoute: typeof AdminOsintRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/api/session/$id': {
       id: '/api/session/$id'
@@ -865,7 +864,6 @@ const rootRouteChildren: RootRouteChildren = {
   RevenueRoute: RevenueRoute,
   ShareRoute: ShareRouteWithChildren,
   VesselRoute: VesselRoute,
-  AdminOsintRoute: AdminOsintRoute,
   EntityIdRoute: EntityIdRoute,
   AdminIndexRoute: AdminIndexRoute,
   ApiCopilotQueryRoute: ApiCopilotQueryRoute,
@@ -880,3 +878,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
