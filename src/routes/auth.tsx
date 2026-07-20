@@ -198,6 +198,11 @@ function AuthPage() {
   const [submitting, setSubmitting] = useState(false);
   const [devLoading, setDevLoading] = useState<RoleKey | null>(null);
   const [mfa, setMfa] = useState<{ factorId: string; factorName: string } | null>(null);
+  const { data: intelligenceMetrics } = useQuery({
+    queryKey: ["intelligence-metrics"],
+    queryFn: () => getIntelligenceMetrics(),
+    staleTime: 60_000,
+  });
 
   const isDev = DEV_MODE_AVAILABLE;
 
