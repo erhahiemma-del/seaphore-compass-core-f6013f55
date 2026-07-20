@@ -167,7 +167,7 @@ const KPI_CARDS = [
     sub: "Coverage",
     tone: "teal",
   },
-] as const;
+];
 
 // Live operational status — replaces the static security trust bar.
 const OPS_STATUS = [
