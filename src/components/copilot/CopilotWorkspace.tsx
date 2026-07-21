@@ -138,7 +138,7 @@ export function CopilotWorkspace({
       setBriefing(adapted);
       setStage("ready");
       // Record the exchange on the shared Mission Context conversation.
-      session.appendCopilot(adapted.classification?.typeBadge ?? "Briefing", adapted.id, instance);
+      session.appendCopilot(`Briefing: ${q}`, adapted.id, instance);
       await queryClient.invalidateQueries({ queryKey: ["intel", "briefings"] });
       return adapted;
     },
