@@ -133,13 +133,22 @@ export function CopilotWorkspace({
   async function handleOverride(submission: OverrideSubmission) {
     if (!briefing) return;
     try {
-      await submitOverride({
-        data: {
+      if (devBypass) {
+        await captureOverride({
           briefing_id: briefing.id,
+          officer_id: officerId,
           decision: submission.decision,
           justification: submission.justification,
-        },
-      });
+        });
+      } else {
+        await submitOverride({
+          data: {
+            briefing_id: briefing.id,
+            decision: submission.decision,
+            justification: submission.justification,
+          },
+        });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Override submission failed");
     }
