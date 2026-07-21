@@ -210,9 +210,10 @@ function AuthPage() {
   const [isDev, setIsDev] = useState(false);
   useEffect(() => setIsDev(DEV_AUTH_ENABLED), []);
 
+  const bypass = useIsDevBypass();
   useEffect(() => {
-    if (session && !mfa) navigate({ to: redirect, replace: true });
-  }, [session, mfa, navigate, redirect]);
+    if ((session || bypass) && !mfa) navigate({ to: redirect, replace: true });
+  }, [session, bypass, mfa, navigate, redirect]);
 
   async function goToDestination() {
     navigate({ to: redirect, replace: true });
