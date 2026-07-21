@@ -16,6 +16,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { AnyRouter } from "@tanstack/react-router";
 
 import { supabase } from "@/integrations/supabase/client";
+import { useDevModeStore } from "@/stores/dev-mode.store";
 
 export async function performLogout(opts: {
   queryClient: QueryClient;
@@ -27,6 +28,9 @@ export async function performLogout(opts: {
     /* non-fatal */
   }
   opts.queryClient.clear();
+  // Clear any dev-mode mock session first so RequireAuth stops treating
+  // the visitor as authenticated the moment we land on /auth.
+  useDevModeStore.getState().clearBypass();
   await supabase.auth.signOut();
   opts.router.navigate({ to: "/auth", replace: true });
 }
