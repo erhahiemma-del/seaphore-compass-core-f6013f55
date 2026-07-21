@@ -207,7 +207,8 @@ function AuthPage() {
     staleTime: 60_000,
   });
 
-  const isDev = DEV_AUTH_ENABLED;
+  const [isDev, setIsDev] = useState(false);
+  useEffect(() => setIsDev(DEV_AUTH_ENABLED), []);
 
   useEffect(() => {
     if (session && !mfa) navigate({ to: redirect, replace: true });
