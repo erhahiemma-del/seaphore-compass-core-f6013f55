@@ -31,6 +31,7 @@ import { cn } from "@/lib/utils";
 import { orchestrate, captureOverride } from "@/services/orchestration";
 import { useAuthStore } from "@/stores/auth.store";
 import { useCopilotStore } from "@/stores/copilot.store";
+import { useIsDevBypass } from "@/stores/dev-mode.store";
 
 
 type Stage = "idle" | "classifying" | "retrieving" | "reasoning" | "rendering" | "ready";
@@ -60,6 +61,7 @@ export function CopilotWorkspace({
   const submitOverride = useServerFn(copilotOverrideFn);
   const authUserId = useAuthStore((s) => s.officer?.userId);
   const officerId = authUserId ?? "00000000-0000-0000-0000-000000000000";
+  const devBypass = useIsDevBypass();
 
 
 
@@ -94,7 +96,13 @@ export function CopilotWorkspace({
             }
           : undefined,
       };
-      const response = (await runQuery({ data: queryPayload })) as CopilotQueryResponse;
+      const response = (devBypass
+        ? await orchestrate({
+            query: queryPayload.query,
+            officer_id: queryPayload.officer_id,
+            context: queryPayload.context,
+          })
+        : await runQuery({ data: queryPayload })) as CopilotQueryResponse;
       setStage("reasoning");
       const adapted = adaptBriefing(
         {
@@ -125,13 +133,22 @@ export function CopilotWorkspace({
   async function handleOverride(submission: OverrideSubmission) {
     if (!briefing) return;
     try {
-      await submitOverride({
-        data: {
+      if (devBypass) {
+        await captureOverride({
           briefing_id: briefing.id,
+          officer_id: officerId,
           decision: submission.decision,
           justification: submission.justification,
-        },
-      });
+        });
+      } else {
+        await submitOverride({
+          data: {
+            briefing_id: briefing.id,
+            decision: submission.decision,
+            justification: submission.justification,
+          },
+        });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Override submission failed");
     }
