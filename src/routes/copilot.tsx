@@ -96,8 +96,6 @@ function CopilotOpsPage() {
   const context = useCopilotStore((s) => s.context);
   const runQuery = useServerFn(copilotQueryFn);
   const submitOverride = useServerFn(copilotOverrideFn);
-  const authUserId = useAuthStore((s) => s.officer?.userId);
-  const officerId = authUserId ?? "00000000-0000-0000-0000-000000000000";
 
   const [text, setText] = useState("");
   const [stage, setStage] = useState<Stage>("idle");
