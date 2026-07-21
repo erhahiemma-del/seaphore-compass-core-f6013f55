@@ -52,7 +52,10 @@ import { adaptBriefing, type CopilotQueryResponse } from "@/lib/copilot/adapt-br
 import { getIntelligenceMetrics } from "@/lib/intelligence-metrics.functions";
 import { copilotOverrideFn, copilotQueryFn } from "@/lib/orchestration.functions";
 import { cn } from "@/lib/utils";
+import { orchestrate, captureOverride } from "@/services/orchestration";
+import { useAuthStore } from "@/stores/auth.store";
 import { useCopilotStore } from "@/stores/copilot.store";
+import { useIsDevBypass } from "@/stores/dev-mode.store";
 
 
 export const Route = createFileRoute("/copilot")({
