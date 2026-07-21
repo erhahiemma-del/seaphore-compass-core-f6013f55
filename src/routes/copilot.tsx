@@ -101,6 +101,32 @@ const SUGGESTED_QUERIES = [
   "Generate executive briefing",
 ];
 
+interface OrchestrationModule {
+  key: string;
+  label: string;
+  route: string;
+  icon: LucideIcon;
+}
+
+/**
+ * Intelligence modules that Copilot can orchestrate. Clicking "Open"
+ * navigates to the module (nav + Copilot launcher stay persistent).
+ * Clicking "Split" mounts the module in an embedded iframe beside the
+ * Copilot workspace so officers can cross-reference without losing
+ * conversation context.
+ */
+const ORCHESTRATION_MODULES: OrchestrationModule[] = [
+  { key: "manifest", label: "Manifest", route: "/manifest", icon: FileText },
+  { key: "revenue", label: "Revenue", route: "/revenue", icon: DollarSign },
+  { key: "vessel", label: "Vessel", route: "/vessel", icon: Ship },
+  { key: "ownership", label: "Ownership", route: "/ownership", icon: Building2 },
+  { key: "ports", label: "Ports", route: "/ports", icon: Anchor },
+  { key: "compliance", label: "Compliance", route: "/compliance", icon: ShieldCheck },
+  { key: "detect", label: "Detect", route: "/detect", icon: Radar },
+  { key: "investigate", label: "Investigate", route: "/investigate", icon: Search },
+  { key: "decide", label: "Decision Support", route: "/decide", icon: Gavel },
+];
+
 function CopilotOpsPage() {
   const queryClient = useQueryClient();
   const context = useCopilotStore((s) => s.context);
@@ -113,7 +139,9 @@ function CopilotOpsPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeInvestigation, setActiveInvestigation] = useState<string>("inv-ocean-pearl");
   const [panelTab, setPanelTab] = useState<"context" | "evidence" | "timeline" | "notes">("context");
+  const [splitModule, setSplitModule] = useState<OrchestrationModule | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
+
 
   useEffect(() => {
     const t = window.setTimeout(() => inputRef.current?.focus(), 40);
