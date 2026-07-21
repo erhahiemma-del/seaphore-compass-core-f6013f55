@@ -41,7 +41,7 @@ import { MfaChallenge } from "@/components/auth/MfaChallenge";
 import { DEV_AUTH_ENABLED } from "@/lib/dev/env";
 import { quickLoginAs } from "@/lib/dev/quick-login";
 import { ROLE_DASHBOARDS } from "@/lib/dev/role-dashboards";
-import { useDevModeStore } from "@/stores/dev-mode.store";
+import { useDevModeStore, useIsDevBypass } from "@/stores/dev-mode.store";
 import type { OfficerRole } from "@/stores/auth.store";
 
 function sanitizeRedirect(raw: unknown): string {
