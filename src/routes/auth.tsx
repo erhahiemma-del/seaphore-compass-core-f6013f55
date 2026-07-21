@@ -242,16 +242,20 @@ function AuthPage() {
     setDevLoading(roleKey);
     setError(null);
     try {
-      const result = await quickLoginAs(roleKey);
-      if (!result.ok) {
-        setError(`[${result.stage}] ${result.message} — ${result.fix}`);
+      if (!DEV_AUTH_ENABLED) {
+        setError("Quick access is disabled in production builds.");
         setDevLoading(null);
         return;
       }
-      useDevModeStore.getState().setMockRole(roleKey as OfficerRole);
-      navigate({ to: result.landingPath, replace: true });
+      // Activate the persisted dev-mode mock session. RequireAuth,
+      // useRoles, Policy Engine, Workflow Engine and Copilot all read
+      // from `useIsDevBypass()` + `useDevModeStore.mockRole`, so this
+      // one call authenticates the visitor everywhere. No Supabase call.
+      useDevModeStore.getState().activateBypass(roleKey as OfficerRole);
+      const landing = ROLE_DASHBOARDS[roleKey as keyof typeof ROLE_DASHBOARDS]?.url ?? "/";
+      navigate({ to: landing, replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Quick login failed");
+      setError(err instanceof Error ? err.message : "Quick access failed");
       setDevLoading(null);
     }
   }
