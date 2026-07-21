@@ -63,7 +63,7 @@ export function AskCopilotDialog({
 
   if (!open) return null;
 
-  const suggestions = config?.suggestions?.slice(0, 3);
+  const suggestions = config?.exampleQueries?.slice(0, 3);
 
   return (
     <div
