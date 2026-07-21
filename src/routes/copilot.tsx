@@ -161,18 +161,20 @@ function CopilotOpsPage() {
       const started = performance.now();
       await new Promise((r) => setTimeout(r, 60));
       setStage("retrieving");
-      const response = (await runQuery({
-        data: {
-          query: q,
-          context: context
-            ? {
-                investigation_id: context.kind === "investigation" ? context.label : undefined,
-                vessel: context.kind === "vessel" ? context.label : undefined,
-                port: context.kind === "port" ? context.label : undefined,
-              }
-            : undefined,
-        },
-      })) as CopilotQueryResponse;
+      const queryPayload = {
+        query: q,
+        officer_id: officerId,
+        context: context
+          ? {
+              investigation_id: context.kind === "investigation" ? context.label : undefined,
+              vessel: context.kind === "vessel" ? context.label : undefined,
+              port: context.kind === "port" ? context.label : undefined,
+            }
+          : undefined,
+      };
+      const response = (devBypass
+        ? await orchestrate(queryPayload)
+        : await runQuery({ data: queryPayload })) as CopilotQueryResponse;
       setStage("reasoning");
       const adapted = adaptBriefing(
         { ...response, latency_ms: response.latency_ms ?? Math.round(performance.now() - started) },
