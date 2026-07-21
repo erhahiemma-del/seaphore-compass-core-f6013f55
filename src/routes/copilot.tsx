@@ -362,9 +362,26 @@ function CopilotOpsPage() {
                     {context?.label ?? "MV Ocean Pearl (IMO 9438291)"}
                   </span>
                 </div>
-                <button className="rounded-md border border-border px-2 py-1 text-[11px] font-medium text-foreground/80 hover:bg-accent">
-                  Change Context
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBriefing(null);
+                      setStage("idle");
+                      setText("");
+                      setError(null);
+                      inputRef.current?.focus();
+                    }}
+                    disabled={mutation.isPending}
+                    className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] font-medium text-foreground/80 hover:bg-accent disabled:opacity-50"
+                    title="Clear briefing and start a new discussion"
+                  >
+                    <Plus className="h-3 w-3" /> New Discussion
+                  </button>
+                  <button className="rounded-md border border-border px-2 py-1 text-[11px] font-medium text-foreground/80 hover:bg-accent">
+                    Change Context
+                  </button>
+                </div>
               </div>
 
               <div className="flex-1 overflow-auto p-4">
