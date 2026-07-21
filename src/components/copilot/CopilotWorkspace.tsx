@@ -13,7 +13,7 @@
  */
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Send } from "lucide-react";
+import { Loader2, RotateCcw, Send } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { AdaptiveBriefing } from "@/components/copilot/briefing";
@@ -24,6 +24,8 @@ import type {
 import { ContextBar } from "@/components/copilot/ContextBar";
 import { StreamingStages } from "@/components/copilot/StreamingStages";
 import { Button } from "@/components/ui/button";
+import { useCopilotSession } from "@/hooks/use-copilot-session";
+import type { CopilotInstanceKey } from "@/lib/ai/types";
 import { adaptBriefing, type CopilotQueryResponse } from "@/lib/copilot/adapt-briefing";
 
 import { copilotOverrideFn, copilotQueryFn } from "@/lib/orchestration.functions";
@@ -32,6 +34,7 @@ import { orchestrate, captureOverride } from "@/services/orchestration";
 import { useAuthStore } from "@/stores/auth.store";
 import { useCopilotStore } from "@/stores/copilot.store";
 import { useIsDevBypass } from "@/stores/dev-mode.store";
+import { useMissionContextStore } from "@/stores/mission-context.store";
 
 
 type Stage = "idle" | "classifying" | "retrieving" | "reasoning" | "rendering" | "ready";
@@ -47,6 +50,11 @@ export interface CopilotWorkspaceProps {
   className?: string;
   autoFocus?: boolean;
   showContextBar?: boolean;
+  /** Which Copilot surface this workspace is rendered from. Biases the
+   * orchestration Agent Scheduler toward that module's specialist. */
+  instance?: CopilotInstanceKey;
+  /** Show the shared conversation history for the active mission. */
+  showHistory?: boolean;
 }
 
 export function CopilotWorkspace({
@@ -54,6 +62,8 @@ export function CopilotWorkspace({
   className,
   autoFocus = true,
   showContextBar = true,
+  instance = "seaphore",
+  showHistory = true,
 }: CopilotWorkspaceProps) {
   const queryClient = useQueryClient();
   const context = useCopilotStore((s) => s.context);
@@ -62,6 +72,9 @@ export function CopilotWorkspace({
   const authUserId = useAuthStore((s) => s.officer?.userId);
   const officerId = authUserId ?? "00000000-0000-0000-0000-000000000000";
   const devBypass = useIsDevBypass();
+  const session = useCopilotSession();
+  const activeMissionId = useMissionContextStore((s) => s.activeId);
+
 
 
 
