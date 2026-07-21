@@ -61,6 +61,7 @@ export function CopilotWorkspace({
   const submitOverride = useServerFn(copilotOverrideFn);
   const authUserId = useAuthStore((s) => s.officer?.userId);
   const officerId = authUserId ?? "00000000-0000-0000-0000-000000000000";
+  const devBypass = useIsDevBypass();
 
 
 
