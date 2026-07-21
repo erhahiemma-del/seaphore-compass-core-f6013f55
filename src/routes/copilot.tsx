@@ -210,236 +210,284 @@ function CopilotOpsPage() {
     stage === "classifying" || stage === "retrieving" || stage === "reasoning" || stage === "rendering";
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F7F8FA]">
-      {/* Header */}
-      <header className="flex items-center gap-3 border-b border-border/60 bg-white px-6 py-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color:var(--color-teal)]/10 text-[color:var(--color-teal)]">
-          <Sparkles className="h-5 w-5" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <h1 className="text-lg font-semibold text-foreground">NIMASA Copilot</h1>
-            <span
-              className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em]"
-              style={{ color: "#7C3AED", backgroundColor: "#7C3AED14" }}
-            >
-              BETA
-            </span>
+    <AppShell title="NIMASA Copilot" subtitle="Intelligence Orchestration Workspace">
+      <div className="flex min-h-[calc(100vh-8rem)] flex-col bg-[#F7F8FA]">
+        {/* Module Orchestration Bar — persistent switcher across every
+            intelligence module. "Open" navigates (Copilot launcher stays
+            available via the global sidebar); "Split" mounts the module
+            beside the workspace so context is never lost. */}
+        <div className="flex flex-wrap items-center gap-2 border-b border-border/60 bg-white px-4 py-2">
+          <div className="mr-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <Sparkles className="h-3.5 w-3.5 text-[color:var(--color-teal)]" />
+            Orchestrate
           </div>
-          <p className="text-xs text-muted-foreground">
-            Intelligence orchestration across agents, evidence and operations.
-          </p>
+          {ORCHESTRATION_MODULES.map((m) => {
+            const active = splitModule?.key === m.key;
+            return (
+              <div key={m.key} className="flex items-center overflow-hidden rounded-md border border-border/70">
+                <Link
+                  to={m.route}
+                  className="flex items-center gap-1.5 bg-background px-2 py-1 text-[11.5px] font-medium text-foreground hover:bg-accent"
+                >
+                  <m.icon className="h-3.5 w-3.5 text-[color:var(--color-teal)]" />
+                  {m.label}
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setSplitModule(active ? null : m)}
+                  title={active ? "Close split view" : "Open in split view"}
+                  className={cn(
+                    "flex items-center border-l border-border/70 px-1.5 py-1 text-muted-foreground hover:text-foreground",
+                    active && "bg-[color:var(--color-teal)]/10 text-[color:var(--color-teal)]",
+                  )}
+                >
+                  <Split className="h-3 w-3" />
+                </button>
+              </div>
+            );
+          })}
         </div>
-      </header>
 
-      {/* KPI Ribbon */}
-      <KpiRibbon />
+        {/* KPI Ribbon */}
+        <KpiRibbon />
 
-      {/* Main 3-column area */}
-      <div className="grid flex-1 gap-4 p-4 lg:grid-cols-[280px_minmax(0,1fr)_360px]">
-        {/* LEFT — Investigations */}
-        <aside className="flex flex-col gap-3">
-          <div className="rounded-xl border border-border/60 bg-white shadow-sm">
-            <div className="flex border-b border-border/60 px-3 pt-2">
-              <TabBtn active>Investigations</TabBtn>
-              <TabBtn>Cases</TabBtn>
+        {/* Main area — 3 columns; when a module is split-mounted the center
+            workspace shrinks and the module renders beside it. */}
+        <div
+          className={cn(
+            "grid flex-1 gap-4 p-4",
+            splitModule
+              ? "lg:grid-cols-[260px_minmax(0,1fr)_minmax(0,1fr)]"
+              : "lg:grid-cols-[280px_minmax(0,1fr)_360px]",
+          )}
+        >
+          {/* LEFT — Investigations */}
+          <aside className="flex flex-col gap-3">
+            <div className="rounded-xl border border-border/60 bg-white shadow-sm">
+              <div className="flex border-b border-border/60 px-3 pt-2">
+                <TabBtn active>Investigations</TabBtn>
+                <TabBtn>Cases</TabBtn>
+              </div>
+              <div className="p-3">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                  <input
+                    placeholder="Search investigations…"
+                    className="w-full rounded-md border border-border/70 bg-background py-1.5 pl-8 pr-2 text-xs outline-none focus:border-primary"
+                  />
+                </div>
+
+                <SectionLabel className="mt-4">Pinned</SectionLabel>
+                <ul className="space-y-1">
+                  {PINNED.map((inv) => (
+                    <InvestigationRow
+                      key={inv.id}
+                      inv={inv}
+                      active={inv.id === activeInvestigation}
+                      onClick={() => setActiveInvestigation(inv.id)}
+                    />
+                  ))}
+                </ul>
+
+                <SectionLabel className="mt-4">Recent</SectionLabel>
+                <ul className="space-y-1">
+                  {RECENT.map((inv) => (
+                    <InvestigationRow
+                      key={inv.id}
+                      inv={inv}
+                      active={inv.id === activeInvestigation}
+                      onClick={() => setActiveInvestigation(inv.id)}
+                    />
+                  ))}
+                </ul>
+
+                <SectionLabel className="mt-4">Suggested Intelligence Queries</SectionLabel>
+                <ul className="space-y-1.5">
+                  {SUGGESTED_QUERIES.map((q) => (
+                    <li key={q}>
+                      <button
+                        type="button"
+                        onClick={() => handleSubmit(q)}
+                        className="flex w-full items-center gap-2 rounded-md border border-border/60 bg-background/60 px-2.5 py-1.5 text-left text-[12px] text-foreground/85 hover:border-primary/40 hover:bg-primary/5"
+                      >
+                        <ArrowRight className="h-3 w-3 shrink-0 text-[color:var(--color-teal)]" />
+                        <span className="truncate">{q}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBriefing(null);
+                    setStage("idle");
+                    setText("");
+                    inputRef.current?.focus();
+                  }}
+                  className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-border py-2 text-[12px] font-semibold text-muted-foreground hover:border-primary/60 hover:text-primary"
+                >
+                  <Plus className="h-3.5 w-3.5" /> New Investigation
+                </button>
+              </div>
             </div>
-            <div className="p-3">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-                <input
-                  placeholder="Search investigations…"
-                  className="w-full rounded-md border border-border/70 bg-background py-1.5 pl-8 pr-2 text-xs outline-none focus:border-primary"
-                />
+          </aside>
+
+          {/* CENTER — Intelligence Workspace */}
+          <section className="flex flex-col gap-3">
+            <div className="flex flex-1 flex-col rounded-xl border border-border/60 bg-white shadow-sm">
+              <div className="flex items-center justify-between border-b border-border/60 px-4 py-2.5">
+                <div className="flex items-center gap-2 text-[12px]">
+                  <span className="inline-block h-2 w-2 rounded-full bg-[color:var(--color-teal)]" />
+                  <span className="font-semibold text-foreground">Copilot Context</span>
+                  <span className="text-muted-foreground">You are viewing data for:</span>
+                  <span className="font-semibold text-foreground">
+                    {context?.label ?? "MV Ocean Pearl (IMO 9438291)"}
+                  </span>
+                </div>
+                <button className="rounded-md border border-border px-2 py-1 text-[11px] font-medium text-foreground/80 hover:bg-accent">
+                  Change Context
+                </button>
               </div>
 
-              <SectionLabel className="mt-4">Pinned</SectionLabel>
-              <ul className="space-y-1">
-                {PINNED.map((inv) => (
-                  <InvestigationRow
-                    key={inv.id}
-                    inv={inv}
-                    active={inv.id === activeInvestigation}
-                    onClick={() => setActiveInvestigation(inv.id)}
-                  />
-                ))}
-              </ul>
+              <div className="flex-1 overflow-auto p-4">
+                {!briefing && !isStreaming ? <EmptyBriefing /> : null}
 
-              <SectionLabel className="mt-4">Recent</SectionLabel>
-              <ul className="space-y-1">
-                {RECENT.map((inv) => (
-                  <InvestigationRow
-                    key={inv.id}
-                    inv={inv}
-                    active={inv.id === activeInvestigation}
-                    onClick={() => setActiveInvestigation(inv.id)}
-                  />
-                ))}
-              </ul>
+                {isStreaming ? (
+                  <div className="rounded-lg border border-border/60 bg-[#FAFBFC] p-4">
+                    <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      Query
+                    </p>
+                    <p className="mb-4 text-sm text-foreground">{text}</p>
+                    <StreamingStages activeIndex={stageIndex(stage)} />
+                  </div>
+                ) : null}
 
-              <SectionLabel className="mt-4">Suggested Intelligence Queries</SectionLabel>
-              <ul className="space-y-1.5">
-                {SUGGESTED_QUERIES.map((q) => (
-                  <li key={q}>
+                {error ? (
+                  <div className="mb-3 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+                    {error}
+                  </div>
+                ) : null}
+
+                {briefing ? <AdaptiveBriefing briefing={briefing} onOverride={handleOverride} /> : null}
+              </div>
+
+              {/* Query input */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSubmit(text);
+                }}
+                className="border-t border-border/60 bg-white px-4 py-3"
+              >
+                <div className="flex items-end gap-2 rounded-lg border border-border/70 bg-white px-3 py-2 shadow-sm focus-within:border-primary">
+                  <textarea
+                    ref={inputRef}
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    placeholder="Investigate vessels, manifests, cargo, ownership, operators, ports, compliance or maritime risk…"
+                    rows={1}
+                    disabled={mutation.isPending}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSubmit(text);
+                      }
+                    }}
+                    className="max-h-32 flex-1 resize-none bg-transparent text-[13px] outline-none placeholder:text-muted-foreground disabled:opacity-60"
+                  />
+                  <Button
+                    type="submit"
+                    size="sm"
+                    disabled={mutation.isPending || !text.trim()}
+                    className="h-8 gap-1.5"
+                  >
+                    {mutation.isPending ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Send className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                </div>
+                <p className="mt-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                  SHIFT + ENTER for new line
+                </p>
+              </form>
+            </div>
+          </section>
+
+          {/* RIGHT — Split module OR Intelligence Panel */}
+          <aside className="flex flex-col gap-3">
+            {splitModule ? (
+              <div className="flex flex-1 flex-col overflow-hidden rounded-xl border border-border/60 bg-white shadow-sm">
+                <div className="flex items-center justify-between gap-2 border-b border-border/60 bg-background/50 px-3 py-2">
+                  <div className="flex items-center gap-1.5 text-[12px] font-semibold text-foreground">
+                    <splitModule.icon className="h-3.5 w-3.5 text-[color:var(--color-teal)]" />
+                    {splitModule.label} Intelligence
+                    <span className="ml-1 rounded bg-muted px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      Split View
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Link
+                      to={splitModule.route}
+                      className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[10.5px] font-medium text-foreground/80 hover:bg-accent"
+                      title="Open full page"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      Open
+                    </Link>
                     <button
                       type="button"
-                      onClick={() => handleSubmit(q)}
-                      className="flex w-full items-center gap-2 rounded-md border border-border/60 bg-background/60 px-2.5 py-1.5 text-left text-[12px] text-foreground/85 hover:border-primary/40 hover:bg-primary/5"
+                      onClick={() => setSplitModule(null)}
+                      className="rounded border border-border p-1 text-muted-foreground hover:text-foreground"
+                      title="Close split view"
                     >
-                      <ArrowRight className="h-3 w-3 shrink-0 text-[color:var(--color-teal)]" />
-                      <span className="truncate">{q}</span>
+                      <X className="h-3 w-3" />
                     </button>
-                  </li>
-                ))}
-              </ul>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setBriefing(null);
-                  setStage("idle");
-                  setText("");
-                  inputRef.current?.focus();
-                }}
-                className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-border py-2 text-[12px] font-semibold text-muted-foreground hover:border-primary/60 hover:text-primary"
-              >
-                <Plus className="h-3.5 w-3.5" /> New Investigation
-              </button>
-            </div>
-          </div>
-        </aside>
-
-        {/* CENTER — Intelligence Workspace */}
-        <section className="flex flex-col gap-3">
-          <div className="flex flex-1 flex-col rounded-xl border border-border/60 bg-white shadow-sm">
-            <div className="flex items-center justify-between border-b border-border/60 px-4 py-2.5">
-              <div className="flex items-center gap-2 text-[12px]">
-                <span className="inline-block h-2 w-2 rounded-full bg-[color:var(--color-teal)]" />
-                <span className="font-semibold text-foreground">Copilot Context</span>
-                <span className="text-muted-foreground">You are viewing data for:</span>
-                <span className="font-semibold text-foreground">
-                  {context?.label ?? "MV Ocean Pearl (IMO 9438291)"}
-                </span>
-              </div>
-              <button className="rounded-md border border-border px-2 py-1 text-[11px] font-medium text-foreground/80 hover:bg-accent">
-                Change Context
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-auto p-4">
-              {!briefing && !isStreaming ? (
-                <EmptyBriefing />
-              ) : null}
-
-              {isStreaming ? (
-                <div className="rounded-lg border border-border/60 bg-[#FAFBFC] p-4">
-                  <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Query
-                  </p>
-                  <p className="mb-4 text-sm text-foreground">{text}</p>
-                  <StreamingStages activeIndex={stageIndex(stage)} />
+                  </div>
                 </div>
-              ) : null}
-
-              {error ? (
-                <div className="mb-3 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-                  {error}
-                </div>
-              ) : null}
-
-              {briefing ? (
-                <AdaptiveBriefing briefing={briefing} onOverride={handleOverride} />
-              ) : null}
-            </div>
-
-            {/* Query input */}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSubmit(text);
-              }}
-              className="border-t border-border/60 bg-white px-4 py-3"
-            >
-              <div className="flex items-end gap-2 rounded-lg border border-border/70 bg-white px-3 py-2 shadow-sm focus-within:border-primary">
-                <textarea
-                  ref={inputRef}
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  placeholder="Investigate vessels, manifests, cargo, ownership, operators, ports, compliance or maritime risk…"
-                  rows={1}
-                  disabled={mutation.isPending}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSubmit(text);
-                    }
-                  }}
-                  className="max-h-32 flex-1 resize-none bg-transparent text-[13px] outline-none placeholder:text-muted-foreground disabled:opacity-60"
+                <iframe
+                  key={splitModule.key}
+                  src={`${splitModule.route}?embed=1`}
+                  title={`${splitModule.label} Intelligence`}
+                  className="min-h-[600px] flex-1 w-full border-0 bg-white"
                 />
-                <Button
-                  type="submit"
-                  size="sm"
-                  disabled={mutation.isPending || !text.trim()}
-                  className="h-8 gap-1.5"
-                >
-                  {mutation.isPending ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Send className="h-3.5 w-3.5" />
-                  )}
-                </Button>
               </div>
-              <p className="mt-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-                SHIFT + ENTER for new line
-              </p>
-            </form>
-          </div>
-        </section>
+            ) : (
+              <div className="rounded-xl border border-border/60 bg-white shadow-sm">
+                <div className="flex border-b border-border/60 px-3 pt-2 text-[11px] font-semibold uppercase tracking-wider">
+                  {(["context", "evidence", "timeline", "notes"] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setPanelTab(tab)}
+                      className={cn(
+                        "mr-3 border-b-2 pb-2 pt-1",
+                        panelTab === tab
+                          ? "border-[color:var(--color-teal)] text-foreground"
+                          : "border-transparent text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      {tab === "context" ? "Context" : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    </button>
+                  ))}
+                </div>
 
-        {/* RIGHT — Intelligence Panel */}
-        <aside className="flex flex-col gap-3">
-          <div className="rounded-xl border border-border/60 bg-white shadow-sm">
-            <div className="flex border-b border-border/60 px-3 pt-2 text-[11px] font-semibold uppercase tracking-wider">
-              {(["context", "evidence", "timeline", "notes"] as const).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setPanelTab(tab)}
-                  className={cn(
-                    "mr-3 border-b-2 pb-2 pt-1",
-                    panelTab === tab
-                      ? "border-[color:var(--color-teal)] text-foreground"
-                      : "border-transparent text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  {tab === "context" ? "Context" : tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </button>
-              ))}
-            </div>
-
-            <div className="space-y-4 p-3">
-              <VesselSnapshot />
-              <RiskOverview />
-              <OwnershipGraph />
-              <QuickActions />
-            </div>
-          </div>
-        </aside>
+                <div className="space-y-4 p-3">
+                  <VesselSnapshot />
+                  <RiskOverview />
+                  <OwnershipGraph />
+                  <QuickActions />
+                </div>
+              </div>
+            )}
+          </aside>
+        </div>
       </div>
-
-      <footer className="border-t border-border/60 bg-white px-6 py-3 text-center">
-        <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
-          <span className="mr-4">
-            <ShieldCheck className="mr-1 inline h-3 w-3 text-muted-foreground" />
-            Copilot may make mistakes. Validate critical decisions.
-          </span>
-          <span className="text-foreground/80">
-            Evidence first. Explainable always. Officer decides.
-          </span>
-        </p>
-      </footer>
-    </div>
+    </AppShell>
   );
 }
+
 
 function stageIndex(s: Stage): number {
   if (s === "classifying") return 0;
