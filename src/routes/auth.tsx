@@ -208,7 +208,7 @@ function AuthPage() {
   });
 
   const [isDev, setIsDev] = useState(false);
-  useEffect(() => setIsDev(false), []);
+  useEffect(() => setIsDev(DEV_AUTH_ENABLED), []);
 
   useEffect(() => {
     if (session && !mfa) navigate({ to: redirect, replace: true });
