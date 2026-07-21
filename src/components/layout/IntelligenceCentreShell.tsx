@@ -45,6 +45,23 @@ export function AppShell({ children, title, subtitle, mode = "light" }: AppShell
   const mapProvider: MapProviderName =
     (import.meta.env.VITE_MAP_PROVIDER as MapProviderName | undefined) ?? "mock";
 
+  // Embed mode — when a module is loaded inside the Copilot workspace via
+  // an iframe (?embed=1), suppress the global chrome so the module renders
+  // cleanly beside the persistent Copilot workspace.
+  const isEmbedded =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("embed") === "1";
+
+  if (isEmbedded) {
+    return (
+      <MapProviderRoot provider={mapProvider}>
+        <div className={cn("min-h-screen w-full bg-background text-foreground", mode === "dark" && "dark")}>
+          <main className="flex-1">{children}</main>
+        </div>
+      </MapProviderRoot>
+    );
+  }
+
   return (
     <MapProviderRoot provider={mapProvider}>
       <SidebarProvider style={SIDEBAR_STYLE}>
@@ -66,6 +83,7 @@ export function AppShell({ children, title, subtitle, mode = "light" }: AppShell
     </MapProviderRoot>
   );
 }
+
 
 function AppFooter() {
   return (
