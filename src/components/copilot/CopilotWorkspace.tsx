@@ -98,9 +98,17 @@ export function CopilotWorkspace({
       const started = performance.now();
       await new Promise((r) => setTimeout(r, 80));
       setStage("retrieving");
+      // Flatten the active Mission Context so the reasoning engine has
+      // full operational grounding (vessel, voyage, alerts, decisions, …).
+      const missionState = useMissionContextStore.getState();
+      const mission = activeMissionId
+        ? missionState.missions[activeMissionId]
+        : undefined;
       const queryPayload = {
         query: q,
         officer_id: officerId,
+        moduleHint: instance,
+        mission: mission as unknown as Record<string, unknown> | undefined,
         context: context
           ? {
               investigation_id: context.kind === "investigation" ? context.label : undefined,
@@ -113,6 +121,8 @@ export function CopilotWorkspace({
         ? await orchestrate({
             query: queryPayload.query,
             officer_id: queryPayload.officer_id,
+            moduleHint: queryPayload.moduleHint,
+            mission: queryPayload.mission,
             context: queryPayload.context,
           })
         : await runQuery({ data: queryPayload })) as CopilotQueryResponse;
@@ -127,6 +137,8 @@ export function CopilotWorkspace({
       setStage("rendering");
       setBriefing(adapted);
       setStage("ready");
+      // Record the exchange on the shared Mission Context conversation.
+      session.appendCopilot(adapted.classification?.typeBadge ?? "Briefing", adapted.id, instance);
       await queryClient.invalidateQueries({ queryKey: ["intel", "briefings"] });
       return adapted;
     },
@@ -140,8 +152,10 @@ export function CopilotWorkspace({
     const clean = q.trim();
     if (!clean || mutation.isPending) return;
     setText(clean);
+    session.appendOfficer(clean, instance);
     mutation.mutate(clean);
   }
+
 
   async function handleOverride(submission: OverrideSubmission) {
     if (!briefing) return;
