@@ -200,6 +200,44 @@ export function CopilotWorkspace({
     <div className={cn("flex flex-col gap-4", className)}>
       {showContextBar && context ? <ContextBar context={context} /> : null}
 
+      {showHistory && session.history.length > 0 ? (
+        <div className="rounded-lg border border-border bg-card p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Mission conversation · {session.history.length} turns
+            </p>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={session.reset}
+              className="h-6 gap-1 text-[11px]"
+            >
+              <RotateCcw className="h-3 w-3" aria-hidden />
+              Reset
+            </Button>
+          </div>
+          <ul className="max-h-40 space-y-1 overflow-y-auto pr-1">
+            {session.history.slice(-8).map((entry) => (
+              <li
+                key={entry.id}
+                className={cn(
+                  "rounded border px-2 py-1 text-[11.5px] leading-snug",
+                  entry.role === "officer"
+                    ? "border-primary/30 bg-primary/5 text-foreground"
+                    : "border-border bg-background text-muted-foreground",
+                )}
+              >
+                <span className="mr-1 font-semibold uppercase tracking-wider text-[9.5px] text-muted-foreground">
+                  {entry.role === "officer" ? "Officer" : entry.instance ?? "Copilot"}
+                </span>
+                {entry.text}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+
       {!briefing && !isStreaming ? (
         <div className="rounded-lg border border-border bg-card p-4">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
