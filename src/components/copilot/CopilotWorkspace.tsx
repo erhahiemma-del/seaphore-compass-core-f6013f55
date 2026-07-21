@@ -25,13 +25,13 @@ import { ContextBar } from "@/components/copilot/ContextBar";
 import { StreamingStages } from "@/components/copilot/StreamingStages";
 import { Button } from "@/components/ui/button";
 import { adaptBriefing, type CopilotQueryResponse } from "@/lib/copilot/adapt-briefing";
-import { DEV_MODE_AVAILABLE, MOCK_OFFICER_ID } from "@/lib/dev/dev-mode";
+
 import { copilotOverrideFn, copilotQueryFn } from "@/lib/orchestration.functions";
 import { cn } from "@/lib/utils";
 import { orchestrate, captureOverride } from "@/services/orchestration";
 import { useAuthStore } from "@/stores/auth.store";
 import { useCopilotStore } from "@/stores/copilot.store";
-import { useDevModeStore } from "@/stores/dev-mode.store";
+
 
 type Stage = "idle" | "classifying" | "retrieving" | "reasoning" | "rendering" | "ready";
 
@@ -58,9 +58,9 @@ export function CopilotWorkspace({
   const context = useCopilotStore((s) => s.context);
   const runQuery = useServerFn(copilotQueryFn);
   const submitOverride = useServerFn(copilotOverrideFn);
-  const devBypass = useDevModeStore((s) => s.bypassAuth) && DEV_MODE_AVAILABLE;
   const authUserId = useAuthStore((s) => s.officer?.userId);
-  const officerId = devBypass ? MOCK_OFFICER_ID : (authUserId ?? MOCK_OFFICER_ID);
+  const officerId = authUserId ?? "00000000-0000-0000-0000-000000000000";
+
 
 
   const [text, setText] = useState("");
