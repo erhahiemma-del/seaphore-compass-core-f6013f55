@@ -10,7 +10,24 @@
  * Verified at build time by `scripts/verify-prod-bundle.mjs`.
  */
 export const IS_DEV_BUILD = !import.meta.env.PROD;
-export const DEV_AUTH_ENABLED = IS_DEV_BUILD;
+
+/**
+ * True on Lovable preview/sandbox hosts (id-preview--*.lovable.app,
+ * *-dev.lovable.app, project--*-dev.lovable.app, localhost). Published
+ * production domains — the final `*.lovable.app` slug and custom
+ * domains — return false, so the dev role cards never render there.
+ */
+function isPreviewHost(): boolean {
+  if (typeof window === "undefined") return false;
+  const h = window.location.hostname;
+  if (h === "localhost" || h === "127.0.0.1") return true;
+  if (h.startsWith("id-preview--")) return true;
+  if (h.endsWith("-dev.lovable.app")) return true;
+  if (h.endsWith(".lovableproject.com")) return true;
+  return false;
+}
+
+export const DEV_AUTH_ENABLED = IS_DEV_BUILD || isPreviewHost();
 
 /** Fixed dev seed password — matches the SQL migration. */
 export const DEV_SEED_PASSWORD = "SeaphoreDev!2026";
