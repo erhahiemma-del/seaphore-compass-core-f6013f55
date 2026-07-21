@@ -53,7 +53,17 @@ export function classifyIntent(query: OfficerQuery): Intent {
   >) {
     if (patterns.some((p) => p.test(q))) capabilities.push(cap);
   }
+
+  // Module-hint bias — when the query originates from a specialist Copilot
+  // surface (Manifest / Revenue / etc.), prepend that module's primary
+  // capability so the Agent Scheduler consults its specialist first.
+  const moduleCapability = MODULE_HINT_CAPABILITY[query.moduleHint ?? ""];
+  if (moduleCapability && !capabilities.includes(moduleCapability)) {
+    capabilities.unshift(moduleCapability);
+  }
+
   if (capabilities.length === 0) capabilities.push("EVIDENCE_SEARCH");
+
 
   // Entity extraction — non-fabricating; only lifts literals present in query
   const entities: Intent["entities"] = [];
