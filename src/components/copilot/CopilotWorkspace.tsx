@@ -94,9 +94,7 @@ export function CopilotWorkspace({
             }
           : undefined,
       };
-      const response = devBypass
-        ? ((await orchestrate(queryPayload)) as unknown as CopilotQueryResponse)
-        : ((await runQuery({ data: queryPayload })) as CopilotQueryResponse);
+      const response = (await runQuery({ data: queryPayload })) as CopilotQueryResponse;
       setStage("reasoning");
       const adapted = adaptBriefing(
         {
