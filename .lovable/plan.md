@@ -1,70 +1,88 @@
+# Unified Copilot Platform + Persistent Mission Context
 
-# Authentication Overhaul + Dev Auth Mode
+Merge the two Copilot surfaces (NIMASA `/copilot` Intelligence Operations Center and the Seaphore `AskCopilotDialog` / `CentreCopilot` panels) into one system: one orchestration pipeline, one conversation store, one context manager, one Adaptive Briefing renderer, and one shared **Mission Context** that every module reads and updates.
 
-## Root cause (current instability)
+## Outcome
 
-1. **Server functions require a real Supabase JWT.** The `requireSupabaseAuth` middleware validates a 3-part JWT via `getClaims`. In Dev Bypass, `buildMockSession()` produces `access_token: "dev-bypass-token"` (not a JWT), so `attachSupabaseAuth` either attaches nothing or attaches a token that fails validation → every protected server fn returns `401 Unauthorized`. Individual features have been patched ad-hoc to fall back to direct Supabase calls, which is why the fixes keep repeating for each new page.
-2. **No real dev users exist.** Bypass fabricates a mock session client-side only; the DB has no matching `auth.users` row, so RLS-scoped reads that filter on `auth.uid()` return empty and role lookups miss.
-3. **Auth state race.** `useAuth` starts a 4-second fallback timer that force-enables bypass when Supabase is slow — this silently masks real auth failures in dev and can flip state mid-render.
-4. **Two competing "dev mode" concepts** (env `VITE_DEV_BYPASS_AUTH` + persisted store) with no single source of truth, and production has no hard guard beyond `import.meta.env.PROD`.
+- Every Copilot surface (global modal, `/copilot` page, per-centre panels) calls the same `orchestrate()` pipeline and renders the same `AdaptiveBriefing`.
+- Opening Copilot from Manifest / Revenue / Vessel / Ports / Compliance / Ownership / Evidence / Alerts / Memory auto-injects that module's context and biases the agent scheduler toward its specialist agents.
+- Conversation history and officer overrides are shared across surfaces in real time.
+- A **Mission Context** object per active investigation persists the full operational state (vessel, voyage, manifest, port, companies, alerts, evidence, decisions, tasks, hypotheses, next actions) and is available to every module and to the reasoning engine as grounding input.
 
-## Fix strategy
+## Architecture
 
-Stop faking sessions on the client. Instead, seed **real** Supabase users for the four roles and use `signInWithPassword` under the hood for one-click dev login. That means every existing code path (server fns, RLS, role hooks) works unmodified — the only dev-specific surface is the login UI + a command palette.
+```text
+┌───────────────────────────────────────────────────────────────┐
+│  Mission Context Store (Zustand, per-investigation, persisted)│
+│   investigation · vessel · voyage · manifest · port ·         │
+│   companies · alerts · evidence · decisions · tasks ·         │
+│   conversation · hypotheses · next-actions                    │
+└───────────────▲───────────────────────────────▲───────────────┘
+                │ read / update                 │ grounding
+   ┌────────────┴────────────┐     ┌────────────┴────────────┐
+   │ Modules (Manifest,      │     │  Unified Copilot Engine │
+   │  Revenue, Vessel, …)    │────▶│  orchestrate({ query,   │
+   │  push context on mount  │     │   moduleHint, mission })│
+   └─────────────────────────┘     └────────────┬────────────┘
+                                                │
+              ┌─────────────────────────────────┴────────────────┐
+              │ Copilot Surfaces (all render AdaptiveBriefing)   │
+              │  • GlobalCopilotLauncher modal                   │
+              │  • /copilot Intelligence Operations Center       │
+              │  • CentreCopilot panels                          │
+              └──────────────────────────────────────────────────┘
+```
 
-## Deliverables
+## Plan
 
-### 1. Real dev users (migration)
-- Migration seeds four confirmed users in `auth.users` (`admin@seaphore.local`, `director@…`, `officer@…`, `analyst@…`) with a known dev password from `DEV_SEED_PASSWORD` env (fallback constant), plus their `user_roles` rows.
-- Migration is idempotent and gated: only inserts rows whose emails end in `@seaphore.local`. Safe in prod (creates locked accounts with a random-per-project password if the env is unset; documented as "dev accounts — rotate or delete in prod").
+### 1. Mission Context (new)
+Create `src/stores/mission-context.store.ts` — a Zustand store keyed by `investigationId` with slices for: `vessel`, `voyage`, `manifest`, `port`, `companies[]`, `alerts[]`, `evidence[]`, `decisions[]`, `tasks[]`, `conversation` (UIMessage-style history of briefings + queries), `hypotheses[]`, `nextActions[]`. Persisted to `localStorage` and (later) mirrored to `intel_briefings` + a new `mission_snapshots` table.
 
-### 2. Single dev-mode source of truth
-- New `src/lib/dev/env.ts` exporting `IS_DEV_BUILD = !import.meta.env.PROD` and `DEV_AUTH_ENABLED = IS_DEV_BUILD` (tree-shaken to `false` in prod). All dev code imports from here.
-- Delete the client-side "mock session" path: `buildMockSession`, `MOCK_OFFICER_ID`, `useIsDevBypass`, `DEV_ENV_BYPASS`. Rip out the per-feature `devBypass` branches in Administration, AdministrationCenter, CopilotWorkspace, admin/osint — they become unnecessary once real sessions exist.
+Expose:
+- `useMissionContext(investigationId)` — full read
+- `useActiveMission()` — active investigation
+- `setMissionSlice(id, slice, value)` — patch API used by modules
+- `appendConversation(id, entry)` — used by Copilot surfaces
 
-### 3. New dev-only auth module `src/lib/dev/quick-login.ts`
-- `quickLoginAs(role)` → `supabase.auth.signInWithPassword({...})`, then navigates to the role's landing page. Guarded by `if (!DEV_AUTH_ENABLED) throw`. Target < 300 ms (single round trip).
-- Rich diagnostics: on failure returns `{ stage, message, cause, fix }` shown in the Diagnostics panel.
+### 2. Unified Copilot Engine
+Extend `orchestrate()` in `src/services/orchestration/orchestrator.ts` to accept:
+- `moduleHint: CopilotInstanceKey` — biases `scheduleRetrievals()` toward specialist agents (e.g. `manifest` ⇒ manifest + cargo agents first).
+- `mission: MissionSnapshot` — flattened Mission Context; passed to `reason()` as grounding evidence and to `intent-classifier` for context-aware classification.
 
-### 4. Auth page changes (UI preserved)
-- Keep existing background, glassmorphism, branding, layout, role tabs.
-- Under the tabs in dev builds: replace the password form with a **Quick Development Access Panel** — four role cards (Administrator/Director/Officer/Analyst) each showing role, permissions summary, landing page, and a "Quick Login" button that calls `quickLoginAs`.
-- In prod builds the file's dev branch is dead-code-eliminated (`if (DEV_AUTH_ENABLED)` around the panel + import).
+Update `intent-classifier.ts` + `scheduler.ts` to consume `moduleHint`. Extend `evidence-fusion.ts` to include mission-scoped evidence.
 
-### 5. Hidden Dev Command Palette (Ctrl+Shift+D)
-- New `src/components/dev/DevCommandPalette.tsx` mounted from `__root.tsx` behind `{DEV_AUTH_ENABLED && <DevCommandPalette />}`.
-- Commands: Login as {role} ×4, Reset Session, Clear Cache (queryClient.clear + localStorage prune), Seed Demo Data (calls existing seed fns), Open Diagnostics, View Session/Role/Permissions.
+### 3. One conversation store
+Retire the ad-hoc state in `CopilotWorkspace.tsx`, `/copilot`, and `AskCopilotDialog`. Route every submission through a new `useCopilotSession(instanceKey)` hook (backed by Mission Context's `conversation` slice) so history and the latest briefing are the same object across surfaces.
 
-### 6. Auth Diagnostics Panel
-- `src/components/dev/AuthDiagnostics.tsx` — opened from command palette. Shows: provider, env, session state, current user, role, JWT decoded header/expiry, Supabase URL reachability (ping `auth/v1/health`), DB connection (SELECT 1 via RPC), role resolution, RequireAuth state, last redirect target, error stack, suggested fix.
+### 4. One renderer
+Replace the `AskCopilotDialog` body with `<CopilotWorkspace instance=… showContextBar autoFocus />`. Kill the mock-intelligence path (`src/lib/ai/mock-intelligence.ts`) in favor of `orchestrate()` — mocks stay only under `VITE_DEV_BYPASS_AUTH` via the existing service-layer path. `CentreCopilot` "Ask" panels also open the same workspace (modal) instead of the legacy dialog.
 
-### 7. Session lifecycle cleanup
-- Remove `useAuth`'s 4-second bypass fallback. Real errors surface into diagnostics instead of silently switching modes.
-- `performLogout` unchanged — already correct.
+### 5. Module-awareness wiring
+For each Intelligence Centre (Manifest, Revenue, Vessel, Ports, Compliance, Ownership, Evidence, Alerts, Memory, Cargo, Administration):
+- On mount, push its current entity/case into Mission Context via `setMissionSlice`.
+- Set `useCopilotStore.setContext({ kind, label, detail })` so the Context Bar reflects the module.
+- Ensure the `instance` prop (`CopilotInstanceKey`) flows into the launcher; the launcher passes it as `moduleHint` to `orchestrate()`.
 
-### 8. Production safety
-- Wrap every dev import site with `DEV_AUTH_ENABLED &&` so Vite/Rollup tree-shakes the dev modules out of the prod bundle.
-- Add build check: `scripts/verify-prod-bundle.mjs` greps the built assets for `@seaphore.local`, `DevCommandPalette`, `quickLoginAs` — fails CI if found. Wired into the existing `.github/workflows/ci.yml`.
-- Migration's dev users only work in prod if someone knows the seed password; document rotating/deleting after deployment.
+### 6. Real-time sync
+Use a Zustand `subscribe` bridge + a lightweight `BroadcastChannel("copilot-sync")` so multiple open tabs / split-screen embeds see the same briefings and mission state instantly. Keeps working under `devBypass`.
 
-## Files touched (summary)
+### 7. Backend (light touch, non-blocking)
+New migration for `mission_snapshots` (investigation_id PK, jsonb payload, updated_at, officer_id) with RLS = officer/above sees own agency's rows, GRANTs to `authenticated` + `service_role`. Server function `saveMissionSnapshot` (auth-required) called on debounce; on `devBypass`, snapshots stay client-side only.
 
-- **New**: `supabase migration seed_dev_users`, `src/lib/dev/env.ts`, `src/lib/dev/quick-login.ts`, `src/lib/dev/diagnostics.ts`, `src/components/dev/DevCommandPalette.tsx`, `src/components/dev/AuthDiagnostics.tsx`, `src/components/dev/QuickAccessPanel.tsx`, `scripts/verify-prod-bundle.mjs`.
-- **Modified**: `src/routes/auth.tsx` (swap in QuickAccessPanel in dev), `src/hooks/use-auth.ts` (drop bypass fallback + mock session), `src/routes/__root.tsx` (mount palette), `src/features/administration/Administration.tsx`, `src/features/administration/AdministrationCenter.tsx`, `src/components/copilot/CopilotWorkspace.tsx`, `src/routes/admin.osint.tsx`, `src/hooks/use-permissions.ts` (remove devBypass forks), `src/stores/dev-mode.store.ts` (deprecate/remove), `src/lib/dev/dev-mode.ts` (deprecate/remove), `src/lib/dev/role-dashboards.ts` (add landing paths).
-- **Delete**: legacy mock-session helpers after references are cleared.
+### 8. Cleanup / deprecation
+- `AskCopilotDialog` becomes a thin wrapper that mounts `CopilotWorkspace` in a `Dialog`.
+- Remove now-dead `askCopilot` / `mock-intelligence` code paths after surfaces migrate (keep the file for one release with a deprecation comment to avoid regressions).
+- Add a unit test asserting all 13 instance keys map to a scheduler bias.
 
-## Validation
+## Files touched (approx.)
 
-For each of Administrator, Director, Officer, Analyst:
-1. Click role card on `/auth` → lands on the role's dashboard in <300 ms.
-2. Refresh → session persists (real Supabase session in localStorage).
-3. Navigate to Administration / Mission Control / Copilot — server fns succeed (no 401), RLS returns proper rows.
-4. Logout → cache cleared, returns to `/auth`.
-5. Ctrl+Shift+D opens palette, diagnostics show live JWT + role.
-6. Production build: `scripts/verify-prod-bundle.mjs` passes; `/auth` renders the original password form only.
+- **New:** `src/stores/mission-context.store.ts`, `src/hooks/use-copilot-session.ts`, `supabase/migrations/*_mission_snapshots.sql`, `src/lib/mission.functions.ts`
+- **Modified:** `src/services/orchestration/{orchestrator,intent-classifier,scheduler,evidence-fusion,reasoning-engine,types}.ts`, `src/components/copilot/CopilotWorkspace.tsx`, `src/routes/copilot.tsx`, `src/components/ai/ask-copilot-dialog.tsx`, `src/components/ai/global-copilot-launcher.tsx`, `src/components/intel-centre/centre-copilot.tsx`, each `src/features/*/…` centre (context push on mount)
+- **Deprecated:** `src/lib/ai/mock-intelligence.ts`, legacy dialog internals
 
-## Technical notes
+## Out of scope for this pass
 
-- **Why real users beats mock sessions**: eliminates the entire `devBypass` branching pattern that's been creeping through the codebase. One integration point (Supabase) instead of two auth realities.
-- **Password**: uses `DEV_SEED_PASSWORD` env (Lovable Cloud secret) or a strong default. Migration inserts via `auth.admin_create_user`-equivalent SQL using `crypt()` from `pgcrypto`.
-- **Landing pages**: Administrator→`/`, Director→`/`, Officer→`/`, Analyst→`/detect` (mapped in `role-dashboards.ts`; brief supports the requested `/dashboard`, `/executive`, `/operations`, `/analytics` names but those routes don't exist yet in Seaphore — we map to nearest existing routes and can add aliases if you want the exact paths).
+- Cross-user real-time (multi-officer collaboration on one mission) — will follow once single-user unification lands.
+- Full replacement of the reasoning model — this pass wires mission grounding into the existing engine, not a model swap.
+
+Approve and I'll implement in the order above (Mission Context store → engine wiring → surface unification → module wiring → backend snapshot → cleanup).
