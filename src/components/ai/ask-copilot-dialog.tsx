@@ -48,7 +48,8 @@ export function AskCopilotDialog({
   context,
 }: AskCopilotDialogProps) {
   const config = COPILOT_REGISTRY[instance];
-  const title = config?.title ?? "Seaphore Copilot";
+  const title = config?.name ?? "Seaphore Copilot";
+
   const subtitle = SUBTITLES[instance] ?? "Ask an operational question";
 
   useEffect(() => {
