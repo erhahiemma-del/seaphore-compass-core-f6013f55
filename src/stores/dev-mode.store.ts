@@ -1,14 +1,16 @@
 /**
  * dev-mode.store — persisted UX state for the developer role switcher.
  *
- * The `bypassAuth` field is DEPRECATED and permanently `false`. The old
- * client-side session bypass was replaced by real seeded accounts
- * (`{role}@seaphore.local`) authenticated through Supabase. See
- * `src/lib/dev/quick-login.ts` and `src/lib/dev/env.ts`.
+ * Preview / development ONLY. `DEV_AUTH_ENABLED` gates every reader:
+ * production builds always see `bypassAuth = false` and `useIsDevBypass()
+ * = false`, so no mock session can leak into a published deployment.
  *
- * Retained fields:
- *  - `mockRole`: the role the floating Role Switcher last selected
- *    (used only for UI hint labels; never for authorization).
+ * A "mock session" is just:
+ *   • bypassAuth: true      — RequireAuth treats the visitor as authenticated
+ *   • mockRole: OfficerRole — feeds useRoles / RBAC / Copilot / Policy engine
+ *
+ * The store is persisted, so the mock session survives refresh until the
+ * user signs out (which calls `clearBypass()`).
  */
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
@@ -17,32 +19,37 @@ import { DEV_AUTH_ENABLED } from "@/lib/dev/env";
 import type { OfficerRole } from "@/stores/auth.store";
 
 interface DevModeState {
-  bypassAuth: false;
+  bypassAuth: boolean;
   mockRole: OfficerRole;
-  setBypassAuth: (v: boolean) => void;
+  activateBypass: (r: OfficerRole) => void;
+  clearBypass: () => void;
   setMockRole: (r: OfficerRole) => void;
+  /** @deprecated use activateBypass / clearBypass */
+  setBypassAuth: (v: boolean) => void;
 }
 
 export const useDevModeStore = create<DevModeState>()(
   persist(
     (set) => ({
-      bypassAuth: false as const,
+      bypassAuth: false,
       mockRole: "officer",
-      // No-op: the old bypass is gone. Kept for API compat with legacy call sites.
-      setBypassAuth: () => set({ bypassAuth: false as const }),
+      activateBypass: (mockRole) => set({ bypassAuth: true, mockRole }),
+      clearBypass: () => set({ bypassAuth: false }),
       setMockRole: (mockRole) => set({ mockRole }),
+      setBypassAuth: (bypassAuth) => set({ bypassAuth }),
     }),
     { name: "seaphore.dev-mode.v2" },
   ),
 );
 
 /**
- * DEPRECATED — always returns `false`. Retained only so legacy call
- * sites compile until they are cleaned up. New code should not consult
- * this hook.
+ * Returns `true` only in preview/development AND when a mock session
+ * has been activated via `activateBypass`. Production builds tree-shake
+ * the `DEV_AUTH_ENABLED` branch and this hook is a permanent `false`.
  */
 export function useIsDevBypass(): boolean {
-  return false;
+  const bypassAuth = useDevModeStore((s) => s.bypassAuth);
+  return DEV_AUTH_ENABLED && bypassAuth;
 }
 
 export { DEV_AUTH_ENABLED as DEV_MODE_AVAILABLE };
