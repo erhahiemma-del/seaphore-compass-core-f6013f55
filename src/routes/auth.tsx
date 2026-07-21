@@ -38,7 +38,8 @@ import nimasaLogo from "@/assets/nimasa-logo.png.asset.json";
 import { cn } from "@/lib/utils";
 import { getPendingMfaFactor } from "@/lib/auth/mfa";
 import { MfaChallenge } from "@/components/auth/MfaChallenge";
-import { DEV_MODE_AVAILABLE } from "@/lib/dev/dev-mode";
+import { DEV_AUTH_ENABLED } from "@/lib/dev/env";
+import { quickLoginAs } from "@/lib/dev/quick-login";
 import { ROLE_DASHBOARDS } from "@/lib/dev/role-dashboards";
 import { useDevModeStore } from "@/stores/dev-mode.store";
 import type { OfficerRole } from "@/stores/auth.store";
@@ -206,7 +207,7 @@ function AuthPage() {
     staleTime: 60_000,
   });
 
-  const isDev = DEV_MODE_AVAILABLE;
+  const isDev = DEV_AUTH_ENABLED;
 
   useEffect(() => {
     if (session && !mfa) navigate({ to: redirect, replace: true });
@@ -236,18 +237,22 @@ function AuthPage() {
     }
   }
 
-  function handleMissionAccess(roleKey: RoleKey) {
+  async function handleMissionAccess(roleKey: RoleKey) {
     setDevLoading(roleKey);
-    const store = useDevModeStore.getState();
-    store.setMockRole(roleKey as OfficerRole);
-    store.setBypassAuth(true);
+    setError(null);
     try {
-      localStorage.setItem("seaphore.dev.demo-seed", String(Date.now()));
-    } catch {
-      /* ignore */
+      const result = await quickLoginAs(roleKey);
+      if (!result.ok) {
+        setError(`[${result.stage}] ${result.message} — ${result.fix}`);
+        setDevLoading(null);
+        return;
+      }
+      useDevModeStore.getState().setMockRole(roleKey as OfficerRole);
+      navigate({ to: result.landingPath, replace: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Quick login failed");
+      setDevLoading(null);
     }
-    const dash = ROLE_DASHBOARDS[roleKey].url;
-    navigate({ to: dash, replace: true });
   }
 
   return (

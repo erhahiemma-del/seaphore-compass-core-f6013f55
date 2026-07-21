@@ -149,9 +149,24 @@ function RootComponent() {
         {import.meta.env.DEV ? <PerfOverlayLazy /> : null}
         {!import.meta.env.PROD ? <DevToolbarLazy /> : null}
         {!import.meta.env.PROD ? <DevModeBadgeLazy /> : null}
+        {!import.meta.env.PROD ? <DevCommandPaletteLazy /> : null}
       </ThemeProvider>
     </QueryClientProvider>
   );
+}
+
+function DevCommandPaletteLazy() {
+  const [Comp, setComp] = useState<React.ComponentType | null>(null);
+  useEffect(() => {
+    let mounted = true;
+    import("@/components/dev/DevCommandPalette").then((m) => {
+      if (mounted) setComp(() => m.DevCommandPalette);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+  return Comp ? <Comp /> : null;
 }
 
 function DevModeBadgeLazy() {
