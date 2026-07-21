@@ -13,7 +13,7 @@
  */
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Send } from "lucide-react";
+import { Loader2, RotateCcw, Send } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { AdaptiveBriefing } from "@/components/copilot/briefing";
@@ -24,6 +24,8 @@ import type {
 import { ContextBar } from "@/components/copilot/ContextBar";
 import { StreamingStages } from "@/components/copilot/StreamingStages";
 import { Button } from "@/components/ui/button";
+import { useCopilotSession } from "@/hooks/use-copilot-session";
+import type { CopilotInstanceKey } from "@/lib/ai/types";
 import { adaptBriefing, type CopilotQueryResponse } from "@/lib/copilot/adapt-briefing";
 
 import { copilotOverrideFn, copilotQueryFn } from "@/lib/orchestration.functions";
@@ -32,6 +34,7 @@ import { orchestrate, captureOverride } from "@/services/orchestration";
 import { useAuthStore } from "@/stores/auth.store";
 import { useCopilotStore } from "@/stores/copilot.store";
 import { useIsDevBypass } from "@/stores/dev-mode.store";
+import { useMissionContextStore } from "@/stores/mission-context.store";
 
 
 type Stage = "idle" | "classifying" | "retrieving" | "reasoning" | "rendering" | "ready";
@@ -47,6 +50,11 @@ export interface CopilotWorkspaceProps {
   className?: string;
   autoFocus?: boolean;
   showContextBar?: boolean;
+  /** Which Copilot surface this workspace is rendered from. Biases the
+   * orchestration Agent Scheduler toward that module's specialist. */
+  instance?: CopilotInstanceKey;
+  /** Show the shared conversation history for the active mission. */
+  showHistory?: boolean;
 }
 
 export function CopilotWorkspace({
@@ -54,6 +62,8 @@ export function CopilotWorkspace({
   className,
   autoFocus = true,
   showContextBar = true,
+  instance = "seaphore",
+  showHistory = true,
 }: CopilotWorkspaceProps) {
   const queryClient = useQueryClient();
   const context = useCopilotStore((s) => s.context);
@@ -62,6 +72,9 @@ export function CopilotWorkspace({
   const authUserId = useAuthStore((s) => s.officer?.userId);
   const officerId = authUserId ?? "00000000-0000-0000-0000-000000000000";
   const devBypass = useIsDevBypass();
+  const session = useCopilotSession();
+  const activeMissionId = useMissionContextStore((s) => s.activeId);
+
 
 
 
@@ -85,9 +98,17 @@ export function CopilotWorkspace({
       const started = performance.now();
       await new Promise((r) => setTimeout(r, 80));
       setStage("retrieving");
+      // Flatten the active Mission Context so the reasoning engine has
+      // full operational grounding (vessel, voyage, alerts, decisions, …).
+      const missionState = useMissionContextStore.getState();
+      const mission = activeMissionId
+        ? missionState.missions[activeMissionId]
+        : undefined;
       const queryPayload = {
         query: q,
         officer_id: officerId,
+        moduleHint: instance,
+        mission: mission as unknown as Record<string, unknown> | undefined,
         context: context
           ? {
               investigation_id: context.kind === "investigation" ? context.label : undefined,
@@ -100,6 +121,8 @@ export function CopilotWorkspace({
         ? await orchestrate({
             query: queryPayload.query,
             officer_id: queryPayload.officer_id,
+            moduleHint: queryPayload.moduleHint,
+            mission: queryPayload.mission,
             context: queryPayload.context,
           })
         : await runQuery({ data: queryPayload })) as CopilotQueryResponse;
@@ -114,6 +137,8 @@ export function CopilotWorkspace({
       setStage("rendering");
       setBriefing(adapted);
       setStage("ready");
+      // Record the exchange on the shared Mission Context conversation.
+      session.appendCopilot(`Briefing: ${q}`, adapted.id, instance);
       await queryClient.invalidateQueries({ queryKey: ["intel", "briefings"] });
       return adapted;
     },
@@ -127,8 +152,10 @@ export function CopilotWorkspace({
     const clean = q.trim();
     if (!clean || mutation.isPending) return;
     setText(clean);
+    session.appendOfficer(clean, instance);
     mutation.mutate(clean);
   }
+
 
   async function handleOverride(submission: OverrideSubmission) {
     if (!briefing) return;
@@ -172,6 +199,44 @@ export function CopilotWorkspace({
   return (
     <div className={cn("flex flex-col gap-4", className)}>
       {showContextBar && context ? <ContextBar context={context} /> : null}
+
+      {showHistory && session.history.length > 0 ? (
+        <div className="rounded-lg border border-border bg-card p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Mission conversation · {session.history.length} turns
+            </p>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={session.reset}
+              className="h-6 gap-1 text-[11px]"
+            >
+              <RotateCcw className="h-3 w-3" aria-hidden />
+              Reset
+            </Button>
+          </div>
+          <ul className="max-h-40 space-y-1 overflow-y-auto pr-1">
+            {session.history.slice(-8).map((entry) => (
+              <li
+                key={entry.id}
+                className={cn(
+                  "rounded border px-2 py-1 text-[11.5px] leading-snug",
+                  entry.role === "officer"
+                    ? "border-primary/30 bg-primary/5 text-foreground"
+                    : "border-border bg-background text-muted-foreground",
+                )}
+              >
+                <span className="mr-1 font-semibold uppercase tracking-wider text-[9.5px] text-muted-foreground">
+                  {entry.role === "officer" ? "Officer" : entry.instance ?? "Copilot"}
+                </span>
+                {entry.text}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
 
       {!briefing && !isStreaming ? (
         <div className="rounded-lg border border-border bg-card p-4">

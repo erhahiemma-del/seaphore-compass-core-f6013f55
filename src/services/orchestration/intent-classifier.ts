@@ -32,6 +32,23 @@ const IMO_RE = /\bIMO\s?\d{7}\b/gi;
 const MMSI_RE = /\b\d{9}\b/g;
 const RC_RE = /\bRC[- ]?\d{5,8}\b/gi;
 
+/** Module hint → primary capability biased into the scheduler. */
+const MODULE_HINT_CAPABILITY: Record<string, CapabilityId> = {
+  manifest: "MANIFEST_CORRELATION",
+  cargo: "MANIFEST_CORRELATION",
+  revenue: "REVENUE_LEAKAGE_DETECTION",
+  vessel: "PATTERN_DETECTION",
+  ports: "PATTERN_DETECTION",
+  ownership: "OWNERSHIP_ANALYSIS",
+  compliance: "COMPLIANCE_ASSESSMENT",
+  evidence: "EVIDENCE_SEARCH",
+  alerts: "RISK_SCORING",
+  memory: "PATTERN_DETECTION",
+  administration: "EVIDENCE_SEARCH",
+  seaphore: "EVIDENCE_SEARCH",
+};
+
+
 export function classifyIntent(query: OfficerQuery): Intent {
   const q = query.query;
 
@@ -53,7 +70,17 @@ export function classifyIntent(query: OfficerQuery): Intent {
   >) {
     if (patterns.some((p) => p.test(q))) capabilities.push(cap);
   }
+
+  // Module-hint bias — when the query originates from a specialist Copilot
+  // surface (Manifest / Revenue / etc.), prepend that module's primary
+  // capability so the Agent Scheduler consults its specialist first.
+  const moduleCapability = MODULE_HINT_CAPABILITY[query.moduleHint ?? ""];
+  if (moduleCapability && !capabilities.includes(moduleCapability)) {
+    capabilities.unshift(moduleCapability);
+  }
+
   if (capabilities.length === 0) capabilities.push("EVIDENCE_SEARCH");
+
 
   // Entity extraction — non-fabricating; only lifts literals present in query
   const entities: Intent["entities"] = [];

@@ -39,12 +39,24 @@ export interface QueryContext {
   workspace?: Workspace;
 }
 
+/**
+ * Copilot instance / surface hint. Values match CopilotInstanceKey in
+ * src/lib/ai/types.ts but the type stays a bare string here to keep the
+ * orchestration service layer decoupled from the UI layer.
+ */
+export type ModuleHint = string;
+
 export interface OfficerQuery {
   query: string;
   session_id?: string;
   officer_id: string;
   context?: QueryContext;
+  /** Which Copilot surface the query originated from. Biases scheduling. */
+  moduleHint?: ModuleHint;
+  /** Flattened Mission Context snapshot passed as grounding to the engine. */
+  mission?: Record<string, unknown>;
 }
+
 
 /** 2.1 output of the Intent Classifier. */
 export interface Intent {
