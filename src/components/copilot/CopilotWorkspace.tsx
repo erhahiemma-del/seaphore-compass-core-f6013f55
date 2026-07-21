@@ -96,7 +96,13 @@ export function CopilotWorkspace({
             }
           : undefined,
       };
-      const response = (await runQuery({ data: queryPayload })) as CopilotQueryResponse;
+      const response = (devBypass
+        ? await orchestrate({
+            query: queryPayload.query,
+            officer_id: queryPayload.officer_id,
+            context: queryPayload.context,
+          })
+        : await runQuery({ data: queryPayload })) as CopilotQueryResponse;
       setStage("reasoning");
       const adapted = adaptBriefing(
         {
