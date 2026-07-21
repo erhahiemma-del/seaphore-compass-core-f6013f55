@@ -7,27 +7,36 @@
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   AlertTriangle,
   Anchor,
   ArrowRight,
+  Building2,
   ClipboardCheck,
+  DollarSign,
+  ExternalLink,
   FileText,
   Gauge,
+  Gavel,
   Layers,
   Loader2,
   MapPin,
+  Package,
   Pin,
   Plus,
+  Radar,
   Search,
   Send,
-  Ship,
   ShieldCheck,
+  Ship,
   Sparkles,
+  Split,
   TrendingDown,
   Users,
   Wallet,
+  X,
+  type LucideIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -37,12 +46,14 @@ import type {
   OverrideSubmission,
 } from "@/components/copilot/briefing";
 import { StreamingStages } from "@/components/copilot/StreamingStages";
+import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { Button } from "@/components/ui/button";
 import { adaptBriefing, type CopilotQueryResponse } from "@/lib/copilot/adapt-briefing";
 import { getIntelligenceMetrics } from "@/lib/intelligence-metrics.functions";
 import { copilotOverrideFn, copilotQueryFn } from "@/lib/orchestration.functions";
 import { cn } from "@/lib/utils";
 import { useCopilotStore } from "@/stores/copilot.store";
+
 
 export const Route = createFileRoute("/copilot")({
   head: () => ({
