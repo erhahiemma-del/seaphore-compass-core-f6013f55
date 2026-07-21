@@ -32,6 +32,23 @@ const IMO_RE = /\bIMO\s?\d{7}\b/gi;
 const MMSI_RE = /\b\d{9}\b/g;
 const RC_RE = /\bRC[- ]?\d{5,8}\b/gi;
 
+/** Module hint → primary capability biased into the scheduler. */
+const MODULE_HINT_CAPABILITY: Record<string, CapabilityId> = {
+  manifest: "MANIFEST_CORRELATION",
+  cargo: "MANIFEST_CORRELATION",
+  revenue: "REVENUE_LEAKAGE_DETECTION",
+  vessel: "PATTERN_DETECTION",
+  ports: "PATTERN_DETECTION",
+  ownership: "OWNERSHIP_ANALYSIS",
+  compliance: "COMPLIANCE_ASSESSMENT",
+  evidence: "EVIDENCE_SEARCH",
+  alerts: "RISK_SCORING",
+  memory: "PATTERN_DETECTION",
+  administration: "EVIDENCE_SEARCH",
+  seaphore: "EVIDENCE_SEARCH",
+};
+
+
 export function classifyIntent(query: OfficerQuery): Intent {
   const q = query.query;
 
