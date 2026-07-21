@@ -31,6 +31,7 @@ import { cn } from "@/lib/utils";
 import { orchestrate, captureOverride } from "@/services/orchestration";
 import { useAuthStore } from "@/stores/auth.store";
 import { useCopilotStore } from "@/stores/copilot.store";
+import { useIsDevBypass } from "@/stores/dev-mode.store";
 
 
 type Stage = "idle" | "classifying" | "retrieving" | "reasoning" | "rendering" | "ready";
