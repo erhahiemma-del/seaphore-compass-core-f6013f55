@@ -122,7 +122,6 @@ function CopilotOpsPage() {
       const response = (await runQuery({
         data: {
           query: q,
-          officer_id: officerId,
           context: context
             ? {
                 investigation_id: context.kind === "investigation" ? context.label : undefined,
