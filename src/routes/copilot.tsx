@@ -252,8 +252,15 @@ function CopilotOpsPage() {
   function handleSubmit(q: string) {
     const clean = q.trim();
     if (!clean || mutation.isPending) return;
-    setText(clean);
+    setText("");
+    setError(null);
+    setClarify(null);
     session.appendOfficer(clean);
+    // Scroll the workspace so the officer sees streaming stages / new briefing
+    // instead of the (now stale) previous briefing content above.
+    requestAnimationFrame(() => {
+      workspaceScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    });
     mutation.mutate(clean);
   }
 
