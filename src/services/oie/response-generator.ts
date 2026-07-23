@@ -7,7 +7,7 @@
  * module still produces a complete response using only the engine's
  * structured sections — the officer never sees a blank briefing.
  */
-import type { Briefing, BriefingSection } from "@/services/orchestration";
+import type { Briefing, BriefingSection, SectionKind } from "@/services/orchestration";
 import { badgeFromComposite, explainMatrix } from "./decision-support";
 import type { HumanCopy } from "./provider-runtime.server";
 import type { ConfidenceBadge, HumanResponse } from "./types";
@@ -15,25 +15,40 @@ import type { ConfidenceBadge, HumanResponse } from "./types";
 const OFFICER_NOTICE: HumanResponse["officerNotice"] =
   "Officer decides — Seaphore only observes and recommends.";
 
-function pickSection<K extends BriefingSection["kind"]>(
-  sections: BriefingSection[],
-  kind: K,
-): Extract<BriefingSection, { kind: K }> | undefined {
-  return sections.find((s) => s.kind === kind) as
-    | Extract<BriefingSection, { kind: K }>
-    | undefined;
+// The BriefingSection type is generic on SectionKind but not a discriminated
+// union, so a same-typed narrow isn't possible; we cast the payload at the
+// use site (mirrors `adapt-briefing.ts`).
+type AnyPayload = { title: string; payload: any }; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+function pickSection(sections: BriefingSection[], kind: SectionKind): AnyPayload | undefined {
+  return sections.find((s) => s.kind === kind) as AnyPayload | undefined;
+}
+
+interface CriticalFindingIn {
+  priority: string;
+  title: string;
+  source: string;
+}
+interface OfficerActionIn {
+  id: string;
+  label: string;
 }
 
 function fallbackFromBriefing(briefing: Briefing): HumanResponse {
   const s = briefing.sections;
-  const executive = pickSection(s, "executive")?.payload.text ?? "";
-  const analytical = pickSection(s, "analytical_assessment")?.payload.text ?? "";
-  const verified = pickSection(s, "verified_evidence")?.payload.items ?? [];
-  const critical = pickSection(s, "critical_findings")?.payload.findings ?? [];
-  const gaps = pickSection(s, "intelligence_gaps")?.payload.list ?? [];
-  const nextQ = pickSection(s, "next_questions")?.payload.questions ?? [];
-  const actions = pickSection(s, "officer_actions")?.payload.actions ?? [];
-  const impact = pickSection(s, "decision_impact")?.payload;
+  const executive = (pickSection(s, "executive")?.payload.text as string | undefined) ?? "";
+  const analytical =
+    (pickSection(s, "analytical_assessment")?.payload.text as string | undefined) ?? "";
+  const verified = (pickSection(s, "verified_evidence")?.payload.items as string[] | undefined) ?? [];
+  const critical =
+    (pickSection(s, "critical_findings")?.payload.findings as CriticalFindingIn[] | undefined) ?? [];
+  const gaps = (pickSection(s, "intelligence_gaps")?.payload.list as string[] | undefined) ?? [];
+  const nextQ = (pickSection(s, "next_questions")?.payload.questions as string[] | undefined) ?? [];
+  const actions =
+    (pickSection(s, "officer_actions")?.payload.actions as OfficerActionIn[] | undefined) ?? [];
+  const impact = pickSection(s, "decision_impact")?.payload as
+    | { revenue: number; security: number; operational: number; cargo: number }
+    | undefined;
 
   const insufficient = briefing.intelligence_status === "insufficient";
   const badge: ConfidenceBadge = badgeFromComposite(
