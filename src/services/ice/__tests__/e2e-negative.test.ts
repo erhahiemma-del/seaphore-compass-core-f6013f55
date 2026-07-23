@@ -354,14 +354,14 @@ describe("E2E · IAL malformed evidence → ICE fails safely", () => {
 
   it("mixes malformed and healthy connectors without corrupting the fused output", async () => {
     const junk = raw({
-      source: "equasis" as ConnectorId,
+      source: "customs" as ConnectorId,
       grade: "UNKNOWN",
       kind: "other",
       fields: { unrecognised_field: "??" },
       ageHrs: 24 * 365, // ancient
     });
     const mgr = managerWith(
-      new ScriptedConnector("equasis" as ConnectorId, [junk]),
+      new ScriptedConnector("customs" as ConnectorId, [junk]),
       new SimulatedImoConnector(),
       new SimulatedEquasisConnector(),
     );
