@@ -89,6 +89,8 @@ import { RoleManagementTable } from "@/features/administration/Administration";
 import { can, type Role } from "@/lib/permissions";
 import { QUERY_KEYS } from "@/lib/query-keys";
 import { DataSourceMatrixPanel } from "@/components/data-sources/data-source-matrix-panel";
+import { IalAdminPanel } from "@/components/administration/ial-admin-panel";
+
 
 // ---------- Types & constants ----------
 
