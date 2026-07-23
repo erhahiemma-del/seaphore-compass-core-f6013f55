@@ -15,6 +15,7 @@ import {
   Building2,
   ClipboardCheck,
   DollarSign,
+  Download,
   ExternalLink,
   FileText,
   Gauge,
@@ -49,6 +50,7 @@ import { StreamingStages } from "@/components/copilot/StreamingStages";
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { Button } from "@/components/ui/button";
 import { adaptBriefing, type CopilotQueryResponse } from "@/lib/copilot/adapt-briefing";
+import { exportBriefingToPdf } from "@/lib/copilot/export-briefing-pdf";
 import { getIntelligenceMetrics } from "@/lib/intelligence-metrics.functions";
 import { copilotOverrideFn } from "@/lib/orchestration.functions";
 import { runOIEFn } from "@/lib/oie/oie.functions";
@@ -418,6 +420,15 @@ function CopilotOpsPage() {
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => briefing && exportBriefingToPdf(briefing)}
+                    disabled={!briefing || mutation.isPending}
+                    className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] font-medium text-foreground/80 hover:bg-accent disabled:opacity-50"
+                    title="Download this briefing as a PDF for sharing and record-keeping"
+                  >
+                    <Download className="h-3 w-3" /> Export PDF
+                  </button>
                   <button
                     type="button"
                     onClick={() => {
