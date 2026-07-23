@@ -37,6 +37,7 @@ import {
   getProviderMeta,
   type ReasoningProviderId,
 } from "./reasoning-provider";
+import { findPlaybook, evaluatePlaybook } from "./playbooks";
 
 export interface ProviderInvocationResult {
   copy: HumanCopyShape | null;
