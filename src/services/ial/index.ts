@@ -84,20 +84,11 @@ export function getIntelligenceAcquisitionManager(): ConnectorManager {
 
   if (mode === "production" || mode === "hybrid") {
     try {
-      // Side-effect: fills the OSINT code registry with production connectors.
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const osint = require("@/lib/osint/connectors") as unknown;
-      void osint; // no-op — the import is for its side-effect
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { listConnectors } = require("@/lib/osint/registry") as {
-        listConnectors: () => ReadonlyArray<import("@/lib/osint/types").ConnectorInterface>;
-      };
-      for (const c of listConnectors()) {
+      for (const c of listOsintConnectors()) {
         mgr.register(bridgeOsintConnector(c));
       }
     } catch {
-      // Environment (e.g. isolated unit test) without the OSINT bundle —
-      // fall back to simulators below.
+      // Fall back to simulators below.
     }
   }
 
