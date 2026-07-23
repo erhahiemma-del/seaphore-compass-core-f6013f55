@@ -4,6 +4,14 @@
  * Briefing Renderer can compose them safely.
  */
 import { AlertTriangle, ChevronRight, ShieldAlert, Sparkles } from "lucide-react";
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Collapsible, GradeChip, SectionShell } from "./primitives";
 import type {
   CriticalFinding,
