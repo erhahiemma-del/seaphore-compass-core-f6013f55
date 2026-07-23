@@ -72,13 +72,39 @@ export function adaptBriefing(
   const next = findSection(s, "next_questions");
 
   const criticalFindings: CriticalFinding[] | undefined = critical
-    ? critical.payload.findings.map((f: { priority: string; title: string; grade: string; source: string }, i: number) => ({
-        id: `${response.briefing_id}-cf-${i}`,
-        priority: (f.priority as CriticalFinding["priority"]) ?? "monitor",
-        title: f.title,
-        grade: f.grade as EvidenceGrade,
-        source: f.source,
-      }))
+    ? critical.payload.findings.map(
+        (
+          f: {
+            priority: string;
+            title: string;
+            grade: string;
+            source: string;
+            citations?: Array<{
+              id: string;
+              source: string;
+              grade: string;
+              hash?: string;
+              excerpt?: string;
+              collected_at?: string;
+            }>;
+          },
+          i: number,
+        ) => ({
+          id: `${response.briefing_id}-cf-${i}`,
+          priority: (f.priority as CriticalFinding["priority"]) ?? "monitor",
+          title: f.title,
+          grade: f.grade as EvidenceGrade,
+          source: f.source,
+          citations: f.citations?.map((c) => ({
+            id: c.id,
+            source: c.source,
+            grade: c.grade as EvidenceGrade,
+            hash: c.hash,
+            excerpt: c.excerpt,
+            collectedAt: c.collected_at,
+          })),
+        }),
+      )
     : undefined;
 
   return {
