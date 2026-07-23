@@ -66,6 +66,97 @@ export function CriticalFindings({ findings }: { findings: CriticalFinding[] }) 
   );
 }
 
+/* ─────────────── Grouped Citations (by source, then grade) ─────────────── */
+
+const GRADE_ORDER: EvidenceGrade[] = [
+  "VERIFIED",
+  "CORROBORATED",
+  "OBSERVED",
+  "REPORTED",
+  "INFERRED",
+  "UNKNOWN",
+];
+
+function groupCitations(citations: EvidenceCitation[]) {
+  const bySource = new Map<string, Map<EvidenceGrade, EvidenceCitation[]>>();
+  for (const c of citations) {
+    const source = c.source || "Unknown source";
+    if (!bySource.has(source)) bySource.set(source, new Map());
+    const gradeMap = bySource.get(source)!;
+    const grade = c.grade || "UNKNOWN";
+    if (!gradeMap.has(grade)) gradeMap.set(grade, []);
+    gradeMap.get(grade)!.push(c);
+  }
+  return Array.from(bySource.entries())
+    .map(([source, gradeMap]) => ({
+      source,
+      total: Array.from(gradeMap.values()).reduce((n, arr) => n + arr.length, 0),
+      grades: GRADE_ORDER.filter((g) => gradeMap.has(g)).map((g) => ({
+        grade: g,
+        items: gradeMap.get(g)!,
+      })),
+    }))
+    .sort((a, b) => b.total - a.total);
+}
+
+function GroupedCitations({ citations }: { citations: EvidenceCitation[] }) {
+  const groups = groupCitations(citations);
+  return (
+    <div className="mt-2 rounded border border-dashed bg-muted/30 p-2">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Evidence cited
+        </p>
+        <span className="text-[10px] text-muted-foreground">
+          {citations.length} record{citations.length === 1 ? "" : "s"} · {groups.length} source
+          {groups.length === 1 ? "" : "s"}
+        </span>
+      </div>
+      <div className="mt-2 space-y-2">
+        {groups.map((g) => (
+          <div key={g.source} className="rounded bg-background/60 p-2">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[11px] font-semibold text-foreground">{g.source}</p>
+              <span className="text-[10px] text-muted-foreground">
+                {g.total} record{g.total === 1 ? "" : "s"}
+              </span>
+            </div>
+            <div className="mt-1 space-y-1.5">
+              {g.grades.map(({ grade, items }) => (
+                <div key={grade} className="flex flex-wrap items-start gap-2">
+                  <span className="flex items-center gap-1 shrink-0">
+                    <GradeChip grade={grade} />
+                    <span className="text-[10px] text-muted-foreground">×{items.length}</span>
+                  </span>
+                  <ul className="flex-1 space-y-0.5">
+                    {items.map((c) => (
+                      <li key={c.id} className="text-[11px] text-foreground">
+                        <span className="font-mono text-muted-foreground">
+                          #{c.id.slice(0, 8)}
+                        </span>
+                        {c.collectedAt && (
+                          <span className="text-muted-foreground">
+                            {" "}
+                            · {new Date(c.collectedAt).toUTCString().slice(5, 16)}
+                          </span>
+                        )}
+                        {c.excerpt && (
+                          <span className="block text-muted-foreground">"{c.excerpt}"</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
 /* ─────────────── Analytical Assessment + Why Chain ─────────────── */
 
 export function AnalyticalAssessment({
