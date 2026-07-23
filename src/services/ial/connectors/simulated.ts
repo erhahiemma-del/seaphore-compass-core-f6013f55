@@ -176,7 +176,9 @@ export class SimulatedOpenSanctionsConnector extends SimConnector {
         source: this.id,
         sourceName: this.displayName,
         grade: "CORROBORATED",
-        entity: q.entity ?? { kind: "company", nativeId: target, label: target },
+        entity: q.entity
+          ? { kind: q.entity.kind, nativeId: q.entity.id, label: q.entity.label }
+          : { kind: "company", nativeId: target, label: target },
         kind: "sanctions",
         fields: { listName: "OFAC-SDN", match: "none", score: 0.02 },
         observedAt: new Date(Date.now() - 6 * 3600_000),
