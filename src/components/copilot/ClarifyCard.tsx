@@ -44,7 +44,7 @@ export function ClarifyCard({ clarification, onPick }: ClarifyCardProps) {
               size="sm"
               variant="outline"
               className="h-8 text-xs"
-              onClick={() => onPick(composeQuery(o.label))}
+              onClick={() => onPick(composeQuery(o.id, o.label))}
               title={o.hint}
             >
               {o.label}
