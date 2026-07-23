@@ -9,6 +9,8 @@ import type {
   CriticalFinding,
   DecisionImpact as DecisionImpactData,
   DecisionRequired as DecisionRequiredData,
+  EvidenceCitation,
+  EvidenceGrade,
   EvidenceSourcesSummary,
   OfficerActionItem,
   OverrideDecision,
