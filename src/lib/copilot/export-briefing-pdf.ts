@@ -234,7 +234,7 @@ export function exportBriefingToPdf(briefing: AdaptiveBriefing): string {
   if (briefing.whyChain?.length) {
     writeSectionTitle(pdf, cursor, "Reasoning");
     briefing.whyChain.forEach((step, i) => {
-      const label = step.claim || step.detail || "";
+      const label = `${step.step}  (${step.from} → ${step.to})`;
       writeBullet(pdf, cursor, `${i + 1}. ${label}`);
     });
     cursor.y += 6;
