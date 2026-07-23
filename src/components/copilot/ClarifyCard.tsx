@@ -14,6 +14,13 @@ export interface ClarifyCardProps {
 }
 
 export function ClarifyCard({ clarification, onPick }: ClarifyCardProps) {
+  const subject = clarification.anchor?.value;
+  function composeQuery(label: string): string {
+    if (!subject) return label;
+    // Compose a full operational query so the OIE re-enters with an
+    // unambiguous intent + subject instead of a bare chip label.
+    return `${label} for ${subject}`;
+  }
   return (
     <div className="rounded-lg border border-primary/40 bg-primary/5 p-4">
       <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
@@ -27,7 +34,7 @@ export function ClarifyCard({ clarification, onPick }: ClarifyCardProps) {
               size="sm"
               variant="outline"
               className="h-8 text-xs"
-              onClick={() => onPick(o.label)}
+              onClick={() => onPick(composeQuery(o.label))}
               title={o.hint}
             >
               {o.label}
@@ -41,3 +48,4 @@ export function ClarifyCard({ clarification, onPick }: ClarifyCardProps) {
     </div>
   );
 }
+
