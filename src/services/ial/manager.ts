@@ -299,6 +299,8 @@ async function emitConnectorEvent(
   } catch {
     /* best-effort — the pipeline never fails on telemetry */
   }
+}
+
 
 function describe(err: unknown): string {
   if (err instanceof Error) return err.message;
