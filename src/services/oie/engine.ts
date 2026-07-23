@@ -1,33 +1,51 @@
 /**
- * OIE · engine — the 8-module operational pipeline.
+ * OIE · engine — the 8-module operational pipeline (client-safe).
  *
- *   1. Query Interpreter   → structured intent + entities
- *   2. Mission Context     → active investigation snapshot
- *   3. Skills Registry     → catalogue of operational capabilities
- *   4. Operational Planner → picks skills for this query
- *   5. Evidence Collector  → delegates to the existing orchestrator
- *                            (its scheduler/fusion/reasoning stack)
- *   6. Reasoning Provider  → Gemini / GPT / Claude (pluggable)
- *   7. Decision Support    → confidence badges + explanation
- *   8. Response Generator  → the final operational Human Response
+ *   1. Query Interpreter        → structured intent + entities
+ *   2. Conversation Resolver    → pronoun / anaphora resolution
+ *   3. Mission Context Builder  → active investigation snapshot
+ *   4. Clarifier                → short-circuits when the request is ambiguous
+ *   5. Skills Registry          → catalogue of operational capabilities
+ *   6. Operational Planner      → picks the primary + supporting skills
+ *   7. Evidence Collector       → delegates to the existing orchestrator
+ *   8. Reasoning Provider       → (injected) Gemini / GPT / Claude
+ *   9. Decision Support         → confidence badges + explanation
+ *  10. Response Generator       → operational-tone 8-section briefing
  *
- * The engine returns BOTH the raw `Briefing` (so the existing Adaptive
- * Briefing renderer keeps working unchanged) AND a `HumanResponse`
- * (used by the new operational panel). Nothing in the UI or downstream
- * services has to change for a new reasoning provider — only this file
- * and `provider-runtime.server.ts` decide who thinks.
+ * This file has NO server-only imports so it stays client-bundle safe.
+ * The reasoning provider is INJECTED (see `oie.functions.ts` for the
+ * server path). When no provider is injected the engine still produces
+ * a full, operational-tone response using the deterministic fallback.
  */
-import type { Briefing, OfficerQuery } from "@/services/orchestration";
+import type { Briefing, BriefingSection, OfficerQuery, SectionKind } from "@/services/orchestration";
 import { orchestrate } from "@/services/orchestration";
 
 import { interpretQuery } from "./query-interpreter";
+import { resolvePronouns, isBareSkillPick } from "./conversation-resolver";
 import { buildMission } from "./mission-builder";
-import { planSkills, planCapabilities } from "./planner";
+import { needsClarification, buildClarification } from "./clarifier";
+import { planSkills } from "./planner";
 import { badgeFromComposite } from "./decision-support";
-import { buildHumanResponse } from "./response-generator";
-import { getProviderMeta, DEFAULT_PROVIDER_ID, type ReasoningProviderId } from "./reasoning-provider";
-import { invokeReasoningProvider } from "./provider-runtime.server";
-import type { OIERequest, OIEResult, OperationalMission } from "./types";
+import { buildHumanResponse, type HumanCopyShape } from "./response-generator";
+import type { HumanResponse, OIERequest, OIEResult, OperationalMission, OperationalPlan } from "./types";
+import { DEFAULT_PROVIDER_ID, getProviderMeta, type ReasoningProviderId } from "./reasoning-provider";
+
+export interface ProviderInvocationResult {
+  copy: HumanCopyShape | null;
+  degraded: boolean;
+  reason?: string;
+}
+export type ProviderCall = (
+  briefing: Briefing,
+  missionSummary: string,
+  plan: OperationalPlan,
+) => Promise<ProviderInvocationResult>;
+
+const nullProviderCall: ProviderCall = async () => ({
+  copy: null,
+  degraded: true,
+  reason: "Operational response generated from structured evidence.",
+});
 
 function summariseMission(m: OperationalMission): string {
   const parts: string[] = [];
@@ -37,64 +55,172 @@ function summariseMission(m: OperationalMission): string {
   if (m.portRef) parts.push(`port ${m.portRef}`);
   if (m.companyRefs && m.companyRefs.length > 0)
     parts.push(`companies ${m.companyRefs.slice(0, 3).join(", ")}`);
+  if (m.lastEntity) parts.push(`focus: ${m.lastEntity.type} ${m.lastEntity.value}`);
   return parts.join("; ");
 }
 
-export async function runOIE(req: OIERequest): Promise<OIEResult> {
+/**
+ * Patches the orchestration briefing so the existing AdaptiveBriefing
+ * renderer displays the operational 8-section HumanResponse. This is a
+ * one-way projection: the engine's structured evidence is preserved,
+ * only the human-facing copy in the section payloads is replaced.
+ */
+function patchBriefingWithHumanResponse(
+  briefing: Briefing,
+  human: HumanResponse,
+  plan: OperationalPlan,
+): Briefing {
+  const clone = { ...briefing, sections: briefing.sections.map((s) => ({ ...s })) };
+
+  const set = (kind: SectionKind, payload: unknown) => {
+    const idx = clone.sections.findIndex((s) => s.kind === kind);
+    if (idx >= 0) {
+      clone.sections[idx] = { ...clone.sections[idx], payload } as BriefingSection;
+    }
+  };
+
+  // Executive → operational Executive Summary + Situation Overview
+  set("executive", {
+    text: [human.executiveSummary, human.situationOverview].filter(Boolean).join("\n\n"),
+  });
+
+  // Analytical assessment → Operational Impact + confidence explanation
+  set("analytical_assessment", {
+    text: [
+      human.operationalImpact,
+      `Confidence: ${human.confidenceAssessment.badge}. ${human.confidenceAssessment.explanation}`,
+    ]
+      .filter(Boolean)
+      .join(" "),
+  });
+
+  // Critical findings → operational key findings
+  set("critical_findings", {
+    findings: human.keyFindings.map((f, i) => ({
+      priority: f.priority,
+      title: f.text,
+      grade: "OBSERVED",
+      source: plan.primarySkill.label,
+      id: `${briefing.id}-kf-${i}`,
+    })),
+  });
+
+  // Officer actions → Recommended actions (with badge in the rationale)
+  set("officer_actions", {
+    actions: human.recommendedActions.map((r, i) => ({
+      id: `${briefing.id}-ra-${i}`,
+      label: `${r.action} — ${r.confidence}`,
+    })),
+  });
+
+  // Intelligence gaps → Information still needed
+  set("intelligence_gaps", { list: human.informationStillNeeded });
+
+  // Next questions → Suggested next questions
+  set("next_questions", { questions: human.suggestedNextQuestions });
+
+  return clone;
+}
+
+export async function runOIE(
+  req: OIERequest,
+  providerCall: ProviderCall = nullProviderCall,
+): Promise<OIEResult> {
   const started = Date.now();
   const q: OfficerQuery = req.query;
 
-  // 1. Interpret
-  const interpreted = interpretQuery(q.query);
+  // Build a minimal mission first (for conversation history only) — we
+  // need the conversation BEFORE we can resolve pronouns.
+  const rawMission = q.mission ?? {};
+  const preMission = buildMission(
+    {
+      investigationId: q.context?.investigation_id,
+      workspace: q.context?.workspace,
+      raw: rawMission,
+    },
+    // temporary interpreted stub — replaced below
+    { raw: q.query, resolved: q.query, intent: "ambiguous", mode: "assessment", domains: [], entities: [], reasoning: "", ambiguous: true },
+  );
 
-  // 2. Mission context
+  // 1. Resolve bare-skill picks ("Manifest", "Ownership") using the
+  //    last officer turn as the entity anchor.
+  const bareRewrite = isBareSkillPick(q.query);
+  let queryText = q.query;
+  let priorAnchor = preMission.lastEntity;
+  if (bareRewrite && priorAnchor) {
+    queryText = `${bareRewrite} ${priorAnchor.value}`;
+  }
+
+  // 2. Resolve pronouns against the conversation history.
+  const resolution = resolvePronouns(queryText, preMission.conversation);
+  const anchor = resolution.anchor ?? priorAnchor;
+
+  // 3. Interpret.
+  const interpreted = interpretQuery(q.query, {
+    anchor,
+    resolvedQuery: resolution.resolved,
+  });
+
+  // 4. Build the full mission (now with the correct interpreted entity set).
   const mission = buildMission(
     {
       investigationId: q.context?.investigation_id,
       workspace: q.context?.workspace,
-      raw: q.mission,
+      raw: rawMission,
     },
     interpreted,
   );
 
-  // 3–4. Skills + plan
-  const plan = planSkills(interpreted);
-  const capabilities = planCapabilities(plan);
+  // 5. Clarify if ambiguous — short-circuit before touching the orchestrator.
+  if (needsClarification(interpreted)) {
+    return {
+      kind: "clarify",
+      clarification: buildClarification(interpreted),
+      interpreted,
+      latencyMs: Date.now() - started,
+    };
+  }
 
-  // 5. Evidence Collector — delegate to the existing orchestration engine.
-  //    The planner's capability bias rides on `moduleHint` for now; the
-  //    intent-classifier already respects domains via keywords, so this
-  //    keeps the downstream engine untouched.
+  // 6. Plan.
+  const plan = planSkills(interpreted);
+
+  // 7. Evidence Collector — delegate to the existing orchestration engine.
   const briefing: Briefing = await orchestrate({
     ...q,
-    moduleHint: q.moduleHint ?? interpreted.domains[0],
+    query: interpreted.resolved,
+    moduleHint: q.moduleHint ?? plan.primarySkill.id,
     context: { ...(q.context ?? {}), workspace: q.context?.workspace ?? mission.workspace },
   });
 
-  // 6. Reasoning Provider — humanize the assessment.
+  // 8. Reasoning Provider — humanize.
   const providerId: ReasoningProviderId =
-    (req.providerId as ReasoningProviderId) ?? DEFAULT_PROVIDER_ID;
+    ((req.providerId as ReasoningProviderId) ?? DEFAULT_PROVIDER_ID);
   const providerMeta = getProviderMeta(providerId);
-  const invocation = await invokeReasoningProvider(
-    providerId,
-    briefing,
-    summariseMission(mission),
-  );
+  const invocation = await providerCall(briefing, summariseMission(mission), plan);
 
-  // 7–8. Decision Support + Human Response
-  const humanResponse = buildHumanResponse(briefing, invocation.copy);
+  // 9–10. Decision Support + Response Generator.
+  const humanResponse = buildHumanResponse(briefing, invocation.copy, plan);
 
-  // Enforce the confidence-badge invariant even if the provider drifted.
+  // Enforce the canonical confidence badge invariant.
   const canonicalBadge = badgeFromComposite(
     briefing.confidence_matrix.composite,
     briefing.intelligence_status === "insufficient",
   );
   humanResponse.confidenceAssessment.badge = canonicalBadge;
+  humanResponse.recommendedActions = humanResponse.recommendedActions.map((r) => ({
+    ...r,
+    confidence: canonicalBadge,
+  }));
+
+  // Project the operational copy back into the briefing sections so the
+  // existing Adaptive Briefing renderer displays the operational tone.
+  const patchedBriefing = patchBriefingWithHumanResponse(briefing, humanResponse, plan);
 
   return {
-    briefing,
+    kind: "briefing",
+    briefing: patchedBriefing,
     humanResponse,
-    plan: { ...plan, requiresDecisionSupport: capabilities.length > 0 },
+    plan,
     provider: {
       id: providerMeta.id,
       label: providerMeta.label,

@@ -1,72 +1,113 @@
 /**
  * OIE · Reasoning Provider — server-only runtime.
  *
- * Calls the Lovable AI Gateway to humanize an Assessment into
- * operational-language copy. Providers are pluggable: Gemini and GPT
- * both route through the same OpenAI-compatible gateway; Claude is
- * wired here as a stub that returns `degraded=true` until an Anthropic
- * key is provisioned.
+ * Calls the Lovable AI Gateway to humanize an Assessment into the
+ * mandated 8-section operational response. Providers are pluggable:
+ * Gemini and GPT both route through the same OpenAI-compatible
+ * gateway; Claude is wired here as a stub that surfaces
+ * `degraded=true` until an Anthropic key is provisioned.
  *
  * Rules:
- *   • Never invent facts — the model only rewrites what the engine gave.
- *   • Return DEGRADED (never throw) when the model is unavailable, so
- *     the OIE can still ship a briefing in observed-language mock mode.
+ *   • Never invent facts. Rewrite only what the engine gave.
+ *   • Return DEGRADED (never throw) when the model is unavailable —
+ *     the OIE always ships a briefing, using the deterministic fallback.
  */
 import { generateText, Output, NoObjectGeneratedError } from "ai";
 import { z } from "zod";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
 import type { Briefing } from "@/services/orchestration";
+import type { OperationalPlan } from "./types";
 import { getProviderMeta, type ReasoningProviderId } from "./reasoning-provider";
 
+import type { HumanCopyShape } from "./response-generator";
+
 const HumanCopySchema = z.object({
+  executiveSummary: z.string(),
   situationOverview: z.string(),
-  verifiedFacts: z.array(z.string()),
-  analyticalAssessment: z.string(),
   keyFindings: z.array(
     z.object({
       priority: z.enum(["critical", "high", "monitor"]),
       text: z.string(),
     }),
   ),
-  recommendations: z.array(
+  operationalImpact: z.string(),
+  recommendedActions: z.array(
     z.object({
       action: z.string(),
-      confidence: z.enum(["High Confidence", "Medium Confidence", "Low Confidence", "Insufficient Evidence"]),
+      confidence: z.enum([
+        "High Confidence",
+        "Medium Confidence",
+        "Low Confidence",
+        "Insufficient Evidence",
+      ]),
       rationale: z.string(),
     }),
   ),
+  informationStillNeeded: z.array(z.string()),
+  suggestedNextQuestions: z.array(z.string()),
   confidenceExplanation: z.string(),
-  operationalImpact: z.string(),
-  nextQuestions: z.array(z.string()),
 });
 
-export type HumanCopy = z.infer<typeof HumanCopySchema>;
+/** Runtime shape must match the client-safe HumanCopyShape exactly. */
+export type HumanCopy = HumanCopyShape;
+// Compile-time cross-check — the schema output must extend the shared shape.
+type _AssertHumanCopy = z.infer<typeof HumanCopySchema> extends HumanCopyShape ? true : never;
+const _assertHumanCopy: _AssertHumanCopy = true;
+void _assertHumanCopy;
 
 const SYSTEM_PROMPT = [
-  "You are the Seaphore Operational Response Generator.",
-  "You rewrite an internal assessment into an operational briefing for a maritime officer.",
+  "You are the Seaphore Operational Response Generator, writing on behalf of a Nigerian Maritime Administration and Safety Agency (NIMASA) intelligence officer.",
+  "You do NOT introduce yourself. You are the voice of the operational team.",
   "",
-  "TRUST MODEL — NON-NEGOTIABLE:",
-  "• Separate Verified Facts (only items marked VERIFIED/CORROBORATED in the input) from Analytical Assessments.",
-  "• Never invent facts, sources, or numbers not present in the input JSON.",
-  "• Never use AI, model, prompt, algorithm, or ML terminology. Use maritime operational language.",
-  "• Use observed/reported/assessed verbs — never conclusory (fraud, guilty, criminal).",
-  "• Every recommendation carries an explicit confidence badge.",
-  "• Officer decides. You observe and recommend.",
+  "TONE — non-negotiable:",
+  "  Use: 'Our assessment indicates…', 'The available evidence shows…', 'We recommend…', 'This requires further verification…'.",
+  "  Never use: 'Based on my analysis…', 'I think…', 'The AI model suggests…', 'As a large language model…'.",
+  "  Never mention AI, model, prompt, algorithm, ML, temperature, tokens.",
+  "  Never expose JSON, code, or internal reasoning to the officer.",
   "",
-  "Return JSON matching the schema exactly. No prose, no markdown.",
+  "TRUST MODEL — non-negotiable:",
+  "  • Separate verified facts (VERIFIED or CORROBORATED evidence only) from analytical assessments.",
+  "  • Never invent facts, numbers, sources, or entity names not present in the engine output.",
+  "  • Never use conclusory or criminal language (fraud, guilty, criminal).",
+  "  • Every recommendation carries an explicit confidence badge from the allowed set.",
+  "  • Officer decides. We observe and recommend.",
+  "",
+  "STRUCTURE — the response ALWAYS has these 8 sections:",
+  "  1. Executive Summary — 2–3 crisp sentences that a director can read alone.",
+  "  2. Situation Overview — what we are looking at and why it matters.",
+  "  3. Key Findings — priority-ordered bullets.",
+  "  4. Operational Impact — what happens if we act / do not act.",
+  "  5. Recommended Actions — each with a confidence badge and rationale.",
+  "  6. Information Still Needed — intelligence gaps we cannot close from current evidence.",
+  "  7. Suggested Next Questions — 3–4 operational follow-ups.",
+  "  8. Confidence Explanation — plain-language reason for the overall confidence.",
+  "",
+  "Return the JSON matching the schema exactly. Do not include markdown or prose outside the JSON.",
 ].join("\n");
 
-function buildUserPrompt(briefing: Briefing, missionSummary: string): string {
+function buildUserPrompt(
+  briefing: Briefing,
+  missionSummary: string,
+  plan: OperationalPlan,
+): string {
   return [
     "# Officer query",
     briefing.query,
     "",
+    "# Investigation type",
+    `${plan.primarySkill.label} — ${plan.primarySkill.objective}`,
+    plan.supportingSkills.length > 0
+      ? `Supporting lines of enquiry: ${plan.supportingSkills.map((s) => s.label).join(", ")}.`
+      : "",
+    "",
+    "# Adaptive follow-ups the officer will likely want next",
+    ...plan.followUps.map((f) => `- ${f}`),
+    "",
     "# Mission context",
     missionSummary || "(none provided)",
     "",
-    "# Engine output (source of truth — do not invent beyond this)",
+    "# Engine output (source of truth — do NOT invent beyond this)",
     JSON.stringify({
       mode: briefing.mode,
       classification: briefing.classification,
@@ -78,7 +119,9 @@ function buildUserPrompt(briefing: Briefing, missionSummary: string): string {
       },
       confidence: briefing.confidence_matrix,
     }),
-  ].join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 export interface ProviderInvocation {
@@ -104,6 +147,7 @@ export async function invokeReasoningProvider(
   providerId: ReasoningProviderId,
   briefing: Briefing,
   missionSummary: string,
+  plan: OperationalPlan,
 ): Promise<ProviderInvocation> {
   const meta = getProviderMeta(providerId);
 
@@ -112,9 +156,7 @@ export async function invokeReasoningProvider(
       copy: null,
       degraded: true,
       providerId,
-      reason:
-        meta.unavailableReason ??
-        `${meta.label} is not available on this deployment.`,
+      reason: meta.unavailableReason ?? `${meta.label} is not available on this deployment.`,
     };
   }
 
@@ -124,7 +166,7 @@ export async function invokeReasoningProvider(
       copy: null,
       degraded: true,
       providerId,
-      reason: "AI Gateway key missing — response degraded to observed-language mode.",
+      reason: "Intelligence gateway offline — response using cached evidence only.",
     };
   }
 
@@ -135,7 +177,7 @@ export async function invokeReasoningProvider(
       model,
       output: Output.object({ schema: HumanCopySchema }),
       system: SYSTEM_PROMPT,
-      prompt: buildUserPrompt(briefing, missionSummary),
+      prompt: buildUserPrompt(briefing, missionSummary, plan),
     });
     return { copy: output, degraded: false, providerId };
   } catch (err) {
@@ -144,7 +186,7 @@ export async function invokeReasoningProvider(
         copy: null,
         degraded: true,
         providerId,
-        reason: "Provider returned malformed output — falling back to observed-language mode.",
+        reason: "Response degraded — falling back to structured briefing.",
       };
     }
     return {

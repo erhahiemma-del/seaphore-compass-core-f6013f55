@@ -1,14 +1,17 @@
 /**
- * OIE server function — the single RPC officers' UI calls.
+ * OIE server function — the single RPC officers' UI calls when
+ * authenticated. Wraps the entire 8-module pipeline and injects the
+ * live reasoning provider (Gemini / GPT / Claude) so the model runs
+ * server-side with `LOVABLE_API_KEY`.
  *
- * Wraps the entire 8-module pipeline behind Supabase auth. Emits the
- * same shape the existing Copilot UI consumes (`briefing` mapped
- * through `adaptBriefing`) PLUS the operational `humanResponse`.
+ * Returns a discriminated union: either a clarify turn or a full
+ * operational briefing. The client renders both.
  */
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runOIE } from "@/services/oie/engine";
-import type { ReasoningProviderId } from "@/services/oie/reasoning-provider";
+import { DEFAULT_PROVIDER_ID, type ReasoningProviderId } from "@/services/oie/reasoning-provider";
+import { invokeReasoningProvider } from "@/services/oie/provider-runtime.server";
 import type { OfficerQuery, Workspace } from "@/services/orchestration";
 
 interface OIEInput {
@@ -44,8 +47,28 @@ export const runOIEFn = createServerFn({ method: "POST" })
       context: data.context,
     };
 
-    const result = await runOIE({ query: officerQuery, providerId: data.providerId });
+    const providerId = data.providerId ?? DEFAULT_PROVIDER_ID;
+    const result = await runOIE(
+      { query: officerQuery, providerId },
+      (briefing, missionSummary, plan) =>
+        invokeReasoningProvider(providerId, briefing, missionSummary, plan),
+    );
+
+    if (result.kind === "clarify") {
+      return {
+        kind: "clarify" as const,
+        clarification: result.clarification,
+        interpreted: {
+          intent: result.interpreted.intent,
+          domains: result.interpreted.domains,
+          ambiguous: result.interpreted.ambiguous,
+        },
+        latency_ms: result.latencyMs,
+      };
+    }
+
     return {
+      kind: "briefing" as const,
       briefing_id: result.briefing.id,
       classification: result.briefing.classification,
       sections: result.briefing.sections,
@@ -57,6 +80,11 @@ export const runOIEFn = createServerFn({ method: "POST" })
       mode: result.briefing.mode,
       latency_ms: result.briefing.latency_ms,
       humanResponse: result.humanResponse,
+      plan: {
+        primarySkill: result.plan.primarySkill.id,
+        supportingSkills: result.plan.supportingSkills.map((s) => s.id),
+        followUps: result.plan.followUps,
+      },
       provider: result.provider,
     };
   });

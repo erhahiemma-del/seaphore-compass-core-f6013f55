@@ -1,15 +1,13 @@
 /**
- * OIE · Module 6 — Reasoning Provider (model-agnostic).
+ * OIE · Reasoning Provider — metadata (client-safe).
  *
- * The Reasoning Provider is the ONLY layer that talks to a model. Every
- * other OIE module is deterministic. Providers are hot-swappable:
- * Gemini (default), OpenAI GPT (via Lovable AI Gateway), and Anthropic
- * Claude (stub — requires ANTHROPIC_API_KEY once wired). Adding a new
- * brain is a new file plus one entry in `providers`.
+ * The Reasoning Provider is the ONLY layer that talks to a model. All
+ * other OIE modules are deterministic. Providers are hot-swappable:
+ * Gemini (default), OpenAI GPT, and Anthropic Claude (adapter ready,
+ * activates once an Anthropic key is provisioned). Adding a new brain
+ * is one entry here + one adapter in `provider-runtime.server.ts`.
  *
- * A provider is asked to REPHRASE the assessment produced by the
- * existing Reasoning Engine into operational language. It never decides
- * what evidence to trust — evidence weighting is fixed upstream.
+ * Nothing in this file makes network calls; UI code can import it.
  */
 export type ReasoningProviderId = "gemini" | "gpt" | "claude";
 
@@ -17,18 +15,11 @@ export interface ReasoningProviderMeta {
   id: ReasoningProviderId;
   label: string;
   vendor: string;
-  /** Which chat model id the Lovable AI Gateway should route to. */
   gatewayModel?: string;
-  /** True when the provider is available in this deployment. */
   available: boolean;
-  /** Human-readable reason when `available === false`. */
   unavailableReason?: string;
 }
 
-/**
- * Static registry — actual server-side dispatch lives in
- * `provider-runtime.server.ts`. UI code only needs the metadata.
- */
 export const PROVIDERS: readonly ReasoningProviderMeta[] = Object.freeze([
   {
     id: "gemini",
@@ -50,7 +41,7 @@ export const PROVIDERS: readonly ReasoningProviderMeta[] = Object.freeze([
     vendor: "Anthropic",
     available: false,
     unavailableReason:
-      "Anthropic key not configured on this deployment. Once added, the Claude adapter activates without further changes.",
+      "Anthropic key not yet configured. Once added, the Claude adapter activates without further changes.",
   },
 ]);
 

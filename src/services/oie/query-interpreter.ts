@@ -1,72 +1,187 @@
 /**
  * OIE · Module 1 — Query Interpreter.
  *
- * Parses natural language into a structured `InterpretedQuery`. It does
- * NOT call a model; it uses deterministic maritime-domain patterns so
- * the same query always classifies the same way, regardless of which
- * reasoning provider follows.
+ * Deterministic maritime-domain interpreter. Recognises operational
+ * INTENT (verb-shaped) rather than raw keywords, extracts entities,
+ * and flags ambiguity so the clarifier can take over. Never calls a
+ * model — the same officer question always classifies the same way.
  */
-import type { InterpretedQuery, OperationalDomain } from "./types";
+import type {
+  EntityMention,
+  InterpretedQuery,
+  OperationalDomain,
+  OperationalIntent,
+} from "./types";
 
-const IMO_RE = /\b(?:IMO\s*)?(\d{7})\b/gi;
+const IMO_RE = /\b(?:IMO[\s:#-]*)?(\d{7})\b/gi;
 const MMSI_RE = /\b(\d{9})\b/g;
-const PORT_RE = /\b(?:port of|at|to|from)\s+([A-Z][a-zA-Z\-\s]{2,24})\b/g;
-const COMPANY_HINT = /\b(shipping|holdings?|maritime|logistics|group|ltd|limited|plc|inc)\b/i;
+const PORT_HINT_RE =
+  /\b(?:port of|at|to|from|calling at|arriving in|departing from)\s+([A-Z][a-zA-Z\-'\s]{2,30})/g;
+const COMPANY_HINT_RE =
+  /\b([A-Z][A-Za-z0-9]+(?:\s+[A-Z][A-Za-z0-9]+){0,3})\s+(?:Shipping|Maritime|Holdings?|Logistics|Group|Ltd|Limited|Plc|Inc|LLC|Trading|Petroleum|Tankers?)\b/g;
+const VESSEL_NAME_RE =
+  /\b(?:vessel|ship|tanker|bulker|MV|MT|M\.V\.|M\.T\.)\s+([A-Z][A-Za-z0-9\-']+(?:\s+[A-Z][A-Za-z0-9\-']+){0,3})/g;
+const QUOTED_RE = /["“]([^"”]{2,60})["”]/g;
 
-const DOMAIN_KEYWORDS: Array<[OperationalDomain, RegExp]> = [
-  ["revenue", /\b(revenue|leakage|underpay|invoic|tariff|fee|levy|duty)\b/i],
-  ["ownership", /\b(owner|beneficial|shareholder|ubo|corporate|network)\b/i],
-  ["manifest", /\b(manifest|bill of lading|BOL|declaration|cargo list)\b/i],
-  ["cargo", /\b(cargo|container|TEU|goods|commodity)\b/i] as unknown as [OperationalDomain, RegExp],
-  ["sanctions", /\b(sanction|OFAC|EU list|UN list|blacklist|blocked)\b/i],
-  ["compliance", /\b(complian|regulation|breach|violation|nimasa|imo rule)\b/i],
-  ["port", /\b(port|berth|terminal|call|arrival|departure)\b/i],
-  ["voyage", /\b(voyage|route|passage|leg|transit)\b/i],
-  ["vessel", /\b(vessel|ship|tanker|bulker|imo|mmsi)\b/i],
-  ["evidence", /\b(evidence|document|proof|record|source)\b/i],
+const DOMAIN_PATTERNS: Array<[OperationalDomain, RegExp]> = [
+  ["revenue", /\b(revenue|leakage|underpay(?:ment)?|invoic|tariff|fee|levy|duty|assessment fee|shortfall)\b/i],
+  ["ownership", /\b(owner(?:ship)?|beneficial|shareholder|UBO|corporate|network|parent company|subsidiary)\b/i],
+  ["manifest", /\b(manifest|bill of lading|BOL|declaration|cargo list|customs form)\b/i],
+  ["cargo", /\b(cargo|container|TEU|goods|commodity|hazmat|dangerous goods)\b/i],
+  ["sanctions", /\b(sanction|OFAC|EU list|UN list|blacklist|blocked|SDN)\b/i],
+  ["compliance", /\b(complian|regulation|breach|violation|NIMASA|IMO rule|SOLAS|MARPOL|ISPS)\b/i],
+  ["port", /\b(port|berth|terminal|call|arrival|departure|anchorage)\b/i],
+  ["voyage", /\b(voyage|route|passage|leg|transit|last trip|previous voyage)\b/i],
+  ["vessel", /\b(vessel|ship|tanker|bulker|IMO|MMSI|flag)\b/i],
+  ["evidence", /\b(evidence|document|proof|record|source|attach)\b/i],
+];
+
+// Intent patterns are ordered — the FIRST match wins. Place more specific
+// verb+object combinations above generic ones.
+const INTENT_PATTERNS: Array<[OperationalIntent, RegExp]> = [
+  // Compare / diff
+  ["manifest_comparison", /\b(compare|diff|difference).{0,40}(manifest|voyage|declaration|cargo list)\b/i],
+  ["voyage_comparison", /\b(compare|diff).{0,30}(voyage|trip|passage|leg|previous)\b/i],
+
+  // Arrival / activity search
+  ["arrival_search", /\b(arriv|inbound|expected|due to (?:arrive|dock))\b/i],
+
+  // Risk / anomaly
+  ["risk_investigation", /\b(why (?:is|are)|high[- ]?risk|risk score|red flag|flagged|anomal(?:y|ous))\b/i],
+  ["operational_assessment", /\b(explain|why|what is happening|what does this mean|assess this)\b/i],
+
+  // Domain-specific investigations
+  ["revenue_leakage", /\b(revenue leakage|underpay|shortfall|missing (?:revenue|fee|levy)|leakage)\b/i],
+  ["revenue_investigation", /\b(revenue|tariff|fee|levy)\b.*\b(assess|review|investigat|check)\b/i],
+  ["ownership_investigation", /\b(who owns|owner(?:ship)?|beneficial|shareholder|corporate ties|network)\b/i],
+  ["manifest_investigation", /\b(manifest|bill of lading|BOL|declaration).*\b(check|review|inspect|investigat|show|look)\b/i],
+  ["cargo_investigation", /\b(cargo|container|hazmat|commodity)\b.*\b(check|inspect|review|show|investigat)\b/i],
+  ["compliance_review", /\b(complian(?:ce|t)?|breach|violation|regulator|NIMASA)\b/i],
+  ["vessel_investigation", /\b(investigat|dossier|profile|tell me about|look into|deep dive).*\b(vessel|ship|IMO)\b/i],
+
+  // Executive
+  ["executive_briefing", /\b(executive|director|leadership|board|summary of the day|daily briefing)\b/i],
+
+  // Broad show / list
+  ["vessel_investigation", /\b(show|list|find|display).*\b(vessel|ship|fleet)\b/i],
 ];
 
 function detectDomains(q: string): OperationalDomain[] {
-  const hits = DOMAIN_KEYWORDS.filter(([, re]) => re.test(q)).map(([d]) => d);
+  const hits = DOMAIN_PATTERNS.filter(([, re]) => re.test(q)).map(([d]) => d);
   return hits.length > 0 ? Array.from(new Set(hits)) : ["general"];
 }
 
-function detectIntent(q: string): InterpretedQuery["intent"] {
-  if (/\b(who|what|where|when|show|list|find|lookup|profile)\b/i.test(q)) return "lookup";
-  if (/\b(assess|evaluate|score|rank|risk|expos)\b/i.test(q)) return "assessment";
-  if (/\b(forecast|predict|projected|next|will|likely)\b/i.test(q)) return "forecast";
-  return "investigation";
+function detectIntent(q: string, entities: EntityMention[]): {
+  intent: OperationalIntent;
+  ambiguous: boolean;
+} {
+  for (const [intent, re] of INTENT_PATTERNS) {
+    if (re.test(q)) return { intent, ambiguous: false };
+  }
+  // No verb intent detected. If the query still names an entity it is
+  // a bare entity mention ("Tell me about Ocean Pearl") → clarify.
+  if (entities.length > 0) return { intent: "entity_dossier", ambiguous: true };
+  return { intent: "ambiguous", ambiguous: true };
 }
 
-function extractEntities(q: string): InterpretedQuery["entities"] {
-  const out: InterpretedQuery["entities"] = [];
+function intentToMode(intent: OperationalIntent): InterpretedQuery["mode"] {
+  switch (intent) {
+    case "arrival_search":
+    case "vessel_investigation":
+    case "executive_briefing":
+    case "entity_dossier":
+      return "lookup";
+    case "risk_investigation":
+    case "operational_assessment":
+    case "revenue_leakage":
+    case "revenue_investigation":
+    case "compliance_review":
+      return "assessment";
+    case "manifest_investigation":
+    case "manifest_comparison":
+    case "cargo_investigation":
+    case "ownership_investigation":
+    case "voyage_comparison":
+      return "investigation";
+    default:
+      return "assessment";
+  }
+}
+
+function extractEntities(q: string): EntityMention[] {
+  const out: EntityMention[] = [];
   const seen = new Set<string>();
-  const push = (type: InterpretedQuery["entities"][number]["type"], value: string) => {
-    const k = `${type}:${value.toLowerCase()}`;
+  const push = (type: EntityMention["type"], value: string, span?: string) => {
+    const clean = value.trim();
+    if (clean.length < 2) return;
+    const k = `${type}:${clean.toLowerCase()}`;
     if (seen.has(k)) return;
     seen.add(k);
-    out.push({ type, value });
+    out.push({ type, value: clean, span });
   };
 
-  for (const m of q.matchAll(IMO_RE)) push("imo", m[1]);
-  for (const m of q.matchAll(MMSI_RE)) push("vessel", m[1]);
-  for (const m of q.matchAll(PORT_RE)) push("port", m[1].trim());
-
-  // Company heuristic: capitalised phrases containing a company hint token.
-  const phraseRe = /\b([A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+){0,3})\b/g;
-  for (const m of q.matchAll(phraseRe)) {
-    if (COMPANY_HINT.test(m[1])) push("company", m[1]);
+  for (const m of q.matchAll(IMO_RE)) push("imo", m[1], m[0]);
+  for (const m of q.matchAll(MMSI_RE)) {
+    // Skip if this MMSI is actually an IMO (already captured).
+    if (!Array.from(q.matchAll(IMO_RE)).some((im) => im[1] === m[1])) push("mmsi", m[1], m[0]);
   }
+  for (const m of q.matchAll(VESSEL_NAME_RE)) push("vessel", m[1], m[0]);
+  for (const m of q.matchAll(QUOTED_RE)) push("vessel", m[1], m[0]);
+  for (const m of q.matchAll(PORT_HINT_RE)) push("port", m[1].trim(), m[0]);
+  for (const m of q.matchAll(COMPANY_HINT_RE)) push("company", m[0], m[0]);
   return out;
 }
 
-export function interpretQuery(raw: string): InterpretedQuery {
-  const q = raw.trim();
-  const domains = detectDomains(q);
-  const intent = detectIntent(q);
-  const entities = extractEntities(q);
-  const reasoning =
-    `Operational domains: ${domains.join(", ")}. ` +
-    `Intent: ${intent}. Entities detected: ${entities.length || "none"}.`;
-  return { raw: q, intent, domains, entities, reasoning };
+/**
+ * Detects pronoun references ("it", "this", "them", "its", "their",
+ * "they", "that") in the raw query — the caller resolves them to a
+ * concrete anchor entity from mission context.
+ */
+export function containsPronounReference(q: string): boolean {
+  return /\b(it|its|this|that|they|them|their|the vessel|the ship|the company|the manifest|the port)\b/i.test(
+    q,
+  );
 }
+
+export interface InterpretOptions {
+  /** Anchor entity from mission context (last-mentioned entity). */
+  anchor?: EntityMention;
+  /** Text that has already had pronouns rewritten. */
+  resolvedQuery?: string;
+}
+
+export function interpretQuery(raw: string, opts: InterpretOptions = {}): InterpretedQuery {
+  const q = raw.trim();
+  const resolved = (opts.resolvedQuery ?? raw).trim();
+  const domains = detectDomains(resolved);
+  const entities = extractEntities(resolved);
+  // If pronoun resolution injected an entity, promote it to entities.
+  if (opts.anchor && !entities.some((e) => e.value.toLowerCase() === opts.anchor!.value.toLowerCase())) {
+    entities.unshift(opts.anchor);
+  }
+  const { intent, ambiguous } = detectIntent(resolved, entities);
+  const mode = intentToMode(intent);
+  const reasoning = [
+    `Intent: ${intent}${ambiguous ? " (ambiguous)" : ""}.`,
+    `Mode: ${mode}.`,
+    `Domains: ${domains.join(", ")}.`,
+    `Entities: ${entities.length > 0 ? entities.map((e) => `${e.type}=${e.value}`).join("; ") : "none"}.`,
+    opts.anchor ? `Anchor carried from context: ${opts.anchor.type}=${opts.anchor.value}.` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  return {
+    raw: q,
+    resolved,
+    intent,
+    mode,
+    domains,
+    entities,
+    anchor: opts.anchor,
+    reasoning,
+    ambiguous,
+  };
+}
+
+/** Utility used by the resolver — extract just the entities from raw text. */
+export { extractEntities };
