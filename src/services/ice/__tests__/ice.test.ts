@@ -132,7 +132,8 @@ describe("ICE-7 · Corroboration", () => {
     const corr = detectCorroborations(cells);
     expect(corr[0].level).toBe("VERIFIED");
     expect(corr[0].agreementCount).toBe(4);
-    expect(cells.every((c) => c.corroborationScore === 100)).toBe(true);
+    // Spec formula: (agreementCount - 1) × 25, capped at 100 → 4 sources = 75.
+    expect(cells.every((c) => c.corroborationScore === 75)).toBe(true);
   });
 });
 
