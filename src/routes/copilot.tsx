@@ -243,9 +243,11 @@ function CopilotOpsPage() {
       await queryClient.invalidateQueries({ queryKey: ["intel", "briefings"] });
       return adapted;
     },
-    onError: (err: unknown) => {
+    onError: (err: unknown, variables) => {
       setStage("idle");
       setError(err instanceof Error ? err.message : "Copilot request failed");
+      if (typeof variables === "string" && variables.trim()) setText(variables);
+      console.error("[Copilot] OIE run failed", err);
     },
   });
 
@@ -255,7 +257,11 @@ function CopilotOpsPage() {
     setText("");
     setError(null);
     setClarify(null);
-    session.appendOfficer(clean);
+    try {
+      session.appendOfficer(clean);
+    } catch (err) {
+      console.warn("[Copilot] failed to log officer turn", err);
+    }
     // Scroll the workspace so the officer sees streaming stages / new briefing
     // instead of the (now stale) previous briefing content above.
     requestAnimationFrame(() => {
