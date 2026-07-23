@@ -81,4 +81,35 @@ export class HealthTracker {
       lastError: s.lastError,
     };
   }
+
+  /**
+   * Flush current in-memory snapshots to the canonical
+   * `public.data_source_health` table. The database remains the source
+   * of truth (Sprint 1A.2 consolidation). Best-effort — never throws.
+   */
+  async flushToDatabase(): Promise<{ written: number; skipped: number }> {
+    if (typeof process === "undefined" || !process.env?.SUPABASE_SERVICE_ROLE_KEY) {
+      return { written: 0, skipped: this.state.size };
+    }
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      let written = 0;
+      for (const id of this.state.keys()) {
+        const h = this.snapshot(id);
+        const { error } = await supabaseAdmin.from("data_source_health").upsert({
+          source_id: String(id),
+          status: h.available ? "healthy" : h.lastError ? "down" : "degraded",
+          latency_ms: h.latencyMsP50,
+          failure_rate: h.failureRate,
+          last_success_at: h.lastSuccessAt,
+          last_error: h.lastError,
+          updated_at: new Date().toISOString(),
+        } as never, { onConflict: "source_id" } as never);
+        if (!error) written++;
+      }
+      return { written, skipped: this.state.size - written };
+    } catch {
+      return { written: 0, skipped: this.state.size };
+    }
+  }
 }
