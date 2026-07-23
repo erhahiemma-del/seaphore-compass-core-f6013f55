@@ -41,6 +41,15 @@ interface CriticalFindingIn {
   priority: string;
   title: string;
   source: string;
+  grade?: string;
+  citations?: Array<{
+    id: string;
+    source: string;
+    grade: string;
+    hash?: string;
+    excerpt?: string;
+    collected_at?: string;
+  }>;
 }
 interface OfficerActionIn {
   id: string;
@@ -51,6 +60,31 @@ interface DecisionImpactIn {
   security: number;
   operational: number;
   cargo: number;
+}
+
+function normaliseCitations(
+  f: CriticalFindingIn,
+): import("./types").EvidenceCitation[] {
+  if (f.citations && f.citations.length > 0) {
+    return f.citations.map((c) => ({
+      id: c.id,
+      source: c.source,
+      grade: (c.grade as import("./types").EvidenceCitation["grade"]) ?? "OBSERVED",
+      hash: c.hash,
+      excerpt: c.excerpt,
+      collectedAt: c.collected_at,
+    }));
+  }
+  // Fall back to a synthetic citation derived from the finding itself so the
+  // officer always sees at least one traceable source label.
+  return [
+    {
+      id: `syn-${f.source}-${f.title.slice(0, 24)}`,
+      source: f.source,
+      grade: (f.grade as import("./types").EvidenceCitation["grade"]) ?? "OBSERVED",
+      excerpt: f.title,
+    },
+  ];
 }
 
 /** Operational-tone fallback — used when the provider is unavailable. */
