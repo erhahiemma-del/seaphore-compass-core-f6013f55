@@ -14,10 +14,19 @@ export interface EmittedEvent {
 }
 
 export async function emitEvent(evt: EmittedEvent): Promise<void> {
-  await supabase.from("orchestration_events").insert({
-    event_type: evt.event_type,
-    entity_ids: evt.entity_ids ?? [],
-    payload: (evt.payload ?? {}) as never,
-    emitted_by: evt.emitted_by ?? null,
-  });
+  // Guard: in dev-bypass (no auth session) RLS blocks the insert. We keep
+  // the pipeline alive and silent — persistence is best-effort here.
+  try {
+    const { data: sess } = await supabase.auth.getSession();
+    if (!sess?.session) return;
+    const { error } = await supabase.from("orchestration_events").insert({
+      event_type: evt.event_type,
+      entity_ids: evt.entity_ids ?? [],
+      payload: (evt.payload ?? {}) as never,
+      emitted_by: evt.emitted_by ?? null,
+    });
+    if (error) console.warn("[event-bus] emit failed:", error.message);
+  } catch (err) {
+    console.warn("[event-bus] emit threw:", err);
+  }
 }
