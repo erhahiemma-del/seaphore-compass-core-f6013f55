@@ -124,6 +124,107 @@ export class ConnectorManager {
     this.cache.invalidate(this.cacheKey(query));
   }
 
+  /** Administrative surface — used by the IAL Admin Controls in the
+   *  Administration Center. Kept on the manager so all cache/connector
+   *  state stays behind one facade. */
+  listConnectors(): ReadonlyArray<{ id: ConnectorId; displayName: string }> {
+    return this.registry.list().map((c) => ({ id: c.id, displayName: c.displayName }));
+  }
+
+  cacheStats(): { hits: number; misses: number; size: number } {
+    return this.cache.stats();
+  }
+
+  clearCache(connectorId?: ConnectorId): number {
+    if (!connectorId) {
+      const size = this.cache.stats().size;
+      this.cache.reset();
+      return size;
+    }
+    return this.cache.invalidateWhere((k) => k.endsWith(`::${connectorId}`) || k === `ial:${connectorId}`);
+  }
+
+  /** Re-authenticate a single connector and drop its cached envelopes.
+   *  Subsequent `acquire()` calls will hit the provider fresh. */
+  async refreshConnector(connectorId: ConnectorId): Promise<{
+    connectorId: ConnectorId;
+    authenticated: boolean;
+    cacheEntriesCleared: number;
+    latencyMs: number;
+    error?: string;
+  }> {
+    const connector = this.registry.get(connectorId);
+    if (!connector) {
+      return { connectorId, authenticated: false, cacheEntriesCleared: 0, latencyMs: 0, error: "connector not registered" };
+    }
+    const started = performance.now();
+    let authenticated = false;
+    let error: string | undefined;
+    try {
+      await connector.connect();
+      authenticated = await connector.authenticate();
+      this.health.recordAuth(connectorId, authenticated);
+    } catch (err) {
+      error = describe(err);
+      this.health.recordAuth(connectorId, false);
+      this.health.recordCall(connectorId, false, 0, error);
+    }
+    const cleared = this.clearCache(connectorId);
+    // Also drop merged envelopes that reference this connector's payload
+    // — the merged key doesn't carry the connector id, so we clear all
+    // top-level `ial:*` merged entries whose per-connector child was
+    // just invalidated. This is a bounded set and only fires on admin
+    // action.
+    const mergedCleared = this.cache.invalidateWhere((k) => k.startsWith("ial:") && !k.includes("::"));
+    return {
+      connectorId,
+      authenticated,
+      cacheEntriesCleared: cleared + mergedCleared,
+      latencyMs: Math.round(performance.now() - started),
+      error,
+    };
+  }
+
+  /** Prewarm the cache by running acquisition (with forceRefresh) for a
+   *  set of queries. Returns per-query outcomes. Failures never throw —
+   *  the OIE contract is that acquisition always yields a package. */
+  async prewarm(queries: ReadonlyArray<AcquisitionQuery>): Promise<
+    ReadonlyArray<{
+      query: AcquisitionQuery;
+      ok: boolean;
+      records: number;
+      sources: number;
+      latencyMs: number;
+      error?: string;
+    }>
+  > {
+    return Promise.all(
+      queries.map(async (q) => {
+        const started = performance.now();
+        try {
+          const pkg = await this.acquire({ ...q, forceRefresh: true });
+          return {
+            query: q,
+            ok: true,
+            records: pkg.verified.length,
+            sources: pkg.sources.length,
+            latencyMs: Math.round(performance.now() - started),
+          };
+        } catch (err) {
+          return {
+            query: q,
+            ok: false,
+            records: 0,
+            sources: 0,
+            latencyMs: Math.round(performance.now() - started),
+            error: describe(err),
+          };
+        }
+      }),
+    );
+  }
+
+
   private selectTargets(query: AcquisitionQuery): ReadonlyArray<Connector> {
     const all = this.registry.list();
     if (!query.connectors || query.connectors.length === 0) return all;
