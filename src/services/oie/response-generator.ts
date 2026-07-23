@@ -92,32 +92,42 @@ function normaliseCitations(
   ];
 }
 
+const SAFE_MATRIX = {
+  evidenceQuality: 0,
+  coverage: 0,
+  freshness: 0,
+  corroboration: 0,
+  consistency: 0,
+  composite: 0,
+  tier: "low" as const,
+};
+
 /** Operational-tone fallback — used when the provider is unavailable. */
 function fallbackFromBriefing(briefing: Briefing, plan: OperationalPlan): HumanResponse {
-  const s = briefing.sections;
-  const executive = (pickSection(s, "executive")?.payload.text as string | undefined) ?? "";
+  const s = Array.isArray(briefing?.sections) ? briefing.sections : [];
+  const executive = (pickSection(s, "executive")?.payload?.text as string | undefined) ?? "";
   const analytical =
-    (pickSection(s, "analytical_assessment")?.payload.text as string | undefined) ?? "";
+    (pickSection(s, "analytical_assessment")?.payload?.text as string | undefined) ?? "";
   const critical =
-    (pickSection(s, "critical_findings")?.payload.findings as CriticalFindingIn[] | undefined) ?? [];
-  const gaps = (pickSection(s, "intelligence_gaps")?.payload.list as string[] | undefined) ?? [];
+    (pickSection(s, "critical_findings")?.payload?.findings as CriticalFindingIn[] | undefined) ?? [];
+  const gaps = (pickSection(s, "intelligence_gaps")?.payload?.list as string[] | undefined) ?? [];
   const actions =
-    (pickSection(s, "officer_actions")?.payload.actions as OfficerActionIn[] | undefined) ?? [];
+    (pickSection(s, "officer_actions")?.payload?.actions as OfficerActionIn[] | undefined) ?? [];
   const impact = pickSection(s, "decision_impact")?.payload as DecisionImpactIn | undefined;
 
-  const insufficient = briefing.intelligence_status === "insufficient";
-  const badge: ConfidenceBadge = badgeFromComposite(
-    briefing.confidence_matrix.composite,
-    insufficient,
-  );
+  const matrix = briefing?.confidence_matrix ?? SAFE_MATRIX;
+  const insufficient = briefing?.intelligence_status === "insufficient";
+  const badge: ConfidenceBadge = badgeFromComposite(matrix.composite ?? 0, insufficient);
 
   const impactText = impact
-    ? `Estimated revenue exposure of ₦${impact.revenue.toLocaleString()}; operational impact ${impact.operational}/10; security concern ${impact.security}/10.`
+    ? `Estimated revenue exposure of ₦${Number(impact.revenue ?? 0).toLocaleString()}; operational impact ${impact.operational ?? 0}/10; security concern ${impact.security ?? 0}/10.`
     : "Operational impact not quantified in the current evidence set.";
 
+  const skillLabel = plan?.primarySkill?.label ?? "operational assessment";
+  const skillObjective = plan?.primarySkill?.objective ?? "assemble the operational picture.";
   const situation = executive
-    ? `Our assessment on this ${plan.primarySkill.label.toLowerCase()}: ${executive}`
-    : `We are running a ${plan.primarySkill.label.toLowerCase()} — ${plan.primarySkill.objective.toLowerCase()}`;
+    ? `Our assessment on this ${skillLabel.toLowerCase()}: ${executive}`
+    : `We are running a ${skillLabel.toLowerCase()} — ${skillObjective.toLowerCase()}`;
 
   const summary = analytical || executive || situation;
 
@@ -126,15 +136,15 @@ function fallbackFromBriefing(briefing: Briefing, plan: OperationalPlan): HumanR
     situationOverview: situation,
     keyFindings: critical.slice(0, 6).map((f) => ({
       priority:
-        f.priority === "critical" || f.priority === "high" || f.priority === "monitor"
+        f?.priority === "critical" || f?.priority === "high" || f?.priority === "monitor"
           ? (f.priority as HumanResponse["keyFindings"][number]["priority"])
           : "monitor",
-      text: `${f.title} (source: ${f.source}).`,
-      citations: normaliseCitations(f),
+      text: `${f?.title ?? "Finding"} (source: ${f?.source ?? "internal"}).`,
+      citations: normaliseCitations(f ?? { priority: "monitor", title: "", source: "internal" }),
     })),
     operationalImpact: impactText,
     recommendedActions: actions.slice(0, 4).map((a) => ({
-      action: a.label,
+      action: a?.label ?? "Review",
       confidence: badge,
       rationale:
         gaps.length > 0
@@ -142,10 +152,10 @@ function fallbackFromBriefing(briefing: Briefing, plan: OperationalPlan): HumanR
           : "The available evidence supports this step.",
     })),
     informationStillNeeded: gaps.slice(0, 4),
-    suggestedNextQuestions: plan.followUps.slice(0, 4),
+    suggestedNextQuestions: (plan?.followUps ?? []).slice(0, 4),
     confidenceAssessment: {
       badge,
-      explanation: explainMatrix(briefing.confidence_matrix),
+      explanation: explainMatrix(matrix),
     },
     officerNotice: OFFICER_NOTICE,
   };
@@ -158,32 +168,27 @@ export function buildHumanResponse(
 ): HumanResponse {
   if (!copy) return fallbackFromBriefing(briefing, plan);
 
-  const insufficient = briefing.intelligence_status === "insufficient";
-  const canonicalBadge = badgeFromComposite(
-    briefing.confidence_matrix.composite,
-    insufficient,
-  );
+  const matrix = briefing?.confidence_matrix ?? SAFE_MATRIX;
+  const insufficient = briefing?.intelligence_status === "insufficient";
+  const canonicalBadge = badgeFromComposite(matrix.composite ?? 0, insufficient);
 
-  // Ensure every recommendation carries a badge from the canonical set
-  // and reject silently-empty responses.
   const recommendedActions: HumanResponse["recommendedActions"] = (copy.recommendedActions ?? [])
     .slice(0, 4)
-    .map((r: HumanCopyShape["recommendedActions"][number]) => ({
-      action: r.action,
-      confidence: r.confidence,
-      rationale: r.rationale,
+    .map((r) => ({
+      action: r?.action ?? "Review",
+      confidence: r?.confidence ?? canonicalBadge,
+      rationale: r?.rationale ?? "",
     }));
 
-  // Build a citation index from the underlying briefing so provider-supplied
-  // citation IDs resolve to real evidence records; anything unresolved falls
-  // back to the citations attached to the finding at the same index.
+  const sections = Array.isArray(briefing?.sections) ? briefing.sections : [];
   const underlyingCritical =
-    (pickSection(briefing.sections, "critical_findings")?.payload.findings as
+    (pickSection(sections, "critical_findings")?.payload?.findings as
       | CriticalFindingIn[]
       | undefined) ?? [];
   const citationIndex = new Map<string, import("./types").EvidenceCitation>();
   for (const f of underlyingCritical) {
-    for (const c of f.citations ?? []) {
+    for (const c of f?.citations ?? []) {
+      if (!c?.id) continue;
       citationIndex.set(c.id, {
         id: c.id,
         source: c.source,
@@ -198,7 +203,7 @@ export function buildHumanResponse(
   const keyFindings: HumanResponse["keyFindings"] = (copy.keyFindings ?? [])
     .slice(0, 8)
     .map((kf, i) => {
-      const resolved = (kf.citationIds ?? [])
+      const resolved = (kf?.citationIds ?? [])
         .map((id) => citationIndex.get(id))
         .filter((c): c is import("./types").EvidenceCitation => Boolean(c));
       const citations =
@@ -207,20 +212,24 @@ export function buildHumanResponse(
           : underlyingCritical[i]
             ? normaliseCitations(underlyingCritical[i])
             : [];
-      return { priority: kf.priority, text: kf.text, citations };
+      return {
+        priority: kf?.priority ?? "monitor",
+        text: kf?.text ?? "",
+        citations,
+      };
     });
 
   return {
-    executiveSummary: copy.executiveSummary,
-    situationOverview: copy.situationOverview,
+    executiveSummary: copy.executiveSummary ?? "",
+    situationOverview: copy.situationOverview ?? "",
     keyFindings,
-    operationalImpact: copy.operationalImpact,
+    operationalImpact: copy.operationalImpact ?? "",
     recommendedActions,
     informationStillNeeded: (copy.informationStillNeeded ?? []).slice(0, 6),
-    suggestedNextQuestions: (copy.suggestedNextQuestions ?? plan.followUps).slice(0, 4),
+    suggestedNextQuestions: (copy.suggestedNextQuestions ?? plan?.followUps ?? []).slice(0, 4),
     confidenceAssessment: {
       badge: canonicalBadge,
-      explanation: copy.confidenceExplanation || explainMatrix(briefing.confidence_matrix),
+      explanation: copy.confidenceExplanation || explainMatrix(matrix),
     },
     officerNotice: OFFICER_NOTICE,
   };

@@ -24,46 +24,46 @@ const VESSEL_NAME_RE =
 const QUOTED_RE = /["“]([^"”]{2,60})["”]/g;
 
 const DOMAIN_PATTERNS: Array<[OperationalDomain, RegExp]> = [
-  ["revenue", /\b(revenue|leakage|underpay(?:ment)?|invoic|tariff|fee|levy|duty|assessment fee|shortfall)\b/i],
-  ["ownership", /\b(owner(?:ship)?|beneficial|shareholder|UBO|corporate|network|parent company|subsidiary)\b/i],
-  ["manifest", /\b(manifest|bill of lading|BOL|declaration|cargo list|customs form)\b/i],
-  ["cargo", /\b(cargo|container|TEU|goods|commodity|hazmat|dangerous goods)\b/i],
-  ["sanctions", /\b(sanction|OFAC|EU list|UN list|blacklist|blocked|SDN)\b/i],
-  ["compliance", /\b(complian|regulation|breach|violation|NIMASA|IMO rule|SOLAS|MARPOL|ISPS)\b/i],
-  ["port", /\b(port|berth|terminal|call|arrival|departure|anchorage)\b/i],
-  ["voyage", /\b(voyage|route|passage|leg|transit|last trip|previous voyage)\b/i],
-  ["vessel", /\b(vessel|ship|tanker|bulker|IMO|MMSI|flag)\b/i],
-  ["evidence", /\b(evidence|document|proof|record|source|attach)\b/i],
+  ["revenue", /\b(revenue|leakage|underpay(?:ment)?|invoic|tariff|fee|levy|duty|assessment fee|shortfall)/i],
+  ["ownership", /\b(owner(?:ship)?|beneficial|shareholder|UBO|corporate|network|parent company|subsidiary)/i],
+  ["manifest", /\b(manifest|bill of lading|BOL|declaration|cargo list|customs form)/i],
+  ["cargo", /\b(cargo|container|TEU|goods|commodit|hazmat|dangerous goods)/i],
+  ["sanctions", /\b(sanction|OFAC|EU list|UN list|blacklist|blocked|SDN)/i],
+  ["compliance", /\b(complian|regulation|breach|violation|NIMASA|IMO rule|SOLAS|MARPOL|ISPS)/i],
+  ["port", /\b(port|berth|terminal|call|arriv|departur|anchorage)/i],
+  ["voyage", /\b(voyage|route|passage|leg|transit|last trip|previous voyage)/i],
+  ["vessel", /\b(vessel|ship|tanker|bulker|IMO|MMSI|flag)/i],
+  ["evidence", /\b(evidence|document|proof|record|source|attach)/i],
 ];
 
 // Intent patterns are ordered — the FIRST match wins. Place more specific
 // verb+object combinations above generic ones.
 const INTENT_PATTERNS: Array<[OperationalIntent, RegExp]> = [
   // Compare / diff
-  ["manifest_comparison", /\b(compare|diff|difference).{0,40}(manifest|voyage|declaration|cargo list)\b/i],
-  ["voyage_comparison", /\b(compare|diff).{0,30}(voyage|trip|passage|leg|previous)\b/i],
+  ["manifest_comparison", /\b(compare|diff|difference).{0,40}(manifest|voyage|declaration|cargo list)/i],
+  ["voyage_comparison", /\b(compare|diff).{0,30}(voyage|trip|passage|leg|previous|last month)/i],
 
   // Arrival / activity search
-  ["arrival_search", /\b(arriv|inbound|expected|due to (?:arrive|dock))\b/i],
+  ["arrival_search", /\b(arriv|inbound|expected|due to (?:arrive|dock)|today'?s\s+\w*\s*vessel|today'?s\s+arriv)/i],
 
   // Risk / anomaly
-  ["risk_investigation", /\b(why (?:is|are)|high[- ]?risk|risk score|red flag|flagged|anomal(?:y|ous))\b/i],
-  ["operational_assessment", /\b(explain|why|what is happening|what does this mean|assess this)\b/i],
+  ["risk_investigation", /\b(why (?:is|are)|high[- ]?risk|risk score|red flag|flagged|anomal|which ones? (?:are|is)\s+(?:high[- ]?risk|risky|flagged))/i],
+  ["operational_assessment", /\b(explain|why|what is happening|what does this mean|assess this)/i],
 
   // Domain-specific investigations
-  ["revenue_leakage", /\b(revenue leakage|underpay|shortfall|missing (?:revenue|fee|levy)|leakage)\b/i],
-  ["revenue_investigation", /\b(revenue|tariff|fee|levy)\b.*\b(assess|review|investigat|check)\b/i],
-  ["ownership_investigation", /\b(who owns|owner(?:ship)?|beneficial|shareholder|corporate ties|network)\b/i],
-  ["manifest_investigation", /\b(manifest|bill of lading|BOL|declaration).*\b(check|review|inspect|investigat|show|look)\b/i],
-  ["cargo_investigation", /\b(cargo|container|hazmat|commodity)\b.*\b(check|inspect|review|show|investigat)\b/i],
-  ["compliance_review", /\b(complian(?:ce|t)?|breach|violation|regulator|NIMASA)\b/i],
-  ["vessel_investigation", /\b(investigat|dossier|profile|tell me about|look into|deep dive).*\b(vessel|ship|IMO)\b/i],
+  ["revenue_leakage", /\b(revenue leakage|underpay|shortfall|missing (?:revenue|fee|levy)|leakage)/i],
+  ["revenue_investigation", /\b(revenue|tariff|fee|levy)\b.*\b(assess|review|investigat|check)/i],
+  ["ownership_investigation", /\b(who owns|owner(?:ship)?|beneficial|shareholder|corporate ties|network)/i],
+  ["manifest_investigation", /\b(manifest|bill of lading|BOL|declaration).*\b(check|review|inspect|investigat|show|look)/i],
+  ["cargo_investigation", /\b(cargo|container|hazmat|commodit)\b.*\b(check|inspect|review|show|investigat)/i],
+  ["compliance_review", /\b(complian(?:ce|t)?|breach|violation|regulator|NIMASA)/i],
+  ["vessel_investigation", /\b(investigat|dossier|profile|tell me about|look into|deep dive).*\b(vessel|ship|IMO)/i],
 
   // Executive
-  ["executive_briefing", /\b(executive|director|leadership|board|summary of the day|daily briefing)\b/i],
+  ["executive_briefing", /\b(executive|director|leadership|board|summary of the day|daily briefing)/i],
 
   // Broad show / list
-  ["vessel_investigation", /\b(show|list|find|display).*\b(vessel|ship|fleet)\b/i],
+  ["vessel_investigation", /\b(show|list|find|display).*\b(vessel|ship|fleet)/i],
 ];
 
 function detectDomains(q: string): OperationalDomain[] {
