@@ -26,9 +26,7 @@ export async function runIce(
   manager: ConnectorManager,
 ): Promise<IntelligencePackage> {
   // ICE-1 · Plan
-  const available = manager.listConnectorIds
-    ? manager.listConnectorIds()
-    : ["imo-gisis","equasis","marinetraffic","ais","opensanctions"];
+  const available = manager.listConnectors().map((c) => c.id);
   const plan = planQuery(input, available);
 
   // ICE-2 · Collect (via IAL)
