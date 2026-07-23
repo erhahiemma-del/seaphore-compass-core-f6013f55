@@ -187,12 +187,17 @@ export function CopilotWorkspace({
     },
   });
 
-  async function handleSubmit(q: string) {
+  function handleSubmit(q: string) {
     const clean = q.trim();
     if (!clean || mutation.isPending) return;
     setText("");
     setError(null);
-    session.appendOfficer(clean, instance);
+    try {
+      session.appendOfficer(clean, instance);
+    } catch (err) {
+      // Never let a conversation-log write block the officer's query.
+      console.warn("[Copilot] failed to log officer turn", err);
+    }
     mutation.mutate(clean);
   }
 
