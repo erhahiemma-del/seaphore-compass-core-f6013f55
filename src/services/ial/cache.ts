@@ -87,4 +87,20 @@ export class EvidenceCache {
     this.hits = 0;
     this.misses = 0;
   }
+
+  keys(): string[] {
+    return Array.from(this.store.keys());
+  }
+
+  invalidateWhere(predicate: (key: string, entry: CacheEntry) => boolean): number {
+    let removed = 0;
+    for (const [k, e] of this.store) {
+      if (predicate(k, e)) {
+        this.store.delete(k);
+        removed++;
+      }
+    }
+    return removed;
+  }
 }
+
