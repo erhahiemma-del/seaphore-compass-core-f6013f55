@@ -458,7 +458,7 @@ function CopilotOpsPage() {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-auto p-4">
+              <div ref={workspaceScrollRef} className="flex-1 overflow-auto p-4">
                 {!briefing && !isStreaming ? <EmptyBriefing /> : null}
 
                 {isStreaming ? (
@@ -466,7 +466,7 @@ function CopilotOpsPage() {
                     <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
                       Query
                     </p>
-                    <p className="mb-4 text-sm text-foreground">{text}</p>
+                    <p className="mb-4 text-sm text-foreground">{mutation.variables ?? ""}</p>
                     <StreamingStages activeIndex={stageIndex(stage)} />
                   </div>
                 ) : null}
