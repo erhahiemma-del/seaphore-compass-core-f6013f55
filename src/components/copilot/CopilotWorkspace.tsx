@@ -1,15 +1,16 @@
 /**
  * CopilotWorkspace — the single canonical Copilot surface.
  *
- * Wires the UI directly to the implemented Intelligence Orchestration
- * Engine (`copilotQueryFn` → Intent Classifier → Agent Scheduler →
- * Evidence Fusion → Reasoning Engine → Policy Engine → Briefing
- * Builder), then renders the Sprint 3 Adaptive Briefing. Officer
- * overrides are captured through `copilotOverrideFn` so the Workflow
- * Engine + Policy Engine can act on them.
+ * Every officer query flows through the Operational Intelligence Engine
+ * (OIE) — never directly to the reasoning provider. The OIE handles
+ * intent recognition, pronoun resolution against mission context,
+ * clarification for ambiguous requests, evidence collection through the
+ * orchestrator, and operational-tone response generation. The UI's only
+ * job is to render whichever turn the OIE returns: a clarify card or a
+ * full Adaptive Briefing.
  *
  * Used by both the modal (global launcher) and the dedicated `/copilot`
- * route so behavior is identical everywhere.
+ * route so behaviour is identical everywhere.
  */
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -21,6 +22,7 @@ import type {
   AdaptiveBriefingData,
   OverrideSubmission,
 } from "@/components/copilot/briefing";
+import { ClarifyCard } from "@/components/copilot/ClarifyCard";
 import { ContextBar } from "@/components/copilot/ContextBar";
 import { StreamingStages } from "@/components/copilot/StreamingStages";
 import { Button } from "@/components/ui/button";
@@ -28,21 +30,22 @@ import { useCopilotSession } from "@/hooks/use-copilot-session";
 import type { CopilotInstanceKey } from "@/lib/ai/types";
 import { adaptBriefing, type CopilotQueryResponse } from "@/lib/copilot/adapt-briefing";
 
-import { copilotOverrideFn, copilotQueryFn } from "@/lib/orchestration.functions";
+import { copilotOverrideFn } from "@/lib/orchestration.functions";
+import { runOIEFn } from "@/lib/oie/oie.functions";
 import { cn } from "@/lib/utils";
-import { orchestrate, captureOverride } from "@/services/orchestration";
+import { captureOverride } from "@/services/orchestration";
+import { runOIE, type Clarification, type OperationalPlan } from "@/services/oie";
 import { useAuthStore } from "@/stores/auth.store";
 import { useCopilotStore } from "@/stores/copilot.store";
 import { useIsDevBypass } from "@/stores/dev-mode.store";
 import { useMissionContextStore } from "@/stores/mission-context.store";
 
-
 type Stage = "idle" | "classifying" | "retrieving" | "reasoning" | "rendering" | "ready";
 
 const DEFAULT_SUGGESTIONS = [
-  "Assess ownership network for IMO 9319466",
-  "Detect revenue leakage on last week's Lagos manifests",
-  "Screen operator Blue Horizon Shipping for sanctions exposure",
+  "Show today's arriving vessels",
+  "Why is this vessel high risk?",
+  "Compare today's manifest with yesterday",
 ];
 
 export interface CopilotWorkspaceProps {
@@ -51,11 +54,22 @@ export interface CopilotWorkspaceProps {
   autoFocus?: boolean;
   showContextBar?: boolean;
   /** Which Copilot surface this workspace is rendered from. Biases the
-   * orchestration Agent Scheduler toward that module's specialist. */
+   *  orchestration Agent Scheduler toward that module's specialist. */
   instance?: CopilotInstanceKey;
   /** Show the shared conversation history for the active mission. */
   showHistory?: boolean;
 }
+
+interface OIEBriefingTurn {
+  kind: "briefing";
+  briefing: AdaptiveBriefingData;
+  followUps: string[];
+}
+interface OIEClarifyTurn {
+  kind: "clarify";
+  clarification: Clarification;
+}
+type CopilotTurn = OIEBriefingTurn | OIEClarifyTurn;
 
 export function CopilotWorkspace({
   suggestions = DEFAULT_SUGGESTIONS,
@@ -67,7 +81,7 @@ export function CopilotWorkspace({
 }: CopilotWorkspaceProps) {
   const queryClient = useQueryClient();
   const context = useCopilotStore((s) => s.context);
-  const runQuery = useServerFn(copilotQueryFn);
+  const runOIEServer = useServerFn(runOIEFn);
   const submitOverride = useServerFn(copilotOverrideFn);
   const authUserId = useAuthStore((s) => s.officer?.userId);
   const officerId = authUserId ?? "00000000-0000-0000-0000-000000000000";
@@ -75,12 +89,9 @@ export function CopilotWorkspace({
   const session = useCopilotSession();
   const activeMissionId = useMissionContextStore((s) => s.activeId);
 
-
-
-
   const [text, setText] = useState("");
   const [stage, setStage] = useState<Stage>("idle");
-  const [briefing, setBriefing] = useState<AdaptiveBriefingData | null>(null);
+  const [turn, setTurn] = useState<CopilotTurn | null>(null);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -92,19 +103,20 @@ export function CopilotWorkspace({
   }, [autoFocus]);
 
   const mutation = useMutation({
-    mutationFn: async (q: string) => {
+    mutationFn: async (q: string): Promise<CopilotTurn> => {
       setError(null);
       setStage("classifying");
       const started = performance.now();
-      await new Promise((r) => setTimeout(r, 80));
+      await new Promise((r) => setTimeout(r, 60));
       setStage("retrieving");
-      // Flatten the active Mission Context so the reasoning engine has
-      // full operational grounding (vessel, voyage, alerts, decisions, …).
+
+      // Flatten the active mission (vessel, alerts, evidence,
+      // conversation…) so the OIE can resolve "it" / "this vessel" and
+      // carry subjects across turns.
       const missionState = useMissionContextStore.getState();
-      const mission = activeMissionId
-        ? missionState.missions[activeMissionId]
-        : undefined;
-      const queryPayload = {
+      const mission = activeMissionId ? missionState.missions[activeMissionId] : undefined;
+
+      const payload = {
         query: q,
         officer_id: officerId,
         moduleHint: instance,
@@ -117,31 +129,58 @@ export function CopilotWorkspace({
             }
           : undefined,
       };
-      const response = (devBypass
-        ? await orchestrate({
-            query: queryPayload.query,
-            officer_id: queryPayload.officer_id,
-            moduleHint: queryPayload.moduleHint,
-            mission: queryPayload.mission,
-            context: queryPayload.context,
+
+      // devBypass → run the OIE client-side against the orchestrator;
+      // authed → route through the server function with a real provider.
+      const result = devBypass
+        ? await runOIE({
+            query: {
+              query: payload.query,
+              officer_id: payload.officer_id,
+              moduleHint: payload.moduleHint,
+              mission: payload.mission,
+              context: payload.context,
+            },
           })
-        : await runQuery({ data: queryPayload })) as CopilotQueryResponse;
+        : await runOIEServer({ data: payload });
+
       setStage("reasoning");
+
+      if (result.kind === "clarify") {
+        setStage("ready");
+        return { kind: "clarify", clarification: result.clarification };
+      }
+
+      // Both paths (devBypass client-side and server RPC) yield a
+      // patched briefing plus the operational plan.
+      const briefing = "briefing" in result ? result.briefing : null;
+      const humanResponse = "humanResponse" in result ? result.humanResponse : null;
+      const followUps = extractFollowUps(result) ?? humanResponse?.suggestedNextQuestions ?? [];
+
+      // Both shapes flow through adaptBriefing so the existing renderer
+      // stays untouched. Server response uses `briefing_id`; client
+      // response uses the full `Briefing`.
       const adapted = adaptBriefing(
         {
-          ...response,
-          latency_ms: response.latency_ms ?? Math.round(performance.now() - started),
+          ...toCopilotQueryResponse(result),
+          latency_ms: latencyFromResult(result) ?? Math.round(performance.now() - started),
         },
         q,
       );
+
       setStage("rendering");
-      setBriefing(adapted);
       setStage("ready");
-      // Record the exchange on the shared Mission Context conversation.
+
+      // Record the exchange on the shared mission conversation so the
+      // NEXT query can resolve pronouns and "carry the subject forward".
       session.appendCopilot(`Briefing: ${q}`, adapted.id, instance);
       await queryClient.invalidateQueries({ queryKey: ["intel", "briefings"] });
-      return adapted;
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _keepBriefing = briefing;
+      return { kind: "briefing", briefing: adapted, followUps };
     },
+    onSuccess: (t) => setTurn(t),
     onError: (err: unknown) => {
       setStage("idle");
       setError(err instanceof Error ? err.message : "Copilot request failed");
@@ -156,13 +195,19 @@ export function CopilotWorkspace({
     mutation.mutate(clean);
   }
 
+  async function handleClarifyPick(label: string) {
+    // The pick keeps the anchor entity alive (the OIE reads it from
+    // conversation history) and re-runs with the operational skill
+    // implied by the label.
+    handleSubmit(label);
+  }
 
   async function handleOverride(submission: OverrideSubmission) {
-    if (!briefing) return;
+    if (turn?.kind !== "briefing") return;
     try {
       if (devBypass) {
         await captureOverride({
-          briefing_id: briefing.id,
+          briefing_id: turn.briefing.id,
           officer_id: officerId,
           decision: submission.decision,
           justification: submission.justification,
@@ -170,7 +215,7 @@ export function CopilotWorkspace({
       } else {
         await submitOverride({
           data: {
-            briefing_id: briefing.id,
+            briefing_id: turn.briefing.id,
             decision: submission.decision,
             justification: submission.justification,
           },
@@ -181,9 +226,8 @@ export function CopilotWorkspace({
     }
   }
 
-
   function reset() {
-    setBriefing(null);
+    setTurn(null);
     setStage("idle");
     setText("");
     setError(null);
@@ -195,6 +239,11 @@ export function CopilotWorkspace({
     stage === "retrieving" ||
     stage === "reasoning" ||
     stage === "rendering";
+
+  const followUpChips =
+    turn?.kind === "briefing" && turn.followUps.length > 0 ? turn.followUps : null;
+
+  const startingSuggestions = suggestions ?? DEFAULT_SUGGESTIONS;
 
   return (
     <div className={cn("flex flex-col gap-4", className)}>
@@ -237,14 +286,13 @@ export function CopilotWorkspace({
         </div>
       ) : null}
 
-
-      {!briefing && !isStreaming ? (
+      {!turn && !isStreaming ? (
         <div className="rounded-lg border border-border bg-card p-4">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Suggested starting points
           </p>
           <ul className="mt-2 flex flex-col gap-2">
-            {(suggestions ?? DEFAULT_SUGGESTIONS).slice(0, 3).map((s) => (
+            {startingSuggestions.slice(0, 3).map((s) => (
               <li key={s}>
                 <button
                   type="button"
@@ -275,17 +323,42 @@ export function CopilotWorkspace({
         </div>
       ) : null}
 
-      {briefing ? (
+      {turn?.kind === "clarify" ? (
+        <ClarifyCard clarification={turn.clarification} onPick={handleClarifyPick} />
+      ) : null}
+
+      {turn?.kind === "briefing" ? (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground">
-              Briefing <span className="font-mono">{briefing.id.slice(0, 8)}</span>
+              Briefing <span className="font-mono">{turn.briefing.id.slice(0, 8)}</span>
             </p>
             <Button size="sm" variant="ghost" onClick={reset}>
               Ask another
             </Button>
           </div>
-          <AdaptiveBriefing briefing={briefing} onOverride={handleOverride} />
+          <AdaptiveBriefing briefing={turn.briefing} onOverride={handleOverride} />
+          {followUpChips ? (
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Suggested next questions
+              </p>
+              <ul className="flex flex-wrap gap-2">
+                {followUpChips.map((f) => (
+                  <li key={f}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 text-xs"
+                      onClick={() => handleSubmit(f)}
+                    >
+                      {f}
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -339,4 +412,57 @@ function stageIndex(s: Stage): number {
   if (s === "retrieving") return 1;
   if (s === "reasoning") return 2;
   return 3;
+}
+
+/** Normalises the OIE result (either client-side or server-RPC shape)
+ *  into the CopilotQueryResponse the AdaptiveBriefing adapter expects. */
+function toCopilotQueryResponse(result: unknown): CopilotQueryResponse {
+  const r = result as Record<string, unknown>;
+  const clientBriefing = r.briefing as
+    | {
+        id: string;
+        classification: CopilotQueryResponse["classification"];
+        sections: CopilotQueryResponse["sections"];
+        intelligence_status: CopilotQueryResponse["intelligence_status"];
+        sources_queried: number;
+        sources_responded: number;
+        sources_corroborated: number;
+        mode: string;
+      }
+    | undefined;
+
+  if (clientBriefing) {
+    return {
+      briefing_id: clientBriefing.id,
+      classification: clientBriefing.classification,
+      sections: clientBriefing.sections,
+      intelligence_status: clientBriefing.intelligence_status,
+      sources_queried: clientBriefing.sources_queried,
+      sources_responded: clientBriefing.sources_responded,
+      sources_corroborated: clientBriefing.sources_corroborated,
+      mode: clientBriefing.mode,
+    };
+  }
+  return {
+    briefing_id: (r.briefing_id as string) ?? "unknown",
+    classification: r.classification as CopilotQueryResponse["classification"],
+    sections: r.sections as CopilotQueryResponse["sections"],
+    intelligence_status: r.intelligence_status as CopilotQueryResponse["intelligence_status"],
+    sources_queried: r.sources_queried as number,
+    sources_responded: r.sources_responded as number,
+    sources_corroborated: r.sources_corroborated as number,
+    mode: r.mode as string,
+  };
+}
+
+function extractFollowUps(result: unknown): string[] | null {
+  const r = result as { plan?: OperationalPlan | { followUps?: string[] } };
+  if (!r.plan) return null;
+  if ("followUps" in r.plan && Array.isArray(r.plan.followUps)) return r.plan.followUps;
+  return null;
+}
+
+function latencyFromResult(result: unknown): number | undefined {
+  const r = result as { latencyMs?: number; latency_ms?: number };
+  return r.latencyMs ?? r.latency_ms;
 }
