@@ -49,6 +49,7 @@ import { StreamingStages } from "@/components/copilot/StreamingStages";
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { Button } from "@/components/ui/button";
 import { adaptBriefing, type CopilotQueryResponse } from "@/lib/copilot/adapt-briefing";
+import { exportBriefingToPdf } from "@/lib/copilot/export-briefing-pdf";
 import { getIntelligenceMetrics } from "@/lib/intelligence-metrics.functions";
 import { copilotOverrideFn } from "@/lib/orchestration.functions";
 import { runOIEFn } from "@/lib/oie/oie.functions";
