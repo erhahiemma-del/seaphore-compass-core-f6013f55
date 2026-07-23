@@ -158,6 +158,7 @@ function CopilotOpsPage() {
   const [panelTab, setPanelTab] = useState<"context" | "evidence" | "timeline" | "notes">("context");
   const [splitModule, setSplitModule] = useState<OrchestrationModule | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  const workspaceScrollRef = useRef<HTMLDivElement | null>(null);
 
 
   useEffect(() => {
