@@ -52,7 +52,7 @@ describe("IFE: agreement", () => {
     expect(fused.confidence).toBe("HIGH");
     const flag = fused.canonical[0].fields.find((f) => f.field === "flag")!;
     expect(flag.value).toBe("PA");
-    expect(flag.supportingSources.sort()).toEqual(["ais", "equasis", "marinetraffic"]);
+    expect(flag.supportingSources.slice().sort()).toEqual(["ais", "equasis", "marinetraffic"]);
     expect(flag.dissentingSources).toHaveLength(0);
   });
 
@@ -94,7 +94,7 @@ describe("IFE: disagreement", () => {
     const flag = fused.canonical[0].fields.find((f) => f.field === "flag")!;
     expect(flag.value).toBe("PA");
     expect(flag.supportingSources).toContain("imo-gisis");
-    expect(flag.dissentingSources.sort()).toEqual(["ais", "marinetraffic"]);
+    expect(flag.dissentingSources.slice().sort()).toEqual(["ais", "marinetraffic"]);
     expect(fused.contradictions[0].resolution).toBe("official-source-preferred");
   });
 
