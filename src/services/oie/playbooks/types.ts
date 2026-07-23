@@ -29,7 +29,7 @@ export interface PlaybookContext {
   criticalFindings: PlaybookFinding[];
   gaps: string[];
   matrix: ConfidenceMatrix;
-  intelligenceStatus: "sufficient" | "partial" | "insufficient";
+  intelligenceStatus: "complete" | "partial" | "insufficient";
   sources: { queried: number; responded: number; corroborated: number };
   decisionImpact?: {
     revenue: number;
