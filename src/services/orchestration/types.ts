@@ -151,7 +151,13 @@ export type SectionPayloads = {
   executive: { text: string };
   why_this_matters: { chain: Array<{ step: string; from: string; to: string }> };
   critical_findings: {
-    findings: Array<{ priority: string; title: string; grade: EvidenceGrade; source: string }>;
+    findings: Array<{
+      priority: string;
+      title: string;
+      grade: EvidenceGrade;
+      source: string;
+      citations?: EvidenceCitation[];
+    }>;
   };
   verified_evidence: { items: string[] };
   observed_patterns: { patterns: Array<{ pattern: string; caseRefs: string[] }> };
