@@ -54,31 +54,7 @@ export function CriticalFindings({ findings }: { findings: CriticalFinding[] }) 
                 <span>· {f.source}</span>
               </p>
               {f.citations && f.citations.length > 0 && (
-                <div className="mt-2 rounded border border-dashed bg-muted/30 p-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Evidence cited
-                  </p>
-                  <ul className="mt-1 space-y-1">
-                    {f.citations.map((c) => (
-                      <li
-                        key={c.id}
-                        className="flex flex-wrap items-start gap-2 text-[11px] text-foreground"
-                      >
-                        <GradeChip grade={c.grade} />
-                        <span className="font-mono text-muted-foreground">#{c.id.slice(0, 8)}</span>
-                        <span className="text-muted-foreground">· {c.source}</span>
-                        {c.collectedAt && (
-                          <span className="text-muted-foreground">
-                            · {new Date(c.collectedAt).toUTCString().slice(5, 16)}
-                          </span>
-                        )}
-                        {c.excerpt && (
-                          <span className="w-full text-muted-foreground">"{c.excerpt}"</span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                <GroupedCitations citations={f.citations} />
               )}
             </div>
           </li>
