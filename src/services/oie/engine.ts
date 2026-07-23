@@ -94,14 +94,29 @@ function patchBriefingWithHumanResponse(
       .join(" "),
   });
 
-  // Critical findings → operational key findings
+  // Critical findings → operational key findings (with their citations
+  // preserved so officers can verify the source evidence for each one).
   set("critical_findings", {
     findings: human.keyFindings.map((f, i) => ({
       priority: f.priority,
       title: f.text,
-      grade: "OBSERVED",
-      source: plan.primarySkill.label,
+      grade: (f.citations[0]?.grade as
+        | "VERIFIED"
+        | "CORROBORATED"
+        | "OBSERVED"
+        | "REPORTED"
+        | "INFERRED"
+        | "UNKNOWN") ?? "OBSERVED",
+      source: f.citations[0]?.source ?? plan.primarySkill.label,
       id: `${briefing.id}-kf-${i}`,
+      citations: f.citations.map((c) => ({
+        id: c.id,
+        source: c.source,
+        grade: c.grade,
+        hash: c.hash,
+        excerpt: c.excerpt,
+        collected_at: c.collectedAt,
+      })),
     })),
   });
 

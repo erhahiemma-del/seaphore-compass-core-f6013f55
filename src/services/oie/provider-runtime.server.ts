@@ -29,6 +29,9 @@ const HumanCopySchema = z.object({
     z.object({
       priority: z.enum(["critical", "high", "monitor"]),
       text: z.string(),
+      /** Evidence IDs from the engine output. Must be present so officers
+       *  can trace each Key Finding back to the exact supporting record. */
+      citationIds: z.array(z.string()).default([]),
     }),
   ),
   operationalImpact: z.string(),
@@ -76,7 +79,7 @@ const SYSTEM_PROMPT = [
   "STRUCTURE — the response ALWAYS has these 8 sections:",
   "  1. Executive Summary — 2–3 crisp sentences that a director can read alone.",
   "  2. Situation Overview — what we are looking at and why it matters.",
-  "  3. Key Findings — priority-ordered bullets.",
+  "  3. Key Findings — priority-ordered bullets. Each finding MUST include `citationIds` — one or more evidence `id` values copied verbatim from the engine output's `critical_findings[].citations[].id`. Never invent an id. If no evidence supports a claim, omit the claim.",
   "  4. Operational Impact — what happens if we act / do not act.",
   "  5. Recommended Actions — each with a confidence badge and rationale.",
   "  6. Information Still Needed — intelligence gaps we cannot close from current evidence.",
