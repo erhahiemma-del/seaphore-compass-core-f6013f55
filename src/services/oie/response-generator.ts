@@ -168,32 +168,27 @@ export function buildHumanResponse(
 ): HumanResponse {
   if (!copy) return fallbackFromBriefing(briefing, plan);
 
-  const insufficient = briefing.intelligence_status === "insufficient";
-  const canonicalBadge = badgeFromComposite(
-    briefing.confidence_matrix.composite,
-    insufficient,
-  );
+  const matrix = briefing?.confidence_matrix ?? SAFE_MATRIX;
+  const insufficient = briefing?.intelligence_status === "insufficient";
+  const canonicalBadge = badgeFromComposite(matrix.composite ?? 0, insufficient);
 
-  // Ensure every recommendation carries a badge from the canonical set
-  // and reject silently-empty responses.
   const recommendedActions: HumanResponse["recommendedActions"] = (copy.recommendedActions ?? [])
     .slice(0, 4)
-    .map((r: HumanCopyShape["recommendedActions"][number]) => ({
-      action: r.action,
-      confidence: r.confidence,
-      rationale: r.rationale,
+    .map((r) => ({
+      action: r?.action ?? "Review",
+      confidence: r?.confidence ?? canonicalBadge,
+      rationale: r?.rationale ?? "",
     }));
 
-  // Build a citation index from the underlying briefing so provider-supplied
-  // citation IDs resolve to real evidence records; anything unresolved falls
-  // back to the citations attached to the finding at the same index.
+  const sections = Array.isArray(briefing?.sections) ? briefing.sections : [];
   const underlyingCritical =
-    (pickSection(briefing.sections, "critical_findings")?.payload.findings as
+    (pickSection(sections, "critical_findings")?.payload?.findings as
       | CriticalFindingIn[]
       | undefined) ?? [];
   const citationIndex = new Map<string, import("./types").EvidenceCitation>();
   for (const f of underlyingCritical) {
-    for (const c of f.citations ?? []) {
+    for (const c of f?.citations ?? []) {
+      if (!c?.id) continue;
       citationIndex.set(c.id, {
         id: c.id,
         source: c.source,
@@ -208,7 +203,7 @@ export function buildHumanResponse(
   const keyFindings: HumanResponse["keyFindings"] = (copy.keyFindings ?? [])
     .slice(0, 8)
     .map((kf, i) => {
-      const resolved = (kf.citationIds ?? [])
+      const resolved = (kf?.citationIds ?? [])
         .map((id) => citationIndex.get(id))
         .filter((c): c is import("./types").EvidenceCitation => Boolean(c));
       const citations =
@@ -217,20 +212,24 @@ export function buildHumanResponse(
           : underlyingCritical[i]
             ? normaliseCitations(underlyingCritical[i])
             : [];
-      return { priority: kf.priority, text: kf.text, citations };
+      return {
+        priority: kf?.priority ?? "monitor",
+        text: kf?.text ?? "",
+        citations,
+      };
     });
 
   return {
-    executiveSummary: copy.executiveSummary,
-    situationOverview: copy.situationOverview,
+    executiveSummary: copy.executiveSummary ?? "",
+    situationOverview: copy.situationOverview ?? "",
     keyFindings,
-    operationalImpact: copy.operationalImpact,
+    operationalImpact: copy.operationalImpact ?? "",
     recommendedActions,
     informationStillNeeded: (copy.informationStillNeeded ?? []).slice(0, 6),
-    suggestedNextQuestions: (copy.suggestedNextQuestions ?? plan.followUps).slice(0, 4),
+    suggestedNextQuestions: (copy.suggestedNextQuestions ?? plan?.followUps ?? []).slice(0, 4),
     confidenceAssessment: {
       badge: canonicalBadge,
-      explanation: copy.confidenceExplanation || explainMatrix(briefing.confidence_matrix),
+      explanation: copy.confidenceExplanation || explainMatrix(matrix),
     },
     officerNotice: OFFICER_NOTICE,
   };
