@@ -181,9 +181,12 @@ export function CopilotWorkspace({
       return { kind: "briefing", briefing: adapted, followUps };
     },
     onSuccess: (t) => setTurn(t),
-    onError: (err: unknown) => {
+    onError: (err: unknown, variables) => {
       setStage("idle");
       setError(err instanceof Error ? err.message : "Copilot request failed");
+      // Restore the query so the officer can retry without retyping.
+      if (typeof variables === "string" && variables.trim()) setText(variables);
+      console.error("[Copilot] OIE run failed", err);
     },
   });
 
