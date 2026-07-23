@@ -46,6 +46,10 @@ import {
   SimulatedMarineTrafficConnector,
   SimulatedOpenSanctionsConnector,
 } from "./connectors/simulated";
+// Side-effect import: registers all production OSINT connectors in
+// `src/lib/osint/registry`. Bridged into the IAL registry below.
+import "@/lib/osint/connectors";
+import { listConnectors as listOsintConnectors } from "@/lib/osint/registry";
 import type { AcquisitionQuery, EvidencePackage } from "./types";
 
 let defaultManager: ConnectorManager | null = null;
