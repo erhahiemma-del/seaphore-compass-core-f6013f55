@@ -383,8 +383,10 @@ function SectionContent({
   if (section === "roles") return <RolesSection />;
   if (section === "audit") return <AuditCentreSection />;
   if (section === "data-sources") return <DataSourceMatrixPanel />;
+  if (section === "ial") return <IalAdminPanel />;
   return <PlaceholderSection section={section} />;
 }
+
 
 function PlaceholderSection({ section }: { section: SectionId }) {
   const item = NAV.find((n) => n.id === section)!;
