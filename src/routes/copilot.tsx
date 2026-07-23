@@ -458,7 +458,34 @@ function CopilotOpsPage() {
                   </div>
                 ) : null}
 
+                {clarify ? (
+                  <div className="mb-3">
+                    <ClarifyCard clarification={clarify} onPick={(l) => handleSubmit(l)} />
+                  </div>
+                ) : null}
+
                 {briefing ? <AdaptiveBriefing briefing={briefing} onOverride={handleOverride} /> : null}
+
+                {briefing && followUps.length > 0 ? (
+                  <div className="mt-3 rounded-lg border border-border/60 bg-[#FAFBFC] p-3">
+                    <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      Suggested next questions
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {followUps.map((f) => (
+                        <Button
+                          key={f}
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-xs"
+                          onClick={() => handleSubmit(f)}
+                        >
+                          {f}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
 
               {/* Query input */}
