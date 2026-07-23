@@ -255,22 +255,28 @@ export function exportBriefingToPdf(briefing: AdaptiveBriefing): string {
   if (briefing.decisionImpact) {
     writeSectionTitle(pdf, cursor, "Decision Impact");
     const impact = briefing.decisionImpact;
-    if (impact.headline) writeParagraph(pdf, cursor, impact.headline, 10.5);
-    if (Array.isArray(impact.points)) {
-      for (const p of impact.points) writeBullet(pdf, cursor, String(p));
-    }
+    const pct = (n: number) => `${Math.round((n ?? 0) * 100)}%`;
+    writeBullet(pdf, cursor, `Revenue impact: ${pct(impact.revenue)}`);
+    writeBullet(pdf, cursor, `Security impact: ${pct(impact.security)}`);
+    writeBullet(pdf, cursor, `Operational impact: ${pct(impact.operational)}`);
+    writeBullet(pdf, cursor, `Cargo impact: ${pct(impact.cargo)}`);
+    cursor.y += 6;
+  }
+
+  if (briefing.decisionRequired) {
+    writeSectionTitle(pdf, cursor, "Decision Required");
+    writeParagraph(
+      pdf,
+      cursor,
+      `Deadline: ${briefing.decisionRequired.deadline}  ·  Risk if deferred: ${briefing.decisionRequired.risk}`,
+    );
     cursor.y += 6;
   }
 
   if (briefing.officerActions?.length) {
     writeSectionTitle(pdf, cursor, "Recommended Officer Actions");
     for (const a of briefing.officerActions) {
-      const line =
-        typeof a === "string"
-          ? a
-          : [a.action, a.owner ? `Owner: ${a.owner}` : null, a.due ? `Due: ${a.due}` : null]
-              .filter(Boolean)
-              .join("  ·  ");
+      const line = a.description ? `${a.label} — ${a.description}` : a.label;
       writeBullet(pdf, cursor, line);
     }
     cursor.y += 6;
