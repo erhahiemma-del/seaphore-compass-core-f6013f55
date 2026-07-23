@@ -84,6 +84,20 @@ export interface EvidenceItem {
   conflicts_with?: string[];
 }
 
+/**
+ * A compact citation pointing officers to a specific evidence record that
+ * supports a finding. Every key finding surfaced to the officer must ship
+ * with at least one citation so it can be independently verified.
+ */
+export interface EvidenceCitation {
+  id: string;
+  source: string;
+  grade: EvidenceGrade;
+  hash?: string;
+  excerpt?: string;
+  collected_at?: string;
+}
+
 export interface RetrievalResult {
   agent: AgentId;
   capability: CapabilityId;
