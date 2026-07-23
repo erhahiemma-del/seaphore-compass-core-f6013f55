@@ -262,10 +262,15 @@ export class ConnectorManager {
       const result = await Promise.race([call, timeout]);
       const latency = Math.round(performance.now() - started);
       this.health.recordCall(connector.id, result.ok, latency, result.error);
+      // Sprint 1A.2: publish connector completion onto the canonical
+      // orchestration event bus. Reuses `evidence.collected` — no new
+      // event system introduced.
+      void emitConnectorEvent(connector.id, result.ok, latency, result.records.length, result.error);
       return result;
     } catch (err) {
       const latency = Math.round(performance.now() - started);
       this.health.recordCall(connector.id, false, latency, describe(err));
+      void emitConnectorEvent(connector.id, false, latency, 0, describe(err));
       return {
         connectorId: connector.id,
         ok: false,
@@ -276,6 +281,24 @@ export class ConnectorManager {
     }
   }
 }
+
+async function emitConnectorEvent(
+  connectorId: ConnectorId,
+  ok: boolean,
+  latencyMs: number,
+  recordCount: number,
+  error?: string,
+): Promise<void> {
+  try {
+    const { emitEvent } = await import("@/services/orchestration/event-bus");
+    await emitEvent({
+      event_type: "evidence.collected",
+      payload: { connectorId, ok, latencyMs, recordCount, error: error ?? null },
+      emitted_by: "ial.connector-manager",
+    });
+  } catch {
+    /* best-effort — the pipeline never fails on telemetry */
+  }
 
 function describe(err: unknown): string {
   if (err instanceof Error) return err.message;
