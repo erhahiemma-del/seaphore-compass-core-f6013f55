@@ -121,7 +121,7 @@ const NAV: NavItem[] = [
   { id: "roles", label: "Roles & Permissions", icon: ShieldCheck },
   { id: "organizations", label: "Organizations", icon: Boxes },
   { id: "data-sources", label: "Data Sources", icon: Database },
-  { id: "ial", label: "IAL Controls", icon: RefreshCcw },
+  { id: "ial", label: "IAL Controls", icon: RefreshCw },
 
   { id: "ai", label: "AI Configuration", icon: Brain },
   { id: "workflow", label: "Workflow Engine", icon: Workflow },
