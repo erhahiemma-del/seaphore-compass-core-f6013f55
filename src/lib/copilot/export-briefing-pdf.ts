@@ -102,9 +102,11 @@ function drawTitle(pdf: jsPDF, cursor: Cursor, briefing: AdaptiveBriefing) {
   const classification = briefing.classification;
   if (classification) {
     const parts: string[] = [];
-    if (classification.type) parts.push(`Type: ${classification.type}`);
-    if (classification.mode) parts.push(`Mode: ${classification.mode}`);
-    if (classification.confidence) parts.push(`Confidence: ${classification.confidence}`);
+    if (classification.typeBadge) parts.push(`Type: ${classification.typeBadge}`);
+    if (classification.tier) parts.push(`Tier: ${classification.tier}`);
+    if (typeof classification.compositeConfidence === "number")
+      parts.push(`Confidence: ${Math.round(classification.compositeConfidence * 100)}%`);
+    if (classification.evidenceStrength) parts.push(`Evidence: ${classification.evidenceStrength}`);
     if (parts.length) {
       pdf.text(parts.join("   ·   "), MARGIN_X, cursor.y);
       cursor.y += 12;
