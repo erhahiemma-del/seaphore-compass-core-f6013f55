@@ -71,12 +71,24 @@ export function buildBriefing(args: {
     });
   }
 
-  // 8. Critical Findings — derived from top verified/inferred items
+  // 8. Critical Findings — derived from top verified/inferred items.
+  //    Each finding carries a citation back to the source evidence so the
+  //    officer can independently verify which record supports it.
   const findings = fused.ranked.slice(0, 5).map((e) => ({
     priority: e.grade === "VERIFIED" ? "immediate" : e.grade === "OBSERVED" ? "today" : "monitor",
     title: (e.content || "").slice(0, 90),
     grade: e.grade,
     source: e.source_system,
+    citations: [
+      {
+        id: e.id,
+        source: e.source_system,
+        grade: e.grade,
+        hash: e.hash_sha256,
+        excerpt: (e.content || "").slice(0, 160),
+        collected_at: e.collected_at,
+      },
+    ],
   }));
   if (findings.length)
     sections.push({ kind: "critical_findings", title: "Critical Findings", payload: { findings } });
