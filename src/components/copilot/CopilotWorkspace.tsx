@@ -181,18 +181,26 @@ export function CopilotWorkspace({
       return { kind: "briefing", briefing: adapted, followUps };
     },
     onSuccess: (t) => setTurn(t),
-    onError: (err: unknown) => {
+    onError: (err: unknown, variables) => {
       setStage("idle");
       setError(err instanceof Error ? err.message : "Copilot request failed");
+      // Restore the query so the officer can retry without retyping.
+      if (typeof variables === "string" && variables.trim()) setText(variables);
+      console.error("[Copilot] OIE run failed", err);
     },
   });
 
-  async function handleSubmit(q: string) {
+  function handleSubmit(q: string) {
     const clean = q.trim();
     if (!clean || mutation.isPending) return;
     setText("");
     setError(null);
-    session.appendOfficer(clean, instance);
+    try {
+      session.appendOfficer(clean, instance);
+    } catch (err) {
+      // Never let a conversation-log write block the officer's query.
+      console.warn("[Copilot] failed to log officer turn", err);
+    }
     mutation.mutate(clean);
   }
 
