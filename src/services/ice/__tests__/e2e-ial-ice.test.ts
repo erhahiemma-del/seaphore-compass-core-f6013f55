@@ -113,22 +113,22 @@ describe("E2E · IAL → ICE → OIE handoff", () => {
     );
 
     const nameRows = pkg.fused.filter(
-      (f) => f.canonicalId === OCEAN_MELODY.id && f.fieldName === "name",
+      (f) => f.canonicalId === OCEAN_MELODY.id && f.fieldName === "vessel_name",
     );
     expect(nameRows.length).toBe(1);
 
     // Matrix should still contain both source cells (audit trail preserved).
     const nameCells = pkg.matrix.filter(
-      (c) => c.canonicalId === OCEAN_MELODY.id && c.fieldName === "name",
+      (c) => c.canonicalId === OCEAN_MELODY.id && c.fieldName === "vessel_name",
     );
     expect(nameCells.length).toBeGreaterThanOrEqual(2);
     const sources = new Set(nameCells.map((c) => c.sourceId));
     expect(sources.has("equasis")).toBe(true);
     expect(sources.has("imo-gisis")).toBe(true);
 
-    // Corroboration row present for `name`.
+    // Corroboration row present for the vessel name.
     const corrob = pkg.corroborations.find(
-      (c) => c.canonicalId === OCEAN_MELODY.id && c.fieldName === "name",
+      (c) => c.canonicalId === OCEAN_MELODY.id && c.fieldName === "vessel_name",
     );
     expect(corrob).toBeDefined();
     expect(corrob!.agreementCount).toBeGreaterThanOrEqual(2);
