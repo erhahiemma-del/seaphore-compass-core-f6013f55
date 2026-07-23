@@ -45,7 +45,7 @@ interface BriefingSeed {
   matrix?: ConfidenceMatrix;
   sources?: { queried: number; responded: number; corroborated: number };
   impact?: { revenue: number; security: number; operational: number; cargo: number };
-  status?: "sufficient" | "partial" | "insufficient";
+  status?: "complete" | "partial" | "insufficient";
 }
 
 function makeBriefing(seed: BriefingSeed): Briefing {
@@ -91,7 +91,7 @@ function makeBriefing(seed: BriefingSeed): Briefing {
     mode: "investigation",
     classification: { typeBadge: "investigation", matrix, evidenceStrength: "strong" },
     sections,
-    intelligence_status: seed.status ?? "sufficient",
+    intelligence_status: seed.status ?? "complete",
     sources_queried: seed.sources?.queried ?? 3,
     sources_responded: seed.sources?.responded ?? 3,
     sources_corroborated: seed.sources?.corroborated ?? 3,
