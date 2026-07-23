@@ -98,6 +98,7 @@ type SectionId =
   | "roles"
   | "organizations"
   | "data-sources"
+  | "ial"
   | "ai"
   | "workflow"
   | "rules"
@@ -106,6 +107,7 @@ type SectionId =
   | "audit"
   | "reports"
   | "settings";
+
 
 interface NavItem {
   id: SectionId;
