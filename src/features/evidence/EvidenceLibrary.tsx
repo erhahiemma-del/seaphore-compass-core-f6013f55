@@ -76,6 +76,7 @@ import {
   activeFilterCount,
   type EvidenceFilters,
 } from "@/features/evidence/filters";
+import { IceExplainabilityPanel } from "@/features/evidence/IceExplainabilityPanel";
 
 /* ============================================================
  * Types & tabs
@@ -92,7 +93,8 @@ type TabKey =
   | "relationships"
   | "investigations"
   | "timeline"
-  | "audit";
+  | "audit"
+  | "ice";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "overview", label: "Overview" },
@@ -106,6 +108,7 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: "investigations", label: "Investigations" },
   { key: "timeline", label: "Timeline" },
   { key: "audit", label: "Audit Trail" },
+  { key: "ice", label: "ICE Explainability" },
 ];
 
 /* ============================================================
@@ -221,6 +224,8 @@ export function EvidenceCentre() {
               <TimelinePanel evidence={filtered} />
             ) : tab === "audit" ? (
               <AuditPanel />
+            ) : tab === "ice" ? (
+              <IceExplainabilityPanel />
             ) : (
               <>
                 <EvidenceExplorer
