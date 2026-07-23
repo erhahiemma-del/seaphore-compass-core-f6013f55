@@ -223,6 +223,8 @@ export function EvidenceCentre() {
               <TimelinePanel evidence={filtered} />
             ) : tab === "audit" ? (
               <AuditPanel />
+            ) : tab === "ice" ? (
+              <IceExplainabilityPanel />
             ) : (
               <>
                 <EvidenceExplorer
