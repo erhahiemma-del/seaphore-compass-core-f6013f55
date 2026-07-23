@@ -313,7 +313,7 @@ export function CopilotWorkspace({
           <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Query
           </p>
-          <p className="mb-4 text-sm text-foreground">{text}</p>
+          <p className="mb-4 text-sm text-foreground">{mutation.variables ?? ""}</p>
           <StreamingStages activeIndex={stageIndex(stage)} />
         </div>
       ) : null}
