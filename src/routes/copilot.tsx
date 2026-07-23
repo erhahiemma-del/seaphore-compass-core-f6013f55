@@ -158,6 +158,7 @@ function CopilotOpsPage() {
   const [panelTab, setPanelTab] = useState<"context" | "evidence" | "timeline" | "notes">("context");
   const [splitModule, setSplitModule] = useState<OrchestrationModule | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  const workspaceScrollRef = useRef<HTMLDivElement | null>(null);
 
 
   useEffect(() => {
@@ -251,8 +252,15 @@ function CopilotOpsPage() {
   function handleSubmit(q: string) {
     const clean = q.trim();
     if (!clean || mutation.isPending) return;
-    setText(clean);
+    setText("");
+    setError(null);
+    setClarify(null);
     session.appendOfficer(clean);
+    // Scroll the workspace so the officer sees streaming stages / new briefing
+    // instead of the (now stale) previous briefing content above.
+    requestAnimationFrame(() => {
+      workspaceScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    });
     mutation.mutate(clean);
   }
 
@@ -450,7 +458,7 @@ function CopilotOpsPage() {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-auto p-4">
+              <div ref={workspaceScrollRef} className="flex-1 overflow-auto p-4">
                 {!briefing && !isStreaming ? <EmptyBriefing /> : null}
 
                 {isStreaming ? (
@@ -458,7 +466,7 @@ function CopilotOpsPage() {
                     <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
                       Query
                     </p>
-                    <p className="mb-4 text-sm text-foreground">{text}</p>
+                    <p className="mb-4 text-sm text-foreground">{mutation.variables ?? ""}</p>
                     <StreamingStages activeIndex={stageIndex(stage)} />
                   </div>
                 ) : null}
