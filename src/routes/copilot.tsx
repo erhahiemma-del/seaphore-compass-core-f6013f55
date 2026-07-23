@@ -50,12 +50,17 @@ import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { Button } from "@/components/ui/button";
 import { adaptBriefing, type CopilotQueryResponse } from "@/lib/copilot/adapt-briefing";
 import { getIntelligenceMetrics } from "@/lib/intelligence-metrics.functions";
-import { copilotOverrideFn, copilotQueryFn } from "@/lib/orchestration.functions";
+import { copilotOverrideFn } from "@/lib/orchestration.functions";
+import { runOIEFn } from "@/lib/oie/oie.functions";
 import { cn } from "@/lib/utils";
-import { orchestrate, captureOverride } from "@/services/orchestration";
+import { captureOverride } from "@/services/orchestration";
+import { runOIE, type Clarification } from "@/services/oie";
+import { ClarifyCard } from "@/components/copilot/ClarifyCard";
 import { useAuthStore } from "@/stores/auth.store";
 import { useCopilotStore } from "@/stores/copilot.store";
 import { useIsDevBypass } from "@/stores/dev-mode.store";
+import { useMissionContextStore } from "@/stores/mission-context.store";
+import { useCopilotSession } from "@/hooks/use-copilot-session";
 
 
 export const Route = createFileRoute("/copilot")({
@@ -133,15 +138,19 @@ const ORCHESTRATION_MODULES: OrchestrationModule[] = [
 function CopilotOpsPage() {
   const queryClient = useQueryClient();
   const context = useCopilotStore((s) => s.context);
-  const runQuery = useServerFn(copilotQueryFn);
+  const runOIEServer = useServerFn(runOIEFn);
   const submitOverride = useServerFn(copilotOverrideFn);
   const devBypass = useIsDevBypass();
   const authUserId = useAuthStore((s) => s.officer?.userId);
   const officerId = authUserId ?? "00000000-0000-0000-0000-000000000000";
+  const session = useCopilotSession();
+  const activeMissionId = useMissionContextStore((s) => s.activeId);
 
   const [text, setText] = useState("");
   const [stage, setStage] = useState<Stage>("idle");
   const [briefing, setBriefing] = useState<AdaptiveBriefingData | null>(null);
+  const [clarify, setClarify] = useState<Clarification | null>(null);
+  const [followUps, setFollowUps] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [activeInvestigation, setActiveInvestigation] = useState<string>("inv-ocean-pearl");
   const [panelTab, setPanelTab] = useState<"context" | "evidence" | "timeline" | "notes">("context");
@@ -157,13 +166,18 @@ function CopilotOpsPage() {
   const mutation = useMutation({
     mutationFn: async (q: string) => {
       setError(null);
+      setClarify(null);
       setStage("classifying");
       const started = performance.now();
       await new Promise((r) => setTimeout(r, 60));
       setStage("retrieving");
-      const queryPayload = {
+
+      const missionState = useMissionContextStore.getState();
+      const mission = activeMissionId ? missionState.missions[activeMissionId] : undefined;
+      const payload = {
         query: q,
         officer_id: officerId,
+        mission: mission as unknown as Record<string, unknown> | undefined,
         context: context
           ? {
               investigation_id: context.kind === "investigation" ? context.label : undefined,
@@ -172,17 +186,57 @@ function CopilotOpsPage() {
             }
           : undefined,
       };
-      const response = (devBypass
-        ? await orchestrate(queryPayload)
-        : await runQuery({ data: queryPayload })) as CopilotQueryResponse;
+
+      const result = devBypass
+        ? await runOIE({
+            query: {
+              query: payload.query,
+              officer_id: payload.officer_id,
+              mission: payload.mission,
+              context: payload.context,
+            },
+          })
+        : await runOIEServer({ data: payload });
+
       setStage("reasoning");
+
+      if (result.kind === "clarify") {
+        setClarify(result.clarification);
+        setBriefing(null);
+        setFollowUps([]);
+        setStage("ready");
+        return null;
+      }
+
+      // Normalise both shapes into a CopilotQueryResponse for the adapter.
+      const flat = (() => {
+        if ("briefing" in result && result.briefing) {
+          const b = result.briefing;
+          return {
+            briefing_id: b.id,
+            classification: b.classification,
+            sections: b.sections,
+            intelligence_status: b.intelligence_status,
+            sources_queried: b.sources_queried,
+            sources_responded: b.sources_responded,
+            sources_corroborated: b.sources_corroborated,
+            mode: b.mode,
+            latency_ms: b.latency_ms,
+          } as CopilotQueryResponse;
+        }
+        return result as unknown as CopilotQueryResponse;
+      })();
+
       const adapted = adaptBriefing(
-        { ...response, latency_ms: response.latency_ms ?? Math.round(performance.now() - started) },
+        { ...flat, latency_ms: flat.latency_ms ?? Math.round(performance.now() - started) },
         q,
       );
       setStage("rendering");
       setBriefing(adapted);
+      const plan = (result as { plan?: { followUps?: string[] } }).plan;
+      setFollowUps(plan?.followUps ?? []);
       setStage("ready");
+      session.appendCopilot(`Briefing: ${q}`, adapted.id);
       await queryClient.invalidateQueries({ queryKey: ["intel", "briefings"] });
       return adapted;
     },
@@ -196,6 +250,7 @@ function CopilotOpsPage() {
     const clean = q.trim();
     if (!clean || mutation.isPending) return;
     setText(clean);
+    session.appendOfficer(clean);
     mutation.mutate(clean);
   }
 
