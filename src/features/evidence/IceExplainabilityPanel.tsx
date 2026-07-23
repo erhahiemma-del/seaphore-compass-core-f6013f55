@@ -216,7 +216,7 @@ function CorrelationMatrixSection({ matrix }: { matrix: ReadonlyArray<MatrixCell
                 <tr key={f} className="border-t border-line/50">
                   <td className="sticky left-0 z-10 bg-surface/70 px-2 py-1.5 font-medium text-foreground">
                     {f}
-                    {CRITICAL_FIELDS.includes(f as never) && (
+                    {CRITICAL_FIELDS.includes(f) && (
                       <span className="ml-1 text-[9.5px] uppercase tracking-wide text-rose-300/80">
                         · critical
                       </span>
