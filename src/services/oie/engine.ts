@@ -499,11 +499,45 @@ export async function runOIE(
       logStageFailure("canonicalBadge", err);
     }
 
+    // Stage 9.5 — Playbook Engine overlay.
+    // Deterministic SOP rules override the reasoning provider's
+    // recommendations and confidence explanation. The playbook never
+    // introduces facts; it only reshapes what the officer sees so
+    // every investigation is repeatable regardless of the brain used.
+    safeSync(
+      "applyPlaybook",
+      () => {
+        const playbook = findPlaybook(plan.primarySkill.id);
+        if (!playbook) return;
+        const evaluation = evaluatePlaybook(playbook, briefing, mission);
+
+        if (evaluation.recommendedActions.length > 0) {
+          humanResponse.recommendedActions = evaluation.recommendedActions.map((r) => ({
+            action: r.action,
+            confidence: r.confidence,
+            rationale: r.rationale,
+          }));
+        }
+        if (evaluation.informationStillNeeded.length > 0) {
+          humanResponse.informationStillNeeded = evaluation.informationStillNeeded;
+        }
+        if (evaluation.suggestedNextQuestions.length > 0) {
+          humanResponse.suggestedNextQuestions = evaluation.suggestedNextQuestions;
+        }
+        humanResponse.confidenceAssessment = {
+          badge: evaluation.confidence.badge,
+          explanation: evaluation.confidence.explanation,
+        };
+      },
+      undefined,
+    );
+
     const patchedBriefing = safeSync(
       "patchBriefing",
       () => patchBriefingWithHumanResponse(briefing, humanResponse, plan),
       briefing,
     );
+
 
     return {
       kind: "briefing",
