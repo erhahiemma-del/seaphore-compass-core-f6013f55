@@ -109,6 +109,7 @@ function groupCitations(citations: EvidenceCitation[]) {
 
 function GroupedCitations({ citations }: { citations: EvidenceCitation[] }) {
   const groups = groupCitations(citations);
+  const [active, setActive] = useState<EvidenceCitation | null>(null);
   return (
     <div className="mt-2 rounded border border-dashed bg-muted/30 p-2">
       <div className="flex items-center justify-between">
@@ -138,18 +139,27 @@ function GroupedCitations({ citations }: { citations: EvidenceCitation[] }) {
                   </span>
                   <ul className="flex-1 space-y-0.5">
                     {items.map((c) => (
-                      <li key={c.id} className="text-[11px] text-foreground">
+                      <li
+                        key={c.id}
+                        className="flex flex-wrap items-baseline gap-x-2 text-[11px] text-foreground"
+                      >
                         <span className="font-mono text-muted-foreground">
                           #{c.id.slice(0, 8)}
                         </span>
                         {c.collectedAt && (
                           <span className="text-muted-foreground">
-                            {" "}
                             · {new Date(c.collectedAt).toUTCString().slice(5, 16)}
                           </span>
                         )}
+                        <button
+                          type="button"
+                          onClick={() => setActive(c)}
+                          className="text-[10px] font-medium uppercase tracking-wider text-primary underline-offset-2 hover:underline focus:outline-none focus:underline"
+                        >
+                          View record
+                        </button>
                         {c.excerpt && (
-                          <span className="block text-muted-foreground">"{c.excerpt}"</span>
+                          <span className="block w-full text-muted-foreground">"{c.excerpt}"</span>
                         )}
                       </li>
                     ))}
@@ -160,9 +170,80 @@ function GroupedCitations({ citations }: { citations: EvidenceCitation[] }) {
           </div>
         ))}
       </div>
+      <EvidenceRecordDialog
+        citation={active}
+        onOpenChange={(open) => !open && setActive(null)}
+      />
     </div>
   );
 }
+
+function EvidenceRecordDialog({
+  citation,
+  onOpenChange,
+}: {
+  citation: EvidenceCitation | null;
+  onOpenChange: (open: boolean) => void;
+}) {
+  return (
+    <Dialog open={!!citation} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Evidence record</DialogTitle>
+          <DialogDescription>
+            Full provenance for the cited evidence item. Officer decides.
+          </DialogDescription>
+        </DialogHeader>
+        {citation && (
+          <dl className="space-y-3 text-sm">
+            <Field label="Record ID">
+              <span className="font-mono text-xs break-all">{citation.id}</span>
+            </Field>
+            <Field label="Source system">
+              <span>{citation.source || "Unknown source"}</span>
+            </Field>
+            <Field label="Evidence grade">
+              <GradeChip grade={citation.grade || "UNKNOWN"} />
+            </Field>
+            <Field label="Collected at">
+              <span>
+                {citation.collectedAt
+                  ? new Date(citation.collectedAt).toUTCString()
+                  : "Not recorded"}
+              </span>
+            </Field>
+            {citation.hash && (
+              <Field label="Content hash">
+                <span className="font-mono text-xs break-all">{citation.hash}</span>
+              </Field>
+            )}
+            <Field label="Excerpt">
+              {citation.excerpt ? (
+                <blockquote className="rounded border-l-2 border-primary/40 bg-muted/40 p-2 text-xs italic text-muted-foreground">
+                  "{citation.excerpt}"
+                </blockquote>
+              ) : (
+                <span className="text-xs text-muted-foreground">No excerpt captured.</span>
+              )}
+            </Field>
+          </dl>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <dt className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </dt>
+      <dd className="mt-0.5">{children}</dd>
+    </div>
+  );
+}
+
 
 
 /* ─────────────── Analytical Assessment + Why Chain ─────────────── */
