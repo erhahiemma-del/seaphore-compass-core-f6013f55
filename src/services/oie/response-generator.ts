@@ -18,7 +18,12 @@ import type { ConfidenceBadge, HumanResponse, OperationalPlan } from "./types";
 export interface HumanCopyShape {
   executiveSummary: string;
   situationOverview: string;
-  keyFindings: Array<{ priority: "critical" | "high" | "monitor"; text: string }>;
+  keyFindings: Array<{
+    priority: "critical" | "high" | "monitor";
+    text: string;
+    /** Evidence IDs (from the engine output) that support this finding. */
+    citationIds?: string[];
+  }>;
   operationalImpact: string;
   recommendedActions: Array<{ action: string; confidence: ConfidenceBadge; rationale: string }>;
   informationStillNeeded: string[];
@@ -41,6 +46,15 @@ interface CriticalFindingIn {
   priority: string;
   title: string;
   source: string;
+  grade?: string;
+  citations?: Array<{
+    id: string;
+    source: string;
+    grade: string;
+    hash?: string;
+    excerpt?: string;
+    collected_at?: string;
+  }>;
 }
 interface OfficerActionIn {
   id: string;
@@ -51,6 +65,31 @@ interface DecisionImpactIn {
   security: number;
   operational: number;
   cargo: number;
+}
+
+function normaliseCitations(
+  f: CriticalFindingIn,
+): import("./types").EvidenceCitation[] {
+  if (f.citations && f.citations.length > 0) {
+    return f.citations.map((c) => ({
+      id: c.id,
+      source: c.source,
+      grade: (c.grade as import("./types").EvidenceCitation["grade"]) ?? "OBSERVED",
+      hash: c.hash,
+      excerpt: c.excerpt,
+      collectedAt: c.collected_at,
+    }));
+  }
+  // Fall back to a synthetic citation derived from the finding itself so the
+  // officer always sees at least one traceable source label.
+  return [
+    {
+      id: `syn-${f.source}-${f.title.slice(0, 24)}`,
+      source: f.source,
+      grade: (f.grade as import("./types").EvidenceCitation["grade"]) ?? "OBSERVED",
+      excerpt: f.title,
+    },
+  ];
 }
 
 /** Operational-tone fallback — used when the provider is unavailable. */
@@ -91,6 +130,7 @@ function fallbackFromBriefing(briefing: Briefing, plan: OperationalPlan): HumanR
           ? (f.priority as HumanResponse["keyFindings"][number]["priority"])
           : "monitor",
       text: `${f.title} (source: ${f.source}).`,
+      citations: normaliseCitations(f),
     })),
     operationalImpact: impactText,
     recommendedActions: actions.slice(0, 4).map((a) => ({
@@ -134,10 +174,46 @@ export function buildHumanResponse(
       rationale: r.rationale,
     }));
 
+  // Build a citation index from the underlying briefing so provider-supplied
+  // citation IDs resolve to real evidence records; anything unresolved falls
+  // back to the citations attached to the finding at the same index.
+  const underlyingCritical =
+    (pickSection(briefing.sections, "critical_findings")?.payload.findings as
+      | CriticalFindingIn[]
+      | undefined) ?? [];
+  const citationIndex = new Map<string, import("./types").EvidenceCitation>();
+  for (const f of underlyingCritical) {
+    for (const c of f.citations ?? []) {
+      citationIndex.set(c.id, {
+        id: c.id,
+        source: c.source,
+        grade: (c.grade as import("./types").EvidenceCitation["grade"]) ?? "OBSERVED",
+        hash: c.hash,
+        excerpt: c.excerpt,
+        collectedAt: c.collected_at,
+      });
+    }
+  }
+
+  const keyFindings: HumanResponse["keyFindings"] = (copy.keyFindings ?? [])
+    .slice(0, 8)
+    .map((kf, i) => {
+      const resolved = (kf.citationIds ?? [])
+        .map((id) => citationIndex.get(id))
+        .filter((c): c is import("./types").EvidenceCitation => Boolean(c));
+      const citations =
+        resolved.length > 0
+          ? resolved
+          : underlyingCritical[i]
+            ? normaliseCitations(underlyingCritical[i])
+            : [];
+      return { priority: kf.priority, text: kf.text, citations };
+    });
+
   return {
     executiveSummary: copy.executiveSummary,
     situationOverview: copy.situationOverview,
-    keyFindings: (copy.keyFindings ?? []).slice(0, 8),
+    keyFindings,
     operationalImpact: copy.operationalImpact,
     recommendedActions,
     informationStillNeeded: (copy.informationStillNeeded ?? []).slice(0, 6),

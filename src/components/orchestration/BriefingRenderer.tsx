@@ -87,9 +87,9 @@ export function BriefingRenderer({ briefing, onOverride }: Props) {
           </Section>
         )}
 
-        {/* 8. Critical Findings */}
+        {/* 8. Key Findings */}
         {byKind.has("critical_findings") && (
-          <Section title="Critical Findings">
+          <Section title="Key Findings">
             <ul className="space-y-2">
               {(
                 byKind.get("critical_findings")!.payload as SectionPayload<"critical_findings">
@@ -103,6 +103,30 @@ export function BriefingRenderer({ briefing, onOverride }: Props) {
                     <p className="text-xs text-muted-foreground">
                       <GradeChip grade={f.grade as EvidenceGrade} /> · {f.source}
                     </p>
+                    {f.citations && f.citations.length > 0 && (
+                      <div className="mt-2 rounded border border-dashed bg-muted/30 p-2">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Evidence cited
+                        </p>
+                        <ul className="mt-1 space-y-1">
+                          {f.citations.map((c) => (
+                            <li
+                              key={c.id}
+                              className="flex flex-wrap items-start gap-2 text-[11px] text-foreground"
+                            >
+                              <GradeChip grade={c.grade as EvidenceGrade} />
+                              <span className="font-mono text-muted-foreground">
+                                #{c.id.slice(0, 8)}
+                              </span>
+                              <span className="text-muted-foreground">· {c.source}</span>
+                              {c.excerpt && (
+                                <span className="w-full text-muted-foreground">"{c.excerpt}"</span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 </li>
               ))}

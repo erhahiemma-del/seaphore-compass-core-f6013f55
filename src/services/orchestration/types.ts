@@ -84,6 +84,20 @@ export interface EvidenceItem {
   conflicts_with?: string[];
 }
 
+/**
+ * A compact citation pointing officers to a specific evidence record that
+ * supports a finding. Every key finding surfaced to the officer must ship
+ * with at least one citation so it can be independently verified.
+ */
+export interface EvidenceCitation {
+  id: string;
+  source: string;
+  grade: EvidenceGrade;
+  hash?: string;
+  excerpt?: string;
+  collected_at?: string;
+}
+
 export interface RetrievalResult {
   agent: AgentId;
   capability: CapabilityId;
@@ -151,7 +165,13 @@ export type SectionPayloads = {
   executive: { text: string };
   why_this_matters: { chain: Array<{ step: string; from: string; to: string }> };
   critical_findings: {
-    findings: Array<{ priority: string; title: string; grade: EvidenceGrade; source: string }>;
+    findings: Array<{
+      priority: string;
+      title: string;
+      grade: EvidenceGrade;
+      source: string;
+      citations?: EvidenceCitation[];
+    }>;
   };
   verified_evidence: { items: string[] };
   observed_patterns: { patterns: Array<{ pattern: string; caseRefs: string[] }> };

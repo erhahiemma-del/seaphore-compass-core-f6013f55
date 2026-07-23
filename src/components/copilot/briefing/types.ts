@@ -98,12 +98,22 @@ export interface EvidenceSourcesSummary {
   detail?: Array<{ name: string; grade: EvidenceGrade; responded: boolean }>;
 }
 
+export interface EvidenceCitation {
+  id: string;
+  source: string;
+  grade: EvidenceGrade;
+  hash?: string;
+  excerpt?: string;
+  collectedAt?: string;
+}
+
 export interface CriticalFinding {
   id: string;
   priority: FindingPriority;
   title: string;
   grade: EvidenceGrade;
   source: string;
+  citations?: EvidenceCitation[];
 }
 
 export interface AdaptiveBriefing {

@@ -150,11 +150,25 @@ export interface OperationalPlan {
   followUps: string[];
 }
 
+/** A citation attaches a Key Finding to the exact evidence record supporting it. */
+export interface EvidenceCitation {
+  id: string;
+  source: string;
+  grade: "VERIFIED" | "CORROBORATED" | "OBSERVED" | "REPORTED" | "INFERRED" | "UNKNOWN";
+  hash?: string;
+  excerpt?: string;
+  collectedAt?: string;
+}
+
 /** The mandated 8-section operational response. */
 export interface HumanResponse {
   executiveSummary: string;
   situationOverview: string;
-  keyFindings: Array<{ priority: "critical" | "high" | "monitor"; text: string }>;
+  keyFindings: Array<{
+    priority: "critical" | "high" | "monitor";
+    text: string;
+    citations: EvidenceCitation[];
+  }>;
   operationalImpact: string;
   recommendedActions: Array<{
     action: string;
