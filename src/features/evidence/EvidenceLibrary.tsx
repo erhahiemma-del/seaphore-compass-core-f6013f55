@@ -92,7 +92,8 @@ type TabKey =
   | "relationships"
   | "investigations"
   | "timeline"
-  | "audit";
+  | "audit"
+  | "ice";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "overview", label: "Overview" },
@@ -106,6 +107,7 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: "investigations", label: "Investigations" },
   { key: "timeline", label: "Timeline" },
   { key: "audit", label: "Audit Trail" },
+  { key: "ice", label: "ICE Explainability" },
 ];
 
 /* ============================================================
