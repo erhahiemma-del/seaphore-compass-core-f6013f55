@@ -76,6 +76,7 @@ import {
   activeFilterCount,
   type EvidenceFilters,
 } from "@/features/evidence/filters";
+import { IceExplainabilityPanel } from "@/features/evidence/IceExplainabilityPanel";
 
 /* ============================================================
  * Types & tabs
