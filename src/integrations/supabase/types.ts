@@ -748,6 +748,425 @@ export type Database = {
           },
         ]
       }
+      ice_conflicts: {
+        Row: {
+          age_differential_hrs: number | null
+          canonical_id: string
+          detected_at: string
+          field_name: string
+          id: string
+          is_critical_field: boolean
+          majority_sources: string[]
+          majority_value: Json | null
+          minority_sources: string[]
+          minority_value: Json | null
+          query_id: string
+          resolution: string
+          resolution_reason: string | null
+          severity: string
+        }
+        Insert: {
+          age_differential_hrs?: number | null
+          canonical_id: string
+          detected_at?: string
+          field_name: string
+          id?: string
+          is_critical_field?: boolean
+          majority_sources?: string[]
+          majority_value?: Json | null
+          minority_sources?: string[]
+          minority_value?: Json | null
+          query_id: string
+          resolution?: string
+          resolution_reason?: string | null
+          severity: string
+        }
+        Update: {
+          age_differential_hrs?: number | null
+          canonical_id?: string
+          detected_at?: string
+          field_name?: string
+          id?: string
+          is_critical_field?: boolean
+          majority_sources?: string[]
+          majority_value?: Json | null
+          minority_sources?: string[]
+          minority_value?: Json | null
+          query_id?: string
+          resolution?: string
+          resolution_reason?: string | null
+          severity?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ice_conflicts_query_id_fkey"
+            columns: ["query_id"]
+            isOneToOne: false
+            referencedRelation: "ice_queries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ice_correlation_matrix: {
+        Row: {
+          canonical_id: string
+          cell_status: string
+          completeness_score: number | null
+          corroboration_score: number | null
+          evidence_score: number | null
+          field_name: string
+          freshness_age_hrs: number | null
+          freshness_score: number | null
+          normalized_value: Json | null
+          original_unit: string | null
+          original_value: Json | null
+          quality_score: number | null
+          query_id: string
+          raw_hash: string | null
+          retrieved_at: string
+          source_id: string
+          source_url: string | null
+          tags: string[]
+          trust_score: number | null
+        }
+        Insert: {
+          canonical_id: string
+          cell_status?: string
+          completeness_score?: number | null
+          corroboration_score?: number | null
+          evidence_score?: number | null
+          field_name: string
+          freshness_age_hrs?: number | null
+          freshness_score?: number | null
+          normalized_value?: Json | null
+          original_unit?: string | null
+          original_value?: Json | null
+          quality_score?: number | null
+          query_id: string
+          raw_hash?: string | null
+          retrieved_at: string
+          source_id: string
+          source_url?: string | null
+          tags?: string[]
+          trust_score?: number | null
+        }
+        Update: {
+          canonical_id?: string
+          cell_status?: string
+          completeness_score?: number | null
+          corroboration_score?: number | null
+          evidence_score?: number | null
+          field_name?: string
+          freshness_age_hrs?: number | null
+          freshness_score?: number | null
+          normalized_value?: Json | null
+          original_unit?: string | null
+          original_value?: Json | null
+          quality_score?: number | null
+          query_id?: string
+          raw_hash?: string | null
+          retrieved_at?: string
+          source_id?: string
+          source_url?: string | null
+          tags?: string[]
+          trust_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ice_correlation_matrix_query_id_fkey"
+            columns: ["query_id"]
+            isOneToOne: false
+            referencedRelation: "ice_queries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ice_corroborations: {
+        Row: {
+          agreed_value: Json
+          agreeing_sources: string[]
+          agreement_count: number
+          canonical_id: string
+          corroboration_level: string
+          detected_at: string
+          field_name: string
+          id: string
+          query_id: string
+          weighted_confidence: number
+        }
+        Insert: {
+          agreed_value: Json
+          agreeing_sources: string[]
+          agreement_count: number
+          canonical_id: string
+          corroboration_level: string
+          detected_at?: string
+          field_name: string
+          id?: string
+          query_id: string
+          weighted_confidence: number
+        }
+        Update: {
+          agreed_value?: Json
+          agreeing_sources?: string[]
+          agreement_count?: number
+          canonical_id?: string
+          corroboration_level?: string
+          detected_at?: string
+          field_name?: string
+          id?: string
+          query_id?: string
+          weighted_confidence?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ice_corroborations_query_id_fkey"
+            columns: ["query_id"]
+            isOneToOne: false
+            referencedRelation: "ice_queries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ice_evidence_scores: {
+        Row: {
+          canonical_id: string
+          completeness_component: number | null
+          conflict_penalty: number
+          corroboration_component: number | null
+          evidence_score: number
+          field_name: string
+          freshness_component: number | null
+          quality_component: number | null
+          query_id: string
+          score_breakdown: Json
+          source_id: string
+          trust_component: number | null
+        }
+        Insert: {
+          canonical_id: string
+          completeness_component?: number | null
+          conflict_penalty?: number
+          corroboration_component?: number | null
+          evidence_score: number
+          field_name: string
+          freshness_component?: number | null
+          quality_component?: number | null
+          query_id: string
+          score_breakdown?: Json
+          source_id: string
+          trust_component?: number | null
+        }
+        Update: {
+          canonical_id?: string
+          completeness_component?: number | null
+          conflict_penalty?: number
+          corroboration_component?: number | null
+          evidence_score?: number
+          field_name?: string
+          freshness_component?: number | null
+          quality_component?: number | null
+          query_id?: string
+          score_breakdown?: Json
+          source_id?: string
+          trust_component?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ice_evidence_scores_query_id_fkey"
+            columns: ["query_id"]
+            isOneToOne: false
+            referencedRelation: "ice_queries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ice_fused_intelligence: {
+        Row: {
+          canonical_id: string
+          cell_status: string
+          confidence: number
+          confidence_level: string
+          explanation_text: string | null
+          field_name: string
+          fused_at: string
+          fused_value: Json | null
+          fusion_policy_version: string
+          has_conflict: boolean
+          has_missing_data: boolean
+          query_id: string
+          requires_officer_review: boolean
+          winning_evidence_score: number | null
+          winning_source_id: string | null
+        }
+        Insert: {
+          canonical_id: string
+          cell_status: string
+          confidence: number
+          confidence_level: string
+          explanation_text?: string | null
+          field_name: string
+          fused_at?: string
+          fused_value?: Json | null
+          fusion_policy_version?: string
+          has_conflict?: boolean
+          has_missing_data?: boolean
+          query_id: string
+          requires_officer_review?: boolean
+          winning_evidence_score?: number | null
+          winning_source_id?: string | null
+        }
+        Update: {
+          canonical_id?: string
+          cell_status?: string
+          confidence?: number
+          confidence_level?: string
+          explanation_text?: string | null
+          field_name?: string
+          fused_at?: string
+          fused_value?: Json | null
+          fusion_policy_version?: string
+          has_conflict?: boolean
+          has_missing_data?: boolean
+          query_id?: string
+          requires_officer_review?: boolean
+          winning_evidence_score?: number | null
+          winning_source_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ice_fused_intelligence_query_id_fkey"
+            columns: ["query_id"]
+            isOneToOne: false
+            referencedRelation: "ice_queries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ice_queries: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          entity_hint: Json | null
+          id: string
+          intent: string | null
+          officer_id: string | null
+          query_text: string
+          risk_tier: string | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          entity_hint?: Json | null
+          id?: string
+          intent?: string | null
+          officer_id?: string | null
+          query_text: string
+          risk_tier?: string | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          entity_hint?: Json | null
+          id?: string
+          intent?: string | null
+          officer_id?: string | null
+          query_text?: string
+          risk_tier?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      ice_query_connectors: {
+        Row: {
+          created_at: string
+          id: string
+          latency_ms: number | null
+          query_id: string
+          records_fetched: number
+          selected: boolean
+          skipped_reason: string | null
+          source_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          latency_ms?: number | null
+          query_id: string
+          records_fetched?: number
+          selected: boolean
+          skipped_reason?: string | null
+          source_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          latency_ms?: number | null
+          query_id?: string
+          records_fetched?: number
+          selected?: boolean
+          skipped_reason?: string | null
+          source_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ice_query_connectors_query_id_fkey"
+            columns: ["query_id"]
+            isOneToOne: false
+            referencedRelation: "ice_queries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ice_recommendations: {
+        Row: {
+          acted_at: string | null
+          created_at: string
+          id: string
+          officer_acted: boolean
+          officer_action: string | null
+          priority: string
+          query_id: string
+          recommendation: string
+          trigger_condition: string
+          trigger_detail: Json | null
+        }
+        Insert: {
+          acted_at?: string | null
+          created_at?: string
+          id?: string
+          officer_acted?: boolean
+          officer_action?: string | null
+          priority: string
+          query_id: string
+          recommendation: string
+          trigger_condition: string
+          trigger_detail?: Json | null
+        }
+        Update: {
+          acted_at?: string | null
+          created_at?: string
+          id?: string
+          officer_acted?: boolean
+          officer_action?: string | null
+          priority?: string
+          query_id?: string
+          recommendation?: string
+          trigger_condition?: string
+          trigger_detail?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ice_recommendations_query_id_fkey"
+            columns: ["query_id"]
+            isOneToOne: false
+            referencedRelation: "ice_queries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       intel_briefings: {
         Row: {
           classification: Json
@@ -1270,6 +1689,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      osint_source_trust: {
+        Row: {
+          field_category: string
+          source_id: string
+          trust_score: number
+          updated_at: string
+        }
+        Insert: {
+          field_category: string
+          source_id: string
+          trust_score: number
+          updated_at?: string
+        }
+        Update: {
+          field_category?: string
+          source_id?: string
+          trust_score?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       osint_sync_runs: {
         Row: {
