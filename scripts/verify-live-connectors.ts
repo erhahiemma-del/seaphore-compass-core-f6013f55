@@ -58,8 +58,8 @@ async function main() {
     });
     rows.push({
       id: c.id,
-      ok: pkg.verified.length + pkg.reported.length + pkg.observed.length > 0 || pkg.issues.length === 0,
-      records: pkg.verified.length + pkg.reported.length + pkg.observed.length,
+      ok: pkg.issues.filter((i) => i.severity === "error").length === 0,
+      verified: pkg.verified.length,
       sources: pkg.sources.length,
       issues: pkg.issues.length,
       ms: Date.now() - started,
