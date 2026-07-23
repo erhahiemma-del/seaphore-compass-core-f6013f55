@@ -98,19 +98,23 @@ export async function prewarmEvidenceCache(
   return results;
 }
 
-async function recordAudit(action: string, payload: Record<string, unknown>): Promise<void> {
+async function recordAudit(action: string, metadata: Record<string, unknown>): Promise<void> {
   try {
     const {
       data: { user },
     } = await supabase.auth.getUser();
     await supabase.from("audit_log").insert({
-      actor_id: user?.id ?? null,
       action,
-      subject: "ial",
-      payload,
+      entity: "ial",
+      module: "administration",
+      rule_refs: ["HR-8", "HR-9"],
+      metadata: metadata as never,
+      officer_id: user?.id ?? "00000000-0000-0000-0000-000000000000",
+      ip_address: "client",
     });
   } catch {
     // audit_log is best-effort in dev-bypass mode; never block an admin
     // action on the log write.
   }
 }
+
