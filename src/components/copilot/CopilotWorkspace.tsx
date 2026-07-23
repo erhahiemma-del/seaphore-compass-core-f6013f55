@@ -190,7 +190,8 @@ export function CopilotWorkspace({
   async function handleSubmit(q: string) {
     const clean = q.trim();
     if (!clean || mutation.isPending) return;
-    setText(clean);
+    setText("");
+    setError(null);
     session.appendOfficer(clean, instance);
     mutation.mutate(clean);
   }
