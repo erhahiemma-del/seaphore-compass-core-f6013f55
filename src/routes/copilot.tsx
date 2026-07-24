@@ -63,6 +63,8 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useCopilotStore } from "@/stores/copilot.store";
 import { useIsDevBypass } from "@/stores/dev-mode.store";
 import { useMissionContextStore } from "@/stores/mission-context.store";
+import { useWorkspaceStore } from "@/stores/workspace.store";
+import { buildLineageTrace } from "@/lib/lineage/build-lineage";
 import { useCopilotSession } from "@/hooks/use-copilot-session";
 import {
   COPILOT_COMMANDS,
