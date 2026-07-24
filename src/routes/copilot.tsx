@@ -510,7 +510,14 @@ function CopilotOpsPage() {
                   </div>
                 ) : null}
 
-                {briefing ? <AdaptiveBriefing briefing={briefing} onOverride={handleOverride} /> : null}
+                {briefing ? (
+                  <AdaptiveBriefing
+                    briefing={briefing}
+                    onOverride={handleOverride}
+                    onGapRequest={(q) => handleSubmit(q)}
+                    onNextQuestion={(q) => handleSubmit(q)}
+                  />
+                ) : null}
 
                 {briefing && followUps.length > 0 ? (
                   <div className="mt-3 rounded-lg border border-border/60 bg-[#FAFBFC] p-3">
