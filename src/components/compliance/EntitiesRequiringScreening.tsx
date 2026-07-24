@@ -361,3 +361,22 @@ function timeAgo(iso: string): string {
   const h = Math.round(m / 60);
   return `${h}h ago`;
 }
+
+function priorRunsTitle(
+  history: NonNullable<ScreeningEntity["history"]>,
+): string {
+  // Exclude the latest run (shown at top of the row) — this tooltip surfaces
+  // the archived prior attempts so officers can see what changed on retry.
+  const prior = history.slice(0, -1);
+  if (prior.length === 0) return "";
+  return prior
+    .map((r, i) => {
+      const when = new Date(r.runAt).toLocaleString();
+      const detail =
+        r.status === "ERROR"
+          ? r.error ?? "failed"
+          : r.summary ?? `${r.hitCount ?? 0} findings`;
+      return `#${i + 1} ${when} — ${r.status}: ${detail}`;
+    })
+    .join("\n");
+}
