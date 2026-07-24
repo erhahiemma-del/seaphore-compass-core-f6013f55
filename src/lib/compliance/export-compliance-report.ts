@@ -98,6 +98,8 @@ interface Cursor {
   page: number;
   /** true while we're inside the Evidence Summary section (drives continuation title). */
   inEvidence: boolean;
+  /** Header metadata rendered on every page (workspace ID + generation time). */
+  headerMeta: HeaderMeta;
 }
 
 function setColor(pdf: jsPDF, kind: "text" | "draw" | "fill", rgb: readonly [number, number, number]) {
