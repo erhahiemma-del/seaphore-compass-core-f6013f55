@@ -1,88 +1,71 @@
-# Unified Copilot Platform + Persistent Mission Context
+## Goal
 
-Merge the two Copilot surfaces (NIMASA `/copilot` Intelligence Operations Center and the Seaphore `AskCopilotDialog` / `CentreCopilot` panels) into one system: one orchestration pipeline, one conversation store, one context manager, one Adaptive Briefing renderer, and one shared **Mission Context** that every module reads and updates.
+Reshape every Copilot response into an **Executive Maritime Intelligence Brief**: answer-first prose, KPI cards, key facts, relationships, timeline, risks, insights, recommendations, and collapsed supporting evidence. No UUIDs, timestamps, JSON, or raw source dumps in the default view.
 
-## Outcome
+This is a **presentation-layer** change. The existing pipeline (OIE → IBE → Response Contract → AdaptiveBriefing data) already produces all the inputs we need — we're rewriting how it renders, not how it's computed.
 
-- Every Copilot surface (global modal, `/copilot` page, per-centre panels) calls the same `orchestrate()` pipeline and renders the same `AdaptiveBriefing`.
-- Opening Copilot from Manifest / Revenue / Vessel / Ports / Compliance / Ownership / Evidence / Alerts / Memory auto-injects that module's context and biases the agent scheduler toward its specialist agents.
-- Conversation history and officer overrides are shared across surfaces in real time.
-- A **Mission Context** object per active investigation persists the full operational state (vessel, voyage, manifest, port, companies, alerts, evidence, decisions, tasks, hypotheses, next actions) and is available to every module and to the reasoning engine as grounding input.
+## Approach
 
-## Architecture
+Add a new top-level renderer that sits **above** `AdaptiveBriefing` and `IntelligenceProjectionPanel`, synthesising both into an executive brief. Keep the existing components mounted but hidden behind a "Show analyst detail" toggle so nothing regresses and Administrator/analyst modes still have access to the full projection.
 
-```text
-┌───────────────────────────────────────────────────────────────┐
-│  Mission Context Store (Zustand, per-investigation, persisted)│
-│   investigation · vessel · voyage · manifest · port ·         │
-│   companies · alerts · evidence · decisions · tasks ·         │
-│   conversation · hypotheses · next-actions                    │
-└───────────────▲───────────────────────────────▲───────────────┘
-                │ read / update                 │ grounding
-   ┌────────────┴────────────┐     ┌────────────┴────────────┐
-   │ Modules (Manifest,      │     │  Unified Copilot Engine │
-   │  Revenue, Vessel, …)    │────▶│  orchestrate({ query,   │
-   │  push context on mount  │     │   moduleHint, mission })│
-   └─────────────────────────┘     └────────────┬────────────┘
-                                                │
-              ┌─────────────────────────────────┴────────────────┐
-              │ Copilot Surfaces (all render AdaptiveBriefing)   │
-              │  • GlobalCopilotLauncher modal                   │
-              │  • /copilot Intelligence Operations Center       │
-              │  • CentreCopilot panels                          │
-              └──────────────────────────────────────────────────┘
-```
+### 1. New component: `ExecutiveBriefing`
 
-## Plan
+`src/components/copilot/briefing/ExecutiveBriefing.tsx` — the single source of truth for the redesigned response. Sections in order:
 
-### 1. Mission Context (new)
-Create `src/stores/mission-context.store.ts` — a Zustand store keyed by `investigationId` with slices for: `vessel`, `voyage`, `manifest`, `port`, `companies[]`, `alerts[]`, `evidence[]`, `decisions[]`, `tasks[]`, `conversation` (UIMessage-style history of briefings + queries), `hypotheses[]`, `nextActions[]`. Persisted to `localStorage` and (later) mirrored to `intel_briefings` + a new `mission_snapshots` table.
+1. **Executive Summary** — 2–4 sentence paragraph. Derived from `briefing.sections.executive` + officer decision header text, rewritten to lead with the direct answer and end with confidence + operational assessment. Falls back to a deterministic template when the model text is empty.
+2. **Confidence Panel** — small strip under the summary, 5 mini-bars: Data Completeness, Relationship Confidence, Evidence Quality, Recency, Operational Confidence. Values pulled from `confidence_matrix` + `ibe` propagation.
+3. **Intelligence Assessment (KPI cards)** — Overall Risk, Confidence, Operational Status, Compliance, Watchlist, Active Investigation, Revenue Exposure, Last Activity. Status colours: green / amber / red mapped from existing risk + confidence bands.
+4. **Key Facts** — humanised label/value pairs derived from the primary entity (vessel/company). Whitelist of business-friendly fields only; UUIDs / `created_at` / FK ids are filtered.
+5. **Relationship Intelligence** — condensed graph. Reuse `OwnershipNetworkGraph` when a vessel/company is resolved, else render a compact node-chip cascade (Vessel → Agent → Operator → Parent → Directors → BOs). Clicking a node calls `handleSubmit("Who/what is <label>?")`.
+6. **Timeline Intelligence** — vertical timeline of operational events (arrival, departure, manifest, inspection, revenue, detention, ownership change, compliance action) sourced from the ranked evidence; lucide icons per event type.
+7. **Risk & Compliance Analysis** — checklist grid; green "No significant risks identified" card when nothing fires.
+8. **AI Intelligence Insights** — analyst-style observations pulled from `assessment.observedPatterns` + IBE proactive nudges, rephrased as sentences (no "pattern object" or ids visible).
+9. **Recommendations** — from officer-decision recommendation + IBE recommended-next-action, rendered as action rows.
+10. **Supporting Evidence (collapsed)** — single accordion with sub-accordions per source category (Manifest, Company Registration, Vessel Registry, Port, AIS, Customs, Revenue, Inspection, Regulatory, Related Intel). Each item shows headline + source + grade chip; UUIDs/hashes only visible inside a nested "Raw" disclosure gated by Administrator role.
 
-Expose:
-- `useMissionContext(investigationId)` — full read
-- `useActiveMission()` — active investigation
-- `setMissionSlice(id, slice, value)` — patch API used by modules
-- `appendConversation(id, entry)` — used by Copilot surfaces
+Visual system: white bg, `rounded-2xl` (16px) cards, subtle shadow, primary accent `#2563EB` (map to `--primary` variant), 8px spacing grid, `max-w-[1280px]`, lucide icons throughout, Framer-motion-free CSS transitions for expand/collapse.
 
-### 2. Unified Copilot Engine
-Extend `orchestrate()` in `src/services/orchestration/orchestrator.ts` to accept:
-- `moduleHint: CopilotInstanceKey` — biases `scheduleRetrievals()` toward specialist agents (e.g. `manifest` ⇒ manifest + cargo agents first).
-- `mission: MissionSnapshot` — flattened Mission Context; passed to `reason()` as grounding evidence and to `intent-classifier` for context-aware classification.
+### 2. New helpers
 
-Update `intent-classifier.ts` + `scheduler.ts` to consume `moduleHint`. Extend `evidence-fusion.ts` to include mission-scoped evidence.
+- `src/lib/copilot/executive-brief/synthesize.ts` — pure functions:
+  - `buildExecutiveSummary(briefing, ibe, humanResponse)` → string
+  - `buildConfidencePanel(matrix, ibe)` → 5 scored dimensions
+  - `buildKpiCards(briefing, ibe)` → typed KPI list w/ status colour
+  - `buildKeyFacts(entities, briefing)` → label/value pairs, whitelist-filtered
+  - `buildTimelineEvents(evidence)` → sorted event list w/ icon key
+  - `buildRiskChecklist(briefing, ibe)` → fired/not-fired items
+  - `buildInsights(assessment, ibe)` → sentence-form observations
+  - `buildRecommendations(briefing, ibe)` → action list
+  - `groupEvidenceForDisclosure(evidence)` → sourceCategory → items[]
+- `src/lib/copilot/executive-brief/sanitize.ts` — strips UUIDs, ISO timestamps in raw form, `created_at`/`updated_at`/`*_id` keys, and JSON-looking payloads from any rendered string.
 
-### 3. One conversation store
-Retire the ad-hoc state in `CopilotWorkspace.tsx`, `/copilot`, and `AskCopilotDialog`. Route every submission through a new `useCopilotSession(instanceKey)` hook (backed by Mission Context's `conversation` slice) so history and the latest briefing are the same object across surfaces.
+Unit tests: `tests/unit/executive-brief.test.ts` covering summary fallback, sanitiser, KPI colour thresholds, and timeline sort.
 
-### 4. One renderer
-Replace the `AskCopilotDialog` body with `<CopilotWorkspace instance=… showContextBar autoFocus />`. Kill the mock-intelligence path (`src/lib/ai/mock-intelligence.ts`) in favor of `orchestrate()` — mocks stay only under `VITE_DEV_BYPASS_AUTH` via the existing service-layer path. `CentreCopilot` "Ask" panels also open the same workspace (modal) instead of the legacy dialog.
+### 3. Wire into `/copilot`
 
-### 5. Module-awareness wiring
-For each Intelligence Centre (Manifest, Revenue, Vessel, Ports, Compliance, Ownership, Evidence, Alerts, Memory, Cargo, Administration):
-- On mount, push its current entity/case into Mission Context via `setMissionSlice`.
-- Set `useCopilotStore.setContext({ kind, label, detail })` so the Context Bar reflects the module.
-- Ensure the `instance` prop (`CopilotInstanceKey`) flows into the launcher; the launcher passes it as `moduleHint` to `orchestrate()`.
+In `src/routes/copilot.tsx`:
 
-### 6. Real-time sync
-Use a Zustand `subscribe` bridge + a lightweight `BroadcastChannel("copilot-sync")` so multiple open tabs / split-screen embeds see the same briefings and mission state instantly. Keeps working under `devBypass`.
+- Import `ExecutiveBriefing`.
+- Replace the current `{briefing ? (...) : null}` block so that by default it renders `ExecutiveBriefing` only.
+- Add a small "Show analyst detail" toggle (persisted via `useState`, default off) that reveals the existing `IntelligenceProjectionPanel` + `AdaptiveBriefing` + `EvidenceLineageView` beneath. Administrator role additionally gets a "Raw data" toggle inside supporting-evidence items.
+- Follow-up chip strip and composer stay unchanged.
 
-### 7. Backend (light touch, non-blocking)
-New migration for `mission_snapshots` (investigation_id PK, jsonb payload, updated_at, officer_id) with RLS = officer/above sees own agency's rows, GRANTs to `authenticated` + `service_role`. Server function `saveMissionSnapshot` (auth-required) called on debounce; on `devBypass`, snapshots stay client-side only.
+### 4. Compliance guardrails preserved
 
-### 8. Cleanup / deprecation
-- `AskCopilotDialog` becomes a thin wrapper that mounts `CopilotWorkspace` in a `Dialog`.
-- Remove now-dead `askCopilot` / `mock-intelligence` code paths after surfaces migrate (keep the file for one release with a deprecation comment to avoid regressions).
-- Add a unit test asserting all 13 instance keys map to a scheduler bias.
+- Footer "Evidence first. Explainable always. Officer decides." unchanged.
+- Every KPI, insight, and recommendation still carries a confidence chip via existing `ExplainableConfidenceChip`.
+- Officer decision affordances (Agree / Modify / Dismiss) remain — they move into the Recommendations section rather than disappearing.
+- Register the new `executive-brief` artifact in `src/lib/projection-contract/registry.ts` as `PROJECTED` so Backend–Frontend Symmetry stays green; update the contract test snapshot.
 
-## Files touched (approx.)
+## Out of scope
 
-- **New:** `src/stores/mission-context.store.ts`, `src/hooks/use-copilot-session.ts`, `supabase/migrations/*_mission_snapshots.sql`, `src/lib/mission.functions.ts`
-- **Modified:** `src/services/orchestration/{orchestrator,intent-classifier,scheduler,evidence-fusion,reasoning-engine,types}.ts`, `src/components/copilot/CopilotWorkspace.tsx`, `src/routes/copilot.tsx`, `src/components/ai/ask-copilot-dialog.tsx`, `src/components/ai/global-copilot-launcher.tsx`, `src/components/intel-centre/centre-copilot.tsx`, each `src/features/*/…` centre (context push on mount)
-- **Deprecated:** `src/lib/ai/mock-intelligence.ts`, legacy dialog internals
+- No changes to OIE / IBE / ICE / IAL / reasoning engine.
+- No new backend tables or server functions.
+- No changes to Mission Control, Investigate, Decide, Share, or other routes.
+- Existing `AdaptiveBriefing` stays intact for analyst detail mode and Storybook.
 
-## Out of scope for this pass
+## Verification
 
-- Cross-user real-time (multi-officer collaboration on one mission) — will follow once single-user unification lands.
-- Full replacement of the reasoning model — this pass wires mission grounding into the existing engine, not a model swap.
-
-Approve and I'll implement in the order above (Mission Context store → engine wiring → surface unification → module wiring → backend snapshot → cleanup).
+- `tsgo` typecheck clean.
+- New unit tests pass.
+- Manual: run the same "Who is behind the agent for MV Ocean Pearl?" query — first sentence is a direct answer, no UUIDs/timestamps visible, evidence collapsed by default, "Show analyst detail" reveals the current UI unchanged.

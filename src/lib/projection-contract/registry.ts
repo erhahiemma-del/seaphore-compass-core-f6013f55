@@ -425,6 +425,21 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: REVIEWED,
   },
+  {
+    id: "copilot.executive-brief",
+    name: "Executive Maritime Intelligence Brief",
+    producer: "COPILOT",
+    description:
+      "Nine-section executive projection (summary, KPIs, key facts, relationships, timeline, risks, insights, recommendations, evidence) synthesised from AdaptiveBriefing + IBE + OIE HumanResponse.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Copilot workspace · Executive Brief",
+      location: "src/components/copilot/briefing/ExecutiveBriefing.tsx",
+      interaction: "drill-in",
+      component: "ExecutiveBriefing",
+    },
+    reviewedAt: REVIEWED,
+  },
 ];
 
 export function getContractEntry(id: string): ProjectionContractEntry | undefined {

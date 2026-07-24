@@ -59,6 +59,10 @@ import { captureOverride } from "@/services/orchestration";
 import { runOIE, type Clarification } from "@/services/oie";
 import { enhanceWithIBE, persistHypotheses } from "@/services/ibe";
 import { IntelligenceProjectionPanel } from "@/components/copilot/projection/IntelligenceProjectionPanel";
+import { ExecutiveBriefing } from "@/components/copilot/briefing/ExecutiveBriefing";
+import { synthesizeExecutiveBrief } from "@/lib/copilot/executive-brief/synthesize";
+import type { HumanResponse } from "@/services/oie/types";
+import type { IbeResult } from "@/services/ibe/types";
 import { ClarifyCard } from "@/components/copilot/ClarifyCard";
 import { useAuthStore } from "@/stores/auth.store";
 import { useCopilotStore } from "@/stores/copilot.store";
@@ -652,13 +656,27 @@ function CopilotOpsPage() {
                       mission={activeMission}
                       briefingId={ibeProjection?.briefingId}
                     />
-                    <AdaptiveBriefing
+                    <ExecutiveBriefingView
                       briefing={briefing}
-                      lineage={lineage}
-                      onOverride={handleOverride}
-                      onGapRequest={(q) => handleSubmit(q)}
-                      onNextQuestion={(q) => handleSubmit(q)}
+                      humanResponse={ibeProjection?.humanResponse ?? null}
+                      ibe={ibeProjection?.ibe ?? null}
+                      followUps={followUps}
+                      onFollowUp={(q: string) => handleSubmit(q)}
                     />
+                    <details className="mt-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-[12px] text-slate-700 open:shadow-sm">
+                      <summary className="cursor-pointer font-medium text-slate-800">
+                        Analyst view — full adaptive briefing
+                      </summary>
+                      <div className="mt-3">
+                        <AdaptiveBriefing
+                          briefing={briefing}
+                          lineage={lineage}
+                          onOverride={handleOverride}
+                          onGapRequest={(q) => handleSubmit(q)}
+                          onNextQuestion={(q) => handleSubmit(q)}
+                        />
+                      </div>
+                    </details>
                   </>
                 ) : null}
 
@@ -806,6 +824,28 @@ function CopilotOpsPage() {
       </div>
     </AppShell>
   );
+}
+
+/* ---------- Executive Briefing wrapper ---------- */
+
+function ExecutiveBriefingView({
+  briefing,
+  humanResponse,
+  ibe,
+  followUps,
+  onFollowUp,
+}: {
+  briefing: AdaptiveBriefingData;
+  humanResponse: HumanResponse | null;
+  ibe: NonNullable<IbeResult["ibe"]> | null;
+  followUps: string[];
+  onFollowUp: (q: string) => void;
+}) {
+  const brief = useMemo(
+    () => synthesizeExecutiveBrief({ briefing, humanResponse, ibe, followUps }),
+    [briefing, humanResponse, ibe, followUps],
+  );
+  return <ExecutiveBriefing brief={brief} onFollowUp={onFollowUp} />;
 }
 
 
