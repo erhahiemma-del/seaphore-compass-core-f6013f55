@@ -72,6 +72,11 @@ interface ScreeningQueueState {
 
   /** Run screening for one queued entity end-to-end. Safe to call in parallel. */
   runOne: (id: string) => Promise<void>;
+  /**
+   * One-click retry for ERROR entities. Archives the failed run into `history`
+   * and re-executes; the new outcome is appended (not overwritten).
+   */
+  retry: (id: string) => Promise<void>;
   /** Run every PENDING (and ERROR) entity with bounded concurrency. */
   runAllPending: (concurrency?: number) => Promise<void>;
 }
