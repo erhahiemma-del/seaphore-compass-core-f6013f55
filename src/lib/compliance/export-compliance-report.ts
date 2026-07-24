@@ -112,10 +112,21 @@ function pageH(pdf: jsPDF) { return pdf.internal.pageSize.getHeight(); }
 function usableWidth(pdf: jsPDF) { return pageW(pdf) - MARGIN_X * 2; }
 function usableHeight(pdf: jsPDF) { return pageH(pdf) - MARGIN_TOP - MARGIN_BOTTOM; }
 
-function drawHeader(pdf: jsPDF) {
+interface HeaderMeta {
+  workspaceId?: string;
+  generatedAt: Date;
+}
+
+/** Height of the navy header band. Widens when we have workspace metadata to display. */
+function headerBandHeight(meta: HeaderMeta): number {
+  return meta.workspaceId ? 40 : 28;
+}
+
+function drawHeader(pdf: jsPDF, meta: HeaderMeta) {
   const w = pageW(pdf);
+  const bandH = headerBandHeight(meta);
   setColor(pdf, "fill", COLORS.navy);
-  pdf.rect(0, 0, w, 28, "F");
+  pdf.rect(0, 0, w, bandH, "F");
   setColor(pdf, "text", [255, 255, 255]);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(10);
@@ -123,6 +134,14 @@ function drawHeader(pdf: jsPDF) {
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(8.5);
   pdf.text("Sanctions screening · Officer briefing", w - MARGIN_X, 18, { align: "right" });
+
+  // Second line: workspace ID (left) + generated timestamp (right).
+  pdf.setFontSize(7.5);
+  const stamp = `Generated ${meta.generatedAt.toISOString()}`;
+  if (meta.workspaceId) {
+    pdf.text(`Workspace ${meta.workspaceId}`, MARGIN_X, 33);
+    pdf.text(stamp, w - MARGIN_X, 33, { align: "right" });
+  }
 }
 
 /** Draw the continuation title used at the top of new pages inside Evidence Summary. */
