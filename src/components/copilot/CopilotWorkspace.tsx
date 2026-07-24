@@ -374,6 +374,30 @@ export function CopilotWorkspace({
         </div>
       ) : null}
 
+      {subjectAnchor ? (
+        <div className="flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-1.5 text-[11.5px]">
+          <span className="font-semibold uppercase tracking-wider text-muted-foreground">
+            Subject
+          </span>
+          <span className="font-medium text-foreground">
+            {subjectAnchor.type.toUpperCase()} · {subjectAnchor.value}
+          </span>
+          <span className="text-muted-foreground">
+            · follow-ups continue on this {subjectAnchor.type}
+          </span>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={session.reset}
+            className="ml-auto h-6 gap-1 text-[11px]"
+            aria-label="Change subject"
+          >
+            <X className="h-3 w-3" aria-hidden />
+            Change subject
+          </Button>
+        </div>
+      ) : null}
+
       <form
         onSubmit={(e) => {
           e.preventDefault();
