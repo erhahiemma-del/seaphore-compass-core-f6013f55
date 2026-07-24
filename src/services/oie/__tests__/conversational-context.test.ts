@@ -55,7 +55,7 @@ function fakeBriefing(query: string, ctxVessel?: string): Briefing {
         payload: { queried: 3, responded: 3, corroborated: 2 },
       },
     ],
-    intelligence_status: "sufficient",
+    intelligence_status: "complete",
     sources_queried: 3,
     sources_responded: 3,
     sources_corroborated: 2,
