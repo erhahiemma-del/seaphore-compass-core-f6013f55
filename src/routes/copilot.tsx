@@ -284,6 +284,7 @@ function CopilotOpsPage() {
         setClarify(result.clarification);
         setBriefing(null);
         setLineage(null);
+        setIbeProjection(null);
         setFollowUps([]);
         setStage("ready");
         return null;
