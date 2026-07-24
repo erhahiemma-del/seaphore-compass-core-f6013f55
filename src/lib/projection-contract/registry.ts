@@ -435,7 +435,7 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     projection: {
       surface: "Copilot workspace · Executive Brief",
       location: "src/components/copilot/briefing/ExecutiveBriefing.tsx",
-      interaction: "progressive-disclosure",
+      interaction: "drill-in",
       component: "ExecutiveBriefing",
     },
     reviewedAt: REVIEWED,
