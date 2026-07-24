@@ -492,6 +492,13 @@ function CopilotOpsPage() {
                   >
                     <Plus className="h-3 w-3" /> New Discussion
                   </button>
+                  <Link
+                    to="/workspace"
+                    className="rounded-md border border-border px-2 py-1 text-[11px] font-medium text-foreground/80 hover:bg-accent"
+                    title="Open the Investigation Workspace — persistent evidence, hypotheses, tasks and decisions"
+                  >
+                    Workspace
+                  </Link>
                   <button className="rounded-md border border-border px-2 py-1 text-[11px] font-medium text-foreground/80 hover:bg-accent">
                     Change Context
                   </button>
