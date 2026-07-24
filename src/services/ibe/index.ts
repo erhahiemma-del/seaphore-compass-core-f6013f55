@@ -171,6 +171,25 @@ export function enhanceWithIBE(input: EnhanceInput): IbeResult {
 
   if (result.kind === "clarify") {
     const thought = think(query, ctx, result);
+    const stubHr: HumanResponse = {
+      executiveSummary: "",
+      situationOverview: "",
+      operationalImpact: "",
+      keyFindings: [],
+      confidenceAssessment: { badge: "Insufficient Evidence", explanation: "" },
+      informationStillNeeded: [],
+      suggestedNextQuestions: [],
+    } as unknown as HumanResponse;
+    const enforcedClarify = enforceResponseContract({
+      query,
+      ctx,
+      oie: result,
+      thought,
+      nudges: [],
+      hypotheses: readMissionHypotheses(mission),
+      humanResponse: stubHr,
+      closer: "Give me the missing detail and I'll open the investigation.",
+    });
     return {
       ...result,
       ibe: {
@@ -180,7 +199,8 @@ export function enhanceWithIBE(input: EnhanceInput): IbeResult {
         hypotheses: readMissionHypotheses(mission),
         nudges: [],
         acknowledgement: acknowledgement(ctx, thought),
-        closer: "Give me the missing detail and I'll open the investigation.",
+        closer: enforcedClarify.closer,
+        contract: enforcedClarify.contract,
       },
     };
   }
@@ -189,13 +209,23 @@ export function enhanceWithIBE(input: EnhanceInput): IbeResult {
   const nudges = scanForNudges(mission, result);
   const hypotheses = deriveHypotheses(query, result, readMissionHypotheses(mission));
   const rewritten = rewriteHumanResponse(result.humanResponse, ctx, thought, nudges, hypotheses);
-  const closer = initiativeCloser(ctx, thought, hypotheses);
-  const patched = patchBriefingSections(result.briefing, rewritten, closer);
+  const rawCloser = initiativeCloser(ctx, thought, hypotheses);
+  const enforced = enforceResponseContract({
+    query,
+    ctx,
+    oie: result,
+    thought,
+    nudges,
+    hypotheses,
+    humanResponse: rewritten,
+    closer: rawCloser,
+  });
+  const patched = patchBriefingSections(result.briefing, enforced.humanResponse, enforced.closer);
 
   return {
     ...result,
     briefing: patched,
-    humanResponse: rewritten,
+    humanResponse: enforced.humanResponse,
     ibe: {
       thought,
       persona: ctx.persona,
@@ -203,8 +233,9 @@ export function enhanceWithIBE(input: EnhanceInput): IbeResult {
       hypotheses,
       nudges,
       acknowledgement: acknowledgement(ctx, thought),
-      closer,
-      humanResponse: rewritten,
+      closer: enforced.closer,
+      humanResponse: enforced.humanResponse,
+      contract: enforced.contract,
     },
   };
 }
