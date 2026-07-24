@@ -593,6 +593,8 @@ function CopilotOpsPage() {
                     type="button"
                     onClick={() => {
                       setBriefing(null);
+                      setLineage(null);
+                      setIbeProjection(null);
                       setStage("idle");
                       setText("");
                       setError(null);
