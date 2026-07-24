@@ -163,6 +163,11 @@ function CopilotOpsPage() {
   const [stage, setStage] = useState<Stage>("idle");
   const [briefing, setBriefing] = useState<AdaptiveBriefingData | null>(null);
   const [lineage, setLineage] = useState<import("@/lib/lineage/types").LineageTrace | null>(null);
+  const [ibeProjection, setIbeProjection] = useState<{
+    ibe: import("@/services/ibe/types").IbeResult["ibe"] | null;
+    humanResponse: import("@/services/oie/types").HumanResponse | null;
+    briefingId?: string;
+  } | null>(null);
   const [clarify, setClarify] = useState<Clarification | null>(null);
   const [followUps, setFollowUps] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
