@@ -57,6 +57,7 @@ import { runOIEFn } from "@/lib/oie/oie.functions";
 import { cn } from "@/lib/utils";
 import { captureOverride } from "@/services/orchestration";
 import { runOIE, type Clarification } from "@/services/oie";
+import { enhanceWithIBE, persistHypotheses } from "@/services/ibe";
 import { ClarifyCard } from "@/components/copilot/ClarifyCard";
 import { useAuthStore } from "@/stores/auth.store";
 import { useCopilotStore } from "@/stores/copilot.store";
@@ -198,7 +199,7 @@ function CopilotOpsPage() {
           : undefined,
       };
 
-      const result = devBypass
+      const rawResult = devBypass
         ? await runOIE({
             query: {
               query: payload.query,
@@ -208,6 +209,62 @@ function CopilotOpsPage() {
             },
           })
         : await runOIEServer({ data: payload });
+
+      // The server function returns a flattened briefing shape for wire
+      // efficiency. Rehydrate it into the canonical OIEResult that IBE
+      // expects. `devBypass` already returns the canonical shape.
+      const normalisedResult: import("@/services/oie").OIEResult = (() => {
+        if ((rawResult as { briefing?: unknown }).briefing) {
+          return rawResult as unknown as import("@/services/oie").OIEResult;
+        }
+        const r = rawResult as Record<string, unknown>;
+        if (r.kind === "clarify") {
+          return {
+            kind: "clarify",
+            clarification: r.clarification as never,
+            interpreted: r.interpreted as never,
+            latencyMs: (r.latency_ms as number) ?? 0,
+          };
+        }
+        return {
+          kind: "briefing",
+          briefing: {
+            id: (r.briefing_id as string) ?? `brf-${Date.now()}`,
+            session_id: undefined,
+            officer_id: officerId,
+            query: q,
+            workspace: undefined,
+            investigation_id: undefined,
+            mode: r.mode as never,
+            classification: r.classification as never,
+            sections: (r.sections as never) ?? [],
+            intelligence_status: r.intelligence_status as never,
+            sources_queried: (r.sources_queried as number) ?? 0,
+            sources_responded: (r.sources_responded as number) ?? 0,
+            sources_corroborated: (r.sources_corroborated as number) ?? 0,
+            confidence_matrix: r.confidence_matrix as never,
+            latency_ms: (r.latency_ms as number) ?? 0,
+            model_used: "server",
+          },
+          humanResponse: r.humanResponse as never,
+          plan: r.plan as never,
+          provider: r.provider as never,
+          latencyMs: (r.latency_ms as number) ?? 0,
+        };
+      })();
+
+      // Sprint COPILOT-2.0 — Intelligence Behaviour Engine.
+      // OIE has produced an operational briefing. IBE reshapes it so the
+      // Copilot speaks as a senior maritime intelligence officer: mission
+      // aware, hypothesis-tracking, coaching, and always initiative-led.
+      const result = enhanceWithIBE({
+        query: q,
+        mission: mission ?? null,
+        result: normalisedResult,
+      });
+      if (result.kind === "briefing" && result.ibe) {
+        persistHypotheses(activeMissionId, result.ibe.hypotheses);
+      }
 
       setStage("reasoning");
 
@@ -245,7 +302,8 @@ function CopilotOpsPage() {
       setStage("rendering");
       setBriefing(adapted);
       const plan = (result as { plan?: { followUps?: string[] } }).plan;
-      setFollowUps(plan?.followUps ?? []);
+      const ibeQuestions = result.ibe?.humanResponse?.suggestedNextQuestions;
+      setFollowUps(ibeQuestions?.length ? ibeQuestions : plan?.followUps ?? []);
       setStage("ready");
       session.appendCopilot(`Briefing: ${q}`, adapted.id);
       // Sprint UX-005 — persist briefing into the Investigation Workspace.
