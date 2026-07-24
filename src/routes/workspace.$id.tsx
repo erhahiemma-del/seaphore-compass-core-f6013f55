@@ -37,6 +37,7 @@ import {
   type InvestigationWorkspace,
   type TaskStatus,
   type TimelineEvent,
+  type WorkspaceEvidence,
 } from "@/stores/workspace.store";
 
 export const Route = createFileRoute("/workspace/$id")({
