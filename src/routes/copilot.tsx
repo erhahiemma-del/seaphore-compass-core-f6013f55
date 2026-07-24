@@ -160,6 +160,7 @@ function CopilotOpsPage() {
   const [text, setText] = useState("");
   const [stage, setStage] = useState<Stage>("idle");
   const [briefing, setBriefing] = useState<AdaptiveBriefingData | null>(null);
+  const [lineage, setLineage] = useState<import("@/lib/lineage/types").LineageTrace | null>(null);
   const [clarify, setClarify] = useState<Clarification | null>(null);
   const [followUps, setFollowUps] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
