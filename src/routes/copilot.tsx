@@ -58,6 +58,7 @@ import { cn } from "@/lib/utils";
 import { captureOverride } from "@/services/orchestration";
 import { runOIE, type Clarification } from "@/services/oie";
 import { enhanceWithIBE, persistHypotheses } from "@/services/ibe";
+import { IntelligenceProjectionPanel } from "@/components/copilot/projection/IntelligenceProjectionPanel";
 import { ClarifyCard } from "@/components/copilot/ClarifyCard";
 import { useAuthStore } from "@/stores/auth.store";
 import { useCopilotStore } from "@/stores/copilot.store";
@@ -158,11 +159,19 @@ function CopilotOpsPage() {
   const officerId = authUserId ?? "00000000-0000-0000-0000-000000000000";
   const session = useCopilotSession();
   const activeMissionId = useMissionContextStore((s) => s.activeId);
+  const activeMission = useMissionContextStore((s) =>
+    s.activeId ? s.missions[s.activeId] ?? null : null,
+  );
 
   const [text, setText] = useState("");
   const [stage, setStage] = useState<Stage>("idle");
   const [briefing, setBriefing] = useState<AdaptiveBriefingData | null>(null);
   const [lineage, setLineage] = useState<import("@/lib/lineage/types").LineageTrace | null>(null);
+  const [ibeProjection, setIbeProjection] = useState<{
+    ibe: import("@/services/ibe/types").IbeResult["ibe"] | null;
+    humanResponse: import("@/services/oie/types").HumanResponse | null;
+    briefingId?: string;
+  } | null>(null);
   const [clarify, setClarify] = useState<Clarification | null>(null);
   const [followUps, setFollowUps] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -275,6 +284,7 @@ function CopilotOpsPage() {
         setClarify(result.clarification);
         setBriefing(null);
         setLineage(null);
+        setIbeProjection(null);
         setFollowUps([]);
         setStage("ready");
         return null;
@@ -326,6 +336,22 @@ function CopilotOpsPage() {
       } catch (e) {
         console.warn("[Lineage] failed to build trace", e);
         setLineage(null);
+      }
+      // Sprint UX-007 — Intelligence Projection Framework. Expose the IBE
+      // internal state (stage, hypotheses, nudges, contract) as an
+      // officer-facing panel so nothing important happens silently.
+      try {
+        const humanResp =
+          (result as { humanResponse?: import("@/services/oie/types").HumanResponse })
+            .humanResponse ?? result.ibe?.humanResponse ?? null;
+        setIbeProjection({
+          ibe: result.ibe ?? null,
+          humanResponse: humanResp,
+          briefingId: adapted.id,
+        });
+      } catch (e) {
+        console.warn("[IPF] failed to project IBE", e);
+        setIbeProjection(null);
       }
       const plan = (result as { plan?: { followUps?: string[] } }).plan;
       const ibeQuestions = result.ibe?.humanResponse?.suggestedNextQuestions;
@@ -513,6 +539,8 @@ function CopilotOpsPage() {
                   type="button"
                   onClick={() => {
                     setBriefing(null);
+                    setLineage(null);
+                    setIbeProjection(null);
                     setStage("idle");
                     setText("");
                     inputRef.current?.focus();
@@ -565,6 +593,8 @@ function CopilotOpsPage() {
                     type="button"
                     onClick={() => {
                       setBriefing(null);
+                      setLineage(null);
+                      setIbeProjection(null);
                       setStage("idle");
                       setText("");
                       setError(null);
@@ -615,13 +645,21 @@ function CopilotOpsPage() {
                 ) : null}
 
                 {briefing ? (
-                <AdaptiveBriefing
-                  briefing={briefing}
-                  lineage={lineage}
-                  onOverride={handleOverride}
-                  onGapRequest={(q) => handleSubmit(q)}
-                  onNextQuestion={(q) => handleSubmit(q)}
-                />
+                  <>
+                    <IntelligenceProjectionPanel
+                      ibe={ibeProjection?.ibe ?? null}
+                      humanResponse={ibeProjection?.humanResponse ?? null}
+                      mission={activeMission}
+                      briefingId={ibeProjection?.briefingId}
+                    />
+                    <AdaptiveBriefing
+                      briefing={briefing}
+                      lineage={lineage}
+                      onOverride={handleOverride}
+                      onGapRequest={(q) => handleSubmit(q)}
+                      onNextQuestion={(q) => handleSubmit(q)}
+                    />
+                  </>
                 ) : null}
 
                 {briefing && followUps.length > 0 ? (
