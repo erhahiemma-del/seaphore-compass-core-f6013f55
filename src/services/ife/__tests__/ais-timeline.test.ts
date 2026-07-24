@@ -76,9 +76,9 @@ describe("AIS timeline: chronological ordering", () => {
     const sortedDesc = [...timestamps].sort((a, b) => b - a);
     expect(timestamps).toEqual(sortedDesc);
 
-    // First entry is 'latest', and any winning duplicate is 'previous' or 'historical'.
-    expect(timeline[0].status).toBe("latest");
+    // Newest observedAt is always at index 0 regardless of which value wins fusion.
     expect(timeline[0].observedAt).toBe("2026-07-20T10:00:00Z");
+    expect(timeline[timeline.length - 1].observedAt).toBe("2026-07-19T22:00:00Z");
   });
 
   it("assigns latest / previous / historical to the winning value in time order", () => {
