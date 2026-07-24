@@ -63,6 +63,13 @@ import { useCopilotStore } from "@/stores/copilot.store";
 import { useIsDevBypass } from "@/stores/dev-mode.store";
 import { useMissionContextStore } from "@/stores/mission-context.store";
 import { useCopilotSession } from "@/hooks/use-copilot-session";
+import {
+  COPILOT_COMMANDS,
+  evaluateAvailability,
+  type CommandExecutionContext,
+  type CommandPermission,
+} from "@/services/copilot/commands/registry";
+import { routeCommand } from "@/services/copilot/commands/router";
 
 
 export const Route = createFileRoute("/copilot")({
@@ -618,8 +625,16 @@ function CopilotOpsPage() {
                   <VesselSnapshot />
                   <RiskOverview />
                   <OwnershipGraph />
-                  <QuickActions />
+                  <CopilotCommandsPanel
+                    onRun={handleSubmit}
+                    vessel={context?.label ?? "MV Ocean Pearl"}
+                    investigation={activeInvestigation}
+                    hasIntelligencePackage={Boolean(briefing)}
+                    role="officer"
+                    disabled={mutation.isPending}
+                  />
                 </div>
+
               </div>
             )}
           </aside>
@@ -929,29 +944,60 @@ function OwnershipGraph() {
   );
 }
 
-function QuickActions() {
-  const actions = [
-    { icon: FileText, label: "Generate Briefing" },
-    { icon: Anchor, label: "Create Investigation" },
-    { icon: Ship, label: "Compare Vessel" },
-    { icon: FileText, label: "Export Report" },
-    { icon: MapPin, label: "AIS Replay" },
-    { icon: Wallet, label: "Revenue Impact" },
-  ];
+function CopilotCommandsPanel({
+  onRun,
+  vessel,
+  investigation,
+  hasIntelligencePackage,
+  role,
+  disabled,
+}: {
+  onRun: (prompt: string) => void;
+  vessel?: string;
+  investigation?: string;
+  hasIntelligencePackage?: boolean;
+  role?: CommandPermission;
+  disabled?: boolean;
+}) {
+  const ctx = useMemo<CommandExecutionContext>(
+    () => ({ vessel, investigation, hasIntelligencePackage, role }),
+    [vessel, investigation, hasIntelligencePackage, role],
+  );
   return (
     <section>
-      <SectionLabel>Quick Actions</SectionLabel>
+      <SectionLabel>Copilot Commands</SectionLabel>
       <div className="grid grid-cols-2 gap-2">
-        {actions.map((a) => (
-          <button
-            key={a.label}
-            className="flex items-center gap-1.5 rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-left text-[11px] font-medium text-foreground/85 hover:border-primary/40 hover:bg-primary/5"
-          >
-            <a.icon className="h-3.5 w-3.5 text-[color:var(--color-teal)]" />
-            <span className="truncate">{a.label}</span>
-          </button>
-        ))}
+        {COPILOT_COMMANDS.map((cmd) => {
+          const availability = evaluateAvailability(cmd, ctx);
+          const isAvailable = availability.available;
+          const title = isAvailable ? cmd.description : availability.reason;
+          return (
+            <button
+              key={cmd.commandId}
+              type="button"
+              disabled={disabled || !isAvailable}
+              onClick={() => {
+                const res = routeCommand(cmd, ctx, onRun);
+                if (!res.ok) {
+                  // eslint-disable-next-line no-console
+                  console.info("[CopilotCommand] blocked:", res.message);
+                }
+              }}
+              title={title}
+              className={cn(
+                "flex items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-[11px] font-medium transition",
+                isAvailable
+                  ? "border-border/60 bg-background/60 text-foreground/85 hover:border-primary/40 hover:bg-primary/5"
+                  : "cursor-not-allowed border-border/40 bg-background/30 text-muted-foreground/60",
+              )}
+            >
+              <cmd.icon className="h-3.5 w-3.5 text-[color:var(--color-teal)]" />
+              <span className="truncate">{cmd.displayName}</span>
+            </button>
+          );
+        })}
       </div>
     </section>
   );
 }
+
