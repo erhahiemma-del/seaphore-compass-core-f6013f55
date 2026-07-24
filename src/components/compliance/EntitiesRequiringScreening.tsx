@@ -195,6 +195,7 @@ export function EntitiesRequiringScreening({
                 exportComplianceReport({
                   rows,
                   context: active?.title,
+                  workspaceId: activeId ?? undefined,
                 });
               } catch (err) {
                 console.error("Compliance report export failed", err);
