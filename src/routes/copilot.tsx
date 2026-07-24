@@ -158,6 +158,9 @@ function CopilotOpsPage() {
   const officerId = authUserId ?? "00000000-0000-0000-0000-000000000000";
   const session = useCopilotSession();
   const activeMissionId = useMissionContextStore((s) => s.activeId);
+  const activeMission = useMissionContextStore((s) =>
+    s.activeId ? s.missions[s.activeId] ?? null : null,
+  );
 
   const [text, setText] = useState("");
   const [stage, setStage] = useState<Stage>("idle");
