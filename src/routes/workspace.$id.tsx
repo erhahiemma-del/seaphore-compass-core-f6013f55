@@ -55,14 +55,14 @@ export const Route = createFileRoute("/workspace/$id")({
     return { id: params.id };
   },
   notFoundComponent: () => (
-    <AppShell>
+    <AppShell title="Investigation Workspace">
       <div className="p-10 text-center text-sm text-muted-foreground">
         Investigation not found. <Link to="/workspace" className="underline">Back to workspaces</Link>.
       </div>
     </AppShell>
   ),
   errorComponent: ({ error }) => (
-    <AppShell>
+    <AppShell title="Investigation Workspace">
       <div className="p-10 text-center text-sm text-destructive">
         {error instanceof Error ? error.message : "Workspace failed to load."}
       </div>
@@ -86,7 +86,7 @@ function WorkspaceRoute() {
   if (!w) return null;
 
   return (
-    <AppShell>
+    <AppShell title="Investigation Workspace">
       <div className="flex h-full min-h-screen flex-col">
         {/* Top bar */}
         <div className="flex items-center justify-between border-b bg-background px-4 py-2.5">

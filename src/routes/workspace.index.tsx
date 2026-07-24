@@ -32,7 +32,7 @@ function WorkspaceIndex() {
   const list = Object.values(investigations).sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
 
   return (
-    <AppShell>
+    <AppShell title="Investigation Workspace">
       <div className="mx-auto max-w-6xl p-6">
         <header className="mb-6 flex items-center justify-between">
           <div>
