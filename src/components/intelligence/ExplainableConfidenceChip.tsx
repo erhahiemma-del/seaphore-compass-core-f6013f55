@@ -9,6 +9,7 @@
  *
  * Golden Rule: the confidence value is never presented without its reason.
  */
+import type { ReactNode } from "react";
 import { CheckCircle2, Info, MinusCircle, XCircle } from "lucide-react";
 import { ConfidenceChip, type ConfidenceChipProps } from "./ConfidenceChip";
 import {
@@ -30,7 +31,7 @@ export interface ExplainableConfidenceChipProps
   heading?: string;
 }
 
-const TONE_ICON: Record<ConfidenceFactor["tone"], JSX.Element> = {
+const TONE_ICON: Record<ConfidenceFactor["tone"], ReactNode> = {
   supporting: <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />,
   detracting: <XCircle className="h-3.5 w-3.5 text-red-600" />,
   neutral: <MinusCircle className="h-3.5 w-3.5 text-muted-foreground" />,
