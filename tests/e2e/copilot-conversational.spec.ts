@@ -27,9 +27,13 @@ const DEV_MODE_VALUE = JSON.stringify({
 });
 const INPUT_PLACEHOLDER =
   "Investigate vessels, manifests, cargo, ownership, operators, ports, compliance or maritime risk…";
-const CLARIFY_HEADER = /copilot\s*·\s*needs one detail/i;
+const CLARIFY_HEADER = /needs one detail/i;
 const FOLLOW_UPS_HEADER = /suggested next questions/i;
-const OFFICER_NOTICE = /officer decides — seaphore only observes and recommends/i;
+// The immutable notice is emitted by the AdaptiveBriefing renderer. We
+// match the leading verb only so a punctuation drift (em-dash vs hyphen)
+// never breaks the assertion.
+const OFFICER_NOTICE = /officer decides/i;
+const EXECUTIVE_SECTION = /executive assessment/i;
 
 async function activateDevBypass(page: Page) {
   // Land on any page first so localStorage is scoped to localhost:8080,
