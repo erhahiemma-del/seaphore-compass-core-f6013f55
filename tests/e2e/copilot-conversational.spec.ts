@@ -32,7 +32,7 @@ const FOLLOW_UPS_HEADER = /suggested next questions/i;
 // The immutable notice is emitted by the AdaptiveBriefing renderer. We
 // match the leading verb only so a punctuation drift (em-dash vs hyphen)
 // never breaks the assertion.
-const OFFICER_NOTICE = /officer decides/i;
+const EXECUTIVE_SECTION = /officer decides/i;
 const EXECUTIVE_SECTION = /executive assessment/i;
 
 async function activateDevBypass(page: Page) {
@@ -72,7 +72,7 @@ test.describe("Copilot · conversational intelligence (/copilot)", () => {
 
     // Wait for the briefing to settle. The immutable officer-decision
     // notice is only emitted by the Adaptive Briefing renderer.
-    await expect(page.getByText(OFFICER_NOTICE)).toBeVisible({
+    await expect(page.getByText(EXECUTIVE_SECTION)).toBeVisible({
       timeout: 25_000,
     });
 
@@ -89,7 +89,7 @@ test.describe("Copilot · conversational intelligence (/copilot)", () => {
     await askCopilot(page, "Tell me about MV Ocean Pearl");
 
     // First turn settled.
-    await expect(page.getByText(OFFICER_NOTICE)).toBeVisible({
+    await expect(page.getByText(EXECUTIVE_SECTION)).toBeVisible({
       timeout: 25_000,
     });
     const chipsRegion = page.locator("div", { hasText: FOLLOW_UPS_HEADER }).last();
@@ -108,7 +108,7 @@ test.describe("Copilot · conversational intelligence (/copilot)", () => {
     // The streaming stage clears the previous briefing while it runs.
     // Wait until a fresh briefing settles (the officer-decision notice
     // reappears) and confirm no clarification card ever intervened.
-    await expect(page.getByText(OFFICER_NOTICE)).toBeVisible({
+    await expect(page.getByText(EXECUTIVE_SECTION)).toBeVisible({
       timeout: 25_000,
     });
     await expect(page.getByText(FOLLOW_UPS_HEADER)).toBeVisible();
