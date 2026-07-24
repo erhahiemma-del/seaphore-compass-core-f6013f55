@@ -29,11 +29,6 @@ const INPUT_PLACEHOLDER =
   "Investigate vessels, manifests, cargo, ownership, operators, ports, compliance or maritime risk…";
 const CLARIFY_HEADER = /needs one detail/i;
 const FOLLOW_UPS_HEADER = /suggested next questions/i;
-// The immutable notice is emitted by the AdaptiveBriefing renderer. We
-// match the leading verb only so a punctuation drift (em-dash vs hyphen)
-// never breaks the assertion.
-const CLARIFY_HEADER = /needs one detail/i;
-const FOLLOW_UPS_HEADER = /suggested next questions/i;
 // The AdaptiveBriefing renderer emits an "Executive Assessment" section
 // heading — used here as the "briefing has settled" signal. We avoid
 // matching the footer's "OFFICER DECIDES" tagline because it renders on
