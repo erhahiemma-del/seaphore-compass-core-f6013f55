@@ -58,6 +58,7 @@ import { cn } from "@/lib/utils";
 import { captureOverride } from "@/services/orchestration";
 import { runOIE, type Clarification } from "@/services/oie";
 import { enhanceWithIBE, persistHypotheses } from "@/services/ibe";
+import { IntelligenceProjectionPanel } from "@/components/copilot/projection/IntelligenceProjectionPanel";
 import { ClarifyCard } from "@/components/copilot/ClarifyCard";
 import { useAuthStore } from "@/stores/auth.store";
 import { useCopilotStore } from "@/stores/copilot.store";
