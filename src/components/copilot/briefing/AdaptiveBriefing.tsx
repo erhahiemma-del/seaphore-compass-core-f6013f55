@@ -13,6 +13,7 @@
 import { useMemo, useState } from "react";
 import { EvidenceCard } from "./EvidenceCard";
 import { EntityCard } from "./EntityCard";
+import { EvidenceLineageView } from "./EvidenceLineageView";
 import { OfficerDecisionHeader } from "./OfficerDecisionHeader";
 import { PatternCard } from "./PatternCard";
 import { SectionShell, TierBadge } from "./primitives";
@@ -43,6 +44,7 @@ import type {
   OverrideDecision,
   OverrideSubmission,
 } from "./types";
+import type { LineageTrace } from "@/lib/lineage/types";
 
 export interface AdaptiveBriefingProps {
   briefing: AdaptiveBriefingData;
