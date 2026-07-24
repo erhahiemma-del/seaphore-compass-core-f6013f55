@@ -198,7 +198,11 @@ export interface ComplianceReportInput {
   context?: string;
 }
 
-export function exportComplianceReport(input: ComplianceReportInput): string {
+/**
+ * Build the PDF without triggering a download. Useful for tests / QA.
+ * Returns the underlying jsPDF instance so callers can .output(...) it.
+ */
+export function buildComplianceReportPdf(input: ComplianceReportInput): { pdf: jsPDF; filename: string } {
   const { rows, officer, context } = input;
   const pdf = new jsPDF({ unit: "pt", format: "a4" });
   const cursor: Cursor = { y: MARGIN_TOP, page: 1 };
