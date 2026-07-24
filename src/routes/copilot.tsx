@@ -274,6 +274,7 @@ function CopilotOpsPage() {
       if (result.kind === "clarify") {
         setClarify(result.clarification);
         setBriefing(null);
+        setLineage(null);
         setFollowUps([]);
         setStage("ready");
         return null;
