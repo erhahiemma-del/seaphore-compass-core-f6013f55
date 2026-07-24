@@ -199,7 +199,7 @@ function CopilotOpsPage() {
           : undefined,
       };
 
-      const result = devBypass
+      const rawResult = devBypass
         ? await runOIE({
             query: {
               query: payload.query,
@@ -209,6 +209,19 @@ function CopilotOpsPage() {
             },
           })
         : await runOIEServer({ data: payload });
+
+      // Sprint COPILOT-2.0 — Intelligence Behaviour Engine.
+      // OIE has produced an operational briefing. IBE reshapes it so the
+      // Copilot speaks as a senior maritime intelligence officer: mission
+      // aware, hypothesis-tracking, coaching, and always initiative-led.
+      const result = enhanceWithIBE({
+        query: q,
+        mission: mission ?? null,
+        result: rawResult,
+      });
+      if (result.kind === "briefing" && result.ibe) {
+        persistHypotheses(activeMissionId, result.ibe.hypotheses);
+      }
 
       setStage("reasoning");
 
@@ -246,7 +259,8 @@ function CopilotOpsPage() {
       setStage("rendering");
       setBriefing(adapted);
       const plan = (result as { plan?: { followUps?: string[] } }).plan;
-      setFollowUps(plan?.followUps ?? []);
+      const ibeQuestions = result.ibe?.humanResponse?.suggestedNextQuestions;
+      setFollowUps(ibeQuestions?.length ? ibeQuestions : plan?.followUps ?? []);
       setStage("ready");
       session.appendCopilot(`Briefing: ${q}`, adapted.id);
       // Sprint UX-005 — persist briefing into the Investigation Workspace.
