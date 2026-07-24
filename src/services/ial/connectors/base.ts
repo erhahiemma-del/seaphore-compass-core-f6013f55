@@ -11,9 +11,36 @@ import type {
   NormalizedEvidence,
 } from "../types";
 
+/**
+ * Canonical capability vocabulary. Connectors advertise which
+ * operational capabilities they can serve; orchestration selects
+ * connectors by capability, never by connector id or display name.
+ *
+ * New capabilities are added here (never inside orchestration).
+ */
+export type ConnectorCapability =
+  | "SANCTIONS"
+  | "VESSEL_SCREENING"
+  | "COMPANY_SCREENING"
+  | "PERSON_SCREENING"
+  | "OWNERSHIP"
+  | "IDENTITY"
+  | "POSITION"
+  | "PORT_CALL"
+  | "COMPLIANCE"
+  | "CARGO";
+
 export interface Connector {
   readonly id: ConnectorId;
   readonly displayName: string;
+
+  /**
+   * Capabilities this connector can serve. Discovery via
+   * `ConnectorRegistry.getByCapability` filters on this list.
+   * Optional for backward compatibility; a connector without
+   * capabilities is invisible to capability-based selection.
+   */
+  readonly capabilities?: ReadonlyArray<ConnectorCapability>;
 
   /** One-time setup (open a pool, resolve an OAuth token, etc.). */
   connect(): Promise<void>;

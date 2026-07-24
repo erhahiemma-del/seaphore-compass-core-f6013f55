@@ -21,7 +21,7 @@
 export * from "./types";
 export { ConnectorRegistry } from "./connectors/registry";
 export { ConnectorManager } from "./manager";
-export type { Connector } from "./connectors/base";
+export type { Connector, ConnectorCapability } from "./connectors/base";
 export { EvidenceCache } from "./cache";
 export { HealthTracker } from "./health";
 export { normalizeRecord, canonicalEntityId } from "./normalizer";

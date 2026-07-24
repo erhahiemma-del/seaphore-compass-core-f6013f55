@@ -15,7 +15,7 @@ import { ConnectorRegistry } from "./connectors/registry";
 import { HealthTracker } from "./health";
 import { buildEvidencePackage } from "./package-builder";
 import { stableHash } from "./hash";
-import type { Connector } from "./connectors/base";
+import type { Connector, ConnectorCapability } from "./connectors/base";
 import type {
   AcquisitionQuery,
   ConnectorHealth,
@@ -129,6 +129,26 @@ export class ConnectorManager {
    *  state stays behind one facade. */
   listConnectors(): ReadonlyArray<{ id: ConnectorId; displayName: string }> {
     return this.registry.list().map((c) => ({ id: c.id, displayName: c.displayName }));
+  }
+
+  /**
+   * Capability-based discovery. Orchestration asks the manager for
+   * connectors that can serve a capability; it never names a provider.
+   *
+   *   manager.getByCapability("SANCTIONS")
+   *     → [{ id: "opensanctions", displayName: "OpenSanctions" }, ...]
+   *
+   * Adding a new provider (OFAC, UN, EU, commercial) means registering
+   * a connector that declares the SANCTIONS capability — no changes to
+   * the orchestrator, planner, or OIE.
+   */
+  getByCapability(
+    capability: ConnectorCapability,
+  ): ReadonlyArray<{ id: ConnectorId; displayName: string }> {
+    return this.registry.getByCapability(capability).map((c) => ({
+      id: c.id,
+      displayName: c.displayName,
+    }));
   }
 
   cacheStats(): { hits: number; misses: number; size: number } {

@@ -13,9 +13,10 @@ import type {
   ConnectorHealth,
   ConnectorId,
   ConnectorResult,
+  EntityKind,
   NormalizedEvidence,
 } from "../types";
-import type { Connector } from "./base";
+import type { Connector, ConnectorCapability } from "./base";
 
 interface SimOptions {
   readonly failing?: boolean;
@@ -164,28 +165,127 @@ export class SimulatedImoConnector extends SimConnector {
   }
 }
 
-/** Simulated OpenSanctions — sanctions matches for entities. */
+/**
+ * Simulated OpenSanctions — the FIRST implementation of the SANCTIONS
+ * capability. Advertises capabilities via metadata; orchestration never
+ * references this connector by id.
+ *
+ * Canonical fields populated on each sanctions record:
+ *   entityId, name, aliases, imo, countries, sanctionLists, programs,
+ *   evidenceUrl, lastUpdated, confidence, match
+ */
 export class SimulatedOpenSanctionsConnector extends SimConnector {
   readonly id: ConnectorId = "opensanctions";
   readonly displayName = "OpenSanctions (Simulated)";
+  readonly capabilities: ReadonlyArray<ConnectorCapability> = [
+    "SANCTIONS",
+    "VESSEL_SCREENING",
+    "COMPANY_SCREENING",
+    "PERSON_SCREENING",
+  ];
+
   protected produce(q: AcquisitionQuery): ReadonlyArray<NormalizedEvidence> {
     const target = q.entity?.label ?? q.text;
     if (!target) return [];
+    const kind: EntityKind = q.entity?.kind ?? inferEntityKind(target);
+    const nativeId = q.entity ? q.entity.id : target;
+    const hit = KNOWN_SANCTIONS_HITS.find((h) =>
+      h.matchers.some((m) => m.test(target)),
+    );
+
+    if (hit) {
+      return [
+        normalizeRecord({
+          source: this.id,
+          sourceName: this.displayName,
+          grade: "CORROBORATED",
+          entity: { kind, nativeId, label: target },
+          kind: "sanctions",
+          fields: {
+            name: hit.name,
+            aliases: hit.aliases,
+            imo: hit.imo ?? null,
+            countries: hit.countries,
+            sanctionLists: hit.lists,
+            listName: hit.lists[0], // validator compat
+            programs: hit.programs,
+            evidenceUrl: hit.evidenceUrl,
+            lastUpdated: hit.lastUpdated,
+            confidence: hit.confidence,
+            match: "positive",
+          },
+          observedAt: new Date(hit.lastUpdated),
+          excerpt: `Active sanctions match on ${hit.lists.join(", ")}`,
+        }),
+      ];
+    }
+
+    // Structured "no match" — canonical fields still populated so the
+    // OIE briefing shows a real assessment, not a blank record.
+    const lastUpdated = new Date(Date.now() - 6 * 3600_000).toISOString();
     return [
       normalizeRecord({
         source: this.id,
         sourceName: this.displayName,
         grade: "CORROBORATED",
-        entity: q.entity
-          ? { kind: q.entity.kind, nativeId: q.entity.id, label: q.entity.label }
-          : { kind: "company", nativeId: target, label: target },
+        entity: { kind, nativeId, label: target },
         kind: "sanctions",
-        fields: { listName: "OFAC-SDN", match: "none", score: 0.02 },
-        observedAt: new Date(Date.now() - 6 * 3600_000),
-        excerpt: "No sanctions match",
+        fields: {
+          name: target,
+          aliases: [],
+          countries: [],
+          sanctionLists: [],
+          listName: "OpenSanctions Consolidated",
+          programs: [],
+          evidenceUrl: "https://www.opensanctions.org/",
+          lastUpdated,
+          confidence: 0.96,
+          match: "none",
+          score: 0.02,
+        },
+        observedAt: new Date(lastUpdated),
+        excerpt: "No active sanctions match",
       }),
     ];
   }
+}
+
+/**
+ * Deterministic in-memory reference dataset for the simulator. Real
+ * providers replace this table; the shape (canonical fields) is the
+ * contract, not the dataset itself.
+ */
+interface SanctionsHit {
+  readonly matchers: ReadonlyArray<RegExp>;
+  readonly name: string;
+  readonly aliases: ReadonlyArray<string>;
+  readonly imo?: string;
+  readonly countries: ReadonlyArray<string>;
+  readonly lists: ReadonlyArray<string>;
+  readonly programs: ReadonlyArray<string>;
+  readonly evidenceUrl: string;
+  readonly lastUpdated: string;
+  readonly confidence: number;
+}
+
+const KNOWN_SANCTIONS_HITS: ReadonlyArray<SanctionsHit> = [
+  {
+    matchers: [/sanctioned\s*test\s*corp/i, /\bblacklisted-demo\b/i],
+    name: "Sanctioned Test Corp",
+    aliases: ["STC Holdings", "Blacklisted Demo Ltd"],
+    countries: ["IR"],
+    lists: ["OFAC-SDN", "EU-CFSP"],
+    programs: ["IRAN-EO13599"],
+    evidenceUrl: "https://www.opensanctions.org/entities/sanctioned-test-corp/",
+    lastUpdated: new Date(Date.now() - 2 * 86400_000).toISOString(),
+    confidence: 0.99,
+  },
+];
+
+function inferEntityKind(target: string): EntityKind {
+  if (/\bMV\b|\bM\/V\b|\bIMO\s*\d{7}\b/i.test(target)) return "vessel";
+  if (/\b(?:ltd|llc|inc|sa|gmbh|shipping|holdings|corp)\b/i.test(target)) return "company";
+  return "company";
 }
 
 /** Simulated MarineTraffic — port calls. */

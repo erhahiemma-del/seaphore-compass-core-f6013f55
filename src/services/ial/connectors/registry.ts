@@ -9,7 +9,7 @@
  * `ConnectorInterface` into an IAL `Connector` and registers it here.
  */
 import type { ConnectorId, EntityKind } from "../types";
-import type { Connector } from "./base";
+import type { Connector, ConnectorCapability } from "./base";
 
 export class ConnectorRegistry {
   private readonly items = new Map<ConnectorId, Connector>();
@@ -52,5 +52,22 @@ export class ConnectorRegistry {
       const kinds = (c as Connector & { entityKinds?: ReadonlyArray<EntityKind> }).entityKinds;
       return !kinds || kinds.length === 0 || kinds.includes(kind);
     });
+  }
+
+  /**
+   * Return connectors that advertise a given capability. Orchestration
+   * uses this — never `get(id)` — so providers are interchangeable.
+   *
+   *   registry.getByCapability("SANCTIONS")
+   *     // → OpenSanctions today
+   *     // → OpenSanctions + OFAC + UN + EU + commercial tomorrow
+   *
+   * A connector opts in by declaring `capabilities` on its class. A
+   * connector without capability metadata is invisible to this lookup;
+   * that is intentional — capability-driven selection is opt-in per
+   * connector.
+   */
+  getByCapability(capability: ConnectorCapability): ReadonlyArray<Connector> {
+    return this.getAll().filter((c) => c.capabilities?.includes(capability) ?? false);
   }
 }
