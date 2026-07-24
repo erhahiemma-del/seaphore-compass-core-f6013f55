@@ -615,12 +615,13 @@ function CopilotOpsPage() {
                 ) : null}
 
                 {briefing ? (
-                  <AdaptiveBriefing
-                    briefing={briefing}
-                    onOverride={handleOverride}
-                    onGapRequest={(q) => handleSubmit(q)}
-                    onNextQuestion={(q) => handleSubmit(q)}
-                  />
+                <AdaptiveBriefing
+                  briefing={briefing}
+                  lineage={lineage}
+                  onOverride={handleOverride}
+                  onGapRequest={(q) => handleSubmit(q)}
+                  onNextQuestion={(q) => handleSubmit(q)}
+                />
                 ) : null}
 
                 {briefing && followUps.length > 0 ? (
