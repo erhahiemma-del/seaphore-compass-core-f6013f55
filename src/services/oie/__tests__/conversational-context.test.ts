@@ -124,7 +124,7 @@ describe("UX-001 · first-turn Executive Operational Briefing", () => {
       "Tell me about MV Ocean Pearl",
       'Look into "Ocean Pearl"',
       "IMO 9876543",
-      "Vessel Atlantic Trader",
+      "tanker Atlantic Trader",
     ];
 
     for (const q of queries) {
