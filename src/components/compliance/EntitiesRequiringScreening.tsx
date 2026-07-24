@@ -187,6 +187,30 @@ export function EntitiesRequiringScreening({
           >
             Clear completed
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              try {
+                exportComplianceReport({
+                  rows,
+                  context: active?.title,
+                });
+              } catch (err) {
+                console.error("Compliance report export failed", err);
+              }
+            }}
+            disabled={rows.length === 0}
+            className={cn(
+              "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium",
+              rows.length === 0
+                ? "cursor-not-allowed opacity-50"
+                : "border-primary/40 bg-primary/5 text-primary hover:bg-primary/10",
+            )}
+            title="Export executive assessment + evidence summary as PDF"
+          >
+            <FileDown className="h-3 w-3" />
+            Generate Compliance Report
+          </button>
         </div>
       </header>
 
