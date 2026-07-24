@@ -171,7 +171,7 @@ function ensureSpace(pdf: jsPDF, cursor: Cursor, needed: number) {
   pdf.addPage();
   cursor.page += 1;
   cursor.y = MARGIN_TOP;
-  drawHeader(pdf);
+  drawHeader(pdf, cursor.headerMeta);
   if (cursor.inEvidence) drawEvidenceContinuation(pdf, cursor);
 }
 
