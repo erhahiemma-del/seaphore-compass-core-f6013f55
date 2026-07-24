@@ -451,15 +451,45 @@ export async function runOIE(
       interpreted,
       "Orchestrator returned no evidence.",
     );
+
+    // Sticky-subject propagation: when the interpreter carried an
+    // anchor forward (officer did NOT name a new subject this turn),
+    // inject that anchor into the orchestrator context AND append it
+    // to the resolved query text so downstream retrieval and reasoning
+    // both stay locked on the same vessel/company/port. The moment the
+    // officer names a different subject, interpreted.anchor is
+    // undefined and this branch is skipped.
+    const stickyAnchor = interpreted.anchor;
+    const anchorContext: Record<string, string> = {};
+    let anchoredQuery = interpreted.resolved || q.query;
+    if (stickyAnchor) {
+      const alreadyMentioned = new RegExp(
+        `\\b${stickyAnchor.value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`,
+        "i",
+      ).test(anchoredQuery);
+      if (!alreadyMentioned) {
+        anchoredQuery = `${anchoredQuery} (regarding ${stickyAnchor.value})`;
+      }
+      if (stickyAnchor.type === "vessel" || stickyAnchor.type === "imo" || stickyAnchor.type === "mmsi") {
+        if (!q.context?.vessel) anchorContext.vessel = stickyAnchor.value;
+      } else if (stickyAnchor.type === "port") {
+        if (!q.context?.port) anchorContext.port = stickyAnchor.value;
+      } else if (stickyAnchor.type === "company") {
+        if (!(q.context as Record<string, unknown> | undefined)?.company)
+          anchorContext.company = stickyAnchor.value;
+      }
+    }
+
     const rawBriefing = await safeAsync(
       "orchestrate",
       () =>
         orchestrate({
           ...q,
-          query: interpreted.resolved || q.query,
+          query: anchoredQuery,
           moduleHint: q.moduleHint ?? plan.primarySkill.id,
           context: {
             ...(q.context ?? {}),
+            ...anchorContext,
             workspace: q.context?.workspace ?? mission.workspace,
           },
         }),

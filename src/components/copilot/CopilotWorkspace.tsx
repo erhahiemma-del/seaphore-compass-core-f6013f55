@@ -14,8 +14,11 @@
  */
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, RotateCcw, Send } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Loader2, RotateCcw, Send, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+import { findAnchor } from "@/services/oie/conversation-resolver";
+import { extractEntities } from "@/services/oie/query-interpreter";
 
 import { AdaptiveBriefing } from "@/components/copilot/briefing";
 import type {
@@ -254,6 +257,19 @@ export function CopilotWorkspace({
 
   const startingSuggestions = suggestions ?? DEFAULT_SUGGESTIONS;
 
+  // Derive the sticky conversational anchor from mission history so the
+  // officer always sees which vessel/company/port follow-ups will
+  // resolve against. Recomputes whenever a turn is appended.
+  const subjectAnchor = useMemo(() => {
+    const turns = session.history.map((h) => ({
+      role: h.role,
+      text: h.text,
+      ts: h.ts,
+      entities: extractEntities(h.text),
+    }));
+    return findAnchor(turns);
+  }, [session.history]);
+
   return (
     <div className={cn("flex flex-col gap-4", className)}>
       {showContextBar && context ? <ContextBar context={context} /> : null}
@@ -368,6 +384,30 @@ export function CopilotWorkspace({
               </ul>
             </div>
           ) : null}
+        </div>
+      ) : null}
+
+      {subjectAnchor ? (
+        <div className="flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-1.5 text-[11.5px]">
+          <span className="font-semibold uppercase tracking-wider text-muted-foreground">
+            Subject
+          </span>
+          <span className="font-medium text-foreground">
+            {subjectAnchor.type.toUpperCase()} · {subjectAnchor.value}
+          </span>
+          <span className="text-muted-foreground">
+            · follow-ups continue on this {subjectAnchor.type}
+          </span>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={session.reset}
+            className="ml-auto h-6 gap-1 text-[11px]"
+            aria-label="Change subject"
+          >
+            <X className="h-3 w-3" aria-hidden />
+            Change subject
+          </Button>
         </div>
       ) : null}
 
