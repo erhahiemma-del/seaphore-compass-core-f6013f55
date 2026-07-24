@@ -431,14 +431,28 @@ function CopilotOpsPage() {
           {/* CENTER — Intelligence Workspace */}
           <section className="flex flex-col gap-3">
             <div className="flex flex-1 flex-col rounded-xl border border-border/60 bg-white shadow-sm">
-              <div className="flex items-center justify-between border-b border-border/60 px-4 py-2.5">
-                <div className="flex items-center gap-2 text-[12px]">
-                  <span className="inline-block h-2 w-2 rounded-full bg-[color:var(--color-teal)]" />
-                  <span className="font-semibold text-foreground">Copilot Context</span>
-                  <span className="text-muted-foreground">You are viewing data for:</span>
-                  <span className="font-semibold text-foreground">
-                    {context?.label ?? "MV Ocean Pearl (IMO 9438291)"}
-                  </span>
+              <div className="flex items-start justify-between border-b border-border/60 px-4 py-2.5">
+                <div className="flex items-start gap-3 text-[12px]">
+                  <span className="mt-1 inline-block h-2 w-2 rounded-full bg-[color:var(--color-teal)]" />
+                  <div>
+                    <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      Current Investigation
+                    </div>
+                    <div className="text-[13px] font-semibold text-foreground">
+                      {context?.label ?? "MV Ocean Pearl · IMO 9438291"}
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-2 text-[11px]">
+                      <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
+                        Active
+                      </span>
+                      <span className="text-muted-foreground">
+                        Current Mission ·{" "}
+                        <span className="font-medium text-foreground">
+                          {briefing?.query ? "Intelligence briefing" : "Awaiting query"}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button
