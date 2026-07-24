@@ -644,7 +644,7 @@ function CopilotOpsPage() {
                     <IntelligenceProjectionPanel
                       ibe={ibeProjection?.ibe ?? null}
                       humanResponse={ibeProjection?.humanResponse ?? null}
-                      mission={mission ?? null}
+                      mission={activeMission}
                       briefingId={ibeProjection?.briefingId}
                     />
                     <AdaptiveBriefing
