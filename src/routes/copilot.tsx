@@ -304,6 +304,28 @@ function CopilotOpsPage() {
       );
       setStage("rendering");
       setBriefing(adapted);
+      // Assemble the Evidence Lineage Trace from existing artefacts (OIE
+      // citations, IBE hypotheses, mission context, workspace state). This
+      // projects backend intelligence into an officer-facing chain-of-custody.
+      try {
+        const wsState = useWorkspaceStore.getState();
+        const activeWs = wsState.activeId ? wsState.investigations[wsState.activeId] : null;
+        const humanResponse =
+          (result as { humanResponse?: import("@/services/oie/types").HumanResponse })
+            .humanResponse ?? result.ibe?.humanResponse;
+        setLineage(
+          buildLineageTrace({
+            briefing: adapted,
+            humanResponse,
+            hypotheses: result.ibe?.hypotheses,
+            mission: mission ?? null,
+            workspace: activeWs,
+          }),
+        );
+      } catch (e) {
+        console.warn("[Lineage] failed to build trace", e);
+        setLineage(null);
+      }
       const plan = (result as { plan?: { followUps?: string[] } }).plan;
       const ibeQuestions = result.ibe?.humanResponse?.suggestedNextQuestions;
       setFollowUps(ibeQuestions?.length ? ibeQuestions : plan?.followUps ?? []);
