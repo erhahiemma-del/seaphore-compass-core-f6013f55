@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { PROJECTION_CONTRACT } from "../projection-contract/registry";
-import { validateContract } from "../projection-contract/validate";
+import { PROJECTION_CONTRACT } from "@/lib/projection-contract/registry";
+import { validateContract } from "@/lib/projection-contract/validate";
 
 describe("Projection Contract (Golden Rule)", () => {
   it("has no validation issues", () => {
