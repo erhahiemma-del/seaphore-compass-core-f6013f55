@@ -47,10 +47,11 @@ interface ScreeningQueueState {
   runningCount: number;
 
   enqueue: (
-    e: Omit<ScreeningEntity, "status" | "addedAt"> & { status?: ScreeningStatus },
+    e: Partial<Pick<ScreeningEntity, "id">> &
+      Omit<ScreeningEntity, "id" | "status" | "addedAt"> & { status?: ScreeningStatus },
   ) => string;
   enqueueMany: (
-    es: Array<Omit<ScreeningEntity, "status" | "addedAt">>,
+    es: Array<Omit<ScreeningEntity, "id" | "status" | "addedAt">>,
   ) => string[];
   remove: (id: string) => void;
   clearCompleted: () => void;
