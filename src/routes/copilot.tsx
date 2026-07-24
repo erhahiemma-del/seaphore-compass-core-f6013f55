@@ -661,7 +661,7 @@ function CopilotOpsPage() {
                       humanResponse={ibeProjection?.humanResponse ?? null}
                       ibe={ibeProjection?.ibe ?? null}
                       followUps={followUps}
-                      onFollowUp={(q) => handleSubmit(q)}
+                      onFollowUp={(q: string) => handleSubmit(q)}
                     />
                     <details className="mt-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-[12px] text-slate-700 open:shadow-sm">
                       <summary className="cursor-pointer font-medium text-slate-800">
