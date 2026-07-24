@@ -97,6 +97,7 @@ export function EntitiesRequiringScreening({
   const remove = useScreeningQueueStore((s) => s.remove);
   const reset = useScreeningQueueStore((s) => s.reset);
   const runOne = useScreeningQueueStore((s) => s.runOne);
+  const retry = useScreeningQueueStore((s) => s.retry);
   const runAllPending = useScreeningQueueStore((s) => s.runAllPending);
   const clearCompleted = useScreeningQueueStore((s) => s.clearCompleted);
   const stats = useScreeningQueueStore(selectScreeningStats);
@@ -268,6 +269,11 @@ export function EntitiesRequiringScreening({
                     {typeof e.hitCount === "number" ? (
                       <span>· {e.hitCount} finding{e.hitCount === 1 ? "" : "s"}</span>
                     ) : null}
+                    {e.history && e.history.length > 1 ? (
+                      <span title={priorRunsTitle(e.history)}>
+                        · {e.history.length - 1} prior run{e.history.length - 1 === 1 ? "" : "s"} preserved
+                      </span>
+                    ) : null}
                   </div>
                   {e.summary ? (
                     <div className="mt-1 text-[11px] text-muted-foreground">{e.summary}</div>
@@ -277,7 +283,7 @@ export function EntitiesRequiringScreening({
                   ) : null}
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
-                  {e.status === "PENDING" || e.status === "ERROR" ? (
+                  {e.status === "PENDING" ? (
                     <button
                       type="button"
                       onClick={() => void runOne(e.id)}
@@ -285,6 +291,17 @@ export function EntitiesRequiringScreening({
                       title="Screen now"
                     >
                       Screen
+                    </button>
+                  ) : null}
+                  {e.status === "ERROR" ? (
+                    <button
+                      type="button"
+                      onClick={() => void retry(e.id)}
+                      className="inline-flex items-center gap-1 rounded-md border border-red-500/40 bg-red-500/5 px-1.5 py-0.5 text-[10.5px] font-medium text-red-600 hover:bg-red-500/10 dark:text-red-300"
+                      title="Retry this screening. Prior run findings are preserved; the new run is appended."
+                    >
+                      <RefreshCw className="h-3 w-3" />
+                      Retry
                     </button>
                   ) : null}
                   {done ? (
@@ -343,4 +360,23 @@ function timeAgo(iso: string): string {
   if (m < 60) return `${m}m ago`;
   const h = Math.round(m / 60);
   return `${h}h ago`;
+}
+
+function priorRunsTitle(
+  history: NonNullable<ScreeningEntity["history"]>,
+): string {
+  // Exclude the latest run (shown at top of the row) — this tooltip surfaces
+  // the archived prior attempts so officers can see what changed on retry.
+  const prior = history.slice(0, -1);
+  if (prior.length === 0) return "";
+  return prior
+    .map((r, i) => {
+      const when = new Date(r.runAt).toLocaleString();
+      const detail =
+        r.status === "ERROR"
+          ? r.error ?? "failed"
+          : r.summary ?? `${r.hitCount ?? 0} findings`;
+      return `#${i + 1} ${when} — ${r.status}: ${detail}`;
+    })
+    .join("\n");
 }

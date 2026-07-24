@@ -24,6 +24,15 @@ export type ScreeningStatus =
 
 export type ScreeningEntityKind = EntityKind;
 
+export interface ScreeningRunRecord {
+  runAt: string;
+  status: ScreeningStatus;
+  hitCount?: number;
+  providers?: string[];
+  summary?: string;
+  error?: string;
+}
+
 export interface ScreeningEntity {
   id: string;
   name: string;
@@ -39,6 +48,8 @@ export interface ScreeningEntity {
   error?: string;
   /** free-text tag so callers (workspace, compliance) can group items. */
   origin?: string;
+  /** Immutable history of prior runs (most recent last). Appended on each retry. */
+  history?: ScreeningRunRecord[];
 }
 
 interface ScreeningQueueState {
@@ -61,6 +72,11 @@ interface ScreeningQueueState {
 
   /** Run screening for one queued entity end-to-end. Safe to call in parallel. */
   runOne: (id: string) => Promise<void>;
+  /**
+   * One-click retry for ERROR entities. Archives the failed run into `history`
+   * and re-executes; the new outcome is appended (not overwritten).
+   */
+  retry: (id: string) => Promise<void>;
   /** Run every PENDING (and ERROR) entity with bounded concurrency. */
   runAllPending: (concurrency?: number) => Promise<void>;
 }
@@ -170,10 +186,33 @@ export const useScreeningQueueStore = create<ScreeningQueueState>()(
           const e = s.entities[id];
           if (!e) return s;
           const wasRunning = e.status === "RUNNING";
+          const completedAt = now();
+          const isTerminal =
+            patch.status === "CLEAR" ||
+            patch.status === "HIT" ||
+            patch.status === "REVIEW" ||
+            patch.status === "ERROR";
+          const runRecord: ScreeningRunRecord | null = isTerminal
+            ? {
+                runAt: completedAt,
+                status: patch.status!,
+                hitCount: patch.hitCount,
+                providers: patch.providers,
+                summary: patch.summary,
+                error: patch.error,
+              }
+            : null;
           return {
             entities: {
               ...s.entities,
-              [id]: { ...e, ...patch, completedAt: now() },
+              [id]: {
+                ...e,
+                ...patch,
+                completedAt,
+                history: runRecord
+                  ? [...(e.history ?? []), runRecord]
+                  : e.history,
+              },
             },
             runningCount: Math.max(0, s.runningCount - (wasRunning ? 1 : 0)),
           };
@@ -195,7 +234,7 @@ export const useScreeningQueueStore = create<ScreeningQueueState>()(
             hitCount === 0
               ? `No matches across ${providers.length} provider${providers.length === 1 ? "" : "s"}.`
               : `${hitCount} potential match${hitCount === 1 ? "" : "es"} · ${providers.join(", ")}`;
-          get().markResult(id, { status, hitCount, providers, summary });
+          get().markResult(id, { status, hitCount, providers, summary, error: undefined });
         } catch (err) {
           get().markResult(id, {
             status: "ERROR",
@@ -203,6 +242,26 @@ export const useScreeningQueueStore = create<ScreeningQueueState>()(
           });
         }
       },
+
+      retry: async (id) => {
+        const e = get().entities[id];
+        if (!e || e.status === "RUNNING") return;
+        // Prior run(s) already live in `history` (appended by markResult).
+        // Clear only the top-level error so the UI reflects the new attempt;
+        // findings from earlier runs remain queryable via `history`.
+        set((s) => {
+          const cur = s.entities[id];
+          if (!cur) return s;
+          return {
+            entities: {
+              ...s.entities,
+              [id]: { ...cur, error: undefined },
+            },
+          };
+        });
+        await get().runOne(id);
+      },
+
 
       runAllPending: async (concurrency = 3) => {
         const s = get();
