@@ -539,6 +539,8 @@ function CopilotOpsPage() {
                   type="button"
                   onClick={() => {
                     setBriefing(null);
+                    setLineage(null);
+                    setIbeProjection(null);
                     setStage("idle");
                     setText("");
                     inputRef.current?.focus();
