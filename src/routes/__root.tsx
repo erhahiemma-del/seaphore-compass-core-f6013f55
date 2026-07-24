@@ -16,7 +16,7 @@ import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { CopilotModal } from "@/components/copilot/CopilotModal";
 import { useCopilotShortcuts } from "@/hooks/use-copilot-shortcuts";
-import { installStaleChunkReload } from "@/lib/stale-chunk-reload";
+import { installStaleChunkReload, showStaleChunkNoticeIfAny } from "@/lib/stale-chunk-reload";
 
 if (typeof window !== "undefined") {
   installStaleChunkReload();
@@ -130,6 +130,11 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+
+  useEffect(() => {
+    showStaleChunkNoticeIfAny();
+  }, []);
+
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
