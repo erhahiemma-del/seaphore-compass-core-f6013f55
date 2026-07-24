@@ -249,6 +249,12 @@ function CopilotOpsPage() {
       setFollowUps(plan?.followUps ?? []);
       setStage("ready");
       session.appendCopilot(`Briefing: ${q}`, adapted.id);
+      // Sprint UX-005 — persist briefing into the Investigation Workspace.
+      try {
+        recordBriefingToWorkspace(adapted);
+      } catch (e) {
+        console.warn("[Workspace] failed to record briefing", e);
+      }
       await queryClient.invalidateQueries({ queryKey: ["intel", "briefings"] });
       return adapted;
     },
