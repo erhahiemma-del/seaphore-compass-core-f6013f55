@@ -97,6 +97,7 @@ export function EntitiesRequiringScreening({
   const remove = useScreeningQueueStore((s) => s.remove);
   const reset = useScreeningQueueStore((s) => s.reset);
   const runOne = useScreeningQueueStore((s) => s.runOne);
+  const retry = useScreeningQueueStore((s) => s.retry);
   const runAllPending = useScreeningQueueStore((s) => s.runAllPending);
   const clearCompleted = useScreeningQueueStore((s) => s.clearCompleted);
   const stats = useScreeningQueueStore(selectScreeningStats);
