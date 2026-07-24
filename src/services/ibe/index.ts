@@ -32,6 +32,7 @@ import { acknowledgement, coachingLines, naturaliseConfidence } from "./presence
 import { scanForNudges } from "./proactive";
 import { deriveHypotheses, readMissionHypotheses } from "./hypotheses";
 import { initiativeCloser, initiativeQuestions } from "./initiative";
+import { enforceResponseContract, type ResponseContract } from "./response-contract";
 import type {
   IbeContext,
   IbeHypothesis,
@@ -47,6 +48,7 @@ export type {
   IbeThought,
   ProactiveNudge,
 } from "./types";
+export type { ResponseContract, ResponseContractCheck, ResponseContractStep } from "./response-contract";
 
 interface EnhanceInput {
   query: string;
