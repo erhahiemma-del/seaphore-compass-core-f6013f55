@@ -352,6 +352,13 @@ export function buildComplianceReportPdf(input: ComplianceReportInput): { pdf: j
   drawFooter(pdf, cursor.page);
 
   const filename = safeFilename();
+  return { pdf, filename };
+}
+
+/** Build the compliance report PDF and trigger a browser download. */
+export function exportComplianceReport(input: ComplianceReportInput): string {
+  const { pdf, filename } = buildComplianceReportPdf(input);
   pdf.save(filename);
   return filename;
 }
+
