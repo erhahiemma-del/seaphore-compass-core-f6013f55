@@ -18,6 +18,7 @@
  * operational briefing OIE already produces.
  */
 import type { HumanResponse, OIEResult } from "@/services/oie/types";
+import type { ResponseContract } from "./response-contract";
 import type { MissionContext } from "@/stores/mission-context.store";
 
 /** How the Copilot speaks to the current officer. */
@@ -104,5 +105,7 @@ export type IbeResult = OIEResult & {
     closer: string;
     /** The (possibly rewritten) HumanResponse for the officer. */
     humanResponse?: HumanResponse;
+    /** Nine-step Response Contract audit for this turn. */
+    contract?: ResponseContract;
   };
 };
