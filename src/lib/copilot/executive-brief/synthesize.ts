@@ -279,8 +279,8 @@ export function buildKpiCards(
   kpis.push({
     key: "investigation",
     label: "Active Investigation",
-    value: ibe?.mission ? "Open" : "None",
-    tone: ibe?.mission ? "warning" : "neutral",
+    value: ibe?.stage && ibe.stage !== "completed" ? "Open" : "None",
+    tone: ibe?.stage && ibe.stage !== "completed" ? "warning" : "neutral",
   });
 
   if (impact) {
