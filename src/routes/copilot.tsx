@@ -826,6 +826,28 @@ function CopilotOpsPage() {
   );
 }
 
+/* ---------- Executive Briefing wrapper ---------- */
+
+function ExecutiveBriefingView({
+  briefing,
+  humanResponse,
+  ibe,
+  followUps,
+  onFollowUp,
+}: {
+  briefing: AdaptiveBriefingData;
+  humanResponse: HumanResponse | null;
+  ibe: NonNullable<IbeResult["ibe"]> | null;
+  followUps: string[];
+  onFollowUp: (q: string) => void;
+}) {
+  const brief = useMemo(
+    () => synthesizeExecutiveBrief({ briefing, humanResponse, ibe, followUps }),
+    [briefing, humanResponse, ibe, followUps],
+  );
+  return <ExecutiveBriefing brief={brief} onFollowUp={onFollowUp} />;
+}
+
 
 function stageIndex(s: Stage): number {
   if (s === "classifying") return 0;
