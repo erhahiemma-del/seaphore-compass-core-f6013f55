@@ -124,6 +124,7 @@ function FollowUpCommands({
 export function AdaptiveBriefing({
   briefing,
   missionType,
+  lineage,
   onOverride,
   onEntityOpen,
   onEvidenceOpen,
