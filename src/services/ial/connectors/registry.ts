@@ -9,7 +9,7 @@
  * `ConnectorInterface` into an IAL `Connector` and registers it here.
  */
 import type { ConnectorId, EntityKind } from "../types";
-import type { Connector } from "./base";
+import type { Connector, ConnectorCapability } from "./base";
 
 export class ConnectorRegistry {
   private readonly items = new Map<ConnectorId, Connector>();
