@@ -31,6 +31,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { IntelMap, type IntelMapEntity } from "@/components/intelligence/IntelMap";
+import { EntitiesRequiringScreening } from "@/components/compliance/EntitiesRequiringScreening";
 import { PORTS, VESSELS, vesselById } from "@/lib/intel-centre-data";
 import { cn } from "@/lib/utils";
 
