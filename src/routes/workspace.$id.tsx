@@ -23,6 +23,7 @@ import {
   Trash2,
   Wand2,
   XCircle,
+  ChevronRight,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
