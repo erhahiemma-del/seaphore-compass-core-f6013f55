@@ -18,6 +18,7 @@
  */
 import { AlertTriangle, CheckCircle2, Circle, MinusCircle, ShieldCheck } from "lucide-react";
 import { SectionShell } from "./primitives";
+import type { BriefingProfile, InvestigationTask } from "./profiles";
 import type { AdaptiveBriefing } from "./types";
 
 /* ─────────────── helpers ─────────────── */
@@ -80,14 +81,16 @@ function confidenceReason(b: AdaptiveBriefing): string[] {
 }
 
 /** Recommended next operational action (never uncertainty). */
-function operationalRecommendation(b: AdaptiveBriefing): string {
+function operationalRecommendation(b: AdaptiveBriefing, profile?: BriefingProfile): string {
+  const custom = profile?.recommendation?.(b);
+  if (custom) return custom;
   if (b.decisionRequired) return "Escalate for manual investigation.";
   const tier = b.classification.tier;
   const strength = b.classification.evidenceStrength;
   if (isInsufficient(b)) return "Continue evidence collection before making a decision.";
   if (tier === "high" && strength === "strong") return "Proceed with normal operations.";
   if (tier === "low" || strength === "weak") return "Suspend transaction pending verification.";
-  return "Initiate compliance review.";
+  return profile?.defaultRecommendation ?? "Initiate compliance review.";
 }
 
 /* ─────────────── Investigation Progress ─────────────── */
@@ -110,7 +113,7 @@ const INVESTIGATION_TASKS: ProgressItem[] = [
   { key: "weather", label: "Weather / conditions", match: /weather|copernicus|marine\s*weather/i },
 ];
 
-function computeProgress(b: AdaptiveBriefing) {
+function computeProgress(b: AdaptiveBriefing, tasks: InvestigationTask[]) {
   const haystack = [
     ...(b.evidence?.map((e) => e.source) ?? []),
     ...(b.evidenceSources?.detail?.map((d) => d.name) ?? []),
@@ -118,9 +121,9 @@ function computeProgress(b: AdaptiveBriefing) {
   ]
     .join(" | ")
     .toLowerCase();
-  const completed: ProgressItem[] = [];
-  const pending: ProgressItem[] = [];
-  for (const t of INVESTIGATION_TASKS) {
+  const completed: InvestigationTask[] = [];
+  const pending: InvestigationTask[] = [];
+  for (const t of tasks) {
     if (t.match.test(haystack)) completed.push(t);
     else pending.push(t);
   }
@@ -153,16 +156,27 @@ function computeScreening(b: AdaptiveBriefing) {
 
 /* ─────────────── Component ─────────────── */
 
-export function OfficerDecisionHeader({ briefing }: { briefing: AdaptiveBriefing }) {
+export function OfficerDecisionHeader({
+  briefing,
+  profile,
+}: {
+  briefing: AdaptiveBriefing;
+  profile?: BriefingProfile;
+}) {
   const assessment = synthesiseAssessment(briefing);
-  const recommendation = operationalRecommendation(briefing);
-  const reasons = confidenceReason(briefing);
+  const recommendation = operationalRecommendation(briefing, profile);
+  const baseReasons = confidenceReason(briefing);
+  const reasons =
+    profile && profile.confidenceFactors.length > 0
+      ? [...baseReasons, ...profile.confidenceFactors.map((f) => `Factor: ${f}`)].slice(0, 6)
+      : baseReasons;
   const completeness = briefing.evidenceSources && briefing.evidenceSources.queried > 0
     ? briefing.evidenceSources.responded / briefing.evidenceSources.queried
     : 0;
-  const { completed, pending } = computeProgress(briefing);
-  const totalTasks = INVESTIGATION_TASKS.length;
-  const progressPct = pct(completed.length / totalTasks);
+  const tasks = profile?.investigationTasks ?? INVESTIGATION_TASKS;
+  const { completed, pending } = computeProgress(briefing, tasks);
+  const totalTasks = tasks.length;
+  const progressPct = totalTasks > 0 ? pct(completed.length / totalTasks) : 0;
   const screening = computeScreening(briefing);
   const tierCls = confidenceTone(briefing.classification.tier);
   const tierLabel = briefing.classification.tier.toUpperCase();

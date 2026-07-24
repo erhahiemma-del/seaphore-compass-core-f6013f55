@@ -120,6 +120,13 @@ export interface AdaptiveBriefing {
   id: string;
   query: string;
   classification: Classification;
+  /**
+   * Optional mission classifier hint. When present, the Adaptive
+   * Briefing Renderer uses it to pick the matching profile in the
+   * Adaptive Intelligence Briefing Engine (AIBE). When absent, the
+   * renderer auto-detects the mission from the briefing content.
+   */
+  missionType?: string;
   executive?: { text: string };
   criticalFindings?: CriticalFinding[];
   evidence?: EvidenceCardData[];
