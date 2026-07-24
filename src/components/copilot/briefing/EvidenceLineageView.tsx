@@ -197,13 +197,11 @@ export function EvidenceLineageView({ trace }: { trace: LineageTrace }) {
 
   return (
     <SectionShell
-      title={
-        <span className="flex items-center gap-2">
-          <GitBranch className="h-3.5 w-3.5" />
-          Evidence Lineage
-          <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-            {recCount} recommendation{recCount === 1 ? "" : "s"}
-          </span>
+      title="Evidence Lineage"
+      icon={<GitBranch className="h-3.5 w-3.5" />}
+      actions={
+        <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+          {recCount} recommendation{recCount === 1 ? "" : "s"}
         </span>
       }
     >
