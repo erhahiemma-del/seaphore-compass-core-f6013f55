@@ -41,6 +41,7 @@ import { Route as InvestigateIdRouteImport } from './routes/investigate.$id'
 import { Route as EntityIdRouteImport } from './routes/entity.$id'
 import { Route as DecideQueueRouteImport } from './routes/decide.queue'
 import { Route as DecideIdRouteImport } from './routes/decide.$id'
+import { Route as AdminProjectionContractRouteImport } from './routes/admin.projection-contract'
 import { Route as AdminOsintRouteImport } from './routes/admin.osint'
 import { Route as ApiSessionIdRouteImport } from './routes/api/session/$id'
 import { Route as ApiRelationshipIdRouteImport } from './routes/api/relationship/$id'
@@ -211,6 +212,11 @@ const DecideIdRoute = DecideIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => DecideRoute,
 } as any)
+const AdminProjectionContractRoute = AdminProjectionContractRouteImport.update({
+  id: '/admin/projection-contract',
+  path: '/admin/projection-contract',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminOsintRoute = AdminOsintRouteImport.update({
   id: '/admin/osint',
   path: '/admin/osint',
@@ -278,6 +284,7 @@ export interface FileRoutesByFullPath {
   '/share': typeof ShareRouteWithChildren
   '/vessel': typeof VesselRoute
   '/admin/osint': typeof AdminOsintRoute
+  '/admin/projection-contract': typeof AdminProjectionContractRoute
   '/decide/$id': typeof DecideIdRoute
   '/decide/queue': typeof DecideQueueRoute
   '/entity/$id': typeof EntityIdRoute
@@ -318,6 +325,7 @@ export interface FileRoutesByTo {
   '/revenue': typeof RevenueRoute
   '/vessel': typeof VesselRoute
   '/admin/osint': typeof AdminOsintRoute
+  '/admin/projection-contract': typeof AdminProjectionContractRoute
   '/decide/$id': typeof DecideIdRoute
   '/decide/queue': typeof DecideQueueRoute
   '/entity/$id': typeof EntityIdRoute
@@ -362,6 +370,7 @@ export interface FileRoutesById {
   '/share': typeof ShareRouteWithChildren
   '/vessel': typeof VesselRoute
   '/admin/osint': typeof AdminOsintRoute
+  '/admin/projection-contract': typeof AdminProjectionContractRoute
   '/decide/$id': typeof DecideIdRoute
   '/decide/queue': typeof DecideQueueRoute
   '/entity/$id': typeof EntityIdRoute
@@ -407,6 +416,7 @@ export interface FileRouteTypes {
     | '/share'
     | '/vessel'
     | '/admin/osint'
+    | '/admin/projection-contract'
     | '/decide/$id'
     | '/decide/queue'
     | '/entity/$id'
@@ -447,6 +457,7 @@ export interface FileRouteTypes {
     | '/revenue'
     | '/vessel'
     | '/admin/osint'
+    | '/admin/projection-contract'
     | '/decide/$id'
     | '/decide/queue'
     | '/entity/$id'
@@ -490,6 +501,7 @@ export interface FileRouteTypes {
     | '/share'
     | '/vessel'
     | '/admin/osint'
+    | '/admin/projection-contract'
     | '/decide/$id'
     | '/decide/queue'
     | '/entity/$id'
@@ -534,6 +546,7 @@ export interface RootRouteChildren {
   ShareRoute: typeof ShareRouteWithChildren
   VesselRoute: typeof VesselRoute
   AdminOsintRoute: typeof AdminOsintRoute
+  AdminProjectionContractRoute: typeof AdminProjectionContractRoute
   EntityIdRoute: typeof EntityIdRoute
   WorkspaceIdRoute: typeof WorkspaceIdRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -774,6 +787,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DecideIdRouteImport
       parentRoute: typeof DecideRoute
     }
+    '/admin/projection-contract': {
+      id: '/admin/projection-contract'
+      path: '/admin/projection-contract'
+      fullPath: '/admin/projection-contract'
+      preLoaderRoute: typeof AdminProjectionContractRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/osint': {
       id: '/admin/osint'
       path: '/admin/osint'
@@ -906,6 +926,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShareRoute: ShareRouteWithChildren,
   VesselRoute: VesselRoute,
   AdminOsintRoute: AdminOsintRoute,
+  AdminProjectionContractRoute: AdminProjectionContractRoute,
   EntityIdRoute: EntityIdRoute,
   WorkspaceIdRoute: WorkspaceIdRoute,
   AdminIndexRoute: AdminIndexRoute,
