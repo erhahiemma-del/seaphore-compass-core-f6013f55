@@ -320,6 +320,8 @@ function EvidencePanel({ w }: { w: InvestigationWorkspace }) {
         <div className="rounded border border-dashed p-3 text-center text-[11px] text-muted-foreground">
           No {cat.toLowerCase()} evidence.
         </div>
+      ) : cat === "COLLECTED" ? (
+        <SupportingEvidenceGroups items={items} onMove={(id, next) => move(w.id, id, next)} />
       ) : (
         <ul className="space-y-1.5">
           {items.map((e) => (
@@ -349,6 +351,102 @@ function EvidencePanel({ w }: { w: InvestigationWorkspace }) {
         </ul>
       )}
     </Panel>
+  );
+}
+
+// Supporting evidence — collected sources expand into citation lists.
+function SupportingEvidenceGroups({
+  items,
+  onMove,
+}: {
+  items: WorkspaceEvidence[];
+  onMove: (id: string, next: EvidenceCategory) => void;
+}) {
+  const groups = useMemo(() => {
+    const map = new Map<string, WorkspaceEvidence[]>();
+    for (const it of items) {
+      const key = it.source || "Unattributed";
+      const bucket = map.get(key) ?? [];
+      bucket.push(it);
+      map.set(key, bucket);
+    }
+    return Array.from(map.entries()).sort((a, b) => b[1].length - a[1].length);
+  }, [items]);
+
+  const [open, setOpen] = useState<Record<string, boolean>>(() =>
+    groups.length > 0 ? { [groups[0][0]]: true } : {},
+  );
+
+  return (
+    <div className="space-y-1.5">
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+        Supporting evidence · {groups.length} source{groups.length === 1 ? "" : "s"}
+      </div>
+      {groups.map(([source, citations]) => {
+        const isOpen = !!open[source];
+        const grades = Array.from(new Set(citations.map((c) => c.grade).filter(Boolean))) as string[];
+        return (
+          <div key={source} className="rounded border">
+            <button
+              type="button"
+              onClick={() => setOpen((s) => ({ ...s, [source]: !isOpen }))}
+              className="flex w-full items-center gap-2 rounded-t px-2 py-1.5 text-left text-xs hover:bg-accent"
+              aria-expanded={isOpen}
+            >
+              <ChevronRight
+                className={cn("h-3.5 w-3.5 shrink-0 transition-transform", isOpen && "rotate-90")}
+              />
+              <span className="min-w-0 flex-1 truncate font-medium">{source}</span>
+              <span className="rounded-full border bg-muted/40 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                {citations.length} citation{citations.length === 1 ? "" : "s"}
+              </span>
+              {grades.length > 0 ? (
+                <span className="hidden text-[10px] text-muted-foreground sm:inline">
+                  {grades.slice(0, 2).join(" · ")}
+                </span>
+              ) : null}
+            </button>
+            {isOpen ? (
+              <ol className="divide-y border-t">
+                {citations.map((c, idx) => (
+                  <li key={c.id} className="flex items-start gap-2 px-2 py-1.5 text-xs">
+                    <span className="mt-0.5 w-5 shrink-0 text-right font-mono text-[10px] text-muted-foreground">
+                      [{idx + 1}]
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-medium">{c.title}</div>
+                      <div className="mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
+                        {c.grade ? <span>{c.grade}</span> : null}
+                        <span>{new Date(c.collectedAt).toLocaleString()}</span>
+                        {c.entityName ? <span>· {c.entityName}</span> : null}
+                        {c.hash ? (
+                          <span className="font-mono" title={c.hash}>
+                            · sha:{c.hash.slice(0, 8)}
+                          </span>
+                        ) : null}
+                      </div>
+                      {c.summary ? (
+                        <div className="mt-1 text-[11px] text-muted-foreground">{c.summary}</div>
+                      ) : null}
+                    </div>
+                    <select
+                      value={c.category}
+                      onChange={(ev) => onMove(c.id, ev.target.value as EvidenceCategory)}
+                      className="rounded border bg-background px-1 py-0.5 text-[10px]"
+                      aria-label="Move citation"
+                    >
+                      {(["COLLECTED", "PENDING", "CONFLICTING", "REJECTED"] as EvidenceCategory[]).map((k) => (
+                        <option key={k}>{k}</option>
+                      ))}
+                    </select>
+                  </li>
+                ))}
+              </ol>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
