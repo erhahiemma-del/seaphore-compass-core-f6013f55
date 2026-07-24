@@ -15,9 +15,9 @@
  */
 import type {
   AdaptiveBriefing as AdaptiveBriefingData,
-  EvidenceGrade,
   EvidenceCitation as UIEvidenceCitation,
-} from "@/components/copilot/briefing";
+  EvidenceGrade,
+} from "@/components/copilot/briefing/types";
 import type { HumanResponse, EvidenceCitation as OIECitation } from "@/services/oie/types";
 import type { IbeHypothesis } from "@/services/ibe/types";
 import type { MissionContext } from "@/stores/mission-context.store";
