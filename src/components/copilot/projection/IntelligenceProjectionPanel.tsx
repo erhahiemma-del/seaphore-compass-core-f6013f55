@@ -96,7 +96,7 @@ export function IntelligenceProjectionPanel({
     const id = s.activeId;
     if (!id) return 0;
     const inv = s.investigations[id];
-    return inv?.artefacts?.length ?? 0;
+    return inv?.evidence?.length ?? 0;
   });
 
   // Nothing to project yet — remain silent, per Golden Rule (silence is
