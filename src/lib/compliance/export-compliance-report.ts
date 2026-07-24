@@ -98,6 +98,8 @@ interface Cursor {
   page: number;
   /** true while we're inside the Evidence Summary section (drives continuation title). */
   inEvidence: boolean;
+  /** Header metadata rendered on every page (workspace ID + generation time). */
+  headerMeta: HeaderMeta;
 }
 
 function setColor(pdf: jsPDF, kind: "text" | "draw" | "fill", rgb: readonly [number, number, number]) {
@@ -112,10 +114,21 @@ function pageH(pdf: jsPDF) { return pdf.internal.pageSize.getHeight(); }
 function usableWidth(pdf: jsPDF) { return pageW(pdf) - MARGIN_X * 2; }
 function usableHeight(pdf: jsPDF) { return pageH(pdf) - MARGIN_TOP - MARGIN_BOTTOM; }
 
-function drawHeader(pdf: jsPDF) {
+interface HeaderMeta {
+  workspaceId?: string;
+  generatedAt: Date;
+}
+
+/** Height of the navy header band. Widens when we have workspace metadata to display. */
+function headerBandHeight(meta: HeaderMeta): number {
+  return meta.workspaceId ? 40 : 28;
+}
+
+function drawHeader(pdf: jsPDF, meta: HeaderMeta) {
   const w = pageW(pdf);
+  const bandH = headerBandHeight(meta);
   setColor(pdf, "fill", COLORS.navy);
-  pdf.rect(0, 0, w, 28, "F");
+  pdf.rect(0, 0, w, bandH, "F");
   setColor(pdf, "text", [255, 255, 255]);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(10);
@@ -123,6 +136,14 @@ function drawHeader(pdf: jsPDF) {
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(8.5);
   pdf.text("Sanctions screening · Officer briefing", w - MARGIN_X, 18, { align: "right" });
+
+  // Second line: workspace ID (left) + generated timestamp (right).
+  pdf.setFontSize(7.5);
+  const stamp = `Generated ${meta.generatedAt.toISOString()}`;
+  if (meta.workspaceId) {
+    pdf.text(`Workspace ${meta.workspaceId}`, MARGIN_X, 33);
+    pdf.text(stamp, w - MARGIN_X, 33, { align: "right" });
+  }
 }
 
 /** Draw the continuation title used at the top of new pages inside Evidence Summary. */
@@ -150,7 +171,7 @@ function ensureSpace(pdf: jsPDF, cursor: Cursor, needed: number) {
   pdf.addPage();
   cursor.page += 1;
   cursor.y = MARGIN_TOP;
-  drawHeader(pdf);
+  drawHeader(pdf, cursor.headerMeta);
   if (cursor.inEvidence) drawEvidenceContinuation(pdf, cursor);
 }
 
@@ -318,6 +339,10 @@ export interface ComplianceReportInput {
   officer?: string;
   /** Optional free-text mission or investigation context. */
   context?: string;
+  /** Active Investigation Workspace ID; surfaced in the report header band. */
+  workspaceId?: string;
+  /** Overrides the generation timestamp (defaults to `new Date()`). Useful for tests. */
+  generatedAt?: Date;
 }
 
 /**
@@ -327,10 +352,16 @@ export interface ComplianceReportInput {
 export function buildComplianceReportPdf(
   input: ComplianceReportInput,
 ): { pdf: jsPDF; filename: string; layout: LayoutScale["key"] } {
-  const { rows, officer, context } = input;
+  const { rows, officer, context, workspaceId, generatedAt } = input;
   const pdf = new jsPDF({ unit: "pt", format: "a4" });
-  const cursor: Cursor = { y: MARGIN_TOP, page: 1, inEvidence: false };
-  drawHeader(pdf);
+  const headerMeta: HeaderMeta = {
+    workspaceId,
+    generatedAt: generatedAt ?? new Date(),
+  };
+  // Push the title block below the (possibly taller) header band.
+  const startY = Math.max(MARGIN_TOP, headerBandHeight(headerMeta) + 20);
+  const cursor: Cursor = { y: startY, page: 1, inEvidence: false, headerMeta };
+  drawHeader(pdf, headerMeta);
 
   const scale = chooseLayout(pdf, rows);
 
@@ -344,7 +375,10 @@ export function buildComplianceReportPdf(
   setColor(pdf, "text", COLORS.muted);
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(9.5);
-  pdf.text(`Generated ${new Date().toUTCString()}`, MARGIN_X, cursor.y);
+  const stampLine =
+    `Generated ${headerMeta.generatedAt.toUTCString()}` +
+    (workspaceId ? `  ·  Investigation Workspace ${workspaceId}` : "");
+  pdf.text(stampLine, MARGIN_X, cursor.y);
   cursor.y += 14;
 
   const posture = computePosture(rows);
