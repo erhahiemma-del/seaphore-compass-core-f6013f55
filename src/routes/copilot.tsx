@@ -652,13 +652,27 @@ function CopilotOpsPage() {
                       mission={activeMission}
                       briefingId={ibeProjection?.briefingId}
                     />
-                    <AdaptiveBriefing
+                    <ExecutiveBriefingView
                       briefing={briefing}
-                      lineage={lineage}
-                      onOverride={handleOverride}
-                      onGapRequest={(q) => handleSubmit(q)}
-                      onNextQuestion={(q) => handleSubmit(q)}
+                      humanResponse={ibeProjection?.humanResponse ?? null}
+                      ibe={ibeProjection?.ibe ?? null}
+                      followUps={followUps}
+                      onFollowUp={(q) => handleSubmit(q)}
                     />
+                    <details className="mt-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-[12px] text-slate-700 open:shadow-sm">
+                      <summary className="cursor-pointer font-medium text-slate-800">
+                        Analyst view — full adaptive briefing
+                      </summary>
+                      <div className="mt-3">
+                        <AdaptiveBriefing
+                          briefing={briefing}
+                          lineage={lineage}
+                          onOverride={handleOverride}
+                          onGapRequest={(q) => handleSubmit(q)}
+                          onNextQuestion={(q) => handleSubmit(q)}
+                        />
+                      </div>
+                    </details>
                   </>
                 ) : null}
 
