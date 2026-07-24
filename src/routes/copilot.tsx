@@ -618,8 +618,16 @@ function CopilotOpsPage() {
                   <VesselSnapshot />
                   <RiskOverview />
                   <OwnershipGraph />
-                  <QuickActions />
+                  <CopilotCommandsPanel
+                    onRun={handleSubmit}
+                    vessel={context?.label ?? "MV Ocean Pearl"}
+                    investigation={activeInvestigation}
+                    hasIntelligencePackage={Boolean(briefing)}
+                    role="officer"
+                    disabled={mutation.isPending}
+                  />
                 </div>
+
               </div>
             )}
           </aside>
