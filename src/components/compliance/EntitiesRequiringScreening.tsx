@@ -16,7 +16,10 @@ import {
   Play,
   X,
   CircleAlert,
+  FileDown,
 } from "lucide-react";
+
+import { exportComplianceReport } from "@/lib/compliance/export-compliance-report";
 
 import { cn } from "@/lib/utils";
 import {
