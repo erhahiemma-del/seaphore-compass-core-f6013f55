@@ -15,7 +15,7 @@ import { ConnectorRegistry } from "./connectors/registry";
 import { HealthTracker } from "./health";
 import { buildEvidencePackage } from "./package-builder";
 import { stableHash } from "./hash";
-import type { Connector } from "./connectors/base";
+import type { Connector, ConnectorCapability } from "./connectors/base";
 import type {
   AcquisitionQuery,
   ConnectorHealth,
