@@ -339,6 +339,10 @@ export interface ComplianceReportInput {
   officer?: string;
   /** Optional free-text mission or investigation context. */
   context?: string;
+  /** Active Investigation Workspace ID; surfaced in the report header band. */
+  workspaceId?: string;
+  /** Overrides the generation timestamp (defaults to `new Date()`). Useful for tests. */
+  generatedAt?: Date;
 }
 
 /**
@@ -348,10 +352,16 @@ export interface ComplianceReportInput {
 export function buildComplianceReportPdf(
   input: ComplianceReportInput,
 ): { pdf: jsPDF; filename: string; layout: LayoutScale["key"] } {
-  const { rows, officer, context } = input;
+  const { rows, officer, context, workspaceId, generatedAt } = input;
   const pdf = new jsPDF({ unit: "pt", format: "a4" });
-  const cursor: Cursor = { y: MARGIN_TOP, page: 1, inEvidence: false };
-  drawHeader(pdf);
+  const headerMeta: HeaderMeta = {
+    workspaceId,
+    generatedAt: generatedAt ?? new Date(),
+  };
+  // Push the title block below the (possibly taller) header band.
+  const startY = Math.max(MARGIN_TOP, headerBandHeight(headerMeta) + 20);
+  const cursor: Cursor = { y: startY, page: 1, inEvidence: false, headerMeta };
+  drawHeader(pdf, headerMeta);
 
   const scale = chooseLayout(pdf, rows);
 
@@ -365,7 +375,10 @@ export function buildComplianceReportPdf(
   setColor(pdf, "text", COLORS.muted);
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(9.5);
-  pdf.text(`Generated ${new Date().toUTCString()}`, MARGIN_X, cursor.y);
+  const stampLine =
+    `Generated ${headerMeta.generatedAt.toUTCString()}` +
+    (workspaceId ? `  ·  Investigation Workspace ${workspaceId}` : "");
+  pdf.text(stampLine, MARGIN_X, cursor.y);
   cursor.y += 14;
 
   const posture = computePosture(rows);
