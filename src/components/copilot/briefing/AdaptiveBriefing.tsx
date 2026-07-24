@@ -13,6 +13,7 @@
 import { useMemo, useState } from "react";
 import { EvidenceCard } from "./EvidenceCard";
 import { EntityCard } from "./EntityCard";
+import { EvidenceLineageView } from "./EvidenceLineageView";
 import { OfficerDecisionHeader } from "./OfficerDecisionHeader";
 import { PatternCard } from "./PatternCard";
 import { SectionShell, TierBadge } from "./primitives";
@@ -43,11 +44,14 @@ import type {
   OverrideDecision,
   OverrideSubmission,
 } from "./types";
+import type { LineageTrace } from "@/lib/lineage/types";
 
 export interface AdaptiveBriefingProps {
   briefing: AdaptiveBriefingData;
   /** Optional explicit profile override; auto-detected when omitted. */
   missionType?: MissionBriefingType;
+  /** Evidence lineage trace for this briefing. Rendered as its own section. */
+  lineage?: LineageTrace | null;
   onOverride?: (submission: OverrideSubmission) => void | Promise<void>;
   onEntityOpen?: (entity: EntityCardData) => void;
   onEvidenceOpen?: (evidence: EvidenceCardData) => void;
@@ -120,6 +124,7 @@ function FollowUpCommands({
 export function AdaptiveBriefing({
   briefing,
   missionType,
+  lineage,
   onOverride,
   onEntityOpen,
   onEvidenceOpen,
@@ -266,6 +271,7 @@ export function AdaptiveBriefing({
           if (!node) return null;
           return <div key={slot}>{node}</div>;
         })}
+        {lineage ? <EvidenceLineageView trace={lineage} /> : null}
       </div>
 
       <footer className="border-t px-6 py-3 text-center text-[11px] uppercase tracking-wider text-muted-foreground">

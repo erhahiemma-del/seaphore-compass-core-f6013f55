@@ -63,6 +63,8 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useCopilotStore } from "@/stores/copilot.store";
 import { useIsDevBypass } from "@/stores/dev-mode.store";
 import { useMissionContextStore } from "@/stores/mission-context.store";
+import { useWorkspaceStore } from "@/stores/workspace.store";
+import { buildLineageTrace } from "@/lib/lineage/build-lineage";
 import { useCopilotSession } from "@/hooks/use-copilot-session";
 import {
   COPILOT_COMMANDS,
@@ -160,6 +162,7 @@ function CopilotOpsPage() {
   const [text, setText] = useState("");
   const [stage, setStage] = useState<Stage>("idle");
   const [briefing, setBriefing] = useState<AdaptiveBriefingData | null>(null);
+  const [lineage, setLineage] = useState<import("@/lib/lineage/types").LineageTrace | null>(null);
   const [clarify, setClarify] = useState<Clarification | null>(null);
   const [followUps, setFollowUps] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -271,6 +274,7 @@ function CopilotOpsPage() {
       if (result.kind === "clarify") {
         setClarify(result.clarification);
         setBriefing(null);
+        setLineage(null);
         setFollowUps([]);
         setStage("ready");
         return null;
@@ -301,6 +305,28 @@ function CopilotOpsPage() {
       );
       setStage("rendering");
       setBriefing(adapted);
+      // Assemble the Evidence Lineage Trace from existing artefacts (OIE
+      // citations, IBE hypotheses, mission context, workspace state). This
+      // projects backend intelligence into an officer-facing chain-of-custody.
+      try {
+        const wsState = useWorkspaceStore.getState();
+        const activeWs = wsState.activeId ? wsState.investigations[wsState.activeId] : null;
+        const humanResponse =
+          (result as { humanResponse?: import("@/services/oie/types").HumanResponse })
+            .humanResponse ?? result.ibe?.humanResponse;
+        setLineage(
+          buildLineageTrace({
+            briefing: adapted,
+            humanResponse,
+            hypotheses: result.ibe?.hypotheses,
+            mission: mission ?? null,
+            workspace: activeWs,
+          }),
+        );
+      } catch (e) {
+        console.warn("[Lineage] failed to build trace", e);
+        setLineage(null);
+      }
       const plan = (result as { plan?: { followUps?: string[] } }).plan;
       const ibeQuestions = result.ibe?.humanResponse?.suggestedNextQuestions;
       setFollowUps(ibeQuestions?.length ? ibeQuestions : plan?.followUps ?? []);
@@ -589,12 +615,13 @@ function CopilotOpsPage() {
                 ) : null}
 
                 {briefing ? (
-                  <AdaptiveBriefing
-                    briefing={briefing}
-                    onOverride={handleOverride}
-                    onGapRequest={(q) => handleSubmit(q)}
-                    onNextQuestion={(q) => handleSubmit(q)}
-                  />
+                <AdaptiveBriefing
+                  briefing={briefing}
+                  lineage={lineage}
+                  onOverride={handleOverride}
+                  onGapRequest={(q) => handleSubmit(q)}
+                  onNextQuestion={(q) => handleSubmit(q)}
+                />
                 ) : null}
 
                 {briefing && followUps.length > 0 ? (
