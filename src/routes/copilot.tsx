@@ -70,6 +70,7 @@ import {
   type CommandPermission,
 } from "@/services/copilot/commands/registry";
 import { routeCommand } from "@/services/copilot/commands/router";
+import { recordBriefingToWorkspace, recordOfficerTurn } from "@/services/workspace/derive";
 
 
 export const Route = createFileRoute("/copilot")({
@@ -247,6 +248,12 @@ function CopilotOpsPage() {
       setFollowUps(plan?.followUps ?? []);
       setStage("ready");
       session.appendCopilot(`Briefing: ${q}`, adapted.id);
+      // Sprint UX-005 — persist briefing into the Investigation Workspace.
+      try {
+        recordBriefingToWorkspace(adapted);
+      } catch (e) {
+        console.warn("[Workspace] failed to record briefing", e);
+      }
       await queryClient.invalidateQueries({ queryKey: ["intel", "briefings"] });
       return adapted;
     },
@@ -268,6 +275,12 @@ function CopilotOpsPage() {
       session.appendOfficer(clean);
     } catch (err) {
       console.warn("[Copilot] failed to log officer turn", err);
+    }
+    // Sprint UX-005 — record officer turn into the Investigation Workspace.
+    try {
+      recordOfficerTurn(clean);
+    } catch (err) {
+      console.warn("[Workspace] failed to record officer turn", err);
     }
     // Scroll the workspace so the officer sees streaming stages / new briefing
     // instead of the (now stale) previous briefing content above.
@@ -479,6 +492,13 @@ function CopilotOpsPage() {
                   >
                     <Plus className="h-3 w-3" /> New Discussion
                   </button>
+                  <Link
+                    to="/workspace"
+                    className="rounded-md border border-border px-2 py-1 text-[11px] font-medium text-foreground/80 hover:bg-accent"
+                    title="Open the Investigation Workspace — persistent evidence, hypotheses, tasks and decisions"
+                  >
+                    Workspace
+                  </Link>
                   <button className="rounded-md border border-border px-2 py-1 text-[11px] font-medium text-foreground/80 hover:bg-accent">
                     Change Context
                   </button>

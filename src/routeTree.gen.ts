@@ -28,10 +28,12 @@ import { Route as CargoRouteImport } from './routes/cargo'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AlertsRouteImport } from './routes/alerts'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as WorkspaceIndexRouteImport } from './routes/workspace.index'
 import { Route as ShareIndexRouteImport } from './routes/share.index'
 import { Route as InvestigateIndexRouteImport } from './routes/investigate.index'
 import { Route as DecideIndexRouteImport } from './routes/decide.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as WorkspaceIdRouteImport } from './routes/workspace.$id'
 import { Route as ShareQueueRouteImport } from './routes/share.queue'
 import { Route as ShareIdRouteImport } from './routes/share.$id'
 import { Route as InvestigateOpenRouteImport } from './routes/investigate.open'
@@ -144,6 +146,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WorkspaceIndexRoute = WorkspaceIndexRouteImport.update({
+  id: '/workspace/',
+  path: '/workspace/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShareIndexRoute = ShareIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -162,6 +169,11 @@ const DecideIndexRoute = DecideIndexRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkspaceIdRoute = WorkspaceIdRouteImport.update({
+  id: '/workspace/$id',
+  path: '/workspace/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ShareQueueRoute = ShareQueueRouteImport.update({
@@ -273,10 +285,12 @@ export interface FileRoutesByFullPath {
   '/investigate/open': typeof InvestigateOpenRoute
   '/share/$id': typeof ShareIdRoute
   '/share/queue': typeof ShareQueueRoute
+  '/workspace/$id': typeof WorkspaceIdRoute
   '/admin/': typeof AdminIndexRoute
   '/decide/': typeof DecideIndexRoute
   '/investigate/': typeof InvestigateIndexRoute
   '/share/': typeof ShareIndexRoute
+  '/workspace/': typeof WorkspaceIndexRoute
   '/api/copilot/query': typeof ApiCopilotQueryRoute
   '/api/entity/$id': typeof ApiEntityIdRoute
   '/api/evidence/$id': typeof ApiEvidenceIdRoute
@@ -311,10 +325,12 @@ export interface FileRoutesByTo {
   '/investigate/open': typeof InvestigateOpenRoute
   '/share/$id': typeof ShareIdRoute
   '/share/queue': typeof ShareQueueRoute
+  '/workspace/$id': typeof WorkspaceIdRoute
   '/admin': typeof AdminIndexRoute
   '/decide': typeof DecideIndexRoute
   '/investigate': typeof InvestigateIndexRoute
   '/share': typeof ShareIndexRoute
+  '/workspace': typeof WorkspaceIndexRoute
   '/api/copilot/query': typeof ApiCopilotQueryRoute
   '/api/entity/$id': typeof ApiEntityIdRoute
   '/api/evidence/$id': typeof ApiEvidenceIdRoute
@@ -353,10 +369,12 @@ export interface FileRoutesById {
   '/investigate/open': typeof InvestigateOpenRoute
   '/share/$id': typeof ShareIdRoute
   '/share/queue': typeof ShareQueueRoute
+  '/workspace/$id': typeof WorkspaceIdRoute
   '/admin/': typeof AdminIndexRoute
   '/decide/': typeof DecideIndexRoute
   '/investigate/': typeof InvestigateIndexRoute
   '/share/': typeof ShareIndexRoute
+  '/workspace/': typeof WorkspaceIndexRoute
   '/api/copilot/query': typeof ApiCopilotQueryRoute
   '/api/entity/$id': typeof ApiEntityIdRoute
   '/api/evidence/$id': typeof ApiEvidenceIdRoute
@@ -396,10 +414,12 @@ export interface FileRouteTypes {
     | '/investigate/open'
     | '/share/$id'
     | '/share/queue'
+    | '/workspace/$id'
     | '/admin/'
     | '/decide/'
     | '/investigate/'
     | '/share/'
+    | '/workspace/'
     | '/api/copilot/query'
     | '/api/entity/$id'
     | '/api/evidence/$id'
@@ -434,10 +454,12 @@ export interface FileRouteTypes {
     | '/investigate/open'
     | '/share/$id'
     | '/share/queue'
+    | '/workspace/$id'
     | '/admin'
     | '/decide'
     | '/investigate'
     | '/share'
+    | '/workspace'
     | '/api/copilot/query'
     | '/api/entity/$id'
     | '/api/evidence/$id'
@@ -475,10 +497,12 @@ export interface FileRouteTypes {
     | '/investigate/open'
     | '/share/$id'
     | '/share/queue'
+    | '/workspace/$id'
     | '/admin/'
     | '/decide/'
     | '/investigate/'
     | '/share/'
+    | '/workspace/'
     | '/api/copilot/query'
     | '/api/entity/$id'
     | '/api/evidence/$id'
@@ -511,7 +535,9 @@ export interface RootRouteChildren {
   VesselRoute: typeof VesselRoute
   AdminOsintRoute: typeof AdminOsintRoute
   EntityIdRoute: typeof EntityIdRoute
+  WorkspaceIdRoute: typeof WorkspaceIdRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  WorkspaceIndexRoute: typeof WorkspaceIndexRoute
   ApiCopilotQueryRoute: typeof ApiCopilotQueryRoute
   ApiEntityIdRoute: typeof ApiEntityIdRoute
   ApiEvidenceIdRoute: typeof ApiEvidenceIdRoute
@@ -657,6 +683,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/workspace/': {
+      id: '/workspace/'
+      path: '/workspace'
+      fullPath: '/workspace/'
+      preLoaderRoute: typeof WorkspaceIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/share/': {
       id: '/share/'
       path: '/'
@@ -683,6 +716,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workspace/$id': {
+      id: '/workspace/$id'
+      path: '/workspace/$id'
+      fullPath: '/workspace/$id'
+      preLoaderRoute: typeof WorkspaceIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/share/queue': {
@@ -867,7 +907,9 @@ const rootRouteChildren: RootRouteChildren = {
   VesselRoute: VesselRoute,
   AdminOsintRoute: AdminOsintRoute,
   EntityIdRoute: EntityIdRoute,
+  WorkspaceIdRoute: WorkspaceIdRoute,
   AdminIndexRoute: AdminIndexRoute,
+  WorkspaceIndexRoute: WorkspaceIndexRoute,
   ApiCopilotQueryRoute: ApiCopilotQueryRoute,
   ApiEntityIdRoute: ApiEntityIdRoute,
   ApiEvidenceIdRoute: ApiEvidenceIdRoute,
