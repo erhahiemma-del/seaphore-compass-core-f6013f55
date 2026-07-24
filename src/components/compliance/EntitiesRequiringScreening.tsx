@@ -121,7 +121,7 @@ export function EntitiesRequiringScreening({
       enqueue({
         name: ent.name,
         kind: (ent.type as ScreeningEntity["kind"]) ?? undefined,
-        origin: `workspace:${active.overview.title}`,
+        origin: `workspace:${active.title}`,
       });
     }
   }, [active, entities, enqueue, syncWithWorkspace]);
