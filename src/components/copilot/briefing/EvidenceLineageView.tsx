@@ -102,20 +102,22 @@ function RecommendationCard({ rec }: { rec: RecommendationLineage }) {
   const [open, setOpen] = useState(true);
   return (
     <div className="rounded-lg border border-border/60 bg-card">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-2 border-b border-border/60 px-3 py-2 text-left hover:bg-accent/40"
-        aria-expanded={open}
-      >
-        {open ? (
-          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-        ) : (
-          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-        )}
-        <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-foreground">
-          {rec.action}
-        </span>
+      <div className="flex items-center gap-2 border-b border-border/60 px-3 py-2">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex min-w-0 flex-1 items-center gap-2 text-left hover:opacity-80"
+          aria-expanded={open}
+        >
+          {open ? (
+            <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          ) : (
+            <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          )}
+          <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-foreground">
+            {rec.action}
+          </span>
+        </button>
         <ExplainableConfidenceChip
           confidenceBadge={rec.confidenceBadge}
           supporting={rec.supporting}
@@ -123,7 +125,7 @@ function RecommendationCard({ rec }: { rec: RecommendationLineage }) {
           size="sm"
           className="shrink-0"
         />
-      </button>
+      </div>
       {open && (
         <div className="space-y-4 px-3 py-3">
           {rec.rationale && (
