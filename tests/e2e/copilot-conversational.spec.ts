@@ -32,7 +32,12 @@ const FOLLOW_UPS_HEADER = /suggested next questions/i;
 // The immutable notice is emitted by the AdaptiveBriefing renderer. We
 // match the leading verb only so a punctuation drift (em-dash vs hyphen)
 // never breaks the assertion.
-const EXECUTIVE_SECTION = /officer decides/i;
+const CLARIFY_HEADER = /needs one detail/i;
+const FOLLOW_UPS_HEADER = /suggested next questions/i;
+// The AdaptiveBriefing renderer emits an "Executive Assessment" section
+// heading — used here as the "briefing has settled" signal. We avoid
+// matching the footer's "OFFICER DECIDES" tagline because it renders on
+// every page and would produce a false positive.
 const EXECUTIVE_SECTION = /executive assessment/i;
 
 async function activateDevBypass(page: Page) {
