@@ -1,5 +1,17 @@
 export { AdaptiveBriefing } from "./AdaptiveBriefing";
 export type { AdaptiveBriefingProps } from "./AdaptiveBriefing";
+export {
+  BRIEFING_PROFILES,
+  detectMissionType,
+  getProfile,
+} from "./profiles";
+export type {
+  BriefingProfile,
+  BriefingSlot,
+  FollowUpCommand,
+  KPI,
+  MissionBriefingType,
+} from "./profiles";
 export { EvidenceCard } from "./EvidenceCard";
 export { EntityCard } from "./EntityCard";
 export { PatternCard } from "./PatternCard";
