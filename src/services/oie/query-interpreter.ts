@@ -156,9 +156,23 @@ export function interpretQuery(raw: string, opts: InterpretOptions = {}): Interp
   const resolved = (opts.resolvedQuery ?? raw).trim();
   const domains = detectDomains(resolved);
   const entities = extractEntities(resolved);
-  // If pronoun resolution injected an entity, promote it to entities.
-  if (opts.anchor && !entities.some((e) => e.value.toLowerCase() === opts.anchor!.value.toLowerCase())) {
-    entities.unshift(opts.anchor);
+  // Carry the conversational anchor forward — but ONLY when the officer
+  // has not named a different subject in this turn. If the current query
+  // already mentions an entity of the anchor's category (vessel/company/
+  // port/imo/mmsi), the officer has switched subjects and the anchor
+  // must not be injected.
+  const anchor = opts.anchor;
+  const anchorCategoryPresent = (() => {
+    if (!anchor) return false;
+    const vesselKinds: EntityMention["type"][] = ["vessel", "imo", "mmsi"];
+    const isVesselKind = vesselKinds.includes(anchor.type);
+    return entities.some((e) =>
+      isVesselKind ? vesselKinds.includes(e.type) : e.type === anchor.type,
+    );
+  })();
+  const anchorInjected = Boolean(anchor && !anchorCategoryPresent);
+  if (anchor && anchorInjected) {
+    entities.unshift(anchor);
   }
   const { intent, ambiguous } = detectIntent(resolved, entities);
   const mode = intentToMode(intent);
@@ -167,7 +181,11 @@ export function interpretQuery(raw: string, opts: InterpretOptions = {}): Interp
     `Mode: ${mode}.`,
     `Domains: ${domains.join(", ")}.`,
     `Entities: ${entities.length > 0 ? entities.map((e) => `${e.type}=${e.value}`).join("; ") : "none"}.`,
-    opts.anchor ? `Anchor carried from context: ${opts.anchor.type}=${opts.anchor.value}.` : "",
+    anchor
+      ? anchorInjected
+        ? `Anchor carried from context: ${anchor.type}=${anchor.value}.`
+        : `Anchor superseded — officer named a new subject in this turn.`
+      : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -178,7 +196,7 @@ export function interpretQuery(raw: string, opts: InterpretOptions = {}): Interp
     mode,
     domains,
     entities,
-    anchor: opts.anchor,
+    anchor: anchorInjected ? anchor : undefined,
     reasoning,
     ambiguous,
   };
