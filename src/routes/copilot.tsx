@@ -277,6 +277,12 @@ function CopilotOpsPage() {
     } catch (err) {
       console.warn("[Copilot] failed to log officer turn", err);
     }
+    // Sprint UX-005 — record officer turn into the Investigation Workspace.
+    try {
+      recordOfficerTurn(clean);
+    } catch (err) {
+      console.warn("[Workspace] failed to record officer turn", err);
+    }
     // Scroll the workspace so the officer sees streaming stages / new briefing
     // instead of the (now stale) previous briefing content above.
     requestAnimationFrame(() => {
