@@ -111,12 +111,20 @@ export function AdaptiveBriefing({
       </header>
 
       <div className="space-y-6 p-6">
-        {briefing.executive && <ExecutiveAssessment text={briefing.executive.text} />}
+        {/* 1. Officer Decision Header — Executive Assessment, Recommendation,
+            Confidence w/ reason, Completeness, Progress, Screening. */}
+        <OfficerDecisionHeader briefing={briefing} />
 
+        {/* 2. Recommended Intelligence Collection (formerly Intelligence Gaps). */}
+        {nonEmpty(briefing.intelligenceGaps) && (
+          <IntelligenceGaps gaps={briefing.intelligenceGaps!} onRequest={onGapRequest} />
+        )}
+
+        {/* 3. Supporting evidence. */}
         {hasFindings && <CriticalFindings findings={briefing.criticalFindings!} />}
 
         {hasEvidence && (
-          <SectionShell title="Evidence">
+          <SectionShell title="Supporting Evidence">
             <div className="grid gap-3 md:grid-cols-2">
               {briefing.evidence!.map((e) => (
                 <EvidenceCard key={e.id} evidence={e} onOpen={onEvidenceOpen} />
@@ -153,10 +161,6 @@ export function AdaptiveBriefing({
           <CounterHypotheses list={briefing.counterHypotheses!} />
         )}
 
-        {nonEmpty(briefing.intelligenceGaps) && (
-          <IntelligenceGaps gaps={briefing.intelligenceGaps!} onRequest={onGapRequest} />
-        )}
-
         {briefing.decisionImpact && <DecisionImpact impact={briefing.decisionImpact} />}
 
         {briefing.decisionRequired && <DecisionRequired decision={briefing.decisionRequired} />}
@@ -177,6 +181,7 @@ export function AdaptiveBriefing({
           onJustificationChange={setJustification}
         />
 
+        {/* 9. Technical metadata — last. */}
         {showSources && <EvidenceSourcesPanel sources={briefing.evidenceSources!} />}
 
         {nonEmpty(briefing.nextQuestions) && (
