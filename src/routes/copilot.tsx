@@ -332,6 +332,22 @@ function CopilotOpsPage() {
         console.warn("[Lineage] failed to build trace", e);
         setLineage(null);
       }
+      // Sprint UX-007 — Intelligence Projection Framework. Expose the IBE
+      // internal state (stage, hypotheses, nudges, contract) as an
+      // officer-facing panel so nothing important happens silently.
+      try {
+        const humanResp =
+          (result as { humanResponse?: import("@/services/oie/types").HumanResponse })
+            .humanResponse ?? result.ibe?.humanResponse ?? null;
+        setIbeProjection({
+          ibe: result.ibe ?? null,
+          humanResponse: humanResp,
+          briefingId: adapted.id,
+        });
+      } catch (e) {
+        console.warn("[IPF] failed to project IBE", e);
+        setIbeProjection(null);
+      }
       const plan = (result as { plan?: { followUps?: string[] } }).plan;
       const ibeQuestions = result.ibe?.humanResponse?.suggestedNextQuestions;
       setFollowUps(ibeQuestions?.length ? ibeQuestions : plan?.followUps ?? []);
