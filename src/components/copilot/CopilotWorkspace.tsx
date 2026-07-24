@@ -14,8 +14,11 @@
  */
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, RotateCcw, Send } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Loader2, RotateCcw, Send, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+import { findAnchor } from "@/services/oie/conversation-resolver";
+import { extractEntities } from "@/services/oie/query-interpreter";
 
 import { AdaptiveBriefing } from "@/components/copilot/briefing";
 import type {
