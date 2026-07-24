@@ -257,6 +257,19 @@ export function CopilotWorkspace({
 
   const startingSuggestions = suggestions ?? DEFAULT_SUGGESTIONS;
 
+  // Derive the sticky conversational anchor from mission history so the
+  // officer always sees which vessel/company/port follow-ups will
+  // resolve against. Recomputes whenever a turn is appended.
+  const subjectAnchor = useMemo(() => {
+    const turns = session.history.map((h) => ({
+      role: h.role,
+      text: h.text,
+      ts: h.ts,
+      entities: extractEntities(h.text),
+    }));
+    return findAnchor(turns);
+  }, [session.history]);
+
   return (
     <div className={cn("flex flex-col gap-4", className)}>
       {showContextBar && context ? <ContextBar context={context} /> : null}
