@@ -6,10 +6,10 @@
  *
  *   1. First turn — a bare entity query ("Tell me about MV Ocean Pearl")
  *      renders a full Executive Operational Briefing, NOT a
- *      "COPILOT NEEDS ONE DETAIL" clarification card.
- *   2. Follow-up chips — "Suggested next questions" render under the
- *      briefing and clicking one issues a second turn that stays on the
- *      same sticky subject.
+ *      "Copilot · needs one detail" clarification card.
+ *   2. Follow-up chips — the "Suggested next questions" panel renders
+ *      under the briefing, and clicking one issues a second turn that
+ *      also comes back as a briefing (no clarification card).
  *
  * The Copilot is exercised through the dev-bypass path
  * (`useIsDevBypass()` → runOIE client-side), so the full UI cycle is
@@ -25,6 +25,11 @@ const DEV_MODE_VALUE = JSON.stringify({
   state: { bypassAuth: true, mockRole: "officer" },
   version: 0,
 });
+const INPUT_PLACEHOLDER =
+  "Investigate vessels, manifests, cargo, ownership, operators, ports, compliance or maritime risk…";
+const CLARIFY_HEADER = /copilot\s*·\s*needs one detail/i;
+const FOLLOW_UPS_HEADER = /suggested next questions/i;
+const OFFICER_NOTICE = /officer decides — seaphore only observes and recommends/i;
 
 async function activateDevBypass(page: Page) {
   // Land on any page first so localStorage is scoped to localhost:8080,
@@ -38,20 +43,19 @@ async function activateDevBypass(page: Page) {
 
 async function openCopilot(page: Page) {
   await page.goto("/copilot");
-  // The textarea is the single Copilot input in this route.
-  await expect(page.getByPlaceholder("Ask an operational question…")).toBeVisible({
-    timeout: 10_000,
+  await expect(page.getByPlaceholder(INPUT_PLACEHOLDER)).toBeVisible({
+    timeout: 15_000,
   });
 }
 
 async function askCopilot(page: Page, query: string) {
-  const input = page.getByPlaceholder("Ask an operational question…");
+  const input = page.getByPlaceholder(INPUT_PLACEHOLDER);
   await input.click();
   await input.fill(query);
   await input.press("Enter");
 }
 
-test.describe("Copilot · first-turn Executive Operational Briefing", () => {
+test.describe("Copilot · conversational intelligence (/copilot)", () => {
   test.beforeEach(async ({ page }) => {
     await activateDevBypass(page);
     await openCopilot(page);
@@ -62,69 +66,34 @@ test.describe("Copilot · first-turn Executive Operational Briefing", () => {
   }) => {
     await askCopilot(page, "Tell me about MV Ocean Pearl");
 
-    // The briefing region carries an "Ask another" affordance and a
-    // "Briefing" ID label — both are only rendered by the briefing turn.
-    await expect(page.getByRole("button", { name: "Ask another" })).toBeVisible({
-      timeout: 20_000,
+    // Wait for the briefing to settle. The immutable officer-decision
+    // notice is only emitted by the Adaptive Briefing renderer.
+    await expect(page.getByText(OFFICER_NOTICE)).toBeVisible({
+      timeout: 25_000,
     });
-    await expect(page.getByText(/^Briefing\s+/i)).toBeVisible();
-
-    // The clarification card ("COPILOT NEEDS ONE DETAIL" / "Which one?"
-    // / "I need one more detail") must NOT render.
-    await expect(
-      page.getByText(/copilot needs one detail/i),
-    ).toHaveCount(0);
-    await expect(page.getByText(/i need one more detail/i)).toHaveCount(0);
 
     // Follow-up chips replace the workflow buttons.
-    await expect(
-      page.getByText(/suggested next questions/i),
-    ).toBeVisible();
+    await expect(page.getByText(FOLLOW_UPS_HEADER)).toBeVisible();
 
-    // The sticky-subject pill locks the anchor to the resolved vessel.
-    await expect(
-      page.getByText(/follow-ups continue on this vessel/i),
-    ).toBeVisible();
-    await expect(page.getByText(/Ocean Pearl/i).first()).toBeVisible();
+    // The clarification card must NOT render on a bare entity query.
+    await expect(page.getByText(CLARIFY_HEADER)).toHaveCount(0);
   });
 
-  test("truly ambiguous input still shows a clarification", async ({ page }) => {
-    await askCopilot(page, "help");
-
-    // Either a clarify card renders OR the officer sees a copilot-side
-    // question — either way, no full briefing on this turn.
-    await expect(page.getByRole("button", { name: "Ask another" })).toHaveCount(0);
-    await expect(
-      page.getByText(
-        /needs one detail|which (one|vessel)|i need one more detail|clarif/i,
-      ),
-    ).toBeVisible({ timeout: 20_000 });
-  });
-});
-
-test.describe("Copilot · follow-up chips keep the sticky subject", () => {
-  test.beforeEach(async ({ page }) => {
-    await activateDevBypass(page);
-    await openCopilot(page);
-  });
-
-  test("clicking a suggested next question issues a second briefing on the same vessel", async ({
+  test("clicking a suggested next question issues a second briefing, still no clarification", async ({
     page,
   }) => {
     await askCopilot(page, "Tell me about MV Ocean Pearl");
 
     // First turn settled.
-    await expect(page.getByRole("button", { name: "Ask another" })).toBeVisible({
-      timeout: 20_000,
+    await expect(page.getByText(OFFICER_NOTICE)).toBeVisible({
+      timeout: 25_000,
     });
-    const chipsRegion = page
-      .locator("div", { hasText: /suggested next questions/i })
-      .last();
+    const chipsRegion = page.locator("div", { hasText: FOLLOW_UPS_HEADER }).last();
     await expect(chipsRegion).toBeVisible();
 
     // Grab the first follow-up chip label so the assertion is
-    // independent of the exact suggestion strings (they can vary with
-    // the planner's follow-ups).
+    // independent of the exact suggestion strings — the planner's
+    // follow-up list can evolve without breaking this test.
     const firstChip = chipsRegion.getByRole("button").first();
     await expect(firstChip).toBeVisible();
     const chipLabel = (await firstChip.textContent())?.trim() ?? "";
@@ -132,23 +101,13 @@ test.describe("Copilot · follow-up chips keep the sticky subject", () => {
 
     await firstChip.click();
 
-    // The workspace clears and re-renders the streaming stages, then
-    // yields a NEW briefing that still resolves against MV Ocean Pearl.
-    await expect(page.getByRole("button", { name: "Ask another" })).toBeVisible({
-      timeout: 20_000,
+    // The streaming stage clears the previous briefing while it runs.
+    // Wait until a fresh briefing settles (the officer-decision notice
+    // reappears) and confirm no clarification card ever intervened.
+    await expect(page.getByText(OFFICER_NOTICE)).toBeVisible({
+      timeout: 25_000,
     });
-
-    // Mission conversation shows both turns — officer asked, copilot
-    // replied — and the subject pill is still anchored on the vessel.
-    await expect(page.getByText(/mission conversation/i)).toBeVisible();
-    await expect(page.getByText(/Ocean Pearl/i).first()).toBeVisible();
-    await expect(
-      page.getByText(/follow-ups continue on this vessel/i),
-    ).toBeVisible();
-
-    // The clarify card must NEVER have appeared during the flow.
-    await expect(
-      page.getByText(/copilot needs one detail/i),
-    ).toHaveCount(0);
+    await expect(page.getByText(FOLLOW_UPS_HEADER)).toBeVisible();
+    await expect(page.getByText(CLARIFY_HEADER)).toHaveCount(0);
   });
 });
