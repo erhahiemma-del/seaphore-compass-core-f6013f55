@@ -12,6 +12,7 @@
 import { useState } from "react";
 import { ChevronDown, ChevronRight, FileSearch, GitBranch, Info, XCircle } from "lucide-react";
 import { SectionShell } from "./primitives";
+import { ExplainableConfidenceChip } from "@/components/intelligence/ExplainableConfidenceChip";
 import type {
   DiscardedEvidence,
   LineageContextLink,
@@ -115,11 +116,13 @@ function RecommendationCard({ rec }: { rec: RecommendationLineage }) {
         <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-foreground">
           {rec.action}
         </span>
-        {rec.confidenceBadge && (
-          <span className="shrink-0 rounded border border-border bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            {rec.confidenceBadge}
-          </span>
-        )}
+        <ExplainableConfidenceChip
+          confidenceBadge={rec.confidenceBadge}
+          supporting={rec.supporting}
+          discarded={rec.discarded}
+          size="sm"
+          className="shrink-0"
+        />
       </button>
       {open && (
         <div className="space-y-4 px-3 py-3">
