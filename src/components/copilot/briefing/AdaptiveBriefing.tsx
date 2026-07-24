@@ -50,6 +50,8 @@ export interface AdaptiveBriefingProps {
   briefing: AdaptiveBriefingData;
   /** Optional explicit profile override; auto-detected when omitted. */
   missionType?: MissionBriefingType;
+  /** Evidence lineage trace for this briefing. Rendered as its own section. */
+  lineage?: LineageTrace | null;
   onOverride?: (submission: OverrideSubmission) => void | Promise<void>;
   onEntityOpen?: (entity: EntityCardData) => void;
   onEvidenceOpen?: (evidence: EvidenceCardData) => void;
