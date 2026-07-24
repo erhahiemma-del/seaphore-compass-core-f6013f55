@@ -71,7 +71,6 @@ import {
 } from "@/services/copilot/commands/registry";
 import { routeCommand } from "@/services/copilot/commands/router";
 import { recordBriefingToWorkspace, recordOfficerTurn } from "@/services/workspace/derive";
-import { useWorkspaceStore } from "@/stores/workspace.store";
 
 
 export const Route = createFileRoute("/copilot")({
