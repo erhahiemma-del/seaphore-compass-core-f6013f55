@@ -271,6 +271,7 @@ export function AdaptiveBriefing({
           if (!node) return null;
           return <div key={slot}>{node}</div>;
         })}
+        {lineage ? <EvidenceLineageView trace={lineage} /> : null}
       </div>
 
       <footer className="border-t px-6 py-3 text-center text-[11px] uppercase tracking-wider text-muted-foreground">
