@@ -13,9 +13,10 @@ import type {
   ConnectorHealth,
   ConnectorId,
   ConnectorResult,
+  EntityKind,
   NormalizedEvidence,
 } from "../types";
-import type { Connector } from "./base";
+import type { Connector, ConnectorCapability } from "./base";
 
 interface SimOptions {
   readonly failing?: boolean;
