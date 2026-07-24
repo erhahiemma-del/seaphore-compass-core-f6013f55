@@ -105,5 +105,7 @@ export type IbeResult = OIEResult & {
     closer: string;
     /** The (possibly rewritten) HumanResponse for the officer. */
     humanResponse?: HumanResponse;
+    /** Nine-step Response Contract audit for this turn. */
+    contract?: ResponseContract;
   };
 };
