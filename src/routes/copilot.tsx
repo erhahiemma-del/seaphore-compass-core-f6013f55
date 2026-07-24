@@ -63,6 +63,13 @@ import { useCopilotStore } from "@/stores/copilot.store";
 import { useIsDevBypass } from "@/stores/dev-mode.store";
 import { useMissionContextStore } from "@/stores/mission-context.store";
 import { useCopilotSession } from "@/hooks/use-copilot-session";
+import {
+  COPILOT_COMMANDS,
+  evaluateAvailability,
+  type CommandExecutionContext,
+  type CommandPermission,
+} from "@/services/copilot/commands/registry";
+import { routeCommand } from "@/services/copilot/commands/router";
 
 
 export const Route = createFileRoute("/copilot")({
