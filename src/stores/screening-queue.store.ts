@@ -24,6 +24,15 @@ export type ScreeningStatus =
 
 export type ScreeningEntityKind = EntityKind;
 
+export interface ScreeningRunRecord {
+  runAt: string;
+  status: ScreeningStatus;
+  hitCount?: number;
+  providers?: string[];
+  summary?: string;
+  error?: string;
+}
+
 export interface ScreeningEntity {
   id: string;
   name: string;
@@ -39,6 +48,8 @@ export interface ScreeningEntity {
   error?: string;
   /** free-text tag so callers (workspace, compliance) can group items. */
   origin?: string;
+  /** Immutable history of prior runs (most recent last). Appended on each retry. */
+  history?: ScreeningRunRecord[];
 }
 
 interface ScreeningQueueState {
