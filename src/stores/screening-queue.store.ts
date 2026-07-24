@@ -12,6 +12,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
 import { runSanctionsScreening } from "@/services/capabilities/sanctions";
+import type { EntityKind } from "@/services/ial";
 
 export type ScreeningStatus =
   | "PENDING"
@@ -21,13 +22,7 @@ export type ScreeningStatus =
   | "REVIEW"
   | "ERROR";
 
-export type ScreeningEntityKind =
-  | "vessel"
-  | "company"
-  | "person"
-  | "port"
-  | "manifest"
-  | string;
+export type ScreeningEntityKind = EntityKind;
 
 export interface ScreeningEntity {
   id: string;
