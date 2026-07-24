@@ -186,7 +186,7 @@ export const useScreeningQueueStore = create<ScreeningQueueState>()(
           const result = await runSanctionsScreening({
             target: { kind: e.kind, name: e.name, imo: e.imo },
           });
-          const findings = result.package.findings ?? [];
+          const findings = result.package.verified.filter((v) => v.kind === "sanctions");
           const hitCount = findings.length;
           const providers = result.providers.map((p) => p.displayName);
           const status = classifyHits(hitCount);
