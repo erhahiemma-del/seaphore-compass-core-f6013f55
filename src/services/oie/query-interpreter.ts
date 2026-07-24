@@ -78,9 +78,10 @@ function detectIntent(q: string, entities: EntityMention[]): {
   for (const [intent, re] of INTENT_PATTERNS) {
     if (re.test(q)) return { intent, ambiguous: false };
   }
-  // No verb intent detected. If the query still names an entity it is
-  // a bare entity mention ("Tell me about Ocean Pearl") → clarify.
-  if (entities.length > 0) return { intent: "entity_dossier", ambiguous: true };
+  // No verb intent detected. If the query names an entity, resolve it
+  // as a full entity dossier / executive briefing rather than
+  // interrupting the officer with a clarification card (UX-001).
+  if (entities.length > 0) return { intent: "entity_dossier", ambiguous: false };
   return { intent: "ambiguous", ambiguous: true };
 }
 
