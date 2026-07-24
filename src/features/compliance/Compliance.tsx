@@ -879,6 +879,13 @@ export function ComplianceCentre() {
         {/* Body: Left (map+matrix+timeline+regs+invs) | Right (copilot/insights/drivers/evidence) */}
         <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_320px]">
           <div className="space-y-3">
+            <EntitiesRequiringScreening
+              seed={[
+                { name: "MV Ocean Pearl", kind: "vessel", imo: "9876543", origin: "watchlist" },
+                { name: "Blue Horizon Shipping Ltd", kind: "company", origin: "watchlist" },
+                { name: "Sable Trading Co.", kind: "company", origin: "watchlist" },
+              ]}
+            />
             {/* Map row: layers | map | profile */}
             <div className="grid gap-3 md:grid-cols-[190px_minmax(0,1fr)_260px]">
               <div className="rounded-lg border border-line/60 bg-surface-1 p-3">
