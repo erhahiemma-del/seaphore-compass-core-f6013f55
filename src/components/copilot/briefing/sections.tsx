@@ -295,7 +295,32 @@ export function CounterHypotheses({ list }: { list: string[] }) {
   );
 }
 
-/* ─────────────── Intelligence Gaps ─────────────── */
+/* ─────────────── Recommended Intelligence Collection ─────────────── */
+
+/**
+ * Map a gap description to an operational verb. Officers see action
+ * language ("Run Screening") rather than system language ("Request").
+ */
+function operationalActionFor(gap: string): { verb: string; command: string } {
+  const g = gap.toLowerCase();
+  if (/sanction|screening/.test(g))
+    return { verb: "Run Screening", command: `Run sanctions screening for ${gap}` };
+  if (/beneficial|owner/.test(g))
+    return { verb: "Resolve Ownership", command: `Resolve beneficial ownership for ${gap}` };
+  if (/ais|position|track/.test(g))
+    return { verb: "Collect AIS", command: `Collect AIS history for ${gap}` };
+  if (/manifest/.test(g))
+    return { verb: "Retrieve Manifest", command: `Retrieve cargo manifest for ${gap}` };
+  if (/revenue|financial|leakage/.test(g))
+    return { verb: "Assess Revenue", command: `Assess revenue exposure for ${gap}` };
+  if (/compliance/.test(g))
+    return { verb: "Generate Compliance Report", command: `Generate compliance report for ${gap}` };
+  if (/insurance/.test(g))
+    return { verb: "Retrieve Insurance", command: `Retrieve insurance record for ${gap}` };
+  if (/weather/.test(g))
+    return { verb: "Collect Weather", command: `Collect weather data for ${gap}` };
+  return { verb: "Collect Evidence", command: gap };
+}
 
 export function IntelligenceGaps({
   gaps,
@@ -307,30 +332,30 @@ export function IntelligenceGaps({
   if (gaps.length === 0) return null;
   return (
     <SectionShell
-      title="Intelligence Gaps"
+      title="Recommended Intelligence Collection"
       icon={<AlertTriangle className="h-4 w-4 text-amber-500" aria-hidden />}
     >
-      <ul className="space-y-1 text-sm">
-        {gaps.map((g, i) => (
-          <li
-            key={i}
-            className="flex items-start justify-between gap-3 rounded-md border p-2"
-          >
-            <span className="text-foreground">
-              <span className="mr-2 text-[10px] font-semibold uppercase text-muted-foreground">
-                #{i + 1}
+      <ul className="space-y-1.5 text-sm">
+        {gaps.map((g, i) => {
+          const action = operationalActionFor(g);
+          return (
+            <li key={i} className="flex items-start justify-between gap-3 rounded-md border p-2">
+              <span className="min-w-0 text-foreground">
+                <span className="mr-2 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                  Priority {i + 1}
+                </span>
+                {g}
               </span>
-              {g}
-            </span>
-            <button
-              type="button"
-              onClick={() => onRequest?.(g)}
-              className="shrink-0 rounded-md border px-2 py-0.5 text-xs text-primary hover:bg-muted"
-            >
-              Request
-            </button>
-          </li>
-        ))}
+              <button
+                type="button"
+                onClick={() => onRequest?.(action.command)}
+                className="shrink-0 rounded-md border border-primary/30 bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+              >
+                {action.verb}
+              </button>
+            </li>
+          );
+        })}
       </ul>
     </SectionShell>
   );
