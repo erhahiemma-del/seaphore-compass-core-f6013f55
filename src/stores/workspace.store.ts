@@ -262,6 +262,9 @@ export interface InvestigationWorkspace {
 
   // Copilot conversation transcript pointer (Copilot store owns rendering).
   conversationTurns: Array<{ id: string; at: string; role: "officer" | "copilot"; text: string; briefingId?: string }>;
+
+  // Investigation Outcome & Learning Loop (Sprint 2.6).
+  outcome?: WorkspaceOutcome;
 }
 
 interface WorkspaceState {
