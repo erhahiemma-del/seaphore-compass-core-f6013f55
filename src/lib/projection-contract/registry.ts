@@ -496,19 +496,20 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
   },
   {
     id: "capability.intelligence-evidence-explorer",
-    name: "Intelligence Evidence Explorer",
+    name: "Intelligence Evidence Explorer (first Canonical UIP consumer)",
     producer: "CAPABILITY",
     description:
-      "Comprehensive investigator surface over every sanitized evidence item. Four views: (1) List — evidence rows with confidence chips, status, connector, timestamp, and per-axis breakdown (identity, freshness, completeness, cross-source agreement); (2) Graph — entity relationships across vessels, companies, people, cargo, ports, incidents, and documents, with edges anchored on the underlying evidence; (3) Timeline — chronological projection with conflict highlighting; (4) Source — grouped by connector with coverage and freshness. Cross-connector conflicts are surfaced rather than hidden and cite the underlying evidence ids. Filters cover connector, confidence, entity, investigation, type, status, source, and time; Executive Brief deep-links pass filters via URL search params.",
+      "Sprint 2.1B — first production consumer of the Canonical Unified Intelligence Package. The route loads evidence exclusively via `getUip(briefing.source_uip_id)` from the UIP registry (no demo fixtures, no seedEvidence). The `UipCanonicalPanel` (mounted above the Explorer) projects the FULL fused package: (a) raw evidence + freshest observation, (b) canonical entities with alias-merge counts and per-record OC-001 grade, (c) correlations — every IFE contradiction with severity, resolution rationale, and per-source values, (d) package-level confidence and composite grade, (e) provenance and sources with per-connector record count, agreement score, and fusion weight, plus deep-link filters back into the Explorer. Every evidence row below carries `connector`, `sourceName`, `providerRecordId`, and content `hash` so it traces back to its originating connector and evidence record. Explorer views (List / Graph / Timeline / Source) are unchanged; only the data source now flows from the Canonical UIP. Existing OKL explainability rows continue to surface inside List/Timeline via `capability.okl-evidence-explainability`.",
     state: "PROJECTED",
     projection: {
-      surface: "Intelligence Evidence · Explorer",
+      surface: "Intelligence Evidence · Canonical UIP Panel + Explorer",
       location: "src/routes/intelligence-evidence.tsx",
-      component: "src/components/intelligence/IntelligenceEvidenceExplorer.tsx",
+      component: "src/components/intelligence/UipCanonicalPanel.tsx",
       interaction: "drill-in",
     },
     reviewedAt: REVIEWED,
   },
+
   {
     id: "capability.okl-evidence-explainability",
     name: "OKL Evidence Explainability",
