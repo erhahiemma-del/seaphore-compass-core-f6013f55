@@ -831,12 +831,12 @@ export function analyzeOperationalKnowledge(
 
   const byRisk: Record<RiskLevel, number> = { LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0 };
   const byKind: Partial<Record<OklPatternKind, number>> = {};
-  for (const p of patterns) {
+  for (const p of enriched) {
     byRisk[p.riskLevel] += 1;
     byKind[p.kind] = (byKind[p.kind] ?? 0) + 1;
   }
 
-  const topRecommendation = patterns
+  const topRecommendation = enriched
     .flatMap((p) => p.recommendations)
     .sort((a, b) => {
       const u = { IMMEDIATE: 0, PRIORITY: 1, ROUTINE: 2 } as const;
@@ -847,26 +847,26 @@ export function analyzeOperationalKnowledge(
     identity: base.identity,
     evidence: base.evidence,
     fusion: base.fusion,
-    pattern: patterns.length
+    pattern: enriched.length
       ? Math.round(
-          patterns.reduce((s, p) => s + p.confidence.pattern, 0) / patterns.length,
+          enriched.reduce((s, p) => s + p.confidence.pattern, 0) / patterns.length,
         )
       : 0,
     recommendation: topRecommendation?.confidence ?? 0,
     tier: tierFromScore(topRecommendation?.confidence ?? 0),
     explanation:
-      patterns.length === 0
+      enriched.length === 0
         ? "No operational patterns detected in the current UIP."
-        : `Composite of ${patterns.length} pattern(s); top recommendation drives overall tier.`,
+        : `Composite of ${enriched.length} pattern(s); top recommendation drives overall tier.`,
   };
 
   return {
     id: uid("okpkg"),
     createdAt: now(),
     uipId: input.uip.id,
-    patterns,
+    patterns: enriched,
     summary: {
-      total: patterns.length,
+      total: enriched.length,
       byRisk,
       byKind,
       topRecommendation,
