@@ -19,6 +19,12 @@ import type {
   IdentityConfidenceResult,
   IdentitySelection,
 } from "@/intelligence/matching/identity-confidence";
+import type {
+  AisContinuityReport,
+  AisDarkEvidence,
+  AisPattern,
+} from "@/intelligence/analyzers/AISBehaviourAnalyzer";
+import type { OsaeAssessment, PerEventAssessment } from "@/services/osae";
 import { sanitizeText } from "./sanitize";
 
 export type StatusTone = "positive" | "warning" | "critical" | "neutral";
@@ -144,12 +150,42 @@ export interface IdentityResolutionSection {
   requiresConfirmation: boolean;
 }
 
+export interface AisInterruptionTimelineItem {
+  startAt: string;
+  endAt: string;
+  durationHours: number;
+  kind: AisDarkEvidence["kind"];
+  startLabel: string | null;
+  endLabel: string | null;
+  startLocation: { latitude: number; longitude: number } | null;
+  endLocation: { latitude: number; longitude: number } | null;
+  confidence: number;
+  priority?: "watch" | "monitor" | "act" | "urgent";
+  rationale?: string;
+  explanation: string;
+}
+
+export interface AisContinuitySection {
+  vesselId: string;
+  windowStart: string;
+  windowEnd: string;
+  totalInterruptions: number;
+  longestInterruptionHours: number;
+  coverageUncertainCount: number;
+  overallPriority?: "watch" | "monitor" | "act" | "urgent";
+  overallSummary?: string;
+  timeline: AisInterruptionTimelineItem[];
+  patterns: AisPattern[];
+  evidenceCitation: string;
+}
+
 export interface ExecutiveBrief {
   executiveSummary: string;
   confidence: ConfidencePanel;
   kpis: KpiCard[];
   keyFacts: KeyFact[];
   identityResolution?: IdentityResolutionSection;
+  aisContinuity?: AisContinuitySection;
   relationships: RelationshipNode[];
   timeline: TimelineEvent[];
   risks: RiskCheck[];
@@ -652,6 +688,58 @@ export function buildIdentityResolutionSection<C extends IdentityCandidate>(
   };
 }
 
+/* ─────────────────────── AIS continuity section ─────────────────────── */
+
+function priorityByRange(
+  assessments: PerEventAssessment[],
+  startAt: string,
+  endAt: string,
+): PerEventAssessment | undefined {
+  return assessments.find((a) => a.startAt === startAt && a.endAt === endAt);
+}
+
+export function buildAisContinuitySection(
+  report: AisContinuityReport,
+  osae?: OsaeAssessment,
+): AisContinuitySection {
+  const timeline: AisInterruptionTimelineItem[] = report.darkEvents.map((ev) => {
+    const match = osae ? priorityByRange(osae.eventAssessments, ev.startAt, ev.endAt) : undefined;
+    return {
+      startAt: ev.startAt,
+      endAt: ev.endAt,
+      durationHours: ev.durationHours,
+      kind: ev.kind,
+      startLabel:
+        ev.nearestPort && typeof ev.distanceFromPortNm === "number"
+          ? `${Math.round(ev.distanceFromPortNm)}nm from ${ev.nearestPort}`
+          : (ev.nearestPort ?? null),
+      endLabel: ev.nearestPortEnd ?? null,
+      startLocation: ev.startLocation,
+      endLocation: ev.endLocation,
+      confidence: ev.confidence,
+      priority: match?.priority,
+      rationale: match?.rationale,
+      explanation: ev.explanation,
+    };
+  });
+  const coverageUncertainCount = report.darkEvents.filter(
+    (d) => d.kind === "coverage-uncertain",
+  ).length;
+  return {
+    vesselId: report.vesselId,
+    windowStart: report.windowStart,
+    windowEnd: report.windowEnd,
+    totalInterruptions: report.totalInterruptions,
+    longestInterruptionHours: report.longestInterruptionHours,
+    coverageUncertainCount,
+    overallPriority: osae?.priority,
+    overallSummary: osae?.summary,
+    timeline,
+    patterns: report.patterns,
+    evidenceCitation: "Global Fishing Watch (AIS events)",
+  };
+}
+
 /* ───────────────────────────── entry ─────────────────────────── */
 
 export function synthesizeExecutiveBrief(args: {
@@ -660,8 +748,18 @@ export function synthesizeExecutiveBrief(args: {
   ibe: IbeResult["ibe"] | null | undefined;
   followUps: string[];
   identitySelection?: IdentitySelection<IdentityCandidate>;
+  aisContinuityReport?: AisContinuityReport;
+  osaeAssessment?: OsaeAssessment;
 }): ExecutiveBrief {
-  const { briefing, humanResponse, ibe, followUps, identitySelection } = args;
+  const {
+    briefing,
+    humanResponse,
+    ibe,
+    followUps,
+    identitySelection,
+    aisContinuityReport,
+    osaeAssessment,
+  } = args;
   return {
     executiveSummary: buildExecutiveSummary(briefing, humanResponse),
     confidence: buildConfidencePanel(briefing, ibe),
@@ -669,6 +767,9 @@ export function synthesizeExecutiveBrief(args: {
     keyFacts: buildKeyFacts(briefing),
     identityResolution: identitySelection
       ? buildIdentityResolutionSection(identitySelection)
+      : undefined,
+    aisContinuity: aisContinuityReport
+      ? buildAisContinuitySection(aisContinuityReport, osaeAssessment)
       : undefined,
     relationships: buildRelationshipNodes(briefing),
     timeline: buildTimelineEvents(briefing),
