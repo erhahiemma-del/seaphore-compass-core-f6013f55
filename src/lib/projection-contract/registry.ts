@@ -554,6 +554,21 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: REVIEWED,
   },
+  {
+    id: "capability.predictive-intelligence-engine",
+    name: "Predictive Intelligence Engine (PIE)",
+    producer: "CAPABILITY",
+    description:
+      "Downstream of the IFE and MKG. PIE consumes fused, evidence-backed intelligence and produces deterministic, explainable predictions: AIS behaviour forecasts, route-deviation likelihood, ownership churn, sanctions proximity, cargo/tonnage anomalies, compliance recurrence, and revenue anomalies. Every prediction carries a headline, model probability, OC-001 confidence (aggregated as the weakest supporting grade), horizon, weighted contributing factors, alternative hypotheses, baseline snapshot (mean/stddev/n/z-score), and per-record evidence citations. Predictions are keyed by a stable id so repeat cycles update — not duplicate — them, and alerting is gated by both a probability threshold and a cooldown window to minimise false positives. Connectors cannot generate predictions directly; PIE only accepts IAL-normalised evidence. Officers explore predictions at /predictions with a Predictions Panel that reveals factors, alternatives, baselines, and citations for every forecast.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Predictive Intelligence · PIE",
+      location: "src/routes/predictions.tsx",
+      component: "src/components/pie/PredictionsPanel.tsx",
+      interaction: "drill-in",
+    },
+    reviewedAt: REVIEWED,
+  },
 ];
 
 export function getContractEntry(id: string): ProjectionContractEntry | undefined {
