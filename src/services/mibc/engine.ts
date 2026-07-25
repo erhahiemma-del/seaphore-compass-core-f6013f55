@@ -6,6 +6,7 @@
  */
 
 import type { InvestigationWorkspace } from "@/stores/workspace.store";
+import type { MissionPlan } from "@/services/mission";
 import type {
   ReportPackage,
   ReportSection,
@@ -20,6 +21,8 @@ export interface BuildReportInput {
   period: ReportPeriod;
   workspaces: InvestigationWorkspace[];
   officer: string;
+  /** Mission plans available in the store — engine filters to those linked to sourced workspaces. */
+  missionPlans?: MissionPlan[];
   /** Optional pre-computed OKL insights per workspace, keyed by workspace id. */
   oklInsights?: Record<
     string,
