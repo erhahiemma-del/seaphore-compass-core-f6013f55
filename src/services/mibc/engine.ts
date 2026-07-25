@@ -670,9 +670,6 @@ export function buildReport(input: BuildReportInput): ReportPackage {
           : `Investigation-Based Brief · ${sourceUipIds.length} Canonical UIP snapshot${sourceUipIds.length === 1 ? "" : "s"} resolved via the Intelligence Orchestrator.`,
   };
 }
-        : "Reports read only from Investigation Workspaces. Every chart and recommendation traces to evidence.",
-  };
-}
 
 function deriveTitle(reportType: ReportType, workspaces: InvestigationWorkspace[]): string {
   const label = REPORT_TYPE_LABEL[reportType];
