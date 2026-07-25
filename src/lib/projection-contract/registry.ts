@@ -736,6 +736,21 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     reviewedAt: REVIEWED,
   },
   {
+    id: "workspace.outcome-learning-loop",
+    name: "Investigation Outcome & Learning Loop",
+    producer: "WORKSPACE",
+    description:
+      "Sprint 2.6 — every closed investigation records a structured outcome (finalOutcome, officerDecision, actionTaken, resolutionStatus, success rating, lessonsLearned, per-recommendation effectiveness, optional KPIs). Persisted via workspace.recordOutcome, emitted into OKL as rich OUTCOME rows (plus one OUTCOME row per rated recommendation labelled REC_<effectiveness>). Feeds OIE HISTORICAL_OUTCOME and RECOMMENDATION_EFFECTIVENESS lenses so future investigations answer 'which recommendations historically worked' from real history — not fixtures.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Investigation Workspace · Outcome & Lessons card",
+      location: "src/routes/workspace.$id.tsx",
+      component: "src/features/investigate/OutcomeCaptureCard.tsx",
+      interaction: "action",
+    },
+    reviewedAt: REVIEWED,
+  },
+  {
     id: "capability.mibc-background-scheduler",
     name: "MIBC background report scheduler",
     producer: "CAPABILITY",

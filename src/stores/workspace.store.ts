@@ -134,6 +134,50 @@ export interface WorkspaceRecommendation {
   supportingEvidence?: string[];
 }
 
+// Sprint 2.6 — Investigation Outcome & Learning Loop.
+// Captured at (or before) CLOSED so OKL ingestion can persist a rich
+// OUTCOME record. OIE's HISTORICAL_OUTCOME + RECOMMENDATION_EFFECTIVENESS
+// lenses read these fields via okl_records.
+export type ResolutionStatus =
+  | "RESOLVED"
+  | "PARTIALLY_RESOLVED"
+  | "UNRESOLVED"
+  | "ESCALATED"
+  | "REFERRED";
+export type SuccessRating =
+  | "SUCCESS"
+  | "PARTIAL_SUCCESS"
+  | "FAILURE"
+  | "INCONCLUSIVE";
+export type RecommendationEffectiveness =
+  | "EFFECTIVE"
+  | "PARTIALLY_EFFECTIVE"
+  | "INEFFECTIVE"
+  | "NOT_ACTIONED";
+export interface RecommendationRating {
+  recommendationId?: string;
+  label: string;
+  effectiveness: RecommendationEffectiveness;
+  note?: string;
+}
+export interface OutcomeKpi {
+  label: string;
+  value: string;
+  note?: string;
+}
+export interface WorkspaceOutcome {
+  finalOutcome: string;
+  officerDecision: string;
+  actionTaken: string;
+  resolutionStatus: ResolutionStatus;
+  success: SuccessRating;
+  lessonsLearned: string;
+  recommendationRatings: RecommendationRating[];
+  kpis?: OutcomeKpi[];
+  recordedAt: string;
+  recordedBy: string;
+}
+
 // Investigation Notebook — support notes / findings / questions with
 // markdown, version history, and audit trail. Hypotheses, recommendations,
 // and tasks remain first-class panels but are also linkable from notebook
@@ -218,6 +262,9 @@ export interface InvestigationWorkspace {
 
   // Copilot conversation transcript pointer (Copilot store owns rendering).
   conversationTurns: Array<{ id: string; at: string; role: "officer" | "copilot"; text: string; briefingId?: string }>;
+
+  // Investigation Outcome & Learning Loop (Sprint 2.6).
+  outcome?: WorkspaceOutcome;
 }
 
 interface WorkspaceState {
@@ -278,6 +325,13 @@ interface WorkspaceState {
   linkMission: (id: string, missionId: string, note?: string) => void;
   linkOklPattern: (id: string, patternId: string, note?: string) => void;
 
+  // Investigation Outcome & Learning Loop (Sprint 2.6).
+  recordOutcome: (
+    id: string,
+    outcome: Omit<WorkspaceOutcome, "recordedAt"> & Partial<Pick<WorkspaceOutcome, "recordedAt">>,
+    opts?: { closeOnRecord?: boolean; closureNote?: string },
+  ) => void;
+  clearOutcome: (id: string) => void;
 
   removeInvestigation: (id: string) => void;
   exportInvestigation: (id: string) => InvestigationWorkspace | null;
@@ -729,6 +783,71 @@ export const useWorkspaceStore = create<WorkspaceState>()(
               [id]: { ...w, oklPatternIds: [...existing, patternId], timeline: [...w.timeline, tl], updatedAt: t },
             },
           };
+        }),
+
+      recordOutcome: (id, outcome, opts) =>
+        set((s) => {
+          const w = s.investigations[id];
+          if (!w) return s;
+          const t = now();
+          const full: WorkspaceOutcome = {
+            recordedAt: t,
+            ...outcome,
+          };
+          const decision: WorkspaceDecision = {
+            id: uid("dec"),
+            at: t,
+            title: `Outcome recorded: ${full.success.replace(/_/g, " ")}`,
+            detail: full.finalOutcome,
+            officer: full.recordedBy,
+          };
+          const tl: TimelineEvent = {
+            id: uid("tl"),
+            at: t,
+            kind: "decision",
+            label: `Outcome · ${full.resolutionStatus.replace(/_/g, " ")}`,
+            detail: full.finalOutcome,
+            refId: decision.id,
+          };
+          const status: WorkspaceStatus = opts?.closeOnRecord ? "CLOSED" : w.status;
+          const stage: InvestigationStage | undefined = opts?.closeOnRecord ? "CLOSED" : w.stage;
+          const stageHistory =
+            opts?.closeOnRecord && w.stage !== "CLOSED"
+              ? [
+                  ...(w.stageHistory ?? []),
+                  {
+                    at: t,
+                    from: w.stage ?? null,
+                    to: "CLOSED" as InvestigationStage,
+                    officer: full.recordedBy,
+                    note: opts?.closureNote ?? "Closed after outcome captured",
+                  },
+                ]
+              : w.stageHistory;
+          return {
+            investigations: {
+              ...s.investigations,
+              [id]: {
+                ...w,
+                outcome: full,
+                decisions: [...w.decisions, decision],
+                timeline: [...w.timeline, tl],
+                status,
+                stage,
+                stageHistory,
+                updatedAt: t,
+              },
+            },
+          };
+        }),
+
+      clearOutcome: (id) =>
+        set((s) => {
+          const w = s.investigations[id];
+          if (!w) return s;
+          const rest = { ...w };
+          delete rest.outcome;
+          return { investigations: { ...s.investigations, [id]: { ...rest, updatedAt: now() } } };
         }),
 
     }),
