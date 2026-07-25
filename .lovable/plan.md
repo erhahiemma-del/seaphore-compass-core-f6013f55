@@ -1,71 +1,64 @@
-## Goal
+# Maritime Investigation Workspace (MIW)
 
-Reshape every Copilot response into an **Executive Maritime Intelligence Brief**: answer-first prose, KPI cards, key facts, relationships, timeline, risks, insights, recommendations, and collapsed supporting evidence. No UUIDs, timestamps, JSON, or raw source dumps in the default view.
+Evolve the existing Intelligence Investigation Workspace (IIW at `src/routes/workspace.$id.tsx` + `src/stores/workspace.store.ts`) into a full operational investigation system. This is a large sprint — I'll scope it into 4 landings so each ship is verifiable rather than a single mega-change. All existing sprints (1A–1D, IFE, OSAE, Identity Resolution, Executive Brief, Evidence Explorer) remain untouched and are consumed, never bypassed.
 
-This is a **presentation-layer** change. The existing pipeline (OIE → IBE → Response Contract → AdaptiveBriefing data) already produces all the inputs we need — we're rewriting how it renders, not how it's computed.
+## Landing 1 — Data model + Investigation Dashboard
 
-## Approach
+New Intelligence Centre at `/investigations` (Maritime Investigation Workspace).
 
-Add a new top-level renderer that sits **above** `AdaptiveBriefing` and `IntelligenceProjectionPanel`, synthesising both into an executive brief. Keep the existing components mounted but hidden behind a "Show analyst detail" toggle so nothing regresses and Administrator/analyst modes still have access to the full projection.
+- Extend `workspace.store.ts` (persisted Zustand) with investigation record fields: `title`, `description`, `investigationType`, `priority`, `status` (Open · In Review · Escalated · Closed · Archived), `createdBy`, `leadInvestigator`, `team[]`, `dueDate`, `classification` (Public · Restricted · Confidential · Secret), `region`, `ports[]`, `countries[]`, `tags[]`, `linkedInvestigations[]`, `relatedIncidents[]`, `revenueAtRisk`, `recoveredRevenue`. Persist alongside existing evidence/notes/tasks/timeline. No schema migration — investigations already exist in the store and the `investigations` DB table.
+- Dashboard cards (13): Active · New Today · High Priority · Critical Priority · Open Tasks · Pending Intel Requests · Evidence Collected · Revenue At Risk · Recovered Revenue · Avg Duration · Investigations Closed · High-Risk Vessels · High-Risk Companies. All derived from store selectors.
+- Investigations table with filters (status, priority, type, region, officer, tag) and global search.
+- Register `capability.maritime-investigation-workspace` in the Projection Contract.
 
-### 1. New component: `ExecutiveBriefing`
+## Landing 2 — Investigation Record (single-investigation view)
 
-`src/components/copilot/briefing/ExecutiveBriefing.tsx` — the single source of truth for the redesigned response. Sections in order:
+Replace `workspace.$id.tsx` panels with a tabbed workspace at `/investigations/$id`:
 
-1. **Executive Summary** — 2–4 sentence paragraph. Derived from `briefing.sections.executive` + officer decision header text, rewritten to lead with the direct answer and end with confidence + operational assessment. Falls back to a deterministic template when the model text is empty.
-2. **Confidence Panel** — small strip under the summary, 5 mini-bars: Data Completeness, Relationship Confidence, Evidence Quality, Recency, Operational Confidence. Values pulled from `confidence_matrix` + `ibe` propagation.
-3. **Intelligence Assessment (KPI cards)** — Overall Risk, Confidence, Operational Status, Compliance, Watchlist, Active Investigation, Revenue Exposure, Last Activity. Status colours: green / amber / red mapped from existing risk + confidence bands.
-4. **Key Facts** — humanised label/value pairs derived from the primary entity (vessel/company). Whitelist of business-friendly fields only; UUIDs / `created_at` / FK ids are filtered.
-5. **Relationship Intelligence** — condensed graph. Reuse `OwnershipNetworkGraph` when a vessel/company is resolved, else render a compact node-chip cascade (Vessel → Agent → Operator → Parent → Directors → BOs). Clicking a node calls `handleSubmit("Who/what is <label>?")`.
-6. **Timeline Intelligence** — vertical timeline of operational events (arrival, departure, manifest, inspection, revenue, detention, ownership change, compliance action) sourced from the ranked evidence; lucide icons per event type.
-7. **Risk & Compliance Analysis** — checklist grid; green "No significant risks identified" card when nothing fires.
-8. **AI Intelligence Insights** — analyst-style observations pulled from `assessment.observedPatterns` + IBE proactive nudges, rephrased as sentences (no "pattern object" or ids visible).
-9. **Recommendations** — from officer-decision recommendation + IBE recommended-next-action, rendered as action rows.
-10. **Supporting Evidence (collapsed)** — single accordion with sub-accordions per source category (Manifest, Company Registration, Vessel Registry, Port, AIS, Customs, Revenue, Inspection, Regulatory, Related Intel). Each item shows headline + source + grade chip; UUIDs/hashes only visible inside a nested "Raw" disclosure gated by Administrator role.
+- **Overview**: Intelligence Summary panel (auto-generated from OSAE + IFE Unified Intelligence Package — priority, risk score, confidence, revenue-at-risk, entities grouped by type). Never copies evidence, references the UIP.
+- **Timeline**: chronological activity feed rendered from existing `timeline[]` (extended with typed events: intel-received, evidence-attached, task-created, note-added, brief-generated, escalation, decision).
+- **Evidence**: embed the existing `IntelligenceEvidenceExplorer` with `investigation` filter pre-applied. Read-only — evidence is referenced through UIP, not copied.
+- **Notebook**: append-only notes with Markdown, entry types (Note · Observation · Hypothesis · Recommendation · Decision · Question · Task), author, timestamp. Every entry writes an `audit_log` row and is immutable in-store (new versions supersede but history is preserved).
+- **Tasks**: create/assign/complete tasks with owner, priority, status, due date, dependencies (task IDs), evidence links. Auto-generated timeline events.
+- **Recommendations**: derived from OSAE outputs — Immediate Inspection · Revenue Audit · Monitor · Escalate · Close, each with confidence, supporting evidence citations, alternative views, reasoning.
+- **Copilot**: embedded `AskCopilotDialog` scoped to the investigation's UIP (subject + evidence context passed in).
+- **Collaboration**: mentions/comments on notebook entries, assignment log, activity feed, version history from audit_log.
 
-Visual system: white bg, `rounded-2xl` (16px) cards, subtle shadow, primary accent `#2563EB` (map to `--primary` variant), 8px spacing grid, `max-w-[1280px]`, lucide icons throughout, Framer-motion-free CSS transitions for expand/collapse.
+Persistent header with title, priority chip, status pill, classification, lead investigator, team avatars.
 
-### 2. New helpers
+## Landing 3 — Reporting Centre
 
-- `src/lib/copilot/executive-brief/synthesize.ts` — pure functions:
-  - `buildExecutiveSummary(briefing, ibe, humanResponse)` → string
-  - `buildConfidencePanel(matrix, ibe)` → 5 scored dimensions
-  - `buildKpiCards(briefing, ibe)` → typed KPI list w/ status colour
-  - `buildKeyFacts(entities, briefing)` → label/value pairs, whitelist-filtered
-  - `buildTimelineEvents(evidence)` → sorted event list w/ icon key
-  - `buildRiskChecklist(briefing, ibe)` → fired/not-fired items
-  - `buildInsights(assessment, ibe)` → sentence-form observations
-  - `buildRecommendations(briefing, ibe)` → action list
-  - `groupEvidenceForDisclosure(evidence)` → sourceCategory → items[]
-- `src/lib/copilot/executive-brief/sanitize.ts` — strips UUIDs, ISO timestamps in raw form, `created_at`/`updated_at`/`*_id` keys, and JSON-looking payloads from any rendered string.
+New `src/services/reporting/` pipeline. **Reports always consume investigation-curated data**, never raw connectors.
 
-Unit tests: `tests/unit/executive-brief.test.ts` covering summary fallback, sanitiser, KPI colour thresholds, and timeline sort.
+- Report Engine (`report-engine.ts`) takes `{ investigation, uip, brief, osae, evidence }` and produces a normalized `ReportPackage` with the standard sections (Executive Summary · Key Findings · Evidence Summary · Entity Relationships · Timeline · Revenue · Risk · OSAE Recs · Supporting Evidence · Confidence · Sources · Appendices).
+- 11 report types (Executive · Operational · Investigation · Cargo Intel · Container · Manifest · Revenue · Port · Compliance · Historical Comparison · Trend Analysis) as configuration presets over the same engine — each selects which sections to include and emphasize.
+- Export adapters:
+  - **PDF** — extend existing `jspdf` compliance export (`src/lib/compliance/export-compliance-report.ts`) into a shared PDF renderer.
+  - **DOCX** — `docx` npm package.
+  - **XLSX** — new `xlsx` or existing pattern.
+  - **PPTX** — `pptxgenjs`.
+- All formats carry immutable footer, confidence chips per section, evidence provenance table.
+- "Generate Report" action on the investigation record, with format + type picker. Registered in Projection Contract.
 
-### 3. Wire into `/copilot`
+## Landing 4 — Historical Intelligence + Global Search
 
-In `src/routes/copilot.tsx`:
+- Historical comparison panel on investigation record: Yesterday · Last 7 · Last 30 · Previous Quarter · Previous Year. Compares risk score, evidence count, revenue at risk, entity churn against archived snapshots (stored in-store per investigation as time-series).
+- Global Search route `/investigations/search` — searches across investigations, vessels, companies, cargo, containers, manifests, ports, agents, revenue, risk, evidence, officer, date. Uses in-store index + existing `IntelligenceEvidenceExplorer` filter language.
+- RBAC gating using existing `use-permissions` hook: Investigator (create/edit own + assigned) · Supervisor (assign, approve) · Director (all) · Administrator (all + config) · Auditor (read-only + audit log access). Guards are UI-level; every mutation still writes to `audit_log`.
 
-- Import `ExecutiveBriefing`.
-- Replace the current `{briefing ? (...) : null}` block so that by default it renders `ExecutiveBriefing` only.
-- Add a small "Show analyst detail" toggle (persisted via `useState`, default off) that reveals the existing `IntelligenceProjectionPanel` + `AdaptiveBriefing` + `EvidenceLineageView` beneath. Administrator role additionally gets a "Raw data" toggle inside supporting-evidence items.
-- Follow-up chip strip and composer stay unchanged.
+## Technical notes
 
-### 4. Compliance guardrails preserved
+- **No schema migrations** required for Landings 1–2. Investigations remain in the persisted store; the existing `investigations` DB table is untouched. If Landing 3–4 need durable server storage (e.g. cross-device), we add it as a follow-up sprint.
+- **Zero duplication**: Evidence view = `IntelligenceEvidenceExplorer`. Brief = existing `ExecutiveBriefing`. Assessment = OSAE outputs. Identity = existing resolver. Copilot = existing OIE via IBE.
+- **Projection Contract**: 4 new entries — `capability.maritime-investigation-workspace`, `capability.investigation-notebook`, `capability.investigation-tasks`, `capability.reporting-centre`.
+- **Immutable footer** on every workspace surface and every exported report.
+- **Confidence chips** on every recommendation, KPI card, and report section.
 
-- Footer "Evidence first. Explainable always. Officer decides." unchanged.
-- Every KPI, insight, and recommendation still carries a confidence chip via existing `ExplainableConfidenceChip`.
-- Officer decision affordances (Agree / Modify / Dismiss) remain — they move into the Recommendations section rather than disappearing.
-- Register the new `executive-brief` artifact in `src/lib/projection-contract/registry.ts` as `PROJECTED` so Backend–Frontend Symmetry stays green; update the contract test snapshot.
+## What I need from you before starting
 
-## Out of scope
+Two decisions so Landings 3–4 don't churn:
 
-- No changes to OIE / IBE / ICE / IAL / reasoning engine.
-- No new backend tables or server functions.
-- No changes to Mission Control, Investigate, Decide, Share, or other routes.
-- Existing `AdaptiveBriefing` stays intact for analyst detail mode and Storybook.
+1. **Storage scope**: keep investigations in the persisted browser store (fast, offline-friendly, single-device) OR also mirror to Supabase for cross-device/team collaboration? The latter needs an RLS-scoped `investigations`/`investigation_notes`/`investigation_tasks` schema and adds ~1 landing of work.
+2. **Report libraries**: OK to add `docx`, `xlsx` (SheetJS community), and `pptxgenjs` as dependencies? Alternative is PDF-only for this sprint with the others as a follow-up.
 
-## Verification
-
-- `tsgo` typecheck clean.
-- New unit tests pass.
-- Manual: run the same "Who is behind the agent for MV Ocean Pearl?" query — first sentence is a direct answer, no UUIDs/timestamps visible, evidence collapsed by default, "Show analyst detail" reveals the current UI unchanged.
+Once confirmed I'll ship Landing 1 first (dashboard + data model), then request review before proceeding.

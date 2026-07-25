@@ -15,6 +15,31 @@ import { persist, createJSONStorage } from "zustand/middleware";
 export type WorkspaceStatus = "ACTIVE" | "MONITORING" | "SUSPENDED" | "CLOSED";
 export type WorkspacePriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 export type ConfidenceTier = "LOW" | "MEDIUM" | "HIGH";
+export type InvestigationStage =
+  | "INTAKE"
+  | "EVIDENCE"
+  | "ANALYSIS"
+  | "DECISION"
+  | "REPORT"
+  | "CLOSED";
+export const INVESTIGATION_STAGES: InvestigationStage[] = [
+  "INTAKE",
+  "EVIDENCE",
+  "ANALYSIS",
+  "DECISION",
+  "REPORT",
+  "CLOSED",
+];
+export type InvestigationCaseType =
+  | "VESSEL"
+  | "COMPANY"
+  | "CARGO"
+  | "PERSON"
+  | "SANCTIONS"
+  | "COMPLIANCE"
+  | "INCIDENT"
+  | "REVENUE"
+  | "GENERIC";
 
 export type EvidenceCategory = "COLLECTED" | "PENDING" | "CONFLICTING" | "REJECTED";
 export interface WorkspaceEvidence {
@@ -133,6 +158,18 @@ export interface InvestigationWorkspace {
   entities: WorkspaceEntity[];
   recommendation?: WorkspaceRecommendation;
 
+  // MIW extensions (Sprint 1H — Maritime Investigation Workspace).
+  stage?: InvestigationStage;
+  caseType?: InvestigationCaseType;
+  subjectId?: string;
+  subjectName?: string;
+  region?: string;
+  tags?: string[];
+  assignees?: string[];
+  dueAt?: string;
+  estimatedRevenueImpactUsd?: number;
+  stageHistory?: Array<{ at: string; from: InvestigationStage | null; to: InvestigationStage; officer?: string; note?: string }>;
+
   // Copilot conversation transcript pointer (Copilot store owns rendering).
   conversationTurns: Array<{ id: string; at: string; role: "officer" | "copilot"; text: string; briefingId?: string }>;
 }
@@ -146,9 +183,18 @@ interface WorkspaceState {
     missionType?: string;
     priority?: WorkspacePriority;
     officer?: string;
+    caseType?: InvestigationCaseType;
+    subjectId?: string;
+    subjectName?: string;
+    region?: string;
+    tags?: string[];
+    assignees?: string[];
+    dueAt?: string;
+    estimatedRevenueImpactUsd?: number;
   }) => string;
   setActive: (id: string | null) => void;
   updateOverview: (id: string, patch: Partial<InvestigationWorkspace>) => void;
+  advanceStage: (id: string, to: InvestigationStage, note?: string) => void;
 
   addEvidence: (id: string, ev: Omit<WorkspaceEvidence, "id" | "collectedAt"> & Partial<Pick<WorkspaceEvidence, "id" | "collectedAt">>) => void;
   moveEvidence: (id: string, evidenceId: string, category: EvidenceCategory) => void;
@@ -219,7 +265,20 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       activeId: null,
       investigations: {},
 
-      createInvestigation: ({ title, missionType = "GENERIC", priority = "MEDIUM", officer = "Officer" }) => {
+      createInvestigation: ({
+        title,
+        missionType = "GENERIC",
+        priority = "MEDIUM",
+        officer = "Officer",
+        caseType,
+        subjectId,
+        subjectName,
+        region,
+        tags,
+        assignees,
+        dueAt,
+        estimatedRevenueImpactUsd,
+      }) => {
         const id = uid("inv");
         const t = now();
         const wsp: InvestigationWorkspace = {
@@ -246,12 +305,49 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           ],
           entities: [],
           conversationTurns: [],
+          stage: "INTAKE",
+          caseType,
+          subjectId,
+          subjectName,
+          region,
+          tags,
+          assignees: assignees ?? [officer],
+          dueAt,
+          estimatedRevenueImpactUsd,
+          stageHistory: [{ at: t, from: null, to: "INTAKE", officer, note: "Investigation opened" }],
         };
         set((s) => ({ investigations: { ...s.investigations, [id]: wsp }, activeId: id }));
         return id;
       },
 
       setActive: (id) => set({ activeId: id }),
+
+      advanceStage: (id, to, note) =>
+        set((s) => {
+          const w = s.investigations[id];
+          if (!w) return s;
+          const from = w.stage ?? null;
+          if (from === to) return s;
+          const t = now();
+          const stageHistory = [
+            ...(w.stageHistory ?? []),
+            { at: t, from, to, officer: w.officer, note },
+          ];
+          const tl: TimelineEvent = {
+            id: uid("tl"),
+            at: t,
+            kind: "decision",
+            label: `Stage: ${from ?? "—"} → ${to}`,
+            detail: note,
+          };
+          const status: WorkspaceStatus = to === "CLOSED" ? "CLOSED" : w.status;
+          return {
+            investigations: {
+              ...s.investigations,
+              [id]: { ...w, stage: to, status, stageHistory, timeline: [...w.timeline, tl], updatedAt: t },
+            },
+          };
+        }),
 
       updateOverview: (id, patch) =>
         set((s) => {

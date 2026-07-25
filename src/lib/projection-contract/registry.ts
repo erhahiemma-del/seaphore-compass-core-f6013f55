@@ -629,6 +629,21 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: REVIEWED,
   },
+  {
+    id: "capability.maritime-investigation-workspace",
+    name: "Maritime Investigation Workspace (MIW) — Dashboard",
+    producer: "CAPABILITY",
+    description:
+      "Sprint 1H Landing 1. Officer-facing dashboard aggregating every persistent investigation from the workspace store with lifecycle stage (INTAKE → EVIDENCE → ANALYSIS → DECISION → REPORT → CLOSED), priority, explainable confidence tier, evidence coverage, revenue at risk, overdue tracking, and open task count. Every KPI is derived deterministically from evidence and hypotheses; the officer remains the sole decision maker.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Investigation Dashboard",
+      location: "src/routes/investigations.tsx",
+      component: "src/stores/workspace.store.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: REVIEWED,
+  },
 ];
 
 export function getContractEntry(id: string): ProjectionContractEntry | undefined {
