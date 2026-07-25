@@ -13,6 +13,7 @@ import { uscgPsixConnector } from "@/connectors/uscg-psix";
 import { ukCompaniesHouseConnector } from "@/connectors/uk-companies-house";
 import { cacNigeriaConnector } from "@/connectors/cac-nigeria";
 import { piClubPublicationsConnector } from "@/connectors/p-i-club-publications";
+import { globalFishingWatchConnector } from "@/connectors/global-fishing-watch";
 
 registerConnector(mockAisConnector);
 registerConnector(imoGisisConnector);
