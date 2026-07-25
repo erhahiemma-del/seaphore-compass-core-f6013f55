@@ -17,7 +17,6 @@ import {
   DEMO_HISTORICAL,
   DEMO_INVESTIGATIONS,
 } from "@/services/okl/fixtures";
-import { Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/operational-knowledge")({
   head: () => ({
