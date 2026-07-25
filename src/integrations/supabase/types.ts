@@ -1182,6 +1182,7 @@ export type Database = {
           query: string
           sections: Json
           session_id: string | null
+          source_uip_id: string | null
           sources_corroborated: number
           sources_queried: number
           sources_responded: number
@@ -1201,6 +1202,7 @@ export type Database = {
           query: string
           sections?: Json
           session_id?: string | null
+          source_uip_id?: string | null
           sources_corroborated?: number
           sources_queried?: number
           sources_responded?: number
@@ -1220,6 +1222,7 @@ export type Database = {
           query?: string
           sections?: Json
           session_id?: string | null
+          source_uip_id?: string | null
           sources_corroborated?: number
           sources_queried?: number
           sources_responded?: number
