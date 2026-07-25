@@ -402,7 +402,7 @@ export const generateOieInsights = createServerFn({ method: "POST" })
         kind: "CROSS_CASE_RELATIONSHIP",
         title: `${v.label} bridges ${v.invs.size} investigations`,
         summary: `Co-appears alongside the current subject in ${v.invs.size} historical cases.`,
-        rationale: `Cross-case bridge derived from OKL entity co-occurrence. Every co-occurrence links back to its `source_uip_id`; no connector call.`,
+        rationale: `Cross-case bridge derived from OKL entity co-occurrence. Every co-occurrence links back to its source_uip_id; no connector call.`,
         confidence: conf,
         signals: {
           bridgingInvestigations: v.invs.size,
