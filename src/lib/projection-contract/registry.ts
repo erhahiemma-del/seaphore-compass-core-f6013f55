@@ -659,7 +659,23 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: REVIEWED,
   },
+  {
+    id: "capability.maritime-intelligence-briefing-centre",
+    name: "Maritime Intelligence Briefing Centre (MIBC)",
+    producer: "CAPABILITY",
+    description:
+      "Enterprise reporting engine. Consumes ONLY the Maritime Investigation Workspace (enriched by IFE / OKL / MKG) — never raw connector data. Produces 11 report types (Executive, Operational, Investigation, Revenue, Cargo, Container, Manifest, Compliance, Port, Historical Comparison, Trend) as PDF / DOCX / XLSX / PPTX. Every chart references evidence; every recommendation references the Operational Knowledge Layer; every conclusion is explainable. Officer decides.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Briefing Centre",
+      location: "src/routes/briefing-centre.tsx",
+      component: "src/services/mibc/engine.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: REVIEWED,
+  },
 ];
+
 
 export function getContractEntry(id: string): ProjectionContractEntry | undefined {
   return PROJECTION_CONTRACT.find((e) => e.id === id);
