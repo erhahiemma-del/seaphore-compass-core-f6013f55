@@ -33,7 +33,10 @@ import type {
 const BASE_URL = "https://gateway.api.globalfishingwatch.org";
 const SEARCH_PATH = "/v3/vessels/search";
 const EVENTS_PATH = "/v3/events";
-const HEALTH_TIMEOUT_MS = 2000;
+const HEALTH_TIMEOUT_MS = 4000;
+// GFW v3 requires a datasets[] param on every vessel/event call.
+const VESSEL_IDENTITY_DATASET = "public-global-vessel-identity:latest";
+const EVENTS_DATASET = "public-global-events:latest";
 
 const ENV_KEY = "GLOBAL_FISHING_WATCH_API_KEY";
 
@@ -53,10 +56,10 @@ function buildHeaders(apiKey: string): Record<string, string> {
 async function httpGet<T>(
   apiKey: string,
   path: string,
-  params: Record<string, string>,
+  params: Array<[string, string]>,
 ): Promise<{ ok: true; body: T } | { ok: false; status: number; message: string }> {
   const url = new URL(path, BASE_URL);
-  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  for (const [k, v] of params) url.searchParams.append(k, v);
   let response: Response;
   try {
     response = await fetch(url.toString(), {
@@ -70,7 +73,17 @@ async function httpGet<T>(
     return { ok: false, status: response.status, message: "Authentication Failed" };
   }
   if (!response.ok) {
-    return { ok: false, status: response.status, message: `HTTP ${response.status}` };
+    let detail = "";
+    try {
+      detail = (await response.text()).slice(0, 200);
+    } catch {
+      /* ignore */
+    }
+    return {
+      ok: false,
+      status: response.status,
+      message: `HTTP ${response.status}${detail ? `: ${detail}` : ""}`,
+    };
   }
   try {
     return { ok: true, body: (await response.json()) as T };
@@ -82,13 +95,20 @@ async function httpGet<T>(
 function parseVessel(entry: unknown, fallbackQuery: string): GfwVesselIdentity | null {
   if (!entry || typeof entry !== "object") return null;
   const r = entry as Record<string, unknown>;
+  const self = Array.isArray(r.selfReportedInfo) && r.selfReportedInfo.length
+    ? (r.selfReportedInfo[0] as Record<string, unknown>)
+    : {};
+  const registry = Array.isArray(r.registryInfo) && r.registryInfo.length
+    ? (r.registryInfo[0] as Record<string, unknown>)
+    : {};
+  const vesselId = (self.id as string) ?? (registry.id as string) ?? (r.id as string) ?? fallbackQuery;
   return {
-    vesselId: String(r.id ?? r.vesselId ?? fallbackQuery),
-    imo: (r.imo as string) ?? null,
-    mmsi: (r.mmsi as string) ?? null,
-    callSign: (r.callsign as string) ?? (r.callSign as string) ?? null,
-    flag: (r.flag as string) ?? null,
-    name: (r.shipname as string) ?? (r.name as string) ?? null,
+    vesselId: String(vesselId),
+    imo: (self.imo as string) ?? (registry.imo as string) ?? null,
+    mmsi: (self.ssvid as string) ?? (registry.ssvid as string) ?? null,
+    callSign: (self.callsign as string) ?? (registry.callsign as string) ?? null,
+    flag: (self.flag as string) ?? (registry.flag as string) ?? null,
+    name: (self.shipname as string) ?? (registry.shipname as string) ?? null,
   };
 }
 
@@ -160,21 +180,39 @@ export async function runGfwSearch(query: string): Promise<GfwEvidencePackage | 
   const apiKey = readApiKey();
   if (!apiKey) throw new GfwCredentialsMissingError();
 
-  const searchRes = await httpGet<{ entries?: unknown[] }>(apiKey, SEARCH_PATH, { query: q });
+  const searchRes = await httpGet<{ entries?: unknown[] }>(apiKey, SEARCH_PATH, [
+    ["query", q],
+    ["datasets[0]", VESSEL_IDENTITY_DATASET],
+    ["limit", "5"],
+  ]);
   if (!searchRes.ok) {
     if (searchRes.status === 401 || searchRes.status === 403) {
       throw new GfwAuthError(searchRes.message);
     }
     throw new GfwUpstreamError(searchRes.message, searchRes.status);
   }
-  const first = Array.isArray(searchRes.body.entries) ? searchRes.body.entries[0] : null;
-  const vessel = parseVessel(first, q);
+  const entries = Array.isArray(searchRes.body.entries) ? searchRes.body.entries : [];
+  // Prefer the entry with the richest identity (IMO > MMSI > any).
+  const scored = entries
+    .map((e) => parseVessel(e, q))
+    .filter((v): v is GfwVesselIdentity => v !== null)
+    .sort((a, b) => {
+      const sa = (a.imo ? 3 : 0) + (a.mmsi ? 2 : 0) + (a.flag ? 1 : 0);
+      const sb = (b.imo ? 3 : 0) + (b.mmsi ? 2 : 0) + (b.flag ? 1 : 0);
+      return sb - sa;
+    });
+  const vessel = scored[0] ?? null;
   if (!vessel) return null;
 
-  const eventsRes = await httpGet<{ entries?: unknown[] }>(apiKey, EVENTS_PATH, {
-    vessels: vessel.vesselId,
-    types: "port_visit,gap,fishing,encounter",
-  });
+  const eventsRes = await httpGet<{ entries?: unknown[] }>(apiKey, EVENTS_PATH, [
+    ["vessels[0]", vessel.vesselId],
+    ["datasets[0]", EVENTS_DATASET],
+    ["types[0]", "gap"],
+    ["types[1]", "port_visit"],
+    ["types[2]", "fishing"],
+    ["types[3]", "encounter"],
+    ["limit", "50"],
+  ]);
   const rawEntries =
     eventsRes.ok && Array.isArray(eventsRes.body.entries) ? eventsRes.body.entries : [];
   const events = parseMovementEvents(rawEntries);
@@ -216,7 +254,9 @@ export async function runGfwHealthCheck(): Promise<GfwHealthPayload> {
   const timeout = setTimeout(() => controller.abort(), HEALTH_TIMEOUT_MS);
   try {
     const url = new URL(SEARCH_PATH, BASE_URL);
-    url.searchParams.set("query", "healthcheck");
+    url.searchParams.append("query", "test");
+    url.searchParams.append("datasets[0]", VESSEL_IDENTITY_DATASET);
+    url.searchParams.append("limit", "1");
     const response = await fetch(url.toString(), {
       method: "GET",
       headers: buildHeaders(apiKey),
