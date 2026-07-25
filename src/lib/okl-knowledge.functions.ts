@@ -107,7 +107,7 @@ export const persistOklIngest = createServerFn({ method: "POST" })
         confidence: r.confidence ?? null,
         label: r.label ?? null,
         detail: r.detail ?? null,
-        payload: r.payload,
+        payload: r.payload as never,
       }));
       const { error: recErr } = await supabase.from("okl_records").insert(rows);
       if (recErr) throw new Error(recErr.message);
