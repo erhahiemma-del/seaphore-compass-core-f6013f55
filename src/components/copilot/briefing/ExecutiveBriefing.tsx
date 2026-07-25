@@ -6,6 +6,7 @@
  * happens here — every value is computed by the synthesizer.
  */
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import type {
   ExecutiveBrief,
   EvidenceGroup,
