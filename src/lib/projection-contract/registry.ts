@@ -494,6 +494,21 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: REVIEWED,
   },
+  {
+    id: "capability.intelligence-evidence-viewer",
+    name: "Intelligence Evidence Viewer",
+    producer: "CAPABILITY",
+    description:
+      "Unified officer-facing surface listing every sanitized evidence item (GFW identity, gap events, AIS continuity, OSAE assessment, workspace evidence) with source, timestamp, confidence, type, status, and safe source link.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Intelligence Evidence · Assessment Basis",
+      location: "src/routes/intelligence-evidence.tsx",
+      component: "src/components/intelligence/IntelligenceEvidenceViewer.tsx",
+      interaction: "drill-in",
+    },
+    reviewedAt: REVIEWED,
+  },
 ];
 
 export function getContractEntry(id: string): ProjectionContractEntry | undefined {
