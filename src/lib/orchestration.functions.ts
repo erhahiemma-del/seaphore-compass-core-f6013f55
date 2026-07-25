@@ -64,13 +64,20 @@ export const copilotQueryFn = createServerFn({ method: "POST" })
 
     try {
       const briefing = await trace.stage("total", () =>
-        orchestrate({
-          query: data.query,
-          session_id: data.session_id,
-          officer_id: context.userId,
-          context: data.context,
-        }),
+        orchestrate(
+          {
+            query: data.query,
+            session_id: data.session_id,
+            officer_id: context.userId,
+            context: data.context,
+          },
+          // Pass the authenticated server client so intel_briefings and
+          // orchestration_events persist under the officer's auth context
+          // (Sprint 2.1A — canonical UIP as system of record).
+          { supabase: context.supabase },
+        ),
       );
+
       trace.finish({ ok: true });
       return {
         briefing_id: briefing.id,
