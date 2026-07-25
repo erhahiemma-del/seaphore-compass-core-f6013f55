@@ -61,6 +61,13 @@ import { enhanceWithIBE, persistHypotheses } from "@/services/ibe";
 import { IntelligenceProjectionPanel } from "@/components/copilot/projection/IntelligenceProjectionPanel";
 import { ExecutiveBriefing } from "@/components/copilot/briefing/ExecutiveBriefing";
 import { synthesizeExecutiveBrief } from "@/lib/copilot/executive-brief/synthesize";
+import { analyzeOperationalKnowledge } from "@/services/okl";
+import {
+  DEMO_UIP,
+  DEMO_EVIDENCE,
+  DEMO_HISTORICAL,
+  DEMO_INVESTIGATIONS,
+} from "@/services/okl/fixtures";
 import type { HumanResponse } from "@/services/oie/types";
 import type { IbeResult } from "@/services/ibe/types";
 import { ClarifyCard } from "@/components/copilot/ClarifyCard";
@@ -841,9 +848,26 @@ function ExecutiveBriefingView({
   followUps: string[];
   onFollowUp: (q: string) => void;
 }) {
+  const operationalKnowledge = useMemo(
+    () =>
+      analyzeOperationalKnowledge({
+        uip: DEMO_UIP,
+        rawEvidence: DEMO_EVIDENCE,
+        historical: DEMO_HISTORICAL,
+        investigations: DEMO_INVESTIGATIONS,
+      }),
+    [],
+  );
   const brief = useMemo(
-    () => synthesizeExecutiveBrief({ briefing, humanResponse, ibe, followUps }),
-    [briefing, humanResponse, ibe, followUps],
+    () =>
+      synthesizeExecutiveBrief({
+        briefing,
+        humanResponse,
+        ibe,
+        followUps,
+        operationalKnowledge,
+      }),
+    [briefing, humanResponse, ibe, followUps, operationalKnowledge],
   );
   return <ExecutiveBriefing brief={brief} onFollowUp={onFollowUp} />;
 }
