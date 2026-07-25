@@ -146,14 +146,17 @@ function WorkspaceRoute() {
             <TaskPanel w={w} />
           </div>
 
-          {/* Column 3: Decision log + Timeline + Conversation */}
+          {/* Column 3: Recommendation + Decision log + Notebook + Copilot + Timeline */}
           <div className="space-y-4">
             <RecommendationPanel w={w} />
+            <NotebookPanel w={w} />
+            <EmbeddedCopilotPanel w={w} />
             <DecisionLogPanel w={w} />
             <TimelinePanel w={w} />
             <ConversationPanel w={w} />
           </div>
         </div>
+
 
         <footer className="border-t bg-background/60 px-4 py-2 text-center text-[11px] text-muted-foreground">
           Evidence first. Explainable always. Officer decides.
