@@ -6,6 +6,7 @@
  */
 
 import type { InvestigationWorkspace } from "@/stores/workspace.store";
+import type { MissionPlan } from "@/services/mission";
 import type {
   ReportPackage,
   ReportSection,
@@ -20,6 +21,8 @@ export interface BuildReportInput {
   period: ReportPeriod;
   workspaces: InvestigationWorkspace[];
   officer: string;
+  /** Mission plans available in the store — engine filters to those linked to sourced workspaces. */
+  missionPlans?: ReadonlyArray<MissionPlan>;
   /** Optional pre-computed OKL insights per workspace, keyed by workspace id. */
   oklInsights?: Record<
     string,
@@ -267,6 +270,51 @@ export function buildReport(input: BuildReportInput): ReportPackage {
           ]
         : recBullets,
   });
+
+  // ── Human Decisions ────────────────────────────────────────────────
+  sections.push({
+    id: "human-decisions",
+    title: "Human Decisions",
+    bullets:
+      decisions.length === 0
+        ? ["No officer decisions recorded in period."]
+        : decisions.map(
+            (d) =>
+              `${new Date(d.at).toISOString().slice(0, 16).replace("T", " ")} — ${d.workspaceTitle} · ${d.title}${d.detail ? ` — ${d.detail}` : ""}${d.officer ? ` (officer: ${d.officer})` : ""}`,
+          ),
+    references: decisions.map((d) => d.id),
+  });
+
+  // ── Mission Progress ───────────────────────────────────────────────
+  const workspaceIds = new Set(workspaces.map((w) => w.id));
+  const linkedMissionIds = new Set(
+    workspaces.flatMap((w) => w.missionPlanIds ?? []),
+  );
+  const missions = (input.missionPlans ?? []).filter((m) => linkedMissionIds.has(m.id));
+  sections.push({
+    id: "mission-progress",
+    title: "Mission Progress",
+    columns: ["Mission", "Type", "Status", "Objectives", "Approved recs", "Subjects"],
+    rows:
+      missions.length === 0
+        ? []
+        : missions.map((m) => ({
+            Mission: m.name,
+            Type: m.type,
+            Status: m.status,
+            Objectives: m.objectives.length,
+            "Approved recs": m.recommendations.filter((r) => r.humanApproved).length,
+            Subjects: joinShort(m.subjects.map((s) => s.label)),
+          })),
+    bullets:
+      missions.length === 0
+        ? ["No missions linked to sourced investigations. Missions are only created from approved decisions, recommendations, or OKL patterns."]
+        : undefined,
+    references: [...linkedMissionIds],
+  });
+  // Preserve workspaceIds usage (silences unused-var when downstream code changes).
+  void workspaceIds;
+
 
   sections.push({
     id: "confidence",

@@ -204,6 +204,10 @@ export interface InvestigationWorkspace {
   estimatedRevenueImpactUsd?: number;
   stageHistory?: Array<{ at: string; from: InvestigationStage | null; to: InvestigationStage; officer?: string; note?: string }>;
 
+  // Operational Command integration — linked artifacts owned by other services.
+  missionPlanIds?: string[];
+  oklPatternIds?: string[];
+
   // Copilot conversation transcript pointer (Copilot store owns rendering).
   conversationTurns: Array<{ id: string; at: string; role: "officer" | "copilot"; text: string; briefingId?: string }>;
 }
@@ -260,6 +264,10 @@ interface WorkspaceState {
     patch: Partial<Pick<NotebookEntry, "title" | "body" | "supportingEvidence" | "refId">> & { officer?: string },
   ) => void;
   removeNotebookEntry: (id: string, entryId: string) => void;
+
+  // Operational Command bridges.
+  linkMission: (id: string, missionId: string, note?: string) => void;
+  linkOklPattern: (id: string, patternId: string, note?: string) => void;
 
 
   removeInvestigation: (id: string) => void;
@@ -670,6 +678,44 @@ export const useWorkspaceStore = create<WorkspaceState>()(
             investigations: {
               ...s.investigations,
               [id]: { ...w, notebook: (w.notebook ?? []).filter((e) => e.id !== entryId), updatedAt: now() },
+            },
+          };
+        }),
+
+      linkMission: (id, missionId, note) =>
+        set((s) => {
+          const w = s.investigations[id];
+          if (!w) return s;
+          const existing = w.missionPlanIds ?? [];
+          if (existing.includes(missionId)) return s;
+          const t = now();
+          const tl: TimelineEvent = {
+            id: uid("tl"), at: t, kind: "decision",
+            label: `Mission linked: ${missionId}`, detail: note, refId: missionId,
+          };
+          return {
+            investigations: {
+              ...s.investigations,
+              [id]: { ...w, missionPlanIds: [...existing, missionId], timeline: [...w.timeline, tl], updatedAt: t },
+            },
+          };
+        }),
+
+      linkOklPattern: (id, patternId, note) =>
+        set((s) => {
+          const w = s.investigations[id];
+          if (!w) return s;
+          const existing = w.oklPatternIds ?? [];
+          if (existing.includes(patternId)) return s;
+          const t = now();
+          const tl: TimelineEvent = {
+            id: uid("tl"), at: t, kind: "recommendation",
+            label: `OKL pattern linked: ${patternId}`, detail: note, refId: patternId,
+          };
+          return {
+            investigations: {
+              ...s.investigations,
+              [id]: { ...w, oklPatternIds: [...existing, patternId], timeline: [...w.timeline, tl], updatedAt: t },
             },
           };
         }),
