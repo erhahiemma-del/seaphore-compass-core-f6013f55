@@ -16,6 +16,7 @@ import { Route as RevenueRouteImport } from './routes/revenue'
 import { Route as PredictionsRouteImport } from './routes/predictions'
 import { Route as PortsRouteImport } from './routes/ports'
 import { Route as OwnershipRouteImport } from './routes/ownership'
+import { Route as OperationalKnowledgeRouteImport } from './routes/operational-knowledge'
 import { Route as ObservabilityRouteImport } from './routes/observability'
 import { Route as NationalRiskRouteImport } from './routes/national-risk'
 import { Route as MissionsRouteImport } from './routes/missions'
@@ -94,6 +95,11 @@ const PortsRoute = PortsRouteImport.update({
 const OwnershipRoute = OwnershipRouteImport.update({
   id: '/ownership',
   path: '/ownership',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OperationalKnowledgeRoute = OperationalKnowledgeRouteImport.update({
+  id: '/operational-knowledge',
+  path: '/operational-knowledge',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ObservabilityRoute = ObservabilityRouteImport.update({
@@ -338,6 +344,7 @@ export interface FileRoutesByFullPath {
   '/missions': typeof MissionsRoute
   '/national-risk': typeof NationalRiskRoute
   '/observability': typeof ObservabilityRoute
+  '/operational-knowledge': typeof OperationalKnowledgeRoute
   '/ownership': typeof OwnershipRoute
   '/ports': typeof PortsRoute
   '/predictions': typeof PredictionsRoute
@@ -389,6 +396,7 @@ export interface FileRoutesByTo {
   '/missions': typeof MissionsRoute
   '/national-risk': typeof NationalRiskRoute
   '/observability': typeof ObservabilityRoute
+  '/operational-knowledge': typeof OperationalKnowledgeRoute
   '/ownership': typeof OwnershipRoute
   '/ports': typeof PortsRoute
   '/predictions': typeof PredictionsRoute
@@ -442,6 +450,7 @@ export interface FileRoutesById {
   '/missions': typeof MissionsRoute
   '/national-risk': typeof NationalRiskRoute
   '/observability': typeof ObservabilityRoute
+  '/operational-knowledge': typeof OperationalKnowledgeRoute
   '/ownership': typeof OwnershipRoute
   '/ports': typeof PortsRoute
   '/predictions': typeof PredictionsRoute
@@ -497,6 +506,7 @@ export interface FileRouteTypes {
     | '/missions'
     | '/national-risk'
     | '/observability'
+    | '/operational-knowledge'
     | '/ownership'
     | '/ports'
     | '/predictions'
@@ -548,6 +558,7 @@ export interface FileRouteTypes {
     | '/missions'
     | '/national-risk'
     | '/observability'
+    | '/operational-knowledge'
     | '/ownership'
     | '/ports'
     | '/predictions'
@@ -600,6 +611,7 @@ export interface FileRouteTypes {
     | '/missions'
     | '/national-risk'
     | '/observability'
+    | '/operational-knowledge'
     | '/ownership'
     | '/ports'
     | '/predictions'
@@ -654,6 +666,7 @@ export interface RootRouteChildren {
   MissionsRoute: typeof MissionsRoute
   NationalRiskRoute: typeof NationalRiskRoute
   ObservabilityRoute: typeof ObservabilityRoute
+  OperationalKnowledgeRoute: typeof OperationalKnowledgeRoute
   OwnershipRoute: typeof OwnershipRoute
   PortsRoute: typeof PortsRoute
   PredictionsRoute: typeof PredictionsRoute
@@ -727,6 +740,13 @@ declare module '@tanstack/react-router' {
       path: '/ownership'
       fullPath: '/ownership'
       preLoaderRoute: typeof OwnershipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/operational-knowledge': {
+      id: '/operational-knowledge'
+      path: '/operational-knowledge'
+      fullPath: '/operational-knowledge'
+      preLoaderRoute: typeof OperationalKnowledgeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/observability': {
@@ -1106,6 +1126,7 @@ const rootRouteChildren: RootRouteChildren = {
   MissionsRoute: MissionsRoute,
   NationalRiskRoute: NationalRiskRoute,
   ObservabilityRoute: ObservabilityRoute,
+  OperationalKnowledgeRoute: OperationalKnowledgeRoute,
   OwnershipRoute: OwnershipRoute,
   PortsRoute: PortsRoute,
   PredictionsRoute: PredictionsRoute,

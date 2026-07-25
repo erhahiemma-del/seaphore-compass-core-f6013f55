@@ -644,6 +644,21 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: REVIEWED,
   },
+  {
+    id: "capability.operational-knowledge-layer",
+    name: "Operational Knowledge Layer (OKL)",
+    producer: "CAPABILITY",
+    description:
+      "Consumes ONLY the Unified Intelligence Package and the Maritime Knowledge Graph and produces explainable operational patterns (repeat offender, suspicious routing, dark AIS, ownership networks, cargo/manifest anomalies, revenue leakage, sanctions exposure, port congestion, cross-investigation links, historical behaviour). Every pattern carries a full Confidence Pyramid (identity · evidence · fusion · pattern · recommendation), source connectors, contradictions, alternative explanations, reasoning trace, and officer-approval-gated recommendations. The officer decides.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Operational Knowledge",
+      location: "src/routes/operational-knowledge.tsx",
+      component: "src/components/intelligence/OperationalInsights.tsx",
+      interaction: "drill-in",
+    },
+    reviewedAt: REVIEWED,
+  },
 ];
 
 export function getContractEntry(id: string): ProjectionContractEntry | undefined {

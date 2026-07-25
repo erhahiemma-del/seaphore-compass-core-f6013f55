@@ -97,6 +97,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { title: "Intelligence Evidence", subtitle: "Assessment Basis", url: "/intelligence-evidence", icon: FileSearch },
       { title: "Knowledge Graph", subtitle: "Relational Intelligence", url: "/knowledge-graph", icon: Share2 },
       { title: "Predictive Intelligence", subtitle: "PIE · Forecasts & Alerts", url: "/predictions", icon: Radar },
+      { title: "Operational Knowledge", subtitle: "OKL · Patterns & Recommendations", url: "/operational-knowledge", icon: Sparkles },
       { title: "Alerts Center", url: "/alerts", icon: BellRing },
     ],
   },

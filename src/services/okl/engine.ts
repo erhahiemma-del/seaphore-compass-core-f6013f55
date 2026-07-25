@@ -12,6 +12,7 @@
  */
 import type { UnifiedIntelligencePackage } from "@/services/ife";
 import type { NormalizedEvidence, CanonicalEntityRef } from "@/services/ial/types";
+import type { MaritimeKnowledgeGraph } from "@/services/mkg";
 
 import {
   fusionToScore,
@@ -40,6 +41,8 @@ export interface AnalyzeOklInput {
   readonly investigations?: ReadonlyArray<OklInvestigationHint>;
   /** Optional raw evidence when the UIP fusion didn't retain full records. */
   readonly rawEvidence?: ReadonlyArray<NormalizedEvidence>;
+  /** Optional Maritime Knowledge Graph for relationship enrichment. */
+  readonly graph?: MaritimeKnowledgeGraph;
 }
 
 interface DetectorCtx {
@@ -47,6 +50,7 @@ interface DetectorCtx {
   readonly historical: ReadonlyArray<OklHistoricalHint>;
   readonly investigations: ReadonlyArray<OklInvestigationHint>;
   readonly evidence: ReadonlyArray<NormalizedEvidence>;
+  readonly graph?: MaritimeKnowledgeGraph;
   readonly identityScore: number;
   readonly evidenceScore: number;
   readonly fusionScore: number;
@@ -781,6 +785,7 @@ export function analyzeOperationalKnowledge(
     historical: input.historical ?? [],
     investigations: input.investigations ?? [],
     evidence: input.rawEvidence ?? [],
+    graph: input.graph,
     identityScore: base.identity,
     evidenceScore: base.evidence,
     fusionScore: base.fusion,
@@ -800,14 +805,40 @@ export function analyzeOperationalKnowledge(
     ...detectHistoricalBehaviour(ctx),
   ].sort((a, b) => RISK_ORDER[b.riskLevel] - RISK_ORDER[a.riskLevel]);
 
+  // MKG enrichment — attach graph neighbours as related entities on each
+  // pattern without inventing new evidence.
+  const enriched: OperationalPattern[] = ctx.graph
+    ? patterns.map((p) => {
+        const seen = new Set(p.entities.map((e) => e.id));
+        const related: CanonicalEntityRef[] = [];
+        for (const e of p.entities) {
+          const nbrs = ctx.graph!.neighbors(e.id).slice(0, 3);
+          for (const n of nbrs) {
+            if (seen.has(n.neighbor.id)) continue;
+            seen.add(n.neighbor.id);
+            const k = n.neighbor.kind;
+            const canonicalKind: CanonicalEntityRef["kind"] =
+              k === "vessel" || k === "company" || k === "person" ||
+              k === "port" || k === "cargo" || k === "voyage"
+                ? k
+                : "company";
+            related.push({ kind: canonicalKind, id: n.neighbor.id, label: n.neighbor.label });
+          }
+        }
+        return related.length
+          ? { ...p, entities: [...p.entities, ...related] }
+          : p;
+      })
+    : patterns;
+
   const byRisk: Record<RiskLevel, number> = { LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0 };
   const byKind: Partial<Record<OklPatternKind, number>> = {};
-  for (const p of patterns) {
+  for (const p of enriched) {
     byRisk[p.riskLevel] += 1;
     byKind[p.kind] = (byKind[p.kind] ?? 0) + 1;
   }
 
-  const topRecommendation = patterns
+  const topRecommendation = enriched
     .flatMap((p) => p.recommendations)
     .sort((a, b) => {
       const u = { IMMEDIATE: 0, PRIORITY: 1, ROUTINE: 2 } as const;
@@ -818,26 +849,26 @@ export function analyzeOperationalKnowledge(
     identity: base.identity,
     evidence: base.evidence,
     fusion: base.fusion,
-    pattern: patterns.length
+    pattern: enriched.length
       ? Math.round(
-          patterns.reduce((s, p) => s + p.confidence.pattern, 0) / patterns.length,
+          enriched.reduce((s, p) => s + p.confidence.pattern, 0) / enriched.length,
         )
       : 0,
     recommendation: topRecommendation?.confidence ?? 0,
     tier: tierFromScore(topRecommendation?.confidence ?? 0),
     explanation:
-      patterns.length === 0
+      enriched.length === 0
         ? "No operational patterns detected in the current UIP."
-        : `Composite of ${patterns.length} pattern(s); top recommendation drives overall tier.`,
+        : `Composite of ${enriched.length} pattern(s); top recommendation drives overall tier.`,
   };
 
   return {
     id: uid("okpkg"),
     createdAt: now(),
     uipId: input.uip.id,
-    patterns,
+    patterns: enriched,
     summary: {
-      total: patterns.length,
+      total: enriched.length,
       byRisk,
       byKind,
       topRecommendation,
