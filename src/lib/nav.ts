@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Building2,
   FolderArchive,
+  FileSearch,
   BellRing,
   Settings,
   Sparkles,
