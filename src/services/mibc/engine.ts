@@ -448,6 +448,51 @@ export function buildReport(input: BuildReportInput): ReportPackage {
         : recBullets,
   });
 
+  // ── Explainability — every recommendation exposes evidence, confidence,
+  //    supporting sources, and reasoning chain. No black-box output.
+  const uipRefsForExplain = input.uipSnapshots ?? [];
+  const explainRows: Array<Record<string, string | number>> = [];
+  for (const w of workspaces) {
+    if (!w.recommendation) continue;
+    const uip = uipRefsForExplain.find(
+      (r) => r.workspaceId === w.id || r.uip.id === w.sourceUipId,
+    )?.uip;
+    const supportIds = w.recommendation.supportingEvidence ?? [];
+    const sources = Array.from(
+      new Set([
+        ...supportIds
+          .map((id) => w.evidence.find((e) => e.id === id)?.source)
+          .filter((x): x is string => !!x),
+        ...(uip?.provenance.map((p) => p.sourceName) ?? []),
+      ]),
+    );
+    const reasoning =
+      w.recommendation.rationale ??
+      uip?.fused.report.summary ??
+      "Officer to record reasoning before circulation.";
+    explainRows.push({
+      Recommendation: `${w.title} → ${w.recommendation.label}`,
+      Confidence: `${w.confidencePct ?? 0}%`,
+      "Evidence Used": supportIds.length
+        ? `${supportIds.length} item${supportIds.length === 1 ? "" : "s"}`
+        : `${w.evidence.length} workspace record${w.evidence.length === 1 ? "" : "s"}`,
+      "Supporting Sources": joinShort(sources, 4),
+      "Reasoning Chain": reasoning.length > 220 ? reasoning.slice(0, 217) + "…" : reasoning,
+    });
+  }
+  sections.push({
+    id: "explainability",
+    title: "Explainability",
+    body:
+      explainRows.length === 0
+        ? "No recommendation carries a supporting evidence trace yet. Officers must not release recommendations without an explicit evidence and reasoning trace."
+        : "Every recommendation below carries the evidence, confidence, sources, and reasoning chain used by the Copilot pipeline. No black-box recommendations.",
+    columns: ["Recommendation", "Confidence", "Evidence Used", "Supporting Sources", "Reasoning Chain"],
+    rows: explainRows,
+  });
+
+
+
   // ── Human Decisions ────────────────────────────────────────────────
   sections.push({
     id: "human-decisions",
