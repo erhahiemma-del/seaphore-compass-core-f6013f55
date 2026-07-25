@@ -44,6 +44,8 @@ import {
 import { AskCopilotDialog } from "@/components/ai/ask-copilot-dialog";
 import { MissionsPanel } from "@/components/investigation/MissionsPanel";
 import { OklPatternsPanel } from "@/components/investigation/OklPatternsPanel";
+import { HistoricalKnowledgePanel } from "@/components/okl/HistoricalKnowledgePanel";
+import { useOklAutoPersistOnClose } from "@/services/okl/use-okl-auto-persist";
 
 
 export const Route = createFileRoute("/workspace/$id")({
