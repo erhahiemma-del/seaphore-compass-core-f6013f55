@@ -57,8 +57,6 @@ function OperationalKnowledgeRoute() {
     <AppShell
       title="Operational Knowledge Layer"
       subtitle="Explainable operational patterns derived from the Unified Intelligence Package"
-      icon={Sparkles}
-      badge={{ label: "OKL", tone: "info" }}
     >
       <div className="mx-auto max-w-6xl px-4 py-6">
         <div className="mb-4 rounded-xl bg-white p-4 ring-1 ring-slate-200">
