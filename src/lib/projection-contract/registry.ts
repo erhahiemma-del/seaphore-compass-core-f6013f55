@@ -749,6 +749,33 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: REVIEWED,
   },
+  {
+    id: "ife.unified-intelligence-package",
+    name: "Unified Intelligence Package (canonical SSOT)",
+    producer: "IFE",
+    description:
+      "Single canonical evidence artifact per officer query/investigation, addressed by unifiedPackageId. Every downstream capability (MKG, PIE, OKL, OSAE, Revenue, NMRSE, MIW, Mission Planning, Copilot, Executive Briefing, MIBC) resolves the same evidence set through the UIP registry. No route generates its own intelligence.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Executive Briefing header · UIP chip",
+      location: "src/components/copilot/briefing/ExecutiveBriefing.tsx",
+      interaction: "hover-explainer",
+    },
+    reviewedAt: REVIEWED,
+  },
+  {
+    id: "ife.legacy-fusion-shims",
+    name: "Legacy fusion modules (Sprint 7 fusion, orchestration.evidence-fusion, ICE fusion)",
+    producer: "IFE",
+    description:
+      "Historical fusion implementations retained as internal shims while consumers migrate to the canonical IFE + UIP registry. Not projected to officers; not part of the production evidence contract.",
+    state: "INTERNAL",
+    internal: {
+      reason: "implementation-detail",
+      note: "Deprecated. New code MUST call the canonical IFE and register the UIP; these paths remain only to preserve import compatibility.",
+    },
+    reviewedAt: REVIEWED,
+  },
 ];
 
 
