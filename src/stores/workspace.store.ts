@@ -174,6 +174,14 @@ export interface InvestigationWorkspace {
   startedAt: string;
   updatedAt: string;
   lastBriefingId?: string;
+  /**
+   * Canonical UIP id that seeded this investigation. Every downstream
+   * artifact (Mission Plan, MIBC report) traces back to this id so the
+   * end-to-end pipeline (UIP → OSAE → Investigation → Mission → MIBC)
+   * remains explainable. Set on creation from `recordBriefingToWorkspace`
+   * and never mutated thereafter.
+   */
+  sourceUipId?: string;
 
   confidenceTier: ConfidenceTier;
   confidencePct: number;
@@ -229,6 +237,7 @@ interface WorkspaceState {
     assignees?: string[];
     dueAt?: string;
     estimatedRevenueImpactUsd?: number;
+    sourceUipId?: string;
   }) => string;
   setActive: (id: string | null) => void;
   updateOverview: (id: string, patch: Partial<InvestigationWorkspace>) => void;
@@ -333,6 +342,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         assignees,
         dueAt,
         estimatedRevenueImpactUsd,
+        sourceUipId,
       }) => {
         const id = uid("inv");
         const t = now();
@@ -345,6 +355,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           officer,
           startedAt: t,
           updatedAt: t,
+          sourceUipId,
           confidenceTier: "LOW",
           confidencePct: 0,
           evidenceCompleteness: 0,
@@ -369,7 +380,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           assignees: assignees ?? [officer],
           dueAt,
           estimatedRevenueImpactUsd,
-          stageHistory: [{ at: t, from: null, to: "INTAKE", officer, note: "Investigation opened" }],
+          stageHistory: [{ at: t, from: null, to: "INTAKE", officer, note: sourceUipId ? `Investigation opened · UIP ${sourceUipId}` : "Investigation opened" }],
           notebook: [],
 
         };

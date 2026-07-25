@@ -79,6 +79,22 @@ export interface ReportChart {
   evidenceRefs: string[]; // Golden Rule: every chart references evidence
 }
 
+/**
+ * Origin of a MIBC report.
+ *
+ * - `LIVE_UIP`             — one-off intelligence report generated directly from a
+ *                            Canonical UIP (e.g. sanctions screening result, ad-hoc
+ *                            live query). Requires `sourceUipIds`.
+ * - `INVESTIGATION`        — report assembled from Investigation Workspaces; each
+ *                            workspace carries `sourceUipId` so the UIP lineage
+ *                            remains intact.
+ * - `OPERATIONAL_RUNTIME`  — report assembled from the full operational chain
+ *                            (UIP → OSAE → Investigation → Mission). Each sourced
+ *                            workspace must carry `sourceUipId` and at least one
+ *                            linked mission plan must exist.
+ */
+export type ReportOrigin = "LIVE_UIP" | "INVESTIGATION" | "OPERATIONAL_RUNTIME";
+
 export interface ReportPackage {
   /** Stable synthetic id (not persisted). */
   id: string;
@@ -91,8 +107,15 @@ export interface ReportPackage {
   title: string;
   subtitle?: string;
 
+  /** Which arm of the Operational Runtime this report was assembled from. */
+  origin: ReportOrigin;
+
   /** Source investigation IDs — reports are ONLY built from these. */
   sourceInvestigationIds: string[];
+  /** Canonical UIP ids this report traces back to. */
+  sourceUipIds: string[];
+  /** Mission plan ids included (Operational Runtime origin). */
+  sourceMissionIds: string[];
 
   /** Ordered sections (Executive Summary → Appendices → Sources). */
   sections: ReportSection[];

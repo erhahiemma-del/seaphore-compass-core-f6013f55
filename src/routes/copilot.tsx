@@ -66,12 +66,6 @@ import { synthesizeExecutiveBrief } from "@/lib/copilot/executive-brief/synthesi
 
 import { analyzeOperationalKnowledge } from "@/services/okl";
 import { autoIngestOklIntoInvestigations } from "@/services/okl/auto-ingest";
-import {
-  DEMO_UIP,
-  DEMO_EVIDENCE,
-  DEMO_HISTORICAL,
-  DEMO_INVESTIGATIONS,
-} from "@/services/okl/fixtures";
 import type { HumanResponse } from "@/services/oie/types";
 import type { IbeResult } from "@/services/ibe/types";
 import { ClarifyCard } from "@/components/copilot/ClarifyCard";
@@ -392,8 +386,12 @@ function CopilotOpsPage() {
       setStage("ready");
       session.appendCopilot(`Briefing: ${q}`, adapted.id);
       // Sprint UX-005 — persist briefing into the Investigation Workspace.
+      // The active UIP id (captured above from the OIE result) is threaded
+      // through so the Investigation permanently references the originating
+      // Canonical UIP — mandatory for the operational-runtime pipeline
+      // (UIP → OSAE → Investigation → Mission → MIBC).
       try {
-        recordBriefingToWorkspace(adapted);
+        recordBriefingToWorkspace(adapted, uipFromResult?.id ?? null);
       } catch (e) {
         console.warn("[Workspace] failed to record briefing", e);
       }
@@ -874,18 +872,24 @@ function ExecutiveBriefingView({
   uipId: string | null;
   onFollowUp: (q: string) => void;
 }) {
+  // Resolve the Canonical UIP that produced this briefing so the
+  // provenance panel + OKL analysis operate on the same evidence set
+  // every downstream surface consumes. NEVER falls back to demo fixtures.
+  const uip = useUipStore((s) => (uipId ? s.byId[uipId] : undefined));
   const operationalKnowledge = useMemo(
     () =>
-      analyzeOperationalKnowledge({
-        uip: DEMO_UIP,
-        rawEvidence: DEMO_EVIDENCE,
-        historical: DEMO_HISTORICAL,
-        investigations: DEMO_INVESTIGATIONS,
-      }),
-    [],
+      uip
+        ? analyzeOperationalKnowledge({
+            uip,
+            rawEvidence: uip.rawEvidence,
+            historical: [],
+            investigations: [],
+          })
+        : null,
+    [uip],
   );
   useEffect(() => {
-    autoIngestOklIntoInvestigations(operationalKnowledge);
+    if (operationalKnowledge) autoIngestOklIntoInvestigations(operationalKnowledge);
   }, [operationalKnowledge]);
   const brief = useMemo(
     () =>
@@ -894,13 +898,10 @@ function ExecutiveBriefingView({
         humanResponse,
         ibe,
         followUps,
-        operationalKnowledge,
+        operationalKnowledge: operationalKnowledge ?? undefined,
       }),
     [briefing, humanResponse, ibe, followUps, operationalKnowledge],
   );
-  // Resolve the Canonical UIP that produced this briefing so the provenance
-  // panel can cite the same evidence set every downstream surface uses.
-  const uip = useUipStore((s) => (uipId ? s.byId[uipId] : undefined));
   return (
     <>
       <ExecutiveBriefing brief={brief} onFollowUp={onFollowUp} />

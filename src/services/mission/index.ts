@@ -95,6 +95,10 @@ export interface MissionPlan {
   readonly approvedBy?: string;
   readonly rejectedReason?: string;
   readonly auditTrail: ReadonlyArray<{ atISO: string; actor: string; action: string; note?: string }>;
+  /** Investigation this mission was bridged from — required for every plan created via the sanctioned bridge. */
+  readonly sourceInvestigationId?: string;
+  /** Canonical UIP id inherited from the source investigation. Provides the full pipeline trace UIP → Investigation → Mission. */
+  readonly sourceUipId?: string;
 }
 
 export interface PlanMissionInput {
@@ -103,6 +107,8 @@ export interface PlanMissionInput {
   readonly subjects: ReadonlyArray<MissionSubject>;
   readonly predictions?: ReadonlyArray<Prediction>;
   readonly hints?: ReadonlyArray<string>;
+  readonly sourceInvestigationId?: string;
+  readonly sourceUipId?: string;
 }
 
 const OBJECTIVES_BY_TYPE: Record<MissionType, ReadonlyArray<string>> = {
@@ -210,6 +216,8 @@ export function planMission(input: PlanMissionInput, opts?: { now?: () => Date }
     recommendations,
     createdAt: iso,
     updatedAt: iso,
+    sourceInvestigationId: input.sourceInvestigationId,
+    sourceUipId: input.sourceUipId,
     auditTrail: [{ atISO: iso, actor: "system", action: "created" }],
   };
 }

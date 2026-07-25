@@ -1,19 +1,23 @@
 /**
  * /missions — AI-Assisted Mission Planning surface (Sprint 1G).
  *
- * Officers see draft mission plans derived from PIE predictions. Every
- * recommendation must be officer-approved before the mission moves to
- * `executing`. Golden Rule: Detect. Decide. Act.
+ * OPERATIONAL RUNTIME CONTRACT (Sprint Operational Runtime):
+ *   Mission Plans are ONLY ever created via the sanctioned bridge
+ *   `createMissionFromInvestigation` — which itself gates on an approved
+ *   decision, recommendation, or linked OKL pattern on an Investigation
+ *   Workspace. This route does NOT create missions; it renders and
+ *   advances the ones the bridge produced.
+ *
+ * Every recommendation is derived from evidence and requires explicit
+ * officer approval before the mission can move to execution.
  */
-import { useEffect } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useMissionStore } from "@/services/mission";
-import { usePieStore } from "@/services/pie";
-import { Target } from "lucide-react";
+import { Target, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/missions")({
   head: () => ({
@@ -40,25 +44,8 @@ export const Route = createFileRoute("/missions")({
 const OFFICER = "officer:demo";
 
 function MissionsRoute() {
-  const { plans, create, submitForApproval, approve, execute, complete, approveRecommendation, reset } =
+  const { plans, submitForApproval, approve, execute, complete, approveRecommendation } =
     useMissionStore();
-  const predictions = usePieStore((s) => s.predictions);
-
-  useEffect(() => {
-    if (plans.length > 0) return;
-    reset();
-    create({
-      name: "Interdiction — DONGWON NO.16",
-      type: "interdiction",
-      subjects: [{ kind: "vessel", id: "vessel:9411640", label: "DONGWON NO.16" }],
-      predictions: predictions.filter((p) => p.subject.id === "vessel:9411640"),
-    });
-    create({
-      name: "Revenue Audit — Lagos Port Manifests",
-      type: "revenue-audit",
-      subjects: [{ kind: "port", id: "port:unlocode:NGLOS", label: "Lagos" }],
-    });
-  }, [plans.length, create, reset, predictions]);
 
   return (
     <AppShell title="Mission Planning" subtitle="AI-assisted planning under officer approval">
@@ -69,11 +56,36 @@ function MissionsRoute() {
               <Target className="h-4 w-4" /> Mission Planner
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            Every recommendation is derived from evidence and requires explicit officer approval
-            before the mission can move to execution.
+          <CardContent className="text-sm text-muted-foreground space-y-2">
+            <p>
+              Missions may only be created from an Investigation Workspace with an
+              officer-approved decision, recommendation, or linked OKL pattern. Every
+              recommendation is derived from evidence and requires explicit officer approval
+              before the mission can move to execution.
+            </p>
+            <p className="text-xs">
+              Every plan on this page traces back to a Canonical UIP → Investigation →
+              Mission chain via <code>sourceUipId</code> / <code>sourceInvestigationId</code>.
+            </p>
           </CardContent>
         </Card>
+
+        {plans.length === 0 && (
+          <Card>
+            <CardContent className="py-8 text-center text-sm text-muted-foreground">
+              <p className="mb-3">No mission plans yet.</p>
+              <Button asChild size="sm" variant="outline">
+                <Link to="/investigations">
+                  Open Investigation Workspace <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                </Link>
+              </Button>
+              <p className="mt-3 text-xs">
+                Bridge a mission from an investigation once an approved decision,
+                recommendation, or OKL pattern link exists.
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         {plans.map((p) => (
           <Card key={p.id}>
@@ -93,6 +105,16 @@ function MissionsRoute() {
                     {s.kind}: {s.label}
                   </Badge>
                 ))}
+                {p.sourceInvestigationId && (
+                  <Badge variant="outline" className="text-[10px]">
+                    inv {p.sourceInvestigationId.slice(-6)}
+                  </Badge>
+                )}
+                {p.sourceUipId && (
+                  <Badge variant="outline" className="text-[10px]">
+                    UIP {p.sourceUipId.slice(-6)}
+                  </Badge>
+                )}
               </div>
 
               <section>
