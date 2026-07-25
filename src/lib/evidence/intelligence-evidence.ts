@@ -169,6 +169,8 @@ export function fromDarkEvent(dark: AisDarkEvidence, vesselId: string, subject?:
     summary: dark.explanation,
     subject,
     producer: "REASONING",
+    connector: "gfw",
+    entities: subject ? [{ type: "vessel", name: subject, id: vesselId }] : undefined,
   };
 }
 
