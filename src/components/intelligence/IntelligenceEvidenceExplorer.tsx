@@ -20,7 +20,9 @@ import { useMemo, useState, useEffect, type ReactNode, type ComponentType } from
 import {
   AlertTriangle,
   Anchor,
+  Brain,
   Building2,
+  ChevronDown,
   ExternalLink,
   FileSearch,
   Filter,
@@ -32,6 +34,7 @@ import {
   ScrollText,
   Search,
   ShieldAlert,
+  Sparkles,
   Timer,
   User2,
   X,
