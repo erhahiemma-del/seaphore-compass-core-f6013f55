@@ -158,6 +158,18 @@ export interface InvestigationWorkspace {
   entities: WorkspaceEntity[];
   recommendation?: WorkspaceRecommendation;
 
+  // MIW extensions (Sprint 1H — Maritime Investigation Workspace).
+  stage?: InvestigationStage;
+  caseType?: InvestigationCaseType;
+  subjectId?: string;
+  subjectName?: string;
+  region?: string;
+  tags?: string[];
+  assignees?: string[];
+  dueAt?: string;
+  estimatedRevenueImpactUsd?: number;
+  stageHistory?: Array<{ at: string; from: InvestigationStage | null; to: InvestigationStage; officer?: string; note?: string }>;
+
   // Copilot conversation transcript pointer (Copilot store owns rendering).
   conversationTurns: Array<{ id: string; at: string; role: "officer" | "copilot"; text: string; briefingId?: string }>;
 }
@@ -171,9 +183,18 @@ interface WorkspaceState {
     missionType?: string;
     priority?: WorkspacePriority;
     officer?: string;
+    caseType?: InvestigationCaseType;
+    subjectId?: string;
+    subjectName?: string;
+    region?: string;
+    tags?: string[];
+    assignees?: string[];
+    dueAt?: string;
+    estimatedRevenueImpactUsd?: number;
   }) => string;
   setActive: (id: string | null) => void;
   updateOverview: (id: string, patch: Partial<InvestigationWorkspace>) => void;
+  advanceStage: (id: string, to: InvestigationStage, note?: string) => void;
 
   addEvidence: (id: string, ev: Omit<WorkspaceEvidence, "id" | "collectedAt"> & Partial<Pick<WorkspaceEvidence, "id" | "collectedAt">>) => void;
   moveEvidence: (id: string, evidenceId: string, category: EvidenceCategory) => void;
