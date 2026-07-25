@@ -43,6 +43,7 @@ import {
 } from "@/stores/workspace.store";
 import { AskCopilotDialog } from "@/components/ai/ask-copilot-dialog";
 import { MissionsPanel } from "@/components/investigation/MissionsPanel";
+import { OklPatternsPanel } from "@/components/investigation/OklPatternsPanel";
 
 
 export const Route = createFileRoute("/workspace/$id")({
