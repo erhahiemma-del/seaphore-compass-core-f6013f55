@@ -1,12 +1,38 @@
 /**
- * MIBC engine — assembles a ReportPackage from Maritime Investigation
- * Workspaces. NEVER reads from connectors. When OKL / MKG state is
- * available it may enrich the report; those layers themselves consume
- * the UIP (not raw connectors).
+ * MIBC engine — assembles a ReportPackage from Canonical Unified
+ * Intelligence Package (UIP) snapshots resolved via the Intelligence
+ * Orchestrator, paired with Maritime Investigation Workspaces.
+ *
+ * Sprint 2.2 (Canonical UIP Integration):
+ *   MIBC now consumes intelligence EXCLUSIVELY through
+ *   `intelligenceOrchestrator.getUIP(...)` / `getUIPBatch(...)`. The
+ *   engine itself is pure — the route resolves the UIP snapshots and
+ *   passes them in via `uipSnapshots`. Two modes are supported:
+ *
+ *     - Live Intelligence Brief    → `uipSnapshots` supplied, no
+ *                                    workspaces (or empty). Origin
+ *                                    stamped as `LIVE_UIP`.
+ *     - Investigation-Based Brief  → workspaces supplied; each
+ *                                    workspace's `sourceUipId` is
+ *                                    resolved through the orchestrator
+ *                                    into a matching UIP snapshot. When
+ *                                    linked mission plans exist the
+ *                                    origin is stamped
+ *                                    `OPERATIONAL_RUNTIME`.
+ *
+ * Numbers surfaced by the report (risk, revenue, entities, evidence
+ * counts, confidence) are derived from the UIP snapshots when
+ * available, so every MIBC report matches the values shown by the
+ * other UIP consumers (Evidence Explorer, Predictions, Revenue
+ * Leakage, Operational Knowledge). The engine NEVER reads from raw
+ * connectors or intelligence tables.
  */
 
 import type { InvestigationWorkspace } from "@/stores/workspace.store";
 import type { MissionPlan } from "@/services/mission";
+import type { UnifiedIntelligencePackage } from "@/services/ife/unified";
+import { analyzeOperationalKnowledge } from "@/services/okl";
+import type { ConfidencePyramid } from "@/services/okl/types";
 import type {
   ReportPackage,
   ReportSection,
@@ -15,6 +41,17 @@ import type {
   ReportPeriod,
 } from "./types";
 import { REPORT_TYPE_LABEL, REPORT_PERIOD_LABEL } from "./types";
+
+/**
+ * UIP snapshot paired (optionally) with the Investigation Workspace
+ * that sourced it. The route resolves these through the Intelligence
+ * Orchestrator BEFORE calling `buildReport`.
+ */
+export interface UipSnapshotRef {
+  readonly uip: UnifiedIntelligencePackage;
+  /** Workspace this UIP belongs to, when the report is investigation-scoped. */
+  readonly workspaceId?: string;
+}
 
 export interface BuildReportInput {
   reportType: ReportType;
@@ -33,7 +70,31 @@ export interface BuildReportInput {
       evidenceRefs?: string[];
     }>
   >;
+  /**
+   * Canonical UIP snapshots resolved via
+   * `intelligenceOrchestrator.getUIP(...)`. When supplied, the engine
+   * populates Evidence Provenance, Canonical Entities, and Confidence
+   * Pyramid sections from these snapshots and treats their ids as the
+   * report's authoritative `sourceUipIds`.
+   */
+  uipSnapshots?: ReadonlyArray<UipSnapshotRef>;
+  /**
+   * UIP ids the orchestrator was asked for but could not resolve in
+   * this session. Surfaced in the Investigation Links section so the
+   * officer never sees silent gaps.
+   */
+  missingUipIds?: ReadonlyArray<string>;
+  /**
+   * Force the report origin. When omitted the engine derives it:
+   *   - `LIVE_UIP`             when there are no workspaces and at
+   *                            least one UIP snapshot is supplied,
+   *   - `OPERATIONAL_RUNTIME`  when workspaces + linked missions +
+   *                            resolved UIPs all present,
+   *   - `INVESTIGATION`        otherwise.
+   */
+  origin?: ReportPackage["origin"];
 }
+
 
 function nowIso(): string {
   return new Date().toISOString();
