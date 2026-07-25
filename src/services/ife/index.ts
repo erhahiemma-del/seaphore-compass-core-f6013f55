@@ -22,3 +22,7 @@ export { fuseField, toCandidate } from "./fusion-rules";
 export { buildCanonicalRecord } from "./canonical-builder";
 export { buildContradictionReport } from "./report";
 export { packageConfidence } from "./confidence-engine";
+export { resolveIdentities } from "./identity-resolver";
+export type { IdentityCluster, IdentityResolution } from "./identity-resolver";
+export { buildUnifiedIntelligencePackage } from "./unified";
+export type { UnifiedIntelligencePackage, BuildUnifiedInput } from "./unified";
