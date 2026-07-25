@@ -5,20 +5,29 @@
  * (optionally) the Maritime Knowledge Graph. Every pattern here carries
  * source connectors, evidence citations, contradictions, alternatives,
  * a reasoning trace, and the full Confidence Pyramid. The officer decides.
+ *
+ * Sprint 2.1B — Slice 2: demo fixtures removed. The route now resolves
+ * evidence via `getUip(source_uip_id)` from the live client-side UIP
+ * store, populated by the last Copilot briefing (or a specific UIP via
+ * the `?uip=<id>` search param).
  */
 import { useMemo } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { OperationalInsights } from "@/components/intelligence/OperationalInsights";
 import { analyzeOperationalKnowledge } from "@/services/okl";
-import {
-  DEMO_UIP,
-  DEMO_EVIDENCE,
-  DEMO_HISTORICAL,
-  DEMO_INVESTIGATIONS,
-} from "@/services/okl/fixtures";
+import { useUipStore } from "@/stores/uip.store";
+import { Card, CardContent } from "@/components/ui/card";
+import { Radar } from "lucide-react";
+
+interface OklSearch {
+  uip?: string;
+}
 
 export const Route = createFileRoute("/operational-knowledge")({
+  validateSearch: (raw: Record<string, unknown>): OklSearch => ({
+    uip: typeof raw.uip === "string" ? raw.uip : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Operational Knowledge Layer · Seaphore" },
@@ -41,16 +50,20 @@ export const Route = createFileRoute("/operational-knowledge")({
 });
 
 function OperationalKnowledgeRoute() {
-  const pkg = useMemo(
-    () =>
-      analyzeOperationalKnowledge({
-        uip: DEMO_UIP,
-        rawEvidence: DEMO_EVIDENCE,
-        historical: DEMO_HISTORICAL,
-        investigations: DEMO_INVESTIGATIONS,
-      }),
-    [],
-  );
+  const { uip: uipParam } = Route.useSearch();
+  const uip = useUipStore((s) => {
+    if (uipParam) return s.byId[uipParam];
+    const latestId = s.order[0];
+    return latestId ? s.byId[latestId] : undefined;
+  });
+
+  const pkg = useMemo(() => {
+    if (!uip) return null;
+    return analyzeOperationalKnowledge({
+      uip,
+      rawEvidence: uip.rawEvidence,
+    });
+  }, [uip]);
 
   return (
     <AppShell
@@ -70,7 +83,36 @@ function OperationalKnowledgeRoute() {
             officer approval.
           </p>
         </div>
-        <OperationalInsights package={pkg} />
+        {!uip || !pkg ? (
+          <Card>
+            <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
+              <Radar className="h-6 w-6 text-muted-foreground" />
+              <div className="text-sm font-medium">No Unified Intelligence Package loaded</div>
+              <div className="max-w-md text-xs text-muted-foreground">
+                OKL only operates on live fused intelligence. Generate a briefing
+                from the Copilot and this surface will populate with detected
+                operational patterns for that UIP.
+              </div>
+              <Link
+                to="/copilot"
+                className="mt-2 inline-flex items-center rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium hover:bg-slate-50"
+              >
+                Open Copilot
+              </Link>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            <div className="mb-3 flex items-center gap-2 text-[11px] text-muted-foreground">
+              <span className="rounded bg-slate-100 px-2 py-0.5 font-mono">{uip.id}</span>
+              <span>
+                {uip.fused.stats.canonicalEntities} entities · {uip.rawEvidence.length}{" "}
+                evidence records · {uip.provenance.length} connectors
+              </span>
+            </div>
+            <OperationalInsights package={pkg} />
+          </>
+        )}
       </div>
     </AppShell>
   );
