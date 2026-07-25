@@ -213,6 +213,13 @@ export interface Briefing {
   confidence_matrix: ConfidenceMatrix;
   latency_ms: number;
   model_used: string;
+  /**
+   * Canonical Unified Intelligence Package id. Every downstream artifact
+   * (predictions, patterns, recommendations, tasks, missions, reports)
+   * derived from this briefing MUST carry the same id so evidence provenance
+   * is preserved end-to-end.
+   */
+  source_uip_id?: string;
 }
 
 export type OverrideDecision = "agree" | "disagree" | "modify" | "dismiss";
