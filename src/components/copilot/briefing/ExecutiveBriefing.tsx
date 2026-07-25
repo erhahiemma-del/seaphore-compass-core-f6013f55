@@ -6,7 +6,7 @@
  * happens here — every value is computed by the synthesizer.
  */
 import { useState } from "react";
-import type { ExecutiveBrief, EvidenceGroup, KpiCard, TimelineEvent } from "@/lib/copilot/executive-brief/synthesize";
+import type { ExecutiveBrief, EvidenceGroup, KpiCard, TimelineEvent, IdentityResolutionSection } from "@/lib/copilot/executive-brief/synthesize";
 import type { EvidenceCardData } from "@/components/copilot/briefing/types";
 import {
   AlertTriangle,
@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Circle,
   ClipboardCheck,
+  Fingerprint,
   FileText,
   Gauge,
   Info,
@@ -31,6 +32,7 @@ import {
   Sparkles,
   User2,
   Workflow,
+  XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatWhen } from "@/lib/copilot/executive-brief/sanitize";
