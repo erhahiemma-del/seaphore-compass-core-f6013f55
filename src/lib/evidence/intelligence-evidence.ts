@@ -145,6 +145,8 @@ export function fromAisContinuityReport(report: AisContinuityReport, subject?: s
     summary: `Window ${report.windowStart.slice(0, 10)} → ${report.windowEnd.slice(0, 10)} · ${report.totalEvents} positions`,
     subject,
     producer: "REASONING",
+    connector: "gfw",
+    entities: subject ? [{ type: "vessel", name: subject, id: report.vesselId }] : undefined,
   });
 
   for (const dark of report.darkEvents) {
