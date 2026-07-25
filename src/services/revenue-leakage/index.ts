@@ -66,7 +66,7 @@ function weakestGrade(grades: ReadonlyArray<EvidenceGrade>): EvidenceGrade {
 }
 
 function priorityFor(magnitude: number, confidence: EvidenceGrade): LeakagePriority {
-  const cw = GRADE_RANK[confidence] / 6;
+  const cw = GRADE_RANK[confidence] / 5;
   const score = magnitude * cw;
   if (score >= 500_000) return "critical";
   if (score >= 100_000) return "high";
