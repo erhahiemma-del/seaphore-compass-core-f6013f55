@@ -12,11 +12,11 @@ export const Route = createFileRoute("/api/entity/$id")({
         handler: async ({ params }) => {
           for (const uipId of listUipIds()) {
             const uip = getUip(uipId);
-            const rec = uip?.fused.records.find((r) => r.entityRef.id === params.id);
-            if (rec) {
+            const rec = uip?.fused.canonical.find((r) => r.entity.id === params.id);
+            if (rec && uip) {
               return {
-                data: { entity: rec, unifiedPackageId: uip!.id },
-                sources: uip!.provenance.map((p) => p.sourceName),
+                data: { entity: rec, unifiedPackageId: uip.id },
+                sources: uip.provenance.map((p) => p.sourceName),
                 confidence: "verified",
               };
             }
