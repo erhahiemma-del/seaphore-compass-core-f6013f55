@@ -372,7 +372,7 @@ export function buildReport(input: BuildReportInput): ReportPackage {
     new Set(workspaces.map((w) => w.sourceUipId).filter((x): x is string => !!x)),
   );
   const origin: "LIVE_UIP" | "INVESTIGATION" | "OPERATIONAL_RUNTIME" =
-    linkedMissionIds.length > 0 && sourceUipIds.length > 0
+    linkedMissionIds.size > 0 && sourceUipIds.length > 0
       ? "OPERATIONAL_RUNTIME"
       : "INVESTIGATION";
 
@@ -396,7 +396,7 @@ export function buildReport(input: BuildReportInput): ReportPackage {
     sources,
     provenanceLine:
       origin === "OPERATIONAL_RUNTIME"
-        ? `Operational Runtime trace · ${sourceUipIds.length} UIP → ${workspaces.length} Investigation → ${linkedMissionIds.length} Mission. Every chart and recommendation traces to evidence.`
+        ? `Operational Runtime trace · ${sourceUipIds.length} UIP → ${workspaces.length} Investigation → ${linkedMissionIds.size} Mission. Every chart and recommendation traces to evidence.`
         : "Reports read only from Investigation Workspaces. Every chart and recommendation traces to evidence.",
   };
 }
