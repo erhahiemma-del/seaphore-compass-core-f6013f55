@@ -324,7 +324,7 @@ export function IntelligenceEvidenceExplorer({
 /* ─────────────────────────── Mode Switcher ─────────────────────────── */
 
 function ModeSwitcher({ mode, onChange }: { mode: Mode; onChange: (m: Mode) => void }) {
-  const modes: Array<{ id: Mode; label: string; icon: React.ComponentType<{ className?: string }> }> = [
+  const modes: Array<{ id: Mode; label: string; icon: ComponentType<{ className?: string }> }> = [
     { id: "list", label: "List", icon: ListIcon },
     { id: "graph", label: "Graph", icon: GitBranch },
     { id: "timeline", label: "Timeline", icon: Timer },
@@ -496,7 +496,7 @@ function FilterRow({
 }: {
   label: string;
   icon?: boolean;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-1.5">
@@ -516,7 +516,7 @@ function FilterChip({
 }: {
   active: boolean;
   onClick: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <button
