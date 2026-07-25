@@ -119,33 +119,79 @@ export async function persistInvestigationToOkl(
   }
 
   // OUTCOMES (final stage transition to CLOSED) -----------------------
+  // Sprint 2.6 — if the officer captured a WorkspaceOutcome, use its fields
+  // (final outcome, resolution status, success rating, lessons learned,
+  // KPIs) so the OIE reasoning lenses can learn from history. Otherwise
+  // fall back to a minimal closure marker for backward compatibility.
   const closedTransition = (ws.stageHistory ?? []).find((s) => s.to === "CLOSED");
-  if (closedTransition) {
+  const outcome = ws.outcome;
+  if (outcome || closedTransition) {
     records.push({
       kind: "OUTCOME",
-      label: `Investigation closed at ${ws.stage ?? "CLOSED"}`,
-      detail: closedTransition.note ?? null,
+      label: outcome
+        ? `${outcome.success.replace(/_/g, " ")} · ${outcome.resolutionStatus.replace(/_/g, " ")}`
+        : `Investigation closed at ${ws.stage ?? "CLOSED"}`,
+      detail: outcome?.finalOutcome ?? closedTransition?.note ?? null,
       confidence: Math.round(ws.confidencePct ?? 0),
+      patternKind: outcome?.success ?? null,
+      riskLevel: outcome
+        ? outcome.success === "SUCCESS"
+          ? "LOW"
+          : outcome.success === "PARTIAL_SUCCESS"
+            ? "MEDIUM"
+            : "HIGH"
+        : null,
       payload: {
         stage: ws.stage,
-        officer: closedTransition.officer,
+        officer: outcome?.recordedBy ?? closedTransition?.officer,
         evidenceCompleteness: ws.evidenceCompleteness,
         progress: ws.progress,
+        finalOutcome: outcome?.finalOutcome ?? null,
+        officerDecision: outcome?.officerDecision ?? null,
+        actionTaken: outcome?.actionTaken ?? null,
+        resolutionStatus: outcome?.resolutionStatus ?? null,
+        success: outcome?.success ?? null,
+        lessonsLearned: outcome?.lessonsLearned ?? null,
+        kpis: outcome?.kpis ?? null,
+        recordedAt: outcome?.recordedAt ?? closedTransition?.at ?? null,
       },
     });
   }
 
-  // RECOMMENDATIONS ---------------------------------------------------
-  if (ws.recommendation) {
+  // Per-recommendation effectiveness — one OUTCOME row per rated
+  // recommendation so OIE's RECOMMENDATION_EFFECTIVENESS lens buckets by
+  // label and can compute ratios across investigations. Records are also
+  // tagged as PATTERN so the RECURRING_PATTERN lens picks up recurrent
+  // failure modes.
+  for (const rating of outcome?.recommendationRatings ?? []) {
     records.push({
-      kind: "RECOMMENDATION",
-      label: ws.recommendation.label,
-      detail: ws.recommendation.rationale ?? null,
+      kind: "OUTCOME",
+      patternKind: `REC_${rating.effectiveness}`,
+      label: rating.label,
+      detail: rating.note ?? null,
+      confidence:
+        rating.effectiveness === "EFFECTIVE"
+          ? 85
+          : rating.effectiveness === "PARTIALLY_EFFECTIVE"
+            ? 55
+            : rating.effectiveness === "INEFFECTIVE"
+              ? 25
+              : 10,
+      riskLevel:
+        rating.effectiveness === "EFFECTIVE"
+          ? "LOW"
+          : rating.effectiveness === "PARTIALLY_EFFECTIVE"
+            ? "MEDIUM"
+            : "HIGH",
       payload: {
-        supportingEvidence: ws.recommendation.supportingEvidence ?? [],
+        recommendationId: rating.recommendationId ?? null,
+        effectiveness: rating.effectiveness,
+        outcomeSuccess: outcome?.success ?? null,
+        note: rating.note ?? null,
       },
     });
   }
+
 
   const snapshot = {
     workspace: {
