@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as VesselRouteImport } from './routes/vessel'
 import { Route as ShareRouteImport } from './routes/share'
 import { Route as RevenueRouteImport } from './routes/revenue'
+import { Route as PredictionsRouteImport } from './routes/predictions'
 import { Route as PortsRouteImport } from './routes/ports'
 import { Route as OwnershipRouteImport } from './routes/ownership'
 import { Route as ObservabilityRouteImport } from './routes/observability'
@@ -68,6 +69,11 @@ const ShareRoute = ShareRouteImport.update({
 const RevenueRoute = RevenueRouteImport.update({
   id: '/revenue',
   path: '/revenue',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PredictionsRoute = PredictionsRouteImport.update({
+  id: '/predictions',
+  path: '/predictions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PortsRoute = PortsRouteImport.update({
@@ -300,6 +306,7 @@ export interface FileRoutesByFullPath {
   '/observability': typeof ObservabilityRoute
   '/ownership': typeof OwnershipRoute
   '/ports': typeof PortsRoute
+  '/predictions': typeof PredictionsRoute
   '/revenue': typeof RevenueRoute
   '/share': typeof ShareRouteWithChildren
   '/vessel': typeof VesselRoute
@@ -345,6 +352,7 @@ export interface FileRoutesByTo {
   '/observability': typeof ObservabilityRoute
   '/ownership': typeof OwnershipRoute
   '/ports': typeof PortsRoute
+  '/predictions': typeof PredictionsRoute
   '/revenue': typeof RevenueRoute
   '/vessel': typeof VesselRoute
   '/admin/connectors': typeof AdminConnectorsRoute
@@ -392,6 +400,7 @@ export interface FileRoutesById {
   '/observability': typeof ObservabilityRoute
   '/ownership': typeof OwnershipRoute
   '/ports': typeof PortsRoute
+  '/predictions': typeof PredictionsRoute
   '/revenue': typeof RevenueRoute
   '/share': typeof ShareRouteWithChildren
   '/vessel': typeof VesselRoute
@@ -441,6 +450,7 @@ export interface FileRouteTypes {
     | '/observability'
     | '/ownership'
     | '/ports'
+    | '/predictions'
     | '/revenue'
     | '/share'
     | '/vessel'
@@ -486,6 +496,7 @@ export interface FileRouteTypes {
     | '/observability'
     | '/ownership'
     | '/ports'
+    | '/predictions'
     | '/revenue'
     | '/vessel'
     | '/admin/connectors'
@@ -532,6 +543,7 @@ export interface FileRouteTypes {
     | '/observability'
     | '/ownership'
     | '/ports'
+    | '/predictions'
     | '/revenue'
     | '/share'
     | '/vessel'
@@ -580,6 +592,7 @@ export interface RootRouteChildren {
   ObservabilityRoute: typeof ObservabilityRoute
   OwnershipRoute: typeof OwnershipRoute
   PortsRoute: typeof PortsRoute
+  PredictionsRoute: typeof PredictionsRoute
   RevenueRoute: typeof RevenueRoute
   ShareRoute: typeof ShareRouteWithChildren
   VesselRoute: typeof VesselRoute
@@ -621,6 +634,13 @@ declare module '@tanstack/react-router' {
       path: '/revenue'
       fullPath: '/revenue'
       preLoaderRoute: typeof RevenueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/predictions': {
+      id: '/predictions'
+      path: '/predictions'
+      fullPath: '/predictions'
+      preLoaderRoute: typeof PredictionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ports': {
@@ -984,6 +1004,7 @@ const rootRouteChildren: RootRouteChildren = {
   ObservabilityRoute: ObservabilityRoute,
   OwnershipRoute: OwnershipRoute,
   PortsRoute: PortsRoute,
+  PredictionsRoute: PredictionsRoute,
   RevenueRoute: RevenueRoute,
   ShareRoute: ShareRouteWithChildren,
   VesselRoute: VesselRoute,
