@@ -158,39 +158,75 @@ export async function persistInvestigationToOkl(
     });
   }
 
-  // Per-recommendation effectiveness — one OUTCOME row per rated
-  // recommendation so OIE's RECOMMENDATION_EFFECTIVENESS lens buckets by
-  // label and can compute ratios across investigations. Records are also
-  // tagged as PATTERN so the RECURRING_PATTERN lens picks up recurrent
-  // failure modes.
+  // Per-recommendation effectiveness — Sprint 2.6 emits a dedicated
+  // RECOMMENDATION_RESULT record per rated recommendation so the OIE
+  // reasoning lenses can bucket by label and compute acceptance /
+  // effectiveness ratios across investigations. A mirror OUTCOME row is
+  // retained for backward-compat with the existing HISTORICAL_OUTCOME lens.
   for (const rating of outcome?.recommendationRatings ?? []) {
+    const conf =
+      rating.effectiveness === "EFFECTIVE"
+        ? 85
+        : rating.effectiveness === "PARTIALLY_EFFECTIVE"
+          ? 55
+          : rating.effectiveness === "INEFFECTIVE"
+            ? 25
+            : 10;
+    const risk =
+      rating.effectiveness === "EFFECTIVE"
+        ? "LOW"
+        : rating.effectiveness === "PARTIALLY_EFFECTIVE"
+          ? "MEDIUM"
+          : "HIGH";
+    const accepted =
+      rating.effectiveness === "EFFECTIVE" ||
+      rating.effectiveness === "PARTIALLY_EFFECTIVE";
+    const payload = {
+      recommendationId: rating.recommendationId ?? null,
+      effectiveness: rating.effectiveness,
+      accepted,
+      outcomeSuccess: outcome?.success ?? null,
+      note: rating.note ?? null,
+    };
+    records.push({
+      kind: "RECOMMENDATION_RESULT",
+      patternKind: `REC_${rating.effectiveness}`,
+      label: rating.label,
+      detail: rating.note ?? null,
+      confidence: conf,
+      riskLevel: risk,
+      payload,
+    });
     records.push({
       kind: "OUTCOME",
       patternKind: `REC_${rating.effectiveness}`,
       label: rating.label,
       detail: rating.note ?? null,
-      confidence:
-        rating.effectiveness === "EFFECTIVE"
-          ? 85
-          : rating.effectiveness === "PARTIALLY_EFFECTIVE"
-            ? 55
-            : rating.effectiveness === "INEFFECTIVE"
-              ? 25
-              : 10,
-      riskLevel:
-        rating.effectiveness === "EFFECTIVE"
-          ? "LOW"
-          : rating.effectiveness === "PARTIALLY_EFFECTIVE"
-            ? "MEDIUM"
-            : "HIGH",
+      confidence: conf,
+      riskLevel: risk,
+      payload,
+    });
+  }
+
+  // Lessons Learned — Sprint 2.6. One LESSON_LEARNED row per lesson so
+  // the OKL becomes searchable by lesson text and the OIE can surface
+  // recurring lessons across similar investigations.
+  for (const lesson of outcome?.lessonsLearned ?? []) {
+    const text = typeof lesson === "string" ? lesson : String(lesson ?? "");
+    if (!text.trim()) continue;
+    records.push({
+      kind: "LESSON_LEARNED",
+      label: text.slice(0, 120),
+      detail: text,
+      confidence: Math.round(ws.confidencePct ?? 60),
       payload: {
-        recommendationId: rating.recommendationId ?? null,
-        effectiveness: rating.effectiveness,
         outcomeSuccess: outcome?.success ?? null,
-        note: rating.note ?? null,
+        resolutionStatus: outcome?.resolutionStatus ?? null,
+        recordedAt: outcome?.recordedAt ?? null,
       },
     });
   }
+
 
   // RECOMMENDATIONS ---------------------------------------------------
   if (ws.recommendation) {

@@ -235,7 +235,9 @@ export const generateOieInsights = createServerFn({ method: "POST" })
     for (const [invId, list] of byInvestigation) {
       if (subjectInvId && invId === subjectInvId) continue;
       const decisions = list.filter((r) => r.kind === "DECISION");
-      const outcomes = list.filter((r) => r.kind === "OUTCOME");
+      const outcomes = list.filter(
+        (r) => r.kind === "OUTCOME" || r.kind === "LESSON_LEARNED" || r.kind === "RECOMMENDATION_RESULT",
+      );
       if (decisions.length === 0 && outcomes.length === 0) continue;
       const rows = [...decisions, ...outcomes];
       const prov = new Map<string, OieProvenanceRef>();
@@ -315,7 +317,7 @@ export const generateOieInsights = createServerFn({ method: "POST" })
     const recs = records.filter((r) => r.kind === "RECOMMENDATION");
     const outcomesByInv = new Map<string, OklRow[]>();
     for (const r of records) {
-      if (r.kind !== "OUTCOME") continue;
+      if (r.kind !== "OUTCOME" && r.kind !== "RECOMMENDATION_RESULT") continue;
       const list = outcomesByInv.get(r.investigation_id) ?? [];
       list.push(r);
       outcomesByInv.set(r.investigation_id, list);
