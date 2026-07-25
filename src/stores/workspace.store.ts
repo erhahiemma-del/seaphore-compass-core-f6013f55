@@ -785,6 +785,71 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           };
         }),
 
+      recordOutcome: (id, outcome, opts) =>
+        set((s) => {
+          const w = s.investigations[id];
+          if (!w) return s;
+          const t = now();
+          const full: WorkspaceOutcome = {
+            recordedAt: t,
+            ...outcome,
+          };
+          const decision: WorkspaceDecision = {
+            id: uid("dec"),
+            at: t,
+            title: `Outcome recorded: ${full.success.replace(/_/g, " ")}`,
+            detail: full.finalOutcome,
+            officer: full.recordedBy,
+          };
+          const tl: TimelineEvent = {
+            id: uid("tl"),
+            at: t,
+            kind: "decision",
+            label: `Outcome · ${full.resolutionStatus.replace(/_/g, " ")}`,
+            detail: full.finalOutcome,
+            refId: decision.id,
+          };
+          const status: WorkspaceStatus = opts?.closeOnRecord ? "CLOSED" : w.status;
+          const stage: InvestigationStage | undefined = opts?.closeOnRecord ? "CLOSED" : w.stage;
+          const stageHistory =
+            opts?.closeOnRecord && w.stage !== "CLOSED"
+              ? [
+                  ...(w.stageHistory ?? []),
+                  {
+                    at: t,
+                    from: w.stage ?? null,
+                    to: "CLOSED" as InvestigationStage,
+                    officer: full.recordedBy,
+                    note: opts?.closureNote ?? "Closed after outcome captured",
+                  },
+                ]
+              : w.stageHistory;
+          return {
+            investigations: {
+              ...s.investigations,
+              [id]: {
+                ...w,
+                outcome: full,
+                decisions: [...w.decisions, decision],
+                timeline: [...w.timeline, tl],
+                status,
+                stage,
+                stageHistory,
+                updatedAt: t,
+              },
+            },
+          };
+        }),
+
+      clearOutcome: (id) =>
+        set((s) => {
+          const w = s.investigations[id];
+          if (!w) return s;
+          const rest = { ...w };
+          delete rest.outcome;
+          return { investigations: { ...s.investigations, [id]: { ...rest, updatedAt: now() } } };
+        }),
+
     }),
     {
       name: "seaphore.iiw.v1",
