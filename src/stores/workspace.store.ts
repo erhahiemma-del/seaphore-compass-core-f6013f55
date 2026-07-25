@@ -249,6 +249,19 @@ interface WorkspaceState {
 
   appendConversation: (id: string, turn: { role: "officer" | "copilot"; text: string; briefingId?: string }) => void;
 
+  addNotebookEntry: (
+    id: string,
+    entry: Omit<NotebookEntry, "id" | "createdAt" | "updatedAt" | "versions"> &
+      Partial<Pick<NotebookEntry, "id" | "createdAt">>,
+  ) => string;
+  updateNotebookEntry: (
+    id: string,
+    entryId: string,
+    patch: Partial<Pick<NotebookEntry, "title" | "body" | "supportingEvidence" | "refId">> & { officer?: string },
+  ) => void;
+  removeNotebookEntry: (id: string, entryId: string) => void;
+
+
   removeInvestigation: (id: string) => void;
   exportInvestigation: (id: string) => InvestigationWorkspace | null;
 }
