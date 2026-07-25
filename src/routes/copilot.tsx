@@ -181,6 +181,8 @@ function CopilotOpsPage() {
   const [text, setText] = useState("");
   const [stage, setStage] = useState<Stage>("idle");
   const [briefing, setBriefing] = useState<AdaptiveBriefingData | null>(null);
+  const [uipId, setUipId] = useState<string | null>(null);
+
   const [lineage, setLineage] = useState<import("@/lib/lineage/types").LineageTrace | null>(null);
   const [ibeProjection, setIbeProjection] = useState<{
     ibe: import("@/services/ibe/types").IbeResult["ibe"] | null;
@@ -250,7 +252,11 @@ function CopilotOpsPage() {
         (
           await import("@/stores/uip.store")
         ).useUipStore.getState().register(uipFromResult);
+        setUipId(uipFromResult.id);
+      } else {
+        setUipId(null);
       }
+
 
       const normalisedResult: import("@/services/oie").OIEResult = (() => {
         if ((rawResult as { briefing?: unknown }).briefing) {
@@ -684,8 +690,10 @@ function CopilotOpsPage() {
                       humanResponse={ibeProjection?.humanResponse ?? null}
                       ibe={ibeProjection?.ibe ?? null}
                       followUps={followUps}
+                      uipId={uipId}
                       onFollowUp={(q: string) => handleSubmit(q)}
                     />
+
                     <details className="mt-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-[12px] text-slate-700 open:shadow-sm">
                       <summary className="cursor-pointer font-medium text-slate-800">
                         Analyst view — full adaptive briefing
