@@ -18,8 +18,6 @@
  */
 import { useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { zodValidator, fallback } from "@tanstack/zod-adapter";
-import { z } from "zod";
 
 import { IntelligenceEvidenceExplorer } from "@/components/intelligence/IntelligenceEvidenceExplorer";
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
@@ -37,17 +35,24 @@ import {
   type IntelligenceEvidenceItem,
 } from "@/lib/evidence/intelligence-evidence";
 
-const searchSchema = z.object({
-  mode: fallback(z.string(), "list").default("list"),
-  type: fallback(z.string(), "").default(""),
-  connector: fallback(z.string(), "").default(""),
-  entity: fallback(z.string(), "").default(""),
-  investigation: fallback(z.string(), "").default(""),
-  confidence: fallback(z.string(), "").default(""),
-});
+interface EvidenceSearch {
+  mode?: string;
+  type?: string;
+  connector?: string;
+  entity?: string;
+  investigation?: string;
+  confidence?: string;
+}
 
 export const Route = createFileRoute("/intelligence-evidence")({
-  validateSearch: zodValidator(searchSchema),
+  validateSearch: (raw: Record<string, unknown>): EvidenceSearch => ({
+    mode: typeof raw.mode === "string" ? raw.mode : undefined,
+    type: typeof raw.type === "string" ? raw.type : undefined,
+    connector: typeof raw.connector === "string" ? raw.connector : undefined,
+    entity: typeof raw.entity === "string" ? raw.entity : undefined,
+    investigation: typeof raw.investigation === "string" ? raw.investigation : undefined,
+    confidence: typeof raw.confidence === "string" ? raw.confidence : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Intelligence Evidence Explorer · Seaphore" },
