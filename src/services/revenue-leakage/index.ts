@@ -87,7 +87,7 @@ type Detector = (ev: ReadonlyArray<NormalizedEvidence>, ctx: DetectorContext) =>
 
 const detectManifestUnderDeclaration: Detector = (ev, ctx) => {
   return ev
-    .filter((e) => e.kind === "manifest" || e.kind === "cargo")
+    .filter((e) => e.kind === "cargo" || e.kind === "voyage")
     .flatMap((e) => {
       const declared = readNum(e.fields["declaredTonnage"]) ?? readNum(e.fields["manifestTonnage"]);
       const actual = readNum(e.fields["actualTonnage"]);
