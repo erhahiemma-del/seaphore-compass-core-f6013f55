@@ -28,6 +28,8 @@ import {
   type ReportType,
   type ReportPeriod,
 } from "@/services/mibc";
+import { intelligenceOrchestrator } from "@/services/intelligence-orchestrator";
+
 import {
   claimNextReportJob,
   completeReportJob,
