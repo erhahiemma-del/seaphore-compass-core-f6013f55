@@ -846,6 +846,92 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: "2026-07-25",
   },
+
+  // ── OIE Reasoning (Sprint 2.5) ─────────────────────────────────────────
+  {
+    id: "oie.similar-investigations",
+    name: "Similar investigations",
+    producer: "OIE",
+    description:
+      "Historical investigations whose OKL entity fingerprint overlaps the current subject. Jaccard-scored, connector-free.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Investigation Workspace · Operational Intelligence Engine panel",
+      location: "src/components/oie/OperationalInsightsPanel.tsx",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-07-25",
+  },
+  {
+    id: "oie.recurring-patterns",
+    name: "Recurring operational patterns",
+    producer: "OIE",
+    description:
+      "Pattern kinds that recur across ≥2 investigations in the OKL, ranked by breadth and peak record confidence.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Investigation Workspace · Operational Intelligence Engine panel",
+      location: "src/components/oie/OperationalInsightsPanel.tsx",
+      interaction: "passive-display",
+    },
+    reviewedAt: "2026-07-25",
+  },
+  {
+    id: "oie.historical-outcomes",
+    name: "Historical outcomes",
+    producer: "OIE",
+    description:
+      "Decision↔Outcome pairings replayed from prior investigations that touched the subject. Read-only; no re-computation.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Investigation Workspace · Operational Intelligence Engine panel",
+      location: "src/components/oie/OperationalInsightsPanel.tsx",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-07-25",
+  },
+  {
+    id: "oie.emerging-risks",
+    name: "Emerging risks",
+    producer: "OIE",
+    description:
+      "Risk-band records concentrated on the same entity within the last 60 days, weighted by severity and recency.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Investigation Workspace · Operational Intelligence Engine panel",
+      location: "src/components/oie/OperationalInsightsPanel.tsx",
+      interaction: "passive-display",
+    },
+    reviewedAt: "2026-07-25",
+  },
+  {
+    id: "oie.recommendation-effectiveness",
+    name: "Recommendation effectiveness",
+    producer: "OIE",
+    description:
+      "OKL RECOMMENDATION rows paired with subsequent OUTCOME rows to derive a historical effectiveness ratio.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Investigation Workspace · Operational Intelligence Engine panel",
+      location: "src/components/oie/OperationalInsightsPanel.tsx",
+      interaction: "passive-display",
+    },
+    reviewedAt: "2026-07-25",
+  },
+  {
+    id: "oie.cross-case-relationships",
+    name: "Cross-case relationships",
+    producer: "OIE",
+    description:
+      "Non-subject entities that co-appear alongside the current subject across ≥2 investigations.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Investigation Workspace · Operational Intelligence Engine panel",
+      location: "src/components/oie/OperationalInsightsPanel.tsx",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-07-25",
+  },
 ];
 
 
