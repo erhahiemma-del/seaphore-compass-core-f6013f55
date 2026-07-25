@@ -6,7 +6,7 @@ export * from "./types";
 export * from "./constants";
 export { WORKSPACE_CONTRACTS } from "./workspace-contracts";
 export { CAPABILITY_REGISTRY, agentsForCapabilities } from "./capability-registry";
-export { orchestrate } from "./orchestrator";
+export { orchestrate, type OrchestrationDeps } from "./orchestrator";
 export { captureOverride, overrideWorkflowEngine } from "./override-gate";
 export {
   evaluatePolicy,
