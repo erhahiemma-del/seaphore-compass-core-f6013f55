@@ -539,6 +539,21 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: REVIEWED,
   },
+  {
+    id: "capability.maritime-knowledge-graph",
+    name: "Maritime Knowledge Graph (MKG)",
+    producer: "CAPABILITY",
+    description:
+      "Downstream of the Intelligence Fusion Engine. The MKG stores one node per canonical entity (vessel/company/person/port/cargo/voyage/manifest/sanction/inspection/incident) and one edge per evidence-backed relationship (OWNS, OPERATES, MANAGES, FLAGGED_BY, CALLS_AT, DEPARTED_FROM, ARRIVED_AT, PERFORMED_VOYAGE, CARRIED, LISTED_ON_MANIFEST, CONSIGNED_TO/BY, SANCTIONED_BY, SUBJECT_OF_INSPECTION, SUBJECT_OF_INCIDENT, ALIAS_OF, ...). Every node and every edge carries the source connector, evidence record id, timestamp, and OC-001 grade — nothing enters the graph without provenance. The graph exposes bounded traversal (BFS, findPaths) so Copilot and OSAE can answer multi-hop questions (Vessel → Owner → Company → Director → Port → Cargo → Incident) with cited relationships. Officers explore it interactively at /knowledge-graph with a radial visualisation and an Entity Inspector panel.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Knowledge Graph · Relational Intelligence",
+      location: "src/routes/knowledge-graph.tsx",
+      component: "src/components/mkg/GraphView.tsx",
+      interaction: "drill-in",
+    },
+    reviewedAt: REVIEWED,
+  },
 ];
 
 export function getContractEntry(id: string): ProjectionContractEntry | undefined {
