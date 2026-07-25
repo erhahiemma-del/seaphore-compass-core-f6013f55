@@ -5,7 +5,7 @@ import type { NormalizedEvidence } from "@/services/ial/types";
 const VESSEL = {
   id: "vessel:9411640",
   kind: "vessel" as const,
-  primaryLabel: "DONGWON NO.16",
+  label: "DONGWON NO.16",
   identifiers: { imo: "9411640", mmsi: "440825000" },
 };
 
@@ -55,12 +55,12 @@ describe("PIE", () => {
     const cycle = pie.ingest({
       evidence: [
         ev({ kind: "sanctions", grade: "VERIFIED", fields: { status: "listed" } }),
-        ev({ kind: "sanctions", grade: "UNVERIFIED", fields: { status: "listed" } }),
+        ev({ kind: "sanctions", grade: "UNKNOWN", fields: { status: "listed" } }),
       ],
     });
     const sanc = cycle.predictions.find((p) => p.category === "sanctions-proximity")!;
-    expect(sanc.confidence).toBe("UNVERIFIED");
-    // UNVERIFIED confidence must never emit an alert regardless of probability.
+    expect(sanc.confidence).toBe("UNKNOWN");
+    // UNKNOWN confidence must never emit an alert regardless of probability.
     expect(sanc.alert).toBe(false);
   });
 

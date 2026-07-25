@@ -23,8 +23,8 @@ export function citation(e: NormalizedEvidence): PredictionEvidenceCitation {
  * prediction. Never upgrade — a prediction cannot be more confident than
  * its weakest supporting piece of evidence. */
 export function aggregateGrade(evidence: ReadonlyArray<NormalizedEvidence>): EvidenceGrade {
-  if (evidence.length === 0) return "UNVERIFIED";
-  const order: EvidenceGrade[] = ["VERIFIED", "CORROBORATED", "OBSERVED", "UNVERIFIED"];
+  if (evidence.length === 0) return "UNKNOWN";
+  const order: EvidenceGrade[] = ["VERIFIED", "CORROBORATED", "OBSERVED", "REPORTED", "INFERRED", "UNKNOWN"];
   let worst: EvidenceGrade = "VERIFIED";
   for (const e of evidence) {
     if (order.indexOf(e.grade) > order.indexOf(worst)) worst = e.grade;
@@ -100,7 +100,7 @@ export function buildPrediction(args: {
   const probability = combineProbability(args.factors);
   const severity = severityFor(probability);
   const confidence = aggregateGrade(args.evidence);
-  const alert = probability >= (args.alertThreshold ?? 0.55) && confidence !== "UNVERIFIED";
+  const alert = probability >= (args.alertThreshold ?? 0.55) && confidence !== "UNKNOWN";
   return {
     id: stableId(args.category, args.subject.id, args.salt),
     subject: args.subject,

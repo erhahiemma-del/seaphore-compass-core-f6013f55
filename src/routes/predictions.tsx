@@ -42,7 +42,7 @@ function seedEvidence(): ReadonlyArray<NormalizedEvidence> {
   const vessel = {
     id: "vessel:9411640",
     kind: "vessel" as const,
-    primaryLabel: "DONGWON NO.16",
+    label: "DONGWON NO.16",
     identifiers: { imo: "9411640", mmsi: "440825000" },
   };
   const now = new Date("2026-07-25T12:00:00Z").getTime();

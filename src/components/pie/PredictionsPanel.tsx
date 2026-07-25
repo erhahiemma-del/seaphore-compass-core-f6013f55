@@ -75,7 +75,7 @@ function PredictionCard({ prediction: p }: { prediction: Prediction }) {
           </div>
         </div>
         <p className="text-xs text-muted-foreground mt-1">
-          Subject: <span className="font-medium">{p.subject.primaryLabel}</span>
+          Subject: <span className="font-medium">{p.subject.label}</span>
         </p>
       </CardHeader>
       <CardContent className="space-y-3 pt-0">
