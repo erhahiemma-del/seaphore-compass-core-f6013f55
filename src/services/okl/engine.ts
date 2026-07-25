@@ -12,6 +12,7 @@
  */
 import type { UnifiedIntelligencePackage } from "@/services/ife";
 import type { NormalizedEvidence, CanonicalEntityRef } from "@/services/ial/types";
+import type { MaritimeKnowledgeGraph } from "@/services/mkg";
 
 import {
   fusionToScore,
