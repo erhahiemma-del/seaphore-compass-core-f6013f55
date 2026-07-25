@@ -235,7 +235,9 @@ export const generateOieInsights = createServerFn({ method: "POST" })
     for (const [invId, list] of byInvestigation) {
       if (subjectInvId && invId === subjectInvId) continue;
       const decisions = list.filter((r) => r.kind === "DECISION");
-      const outcomes = list.filter((r) => r.kind === "OUTCOME");
+      const outcomes = list.filter(
+        (r) => r.kind === "OUTCOME" || r.kind === "LESSON_LEARNED" || r.kind === "RECOMMENDATION_RESULT",
+      );
       if (decisions.length === 0 && outcomes.length === 0) continue;
       const rows = [...decisions, ...outcomes];
       const prov = new Map<string, OieProvenanceRef>();
