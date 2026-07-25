@@ -357,12 +357,12 @@ function BriefingCentre() {
                     Canonical UIP ({registeredUips.length} registered this session)
                   </label>
                   <Select
-                    value={liveUipId || (registeredUips[0]?.id ?? "")}
+                    value={liveUipId}
                     onValueChange={setLiveUipId}
                     disabled={registeredUips.length === 0}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Latest UIP" />
+                      <SelectValue placeholder="Select a Canonical UIP" />
                     </SelectTrigger>
                     <SelectContent>
                       {registeredUips.map((u) => (
@@ -372,11 +372,15 @@ function BriefingCentre() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {registeredUips.length === 0 && (
+                  {registeredUips.length === 0 ? (
                     <p className="mt-1 text-[11px] text-muted-foreground">
                       Run a Copilot query so a UIP is registered in this session.
                     </p>
-                  )}
+                  ) : !liveUipId ? (
+                    <p className="mt-1 text-[11px] text-amber-600">
+                      No active UIP — pick a snapshot before generating. MIBC never assumes the latest.
+                    </p>
+                  ) : null}
                 </div>
               ) : (
                 <div>
