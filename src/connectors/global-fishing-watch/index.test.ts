@@ -148,7 +148,7 @@ describe("AISBehaviourAnalyzer", () => {
         { timestamp: "2026-01-01T09:00:00Z", latitude: 6.5, longitude: 3.5 },
       ],
       historicalDarkEvents: [
-        { type: "AIS_DARK", startAt: "2025-12-01T00:00:00Z", endAt: "2025-12-01T08:00:00Z", durationHours: 8, weatherContext: "clear", nearestPort: "Lagos", distanceFromPortNm: 40, distanceFromCoastNm: null, trafficDensity: "moderate", historicalFrequency: 0, confidence: 0.7, explanation: "prior" },
+        { type: "AIS_DARK", kind: "disabling", startAt: "2025-12-01T00:00:00Z", endAt: "2025-12-01T08:00:00Z", durationHours: 8, startLocation: null, endLocation: null, weatherContext: "clear", nearestPort: "Lagos", nearestPortEnd: null, distanceFromPortNm: 40, distanceFromCoastNm: null, trafficDensity: "moderate", historicalFrequency: 0, confidence: 0.7, explanation: "prior" },
       ],
     });
     expect(report.gapsDetected).toBe(1);
