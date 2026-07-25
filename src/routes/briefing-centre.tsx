@@ -141,7 +141,7 @@ function BriefingCentre() {
         workspaces: sourceWorkspaces,
         officer: officerName,
         officerId,
-        briefingId: sourceWorkspaces[0]?.briefingId,
+        briefingId: sourceWorkspaces[0]?.sourceUipId,
         missionPlans: useMissionStore.getState().plans,
         uipSnapshots,
         missingUipIds: batch.missing,
