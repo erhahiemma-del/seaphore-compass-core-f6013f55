@@ -74,55 +74,22 @@ export const Route = createFileRoute("/intelligence-evidence")({
   component: IntelligenceEvidenceRoute,
 });
 
-function buildSampleEvidence(): IntelligenceEvidenceItem[] {
-  const identity = fromGfwIdentity(
-    {
-      vesselId: "8e126a2d7-7c99-38e2-0096-cf6a22b81b33",
-      name: "DONGWON NO.16",
-      mmsi: "440825000",
-      flag: "KOR",
-      matchFields: "SEVERAL_FIELDS",
-      evidenceUrl:
-        "https://gateway.api.globalfishingwatch.org/v3/vessels/search?query=440825000",
-      collectedAt: "2026-07-25T14:30:15.000Z",
-    },
-    "DONGWON NO.16",
-  );
-
-  const gap = fromGfwGapEvent({
-    id: "87ab704a63445d61c846bb2b9f75d8b2",
-    vessel: { name: "DONGWON NO.16", ssvid: "440825000", flag: "KOR" },
-    start: "2017-01-13T16:51:02.000Z",
-    end: "2026-06-13T01:29:22.000Z",
-    durationHours: 82496.6,
-    intentionalDisabling: true,
-    impliedSpeedKnots: 0.045,
-    evidenceUrl:
-      "https://gateway.api.globalfishingwatch.org/v3/events?datasets%5B0%5D=public-global-gaps-events:latest",
-  });
-
-  const report = AISBehaviourAnalyzer.analyse({
-    vesselId: "8e126a2d7-7c99-38e2-0096-cf6a22b81b33",
-    events: [
-      { timestamp: "2017-01-13T16:51:02.000Z", latitude: -9.5437, longitude: 165.1277, weather: "clear" },
-      { timestamp: "2026-06-13T01:29:22.000Z", latitude: 36.0, longitude: 120.259, weather: "clear" },
-    ],
-    gapThresholdHours: 6,
-  });
-  const continuity = fromAisContinuityReport(report, "DONGWON NO.16");
-  const assessment = fromOsaeAssessment(OSAE.publishAisContinuity(report), "DONGWON NO.16");
-
-  // OKL: project detected operational patterns as evidence rows with
-  // full officer-facing explainability.
-  const okl = analyzeOperationalKnowledge({
-    uip: DEMO_UIP,
-    historical: DEMO_HISTORICAL,
-    investigations: DEMO_INVESTIGATIONS,
-    rawEvidence: DEMO_EVIDENCE,
-  });
-  const oklItems = okl.patterns.map((p) => fromOklPattern(p, "DONGWON NO.16"));
-
-  return [identity, gap, ...continuity, assessment, ...oklItems];
+/**
+ * Build evidence rows from a live Unified Intelligence Package.
+ * Runs OKL against the UIP so detected operational patterns are projected
+ * alongside their raw evidence. Never uses demo fixtures.
+ */
+function buildEvidenceFromUip(
+  uip: import("@/services/ife/unified").UnifiedIntelligencePackage,
+): IntelligenceEvidenceItem[] {
+  const raw = uip.rawEvidence.map((e) => fromNormalizedEvidence(e));
+  const okl = analyzeOperationalKnowledge({ uip, rawEvidence: uip.rawEvidence });
+  const subject =
+    uip.fused.stats.canonicalEntities > 0
+      ? (uip.rawEvidence[0]?.entity.label ?? undefined)
+      : undefined;
+  const oklItems = okl.patterns.map((p) => fromOklPattern(p, subject));
+  return [...raw, ...oklItems];
 }
 
 const EVIDENCE_TYPES: EvidenceType[] = [
