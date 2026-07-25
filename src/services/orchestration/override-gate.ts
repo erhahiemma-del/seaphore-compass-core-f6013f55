@@ -10,7 +10,8 @@
  * hands off to the canonical Workflow Engine via the canonical Policy Engine.
  * Dismiss/Disagree never trigger workflows.
  */
-import { supabase } from "@/integrations/supabase/client";
+import { supabase as browserSupabase } from "@/integrations/supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { defaultPolicyEngine, type ApprovalToken } from "@/services/policy";
 import {
   WorkflowEngine,
@@ -37,6 +38,8 @@ export interface OverrideInput {
   modifications?: Record<string, unknown>;
   /** When present and decision ∈ {agree, modify}, dispatched via policy+workflow. */
   workflow?: OverrideWorkflowDirective;
+  /** Authenticated Supabase client from a server-fn context. Preferred. */
+  supabase?: SupabaseClient;
 }
 
 export interface OverrideResult {
@@ -52,7 +55,9 @@ export interface OverrideResult {
 const engine = new WorkflowEngine({ policy: defaultPolicyEngine });
 
 export async function captureOverride(input: OverrideInput): Promise<OverrideResult> {
-  const { data, error } = await supabase
+  const client: SupabaseClient =
+    input.supabase ?? (browserSupabase as unknown as SupabaseClient);
+  const { data, error } = await client
     .from("briefing_overrides")
     .insert({
       briefing_id: input.briefing_id,
@@ -65,13 +70,16 @@ export async function captureOverride(input: OverrideInput): Promise<OverrideRes
     .single();
   if (error) throw error;
 
-  await emitEvent({
-    event_type: "officer.actioned",
-    payload: { briefing_id: input.briefing_id, decision: input.decision },
-    emitted_by: input.officer_id,
-  });
+  await emitEvent(
+    {
+      event_type: "officer.actioned",
+      payload: { briefing_id: input.briefing_id, decision: input.decision },
+      emitted_by: input.officer_id,
+    },
+    { supabase: input.supabase },
+  );
 
-  const result: OverrideResult = { id: data.id as string };
+  const result: OverrideResult = { id: (data as { id: string }).id };
 
   // Only agree / modify may execute a downstream workflow.
   const dispatchable = input.decision === "agree" || input.decision === "modify";
