@@ -43,6 +43,7 @@ import { Route as DecideQueueRouteImport } from './routes/decide.queue'
 import { Route as DecideIdRouteImport } from './routes/decide.$id'
 import { Route as AdminProjectionContractRouteImport } from './routes/admin.projection-contract'
 import { Route as AdminOsintRouteImport } from './routes/admin.osint'
+import { Route as AdminConnectorsRouteImport } from './routes/admin.connectors'
 import { Route as ApiSessionIdRouteImport } from './routes/api/session/$id'
 import { Route as ApiRelationshipIdRouteImport } from './routes/api/relationship/$id'
 import { Route as ApiPublicWorkflowsRouteImport } from './routes/api/public/workflows'
@@ -222,6 +223,11 @@ const AdminOsintRoute = AdminOsintRouteImport.update({
   path: '/admin/osint',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminConnectorsRoute = AdminConnectorsRouteImport.update({
+  id: '/admin/connectors',
+  path: '/admin/connectors',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSessionIdRoute = ApiSessionIdRouteImport.update({
   id: '/api/session/$id',
   path: '/api/session/$id',
@@ -283,6 +289,7 @@ export interface FileRoutesByFullPath {
   '/revenue': typeof RevenueRoute
   '/share': typeof ShareRouteWithChildren
   '/vessel': typeof VesselRoute
+  '/admin/connectors': typeof AdminConnectorsRoute
   '/admin/osint': typeof AdminOsintRoute
   '/admin/projection-contract': typeof AdminProjectionContractRoute
   '/decide/$id': typeof DecideIdRoute
@@ -324,6 +331,7 @@ export interface FileRoutesByTo {
   '/ports': typeof PortsRoute
   '/revenue': typeof RevenueRoute
   '/vessel': typeof VesselRoute
+  '/admin/connectors': typeof AdminConnectorsRoute
   '/admin/osint': typeof AdminOsintRoute
   '/admin/projection-contract': typeof AdminProjectionContractRoute
   '/decide/$id': typeof DecideIdRoute
@@ -369,6 +377,7 @@ export interface FileRoutesById {
   '/revenue': typeof RevenueRoute
   '/share': typeof ShareRouteWithChildren
   '/vessel': typeof VesselRoute
+  '/admin/connectors': typeof AdminConnectorsRoute
   '/admin/osint': typeof AdminOsintRoute
   '/admin/projection-contract': typeof AdminProjectionContractRoute
   '/decide/$id': typeof DecideIdRoute
@@ -415,6 +424,7 @@ export interface FileRouteTypes {
     | '/revenue'
     | '/share'
     | '/vessel'
+    | '/admin/connectors'
     | '/admin/osint'
     | '/admin/projection-contract'
     | '/decide/$id'
@@ -456,6 +466,7 @@ export interface FileRouteTypes {
     | '/ports'
     | '/revenue'
     | '/vessel'
+    | '/admin/connectors'
     | '/admin/osint'
     | '/admin/projection-contract'
     | '/decide/$id'
@@ -500,6 +511,7 @@ export interface FileRouteTypes {
     | '/revenue'
     | '/share'
     | '/vessel'
+    | '/admin/connectors'
     | '/admin/osint'
     | '/admin/projection-contract'
     | '/decide/$id'
@@ -545,6 +557,7 @@ export interface RootRouteChildren {
   RevenueRoute: typeof RevenueRoute
   ShareRoute: typeof ShareRouteWithChildren
   VesselRoute: typeof VesselRoute
+  AdminConnectorsRoute: typeof AdminConnectorsRoute
   AdminOsintRoute: typeof AdminOsintRoute
   AdminProjectionContractRoute: typeof AdminProjectionContractRoute
   EntityIdRoute: typeof EntityIdRoute
@@ -801,6 +814,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOsintRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/connectors': {
+      id: '/admin/connectors'
+      path: '/admin/connectors'
+      fullPath: '/admin/connectors'
+      preLoaderRoute: typeof AdminConnectorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/session/$id': {
       id: '/api/session/$id'
       path: '/api/session/$id'
@@ -925,6 +945,7 @@ const rootRouteChildren: RootRouteChildren = {
   RevenueRoute: RevenueRoute,
   ShareRoute: ShareRouteWithChildren,
   VesselRoute: VesselRoute,
+  AdminConnectorsRoute: AdminConnectorsRoute,
   AdminOsintRoute: AdminOsintRoute,
   AdminProjectionContractRoute: AdminProjectionContractRoute,
   EntityIdRoute: EntityIdRoute,
@@ -943,13 +964,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
