@@ -113,16 +113,19 @@ export async function captureOverride(input: OverrideInput): Promise<OverrideRes
 
   // 3. Audit hand-off — the workflow engine writes its own transitions; we
   //    add an orchestration-level event so briefing timelines line up.
-  await emitEvent({
-    event_type: "officer.actioned",
-    payload: {
-      briefing_id: input.briefing_id,
-      workflow: input.workflow.workflow,
-      run_id: record.id,
-      status: record.status,
+  await emitEvent(
+    {
+      event_type: "officer.actioned",
+      payload: {
+        briefing_id: input.briefing_id,
+        workflow: input.workflow.workflow,
+        run_id: record.id,
+        status: record.status,
+      },
+      emitted_by: input.officer_id,
     },
-    emitted_by: input.officer_id,
-  });
+    { supabase: input.supabase },
+  );
 
   result.workflow = { dispatched: true, outcome: decision.outcome, record };
   return result;
