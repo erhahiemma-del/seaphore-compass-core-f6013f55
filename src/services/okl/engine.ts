@@ -41,6 +41,8 @@ export interface AnalyzeOklInput {
   readonly investigations?: ReadonlyArray<OklInvestigationHint>;
   /** Optional raw evidence when the UIP fusion didn't retain full records. */
   readonly rawEvidence?: ReadonlyArray<NormalizedEvidence>;
+  /** Optional Maritime Knowledge Graph for relationship enrichment. */
+  readonly graph?: MaritimeKnowledgeGraph;
 }
 
 interface DetectorCtx {
