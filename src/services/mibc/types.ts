@@ -1,0 +1,107 @@
+/**
+ * Maritime Intelligence Briefing Centre (MIBC) — types.
+ *
+ * Enterprise reporting engine. Reports NEVER read from connectors. Sole
+ * inputs are the Maritime Investigation Workspace and, when available,
+ * derived layers (OKL / MKG) that themselves consume the UIP.
+ */
+
+export const REPORT_TYPES = [
+  "EXECUTIVE_BRIEF",
+  "OPERATIONAL_BRIEF",
+  "INVESTIGATION_REPORT",
+  "REVENUE_INTELLIGENCE",
+  "CARGO_INTELLIGENCE",
+  "CONTAINER_INTELLIGENCE",
+  "MANIFEST_INTELLIGENCE",
+  "COMPLIANCE_REPORT",
+  "PORT_INTELLIGENCE",
+  "HISTORICAL_COMPARISON",
+  "TREND_ANALYSIS",
+] as const;
+export type ReportType = (typeof REPORT_TYPES)[number];
+
+export const REPORT_TYPE_LABEL: Record<ReportType, string> = {
+  EXECUTIVE_BRIEF: "Executive Brief",
+  OPERATIONAL_BRIEF: "Operational Brief",
+  INVESTIGATION_REPORT: "Investigation Report",
+  REVENUE_INTELLIGENCE: "Revenue Intelligence",
+  CARGO_INTELLIGENCE: "Cargo Intelligence",
+  CONTAINER_INTELLIGENCE: "Container Intelligence",
+  MANIFEST_INTELLIGENCE: "Manifest Intelligence",
+  COMPLIANCE_REPORT: "Compliance Report",
+  PORT_INTELLIGENCE: "Port Intelligence",
+  HISTORICAL_COMPARISON: "Historical Comparison",
+  TREND_ANALYSIS: "Trend Analysis",
+};
+
+export const REPORT_PERIODS = [
+  "YESTERDAY",
+  "LAST_7D",
+  "LAST_30D",
+  "QUARTER",
+  "YEAR",
+  "ON_DEMAND",
+] as const;
+export type ReportPeriod = (typeof REPORT_PERIODS)[number];
+
+export const REPORT_PERIOD_LABEL: Record<ReportPeriod, string> = {
+  YESTERDAY: "Yesterday",
+  LAST_7D: "Last 7 days",
+  LAST_30D: "Last 30 days",
+  QUARTER: "This quarter",
+  YEAR: "This year",
+  ON_DEMAND: "On demand",
+};
+
+export const REPORT_CADENCES = ["DAILY", "WEEKLY", "MONTHLY", "QUARTERLY", "ON_DEMAND"] as const;
+export type ReportCadence = (typeof REPORT_CADENCES)[number];
+
+export type ExportFormat = "PDF" | "DOCX" | "XLSX" | "PPTX";
+
+/** A single section rendered by every exporter in the same order. */
+export interface ReportSection {
+  id: string;
+  title: string;
+  body?: string; // plain text / markdown-lite (bullets prefixed with "- ")
+  bullets?: string[];
+  rows?: Array<Record<string, string | number>>;
+  columns?: string[]; // for rows
+  confidence?: number; // 0..100
+  references?: string[]; // evidence ids / source names
+}
+
+export interface ReportChart {
+  id: string;
+  title: string;
+  kind: "bar" | "pie" | "line";
+  data: Array<{ label: string; value: number }>;
+  evidenceRefs: string[]; // Golden Rule: every chart references evidence
+}
+
+export interface ReportPackage {
+  /** Stable synthetic id (not persisted). */
+  id: string;
+  reportType: ReportType;
+  reportTypeLabel: string;
+  period: ReportPeriod;
+  periodLabel: string;
+  generatedAt: string;
+  officer: string;
+  title: string;
+  subtitle?: string;
+
+  /** Source investigation IDs — reports are ONLY built from these. */
+  sourceInvestigationIds: string[];
+
+  /** Ordered sections (Executive Summary → Appendices → Sources). */
+  sections: ReportSection[];
+  charts: ReportChart[];
+
+  /** For the confidence chip in the header. */
+  overallConfidence: number;
+  /** Evidence provenance summary (source names, first/last seen). */
+  sources: Array<{ name: string; count: number }>;
+  /** Explainability line for the footer beside the immutable Seaphore line. */
+  provenanceLine: string;
+}
