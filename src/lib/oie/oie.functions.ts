@@ -71,6 +71,7 @@ export const runOIEFn = createServerFn({ method: "POST" })
     return {
       kind: "briefing" as const,
       briefing_id: result.briefing.id,
+      source_uip_id: result.briefing.source_uip_id,
       classification: result.briefing.classification,
       sections: result.briefing.sections,
       intelligence_status: result.briefing.intelligence_status,
