@@ -317,7 +317,7 @@ export const generateOieInsights = createServerFn({ method: "POST" })
     const recs = records.filter((r) => r.kind === "RECOMMENDATION");
     const outcomesByInv = new Map<string, OklRow[]>();
     for (const r of records) {
-      if (r.kind !== "OUTCOME") continue;
+      if (r.kind !== "OUTCOME" && r.kind !== "RECOMMENDATION_RESULT") continue;
       const list = outcomesByInv.get(r.investigation_id) ?? [];
       list.push(r);
       outcomesByInv.set(r.investigation_id, list);
