@@ -325,6 +325,13 @@ interface WorkspaceState {
   linkMission: (id: string, missionId: string, note?: string) => void;
   linkOklPattern: (id: string, patternId: string, note?: string) => void;
 
+  // Investigation Outcome & Learning Loop (Sprint 2.6).
+  recordOutcome: (
+    id: string,
+    outcome: Omit<WorkspaceOutcome, "recordedAt"> & Partial<Pick<WorkspaceOutcome, "recordedAt">>,
+    opts?: { closeOnRecord?: boolean; closureNote?: string },
+  ) => void;
+  clearOutcome: (id: string) => void;
 
   removeInvestigation: (id: string) => void;
   exportInvestigation: (id: string) => InvestigationWorkspace | null;
