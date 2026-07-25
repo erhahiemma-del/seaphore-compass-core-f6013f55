@@ -14,6 +14,7 @@ import { buildBriefing } from "./briefing-builder";
 import { emitEvent } from "./event-bus";
 import { supabase } from "@/integrations/supabase/client";
 import { PERF_BUDGETS } from "./constants";
+import { hashQuery } from "@/services/ife/registry";
 import type { Briefing, OfficerQuery } from "./types";
 
 export async function orchestrate(query: OfficerQuery): Promise<Briefing> {
@@ -38,16 +39,21 @@ export async function orchestrate(query: OfficerQuery): Promise<Briefing> {
   const matrix = computeConfidenceMatrix(fused);
   const assessment = await reason(intent, fused, matrix);
 
-  // 5. Build the Intelligence Contract
-  const briefing = buildBriefing({
-    query: { ...query, session_id: session.session_id },
-    intent,
-    fused,
-    assessment,
-    matrix,
-    latency_ms: Math.round(performance.now() - started),
-    model_used: "lovable-ai:gemini",
-  });
+  // 5. Build the Intelligence Contract — stamp canonical UIP id so every
+  //    downstream artifact references the same evidence set.
+  const uipId = `uip_${hashQuery(query.query, session.session_id)}`;
+  const briefing: Briefing = {
+    ...buildBriefing({
+      query: { ...query, session_id: session.session_id },
+      intent,
+      fused,
+      assessment,
+      matrix,
+      latency_ms: Math.round(performance.now() - started),
+      model_used: "lovable-ai:gemini",
+    }),
+    source_uip_id: uipId,
+  };
 
   // 6. Persist — best-effort. In dev-bypass (no session) RLS blocks the
   // insert; we keep the pipeline moving so the briefing still renders.

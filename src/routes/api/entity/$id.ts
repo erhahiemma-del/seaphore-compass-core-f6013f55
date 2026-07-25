@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { apiHandler } from "@/lib/api/handler";
 import { IdParamSchema } from "@/lib/api/schemas";
-import { mockDb } from "@/lib/api/mock-dataset";
 import { Errors } from "@/lib/api/errors";
+import { listUipIds, getUip } from "@/services/ife/registry";
 
 export const Route = createFileRoute("/api/entity/$id")({
   server: {
@@ -10,9 +10,18 @@ export const Route = createFileRoute("/api/entity/$id")({
       GET: apiHandler({
         paramsSchema: IdParamSchema,
         handler: async ({ params }) => {
-          const entity = mockDb.entityWithGraph(params.id);
-          if (!entity) throw Errors.notFound("Entity", params.id);
-          return { data: entity, sources: ["mock:knowledge-graph"], confidence: "verified" };
+          for (const uipId of listUipIds()) {
+            const uip = getUip(uipId);
+            const rec = uip?.fused.records.find((r) => r.entityRef.id === params.id);
+            if (rec) {
+              return {
+                data: { entity: rec, unifiedPackageId: uip!.id },
+                sources: uip!.provenance.map((p) => p.sourceName),
+                confidence: "verified",
+              };
+            }
+          }
+          throw Errors.notFound("Entity", params.id);
         },
       }),
     },

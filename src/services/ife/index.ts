@@ -26,3 +26,12 @@ export { resolveIdentities } from "./identity-resolver";
 export type { IdentityCluster, IdentityResolution } from "./identity-resolver";
 export { buildUnifiedIntelligencePackage } from "./unified";
 export type { UnifiedIntelligencePackage, BuildUnifiedInput } from "./unified";
+export {
+  registerUip,
+  getUip,
+  getUipByQueryHash,
+  listUipIds,
+  hashQuery,
+  __resetUipRegistry,
+  type UnifiedPackageId,
+} from "./registry";
