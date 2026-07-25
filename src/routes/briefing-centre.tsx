@@ -20,14 +20,15 @@ import {
   REPORT_TYPE_LABEL,
   REPORT_PERIODS,
   REPORT_PERIOD_LABEL,
-  REPORT_CADENCES,
   type ReportType,
   type ReportPeriod,
-  type ReportCadence,
   type ExportFormat,
   type ReportPackage,
 } from "@/services/mibc";
-import { FileText, FileDown, Sparkles, CalendarClock } from "lucide-react";
+import { FileText, FileDown, Sparkles } from "lucide-react";
+import { SchedulesPanel } from "@/components/briefing/SchedulesPanel";
+import { JobHistoryPanel } from "@/components/briefing/JobHistoryPanel";
+import { useReportJobDrainer } from "@/lib/mibc/job-drainer";
 
 export const Route = createFileRoute("/briefing-centre")({
   head: () => ({
@@ -48,13 +49,8 @@ export const Route = createFileRoute("/briefing-centre")({
   component: BriefingCentre,
 });
 
-type ScheduledJob = {
-  id: string;
-  reportType: ReportType;
-  period: ReportPeriod;
-  cadence: ReportCadence;
-  createdAt: string;
-};
+// Local ScheduledJob type removed; schedules are now persisted server-side
+// via report_schedules and report_jobs. See src/lib/mibc/schedules.functions.ts.
 
 function BriefingCentre() {
   const investigations = useWorkspaceStore((s) => Object.values(s.investigations));
