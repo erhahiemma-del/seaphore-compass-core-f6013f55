@@ -52,16 +52,16 @@ export interface LeakageFinding {
 }
 
 const GRADE_RANK: Record<EvidenceGrade, number> = {
-  OBSERVED: 1,
-  DECLARED: 2,
-  INFERRED: 3,
+  UNKNOWN: 0,
+  INFERRED: 1,
+  REPORTED: 2,
+  OBSERVED: 3,
   CORROBORATED: 4,
   VERIFIED: 5,
-  AUDITED: 6,
 };
 
 function weakestGrade(grades: ReadonlyArray<EvidenceGrade>): EvidenceGrade {
-  if (grades.length === 0) return "INFERRED";
+  if (grades.length === 0) return "UNKNOWN";
   return grades.reduce((min, g) => (GRADE_RANK[g] < GRADE_RANK[min] ? g : min), grades[0]);
 }
 
