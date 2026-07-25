@@ -7,7 +7,7 @@ const line = (s = "") => console.log(s);
 const h = (t: string) => { line(); line("═".repeat(72)); line(t); line("═".repeat(72)); };
 
 h("STEP 1 — Connector Registration (server-driven registry)");
-const snap = await listAuthenticatedConnectors();
+const snap = await probeAllConnectors();
 for (const c of snap) {
   line(`  • ${c.id} v${c.version}  entities=[${c.supportedEntities.join(",")}]  health=${c.health.status}  latency=${c.health.latencyMs ?? "—"}ms`);
 }
