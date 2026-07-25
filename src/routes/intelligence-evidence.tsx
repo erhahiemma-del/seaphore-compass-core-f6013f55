@@ -111,13 +111,19 @@ const CONFIDENCE_CHIPS: EvidenceConfidence[] = [
 function IntelligenceEvidenceRoute() {
   const investigations = useWorkspaceStore((s) => s.investigations);
   const search = Route.useSearch();
+  const uip = useUipStore((s) => {
+    if (search.uip) return s.byId[search.uip];
+    const latestId = s.order[0];
+    return latestId ? s.byId[latestId] : undefined;
+  });
 
   const items = useMemo<IntelligenceEvidenceItem[]>(() => {
     const wsItems = Object.entries(investigations).flatMap(([id, w]) =>
       w.evidence.map((e) => fromWorkspaceEvidence(e, id)),
     );
-    return [...buildSampleEvidence(), ...wsItems];
-  }, [investigations]);
+    const uipItems = uip ? buildEvidenceFromUip(uip) : [];
+    return [...uipItems, ...wsItems];
+  }, [investigations, uip]);
 
   const initialFilters = useMemo(() => {
     const types = new Set<EvidenceType>();
