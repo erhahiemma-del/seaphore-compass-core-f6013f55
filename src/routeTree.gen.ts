@@ -18,6 +18,7 @@ import { Route as ObservabilityRouteImport } from './routes/observability'
 import { Route as MemoryRouteImport } from './routes/memory'
 import { Route as ManifestRouteImport } from './routes/manifest'
 import { Route as InvestigateRouteImport } from './routes/investigate'
+import { Route as IntelligenceEvidenceRouteImport } from './routes/intelligence-evidence'
 import { Route as EvidenceRouteImport } from './routes/evidence'
 import { Route as DetectRouteImport } from './routes/detect'
 import { Route as DecideRouteImport } from './routes/decide'
@@ -96,6 +97,11 @@ const ManifestRoute = ManifestRouteImport.update({
 const InvestigateRoute = InvestigateRouteImport.update({
   id: '/investigate',
   path: '/investigate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IntelligenceEvidenceRoute = IntelligenceEvidenceRouteImport.update({
+  id: '/intelligence-evidence',
+  path: '/intelligence-evidence',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EvidenceRoute = EvidenceRouteImport.update({
@@ -280,6 +286,7 @@ export interface FileRoutesByFullPath {
   '/decide': typeof DecideRouteWithChildren
   '/detect': typeof DetectRoute
   '/evidence': typeof EvidenceRoute
+  '/intelligence-evidence': typeof IntelligenceEvidenceRoute
   '/investigate': typeof InvestigateRouteWithChildren
   '/manifest': typeof ManifestRoute
   '/memory': typeof MemoryRoute
@@ -324,6 +331,7 @@ export interface FileRoutesByTo {
   '/copilot': typeof CopilotRoute
   '/detect': typeof DetectRoute
   '/evidence': typeof EvidenceRoute
+  '/intelligence-evidence': typeof IntelligenceEvidenceRoute
   '/manifest': typeof ManifestRoute
   '/memory': typeof MemoryRoute
   '/observability': typeof ObservabilityRoute
@@ -368,6 +376,7 @@ export interface FileRoutesById {
   '/decide': typeof DecideRouteWithChildren
   '/detect': typeof DetectRoute
   '/evidence': typeof EvidenceRoute
+  '/intelligence-evidence': typeof IntelligenceEvidenceRoute
   '/investigate': typeof InvestigateRouteWithChildren
   '/manifest': typeof ManifestRoute
   '/memory': typeof MemoryRoute
@@ -415,6 +424,7 @@ export interface FileRouteTypes {
     | '/decide'
     | '/detect'
     | '/evidence'
+    | '/intelligence-evidence'
     | '/investigate'
     | '/manifest'
     | '/memory'
@@ -459,6 +469,7 @@ export interface FileRouteTypes {
     | '/copilot'
     | '/detect'
     | '/evidence'
+    | '/intelligence-evidence'
     | '/manifest'
     | '/memory'
     | '/observability'
@@ -502,6 +513,7 @@ export interface FileRouteTypes {
     | '/decide'
     | '/detect'
     | '/evidence'
+    | '/intelligence-evidence'
     | '/investigate'
     | '/manifest'
     | '/memory'
@@ -548,6 +560,7 @@ export interface RootRouteChildren {
   DecideRoute: typeof DecideRouteWithChildren
   DetectRoute: typeof DetectRoute
   EvidenceRoute: typeof EvidenceRoute
+  IntelligenceEvidenceRoute: typeof IntelligenceEvidenceRoute
   InvestigateRoute: typeof InvestigateRouteWithChildren
   ManifestRoute: typeof ManifestRoute
   MemoryRoute: typeof MemoryRoute
@@ -637,6 +650,13 @@ declare module '@tanstack/react-router' {
       path: '/investigate'
       fullPath: '/investigate'
       preLoaderRoute: typeof InvestigateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/intelligence-evidence': {
+      id: '/intelligence-evidence'
+      path: '/intelligence-evidence'
+      fullPath: '/intelligence-evidence'
+      preLoaderRoute: typeof IntelligenceEvidenceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/evidence': {
@@ -936,6 +956,7 @@ const rootRouteChildren: RootRouteChildren = {
   DecideRoute: DecideRouteWithChildren,
   DetectRoute: DetectRoute,
   EvidenceRoute: EvidenceRoute,
+  IntelligenceEvidenceRoute: IntelligenceEvidenceRoute,
   InvestigateRoute: InvestigateRouteWithChildren,
   ManifestRoute: ManifestRoute,
   MemoryRoute: MemoryRoute,
