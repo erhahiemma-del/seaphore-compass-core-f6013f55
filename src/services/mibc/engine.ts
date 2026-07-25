@@ -796,7 +796,7 @@ export function buildReport(input: BuildReportInput): ReportPackage {
       arr.push({
         label: c.entity.label ?? c.entity.id,
         uipId: u.id,
-        confidence: c.confidence,
+        confidence: c.confidence === "HIGH" ? 90 : c.confidence === "MEDIUM" ? 65 : 40,
       });
       kindBuckets.set(kind, arr);
     }
