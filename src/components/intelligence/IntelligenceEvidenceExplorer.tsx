@@ -87,7 +87,8 @@ const STATUS_LABEL: Record<EvidenceStatus, string> = {
 
 const CONFIDENCES: EvidenceConfidence[] = ["VERIFIED", "OBSERVED", "INFERRED", "UNCONFIRMED"];
 
-const ENTITY_ICON: Record<EvidenceEntityType, React.ComponentType<{ className?: string }>> = {
+import type { LucideIcon } from "lucide-react";
+const ENTITY_ICON: Record<EvidenceEntityType, LucideIcon> = {
   vessel: Anchor,
   company: Building2,
   person: User2,
