@@ -91,6 +91,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { title: "Compliance Intelligence", url: "/compliance", icon: ShieldCheck },
       { title: "Evidence Library", url: "/evidence", icon: FolderArchive },
       { title: "Intelligence Evidence", subtitle: "Assessment Basis", url: "/intelligence-evidence", icon: FileSearch },
+      { title: "Knowledge Graph", subtitle: "Relational Intelligence", url: "/knowledge-graph", icon: Share2 },
       { title: "Alerts Center", url: "/alerts", icon: BellRing },
     ],
   },

@@ -17,6 +17,7 @@ import { Route as OwnershipRouteImport } from './routes/ownership'
 import { Route as ObservabilityRouteImport } from './routes/observability'
 import { Route as MemoryRouteImport } from './routes/memory'
 import { Route as ManifestRouteImport } from './routes/manifest'
+import { Route as KnowledgeGraphRouteImport } from './routes/knowledge-graph'
 import { Route as InvestigateRouteImport } from './routes/investigate'
 import { Route as IntelligenceEvidenceRouteImport } from './routes/intelligence-evidence'
 import { Route as EvidenceRouteImport } from './routes/evidence'
@@ -92,6 +93,11 @@ const MemoryRoute = MemoryRouteImport.update({
 const ManifestRoute = ManifestRouteImport.update({
   id: '/manifest',
   path: '/manifest',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KnowledgeGraphRoute = KnowledgeGraphRouteImport.update({
+  id: '/knowledge-graph',
+  path: '/knowledge-graph',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InvestigateRoute = InvestigateRouteImport.update({
@@ -288,6 +294,7 @@ export interface FileRoutesByFullPath {
   '/evidence': typeof EvidenceRoute
   '/intelligence-evidence': typeof IntelligenceEvidenceRoute
   '/investigate': typeof InvestigateRouteWithChildren
+  '/knowledge-graph': typeof KnowledgeGraphRoute
   '/manifest': typeof ManifestRoute
   '/memory': typeof MemoryRoute
   '/observability': typeof ObservabilityRoute
@@ -332,6 +339,7 @@ export interface FileRoutesByTo {
   '/detect': typeof DetectRoute
   '/evidence': typeof EvidenceRoute
   '/intelligence-evidence': typeof IntelligenceEvidenceRoute
+  '/knowledge-graph': typeof KnowledgeGraphRoute
   '/manifest': typeof ManifestRoute
   '/memory': typeof MemoryRoute
   '/observability': typeof ObservabilityRoute
@@ -378,6 +386,7 @@ export interface FileRoutesById {
   '/evidence': typeof EvidenceRoute
   '/intelligence-evidence': typeof IntelligenceEvidenceRoute
   '/investigate': typeof InvestigateRouteWithChildren
+  '/knowledge-graph': typeof KnowledgeGraphRoute
   '/manifest': typeof ManifestRoute
   '/memory': typeof MemoryRoute
   '/observability': typeof ObservabilityRoute
@@ -426,6 +435,7 @@ export interface FileRouteTypes {
     | '/evidence'
     | '/intelligence-evidence'
     | '/investigate'
+    | '/knowledge-graph'
     | '/manifest'
     | '/memory'
     | '/observability'
@@ -470,6 +480,7 @@ export interface FileRouteTypes {
     | '/detect'
     | '/evidence'
     | '/intelligence-evidence'
+    | '/knowledge-graph'
     | '/manifest'
     | '/memory'
     | '/observability'
@@ -515,6 +526,7 @@ export interface FileRouteTypes {
     | '/evidence'
     | '/intelligence-evidence'
     | '/investigate'
+    | '/knowledge-graph'
     | '/manifest'
     | '/memory'
     | '/observability'
@@ -562,6 +574,7 @@ export interface RootRouteChildren {
   EvidenceRoute: typeof EvidenceRoute
   IntelligenceEvidenceRoute: typeof IntelligenceEvidenceRoute
   InvestigateRoute: typeof InvestigateRouteWithChildren
+  KnowledgeGraphRoute: typeof KnowledgeGraphRoute
   ManifestRoute: typeof ManifestRoute
   MemoryRoute: typeof MemoryRoute
   ObservabilityRoute: typeof ObservabilityRoute
@@ -643,6 +656,13 @@ declare module '@tanstack/react-router' {
       path: '/manifest'
       fullPath: '/manifest'
       preLoaderRoute: typeof ManifestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/knowledge-graph': {
+      id: '/knowledge-graph'
+      path: '/knowledge-graph'
+      fullPath: '/knowledge-graph'
+      preLoaderRoute: typeof KnowledgeGraphRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/investigate': {
@@ -958,6 +978,7 @@ const rootRouteChildren: RootRouteChildren = {
   EvidenceRoute: EvidenceRoute,
   IntelligenceEvidenceRoute: IntelligenceEvidenceRoute,
   InvestigateRoute: InvestigateRouteWithChildren,
+  KnowledgeGraphRoute: KnowledgeGraphRoute,
   ManifestRoute: ManifestRoute,
   MemoryRoute: MemoryRoute,
   ObservabilityRoute: ObservabilityRoute,
