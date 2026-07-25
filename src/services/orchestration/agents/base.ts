@@ -3,7 +3,13 @@
  * Each agent retrieves domain-specific evidence via project services/adapters.
  * Agents NEVER generate assessments. If a source is planned/not-in-scope, the
  * agent returns `responded: false` so the Fusion Engine can report the gap.
+ *
+ * Sprint 2.2A — agents receive an optional authenticated Supabase client from
+ * the orchestrator's server-fn context. When present, evidence retrieval runs
+ * under the officer's auth (RLS applies as that user). When absent (dev-bypass
+ * client execution) the caller falls back to the browser client.
  */
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   AgentId,
   CapabilityId,
@@ -13,10 +19,20 @@ import type {
   RetrievalResult,
 } from "../types";
 
+export interface AgentDeps {
+  /** Authenticated Supabase client from `runOIEFn` context. */
+  supabase?: SupabaseClient;
+}
+
 export interface SpecialistAgent {
   id: AgentId;
   handles: CapabilityId[];
-  retrieve(cap: CapabilityId, intent: Intent, query: OfficerQuery): Promise<RetrievalResult>;
+  retrieve(
+    cap: CapabilityId,
+    intent: Intent,
+    query: OfficerQuery,
+    deps?: AgentDeps,
+  ): Promise<RetrievalResult>;
 }
 
 /** Utility to time a retrieval and normalize failure into a responded=false result. */

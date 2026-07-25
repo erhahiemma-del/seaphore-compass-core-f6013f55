@@ -10,7 +10,8 @@
  * every existing caller (server functions, override gate, UI probes) keeps
  * working unchanged.
  */
-import { supabase } from "@/integrations/supabase/client";
+import { supabase as browserSupabase } from "@/integrations/supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   PERMISSIONS,
   WORKFLOW_PERMISSION,
@@ -45,6 +46,8 @@ export interface PolicyRequest {
   permission: Permission;
   workspace?: string;
   investigation_id?: string;
+  /** Authenticated Supabase client from a server-fn context. Preferred. */
+  supabase?: SupabaseClient;
 }
 
 export interface PolicyDecision {
@@ -53,8 +56,15 @@ export interface PolicyDecision {
   requiresEscalation: boolean;
 }
 
-async function fetchOfficerRole(officer_id: string): Promise<Role | null> {
-  const { data } = await supabase
+function clientOf(req: { supabase?: SupabaseClient }): SupabaseClient {
+  return req.supabase ?? (browserSupabase as unknown as SupabaseClient);
+}
+
+async function fetchOfficerRole(
+  client: SupabaseClient,
+  officer_id: string,
+): Promise<Role | null> {
+  const { data } = await client
     .from("user_roles")
     .select("role")
     .eq("user_id", officer_id);
@@ -69,9 +79,10 @@ export async function evaluatePolicy(req: PolicyRequest): Promise<PolicyDecision
     return { allow: false, reasons: [`Unknown permission: ${req.permission}`], requiresEscalation: false };
   }
 
+  const client = clientOf(req);
   const reasons: string[] = [];
   const workflow = PERMISSION_WORKFLOW[req.permission];
-  const role = await fetchOfficerRole(req.officer_id);
+  const role = await fetchOfficerRole(client, req.officer_id);
 
   // 1. RBAC via canonical role matrix.
   if (!role || !roleHas(role, req.permission)) {
@@ -83,14 +94,14 @@ export async function evaluatePolicy(req: PolicyRequest): Promise<PolicyDecision
 
   // 3. Daily DB rate limit (preserved for auditability of long windows).
   const today = new Date().toISOString().slice(0, 10);
-  const { data: counter } = await supabase
+  const { data: counter } = await client
     .from("officer_action_counters")
     .select("count")
     .eq("officer_id", req.officer_id)
     .eq("action_key", req.permission)
     .eq("window_day", today)
     .maybeSingle();
-  const used = counter?.count ?? 0;
+  const used = (counter as { count?: number } | null)?.count ?? 0;
   if (used >= DAILY_LIMIT[req.permission]) {
     reasons.push(`Daily rate limit reached (${used}/${DAILY_LIMIT[req.permission]})`);
   }
@@ -98,24 +109,30 @@ export async function evaluatePolicy(req: PolicyRequest): Promise<PolicyDecision
   return { allow: reasons.length === 0, reasons, requiresEscalation };
 }
 
-export async function recordActionUsage(officer_id: string, permission: Permission): Promise<void> {
+export async function recordActionUsage(
+  officer_id: string,
+  permission: Permission,
+  deps: { supabase?: SupabaseClient } = {},
+): Promise<void> {
+  const client = clientOf(deps);
   const today = new Date().toISOString().slice(0, 10);
-  const { data: existing } = await supabase
+  const { data: existing } = await client
     .from("officer_action_counters")
     .select("count")
     .eq("officer_id", officer_id)
     .eq("action_key", permission)
     .eq("window_day", today)
     .maybeSingle();
-  if (existing) {
-    await supabase
+  const existingRow = existing as { count: number } | null;
+  if (existingRow) {
+    await client
       .from("officer_action_counters")
-      .update({ count: existing.count + 1 })
+      .update({ count: existingRow.count + 1 })
       .eq("officer_id", officer_id)
       .eq("action_key", permission)
       .eq("window_day", today);
   } else {
-    await supabase.from("officer_action_counters").insert({
+    await client.from("officer_action_counters").insert({
       officer_id,
       action_key: permission,
       window_day: today,

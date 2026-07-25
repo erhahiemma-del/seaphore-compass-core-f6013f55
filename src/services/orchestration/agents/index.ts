@@ -1,14 +1,25 @@
 /**
  * Specialist Agents — concrete implementations.
  *
- * These wire the Orchestrator to real project data through the existing
- * repository/service layer. They NEVER fabricate: if a datasource is planned
- * or errors, the agent returns responded=false and the Fusion Engine reports
- * an Intelligence Gap (HR-1).
+ * Wire the Orchestrator to real project data through the existing repository
+ * layer. Agents NEVER fabricate: if a datasource is planned or errors, the
+ * agent returns responded=false and the Fusion Engine reports an Intelligence
+ * Gap (HR-1).
+ *
+ * Sprint 2.2A — server authentication propagation.
+ * The retrieval path uses the authenticated Supabase client threaded from
+ * `runOIEFn` via `orchestrate → scheduleRetrievals → agent.retrieve`. The
+ * browser client is only used as a fallback for client-side / dev-bypass
+ * execution where no server context is available.
  */
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CapabilityId, EvidenceItem, Intent, OfficerQuery } from "../types";
-import { runRetrieval, type SpecialistAgent } from "./base";
-import { supabase } from "@/integrations/supabase/client";
+import { runRetrieval, type AgentDeps, type SpecialistAgent } from "./base";
+import { supabase as browserSupabase } from "@/integrations/supabase/client";
+
+function clientFor(deps?: AgentDeps): SupabaseClient {
+  return deps?.supabase ?? (browserSupabase as unknown as SupabaseClient);
+}
 
 function normalizeGrade(g: string | null | undefined): EvidenceItem["grade"] {
   const up = (g ?? "").toUpperCase();
@@ -28,8 +39,12 @@ function normalizeGrade(g: string | null | undefined): EvidenceItem["grade"] {
  * plus stored evidence records. Filters by entity identifiers extracted by
  * the Intent Classifier when present.
  */
-async function retrieveEvidence(intent: Intent, limit = 25): Promise<EvidenceItem[]> {
-  const { data, error } = await supabase
+async function retrieveEvidence(
+  client: SupabaseClient,
+  intent: Intent,
+  limit = 25,
+): Promise<EvidenceItem[]> {
+  const { data, error } = await client
     .from("signals")
     .select("id, domain, statement, confidence, entity_id, evidence_ids, observed_at")
     .order("observed_at", { ascending: false })
@@ -59,49 +74,57 @@ async function retrieveEvidence(intent: Intent, limit = 25): Promise<EvidenceIte
 const ownershipAgent: SpecialistAgent = {
   id: "ownership",
   handles: ["OWNERSHIP_ANALYSIS", "RELATIONSHIP_DISCOVERY", "SANCTIONS_SCREENING"],
-  retrieve: (cap, intent, _q) =>
+  retrieve: (cap, intent, _q, deps) =>
     runRetrieval(
       "ownership",
       cap,
       cap === "SANCTIONS_SCREENING" ? "OpenSanctions" : "CAC + IMO",
-      () => retrieveEvidence(intent),
+      () => retrieveEvidence(clientFor(deps), intent),
     ),
 };
 
 const revenueAgent: SpecialistAgent = {
   id: "revenue",
   handles: ["REVENUE_LEAKAGE_DETECTION"],
-  retrieve: (cap, intent, _q) =>
-    runRetrieval("revenue", cap, "Manifest + Customs", () => retrieveEvidence(intent)),
+  retrieve: (cap, intent, _q, deps) =>
+    runRetrieval("revenue", cap, "Manifest + Customs", () =>
+      retrieveEvidence(clientFor(deps), intent),
+    ),
 };
 
 const manifestAgent: SpecialistAgent = {
   id: "manifest",
   handles: ["MANIFEST_CORRELATION"],
-  retrieve: (cap, intent, _q) =>
-    runRetrieval("manifest", cap, "Cargo Manifests", () => retrieveEvidence(intent)),
+  retrieve: (cap, intent, _q, deps) =>
+    runRetrieval("manifest", cap, "Cargo Manifests", () =>
+      retrieveEvidence(clientFor(deps), intent),
+    ),
 };
 
 const complianceAgent: SpecialistAgent = {
   id: "compliance",
   handles: ["COMPLIANCE_ASSESSMENT"],
-  retrieve: (cap, intent, _q) =>
-    runRetrieval("compliance", cap, "IMO GISIS + Certificates", () => retrieveEvidence(intent)),
+  retrieve: (cap, intent, _q, deps) =>
+    runRetrieval("compliance", cap, "IMO GISIS + Certificates", () =>
+      retrieveEvidence(clientFor(deps), intent),
+    ),
 };
 
 const evidenceAgent: SpecialistAgent = {
   id: "evidence",
   handles: ["EVIDENCE_SEARCH", "DOCUMENT_ANALYSIS"],
-  retrieve: (cap, intent, _q) =>
-    runRetrieval("evidence", cap, "Evidence Library", () => retrieveEvidence(intent, 50)),
+  retrieve: (cap, intent, _q, deps) =>
+    runRetrieval("evidence", cap, "Evidence Library", () =>
+      retrieveEvidence(clientFor(deps), intent, 50),
+    ),
 };
 
 const forecastAgent: SpecialistAgent = {
   id: "forecast",
   handles: ["PATTERN_DETECTION", "RISK_SCORING"],
-  retrieve: async (cap, intent, _q) =>
+  retrieve: async (cap, intent, _q, deps) =>
     runRetrieval("forecast", cap, "Historical Cases", async () => {
-      const evidence = await retrieveEvidence(intent, 30);
+      const evidence = await retrieveEvidence(clientFor(deps), intent, 30);
       // Pattern agent labels its outputs INFERRED unless corroboration exists.
       return evidence.map((e) => ({
         ...e,
@@ -128,4 +151,4 @@ export function pickAgentForCapability(cap: CapabilityId): SpecialistAgent | und
 }
 
 // Re-export types for callers that only import the agents module.
-export type { SpecialistAgent, OfficerQuery };
+export type { SpecialistAgent, OfficerQuery, AgentDeps };
