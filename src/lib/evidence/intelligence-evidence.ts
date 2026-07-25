@@ -17,6 +17,14 @@ import type {
   AisDarkEvidence,
 } from "@/intelligence/analyzers/AISBehaviourAnalyzer";
 import type { OsaeAssessment } from "@/services/osae";
+import type {
+  OperationalPattern,
+  AlternativeExplanation,
+  ConfidencePyramid,
+  ReasoningStep,
+  OklPatternKind,
+  RiskLevel,
+} from "@/services/okl/types";
 import type { WorkspaceEvidence } from "@/stores/workspace.store";
 
 /** Broad category — drives the filter chips in the viewer. */
@@ -79,7 +87,7 @@ export interface IntelligenceEvidenceItem {
   /** Which subject the evidence relates to (vessel, company, …). */
   subject?: string;
   /** Which producer generated this evidence. */
-  producer?: "IAL" | "REASONING" | "OSAE" | "ICE" | "IFE" | "WORKSPACE";
+  producer?: "IAL" | "REASONING" | "OSAE" | "ICE" | "IFE" | "OKL" | "WORKSPACE";
   /** Hash for chain-of-custody (opaque; never a token). */
   hash?: string;
   /** Connector short-id (e.g. "gfw", "opensanctions", "companies-house"). */
@@ -91,6 +99,47 @@ export interface IntelligenceEvidenceItem {
    * per-entity filter. Extracted upstream in adapters — no raw payloads.
    */
   entities?: EvidenceEntityRef[];
+  /**
+   * Officer-facing OKL explainability. Present when the evidence row was
+   * produced by an Operational Knowledge Layer pattern detector. Carries
+   * WHY the pattern was detected, supporting/contradictory evidence ids,
+   * provenance, alternative explanations, confidence pyramid, and the
+   * machine-readable reasoning trace. Rendered alongside the timeline in
+   * the Intelligence Evidence Explorer.
+   */
+  oklExplainability?: OklExplainability;
+}
+
+export interface OklExplainability {
+  readonly patternId: string;
+  readonly patternKind: OklPatternKind;
+  readonly patternName: string;
+  readonly operationalImpact: string;
+  readonly riskLevel: RiskLevel;
+  /** One-line synthesis of "why this was detected". */
+  readonly whyDetected: string;
+  /** Full machine-readable reasoning trace from the detector. */
+  readonly reasoning: ReadonlyArray<ReasoningStep>;
+  /** Evidence ids from the UIP that support this conclusion. */
+  readonly supportingEvidenceIds: ReadonlyArray<string>;
+  /** Contradictory evidence ids surfaced by the IFE. */
+  readonly contradictoryEvidenceIds: ReadonlyArray<string>;
+  /** Connector short-ids that contributed evidence. */
+  readonly sourceConnectors: ReadonlyArray<string>;
+  /** Alternative benign explanations the officer should weigh. */
+  readonly alternatives: ReadonlyArray<AlternativeExplanation>;
+  /** Full 5-level Confidence Pyramid. */
+  readonly confidencePyramid: ConfidencePyramid;
+  /** Historical context (e.g. prior detections). */
+  readonly historicalContext?: string;
+  /** Provenance — where did this pattern come from? */
+  readonly provenance: {
+    readonly uipId: string;
+    readonly fusedPackageId: string;
+    readonly detector: OklPatternKind;
+  };
+  /** Officer-approval-gated recommendation labels, for quick scanning. */
+  readonly recommendationLabels: ReadonlyArray<string>;
 }
 
 /* ────────────────────────── grade / status helpers ────────────────────────── */
@@ -280,7 +329,90 @@ export function fromWorkspaceEvidence(
   };
 }
 
-/* ────────────────────────── filters ────────────────────────── */
+const OKL_KIND_LABEL: Record<OklPatternKind, string> = {
+  REPEAT_OFFENDER: "Repeat offender",
+  SUSPICIOUS_ROUTING: "Suspicious routing",
+  AIS_DARK_PATTERN: "AIS dark pattern",
+  OWNERSHIP_LINK: "Ownership link",
+  CARGO_ANOMALY: "Cargo anomaly",
+  MANIFEST_INCONSISTENCY: "Manifest inconsistency",
+  REVENUE_LEAKAGE: "Revenue leakage",
+  COMPLIANCE_VIOLATION: "Compliance violation",
+  PORT_CONGESTION: "Port congestion",
+  CROSS_INVESTIGATION_LINK: "Cross-investigation link",
+  HISTORICAL_BEHAVIOUR: "Historical behaviour",
+};
+
+function riskToConfidence(risk: RiskLevel, tier: ConfidencePyramid["tier"]): EvidenceConfidence {
+  if (tier === "HIGH") return risk === "CRITICAL" || risk === "HIGH" ? "VERIFIED" : "OBSERVED";
+  if (tier === "MEDIUM") return "OBSERVED";
+  return "INFERRED";
+}
+
+function riskToStatus(risk: RiskLevel, hasContradictions: boolean): EvidenceStatus {
+  if (hasContradictions) return "conflicting";
+  if (risk === "CRITICAL" || risk === "HIGH") return "verified";
+  return "pending";
+}
+
+/**
+ * Adapt an OKL OperationalPattern into a projected evidence row for the
+ * Intelligence Evidence Explorer. Carries the full officer-facing
+ * explainability payload (why it was detected, supporting evidence,
+ * provenance, alternatives, and confidence pyramid) so the evidence
+ * timeline can render explainability alongside each pattern.
+ */
+export function fromOklPattern(
+  pattern: OperationalPattern,
+  subject?: string,
+  investigationId?: string,
+): IntelligenceEvidenceItem {
+  const primaryReason =
+    pattern.reasoning.find((r) => /matched|detected|flagged|found|observed/i.test(r.step))?.step ??
+    pattern.reasoning[0]?.step ??
+    pattern.operationalImpact;
+
+  const entityRef = pattern.entities[0];
+  const inferredSubject = subject ?? entityRef?.label;
+
+
+  return {
+    id: `okl.${pattern.id}`,
+    source: `Operational Knowledge Layer · ${OKL_KIND_LABEL[pattern.kind]}`,
+    timestamp: pattern.detectedAt,
+    confidence: riskToConfidence(pattern.riskLevel, pattern.confidence.tier),
+    confidenceScore: pattern.confidence.recommendation / 100,
+    evidenceType: "assessment",
+    status: riskToStatus(pattern.riskLevel, pattern.contradictoryEvidenceIds.length > 0),
+    claim: `${pattern.name} · ${pattern.riskLevel} risk`,
+    summary: pattern.operationalImpact,
+    subject: inferredSubject,
+    producer: "OKL",
+    connector: "okl",
+    investigationId,
+    entities: inferredSubject
+      ? [{ type: "vessel", name: inferredSubject, id: entityRef?.id }]
+      : undefined,
+    oklExplainability: {
+      patternId: pattern.id,
+      patternKind: pattern.kind,
+      patternName: pattern.name,
+      operationalImpact: pattern.operationalImpact,
+      riskLevel: pattern.riskLevel,
+      whyDetected: primaryReason,
+      reasoning: pattern.reasoning,
+      supportingEvidenceIds: pattern.supportingEvidenceIds,
+      contradictoryEvidenceIds: pattern.contradictoryEvidenceIds,
+      sourceConnectors: pattern.sourceConnectors,
+      alternatives: pattern.alternatives,
+      confidencePyramid: pattern.confidence,
+      historicalContext: pattern.historicalContext,
+      provenance: pattern.provenance,
+      recommendationLabels: pattern.recommendations.map((r) => r.label),
+    },
+  };
+}
+
 
 export interface EvidenceFilters {
   types: Set<EvidenceType>;

@@ -23,11 +23,19 @@ import { IntelligenceEvidenceExplorer } from "@/components/intelligence/Intellig
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { AISBehaviourAnalyzer } from "@/intelligence/analyzers/AISBehaviourAnalyzer";
 import { OSAE } from "@/services/osae";
+import { analyzeOperationalKnowledge } from "@/services/okl";
+import {
+  DEMO_UIP,
+  DEMO_EVIDENCE,
+  DEMO_HISTORICAL,
+  DEMO_INVESTIGATIONS,
+} from "@/services/okl/fixtures";
 import { useWorkspaceStore } from "@/stores/workspace.store";
 import {
   fromAisContinuityReport,
   fromGfwGapEvent,
   fromGfwIdentity,
+  fromOklPattern,
   fromOsaeAssessment,
   fromWorkspaceEvidence,
   type EvidenceConfidence,
@@ -112,7 +120,17 @@ function buildSampleEvidence(): IntelligenceEvidenceItem[] {
   const continuity = fromAisContinuityReport(report, "DONGWON NO.16");
   const assessment = fromOsaeAssessment(OSAE.publishAisContinuity(report), "DONGWON NO.16");
 
-  return [identity, gap, ...continuity, assessment];
+  // OKL: project detected operational patterns as evidence rows with
+  // full officer-facing explainability.
+  const okl = analyzeOperationalKnowledge({
+    uip: DEMO_UIP,
+    historical: DEMO_HISTORICAL,
+    investigations: DEMO_INVESTIGATIONS,
+    rawEvidence: DEMO_EVIDENCE,
+  });
+  const oklItems = okl.patterns.map((p) => fromOklPattern(p, "DONGWON NO.16"));
+
+  return [identity, gap, ...continuity, assessment, ...oklItems];
 }
 
 const EVIDENCE_TYPES: EvidenceType[] = [

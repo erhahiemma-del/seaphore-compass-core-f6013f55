@@ -510,6 +510,21 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     reviewedAt: REVIEWED,
   },
   {
+    id: "capability.okl-evidence-explainability",
+    name: "OKL Evidence Explainability",
+    producer: "OKL",
+    description:
+      "Every Operational Knowledge Layer pattern is projected into the Intelligence Evidence Explorer as an evidence row carrying full officer-facing explainability: WHY the pattern was detected (headline reasoning step and full reasoning trace), supporting evidence ids from the UIP, contradictory evidence ids, source connectors, alternative benign explanations with likelihood, the 5-level Confidence Pyramid (identity/evidence/fusion/pattern/recommendation with tier and rationale), historical context, officer-approval-gated recommendation labels, and provenance (uip id, fused package id, detector). Rendered as a collapsible violet panel inside List and Timeline evidence rows so explainability sits alongside the timeline — no OKL conclusion is surfaced without its evidence chain.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Intelligence Evidence · OKL Explainability panel",
+      location: "src/routes/intelligence-evidence.tsx",
+      component: "src/components/intelligence/IntelligenceEvidenceExplorer.tsx",
+      interaction: "drill-in",
+    },
+    reviewedAt: REVIEWED,
+  },
+  {
     id: "capability.identity-confidence",
     name: "Identity Confidence Scorer",
     producer: "CAPABILITY",

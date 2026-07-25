@@ -23,6 +23,7 @@ export type BackendLayer =
   | "IBE"
   | "REASONING"
   | "COPILOT"
+  | "OKL"
   | "WORKSPACE"
   | "COMPLIANCE"
   | "OBSERVABILITY"

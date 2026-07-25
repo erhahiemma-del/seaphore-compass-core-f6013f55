@@ -20,7 +20,9 @@ import { useMemo, useState, useEffect, type ReactNode, type ComponentType } from
 import {
   AlertTriangle,
   Anchor,
+  Brain,
   Building2,
+  ChevronDown,
   ExternalLink,
   FileSearch,
   Filter,
@@ -32,6 +34,7 @@ import {
   ScrollText,
   Search,
   ShieldAlert,
+  Sparkles,
   Timer,
   User2,
   X,
@@ -51,6 +54,7 @@ import {
   type EvidenceType,
   type EvidenceEntityType,
   type IntelligenceEvidenceItem,
+  type OklExplainability,
 } from "@/lib/evidence/intelligence-evidence";
 import {
   buildRelationshipGraph,
@@ -697,6 +701,9 @@ function EvidenceList({
               )}
             </div>
           </div>
+          {item.oklExplainability && (
+            <OklExplainabilityPanel explainability={item.oklExplainability} />
+          )}
         </li>
       ))}
     </ul>
@@ -934,6 +941,9 @@ function TimelineView({
                 </Button>
               )}
             </div>
+            {it.oklExplainability && (
+              <OklExplainabilityPanel explainability={it.oklExplainability} compact />
+            )}
           </div>
         </li>
       ))}
@@ -1039,6 +1049,246 @@ function SourceView({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/* ─────────────────────────── OKL Explainability Panel ─────────────────────────── */
+
+const OKL_RISK_TONE: Record<OklExplainability["riskLevel"], string> = {
+  LOW: "border-slate-500/40 bg-slate-500/10 text-slate-700",
+  MEDIUM: "border-amber-500/40 bg-amber-500/10 text-amber-800",
+  HIGH: "border-orange-500/40 bg-orange-500/10 text-orange-800",
+  CRITICAL: "border-rose-500/50 bg-rose-500/10 text-rose-800",
+};
+
+const OKL_TIER_TONE: Record<"LOW" | "MEDIUM" | "HIGH", string> = {
+  LOW: "text-slate-600",
+  MEDIUM: "text-amber-700",
+  HIGH: "text-emerald-700",
+};
+
+const OKL_LIKELIHOOD_TONE: Record<"LOW" | "MEDIUM" | "HIGH", string> = {
+  LOW: "border-slate-500/40 text-slate-600",
+  MEDIUM: "border-amber-500/40 text-amber-700",
+  HIGH: "border-orange-500/40 text-orange-700",
+};
+
+function OklExplainabilityPanel({
+  explainability,
+  compact,
+}: {
+  explainability: OklExplainability;
+  compact?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const e = explainability;
+
+  return (
+    <div className="mt-2 rounded-md border border-violet-500/30 bg-violet-500/5">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left"
+      >
+        <Brain className="h-3.5 w-3.5 text-violet-700" />
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-violet-800">
+          OKL Explainability
+        </span>
+        <span
+          className={cn(
+            "rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
+            OKL_RISK_TONE[e.riskLevel],
+          )}
+        >
+          {e.riskLevel}
+        </span>
+        <span className="hidden truncate text-[11px] text-muted-foreground sm:inline">
+          · {e.whyDetected}
+        </span>
+        <ChevronDown
+          className={cn(
+            "ml-auto h-3.5 w-3.5 text-violet-700 transition-transform",
+            open && "rotate-180",
+          )}
+        />
+      </button>
+
+      {open && (
+        <div className="flex flex-col gap-3 border-t border-violet-500/20 px-3 py-2.5">
+          <section>
+            <SectionLabel icon={<Sparkles className="h-3 w-3" />}>Why detected</SectionLabel>
+            <p className="mt-1 text-[12px] leading-snug text-foreground">{e.whyDetected}</p>
+            {!compact && e.reasoning.length > 0 && (
+              <ol className="mt-1.5 flex flex-col gap-1 pl-4 text-[11px] text-muted-foreground">
+                {e.reasoning.map((r, i) => (
+                  <li key={i} className="list-decimal">
+                    <span className="text-foreground">{r.step}</span>
+                    {r.detail && <span className="text-muted-foreground"> — {r.detail}</span>}
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
+
+          <section>
+            <SectionLabel>Confidence pyramid</SectionLabel>
+            <div className="mt-1 grid grid-cols-2 gap-x-3 gap-y-1 sm:grid-cols-5">
+              {(
+                [
+                  ["Identity", e.confidencePyramid.identity],
+                  ["Evidence", e.confidencePyramid.evidence],
+                  ["Fusion", e.confidencePyramid.fusion],
+                  ["Pattern", e.confidencePyramid.pattern],
+                  ["Recommendation", e.confidencePyramid.recommendation],
+                ] as const
+              ).map(([label, v]) => (
+                <div key={label} className="min-w-0">
+                  <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <span>{label}</span>
+                    <span className="font-mono text-foreground/80">{Math.round(v)}</span>
+                  </div>
+                  <div className="mt-0.5 h-1 rounded-full bg-muted">
+                    <div
+                      className="h-1 rounded-full bg-violet-500"
+                      style={{ width: `${Math.max(2, Math.round(v))}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p
+              className={cn(
+                "mt-1 text-[11px]",
+                OKL_TIER_TONE[e.confidencePyramid.tier],
+              )}
+            >
+              Tier {e.confidencePyramid.tier} · {e.confidencePyramid.explanation}
+            </p>
+          </section>
+
+          <section>
+            <SectionLabel>Supporting evidence</SectionLabel>
+            <div className="mt-1 flex flex-wrap items-center gap-1">
+              {e.supportingEvidenceIds.length === 0 && (
+                <span className="text-[11px] text-muted-foreground">None recorded.</span>
+              )}
+              {e.supportingEvidenceIds.map((id) => (
+                <span
+                  key={id}
+                  title={id}
+                  className="rounded border border-border/60 bg-background px-1.5 py-0.5 font-mono text-[10px] text-foreground"
+                >
+                  {id.length > 22 ? `${id.slice(0, 22)}…` : id}
+                </span>
+              ))}
+            </div>
+            {e.sourceConnectors.length > 0 && (
+              <p className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+                Via {e.sourceConnectors.join(" · ")}
+              </p>
+            )}
+          </section>
+
+          {e.contradictoryEvidenceIds.length > 0 && (
+            <section>
+              <SectionLabel tone="conflict">Contradictory evidence</SectionLabel>
+              <div className="mt-1 flex flex-wrap items-center gap-1">
+                {e.contradictoryEvidenceIds.map((id) => (
+                  <span
+                    key={id}
+                    title={id}
+                    className="rounded border border-orange-500/40 bg-orange-500/10 px-1.5 py-0.5 font-mono text-[10px] text-orange-800"
+                  >
+                    {id.length > 22 ? `${id.slice(0, 22)}…` : id}
+                  </span>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {e.alternatives.length > 0 && (
+            <section>
+              <SectionLabel>Alternative explanations</SectionLabel>
+              <ul className="mt-1 flex flex-col gap-1.5">
+                {e.alternatives.map((alt, i) => (
+                  <li
+                    key={i}
+                    className="rounded border border-border/60 bg-background p-2 text-[11px]"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className={cn(
+                          "rounded border px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wider",
+                          OKL_LIKELIHOOD_TONE[alt.likelihood],
+                        )}
+                      >
+                        {alt.likelihood}
+                      </span>
+                      <span className="font-medium text-foreground">{alt.label}</span>
+                    </div>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">{alt.rationale}</p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {e.historicalContext && (
+            <section>
+              <SectionLabel>Historical context</SectionLabel>
+              <p className="mt-1 text-[11px] text-muted-foreground">{e.historicalContext}</p>
+            </section>
+          )}
+
+          {e.recommendationLabels.length > 0 && (
+            <section>
+              <SectionLabel>Recommended actions (officer approval required)</SectionLabel>
+              <ul className="mt-1 flex flex-wrap gap-1.5">
+                {e.recommendationLabels.map((r) => (
+                  <li
+                    key={r}
+                    className="rounded border border-violet-500/40 bg-violet-500/10 px-1.5 py-0.5 text-[11px] text-violet-900"
+                  >
+                    {r}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          <section>
+            <SectionLabel>Provenance</SectionLabel>
+            <p className="mt-1 font-mono text-[10px] text-muted-foreground">
+              detector={e.provenance.detector} · uip={e.provenance.uipId} · fused=
+              {e.provenance.fusedPackageId} · pattern={e.patternId}
+            </p>
+          </section>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SectionLabel({
+  children,
+  icon,
+  tone,
+}: {
+  children: ReactNode;
+  icon?: ReactNode;
+  tone?: "conflict";
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider",
+        tone === "conflict" ? "text-orange-700" : "text-muted-foreground",
+      )}
+    >
+      {icon}
+      {children}
     </div>
   );
 }
