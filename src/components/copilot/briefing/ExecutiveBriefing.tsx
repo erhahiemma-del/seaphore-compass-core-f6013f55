@@ -279,6 +279,156 @@ function IdentityResolutionCard({ data }: { data: IdentityResolutionSection }) {
   );
 }
 
+/* ─────────── AIS Continuity (Sprint 1D-AIS: voyage-based segmentation) ─────────── */
+
+const AIS_PRIORITY_TONE: Record<string, string> = {
+  urgent: "bg-rose-50 text-rose-700 ring-rose-200",
+  act: "bg-amber-50 text-amber-700 ring-amber-200",
+  monitor: "bg-sky-50 text-sky-700 ring-sky-200",
+  watch: "bg-slate-50 text-slate-700 ring-slate-200",
+};
+
+function formatHours(h: number): string {
+  if (h < 1) return `${Math.round(h * 60)}m`;
+  if (h < 48) return `${h.toFixed(0)}h`;
+  const days = h / 24;
+  return `${days.toFixed(days >= 10 ? 0 : 1)}d`;
+}
+
+function TimelineRow({ ev }: { ev: AisInterruptionTimelineItem }) {
+  const isDisabling = ev.kind === "disabling";
+  const tone = ev.priority ? AIS_PRIORITY_TONE[ev.priority] : AIS_PRIORITY_TONE.watch;
+  return (
+    <li className="relative flex gap-3 pl-5">
+      <span
+        className={cn(
+          "absolute left-1 top-2 h-2.5 w-2.5 rounded-full ring-2 ring-white",
+          isDisabling ? "bg-rose-500" : "bg-slate-300",
+        )}
+      />
+      <div className="min-w-0 flex-1 rounded-xl bg-white p-3 ring-1 ring-slate-200">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-[12px] font-semibold text-slate-900">
+            <Radio className="h-3.5 w-3.5 text-rose-500" />
+            {isDisabling ? "AIS disabling" : "Coverage-uncertain span"}
+            <span className="text-slate-400">·</span>
+            <span className="text-slate-600">{formatHours(ev.durationHours)}</span>
+          </div>
+          {ev.priority ? (
+            <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ring-1", tone)}>
+              {ev.priority}
+            </span>
+          ) : null}
+        </div>
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
+          <span>{formatWhen(ev.startAt)}</span>
+          <ChevronRight className="h-3 w-3" />
+          <span>{formatWhen(ev.endAt)}</span>
+          {ev.startLabel ? (
+            <span className="inline-flex items-center gap-1">
+              <MapPin className="h-3 w-3" />
+              {ev.startLabel}
+            </span>
+          ) : null}
+          {ev.endLabel && ev.endLabel !== ev.startLabel ? (
+            <span className="inline-flex items-center gap-1 text-slate-400">
+              → {ev.endLabel}
+            </span>
+          ) : null}
+          <span className="text-slate-400">confidence {Math.round(ev.confidence * 100)}%</span>
+        </div>
+        <p className="mt-2 text-[12px] text-slate-700">{ev.explanation}</p>
+        {ev.rationale ? (
+          <p className="mt-1 text-[11px] italic text-slate-500">OSAE: {ev.rationale}</p>
+        ) : null}
+      </div>
+    </li>
+  );
+}
+
+function AisContinuityCard({ data }: { data: AisContinuitySection }) {
+  const disablingCount = data.timeline.filter((t) => t.kind === "disabling").length;
+  return (
+    <Section title="AIS Continuity" icon={Radio}>
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+        <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
+          <div className="text-[10px] uppercase tracking-wide text-slate-500">Total interruptions</div>
+          <div className="mt-0.5 text-lg font-semibold text-slate-900">{data.totalInterruptions}</div>
+          <div className="text-[10px] text-slate-500">discrete disabling events</div>
+        </div>
+        <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
+          <div className="text-[10px] uppercase tracking-wide text-slate-500">Longest interruption</div>
+          <div className="mt-0.5 text-lg font-semibold text-slate-900">
+            {data.longestInterruptionHours > 0 ? formatHours(data.longestInterruptionHours) : "—"}
+          </div>
+          <div className="text-[10px] text-slate-500">continuous dark span</div>
+        </div>
+        <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
+          <div className="text-[10px] uppercase tracking-wide text-slate-500">Coverage-uncertain</div>
+          <div className="mt-0.5 text-lg font-semibold text-slate-900">{data.coverageUncertainCount}</div>
+          <div className="text-[10px] text-slate-500">not counted as interruptions</div>
+        </div>
+        <div className={cn("rounded-xl p-3 ring-1", data.overallPriority ? AIS_PRIORITY_TONE[data.overallPriority] : AIS_PRIORITY_TONE.watch)}>
+          <div className="text-[10px] uppercase tracking-wide opacity-70">OSAE priority</div>
+          <div className="mt-0.5 text-lg font-semibold uppercase">{data.overallPriority ?? "—"}</div>
+          <div className="text-[10px] opacity-70">overall assessment</div>
+        </div>
+      </div>
+      {data.overallSummary ? (
+        <p className="mt-3 text-[12px] text-slate-700">{data.overallSummary}</p>
+      ) : null}
+
+      {data.patterns.length ? (
+        <div className="mt-4">
+          <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Pattern analysis</div>
+          <ul className="mt-2 grid grid-cols-1 gap-1.5 md:grid-cols-2">
+            {data.patterns.map((p) => (
+              <li
+                key={p.code}
+                className="flex items-start gap-2 rounded-xl bg-amber-50/60 px-3 py-2 text-[12px] text-amber-900 ring-1 ring-amber-200"
+              >
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5" />
+                <span className="min-w-0">
+                  <span className="font-medium">{p.label}</span>{" "}
+                  <span className="text-amber-700/80">
+                    ({p.occurrences} occurrence{p.occurrences === 1 ? "" : "s"}, conf {Math.round(p.confidence * 100)}%)
+                  </span>
+                  <span className="mt-0.5 block text-[11px] text-amber-900/80">{p.description}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {data.timeline.length ? (
+        <div className="mt-4">
+          <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+            Timeline of discrete AIS events{" "}
+            <span className="text-slate-400">
+              ({disablingCount} disabling
+              {data.coverageUncertainCount ? `, ${data.coverageUncertainCount} coverage-uncertain` : ""})
+            </span>
+          </div>
+          <ol className="mt-2 space-y-2 border-l border-slate-200 pl-1">
+            {data.timeline.map((t) => (
+              <TimelineRow key={`${t.startAt}-${t.endAt}`} ev={t} />
+            ))}
+          </ol>
+        </div>
+      ) : (
+        <p className="mt-3 text-[12px] italic text-slate-500">
+          No AIS interruptions observed across the window.
+        </p>
+      )}
+
+      <p className="mt-3 text-[11px] italic text-slate-500">
+        Evidence: {data.evidenceCitation}. Every interruption is traceable to Global Fishing Watch AIS events.
+      </p>
+    </Section>
+  );
+}
+
 export interface ExecutiveBriefingProps {
   brief: ExecutiveBrief;
   isAdmin?: boolean;
