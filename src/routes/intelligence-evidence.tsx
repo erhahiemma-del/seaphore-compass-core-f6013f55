@@ -120,7 +120,17 @@ function buildSampleEvidence(): IntelligenceEvidenceItem[] {
   const continuity = fromAisContinuityReport(report, "DONGWON NO.16");
   const assessment = fromOsaeAssessment(OSAE.publishAisContinuity(report), "DONGWON NO.16");
 
-  return [identity, gap, ...continuity, assessment];
+  // OKL: project detected operational patterns as evidence rows with
+  // full officer-facing explainability.
+  const okl = analyzeOperationalKnowledge({
+    uip: DEMO_UIP,
+    historical: DEMO_HISTORICAL,
+    investigations: DEMO_INVESTIGATIONS,
+    rawEvidence: DEMO_EVIDENCE,
+  });
+  const oklItems = okl.patterns.map((p) => fromOklPattern(p, "DONGWON NO.16"));
+
+  return [identity, gap, ...continuity, assessment, ...oklItems];
 }
 
 const EVIDENCE_TYPES: EvidenceType[] = [
