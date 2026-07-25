@@ -58,6 +58,12 @@ type SourceMode = "INVESTIGATION" | "LIVE_UIP";
 
 function BriefingCentre() {
   useReportJobDrainer(true);
+  const { session } = useAuth();
+  const officerId = session?.user?.id;
+  const officerName =
+    session?.user?.user_metadata?.full_name ??
+    session?.user?.email ??
+    "Officer on duty";
   const investigations = useWorkspaceStore((s) => Object.values(s.investigations));
   // Subscribe so the Live-UIP selector re-renders as new UIPs register.
   const uipOrder = useUipStore((s) => s.order);
