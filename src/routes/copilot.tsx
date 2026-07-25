@@ -60,7 +60,10 @@ import { runOIE, type Clarification } from "@/services/oie";
 import { enhanceWithIBE, persistHypotheses } from "@/services/ibe";
 import { IntelligenceProjectionPanel } from "@/components/copilot/projection/IntelligenceProjectionPanel";
 import { ExecutiveBriefing } from "@/components/copilot/briefing/ExecutiveBriefing";
+import { EvidenceProvenancePanel } from "@/components/copilot/briefing/EvidenceProvenancePanel";
+import { useUipStore } from "@/stores/uip.store";
 import { synthesizeExecutiveBrief } from "@/lib/copilot/executive-brief/synthesize";
+
 import { analyzeOperationalKnowledge } from "@/services/okl";
 import { autoIngestOklIntoInvestigations } from "@/services/okl/auto-ingest";
 import {
@@ -178,6 +181,8 @@ function CopilotOpsPage() {
   const [text, setText] = useState("");
   const [stage, setStage] = useState<Stage>("idle");
   const [briefing, setBriefing] = useState<AdaptiveBriefingData | null>(null);
+  const [uipId, setUipId] = useState<string | null>(null);
+
   const [lineage, setLineage] = useState<import("@/lib/lineage/types").LineageTrace | null>(null);
   const [ibeProjection, setIbeProjection] = useState<{
     ibe: import("@/services/ibe/types").IbeResult["ibe"] | null;
@@ -247,7 +252,11 @@ function CopilotOpsPage() {
         (
           await import("@/stores/uip.store")
         ).useUipStore.getState().register(uipFromResult);
+        setUipId(uipFromResult.id);
+      } else {
+        setUipId(null);
       }
+
 
       const normalisedResult: import("@/services/oie").OIEResult = (() => {
         if ((rawResult as { briefing?: unknown }).briefing) {
@@ -681,8 +690,10 @@ function CopilotOpsPage() {
                       humanResponse={ibeProjection?.humanResponse ?? null}
                       ibe={ibeProjection?.ibe ?? null}
                       followUps={followUps}
+                      uipId={uipId}
                       onFollowUp={(q: string) => handleSubmit(q)}
                     />
+
                     <details className="mt-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-[12px] text-slate-700 open:shadow-sm">
                       <summary className="cursor-pointer font-medium text-slate-800">
                         Analyst view — full adaptive briefing
@@ -853,12 +864,14 @@ function ExecutiveBriefingView({
   humanResponse,
   ibe,
   followUps,
+  uipId,
   onFollowUp,
 }: {
   briefing: AdaptiveBriefingData;
   humanResponse: HumanResponse | null;
   ibe: NonNullable<IbeResult["ibe"]> | null;
   followUps: string[];
+  uipId: string | null;
   onFollowUp: (q: string) => void;
 }) {
   const operationalKnowledge = useMemo(
@@ -885,8 +898,18 @@ function ExecutiveBriefingView({
       }),
     [briefing, humanResponse, ibe, followUps, operationalKnowledge],
   );
-  return <ExecutiveBriefing brief={brief} onFollowUp={onFollowUp} />;
+  // Resolve the Canonical UIP that produced this briefing so the provenance
+  // panel can cite the same evidence set every downstream surface uses.
+  const uip = useUipStore((s) => (uipId ? s.byId[uipId] : undefined));
+  return (
+    <>
+      <ExecutiveBriefing brief={brief} onFollowUp={onFollowUp} />
+      {uip && <EvidenceProvenancePanel uip={uip} />}
+    </>
+  );
+
 }
+
 
 
 function stageIndex(s: Stage): number {
