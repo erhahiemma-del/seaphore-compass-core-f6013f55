@@ -118,14 +118,16 @@ function mergeSignals(a: Signals, b: Signals): Signals {
 class DSU {
   private parent = new Map<number, number>();
   find(x: number): number {
-    let p = this.parent.get(x);
-    if (p === undefined) { this.parent.set(x, x); return x; }
-    while (p !== x) {
+    if (!this.parent.has(x)) { this.parent.set(x, x); return x; }
+    let cur = x;
+    let p = this.parent.get(cur)!;
+    while (p !== cur) {
       const gp = this.parent.get(p) ?? p;
-      this.parent.set(x, gp);
-      x = p; p = gp;
+      this.parent.set(cur, gp);
+      cur = p;
+      p = gp;
     }
-    return x;
+    return cur;
   }
   union(a: number, b: number): void {
     const ra = this.find(a); const rb = this.find(b);
