@@ -45,6 +45,7 @@ import { AskCopilotDialog } from "@/components/ai/ask-copilot-dialog";
 import { MissionsPanel } from "@/components/investigation/MissionsPanel";
 import { OklPatternsPanel } from "@/components/investigation/OklPatternsPanel";
 import { HistoricalKnowledgePanel } from "@/components/okl/HistoricalKnowledgePanel";
+import { OperationalInsightsPanel } from "@/components/oie/OperationalInsightsPanel";
 import { useOklAutoPersistOnClose } from "@/services/okl/use-okl-auto-persist";
 
 
@@ -153,6 +154,7 @@ function WorkspaceRoute() {
             <OklPatternsPanel w={w} />
             <MissionsPanel w={w} />
             <HistoricalKnowledgePanel workspace={w} />
+            <OperationalInsightsPanel workspace={w} />
           </div>
 
 
