@@ -3,10 +3,16 @@
  * Verifies Layer 2 boundaries: Reasoning Engine never runs without evidence,
  * confidence matrix respects Layer 2.11 propagation, and Layer 2.14 Policy
  * Engine enforces role gating & rate limits.
+ *
+ * Slice 3: fusion is now produced by the canonical IFE via
+ * `buildUnifiedIntelligencePackage`. The orchestration `FusedEvidence`
+ * shape is a *projection* of that UIP (`projectFusedView`).
  */
 import { describe, it, expect } from "vitest";
 import { classifyIntent } from "@/services/orchestration/intent-classifier";
-import { fuseEvidence } from "@/services/orchestration/evidence-fusion";
+import { bridgeToIal } from "@/services/orchestration/ial-bridge";
+import { projectFusedView } from "@/services/orchestration/fused-view";
+import { buildUnifiedIntelligencePackage } from "@/services/ife/unified";
 import {
   computeConfidenceMatrix,
   propagateConfidence,
@@ -41,18 +47,22 @@ describe("Intent Classifier (Layer 2.2)", () => {
   });
 });
 
-describe("Evidence Fusion Engine (Layer 2.10)", () => {
+describe("Canonical Fusion Pipeline (IAL Bridge → IFE → UIP → View)", () => {
   const mkEvidence = (over: Partial<EvidenceItem>): EvidenceItem => ({
     id: crypto.randomUUID(),
     grade: "VERIFIED",
     source_system: "CAC",
     content: "same-fact",
-    entity_ids: ["ent-1"],
+    entity_ids: ["vessel:imo:9319466"],
     collected_at: new Date().toISOString(),
     ...over,
   });
-  const mkResult = (evidence: EvidenceItem[], source_name = "CAC"): RetrievalResult => ({
-    agent: "ownership",
+  const mkResult = (
+    evidence: EvidenceItem[],
+    source_name = "CAC",
+    agent: RetrievalResult["agent"] = "ownership",
+  ): RetrievalResult => ({
+    agent,
     capability: "OWNERSHIP_ANALYSIS",
     source_name,
     responded: true,
@@ -60,34 +70,69 @@ describe("Evidence Fusion Engine (Layer 2.10)", () => {
     latency_ms: 100,
   });
 
+  const runPipeline = (results: RetrievalResult[]) => {
+    const { records, sources } = bridgeToIal(results);
+    const uip = buildUnifiedIntelligencePackage({ input: { records, sources } });
+    return { uip, view: projectFusedView(results, uip) };
+  };
+
   it("deduplicates within same source by content hash", () => {
     const a = mkEvidence({ content: "dup" });
     const b = mkEvidence({ content: "dup" });
-    const f = fuseEvidence([mkResult([a, b])]);
-    expect(f.ranked).toHaveLength(1);
+    const { view } = runPipeline([mkResult([a, b])]);
+    expect(view.ranked).toHaveLength(1);
   });
 
   it("does NOT merge grades — HR-10", () => {
     const v = mkEvidence({ grade: "VERIFIED", content: "x" });
     const r = mkEvidence({ grade: "REPORTED", content: "x" });
-    const f = fuseEvidence([mkResult([v, r], "CAC"), mkResult([r], "IMO")]);
-    for (const item of f.ranked) expect(["VERIFIED", "REPORTED"]).toContain(item.grade);
+    const { view } = runPipeline([
+      mkResult([v, r], "CAC", "ownership"),
+      mkResult([r], "IMO", "compliance"),
+    ]);
+    for (const item of view.ranked) expect(["VERIFIED", "REPORTED"]).toContain(item.grade);
   });
 
-  it("flags contradictions on the same entity between authoritative sources", () => {
-    const a = mkEvidence({ content: "owner A" });
-    const b = mkEvidence({ content: "owner B", source_system: "IMO" });
-    const f = fuseEvidence([mkResult([a], "CAC"), mkResult([b], "IMO")]);
-    expect(f.conflicts.length).toBeGreaterThan(0);
+  it("resolves identity across connectors — one canonical entity", () => {
+    // Two connectors report the same vessel under different id shapes.
+    const a = mkEvidence({
+      content: "ais-position",
+      entity_ids: ["vessel:imo:9319466"],
+      source_system: "AIS",
+    });
+    const b = mkEvidence({
+      content: "equasis-ownership",
+      entity_ids: ["vessel:imo:9319466"],
+      source_system: "Equasis",
+    });
+    const { uip } = runPipeline([
+      mkResult([a], "AIS", "manifest"),
+      mkResult([b], "Equasis", "ownership"),
+    ]);
+    // IFE fuses both records into a single canonical entity.
+    expect(uip.fused.stats.canonicalEntities).toBe(1);
+    expect(uip.identity.length).toBe(1);
   });
 
-  it("counts corroborated signatures across independent sources", () => {
-    const a = mkEvidence({ content: "same" });
-    const b = mkEvidence({ content: "same", source_system: "IMO" });
-    const f = fuseEvidence([mkResult([a], "CAC"), mkResult([b], "IMO")]);
-    expect(f.sources_corroborated).toBeGreaterThan(0);
+  it("tracks sources_queried / sources_responded from retrieval results", () => {
+    const a = mkEvidence({ content: "x" });
+    const { view } = runPipeline([
+      mkResult([a], "CAC"),
+      {
+        agent: "compliance",
+        capability: "COMPLIANCE_ASSESSMENT",
+        source_name: "IMO",
+        responded: false,
+        evidence: [],
+        latency_ms: 0,
+        error: "timeout",
+      },
+    ]);
+    expect(view.sources_queried).toBe(2);
+    expect(view.sources_responded).toBe(1);
   });
 });
+
 
 describe("Confidence propagation (Layer 2.11)", () => {
   it("degrades through each reasoning step", () => {
