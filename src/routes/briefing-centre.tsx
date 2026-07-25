@@ -169,7 +169,7 @@ function BriefingCentre() {
           <CardContent className="space-y-2">
             <div className="flex gap-2">
               <Input
-                placeholder='e.g. "Generate yesterday\'s revenue report" · "Compare Lagos and Tin Can" · "Create executive briefing"'
+                placeholder={`e.g. "Generate yesterday's revenue report" · "Compare Lagos and Tin Can" · "Create executive briefing"`}
                 value={nlQuery}
                 onChange={(e) => setNlQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && runNl()}
