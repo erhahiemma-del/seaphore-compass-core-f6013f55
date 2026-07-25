@@ -365,7 +365,7 @@ export function fromNormalizedEvidence(
     summary: n.excerpt,
     subject: n.entity.label ?? n.entity.id,
     hash: n.hash,
-    producer: "UIP",
+    producer: "IFE",
     connector: n.source,
     investigationId,
     entities: n.entity.label
