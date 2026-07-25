@@ -36,9 +36,25 @@ export type EvidenceStatus = "verified" | "pending" | "historical" | "conflictin
 export type EvidenceConfidence = "VERIFIED" | "OBSERVED" | "INFERRED" | "UNCONFIRMED";
 
 /**
- * Sanitized evidence row shown in the Intelligence Evidence Viewer.
+ * Sanitized evidence row shown in the Intelligence Evidence Explorer.
  * Never contains raw API payloads.
  */
+export type EvidenceEntityType =
+  | "vessel"
+  | "company"
+  | "person"
+  | "cargo"
+  | "port"
+  | "incident"
+  | "document";
+
+export interface EvidenceEntityRef {
+  type: EvidenceEntityType;
+  name: string;
+  /** Optional stable id (MMSI, IMO, company id) — used for dedup. */
+  id?: string;
+}
+
 export interface IntelligenceEvidenceItem {
   /** Stable id (deterministic if possible for dedup). */
   id: string;
@@ -66,6 +82,15 @@ export interface IntelligenceEvidenceItem {
   producer?: "IAL" | "REASONING" | "OSAE" | "ICE" | "IFE" | "WORKSPACE";
   /** Hash for chain-of-custody (opaque; never a token). */
   hash?: string;
+  /** Connector short-id (e.g. "gfw", "opensanctions", "companies-house"). */
+  connector?: string;
+  /** Investigation workspace id this evidence belongs to (if any). */
+  investigationId?: string;
+  /**
+   * Entities the evidence references. Drives the Relationship Graph and
+   * per-entity filter. Extracted upstream in adapters — no raw payloads.
+   */
+  entities?: EvidenceEntityRef[];
 }
 
 /* ────────────────────────── grade / status helpers ────────────────────────── */
@@ -120,6 +145,8 @@ export function fromAisContinuityReport(report: AisContinuityReport, subject?: s
     summary: `Window ${report.windowStart.slice(0, 10)} → ${report.windowEnd.slice(0, 10)} · ${report.totalEvents} positions`,
     subject,
     producer: "REASONING",
+    connector: "gfw",
+    entities: subject ? [{ type: "vessel", name: subject, id: report.vesselId }] : undefined,
   });
 
   for (const dark of report.darkEvents) {
@@ -142,6 +169,8 @@ export function fromDarkEvent(dark: AisDarkEvidence, vesselId: string, subject?:
     summary: dark.explanation,
     subject,
     producer: "REASONING",
+    connector: "gfw",
+    entities: subject ? [{ type: "vessel", name: subject, id: vesselId }] : undefined,
   };
 }
 
@@ -159,6 +188,8 @@ export function fromOsaeAssessment(a: OsaeAssessment, subject?: string): Intelli
     summary: a.summary,
     subject,
     producer: "OSAE",
+    connector: "osae",
+    entities: subject ? [{ type: "vessel", name: subject, id: a.vesselId }] : undefined,
   };
 }
 
@@ -188,6 +219,10 @@ export function fromGfwIdentity(id: {
     sourceUrl: id.evidenceUrl,
     subject: subject ?? id.name,
     producer: "IAL",
+    connector: "gfw",
+    entities: (subject ?? id.name)
+      ? [{ type: "vessel", name: (subject ?? id.name)!, id: id.mmsi ?? id.imo ?? id.vesselId }]
+      : undefined,
   };
 }
 
@@ -215,11 +250,16 @@ export function fromGfwGapEvent(e: {
     sourceUrl: e.evidenceUrl,
     subject: e.vessel.name ?? undefined,
     producer: "IAL",
+    connector: "gfw",
+    entities: e.vessel.name ? [{ type: "vessel", name: e.vessel.name, id: e.vessel.ssvid }] : undefined,
   };
 }
 
 /** Adapt a workspace evidence row (already presentation-safe). */
-export function fromWorkspaceEvidence(w: WorkspaceEvidence): IntelligenceEvidenceItem {
+export function fromWorkspaceEvidence(
+  w: WorkspaceEvidence,
+  investigationId?: string,
+): IntelligenceEvidenceItem {
   return {
     id: `ws.${w.id}`,
     source: w.source,
@@ -232,6 +272,11 @@ export function fromWorkspaceEvidence(w: WorkspaceEvidence): IntelligenceEvidenc
     subject: w.entityName,
     hash: w.hash,
     producer: "WORKSPACE",
+    connector: "workspace",
+    investigationId,
+    entities: w.entityName
+      ? [{ type: "vessel", name: w.entityName, id: w.entityId }]
+      : undefined,
   };
 }
 
@@ -242,6 +287,32 @@ export interface EvidenceFilters {
   statuses: Set<EvidenceStatus>;
   sources: Set<string>;
   search: string;
+  /** Optional connector short-id filter (e.g. "gfw"). */
+  connectors?: Set<string>;
+  /** Optional investigation workspace id filter. */
+  investigations?: Set<string>;
+  /** Optional entity name filter (case-insensitive contains). */
+  entity?: string;
+  /** Optional confidence chip filter. */
+  confidences?: Set<EvidenceConfidence>;
+  /** Optional ISO timestamp lower bound (inclusive). */
+  timeStart?: string;
+  /** Optional ISO timestamp upper bound (inclusive). */
+  timeEnd?: string;
+}
+
+function timeIn(t: string, start?: string, end?: string): boolean {
+  const ts = Date.parse(t);
+  if (Number.isNaN(ts)) return true;
+  if (start) {
+    const s = Date.parse(start);
+    if (!Number.isNaN(s) && ts < s) return false;
+  }
+  if (end) {
+    const e = Date.parse(end);
+    if (!Number.isNaN(e) && ts > e) return false;
+  }
+  return true;
 }
 
 export function applyEvidenceFilters(
@@ -249,20 +320,54 @@ export function applyEvidenceFilters(
   f: EvidenceFilters,
 ): IntelligenceEvidenceItem[] {
   const q = f.search.trim().toLowerCase();
+  const entityQ = f.entity?.trim().toLowerCase() ?? "";
   return items.filter((it) => {
     if (f.types.size > 0 && !f.types.has(it.evidenceType)) return false;
     if (f.statuses.size > 0 && !f.statuses.has(it.status)) return false;
     if (f.sources.size > 0 && !f.sources.has(it.source)) return false;
+    if (f.connectors && f.connectors.size > 0) {
+      if (!it.connector || !f.connectors.has(it.connector)) return false;
+    }
+    if (f.investigations && f.investigations.size > 0) {
+      if (!it.investigationId || !f.investigations.has(it.investigationId)) return false;
+    }
+    if (f.confidences && f.confidences.size > 0 && !f.confidences.has(it.confidence)) {
+      return false;
+    }
+    if (!timeIn(it.timestamp, f.timeStart, f.timeEnd)) return false;
+    if (entityQ) {
+      const hasEntity =
+        (it.subject?.toLowerCase().includes(entityQ) ?? false) ||
+        (it.entities?.some((e) => e.name.toLowerCase().includes(entityQ)) ?? false);
+      if (!hasEntity) return false;
+    }
     if (
       q &&
       !(
         it.claim.toLowerCase().includes(q) ||
         it.source.toLowerCase().includes(q) ||
         (it.subject?.toLowerCase().includes(q) ?? false) ||
-        (it.summary?.toLowerCase().includes(q) ?? false)
+        (it.summary?.toLowerCase().includes(q) ?? false) ||
+        (it.entities?.some((e) => e.name.toLowerCase().includes(q)) ?? false)
       )
     )
       return false;
     return true;
   });
+}
+
+/** Default (empty) filter shape — convenient for view state. */
+export function emptyFilters(): EvidenceFilters {
+  return {
+    types: new Set(),
+    statuses: new Set(),
+    sources: new Set(),
+    search: "",
+    connectors: new Set(),
+    investigations: new Set(),
+    confidences: new Set(),
+    entity: "",
+    timeStart: undefined,
+    timeEnd: undefined,
+  };
 }

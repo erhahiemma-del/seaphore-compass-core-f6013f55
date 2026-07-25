@@ -495,16 +495,16 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     reviewedAt: REVIEWED,
   },
   {
-    id: "capability.intelligence-evidence-viewer",
-    name: "Intelligence Evidence Viewer",
+    id: "capability.intelligence-evidence-explorer",
+    name: "Intelligence Evidence Explorer",
     producer: "CAPABILITY",
     description:
-      "Unified officer-facing surface listing every sanitized evidence item (GFW identity, gap events, AIS continuity, OSAE assessment, workspace evidence) with source, timestamp, confidence, type, status, and safe source link.",
+      "Comprehensive investigator surface over every sanitized evidence item. Four views: (1) List — evidence rows with confidence chips, status, connector, timestamp, and per-axis breakdown (identity, freshness, completeness, cross-source agreement); (2) Graph — entity relationships across vessels, companies, people, cargo, ports, incidents, and documents, with edges anchored on the underlying evidence; (3) Timeline — chronological projection with conflict highlighting; (4) Source — grouped by connector with coverage and freshness. Cross-connector conflicts are surfaced rather than hidden and cite the underlying evidence ids. Filters cover connector, confidence, entity, investigation, type, status, source, and time; Executive Brief deep-links pass filters via URL search params.",
     state: "PROJECTED",
     projection: {
-      surface: "Intelligence Evidence · Assessment Basis",
+      surface: "Intelligence Evidence · Explorer",
       location: "src/routes/intelligence-evidence.tsx",
-      component: "src/components/intelligence/IntelligenceEvidenceViewer.tsx",
+      component: "src/components/intelligence/IntelligenceEvidenceExplorer.tsx",
       interaction: "drill-in",
     },
     reviewedAt: REVIEWED,
