@@ -150,12 +150,42 @@ export interface IdentityResolutionSection {
   requiresConfirmation: boolean;
 }
 
+export interface AisInterruptionTimelineItem {
+  startAt: string;
+  endAt: string;
+  durationHours: number;
+  kind: AisDarkEvidence["kind"];
+  startLabel: string | null;
+  endLabel: string | null;
+  startLocation: { latitude: number; longitude: number } | null;
+  endLocation: { latitude: number; longitude: number } | null;
+  confidence: number;
+  priority?: "watch" | "monitor" | "act" | "urgent";
+  rationale?: string;
+  explanation: string;
+}
+
+export interface AisContinuitySection {
+  vesselId: string;
+  windowStart: string;
+  windowEnd: string;
+  totalInterruptions: number;
+  longestInterruptionHours: number;
+  coverageUncertainCount: number;
+  overallPriority?: "watch" | "monitor" | "act" | "urgent";
+  overallSummary?: string;
+  timeline: AisInterruptionTimelineItem[];
+  patterns: AisPattern[];
+  evidenceCitation: string;
+}
+
 export interface ExecutiveBrief {
   executiveSummary: string;
   confidence: ConfidencePanel;
   kpis: KpiCard[];
   keyFacts: KeyFact[];
   identityResolution?: IdentityResolutionSection;
+  aisContinuity?: AisContinuitySection;
   relationships: RelationshipNode[];
   timeline: TimelineEvent[];
   risks: RiskCheck[];
