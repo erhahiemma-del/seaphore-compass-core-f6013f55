@@ -362,6 +362,8 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           dueAt,
           estimatedRevenueImpactUsd,
           stageHistory: [{ at: t, from: null, to: "INTAKE", officer, note: "Investigation opened" }],
+          notebook: [],
+
         };
         set((s) => ({ investigations: { ...s.investigations, [id]: wsp }, activeId: id }));
         return id;
