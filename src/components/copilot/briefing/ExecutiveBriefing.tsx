@@ -45,6 +45,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatWhen } from "@/lib/copilot/executive-brief/sanitize";
+import { OperationalInsights } from "@/components/intelligence/OperationalInsights";
+import { Brain } from "lucide-react";
 
 const TONE_BG: Record<string, string> = {
   positive: "bg-emerald-50 text-emerald-700 ring-emerald-200",
@@ -451,6 +453,7 @@ export function ExecutiveBriefing({ brief, isAdmin, onFollowUp }: ExecutiveBrief
     recommendations,
     evidenceGroups,
     followUps,
+    operationalKnowledge,
   } = brief;
 
   const firedRisks = risks.filter((r) => r.fired);
@@ -622,6 +625,25 @@ export function ExecutiveBriefing({ brief, isAdmin, onFollowUp }: ExecutiveBrief
           </ul>
         </Section>
       ) : null}
+
+      {/* Section 7.5 — Operational Knowledge Layer */}
+      {operationalKnowledge && operationalKnowledge.patterns.length ? (
+        <Section
+          title="Operational Knowledge"
+          icon={Brain}
+          action={
+            <Link
+              to="/operational-knowledge"
+              className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-0.5 text-[11px] font-medium text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"
+            >
+              Open OKL
+            </Link>
+          }
+        >
+          <OperationalInsights package={operationalKnowledge} />
+        </Section>
+      ) : null}
+
 
       {/* Section 8 — Recommendations */}
       {recommendations.length ? (
