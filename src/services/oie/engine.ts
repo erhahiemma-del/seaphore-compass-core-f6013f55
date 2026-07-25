@@ -484,16 +484,19 @@ export async function runOIE(
     const rawBriefing = await safeAsync(
       "orchestrate",
       () =>
-        orchestrate({
-          ...q,
-          query: anchoredQuery,
-          moduleHint: q.moduleHint ?? plan.primarySkill.id,
-          context: {
-            ...(q.context ?? {}),
-            ...anchorContext,
-            workspace: q.context?.workspace ?? mission.workspace,
+        orchestrate(
+          {
+            ...q,
+            query: anchoredQuery,
+            moduleHint: q.moduleHint ?? plan.primarySkill.id,
+            context: {
+              ...(q.context ?? {}),
+              ...anchorContext,
+              workspace: q.context?.workspace ?? mission.workspace,
+            },
           },
-        }),
+          deps,
+        ),
       fallbackBriefing,
     );
     const briefing = normaliseBriefing(rawBriefing, fallbackBriefing);
