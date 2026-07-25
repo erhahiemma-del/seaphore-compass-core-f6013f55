@@ -5,6 +5,25 @@ const FOOTER = "Evidence first. Explainable always. Officer decides.";
 
 export function exportReportPdf(report: ReportPackage): Blob {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
+
+  // Embed provenance in the PDF's document properties so Preview /
+  // Adobe / any reader shows source_uip_id, briefingId, officerId,
+  // and engine version without opening the file.
+  doc.setProperties({
+    title: report.title,
+    subject: `${report.reportTypeLabel} · ${report.periodLabel} · Seaphore MIBC`,
+    author: report.officer,
+    creator: `Seaphore MIBC ${report.engineVersion}`,
+    keywords: [
+      `mibc:${report.engineVersion}`,
+      `origin:${report.origin}`,
+      `briefing:${report.briefingId ?? "—"}`,
+      `officer:${report.officerId ?? "—"}`,
+      `uip:${report.sourceUipIds.join("|") || "—"}`,
+      `confidence:${report.overallConfidence}%`,
+    ].join(", "),
+  });
+
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const margin = 40;

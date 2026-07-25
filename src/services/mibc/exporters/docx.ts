@@ -86,7 +86,27 @@ export async function exportReportDocx(report: ReportPackage): Promise<Blob> {
     }),
   );
 
-  const doc = new Document({ sections: [{ children }] });
+  // Embed provenance in the DOCX's document properties so recipients
+  // see source_uip_id, briefingId, officer, and engine version in
+  // Word's File > Info panel.
+  const keywords = [
+    `mibc:${report.engineVersion}`,
+    `origin:${report.origin}`,
+    `briefing:${report.briefingId ?? "—"}`,
+    `officer:${report.officerId ?? "—"}`,
+    `uip:${report.sourceUipIds.join("|") || "—"}`,
+    `confidence:${report.overallConfidence}%`,
+  ].join("; ");
+
+  const doc = new Document({
+    creator: `Seaphore MIBC ${report.engineVersion}`,
+    title: report.title,
+    subject: `${report.reportTypeLabel} · ${report.periodLabel}`,
+    description: `Seaphore Maritime Intelligence Briefing. ${keywords}`,
+    keywords,
+    lastModifiedBy: report.officer,
+    sections: [{ children }],
+  });
   const blob = await Packer.toBlob(doc);
   return blob;
 }

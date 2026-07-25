@@ -25,12 +25,14 @@ import {
   type ReportPeriod,
   type ExportFormat,
   type ReportPackage,
+  MIBC_ENGINE_VERSION,
 } from "@/services/mibc";
-import { FileText, FileDown, Sparkles } from "lucide-react";
+import { FileText, FileDown, Sparkles, ShieldCheck } from "lucide-react";
 import { SchedulesPanel } from "@/components/briefing/SchedulesPanel";
 import { JobHistoryPanel } from "@/components/briefing/JobHistoryPanel";
 import { useReportJobDrainer } from "@/lib/mibc/job-drainer";
 import { useAuth } from "@/hooks/use-auth";
+import { recordUipAccess } from "@/lib/telemetry/uip-access";
 
 export const Route = createFileRoute("/briefing-centre")({
   head: () => ({
@@ -91,16 +93,38 @@ function BriefingCentre() {
     setBusy("GENERATE");
     try {
       if (sourceMode === "LIVE_UIP") {
-        // Live Intelligence Brief — resolve a single Canonical UIP via the
-        // Intelligence Orchestrator. When no id is chosen we pick the
-        // freshest snapshot the officer generated in this session.
-        const uip =
-          intelligenceOrchestrator.getUIP(liveUipId) ??
-          intelligenceOrchestrator.getLatestUIP();
-        if (!uip) {
-          toast.error("No Canonical UIP available", {
+        // Live Intelligence Brief — resolve exactly one Canonical UIP
+        // via the Intelligence Orchestrator. NO silent fallback: the
+        // officer must explicitly pick a snapshot. Rendering a report
+        // against "whatever happens to be latest" is the exact shape
+        // of drift the Golden Rule forbids.
+        if (!liveUipId) {
+          recordUipAccess({
+            surface: "MIBC",
+            uipId: null,
+            officerId,
+            action: "RESOLVED_MISS",
+            detail: "Live brief attempted without an explicit UIP selection",
+          });
+          toast.error("No active UIP selected", {
             description:
-              "Run a Copilot query first so a Unified Intelligence Package is registered in this session.",
+              registeredUips.length === 0
+                ? "Run a Copilot query first so a Unified Intelligence Package is registered in this session."
+                : "Choose a Canonical UIP from the selector below — MIBC never assumes the latest.",
+          });
+          return;
+        }
+        const uip = intelligenceOrchestrator.getUIP(liveUipId);
+        if (!uip) {
+          recordUipAccess({
+            surface: "MIBC",
+            uipId: liveUipId,
+            officerId,
+            action: "RESOLVED_MISS",
+            detail: "Selected UIP id is not registered in this session",
+          });
+          toast.error("Selected UIP is not registered", {
+            description: `UIP ${liveUipId} is not present in the current session. Run the query again or pick another snapshot.`,
           });
           return;
         }
@@ -116,6 +140,14 @@ function BriefingCentre() {
           origin: "LIVE_UIP",
         });
         setReport(pkg);
+        recordUipAccess({
+          surface: "MIBC",
+          uipId: uip.id,
+          briefingId: uip.id,
+          officerId,
+          action: "GENERATED",
+          detail: `Live Intelligence Brief · ${pkg.overallConfidence}% confidence`,
+        });
         toast.success(`${REPORT_TYPE_LABEL[reportType]} assembled`, {
           description: `Live UIP ${uip.id} · confidence ${pkg.overallConfidence}%`,
         });
@@ -147,6 +179,25 @@ function BriefingCentre() {
         missingUipIds: batch.missing,
       });
       setReport(pkg);
+      for (const snap of uipSnapshots) {
+        recordUipAccess({
+          surface: "MIBC",
+          uipId: snap.uip.id,
+          briefingId: pkg.briefingId ?? snap.uip.id,
+          officerId,
+          action: "GENERATED",
+          detail: `Investigation-Based Brief · workspace ${snap.workspaceId ?? "—"}`,
+        });
+      }
+      for (const missingId of batch.missing) {
+        recordUipAccess({
+          surface: "MIBC",
+          uipId: missingId,
+          officerId,
+          action: "RESOLVED_MISS",
+          detail: "Workspace referenced a UIP that is not registered in this session",
+        });
+      }
       const missingNote =
         batch.missing.length > 0
           ? ` · ${batch.missing.length} UIP id${batch.missing.length === 1 ? "" : "s"} not registered in session`
@@ -179,6 +230,18 @@ function BriefingCentre() {
       const blob = await exportReport(report, format);
       const ext = format.toLowerCase();
       downloadBlob(blob, `seaphore-${report.reportType.toLowerCase()}-${report.id}.${ext}`);
+      // Telemetry — one event per exported UIP so we can prove which
+      // canonical snapshot backed every file that left the platform.
+      for (const uipId of report.sourceUipIds.length > 0 ? report.sourceUipIds : [null]) {
+        recordUipAccess({
+          surface: "MIBC",
+          uipId,
+          briefingId: report.briefingId ?? null,
+          officerId,
+          action: "DOWNLOAD",
+          detail: `${format} export · ${report.reportTypeLabel}`,
+        });
+      }
       toast.success(`${format} exported`);
     } catch (err) {
       toast.error(`Failed to export ${format}`, { description: String(err) });
@@ -212,6 +275,67 @@ function BriefingCentre() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Active UIP banner — makes the current source snapshot visible
+            without opening the report configuration. */}
+        <Card className="border-border/70 bg-muted/40">
+          <CardContent className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3 text-xs">
+            <div className="flex items-center gap-2 font-medium">
+              <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+              Active source
+            </div>
+            {sourceMode === "LIVE_UIP" ? (
+              liveUipId ? (
+                <>
+                  <span className="text-muted-foreground">Live UIP</span>
+                  <code className="rounded bg-background px-1.5 py-0.5 font-mono text-[11px]">
+                    {liveUipId}
+                  </code>
+                </>
+              ) : (
+                <span className="text-amber-600">
+                  No active UIP — select a Canonical snapshot below
+                </span>
+              )
+            ) : sourceWorkspaces.length > 0 ? (
+              <>
+                <span className="text-muted-foreground">
+                  Investigation-based · {sourceWorkspaces.length} workspace
+                  {sourceWorkspaces.length === 1 ? "" : "s"}
+                </span>
+                <div className="flex flex-wrap gap-1">
+                  {sourceWorkspaces.slice(0, 4).map((w) =>
+                    w.sourceUipId ? (
+                      <code
+                        key={w.id}
+                        className="rounded bg-background px-1.5 py-0.5 font-mono text-[11px]"
+                      >
+                        {w.sourceUipId}
+                      </code>
+                    ) : (
+                      <span key={w.id} className="text-amber-600">
+                        {w.title || w.id}: no UIP stamp
+                      </span>
+                    ),
+                  )}
+                  {sourceWorkspaces.length > 4 ? (
+                    <span className="text-muted-foreground">
+                      +{sourceWorkspaces.length - 4} more
+                    </span>
+                  ) : null}
+                </div>
+              </>
+            ) : (
+              <span className="text-muted-foreground">
+                No investigation workspace selected
+              </span>
+            )}
+            <div className="ml-auto text-[11px] text-muted-foreground">
+              MIBC engine {MIBC_ENGINE_VERSION}
+            </div>
+          </CardContent>
+        </Card>
+
 
         {/* Natural language */}
         <Card>
@@ -307,12 +431,12 @@ function BriefingCentre() {
                     Canonical UIP ({registeredUips.length} registered this session)
                   </label>
                   <Select
-                    value={liveUipId || (registeredUips[0]?.id ?? "")}
+                    value={liveUipId}
                     onValueChange={setLiveUipId}
                     disabled={registeredUips.length === 0}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Latest UIP" />
+                      <SelectValue placeholder="Select a Canonical UIP" />
                     </SelectTrigger>
                     <SelectContent>
                       {registeredUips.map((u) => (
@@ -322,11 +446,15 @@ function BriefingCentre() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {registeredUips.length === 0 && (
+                  {registeredUips.length === 0 ? (
                     <p className="mt-1 text-[11px] text-muted-foreground">
                       Run a Copilot query so a UIP is registered in this session.
                     </p>
-                  )}
+                  ) : !liveUipId ? (
+                    <p className="mt-1 text-[11px] text-amber-600">
+                      No active UIP — pick a snapshot before generating. MIBC never assumes the latest.
+                    </p>
+                  ) : null}
                 </div>
               ) : (
                 <div>

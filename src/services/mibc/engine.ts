@@ -40,7 +40,7 @@ import type {
   ReportType,
   ReportPeriod,
 } from "./types";
-import { REPORT_TYPE_LABEL, REPORT_PERIOD_LABEL } from "./types";
+import { REPORT_TYPE_LABEL, REPORT_PERIOD_LABEL, MIBC_ENGINE_VERSION } from "./types";
 
 /**
  * UIP snapshot paired (optionally) with the Investigation Workspace
@@ -260,6 +260,8 @@ export function buildReport(input: BuildReportInput): ReportPackage {
       { Field: "Officer", Value: officer },
       { Field: "Officer ID", Value: input.officerId ?? "—" },
       { Field: "Generated at (UTC)", Value: generatedAt },
+      { Field: "MIBC engine version", Value: MIBC_ENGINE_VERSION },
+      { Field: "Report origin", Value: input.origin ?? "INVESTIGATION" },
       { Field: "Overall confidence", Value: `${avgConfidence}%` },
       {
         Field: "Source UIP ids",
@@ -916,6 +918,7 @@ export function buildReport(input: BuildReportInput): ReportPackage {
     title,
     subtitle,
     origin,
+    engineVersion: MIBC_ENGINE_VERSION,
     briefingId: input.briefingId,
     officerId: input.officerId,
     subjects,

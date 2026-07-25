@@ -7,6 +7,14 @@ export async function exportReportPptx(report: ReportPackage): Promise<Blob> {
   const pptx = new PptxGenJS();
   pptx.layout = "LAYOUT_WIDE";
 
+  // Embed provenance in the PPTX core properties. PowerPoint / Keynote
+  // surfaces these in the file inspector without opening the deck.
+  pptx.title = report.title;
+  pptx.subject = `${report.reportTypeLabel} · ${report.periodLabel}`;
+  pptx.author = report.officer;
+  pptx.company = `Seaphore MIBC ${report.engineVersion}`;
+  pptx.revision = report.engineVersion;
+
   const addFooter = (slide: PptxGenJS.Slide) => {
     slide.addText(FOOTER, {
       x: 0.4,
@@ -50,6 +58,15 @@ export async function exportReportPptx(report: ReportPackage): Promise<Blob> {
   cover.addText(
     `Generated ${new Date(report.generatedAt).toISOString().slice(0, 16).replace("T", " ")} by ${report.officer} · confidence ${report.overallConfidence}%`,
     { x: 0.5, y: 4.4, w: 12, h: 0.4, fontSize: 12, color: "CBD5F5" },
+  );
+  // Provenance stamp on the cover — every reader sees the source UIP.
+  cover.addText(
+    [
+      `MIBC ${report.engineVersion} · origin ${report.origin}`,
+      `Briefing ${report.briefingId ?? "—"} · Officer ${report.officerId ?? "—"}`,
+      `Source UIP: ${report.sourceUipIds.join(", ") || "—"}`,
+    ].join("\n"),
+    { x: 0.5, y: 5.0, w: 12, h: 1.4, fontSize: 10, color: "94A3B8" },
   );
   addFooter(cover);
 
