@@ -19,6 +19,12 @@ import type {
   IdentityConfidenceResult,
   IdentitySelection,
 } from "@/intelligence/matching/identity-confidence";
+import type {
+  AisContinuityReport,
+  AisDarkEvidence,
+  AisPattern,
+} from "@/intelligence/analyzers/AISBehaviourAnalyzer";
+import type { OsaeAssessment, PerEventAssessment } from "@/services/osae";
 import { sanitizeText } from "./sanitize";
 
 export type StatusTone = "positive" | "warning" | "critical" | "neutral";
