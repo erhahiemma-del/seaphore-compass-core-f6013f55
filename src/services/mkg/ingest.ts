@@ -352,10 +352,11 @@ export function ingestUnifiedPackage(
     // Alias nodes + ALIAS_OF edges (dashed connections between id schemes).
     for (const aliasId of cluster.aliasIds) {
       if (aliasId === cluster.canonicalId) continue;
+      const tier = cluster.confidence?.tier;
       const aliasProv = syntheticProvenance(
         cluster.canonicalId,
         [],
-        cluster.confidence?.recommendation === "AUTO_SELECT" ? "CORROBORATED" : "REPORTED",
+        tier === "VERIFIED" || tier === "OBSERVED" ? "CORROBORATED" : "REPORTED",
         uip.createdAt,
       );
       graph.upsertNode({
