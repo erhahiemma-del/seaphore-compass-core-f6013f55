@@ -56,10 +56,10 @@ function buildHeaders(apiKey: string): Record<string, string> {
 async function httpGet<T>(
   apiKey: string,
   path: string,
-  params: Record<string, string>,
+  params: Array<[string, string]>,
 ): Promise<{ ok: true; body: T } | { ok: false; status: number; message: string }> {
   const url = new URL(path, BASE_URL);
-  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  for (const [k, v] of params) url.searchParams.append(k, v);
   let response: Response;
   try {
     response = await fetch(url.toString(), {
@@ -73,7 +73,17 @@ async function httpGet<T>(
     return { ok: false, status: response.status, message: "Authentication Failed" };
   }
   if (!response.ok) {
-    return { ok: false, status: response.status, message: `HTTP ${response.status}` };
+    let detail = "";
+    try {
+      detail = (await response.text()).slice(0, 200);
+    } catch {
+      /* ignore */
+    }
+    return {
+      ok: false,
+      status: response.status,
+      message: `HTTP ${response.status}${detail ? `: ${detail}` : ""}`,
+    };
   }
   try {
     return { ok: true, body: (await response.json()) as T };
