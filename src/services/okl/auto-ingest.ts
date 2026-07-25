@@ -116,8 +116,8 @@ export function autoIngestOklIntoInvestigations(
           category: "COLLECTED",
           summary: pattern.operationalImpact,
           entityId: pattern.entities[0]?.id,
-          entityName: pattern.entities[0]?.name,
-          grade: pattern.confidence.overall.tier,
+          entityName: pattern.entities[0]?.label,
+          grade: pattern.confidence.tier,
           hash: `okl:${pattern.id}`,
         });
         evidenceAdded += 1;
