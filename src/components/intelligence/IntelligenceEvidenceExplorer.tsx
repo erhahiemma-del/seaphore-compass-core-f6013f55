@@ -54,6 +54,7 @@ import {
   type EvidenceType,
   type EvidenceEntityType,
   type IntelligenceEvidenceItem,
+  type OklExplainability,
 } from "@/lib/evidence/intelligence-evidence";
 import {
   buildRelationshipGraph,
