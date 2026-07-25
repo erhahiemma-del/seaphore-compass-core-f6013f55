@@ -520,7 +520,7 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
       surface: "Vessel Identity Confirmation · Copilot / Compliance",
       location: "src/components/intelligence/VesselIdentityConfirm.tsx",
       component: "src/components/intelligence/VesselIdentityConfirm.tsx",
-      interaction: "explicit-confirmation",
+      interaction: "action",
     },
     reviewedAt: REVIEWED,
   },
