@@ -92,6 +92,8 @@ function WorkspaceRoute() {
   useMemo(() => {
     if (w && useWorkspaceStore.getState().activeId !== id) setActive(id);
   }, [id, w, setActive]);
+  // Sprint 2.4 — auto-persist to OKL on close.
+  useOklAutoPersistOnClose(w ?? undefined);
 
   if (!w) return null;
 
