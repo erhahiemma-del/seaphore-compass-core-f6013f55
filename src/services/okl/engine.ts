@@ -805,6 +805,30 @@ export function analyzeOperationalKnowledge(
     ...detectHistoricalBehaviour(ctx),
   ].sort((a, b) => RISK_ORDER[b.riskLevel] - RISK_ORDER[a.riskLevel]);
 
+  // MKG enrichment — attach graph neighbours as related entities on each
+  // pattern without inventing new evidence.
+  const enriched: OperationalPattern[] = ctx.graph
+    ? patterns.map((p) => {
+        const seen = new Set(p.entities.map((e) => e.id));
+        const related: CanonicalEntityRef[] = [];
+        for (const e of p.entities) {
+          const nbrs = ctx.graph!.neighbors(e.id).slice(0, 3);
+          for (const n of nbrs) {
+            if (seen.has(n.neighbor.id)) continue;
+            seen.add(n.neighbor.id);
+            related.push({
+              kind: (n.neighbor.kind ?? "vessel") as CanonicalEntityRef["kind"],
+              id: n.neighbor.id,
+              label: n.neighbor.label,
+            });
+          }
+        }
+        return related.length
+          ? { ...p, entities: [...p.entities, ...related] }
+          : p;
+      })
+    : patterns;
+
   const byRisk: Record<RiskLevel, number> = { LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0 };
   const byKind: Partial<Record<OklPatternKind, number>> = {};
   for (const p of patterns) {
