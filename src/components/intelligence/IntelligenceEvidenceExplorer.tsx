@@ -16,7 +16,7 @@
  * Golden Rule: every conclusion explainable, every relationship navigable,
  * every piece of evidence traceable.
  */
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, type ReactNode, type ComponentType } from "react";
 import {
   AlertTriangle,
   Anchor,
