@@ -734,6 +734,21 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: REVIEWED,
   },
+  {
+    id: "capability.mibc-background-scheduler",
+    name: "MIBC background report scheduler",
+    producer: "CAPABILITY",
+    description:
+      "Durable, retry-capable scheduling for the Briefing Centre. Officers configure daily / weekly / monthly / quarterly schedules; a pg_cron dispatcher advances next_run_at and enqueues jobs into report_jobs, resets jobs stuck in CLAIMED > 10 min with exponential backoff, and dead-letters after 5 attempts. A browser worker atomically claims one QUEUED job at a time (mibc_claim_next_job RPC), assembles the report from the Investigation Workspace, uploads the PDF to the exports bucket under {userId}/{jobId}.pdf, and marks the job SUCCEEDED. Signed URLs are minted server-side and scoped to the officer. Jobs survive tab closes; the UI never blocks on generation. Every schedule and job row is owner-RLS'd.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Briefing Centre · Scheduled reports and Job history",
+      location: "src/routes/briefing-centre.tsx",
+      component: "src/components/briefing/SchedulesPanel.tsx",
+      interaction: "action",
+    },
+    reviewedAt: REVIEWED,
+  },
 ];
 
 

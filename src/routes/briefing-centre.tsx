@@ -20,14 +20,15 @@ import {
   REPORT_TYPE_LABEL,
   REPORT_PERIODS,
   REPORT_PERIOD_LABEL,
-  REPORT_CADENCES,
   type ReportType,
   type ReportPeriod,
-  type ReportCadence,
   type ExportFormat,
   type ReportPackage,
 } from "@/services/mibc";
-import { FileText, FileDown, Sparkles, CalendarClock } from "lucide-react";
+import { FileText, FileDown, Sparkles } from "lucide-react";
+import { SchedulesPanel } from "@/components/briefing/SchedulesPanel";
+import { JobHistoryPanel } from "@/components/briefing/JobHistoryPanel";
+import { useReportJobDrainer } from "@/lib/mibc/job-drainer";
 
 export const Route = createFileRoute("/briefing-centre")({
   head: () => ({
@@ -48,24 +49,18 @@ export const Route = createFileRoute("/briefing-centre")({
   component: BriefingCentre,
 });
 
-type ScheduledJob = {
-  id: string;
-  reportType: ReportType;
-  period: ReportPeriod;
-  cadence: ReportCadence;
-  createdAt: string;
-};
+// Local ScheduledJob type removed; schedules are now persisted server-side
+// via report_schedules and report_jobs. See src/lib/mibc/schedules.functions.ts.
 
 function BriefingCentre() {
+  useReportJobDrainer(true);
   const investigations = useWorkspaceStore((s) => Object.values(s.investigations));
   const [reportType, setReportType] = useState<ReportType>("EXECUTIVE_BRIEF");
   const [period, setPeriod] = useState<ReportPeriod>("LAST_7D");
-  const [cadence, setCadence] = useState<ReportCadence>("ON_DEMAND");
   const [selected, setSelected] = useState<string[]>([]);
   const [nlQuery, setNlQuery] = useState("");
   const [report, setReport] = useState<ReportPackage | null>(null);
   const [busy, setBusy] = useState<ExportFormat | "GENERATE" | null>(null);
-  const [schedules, setSchedules] = useState<ScheduledJob[]>([]);
 
   const sourceWorkspaces = useMemo(() => {
     if (selected.length === 0) return investigations;
@@ -125,19 +120,7 @@ function BriefingCentre() {
     }
   };
 
-  const schedule = () => {
-    const job: ScheduledJob = {
-      id: `sched-${Date.now().toString(36)}`,
-      reportType,
-      period,
-      cadence,
-      createdAt: new Date().toISOString(),
-    };
-    setSchedules((s) => [job, ...s]);
-    toast.success(`Scheduled ${REPORT_TYPE_LABEL[reportType]}`, {
-      description: `${cadence.toLowerCase()} · from Investigation Workspaces`,
-    });
-  };
+  // Scheduling is server-backed via SchedulesPanel / JobHistoryPanel below.
 
   return (
     <AppShell
@@ -272,47 +255,12 @@ function BriefingCentre() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <CalendarClock className="h-4 w-4" />
-                Scheduling
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Cadence</label>
-                <Select value={cadence} onValueChange={(v) => setCadence(v as ReportCadence)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {REPORT_CADENCES.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c.charAt(0) + c.slice(1).toLowerCase()}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button variant="outline" onClick={schedule} className="w-full">
-                Schedule this report
-              </Button>
-              <div className="space-y-1 text-xs">
-                {schedules.length === 0 ? (
-                  <p className="text-muted-foreground">No scheduled runs yet.</p>
-                ) : (
-                  schedules.map((j) => (
-                    <div key={j.id} className="flex items-center justify-between rounded border px-2 py-1">
-                      <span>
-                        {REPORT_TYPE_LABEL[j.reportType]} · {REPORT_PERIOD_LABEL[j.period]}
-                      </span>
-                      <Badge variant="outline">{j.cadence}</Badge>
-                    </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <SchedulesPanel
+            workspaceIds={selected.length === 0 ? [] : selected}
+          />
         </div>
+
+        <JobHistoryPanel />
 
         {/* Preview + exports */}
         {report && (

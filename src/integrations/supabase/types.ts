@@ -1923,6 +1923,122 @@ export type Database = {
           },
         ]
       }
+      report_jobs: {
+        Row: {
+          artifact_path: string | null
+          attempts: number
+          claimed_at: string | null
+          claimed_by: string | null
+          created_at: string
+          id: string
+          last_error: string | null
+          max_attempts: number
+          owner_user_id: string
+          period: string
+          report_type: string
+          result_summary: Json
+          run_after: string
+          schedule_id: string | null
+          scheduled_for: string
+          status: string
+          updated_at: string
+          workspace_ids: string[]
+        }
+        Insert: {
+          artifact_path?: string | null
+          attempts?: number
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          max_attempts?: number
+          owner_user_id: string
+          period: string
+          report_type: string
+          result_summary?: Json
+          run_after?: string
+          schedule_id?: string | null
+          scheduled_for?: string
+          status?: string
+          updated_at?: string
+          workspace_ids?: string[]
+        }
+        Update: {
+          artifact_path?: string | null
+          attempts?: number
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          max_attempts?: number
+          owner_user_id?: string
+          period?: string
+          report_type?: string
+          result_summary?: Json
+          run_after?: string
+          schedule_id?: string | null
+          scheduled_for?: string
+          status?: string
+          updated_at?: string
+          workspace_ids?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_jobs_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "report_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_schedules: {
+        Row: {
+          active: boolean
+          cadence: string
+          created_at: string
+          id: string
+          last_run_at: string | null
+          name: string
+          next_run_at: string
+          owner_user_id: string
+          period: string
+          report_type: string
+          updated_at: string
+          workspace_ids: string[]
+        }
+        Insert: {
+          active?: boolean
+          cadence: string
+          created_at?: string
+          id?: string
+          last_run_at?: string | null
+          name: string
+          next_run_at: string
+          owner_user_id: string
+          period: string
+          report_type: string
+          updated_at?: string
+          workspace_ids?: string[]
+        }
+        Update: {
+          active?: boolean
+          cadence?: string
+          created_at?: string
+          id?: string
+          last_run_at?: string | null
+          name?: string
+          next_run_at?: string
+          owner_user_id?: string
+          period?: string
+          report_type?: string
+          updated_at?: string
+          workspace_ids?: string[]
+        }
+        Relationships: []
+      }
       risk_scores: {
         Row: {
           computed_at: string
@@ -2186,6 +2302,40 @@ export type Database = {
         Returns: boolean
       }
       is_officer_or_above: { Args: { _user_id: string }; Returns: boolean }
+      mibc_claim_next_job: {
+        Args: { _worker: string }
+        Returns: {
+          artifact_path: string | null
+          attempts: number
+          claimed_at: string | null
+          claimed_by: string | null
+          created_at: string
+          id: string
+          last_error: string | null
+          max_attempts: number
+          owner_user_id: string
+          period: string
+          report_type: string
+          result_summary: Json
+          run_after: string
+          schedule_id: string | null
+          scheduled_for: string
+          status: string
+          updated_at: string
+          workspace_ids: string[]
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "report_jobs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      mibc_dispatch_tick: { Args: never; Returns: Json }
+      mibc_next_run: {
+        Args: { _cadence: string; _from: string }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "analyst" | "officer" | "director" | "admin" | "external_agency"

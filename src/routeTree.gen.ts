@@ -61,6 +61,7 @@ import { Route as ApiInvestigationIdRouteImport } from './routes/api/investigati
 import { Route as ApiEvidenceIdRouteImport } from './routes/api/evidence/$id'
 import { Route as ApiEntityIdRouteImport } from './routes/api/entity/$id'
 import { Route as ApiCopilotQueryRouteImport } from './routes/api/copilot/query'
+import { Route as ApiPublicHooksMibcTickRouteImport } from './routes/api/public/hooks/mibc-tick'
 import { Route as ApiPublicDevSeedRoleRouteImport } from './routes/api/public/dev/seed-role'
 
 const VesselRoute = VesselRouteImport.update({
@@ -323,6 +324,11 @@ const ApiCopilotQueryRoute = ApiCopilotQueryRouteImport.update({
   path: '/api/copilot/query',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksMibcTickRoute = ApiPublicHooksMibcTickRouteImport.update({
+  id: '/api/public/hooks/mibc-tick',
+  path: '/api/public/hooks/mibc-tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicDevSeedRoleRoute = ApiPublicDevSeedRoleRouteImport.update({
   id: '/api/public/dev/seed-role',
   path: '/api/public/dev/seed-role',
@@ -383,6 +389,7 @@ export interface FileRoutesByFullPath {
   '/api/relationship/$id': typeof ApiRelationshipIdRoute
   '/api/session/$id': typeof ApiSessionIdRoute
   '/api/public/dev/seed-role': typeof ApiPublicDevSeedRoleRoute
+  '/api/public/hooks/mibc-tick': typeof ApiPublicHooksMibcTickRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -435,6 +442,7 @@ export interface FileRoutesByTo {
   '/api/relationship/$id': typeof ApiRelationshipIdRoute
   '/api/session/$id': typeof ApiSessionIdRoute
   '/api/public/dev/seed-role': typeof ApiPublicDevSeedRoleRoute
+  '/api/public/hooks/mibc-tick': typeof ApiPublicHooksMibcTickRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -491,6 +499,7 @@ export interface FileRoutesById {
   '/api/relationship/$id': typeof ApiRelationshipIdRoute
   '/api/session/$id': typeof ApiSessionIdRoute
   '/api/public/dev/seed-role': typeof ApiPublicDevSeedRoleRoute
+  '/api/public/hooks/mibc-tick': typeof ApiPublicHooksMibcTickRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -548,6 +557,7 @@ export interface FileRouteTypes {
     | '/api/relationship/$id'
     | '/api/session/$id'
     | '/api/public/dev/seed-role'
+    | '/api/public/hooks/mibc-tick'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -600,6 +610,7 @@ export interface FileRouteTypes {
     | '/api/relationship/$id'
     | '/api/session/$id'
     | '/api/public/dev/seed-role'
+    | '/api/public/hooks/mibc-tick'
   id:
     | '__root__'
     | '/'
@@ -655,6 +666,7 @@ export interface FileRouteTypes {
     | '/api/relationship/$id'
     | '/api/session/$id'
     | '/api/public/dev/seed-role'
+    | '/api/public/hooks/mibc-tick'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -702,6 +714,7 @@ export interface RootRouteChildren {
   ApiRelationshipIdRoute: typeof ApiRelationshipIdRoute
   ApiSessionIdRoute: typeof ApiSessionIdRoute
   ApiPublicDevSeedRoleRoute: typeof ApiPublicDevSeedRoleRoute
+  ApiPublicHooksMibcTickRoute: typeof ApiPublicHooksMibcTickRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1070,6 +1083,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCopilotQueryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/mibc-tick': {
+      id: '/api/public/hooks/mibc-tick'
+      path: '/api/public/hooks/mibc-tick'
+      fullPath: '/api/public/hooks/mibc-tick'
+      preLoaderRoute: typeof ApiPublicHooksMibcTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/dev/seed-role': {
       id: '/api/public/dev/seed-role'
       path: '/api/public/dev/seed-role'
@@ -1170,6 +1190,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRelationshipIdRoute: ApiRelationshipIdRoute,
   ApiSessionIdRoute: ApiSessionIdRoute,
   ApiPublicDevSeedRoleRoute: ApiPublicDevSeedRoleRoute,
+  ApiPublicHooksMibcTickRoute: ApiPublicHooksMibcTickRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
