@@ -354,6 +354,10 @@ export function fromNormalizedEvidence(
   investigationId?: string,
 ): IntelligenceEvidenceItem {
   const entityKind = (n.entity.kind ?? "vessel") as EvidenceEntityType;
+  // Traceability: every row links back to its originating connector (`connector`),
+  // its provider-native record id (`providerRecordId`, surfaced in the summary),
+  // and its content hash (`hash`, chain-of-custody).
+  const traceSuffix = n.providerRecordId ? ` · record ${n.providerRecordId}` : "";
   return {
     id: `uip.${n.id}`,
     source: n.sourceName,
@@ -362,7 +366,7 @@ export function fromNormalizedEvidence(
     evidenceType: KIND_TO_EVIDENCE_TYPE[n.kind] ?? "other",
     status: "verified",
     claim: n.excerpt ?? `${n.kind} record from ${n.sourceName}`,
-    summary: n.excerpt,
+    summary: (n.excerpt ?? `${n.kind} record`) + traceSuffix,
     subject: n.entity.label ?? n.entity.id,
     hash: n.hash,
     producer: "IFE",
@@ -373,6 +377,7 @@ export function fromNormalizedEvidence(
       : undefined,
   };
 }
+
 
 const OKL_KIND_LABEL: Record<OklPatternKind, string> = {
   REPEAT_OFFENDER: "Repeat offender",

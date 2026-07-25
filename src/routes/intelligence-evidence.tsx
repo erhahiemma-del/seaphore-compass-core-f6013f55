@@ -20,6 +20,7 @@ import { useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { IntelligenceEvidenceExplorer } from "@/components/intelligence/IntelligenceEvidenceExplorer";
+import { UipCanonicalPanel } from "@/components/intelligence/UipCanonicalPanel";
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { analyzeOperationalKnowledge } from "@/services/okl";
 import { useUipStore } from "@/stores/uip.store";
@@ -32,6 +33,7 @@ import {
   type EvidenceType,
   type IntelligenceEvidenceItem,
 } from "@/lib/evidence/intelligence-evidence";
+
 
 interface EvidenceSearch {
   mode?: string;
@@ -161,6 +163,7 @@ function IntelligenceEvidenceRoute() {
           Conflicting evidence is surfaced instead of hidden, and every axis of
           the confidence chip is inspectable.
         </p>
+        {uip && <UipCanonicalPanel uip={uip} />}
         <IntelligenceEvidenceExplorer
           items={items}
           initialFilters={initialFilters}
@@ -170,3 +173,4 @@ function IntelligenceEvidenceRoute() {
     </AppShell>
   );
 }
+
