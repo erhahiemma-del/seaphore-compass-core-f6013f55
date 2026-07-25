@@ -615,6 +615,65 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         }),
 
       exportInvestigation: (id) => get().investigations[id] ?? null,
+
+      addNotebookEntry: (id, entry) => {
+        const entryId = entry.id ?? uid("nb");
+        set((s) => {
+          const w = s.investigations[id];
+          if (!w) return s;
+          const t = now();
+          const e: NotebookEntry = {
+            id: entryId,
+            createdAt: entry.createdAt ?? t,
+            updatedAt: t,
+            versions: [{ at: t, body: entry.body, officer: entry.officer }],
+            ...entry,
+          };
+          const tl: TimelineEvent = {
+            id: uid("tl"),
+            at: t,
+            kind: e.kind === "QUESTION" ? "question" : "briefing",
+            label: `${e.kind}: ${e.title}`,
+            refId: entryId,
+          };
+          return {
+            investigations: {
+              ...s.investigations,
+              [id]: { ...w, notebook: [...(w.notebook ?? []), e], timeline: [...w.timeline, tl], updatedAt: t },
+            },
+          };
+        });
+        return entryId;
+      },
+
+      updateNotebookEntry: (id, entryId, patch) =>
+        set((s) => {
+          const w = s.investigations[id];
+          if (!w) return s;
+          const t = now();
+          const notebook = (w.notebook ?? []).map((e) => {
+            if (e.id !== entryId) return e;
+            const bodyChanged = patch.body !== undefined && patch.body !== e.body;
+            const versions = bodyChanged
+              ? [...e.versions, { at: t, body: patch.body!, officer: patch.officer }]
+              : e.versions;
+            return { ...e, ...patch, versions, updatedAt: t };
+          });
+          return { investigations: { ...s.investigations, [id]: { ...w, notebook, updatedAt: t } } };
+        }),
+
+      removeNotebookEntry: (id, entryId) =>
+        set((s) => {
+          const w = s.investigations[id];
+          if (!w) return s;
+          return {
+            investigations: {
+              ...s.investigations,
+              [id]: { ...w, notebook: (w.notebook ?? []).filter((e) => e.id !== entryId), updatedAt: now() },
+            },
+          };
+        }),
+
     }),
     {
       name: "seaphore.iiw.v1",
