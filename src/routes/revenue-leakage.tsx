@@ -5,16 +5,19 @@
  * requires officer approval.
  */
 import { useEffect } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useRevenueLeakageStore } from "@/services/revenue-leakage";
-import type { NormalizedEvidence } from "@/services/ial/types";
+import { useUipStore } from "@/stores/uip.store";
 import { Coins } from "lucide-react";
 
 export const Route = createFileRoute("/revenue-leakage")({
+  validateSearch: (raw: Record<string, unknown>) => ({
+    uip: typeof raw.uip === "string" ? raw.uip : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Revenue Leakage · Seaphore" },
