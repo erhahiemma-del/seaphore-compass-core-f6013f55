@@ -455,7 +455,7 @@ export function ExecutiveBriefing({ brief, isAdmin, onFollowUp }: ExecutiveBrief
 
   const firedRisks = risks.filter((r) => r.fired);
 
-  const subject = identityResolution?.entityLabel;
+  const subject = identityResolution?.selectedLabel;
 
   return (
     <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-4 text-slate-900">
