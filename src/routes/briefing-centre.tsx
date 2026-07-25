@@ -181,7 +181,7 @@ function BriefingCentre() {
   return (
     <AppShell
       title="Maritime Intelligence Briefing Centre"
-      subtitle="Reports read only from Investigation Workspaces. Never raw connector data."
+      subtitle="Reports assembled exclusively from Canonical UIP snapshots via the Intelligence Orchestrator."
     >
       <div className="space-y-6">
         {/* Golden Rule banner */}
@@ -191,9 +191,12 @@ function BriefingCentre() {
             <div>
               <div className="font-medium">Source contract</div>
               <p className="text-muted-foreground">
-                MIBC consumes ONLY the Maritime Investigation Workspace. Charts reference evidence.
-                Recommendations reference the Operational Knowledge Layer. Every conclusion is
-                explainable and traceable.
+                MIBC consumes intelligence <em>exclusively</em> through
+                <code className="mx-1 rounded bg-muted px-1">intelligenceOrchestrator.getUIP(...)</code>
+                and <code className="mx-1 rounded bg-muted px-1">getUIPBatch(...)</code>. Every risk,
+                revenue, entity, and confidence number matches what the Evidence Explorer,
+                Predictions, Revenue Leakage, and Operational Knowledge surfaces show — because
+                they all read the same Canonical UIP.
               </p>
             </div>
           </CardContent>
@@ -232,6 +235,32 @@ function BriefingCentre() {
               <CardTitle className="text-base">Report configuration</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Source</label>
+                <div className="mt-1 grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={sourceMode === "INVESTIGATION" ? "default" : "outline"}
+                    onClick={() => setSourceMode("INVESTIGATION")}
+                  >
+                    Investigation-Based
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={sourceMode === "LIVE_UIP" ? "default" : "outline"}
+                    onClick={() => setSourceMode("LIVE_UIP")}
+                  >
+                    Live Intelligence Brief
+                  </Button>
+                </div>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  {sourceMode === "LIVE_UIP"
+                    ? "Builds directly from a Canonical UIP snapshot (no investigation required)."
+                    : "Resolves each selected workspace's source_uip_id through the orchestrator."}
+                </p>
+              </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">Report type</label>
@@ -260,50 +289,83 @@ function BriefingCentre() {
                   </Select>
                 </div>
               </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">
-                  Source investigations ({sourceWorkspaces.length} of {investigations.length})
-                </label>
-                <div className="mt-1 max-h-40 space-y-1 overflow-y-auto rounded border p-2">
-                  {investigations.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">
-                      No investigations yet. Open the Investigation Dashboard to create one.
+
+              {sourceMode === "LIVE_UIP" ? (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Canonical UIP ({registeredUips.length} registered this session)
+                  </label>
+                  <Select
+                    value={liveUipId || (registeredUips[0]?.id ?? "")}
+                    onValueChange={setLiveUipId}
+                    disabled={registeredUips.length === 0}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Latest UIP" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {registeredUips.map((u) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.id} · {u.fused.canonical.length} entities · {u.rawEvidence.length} evidence
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {registeredUips.length === 0 && (
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      Run a Copilot query so a UIP is registered in this session.
                     </p>
-                  ) : (
-                    investigations.map((w) => {
-                      const on = selected.length === 0 || selected.includes(w.id);
-                      return (
-                        <label key={w.id} className="flex cursor-pointer items-center gap-2 text-xs">
-                          <input
-                            type="checkbox"
-                            checked={on}
-                            onChange={(e) => {
-                              if (selected.length === 0) {
-                                // Materialise the "all" state so a click can toggle one off.
-                                setSelected(
-                                  e.target.checked
-                                    ? investigations.map((x) => x.id)
-                                    : investigations.filter((x) => x.id !== w.id).map((x) => x.id),
-                                );
-                              } else {
-                                setSelected((prev) =>
-                                  e.target.checked
-                                    ? [...prev, w.id]
-                                    : prev.filter((id) => id !== w.id),
-                                );
-                              }
-                            }}
-                          />
-                          <span className="flex-1 truncate">{w.title}</span>
-                          <Badge variant="outline" className="text-[10px]">
-                            {w.priority}
-                          </Badge>
-                        </label>
-                      );
-                    })
                   )}
                 </div>
-              </div>
+              ) : (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Source investigations ({sourceWorkspaces.length} of {investigations.length})
+                  </label>
+                  <div className="mt-1 max-h-40 space-y-1 overflow-y-auto rounded border p-2">
+                    {investigations.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">
+                        No investigations yet. Open the Investigation Dashboard to create one.
+                      </p>
+                    ) : (
+                      investigations.map((w) => {
+                        const on = selected.length === 0 || selected.includes(w.id);
+                        return (
+                          <label key={w.id} className="flex cursor-pointer items-center gap-2 text-xs">
+                            <input
+                              type="checkbox"
+                              checked={on}
+                              onChange={(e) => {
+                                if (selected.length === 0) {
+                                  setSelected(
+                                    e.target.checked
+                                      ? investigations.map((x) => x.id)
+                                      : investigations.filter((x) => x.id !== w.id).map((x) => x.id),
+                                  );
+                                } else {
+                                  setSelected((prev) =>
+                                    e.target.checked
+                                      ? [...prev, w.id]
+                                      : prev.filter((id) => id !== w.id),
+                                  );
+                                }
+                              }}
+                            />
+                            <span className="flex-1 truncate">{w.title}</span>
+                            <Badge variant="outline" className="text-[10px]">
+                              {w.sourceUipId ? `UIP ${w.sourceUipId.slice(-6)}` : "no UIP"}
+                            </Badge>
+                            <Badge variant="outline" className="text-[10px]">
+                              {w.priority}
+                            </Badge>
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              )}
+
               <Button onClick={generate} disabled={busy !== null} className="w-full">
                 <FileText className="mr-2 h-4 w-4" />
                 {busy === "GENERATE" ? "Generating…" : "Generate report"}
@@ -315,6 +377,7 @@ function BriefingCentre() {
             workspaceIds={selected.length === 0 ? [] : selected}
           />
         </div>
+
 
         <JobHistoryPanel />
 
