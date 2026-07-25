@@ -788,7 +788,7 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
       "Immutable per-investigation ingest of entities, relationships, patterns, risks, decisions, outcomes and recommendations, each stamped with source_uip_id and briefing_id.",
     state: "INTERNAL",
     internal: {
-      reason: "backend-store",
+      reason: "implementation-detail",
       note: "Officers do not read the raw store; projected via Historical Knowledge panel.",
     },
     reviewedAt: "2026-07-25",
@@ -803,7 +803,7 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     projection: {
       surface: "Investigation Workspace · Historical Knowledge panel",
       location: "src/components/okl/HistoricalKnowledgePanel.tsx",
-      interaction: "list-with-provenance",
+      interaction: "drill-in",
     },
     reviewedAt: "2026-07-25",
   },
@@ -816,7 +816,7 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     projection: {
       surface: "Investigation Workspace · Historical Knowledge panel",
       location: "src/components/okl/HistoricalKnowledgePanel.tsx",
-      interaction: "grouped-list",
+      interaction: "passive-display",
     },
     reviewedAt: "2026-07-25",
   },
@@ -829,7 +829,7 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     projection: {
       surface: "Investigation Workspace · Historical Knowledge panel",
       location: "src/components/okl/HistoricalKnowledgePanel.tsx",
-      interaction: "decision-list-with-uip-provenance",
+      interaction: "drill-in",
     },
     reviewedAt: "2026-07-25",
   },
@@ -842,7 +842,7 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     projection: {
       surface: "Investigation Workspace · Historical Knowledge panel",
       location: "src/components/okl/HistoricalKnowledgePanel.tsx",
-      interaction: "risk-tier-list",
+      interaction: "passive-display",
     },
     reviewedAt: "2026-07-25",
   },
