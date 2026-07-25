@@ -4,15 +4,41 @@ import type { ReportPackage } from "../types";
 export function exportReportXlsx(report: ReportPackage): Blob {
   const wb = XLSX.utils.book_new();
 
+  // Embed provenance in the workbook's core file properties so Excel
+  // / Numbers surface source_uip_id, briefingId, officer, and engine
+  // version in File > Info without opening any sheet.
+  wb.Props = {
+    Title: report.title,
+    Subject: `${report.reportTypeLabel} · ${report.periodLabel}`,
+    Author: report.officer,
+    Company: `Seaphore MIBC ${report.engineVersion}`,
+    Category: report.origin,
+    Keywords: [
+      `mibc:${report.engineVersion}`,
+      `briefing:${report.briefingId ?? "—"}`,
+      `officer:${report.officerId ?? "—"}`,
+      `uip:${report.sourceUipIds.join("|") || "—"}`,
+      `confidence:${report.overallConfidence}%`,
+    ].join("; "),
+    Comments: report.provenanceLine,
+    LastAuthor: report.officer,
+    CreatedDate: new Date(report.generatedAt),
+  };
+
   // Cover sheet
   const cover = [
     ["Seaphore Maritime Intelligence Briefing Centre"],
     [report.title],
     [`${report.reportTypeLabel} · ${report.periodLabel}`],
-    [`Generated`, new Date(report.generatedAt).toISOString()],
-    [`Officer`, report.officer],
-    [`Confidence`, `${report.overallConfidence}%`],
-    [`Investigations`, report.sourceInvestigationIds.join(", ")],
+    ["Generated", new Date(report.generatedAt).toISOString()],
+    ["Officer", report.officer],
+    ["Officer ID", report.officerId ?? "—"],
+    ["Briefing ID", report.briefingId ?? "—"],
+    ["MIBC engine version", report.engineVersion],
+    ["Report origin", report.origin],
+    ["Confidence", `${report.overallConfidence}%`],
+    ["Source UIP ids", report.sourceUipIds.join(", ") || "—"],
+    ["Investigations", report.sourceInvestigationIds.join(", ") || "—"],
     [],
     ["Evidence first. Explainable always. Officer decides."],
     [report.provenanceLine],
