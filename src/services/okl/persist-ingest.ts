@@ -180,8 +180,8 @@ export async function persistInvestigationToOkl(
     uip: uip
       ? {
           id: uip.id,
-          entities: uip.fused?.entities?.length ?? 0,
-          sourcesResponded: uip.provenance?.length ?? 0,
+          entities: uip.fused?.stats?.canonicalEntities ?? 0,
+          sourcesResponded: uip.fused?.stats?.sourcesResponded ?? 0,
         }
       : null,
     ingestedAt: new Date().toISOString(),
