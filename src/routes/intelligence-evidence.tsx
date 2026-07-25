@@ -16,7 +16,7 @@ import { useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { IntelligenceEvidenceViewer } from "@/components/intelligence/IntelligenceEvidenceViewer";
-import { AppShell } from "@/components/layout/AppShell";
+import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { AISBehaviourAnalyzer } from "@/intelligence/analyzers/AISBehaviourAnalyzer";
 import { OSAE } from "@/services/osae";
 import { useWorkspaceStore } from "@/stores/workspace.store";
