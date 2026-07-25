@@ -219,6 +219,10 @@ export function fromGfwIdentity(id: {
     sourceUrl: id.evidenceUrl,
     subject: subject ?? id.name,
     producer: "IAL",
+    connector: "gfw",
+    entities: (subject ?? id.name)
+      ? [{ type: "vessel", name: (subject ?? id.name)!, id: id.mmsi ?? id.imo ?? id.vesselId }]
+      : undefined,
   };
 }
 
