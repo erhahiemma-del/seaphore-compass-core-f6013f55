@@ -105,6 +105,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { title: "Mission Planning", subtitle: "AI-Assisted Missions", url: "/missions", icon: Target },
       { title: "Investigation Workflows", subtitle: "Structured Cases", url: "/investigations-workflow", icon: ClipboardList },
+      { title: "Investigation Dashboard", subtitle: "MIW · All Cases", url: "/investigations", icon: FolderArchive },
       { title: "Revenue Leakage", subtitle: "Detection & Enforcement", url: "/revenue-leakage", icon: Coins },
       { title: "National Maritime Risk", subtitle: "NMRSE · Composite Scoring", url: "/national-risk", icon: Gauge },
     ],
