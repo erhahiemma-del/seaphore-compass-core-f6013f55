@@ -373,6 +373,22 @@ export function scoreIdentityCandidate(
     }
   }
 
+  // Vessel type — fires when the officer provided a type hint.
+  if (input.hints?.vesselType && candidate.vesselType) {
+    const hit =
+      candidate.vesselType.toLowerCase() === input.hints.vesselType.toLowerCase();
+    signals.push(
+      fireSignal(
+        "vesselType",
+        "Vessel type",
+        hit ? IDENTITY_WEIGHTS.vesselType : 0,
+        hit
+          ? `Vessel type ${candidate.vesselType} matches officer hint.`
+          : `Vessel type ${candidate.vesselType} does not match officer hint ${input.hints.vesselType}.`,
+      ),
+    );
+  }
+
   // Flag — only when the officer supplied a flag hint.
   if (input.hints?.flag && candidate.flag) {
     const hit = candidate.flag.toUpperCase() === input.hints.flag.toUpperCase();
@@ -388,40 +404,46 @@ export function scoreIdentityCandidate(
     );
   }
 
+  // matchFields (GFW provider verdict) — Sprint 1C.1 promotes this to a
+  // primary signal. SHIPNAME / SEVERAL_FIELDS contribute full points;
+  // NO_MATCH contributes 0 (and is further de-prioritised in selectIdentity).
+  const mf = (candidate.providerMatchFields ?? "").toUpperCase();
+  let mfContribution = 0;
+  let mfDetail = "";
+  if (mf === "SEVERAL_FIELDS") {
+    mfContribution = IDENTITY_WEIGHTS.matchFields;
+    mfDetail = "Provider matched several identity fields (strongest verdict).";
+  } else if (mf === "SHIPNAME") {
+    mfContribution = Math.round(IDENTITY_WEIGHTS.matchFields * 0.8);
+    mfDetail = "Provider confirmed name match.";
+  } else if (mf === "NO_MATCH") {
+    mfContribution = 0;
+    mfDetail = "Provider tagged this record as NO_MATCH.";
+  } else if (mf) {
+    mfContribution = Math.round(IDENTITY_WEIGHTS.matchFields * 0.5);
+    mfDetail = `Provider verdict: ${mf}.`;
+  }
+  if (mf) {
+    signals.push(
+      fireSignal("matchFields", "Provider match fields", mfContribution, mfDetail),
+    );
+  }
+
   // Normalise: score as a percentage of the signals that were
   // *applicable* to this query. This lets a pure-name search reach 100
   // when the name is exact, without being penalised for the absence of
   // an IMO hint the officer did not supply.
   const contributionSum = signals.reduce((s, x) => s + x.contribution, 0);
   const applicableWeight = signals.reduce((s, x) => s + x.weight, 0);
-  const rawScore = applicableWeight > 0
-    ? Math.round((contributionSum / applicableWeight) * 100)
-    : 0;
+  const rawScore =
+    applicableWeight > 0
+      ? Math.round((contributionSum / applicableWeight) * 100)
+      : 0;
 
-  // Provider modifier
-  const mf = (candidate.providerMatchFields ?? "").toUpperCase();
-  let modifier = 1;
-  let modifierDetail = "";
-  if (mf === "NO_MATCH") {
-    modifier = 0.35;
-    modifierDetail = "Upstream provider tagged this record as NO_MATCH — score damped 65%.";
-  } else if (mf === "SEVERAL_FIELDS") {
-    modifier = 1.05;
-    modifierDetail = "Upstream provider matched several fields — score boosted 5%.";
-  } else if (mf === "SHIPNAME") {
-    modifier = 1.0;
-    modifierDetail = "Upstream provider confirmed name match.";
-  }
-  if (mf) {
-    signals.push({
-      kind: "provider-match-fields",
-      label: "Provider verdict",
-      contribution: 0,
-      weight: 0,
-      detail: `${mf}. ${modifierDetail}`,
-    });
-  }
-
+  // NO_MATCH damper preserved as a secondary safety belt on top of the
+  // primary matchFields signal — a provider that says "not this vessel"
+  // must never be able to hit VERIFIED on other signals alone.
+  const modifier = mf === "NO_MATCH" ? 0.35 : 1;
   const score = Math.max(0, Math.min(100, Math.round(rawScore * modifier)));
   const tier: IdentityConfidenceTier =
     score >= 90 ? "VERIFIED" : score >= 70 ? "OBSERVED" : score >= 50 ? "INFERRED" : "UNCONFIRMED";
