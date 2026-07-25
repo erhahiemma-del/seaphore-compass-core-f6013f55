@@ -244,6 +244,7 @@ export async function persistInvestigationToOkl(
           sourcesResponded: uip.fused?.stats?.sourcesResponded ?? 0,
         }
       : null,
+    outcome: outcome ?? null,
     ingestedAt: new Date().toISOString(),
     tier: tierPct(ws.confidencePct),
   };
