@@ -440,6 +440,60 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: REVIEWED,
   },
+
+  // ── Sprint 1C — Global Fishing Watch + OSAE ────────────────────────────
+  {
+    id: "ial.gfw-vessel-evidence",
+    name: "GFW vessel identity + last position",
+    producer: "IAL",
+    description: "Identity, flag, MMSI/IMO, and last-known position collected from Global Fishing Watch.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Key Facts · vessel identity",
+      location: "src/components/copilot/briefing/ExecutiveBriefing.tsx",
+      interaction: "passive-display",
+    },
+    reviewedAt: REVIEWED,
+  },
+  {
+    id: "ial.gfw-movement-history",
+    name: "GFW AIS movement history",
+    producer: "IAL",
+    description: "90-day AIS movement events used to compute continuity.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Timeline Intelligence",
+      location: "src/components/copilot/briefing/ExecutiveBriefing.tsx",
+      interaction: "drill-in",
+    },
+    reviewedAt: REVIEWED,
+  },
+  {
+    id: "reasoning.ais-continuity-report",
+    name: "AIS Behaviour Analyzer continuity report",
+    producer: "REASONING",
+    description: "Contextualised gap analysis (weather, distance from coast, historical frequency). Never risk-scored.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Supporting Evidence · AIS continuity",
+      location: "src/components/copilot/briefing/SupportingEvidenceGroups.tsx",
+      interaction: "drill-in",
+    },
+    reviewedAt: REVIEWED,
+  },
+  {
+    id: "capability.osae-assessment",
+    name: "OSAE operational priority + narrative",
+    producer: "CAPABILITY",
+    description: "Priority (watch/monitor/act/urgent) and officer-safe narrative — the only authorised interpretation of AIS continuity.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Officer Decision Header · priority chip",
+      location: "src/components/copilot/briefing/OfficerDecisionHeader.tsx",
+      interaction: "passive-display",
+    },
+    reviewedAt: REVIEWED,
+  },
 ];
 
 export function getContractEntry(id: string): ProjectionContractEntry | undefined {
