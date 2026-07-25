@@ -7,6 +7,14 @@ export async function exportReportPptx(report: ReportPackage): Promise<Blob> {
   const pptx = new PptxGenJS();
   pptx.layout = "LAYOUT_WIDE";
 
+  // Embed provenance in the PPTX core properties. PowerPoint / Keynote
+  // surfaces these in the file inspector without opening the deck.
+  pptx.title = report.title;
+  pptx.subject = `${report.reportTypeLabel} · ${report.periodLabel}`;
+  pptx.author = report.officer;
+  pptx.company = `Seaphore MIBC ${report.engineVersion}`;
+  pptx.revision = report.engineVersion;
+
   const addFooter = (slide: PptxGenJS.Slide) => {
     slide.addText(FOOTER, {
       x: 0.4,
