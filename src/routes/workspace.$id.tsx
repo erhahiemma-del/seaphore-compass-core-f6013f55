@@ -150,6 +150,7 @@ function WorkspaceRoute() {
             <TaskPanel w={w} />
             <OklPatternsPanel w={w} />
             <MissionsPanel w={w} />
+            <HistoricalKnowledgePanel workspace={w} />
           </div>
 
 
