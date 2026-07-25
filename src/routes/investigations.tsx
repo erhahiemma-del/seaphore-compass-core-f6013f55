@@ -252,12 +252,12 @@ function InvestigationsDashboard() {
     <AppShell
       title="Investigation Dashboard"
       subtitle="Maritime Investigation Workspace · every case, every stage"
-      actions={
+    >
+      <div className="mb-3 flex justify-end">
         <Button onClick={handleNew} size="sm">
           <Plus className="mr-2 h-4 w-4" /> New investigation
         </Button>
-      }
-    >
+      </div>
       {/* KPI row 1 — volume + risk */}
       <div className="grid gap-3 md:grid-cols-4">
         <KpiCard
