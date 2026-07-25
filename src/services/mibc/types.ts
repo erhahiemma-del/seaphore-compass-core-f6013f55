@@ -95,6 +95,13 @@ export interface ReportChart {
  */
 export type ReportOrigin = "LIVE_UIP" | "INVESTIGATION" | "OPERATIONAL_RUNTIME";
 
+/**
+ * Engine version stamped onto every ReportPackage and embedded in
+ * every exported artifact (PDF/DOCX/PPTX/XLSX). Bump only when the
+ * assembly logic changes in a way that alters output structure.
+ */
+export const MIBC_ENGINE_VERSION = "2.3.1" as const;
+
 export interface ReportPackage {
   /** Stable synthetic id (not persisted). */
   id: string;
@@ -111,6 +118,9 @@ export interface ReportPackage {
 
   /** Which arm of the Operational Runtime this report was assembled from. */
   origin: ReportOrigin;
+
+  /** MIBC engine version — copied into every export's document metadata. */
+  engineVersion: string;
 
   /** intel_briefings.id from the orchestrator run that produced the source UIP(s). */
   briefingId?: string;
