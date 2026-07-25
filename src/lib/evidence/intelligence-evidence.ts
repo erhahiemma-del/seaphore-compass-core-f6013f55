@@ -17,6 +17,14 @@ import type {
   AisDarkEvidence,
 } from "@/intelligence/analyzers/AISBehaviourAnalyzer";
 import type { OsaeAssessment } from "@/services/osae";
+import type {
+  OperationalPattern,
+  AlternativeExplanation,
+  ConfidencePyramid,
+  ReasoningStep,
+  OklPatternKind,
+  RiskLevel,
+} from "@/services/okl/types";
 import type { WorkspaceEvidence } from "@/stores/workspace.store";
 
 /** Broad category — drives the filter chips in the viewer. */
