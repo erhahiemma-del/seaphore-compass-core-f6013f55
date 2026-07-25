@@ -93,6 +93,12 @@ export interface BuildReportInput {
    *   - `INVESTIGATION`        otherwise.
    */
   origin?: ReportPackage["origin"];
+  /** intel_briefings.id from the orchestrator run that seeded these UIPs. */
+  briefingId?: string;
+  /** Stable officer id (auth uid). Falls back to `officer` for display when omitted. */
+  officerId?: string;
+  /** Mission label for Executive Summary. */
+  mission?: string;
 }
 
 
