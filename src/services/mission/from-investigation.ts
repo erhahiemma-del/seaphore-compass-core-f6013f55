@@ -77,11 +77,14 @@ export function createMissionFromInvestigation(
     type: input.type,
     subjects,
     predictions: [],
+    sourceInvestigationId: w.id,
+    sourceUipId: w.sourceUipId,
     hints: [
       `Investigation ${w.id}`,
       `Case type ${w.caseType ?? "GENERIC"}`,
       `Priority ${w.priority}`,
       `Bridge reason: ${gate.reason}`,
+      ...(w.sourceUipId ? [`Source UIP ${w.sourceUipId}`] : []),
     ],
   });
 
@@ -95,7 +98,7 @@ export function createMissionFromInvestigation(
         atISO: now,
         actor: input.officer,
         action: "bridged-from-investigation",
-        note: `${gate.reason} · investigation ${w.id}`,
+        note: `${gate.reason} · investigation ${w.id}${w.sourceUipId ? ` · UIP ${w.sourceUipId}` : ""}`,
       },
     ],
   };

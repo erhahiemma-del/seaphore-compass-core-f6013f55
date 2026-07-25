@@ -175,6 +175,22 @@ export const OSAE = {
     return state.assessments.get(vesselId);
   },
 
+  /**
+   * Operational-Runtime consumer surface. Returns the OSAE assessments
+   * carried by the given Canonical UIP (populated during
+   * `buildUnifiedIntelligencePackage`), keyed by canonical entity id.
+   *
+   * This is the *sole* sanctioned way downstream operational modules
+   * (MIW, Mission Planning, MIBC) obtain OSAE judgements — never by
+   * re-invoking the analyzer or reading raw connectors.
+   */
+  assessmentsForUip(
+    uip: { readonly osae: ReadonlyArray<{ readonly entityId: string; readonly assessment: OsaeAssessment }> } | null | undefined,
+  ): ReadonlyArray<{ entityId: string; assessment: OsaeAssessment }> {
+    if (!uip) return [];
+    return uip.osae.map((o) => ({ entityId: o.entityId, assessment: o.assessment }));
+  },
+
   /** Test seam. */
   __reset(): void {
     state.reports.clear();
