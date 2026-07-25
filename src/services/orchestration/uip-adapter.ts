@@ -11,9 +11,10 @@
  * identity resolution or IFE fusion — Slice 1 activates the registry; deeper
  * canonicalisation is a downstream slice.
  */
-import type { FusedEvidence } from "./types";
+import type { FusedEvidence, EvidenceItem } from "./types";
 import type { UnifiedIntelligencePackage } from "@/services/ife/unified";
 import type { FusedEntityRecord, FusedEvidencePackage } from "@/services/ife/types";
+import type { NormalizedEvidence, CanonicalEntityRef } from "@/services/ial/types";
 
 interface AdaptInput {
   readonly fused: FusedEvidence;
