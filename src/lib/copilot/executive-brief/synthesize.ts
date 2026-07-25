@@ -779,7 +779,7 @@ export function synthesizeExecutiveBrief(args: {
     evidenceGroups: groupEvidenceForDisclosure(briefing),
     followUps: followUps.length
       ? followUps
-      : (humanResponse?.suggestedNextQuestions ?? humanResponse?.followUps ?? briefing.nextQuestions ?? []).slice(0, 4),
+      : (humanResponse?.suggestedNextQuestions ?? briefing.nextQuestions ?? []).slice(0, 4),
   };
 }
 
