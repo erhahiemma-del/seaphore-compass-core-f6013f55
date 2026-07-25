@@ -204,6 +204,10 @@ export interface InvestigationWorkspace {
   estimatedRevenueImpactUsd?: number;
   stageHistory?: Array<{ at: string; from: InvestigationStage | null; to: InvestigationStage; officer?: string; note?: string }>;
 
+  // Operational Command integration — linked artifacts owned by other services.
+  missionPlanIds?: string[];
+  oklPatternIds?: string[];
+
   // Copilot conversation transcript pointer (Copilot store owns rendering).
   conversationTurns: Array<{ id: string; at: string; role: "officer" | "copilot"; text: string; briefingId?: string }>;
 }
