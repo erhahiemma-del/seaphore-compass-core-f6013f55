@@ -940,6 +940,9 @@ function TimelineView({
                 </Button>
               )}
             </div>
+            {it.oklExplainability && (
+              <OklExplainabilityPanel explainability={it.oklExplainability} compact />
+            )}
           </div>
         </li>
       ))}
