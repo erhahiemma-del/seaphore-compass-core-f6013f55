@@ -333,6 +333,9 @@ export function ExecutiveBriefing({ brief, isAdmin, onFollowUp }: ExecutiveBrief
         </Section>
       ) : null}
 
+      {/* Section 3.5 — Identity Resolution (Sprint 1C.1) */}
+      {identityResolution ? <IdentityResolutionCard data={identityResolution} /> : null}
+
       {/* Section 4 — Relationship Intelligence */}
       {relationships.length ? (
         <Section title="Relationship Intelligence" icon={Workflow}>
