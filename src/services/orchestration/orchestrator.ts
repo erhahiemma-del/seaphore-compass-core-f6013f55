@@ -1,25 +1,38 @@
 /**
  * LAYER 2.1 — Copilot Orchestrator (control plane).
  *
- * Coordinates the entire pipeline: Intent → Scheduler → Fusion → Reasoning →
- * Briefing → Persistence → Event Bus. NEVER reasons or retrieves.
+ * Coordinates the entire pipeline: Intent → Scheduler → IAL Bridge →
+ * Identity Resolution → IFE Fusion → UIP → Reasoning → Briefing →
+ * Persistence → Event Bus. NEVER reasons or retrieves.
  *
- * Slice 1 (Canonical UIP): after fusion the orchestrator builds a Unified
- * Intelligence Package, registers it in the UIP registry, and stamps the
- * briefing's source_uip_id with the registry id so every downstream
- * capability can resolve the exact same evidence set via getUip().
+ * Slice 3 (Producer Swap): the legacy `evidence-fusion.ts` and the ad-hoc
+ * `uip-adapter.ts` are gone. Evidence now flows through the canonical
+ * pipeline:
+ *
+ *   RetrievalResult[]  (agents)
+ *     → bridgeToIal          → NormalizedEvidence[] + SourceAttribution[]
+ *     → buildUnifiedIntelligencePackage  (identity resolution + IFE fusion)
+ *     → registerUip          (canonical SSOT — every downstream module
+ *                             resolves the exact same evidence via getUip)
+ *     → projectFusedView     (compat projection for the reasoning engine
+ *                             and briefing builder)
+ *
+ * The briefing is stamped with `source_uip_id` so every downstream
+ * capability — predictions, patterns, revenue leakage, evidence explorer,
+ * OKL panels — reads the same fused package.
  */
 import { classifyIntent } from "./intent-classifier";
 import { ensureSession, appendHistory } from "./context-manager";
 import { scheduleRetrievals } from "./scheduler";
-import { fuseEvidence } from "./evidence-fusion";
+import { bridgeToIal } from "./ial-bridge";
+import { projectFusedView } from "./fused-view";
 import { reason, computeConfidenceMatrix } from "./reasoning-engine";
 import { buildBriefing } from "./briefing-builder";
 import { emitEvent } from "./event-bus";
 import { supabase as browserSupabase } from "@/integrations/supabase/client";
 import { PERF_BUDGETS } from "./constants";
 import { hashQuery, registerUip, getUip } from "@/services/ife/registry";
-import { buildUipFromOrchestration } from "./uip-adapter";
+import { buildUnifiedIntelligencePackage } from "@/services/ife/unified";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Briefing, OfficerQuery } from "./types";
 
@@ -50,17 +63,18 @@ export async function orchestrate(
     { supabase: deps.supabase },
   );
 
-  // 3. Fuse
-  const fused = fuseEvidence(results);
+  // 3. IAL boundary — normalise every agent's evidence stream into the
+  //    canonical Seaphore evidence contract.
+  const { records, sources } = bridgeToIal(results);
 
-  // 3.5 Canonical UIP — build, register, and stamp source_uip_id.
-  const queryHash = hashQuery(query.query, session.session_id);
-  const uip = buildUipFromOrchestration({
-    fused,
-    queryHash,
-    officerId: query.officer_id,
-    query: query.query,
+  // 4. Canonical IFE — identity resolution + fusion produces the UIP.
+  const uip = buildUnifiedIntelligencePackage({
+    input: { records, sources },
   });
+
+  // 4.5 Register the UIP so every downstream capability resolves the exact
+  //     same evidence set via getUip(source_uip_id).
+  const queryHash = hashQuery(query.query, session.session_id);
   const uipId = registerUip(uip, queryHash);
   const roundtrip = getUip(uipId);
   console.info("[uip] registered", {
@@ -68,6 +82,8 @@ export async function orchestrate(
     queryHash,
     records: uip.fused.stats.inputRecords,
     canonicalEntities: uip.fused.stats.canonicalEntities,
+    identityClusters: uip.identity.length,
+    contradictions: uip.fused.stats.contradictions,
     sourcesResponded: uip.fused.stats.sourcesResponded,
     retrievable: Boolean(roundtrip),
   });
@@ -75,11 +91,14 @@ export async function orchestrate(
     console.warn("[uip] REGISTRY MISS — getUip returned undefined for", uipId);
   }
 
-  // 4. Confidence matrix + reasoning
+  // 5. Compat projection for the reasoning engine + briefing builder.
+  const fused = projectFusedView(results, uip);
+
+  // 6. Confidence matrix + reasoning
   const matrix = computeConfidenceMatrix(fused);
   const assessment = await reason(intent, fused, matrix);
 
-  // 5. Build the Intelligence Contract — stamp the canonical UIP id.
+  // 7. Build the Intelligence Contract — stamp the canonical UIP id.
   const briefing: Briefing = {
     ...buildBriefing({
       query: { ...query, session_id: session.session_id },
@@ -93,7 +112,7 @@ export async function orchestrate(
     source_uip_id: uipId,
   };
 
-  // 6. Persist. When a server-side client is injected the write runs under
+  // 8. Persist. When a server-side client is injected the write runs under
   //    the officer's auth context; otherwise fall back to the browser client
   //    when it has a live session (dev-bypass paths stay silent).
   try {
