@@ -864,12 +864,14 @@ function ExecutiveBriefingView({
   humanResponse,
   ibe,
   followUps,
+  uipId,
   onFollowUp,
 }: {
   briefing: AdaptiveBriefingData;
   humanResponse: HumanResponse | null;
   ibe: NonNullable<IbeResult["ibe"]> | null;
   followUps: string[];
+  uipId: string | null;
   onFollowUp: (q: string) => void;
 }) {
   const operationalKnowledge = useMemo(
@@ -898,7 +900,6 @@ function ExecutiveBriefingView({
   );
   // Resolve the Canonical UIP that produced this briefing so the provenance
   // panel can cite the same evidence set every downstream surface uses.
-  const uipId = briefing.source_uip_id;
   const uip = useUipStore((s) => (uipId ? s.byId[uipId] : undefined));
   return (
     <>
@@ -906,6 +907,7 @@ function ExecutiveBriefingView({
       {uip && <EvidenceProvenancePanel uip={uip} />}
     </>
   );
+
 }
 
 
