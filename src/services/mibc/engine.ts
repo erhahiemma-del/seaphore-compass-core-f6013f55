@@ -916,6 +916,7 @@ export function buildReport(input: BuildReportInput): ReportPackage {
     title,
     subtitle,
     origin,
+    engineVersion: MIBC_ENGINE_VERSION,
     briefingId: input.briefingId,
     officerId: input.officerId,
     subjects,
