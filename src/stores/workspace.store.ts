@@ -134,6 +134,50 @@ export interface WorkspaceRecommendation {
   supportingEvidence?: string[];
 }
 
+// Sprint 2.6 — Investigation Outcome & Learning Loop.
+// Captured at (or before) CLOSED so OKL ingestion can persist a rich
+// OUTCOME record. OIE's HISTORICAL_OUTCOME + RECOMMENDATION_EFFECTIVENESS
+// lenses read these fields via okl_records.
+export type ResolutionStatus =
+  | "RESOLVED"
+  | "PARTIALLY_RESOLVED"
+  | "UNRESOLVED"
+  | "ESCALATED"
+  | "REFERRED";
+export type SuccessRating =
+  | "SUCCESS"
+  | "PARTIAL_SUCCESS"
+  | "FAILURE"
+  | "INCONCLUSIVE";
+export type RecommendationEffectiveness =
+  | "EFFECTIVE"
+  | "PARTIALLY_EFFECTIVE"
+  | "INEFFECTIVE"
+  | "NOT_ACTIONED";
+export interface RecommendationRating {
+  recommendationId?: string;
+  label: string;
+  effectiveness: RecommendationEffectiveness;
+  note?: string;
+}
+export interface OutcomeKpi {
+  label: string;
+  value: string;
+  note?: string;
+}
+export interface WorkspaceOutcome {
+  finalOutcome: string;
+  officerDecision: string;
+  actionTaken: string;
+  resolutionStatus: ResolutionStatus;
+  success: SuccessRating;
+  lessonsLearned: string;
+  recommendationRatings: RecommendationRating[];
+  kpis?: OutcomeKpi[];
+  recordedAt: string;
+  recordedBy: string;
+}
+
 // Investigation Notebook — support notes / findings / questions with
 // markdown, version history, and audit trail. Hypotheses, recommendations,
 // and tasks remain first-class panels but are also linkable from notebook
