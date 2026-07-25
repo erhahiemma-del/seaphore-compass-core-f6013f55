@@ -233,9 +233,9 @@ export function buildReport(input: BuildReportInput): ReportPackage {
       .sort((a, b) => (priorityRank[b] ?? 0) - (priorityRank[a] ?? 0))[0] ??
     "MEDIUM";
   const operationalStatus =
-    workspaces.some((w) => w.stage === "DECIDE" || w.stage === "SHARE")
+    workspaces.some((w) => w.stage === "DECISION" || w.stage === "REPORT")
       ? "Decision pending"
-      : workspaces.some((w) => w.stage === "INVESTIGATE")
+      : workspaces.some((w) => w.stage === "ANALYSIS" || w.stage === "EVIDENCE")
         ? "Active investigation"
         : workspaces.length > 0
           ? "Intake"
@@ -244,7 +244,7 @@ export function buildReport(input: BuildReportInput): ReportPackage {
             : "No active investigations";
   const recommendedCoA =
     workspaces.find((w) => w.recommendation)?.recommendation?.label ??
-    (uipRefsEarly[0]?.uip.osae[0]?.assessment?.recommendedAction ??
+    (uipRefsEarly[0]?.uip.osae[0]?.assessment?.summary ??
       "Officer to review Canonical UIP and register a decision.");
 
   // ── Sections ───────────────────────────────────────────────────────
