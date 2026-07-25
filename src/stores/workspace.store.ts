@@ -668,6 +668,20 @@ export const useWorkspaceStore = create<WorkspaceState>()(
             return { ...e, ...patch, versions, updatedAt: t };
           });
           return { investigations: { ...s.investigations, [id]: { ...w, notebook, updatedAt: t } } };
+        }),
+
+      removeNotebookEntry: (id, entryId) =>
+        set((s) => {
+          const w = s.investigations[id];
+          if (!w) return s;
+          return {
+            investigations: {
+              ...s.investigations,
+              [id]: { ...w, notebook: (w.notebook ?? []).filter((e) => e.id !== entryId), updatedAt: now() },
+            },
+          };
+        }),
+
       linkMission: (id, missionId, note) =>
         set((s) => {
           const w = s.investigations[id];
@@ -676,12 +690,8 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           if (existing.includes(missionId)) return s;
           const t = now();
           const tl: TimelineEvent = {
-            id: uid("tl"),
-            at: t,
-            kind: "decision",
-            label: `Mission linked: ${missionId}`,
-            detail: note,
-            refId: missionId,
+            id: uid("tl"), at: t, kind: "decision",
+            label: `Mission linked: ${missionId}`, detail: note, refId: missionId,
           };
           return {
             investigations: {
@@ -699,31 +709,13 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           if (existing.includes(patternId)) return s;
           const t = now();
           const tl: TimelineEvent = {
-            id: uid("tl"),
-            at: t,
-            kind: "recommendation",
-            label: `OKL pattern linked: ${patternId}`,
-            detail: note,
-            refId: patternId,
+            id: uid("tl"), at: t, kind: "recommendation",
+            label: `OKL pattern linked: ${patternId}`, detail: note, refId: patternId,
           };
           return {
             investigations: {
               ...s.investigations,
               [id]: { ...w, oklPatternIds: [...existing, patternId], timeline: [...w.timeline, tl], updatedAt: t },
-            },
-          };
-        }),
-
-    }),
-
-      removeNotebookEntry: (id, entryId) =>
-        set((s) => {
-          const w = s.investigations[id];
-          if (!w) return s;
-          return {
-            investigations: {
-              ...s.investigations,
-              [id]: { ...w, notebook: (w.notebook ?? []).filter((e) => e.id !== entryId), updatedAt: now() },
             },
           };
         }),
