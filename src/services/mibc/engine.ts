@@ -260,6 +260,8 @@ export function buildReport(input: BuildReportInput): ReportPackage {
       { Field: "Officer", Value: officer },
       { Field: "Officer ID", Value: input.officerId ?? "—" },
       { Field: "Generated at (UTC)", Value: generatedAt },
+      { Field: "MIBC engine version", Value: MIBC_ENGINE_VERSION },
+      { Field: "Report origin", Value: input.origin ?? "INVESTIGATION" },
       { Field: "Overall confidence", Value: `${avgConfidence}%` },
       {
         Field: "Source UIP ids",
