@@ -1,110 +1,141 @@
+/**
+ * Client-proxy tests for the Global Fishing Watch connector.
+ *
+ * The connector no longer speaks HTTP directly — all authenticated
+ * work lives in `src/lib/server/gfw.server.ts` behind a
+ * `createServerFn` in `src/lib/gfw.functions.ts`. These tests mock
+ * that server-function surface and verify the client-side contract:
+ *
+ *   • search() delegates to `gfwSearch` and never reads env
+ *   • Evidence Packages are published to OSAE
+ *   • Errors from the server function are absorbed as `null` results
+ *   • healthCheck() delegates to `gfwHealth`
+ *
+ * Server-side logic (auth, upstream HTTP, analyser wiring) is covered
+ * by the AISBehaviourAnalyzer tests below and by direct calls in
+ * production; the browser never authenticates against GFW.
+ */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/gfw.functions", () => ({
+  gfwSearch: vi.fn(),
+  gfwHealth: vi.fn(),
+}));
+
 import { GlobalFishingWatchConnector } from "./index";
 import { AISBehaviourAnalyzer } from "@/intelligence/analyzers/AISBehaviourAnalyzer";
 import { OSAE } from "@/services/osae";
+import { gfwSearch, gfwHealth } from "@/lib/gfw.functions";
 
-const originalFetch = globalThis.fetch;
-const originalKey = process.env.GLOBAL_FISHING_WATCH_API_KEY;
+const mockedSearch = gfwSearch as unknown as ReturnType<typeof vi.fn>;
+const mockedHealth = gfwHealth as unknown as ReturnType<typeof vi.fn>;
 
-function mockFetchOk(body: unknown, status = 200): void {
-  globalThis.fetch = vi.fn(async () => new Response(JSON.stringify(body), { status })) as unknown as typeof fetch;
-}
-
-describe("GlobalFishingWatchConnector", () => {
+describe("GlobalFishingWatchConnector (client proxy)", () => {
   let connector: GlobalFishingWatchConnector;
 
   beforeEach(() => {
-    process.env.GLOBAL_FISHING_WATCH_API_KEY = "test-key";
     connector = new GlobalFishingWatchConnector();
     connector.__clearCache();
     OSAE.__reset();
+    mockedSearch.mockReset();
+    mockedHealth.mockReset();
   });
   afterEach(() => {
-    globalThis.fetch = originalFetch;
-    if (originalKey === undefined) delete process.env.GLOBAL_FISHING_WATCH_API_KEY;
-    else process.env.GLOBAL_FISHING_WATCH_API_KEY = originalKey;
+    vi.restoreAllMocks();
   });
 
   it("declares tier-1 AIS metadata and never claims risk semantics", () => {
     expect(connector.name).toBe("global-fishing-watch");
     expect(connector.category).toBe("AIS");
     expect(connector.authMethod).toBe("api_key");
-    // Intelligence rule: the connector's own description must not classify risk.
     expect(connector.description.toLowerCase()).not.toMatch(/\b(high|medium|low) risk\b/);
   });
 
-  it("healthCheck reports Authentication Failed when API rejects the key", async () => {
-    mockFetchOk({}, 401);
+  it("registers unconditionally — never inspects env on the client", () => {
+    // The connector is intentionally credential-agnostic in the browser.
+    expect(connector.hasCredentials()).toBe(true);
+  });
+
+  it("healthCheck delegates to the server function and surfaces auth failures", async () => {
+    mockedHealth.mockResolvedValueOnce({
+      status: "down",
+      latencyMs: 42,
+      message: "Authentication Failed",
+    });
     const h = await connector.healthCheck();
+    expect(mockedHealth).toHaveBeenCalledTimes(1);
     expect(h.status).toBe("down");
     expect(h.message).toMatch(/Authentication Failed/);
   });
 
-  it("healthCheck reports unavailable when API is not credentialed", async () => {
-    delete process.env.GLOBAL_FISHING_WATCH_API_KEY;
+  it("healthCheck surfaces missing credentials without touching env on the client", async () => {
+    mockedHealth.mockResolvedValueOnce({
+      status: "down",
+      latencyMs: 0,
+      message: "GLOBAL_FISHING_WATCH_API_KEY not configured",
+    });
     const h = await connector.healthCheck();
     expect(h.status).toBe("down");
     expect(h.message).toMatch(/not configured/);
   });
 
-  it("caches vessel search results (24h)", async () => {
-    const spy = vi.fn(async () =>
-      new Response(JSON.stringify({ entries: [{ id: "v1", imo: "9074729", shipname: "MV Test", flag: "NG" }] }), { status: 200 }),
-    );
-    globalThis.fetch = spy as unknown as typeof fetch;
-    // Second call: movement events (empty).
-    // For simplicity, both calls return the vessel body, then movement path returns entries=[]
-    let call = 0;
-    globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
-      call += 1;
-      const url = String(input);
-      if (url.includes("/vessels/search")) {
-        return new Response(JSON.stringify({ entries: [{ id: "v1", imo: "9074729", shipname: "MV Test", flag: "NG" }] }), { status: 200 });
-      }
-      return new Response(JSON.stringify({ entries: [] }), { status: 200 });
-    }) as unknown as typeof fetch;
+  it("caches Evidence Packages by query — no duplicate server calls", async () => {
+    mockedSearch.mockResolvedValue({
+      package: {
+        vessel: { vesselId: "v1", imo: "9074729", mmsi: null, callSign: null, flag: "NG", name: "MV Test" },
+        lastPosition: null,
+        movementHistory: [],
+        continuityReport: AISBehaviourAnalyzer.analyse({ vesselId: "v1", events: [] }),
+        evidenceUrl: "https://globalfishingwatch.org/vessel-search/vessels/v1",
+      },
+    });
     await connector.search("MV Test");
-    const before = call;
     await connector.search("MV Test");
-    // Vessel search cached → total calls should NOT double from search endpoint.
-    expect(call - before).toBeLessThanOrEqual(1);
+    expect(mockedSearch).toHaveBeenCalledTimes(1);
   });
 
-  it("normalize never throws on malformed input", () => {
-    expect(() => connector.normalize({ sourceRef: "junk" })).not.toThrow();
-    expect(connector.normalize({ sourceRef: "junk" }).entityId).toBe("");
-  });
-
-  it("search publishes AIS continuity evidence to OSAE (but never assigns risk)", async () => {
-    globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
-      const url = String(input);
-      if (url.includes("/vessels/search")) {
-        return new Response(
-          JSON.stringify({ entries: [{ id: "v1", imo: "9074729", shipname: "MV Test" }] }),
-          { status: 200 },
-        );
-      }
-      // Two positions with a 9-hour gap.
-      return new Response(
-        JSON.stringify({
-          entries: [
-            { start: "2026-01-01T00:00:00Z", position: { lat: 6.4, lon: 3.4 }, weather: "clear", nearestPort: "Lagos", distanceFromPortNm: 43 },
-            { start: "2026-01-01T09:00:00Z", position: { lat: 6.5, lon: 3.5 }, weather: "clear" },
-          ],
-        }),
-        { status: 200 },
-      );
-    }) as unknown as typeof fetch;
+  it("publishes AIS continuity evidence to OSAE (connector never assigns risk)", async () => {
+    const continuityReport = AISBehaviourAnalyzer.analyse({
+      vesselId: "v1",
+      events: [
+        { timestamp: "2026-01-01T00:00:00Z", latitude: 6.4, longitude: 3.4, weather: "clear", nearestPort: "Lagos", distanceFromPortNm: 43 },
+        { timestamp: "2026-01-01T09:00:00Z", latitude: 6.5, longitude: 3.5 },
+      ],
+    });
+    mockedSearch.mockResolvedValueOnce({
+      package: {
+        vessel: { vesselId: "v1", imo: "9074729", mmsi: null, callSign: null, flag: null, name: "MV Test" },
+        lastPosition: null,
+        movementHistory: [],
+        continuityReport,
+        evidenceUrl: "https://globalfishingwatch.org/vessel-search/vessels/v1",
+      },
+    });
 
     const result = await connector.search("MV Test");
     expect(result).not.toBeNull();
     expect(result!.continuityReport.gapsDetected).toBe(1);
     const assessment = OSAE.getAssessment("v1");
     expect(assessment).toBeDefined();
-    // Rule: OSAE — not the connector — assigns priority. The connector output has no risk field.
     expect((result as unknown as Record<string, unknown>).risk).toBeUndefined();
-    // Officer-safe narrative must never say "high risk".
-    expect(result!.continuityReport.darkEvents[0].explanation.toLowerCase()).not.toMatch(/\b(high|medium|low) risk\b/);
+    expect(result!.continuityReport.darkEvents[0].explanation.toLowerCase()).not.toMatch(
+      /\b(high|medium|low) risk\b/,
+    );
+  });
+
+  it("returns null when the server function reports missing credentials", async () => {
+    mockedSearch.mockResolvedValueOnce({
+      package: null,
+      error: { code: "GFW_CREDENTIALS_MISSING", message: "Missing GLOBAL_FISHING_WATCH_API_KEY" },
+    });
+    const result = await connector.search("MV Test");
+    expect(result).toBeNull();
+    expect(OSAE.getAssessment("v1")).toBeUndefined();
+  });
+
+  it("normalize never throws on malformed input", () => {
+    expect(() => connector.normalize({ sourceRef: "junk" })).not.toThrow();
+    expect(connector.normalize({ sourceRef: "junk" }).entityId).toBe("");
   });
 });
 
