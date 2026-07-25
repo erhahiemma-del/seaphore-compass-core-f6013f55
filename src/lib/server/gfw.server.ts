@@ -173,7 +173,11 @@ export async function runGfwSearch(query: string): Promise<GfwEvidencePackage | 
   const apiKey = readApiKey();
   if (!apiKey) throw new GfwCredentialsMissingError();
 
-  const searchRes = await httpGet<{ entries?: unknown[] }>(apiKey, SEARCH_PATH, { query: q });
+  const searchRes = await httpGet<{ entries?: unknown[] }>(apiKey, SEARCH_PATH, [
+    ["query", q],
+    ["datasets[0]", VESSEL_IDENTITY_DATASET],
+    ["limit", "5"],
+  ]);
   if (!searchRes.ok) {
     if (searchRes.status === 401 || searchRes.status === 403) {
       throw new GfwAuthError(searchRes.message);
@@ -184,10 +188,15 @@ export async function runGfwSearch(query: string): Promise<GfwEvidencePackage | 
   const vessel = parseVessel(first, q);
   if (!vessel) return null;
 
-  const eventsRes = await httpGet<{ entries?: unknown[] }>(apiKey, EVENTS_PATH, {
-    vessels: vessel.vesselId,
-    types: "port_visit,gap,fishing,encounter",
-  });
+  const eventsRes = await httpGet<{ entries?: unknown[] }>(apiKey, EVENTS_PATH, [
+    ["vessels[0]", vessel.vesselId],
+    ["datasets[0]", EVENTS_DATASET],
+    ["types[0]", "gap"],
+    ["types[1]", "port_visit"],
+    ["types[2]", "fishing"],
+    ["types[3]", "encounter"],
+    ["limit", "50"],
+  ]);
   const rawEntries =
     eventsRes.ok && Array.isArray(eventsRes.body.entries) ? eventsRes.body.entries : [];
   const events = parseMovementEvents(rawEntries);
