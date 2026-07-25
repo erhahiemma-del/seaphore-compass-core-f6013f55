@@ -146,6 +146,7 @@ function WorkspaceRoute() {
           <div className="space-y-4">
             <EvidencePanel w={w} />
             <TaskPanel w={w} />
+            <OklPatternsPanel w={w} />
             <MissionsPanel w={w} />
           </div>
 
