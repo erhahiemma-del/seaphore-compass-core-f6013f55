@@ -95,8 +95,10 @@ export class GlobalFishingWatchConnector implements ConnectorInterface {
     const pkg = response.package;
     this.cache.set(cacheKey, { value: pkg, expiresAt: Date.now() + CACHE_TTL_MS });
 
-    // OSAE receives the sanitised evidence. Priority is OSAE's call.
-    if (pkg) {
+    // OSAE receives the sanitised evidence — but ONLY when the
+    // identity is confirmed. Ambiguous / low-confidence matches must
+    // wait for the officer to confirm the intended vessel.
+    if (pkg && !pkg.requiresConfirmation) {
       OSAE.publishAisContinuity(pkg.continuityReport);
     }
     return pkg;

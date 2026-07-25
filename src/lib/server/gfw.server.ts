@@ -25,10 +25,12 @@ import {
   type AisMovementEvent,
 } from "@/intelligence/analyzers/AISBehaviourAnalyzer";
 import type {
+  GfwCandidate,
   GfwEvidencePackage,
   GfwHealthPayload,
   GfwVesselIdentity,
 } from "@/connectors/global-fishing-watch/types";
+import { selectIdentity } from "@/intelligence/matching/identity-confidence";
 
 const BASE_URL = "https://gateway.api.globalfishingwatch.org";
 const SEARCH_PATH = "/v3/vessels/search";
@@ -95,20 +97,41 @@ async function httpGet<T>(
 function parseVessel(entry: unknown, fallbackQuery: string): GfwVesselIdentity | null {
   if (!entry || typeof entry !== "object") return null;
   const r = entry as Record<string, unknown>;
-  const self = Array.isArray(r.selfReportedInfo) && r.selfReportedInfo.length
-    ? (r.selfReportedInfo[0] as Record<string, unknown>)
-    : {};
-  const registry = Array.isArray(r.registryInfo) && r.registryInfo.length
-    ? (r.registryInfo[0] as Record<string, unknown>)
-    : {};
+  const selfArr = Array.isArray(r.selfReportedInfo)
+    ? (r.selfReportedInfo as Record<string, unknown>[])
+    : [];
+  const registryArr = Array.isArray(r.registryInfo)
+    ? (r.registryInfo as Record<string, unknown>[])
+    : [];
+  const self = selfArr[0] ?? {};
+  const registry = registryArr[0] ?? {};
   const vesselId = (self.id as string) ?? (registry.id as string) ?? (r.id as string) ?? fallbackQuery;
+
+  // Aliases: every distinct shipname across self-reported + registry
+  // beyond the primary. Historical names: `registryOwners`/`priorNames`
+  // when present (GFW exposes these on the identity object).
+  const primary = ((self.shipname as string) ?? (registry.shipname as string) ?? null) || null;
+  const aliasSet = new Set<string>();
+  for (const s of [...selfArr, ...registryArr]) {
+    const n = typeof s.shipname === "string" ? (s.shipname as string) : null;
+    if (n && n !== primary) aliasSet.add(n);
+  }
+  const priorNames = Array.isArray(r.priorNames)
+    ? (r.priorNames as unknown[]).filter((v): v is string => typeof v === "string")
+    : [];
+
+  const matchFields = typeof r.matchFields === "string" ? (r.matchFields as string) : null;
+
   return {
     vesselId: String(vesselId),
     imo: (self.imo as string) ?? (registry.imo as string) ?? null,
     mmsi: (self.ssvid as string) ?? (registry.ssvid as string) ?? null,
     callSign: (self.callsign as string) ?? (registry.callsign as string) ?? null,
     flag: (self.flag as string) ?? (registry.flag as string) ?? null,
-    name: (self.shipname as string) ?? (registry.shipname as string) ?? null,
+    name: primary,
+    aliases: aliasSet.size ? [...aliasSet] : undefined,
+    historicalNames: priorNames.length ? priorNames : undefined,
+    providerMatchFields: matchFields,
   };
 }
 
@@ -173,6 +196,13 @@ export class GfwUpstreamError extends Error {
  * Perform vessel search + movement history + AIS continuity analysis
  * and return a sanitised Evidence Package. Reads credentials from
  * server env only.
+ *
+ * Identity Confidence: every candidate is scored by
+ * `selectIdentity(...)`. When the top score is below the
+ * auto-select threshold or a runner-up sits within the tie band,
+ * `requiresConfirmation` is set to `true` and the movement/continuity
+ * fetch is skipped — the officer must confirm the intended vessel
+ * before OSAE receives evidence.
  */
 export async function runGfwSearch(query: string): Promise<GfwEvidencePackage | null> {
   const q = String(query ?? "").trim();
@@ -192,17 +222,57 @@ export async function runGfwSearch(query: string): Promise<GfwEvidencePackage | 
     throw new GfwUpstreamError(searchRes.message, searchRes.status);
   }
   const entries = Array.isArray(searchRes.body.entries) ? searchRes.body.entries : [];
-  // Prefer the entry with the richest identity (IMO > MMSI > any).
-  const scored = entries
+  const candidates = entries
     .map((e) => parseVessel(e, q))
-    .filter((v): v is GfwVesselIdentity => v !== null)
-    .sort((a, b) => {
-      const sa = (a.imo ? 3 : 0) + (a.mmsi ? 2 : 0) + (a.flag ? 1 : 0);
-      const sb = (b.imo ? 3 : 0) + (b.mmsi ? 2 : 0) + (b.flag ? 1 : 0);
-      return sb - sa;
-    });
-  const vessel = scored[0] ?? null;
-  if (!vessel) return null;
+    .filter((v): v is GfwVesselIdentity => v !== null);
+
+  if (candidates.length === 0) return null;
+
+  const selection = selectIdentity(
+    candidates.map((v) => ({
+      id: v.vesselId,
+      name: v.name,
+      imo: v.imo,
+      mmsi: v.mmsi,
+      callSign: v.callSign,
+      flag: v.flag,
+      aliases: v.aliases,
+      historicalNames: v.historicalNames,
+      providerMatchFields: v.providerMatchFields,
+      _vessel: v,
+    })),
+    { query: q },
+  );
+
+  const vessel =
+    (selection.selected as (GfwVesselIdentity & { _vessel?: GfwVesselIdentity }) | null)?._vessel ??
+    null;
+  if (!vessel || !selection.confidence) return null;
+
+  const alternates: GfwCandidate[] = selection.alternates.map((a) => ({
+    vessel: (a.candidate as unknown as { _vessel: GfwVesselIdentity })._vessel,
+    confidence: a.confidence,
+  }));
+
+  const evidenceUrl = `https://globalfishingwatch.org/vessel-search/vessels/${encodeURIComponent(vessel.vesselId)}`;
+
+  // Ambiguous: skip the movement fetch. Officer must confirm first.
+  if (selection.requiresConfirmation) {
+    return {
+      vessel,
+      lastPosition: null,
+      movementHistory: [],
+      continuityReport: AISBehaviourAnalyzer.analyse({
+        vesselId: vessel.vesselId,
+        events: [],
+      }),
+      evidenceUrl,
+      identityConfidence: selection.confidence,
+      alternates,
+      requiresConfirmation: true,
+      ambiguityReason: selection.ambiguityReason,
+    };
+  }
 
   const eventsRes = await httpGet<{ entries?: unknown[] }>(apiKey, EVENTS_PATH, [
     ["vessels[0]", vessel.vesselId],
@@ -235,7 +305,11 @@ export async function runGfwSearch(query: string): Promise<GfwEvidencePackage | 
       : null,
     movementHistory: events,
     continuityReport,
-    evidenceUrl: `https://globalfishingwatch.org/vessel-search/vessels/${encodeURIComponent(vessel.vesselId)}`,
+    evidenceUrl,
+    identityConfidence: selection.confidence,
+    alternates,
+    requiresConfirmation: false,
+    ambiguityReason: "none",
   };
 }
 
