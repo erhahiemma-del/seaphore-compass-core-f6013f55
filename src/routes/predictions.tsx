@@ -5,13 +5,13 @@
  * Never make a prediction without evidence.
  */
 import { useEffect, useMemo } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PredictionsPanel } from "@/components/pie/PredictionsPanel";
 import { usePieStore } from "@/services/pie";
-import type { NormalizedEvidence } from "@/services/ial/types";
+import { useUipStore } from "@/stores/uip.store";
 import { Radar } from "lucide-react";
 
 export const Route = createFileRoute("/predictions")({
