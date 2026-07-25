@@ -22,7 +22,7 @@ export interface BuildReportInput {
   workspaces: InvestigationWorkspace[];
   officer: string;
   /** Mission plans available in the store — engine filters to those linked to sourced workspaces. */
-  missionPlans?: MissionPlan[];
+  missionPlans?: ReadonlyArray<MissionPlan>;
   /** Optional pre-computed OKL insights per workspace, keyed by workspace id. */
   oklInsights?: Record<
     string,

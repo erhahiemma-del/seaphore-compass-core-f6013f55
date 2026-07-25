@@ -87,7 +87,7 @@ function BriefingCentre() {
         period,
         workspaces: sourceWorkspaces,
         officer: "Officer on duty",
-        missionPlans: useMissionStore.getState().plans as never,
+        missionPlans: useMissionStore.getState().plans,
       });
       setReport(pkg);
       toast.success(`${REPORT_TYPE_LABEL[reportType]} assembled`, {
