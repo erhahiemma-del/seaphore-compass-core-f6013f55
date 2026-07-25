@@ -719,6 +719,21 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: REVIEWED,
   },
+  {
+    id: "capability.okl-workspace-drilldown",
+    name: "OKL Patterns Panel · Investigation Workspace",
+    producer: "OKL",
+    description:
+      "Dedicated panel inside the Maritime Investigation Workspace that surfaces every OKL pattern linked to the case with full drill-down: risk level chip, 5-level Confidence Pyramid (identity/evidence/fusion/pattern/recommendation with tier and explanation), reasoning trace, supporting evidence ids, contradictory evidence ids, source connectors, alternative benign explanations, and historical context. Every recommended action is officer-approval-gated: Approve creates a workspace task (sourceCommand okl:rec:<id>) with urgency-mapped priority AND records an immutable decision citing rationale/confidence/evidence ids AND emits a timeline event; Reject records a decision (detail contains okl:reject:<id>) AND emits a timeline event. A Sync OKL control runs auto-ingest on demand and reports the delta. A Drill-down link opens the Intelligence Evidence Explorer scoped to the investigation and pattern.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Investigation Workspace · Operational Knowledge panel",
+      location: "src/routes/workspace.$id.tsx",
+      component: "src/components/investigation/OklPatternsPanel.tsx",
+      interaction: "action",
+    },
+    reviewedAt: REVIEWED,
+  },
 ];
 
 

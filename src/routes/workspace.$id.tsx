@@ -43,6 +43,7 @@ import {
 } from "@/stores/workspace.store";
 import { AskCopilotDialog } from "@/components/ai/ask-copilot-dialog";
 import { MissionsPanel } from "@/components/investigation/MissionsPanel";
+import { OklPatternsPanel } from "@/components/investigation/OklPatternsPanel";
 
 
 export const Route = createFileRoute("/workspace/$id")({
@@ -145,6 +146,7 @@ function WorkspaceRoute() {
           <div className="space-y-4">
             <EvidencePanel w={w} />
             <TaskPanel w={w} />
+            <OklPatternsPanel w={w} />
             <MissionsPanel w={w} />
           </div>
 
