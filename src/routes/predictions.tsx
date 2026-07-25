@@ -15,6 +15,9 @@ import { useUipStore } from "@/stores/uip.store";
 import { Radar } from "lucide-react";
 
 export const Route = createFileRoute("/predictions")({
+  validateSearch: (raw: Record<string, unknown>) => ({
+    uip: typeof raw.uip === "string" ? raw.uip : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Predictive Intelligence · Seaphore" },
