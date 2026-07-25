@@ -26,6 +26,7 @@ import type {
   RiskLevel,
 } from "@/services/okl/types";
 import type { WorkspaceEvidence } from "@/stores/workspace.store";
+import type { NormalizedEvidence } from "@/services/ial/types";
 
 /** Broad category — drives the filter chips in the viewer. */
 export type EvidenceType =
