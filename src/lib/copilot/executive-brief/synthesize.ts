@@ -688,6 +688,58 @@ export function buildIdentityResolutionSection<C extends IdentityCandidate>(
   };
 }
 
+/* ─────────────────────── AIS continuity section ─────────────────────── */
+
+function priorityByRange(
+  assessments: PerEventAssessment[],
+  startAt: string,
+  endAt: string,
+): PerEventAssessment | undefined {
+  return assessments.find((a) => a.startAt === startAt && a.endAt === endAt);
+}
+
+export function buildAisContinuitySection(
+  report: AisContinuityReport,
+  osae?: OsaeAssessment,
+): AisContinuitySection {
+  const timeline: AisInterruptionTimelineItem[] = report.darkEvents.map((ev) => {
+    const match = osae ? priorityByRange(osae.eventAssessments, ev.startAt, ev.endAt) : undefined;
+    return {
+      startAt: ev.startAt,
+      endAt: ev.endAt,
+      durationHours: ev.durationHours,
+      kind: ev.kind,
+      startLabel:
+        ev.nearestPort && typeof ev.distanceFromPortNm === "number"
+          ? `${Math.round(ev.distanceFromPortNm)}nm from ${ev.nearestPort}`
+          : (ev.nearestPort ?? null),
+      endLabel: ev.nearestPortEnd ?? null,
+      startLocation: ev.startLocation,
+      endLocation: ev.endLocation,
+      confidence: ev.confidence,
+      priority: match?.priority,
+      rationale: match?.rationale,
+      explanation: ev.explanation,
+    };
+  });
+  const coverageUncertainCount = report.darkEvents.filter(
+    (d) => d.kind === "coverage-uncertain",
+  ).length;
+  return {
+    vesselId: report.vesselId,
+    windowStart: report.windowStart,
+    windowEnd: report.windowEnd,
+    totalInterruptions: report.totalInterruptions,
+    longestInterruptionHours: report.longestInterruptionHours,
+    coverageUncertainCount,
+    overallPriority: osae?.priority,
+    overallSummary: osae?.summary,
+    timeline,
+    patterns: report.patterns,
+    evidenceCitation: "Global Fishing Watch (AIS events)",
+  };
+}
+
 /* ───────────────────────────── entry ─────────────────────────── */
 
 export function synthesizeExecutiveBrief(args: {
@@ -696,8 +748,18 @@ export function synthesizeExecutiveBrief(args: {
   ibe: IbeResult["ibe"] | null | undefined;
   followUps: string[];
   identitySelection?: IdentitySelection<IdentityCandidate>;
+  aisContinuityReport?: AisContinuityReport;
+  osaeAssessment?: OsaeAssessment;
 }): ExecutiveBrief {
-  const { briefing, humanResponse, ibe, followUps, identitySelection } = args;
+  const {
+    briefing,
+    humanResponse,
+    ibe,
+    followUps,
+    identitySelection,
+    aisContinuityReport,
+    osaeAssessment,
+  } = args;
   return {
     executiveSummary: buildExecutiveSummary(briefing, humanResponse),
     confidence: buildConfidencePanel(briefing, ibe),
@@ -705,6 +767,9 @@ export function synthesizeExecutiveBrief(args: {
     keyFacts: buildKeyFacts(briefing),
     identityResolution: identitySelection
       ? buildIdentityResolutionSection(identitySelection)
+      : undefined,
+    aisContinuity: aisContinuityReport
+      ? buildAisContinuitySection(aisContinuityReport, osaeAssessment)
       : undefined,
     relationships: buildRelationshipNodes(briefing),
     timeline: buildTimelineEvents(briefing),
@@ -714,7 +779,7 @@ export function synthesizeExecutiveBrief(args: {
     evidenceGroups: groupEvidenceForDisclosure(briefing),
     followUps: followUps.length
       ? followUps
-      : (humanResponse?.suggestedNextQuestions ?? briefing.nextQuestions ?? []).slice(0, 4),
+      : (humanResponse?.suggestedNextQuestions ?? humanResponse?.followUps ?? briefing.nextQuestions ?? []).slice(0, 4),
   };
 }
 
