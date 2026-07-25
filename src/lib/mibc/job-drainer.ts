@@ -114,12 +114,16 @@ export function useReportJobDrainer(enabled = true): void {
               artifactPath: path,
               summary: {
                 reportId: pkg.id,
+                origin: pkg.origin,
                 overallConfidence: pkg.overallConfidence,
                 sections: pkg.sections.length,
                 workspaces: workspaces.length,
+                canonicalUips: pkg.sourceUipIds.length,
+                missingUips: batch.missing.length,
               },
             },
           });
+
         } catch (err) {
           await fail({
             data: {
