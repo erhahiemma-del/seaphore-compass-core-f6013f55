@@ -25,6 +25,7 @@ import type {
   AisPattern,
 } from "@/intelligence/analyzers/AISBehaviourAnalyzer";
 import type { OsaeAssessment, PerEventAssessment } from "@/services/osae";
+import type { OperationalKnowledgePackage } from "@/services/okl";
 import { sanitizeText } from "./sanitize";
 
 export type StatusTone = "positive" | "warning" | "critical" | "neutral";
@@ -186,6 +187,13 @@ export interface ExecutiveBrief {
   keyFacts: KeyFact[];
   identityResolution?: IdentityResolutionSection;
   aisContinuity?: AisContinuitySection;
+  /**
+   * Operational Knowledge Layer package — detected operational patterns
+   * and evidence-backed recommendations with the full 5-level Confidence
+   * Pyramid. Rendered as its own section in the Executive Brief so
+   * officers see OKL output alongside every other intelligence surface.
+   */
+  operationalKnowledge?: OperationalKnowledgePackage;
   relationships: RelationshipNode[];
   timeline: TimelineEvent[];
   risks: RiskCheck[];
@@ -750,6 +758,7 @@ export function synthesizeExecutiveBrief(args: {
   identitySelection?: IdentitySelection<IdentityCandidate>;
   aisContinuityReport?: AisContinuityReport;
   osaeAssessment?: OsaeAssessment;
+  operationalKnowledge?: OperationalKnowledgePackage;
 }): ExecutiveBrief {
   const {
     briefing,
@@ -759,6 +768,7 @@ export function synthesizeExecutiveBrief(args: {
     identitySelection,
     aisContinuityReport,
     osaeAssessment,
+    operationalKnowledge,
   } = args;
   return {
     executiveSummary: buildExecutiveSummary(briefing, humanResponse),
@@ -771,6 +781,7 @@ export function synthesizeExecutiveBrief(args: {
     aisContinuity: aisContinuityReport
       ? buildAisContinuitySection(aisContinuityReport, osaeAssessment)
       : undefined,
+    operationalKnowledge,
     relationships: buildRelationshipNodes(briefing),
     timeline: buildTimelineEvents(briefing),
     risks: buildRiskChecklist(briefing),
