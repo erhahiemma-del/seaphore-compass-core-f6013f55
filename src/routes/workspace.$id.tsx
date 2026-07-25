@@ -44,6 +44,8 @@ import {
 import { AskCopilotDialog } from "@/components/ai/ask-copilot-dialog";
 import { MissionsPanel } from "@/components/investigation/MissionsPanel";
 import { OklPatternsPanel } from "@/components/investigation/OklPatternsPanel";
+import { HistoricalKnowledgePanel } from "@/components/okl/HistoricalKnowledgePanel";
+import { useOklAutoPersistOnClose } from "@/services/okl/use-okl-auto-persist";
 
 
 export const Route = createFileRoute("/workspace/$id")({
@@ -90,6 +92,8 @@ function WorkspaceRoute() {
   useMemo(() => {
     if (w && useWorkspaceStore.getState().activeId !== id) setActive(id);
   }, [id, w, setActive]);
+  // Sprint 2.4 — auto-persist to OKL on close.
+  useOklAutoPersistOnClose(w ?? undefined);
 
   if (!w) return null;
 
@@ -148,6 +152,7 @@ function WorkspaceRoute() {
             <TaskPanel w={w} />
             <OklPatternsPanel w={w} />
             <MissionsPanel w={w} />
+            <HistoricalKnowledgePanel workspace={w} />
           </div>
 
 

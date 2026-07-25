@@ -1408,6 +1408,128 @@ export type Database = {
         }
         Relationships: []
       }
+      okl_ingests: {
+        Row: {
+          briefing_id: string | null
+          created_at: string
+          decision_count: number
+          entity_count: number
+          id: string
+          investigation_id: string
+          investigation_title: string | null
+          officer_id: string | null
+          officer_name: string | null
+          overall_confidence: number | null
+          overall_risk: string | null
+          package_id: string
+          pattern_count: number
+          snapshot: Json
+          source_uip_id: string
+          version: number
+        }
+        Insert: {
+          briefing_id?: string | null
+          created_at?: string
+          decision_count?: number
+          entity_count?: number
+          id?: string
+          investigation_id: string
+          investigation_title?: string | null
+          officer_id?: string | null
+          officer_name?: string | null
+          overall_confidence?: number | null
+          overall_risk?: string | null
+          package_id: string
+          pattern_count?: number
+          snapshot: Json
+          source_uip_id: string
+          version?: number
+        }
+        Update: {
+          briefing_id?: string | null
+          created_at?: string
+          decision_count?: number
+          entity_count?: number
+          id?: string
+          investigation_id?: string
+          investigation_title?: string | null
+          officer_id?: string | null
+          officer_name?: string | null
+          overall_confidence?: number | null
+          overall_risk?: string | null
+          package_id?: string
+          pattern_count?: number
+          snapshot?: Json
+          source_uip_id?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      okl_records: {
+        Row: {
+          briefing_id: string | null
+          confidence: number | null
+          created_at: string
+          detail: string | null
+          entity_id: string | null
+          entity_kind: string | null
+          entity_label: string | null
+          id: string
+          ingest_id: string
+          investigation_id: string
+          kind: string
+          label: string | null
+          pattern_kind: string | null
+          payload: Json
+          risk_level: string | null
+          source_uip_id: string
+        }
+        Insert: {
+          briefing_id?: string | null
+          confidence?: number | null
+          created_at?: string
+          detail?: string | null
+          entity_id?: string | null
+          entity_kind?: string | null
+          entity_label?: string | null
+          id?: string
+          ingest_id: string
+          investigation_id: string
+          kind: string
+          label?: string | null
+          pattern_kind?: string | null
+          payload?: Json
+          risk_level?: string | null
+          source_uip_id: string
+        }
+        Update: {
+          briefing_id?: string | null
+          confidence?: number | null
+          created_at?: string
+          detail?: string | null
+          entity_id?: string | null
+          entity_kind?: string | null
+          entity_label?: string | null
+          id?: string
+          ingest_id?: string
+          investigation_id?: string
+          kind?: string
+          label?: string | null
+          pattern_kind?: string | null
+          payload?: Json
+          risk_level?: string | null
+          source_uip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "okl_records_ingest_id_fkey"
+            columns: ["ingest_id"]
+            isOneToOne: false
+            referencedRelation: "okl_ingests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orchestration_events: {
         Row: {
           created_at: string
