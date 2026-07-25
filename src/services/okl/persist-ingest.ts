@@ -192,6 +192,20 @@ export async function persistInvestigationToOkl(
     });
   }
 
+  // RECOMMENDATIONS ---------------------------------------------------
+  if (ws.recommendation) {
+    records.push({
+      kind: "RECOMMENDATION",
+      label: ws.recommendation.label,
+      detail: ws.recommendation.rationale ?? null,
+      payload: {
+        supportingEvidence: ws.recommendation.supportingEvidence ?? [],
+      },
+    });
+  }
+
+
+
 
   const snapshot = {
     workspace: {
