@@ -288,13 +288,16 @@ export function buildReport(input: BuildReportInput): ReportPackage {
   });
 
   // Intelligence Assessment — structured operational summary.
+  // Watchlist / sanctions hits — surfaced by canonical UIP entities whose
+  // grade or provenance flagged sanctions. We rely on the fused entity
+  // grade rather than a bespoke OSAE field so this stays capability-safe
+  // as OSAE evolves.
   const watchlistHits = uipRefsEarly.reduce(
     (n, r) =>
       n +
-      r.uip.osae.reduce(
-        (m, o) => m + (o.assessment?.sanctions?.matches?.length ?? 0),
-        0,
-      ),
+      r.uip.fused.canonical.filter(
+        (c) => (c.grade ?? "").toUpperCase() === "SANCTIONED",
+      ).length,
     0,
   );
   const complianceStatus =
