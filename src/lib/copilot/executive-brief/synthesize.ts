@@ -684,8 +684,3 @@ export function synthesizeExecutiveBrief(args: {
 
 // Re-export for convenience in the renderer.
 export type { EvidenceCardData, EvidenceGrade };
-  };
-}
-
-// Re-export for convenience in the renderer.
-export type { EvidenceCardData, EvidenceGrade };
