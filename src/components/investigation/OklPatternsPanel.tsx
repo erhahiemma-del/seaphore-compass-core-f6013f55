@@ -61,6 +61,16 @@ export function OklPatternsPanel({ w }: { w: InvestigationWorkspace }) {
   const addTask = useWorkspaceStore((s) => s.addTask);
   const addDecision = useWorkspaceStore((s) => s.addDecision);
   const addTimelineEvent = useWorkspaceStore((s) => s.addTimelineEvent);
+  // Resolve the canonical UIP for this workspace: prefer an explicit
+  // linkage (workspace.sourceUipId), otherwise fall back to the latest
+  // registered UIP the officer generated in this session. Demo fixtures
+  // are never consulted.
+  const uip = useUipStore((s) => {
+    const linked = (w as unknown as { sourceUipId?: string }).sourceUipId;
+    if (linked && s.byId[linked]) return s.byId[linked];
+    const latestId = s.order[0];
+    return latestId ? s.byId[latestId] : undefined;
+  });
 
   const linkedIds = useMemo(
     () => new Set(w.oklPatternIds ?? []),
@@ -68,13 +78,13 @@ export function OklPatternsPanel({ w }: { w: InvestigationWorkspace }) {
   );
 
   const allPatterns = useMemo(() => {
+    if (!uip) return [] as OperationalPattern[];
     const pkg = analyzeOperationalKnowledge({
-      uip: DEMO_UIP,
-      historical: DEMO_HISTORICAL,
-      investigations: DEMO_INVESTIGATIONS,
+      uip,
+      rawEvidence: uip.rawEvidence,
     });
     return pkg.patterns;
-  }, []);
+  }, [uip]);
 
   const patterns = useMemo(
     () => allPatterns.filter((p) => linkedIds.has(p.id)),
@@ -82,11 +92,14 @@ export function OklPatternsPanel({ w }: { w: InvestigationWorkspace }) {
   );
 
   function handleAutoIngest() {
+    if (!uip) {
+      toast.info("No Unified Intelligence Package available. Run a briefing from the Copilot first.");
+      return;
+    }
     const res = autoIngestOklIntoInvestigations(
       analyzeOperationalKnowledge({
-        uip: DEMO_UIP,
-        historical: DEMO_HISTORICAL,
-        investigations: DEMO_INVESTIGATIONS,
+        uip,
+        rawEvidence: uip.rawEvidence,
       }),
     );
     const mine = res.perInvestigation.find((r) => r.investigationId === w.id);
