@@ -40,7 +40,7 @@ import type {
   ReportType,
   ReportPeriod,
 } from "./types";
-import { REPORT_TYPE_LABEL, REPORT_PERIOD_LABEL } from "./types";
+import { REPORT_TYPE_LABEL, REPORT_PERIOD_LABEL, MIBC_ENGINE_VERSION } from "./types";
 
 /**
  * UIP snapshot paired (optionally) with the Investigation Workspace
