@@ -53,15 +53,14 @@ export const Route = createFileRoute("/briefing-centre")({
 // via report_schedules and report_jobs. See src/lib/mibc/schedules.functions.ts.
 
 function BriefingCentre() {
+  useReportJobDrainer(true);
   const investigations = useWorkspaceStore((s) => Object.values(s.investigations));
   const [reportType, setReportType] = useState<ReportType>("EXECUTIVE_BRIEF");
   const [period, setPeriod] = useState<ReportPeriod>("LAST_7D");
-  const [cadence, setCadence] = useState<ReportCadence>("ON_DEMAND");
   const [selected, setSelected] = useState<string[]>([]);
   const [nlQuery, setNlQuery] = useState("");
   const [report, setReport] = useState<ReportPackage | null>(null);
   const [busy, setBusy] = useState<ExportFormat | "GENERATE" | null>(null);
-  const [schedules, setSchedules] = useState<ScheduledJob[]>([]);
 
   const sourceWorkspaces = useMemo(() => {
     if (selected.length === 0) return investigations;
@@ -121,19 +120,7 @@ function BriefingCentre() {
     }
   };
 
-  const schedule = () => {
-    const job: ScheduledJob = {
-      id: `sched-${Date.now().toString(36)}`,
-      reportType,
-      period,
-      cadence,
-      createdAt: new Date().toISOString(),
-    };
-    setSchedules((s) => [job, ...s]);
-    toast.success(`Scheduled ${REPORT_TYPE_LABEL[reportType]}`, {
-      description: `${cadence.toLowerCase()} · from Investigation Workspaces`,
-    });
-  };
+  // Scheduling is server-backed via SchedulesPanel / JobHistoryPanel below.
 
   return (
     <AppShell
