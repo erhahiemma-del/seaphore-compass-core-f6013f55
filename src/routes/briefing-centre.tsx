@@ -419,13 +419,23 @@ function BriefingCentre() {
               </div>
               <div className="flex flex-wrap gap-2 pt-2">
                 <Badge>Confidence {report.overallConfidence}%</Badge>
+                <Badge variant="secondary">Origin · {report.origin.replace("_", " ")}</Badge>
                 <Badge variant="outline">{report.sections.length} sections</Badge>
                 <Badge variant="outline">{report.charts.length} charts</Badge>
-                <Badge variant="outline">
-                  {report.sourceInvestigationIds.length} investigation
-                  {report.sourceInvestigationIds.length === 1 ? "" : "s"}
-                </Badge>
+                {report.sourceUipIds.length > 0 && (
+                  <Badge variant="outline">
+                    {report.sourceUipIds.length} Canonical UIP
+                    {report.sourceUipIds.length === 1 ? "" : "s"}
+                  </Badge>
+                )}
+                {report.sourceInvestigationIds.length > 0 && (
+                  <Badge variant="outline">
+                    {report.sourceInvestigationIds.length} investigation
+                    {report.sourceInvestigationIds.length === 1 ? "" : "s"}
+                  </Badge>
+                )}
               </div>
+
             </CardHeader>
             <CardContent>
               <Tabs defaultValue={report.sections[0]?.id}>
