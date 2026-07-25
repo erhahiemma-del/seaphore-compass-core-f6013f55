@@ -97,20 +97,41 @@ async function httpGet<T>(
 function parseVessel(entry: unknown, fallbackQuery: string): GfwVesselIdentity | null {
   if (!entry || typeof entry !== "object") return null;
   const r = entry as Record<string, unknown>;
-  const self = Array.isArray(r.selfReportedInfo) && r.selfReportedInfo.length
-    ? (r.selfReportedInfo[0] as Record<string, unknown>)
-    : {};
-  const registry = Array.isArray(r.registryInfo) && r.registryInfo.length
-    ? (r.registryInfo[0] as Record<string, unknown>)
-    : {};
+  const selfArr = Array.isArray(r.selfReportedInfo)
+    ? (r.selfReportedInfo as Record<string, unknown>[])
+    : [];
+  const registryArr = Array.isArray(r.registryInfo)
+    ? (r.registryInfo as Record<string, unknown>[])
+    : [];
+  const self = selfArr[0] ?? {};
+  const registry = registryArr[0] ?? {};
   const vesselId = (self.id as string) ?? (registry.id as string) ?? (r.id as string) ?? fallbackQuery;
+
+  // Aliases: every distinct shipname across self-reported + registry
+  // beyond the primary. Historical names: `registryOwners`/`priorNames`
+  // when present (GFW exposes these on the identity object).
+  const primary = ((self.shipname as string) ?? (registry.shipname as string) ?? null) || null;
+  const aliasSet = new Set<string>();
+  for (const s of [...selfArr, ...registryArr]) {
+    const n = typeof s.shipname === "string" ? (s.shipname as string) : null;
+    if (n && n !== primary) aliasSet.add(n);
+  }
+  const priorNames = Array.isArray(r.priorNames)
+    ? (r.priorNames as unknown[]).filter((v): v is string => typeof v === "string")
+    : [];
+
+  const matchFields = typeof r.matchFields === "string" ? (r.matchFields as string) : null;
+
   return {
     vesselId: String(vesselId),
     imo: (self.imo as string) ?? (registry.imo as string) ?? null,
     mmsi: (self.ssvid as string) ?? (registry.ssvid as string) ?? null,
     callSign: (self.callsign as string) ?? (registry.callsign as string) ?? null,
     flag: (self.flag as string) ?? (registry.flag as string) ?? null,
-    name: (self.shipname as string) ?? (registry.shipname as string) ?? null,
+    name: primary,
+    aliases: aliasSet.size ? [...aliasSet] : undefined,
+    historicalNames: priorNames.length ? priorNames : undefined,
+    providerMatchFields: matchFields,
   };
 }
 
