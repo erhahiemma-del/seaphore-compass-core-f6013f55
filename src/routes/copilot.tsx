@@ -62,6 +62,7 @@ import { IntelligenceProjectionPanel } from "@/components/copilot/projection/Int
 import { ExecutiveBriefing } from "@/components/copilot/briefing/ExecutiveBriefing";
 import { synthesizeExecutiveBrief } from "@/lib/copilot/executive-brief/synthesize";
 import { analyzeOperationalKnowledge } from "@/services/okl";
+import { autoIngestOklIntoInvestigations } from "@/services/okl/auto-ingest";
 import {
   DEMO_UIP,
   DEMO_EVIDENCE,
@@ -858,6 +859,9 @@ function ExecutiveBriefingView({
       }),
     [],
   );
+  useEffect(() => {
+    autoIngestOklIntoInvestigations(operationalKnowledge);
+  }, [operationalKnowledge]);
   const brief = useMemo(
     () =>
       synthesizeExecutiveBrief({
