@@ -96,14 +96,14 @@ function buildSampleEvidence(): IntelligenceEvidenceItem[] {
 }
 
 function IntelligenceEvidenceRoute() {
-  const workspaces = useWorkspaceStore((s) => s.workspaces);
+  const investigations = useWorkspaceStore((s) => s.investigations);
 
   const items = useMemo<IntelligenceEvidenceItem[]>(() => {
-    const wsItems = Object.values(workspaces).flatMap((w) =>
+    const wsItems = Object.values(investigations).flatMap((w) =>
       w.evidence.map(fromWorkspaceEvidence),
     );
     return [...buildSampleEvidence(), ...wsItems];
-  }, [workspaces]);
+  }, [investigations]);
 
   return (
     <AppShell title="Intelligence Evidence" subtitle="Assessment Basis · Sanitized">
