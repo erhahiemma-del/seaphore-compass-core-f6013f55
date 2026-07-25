@@ -53,7 +53,7 @@ function patternMatchesInvestigation(
   if (inv.subjectName) {
     const subj = inv.subjectName.toLowerCase();
     for (const pe of pattern.entities) {
-      if (pe.name && subj && pe.name.toLowerCase() === subj) return true;
+      if (pe.label && pe.label.toLowerCase() === subj) return true;
     }
   }
   return false;
