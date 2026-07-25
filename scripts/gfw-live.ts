@@ -1,6 +1,6 @@
 import { runGfwHealthCheck, runGfwSearch } from "../src/lib/server/gfw.server.ts";
 import { OSAE } from "../src/services/osae/index.ts";
-import { listAuthenticatedConnectors } from "../src/lib/server/connectors/registry.server.ts";
+import { probeAllConnectors } from "../src/lib/server/connectors/registry.server.ts";
 import "../src/lib/server/connectors/bootstrap.server.ts";
 
 const line = (s = "") => console.log(s);
