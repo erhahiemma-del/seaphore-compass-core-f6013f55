@@ -60,7 +60,10 @@ import { runOIE, type Clarification } from "@/services/oie";
 import { enhanceWithIBE, persistHypotheses } from "@/services/ibe";
 import { IntelligenceProjectionPanel } from "@/components/copilot/projection/IntelligenceProjectionPanel";
 import { ExecutiveBriefing } from "@/components/copilot/briefing/ExecutiveBriefing";
+import { EvidenceProvenancePanel } from "@/components/copilot/briefing/EvidenceProvenancePanel";
+import { useUipStore } from "@/stores/uip.store";
 import { synthesizeExecutiveBrief } from "@/lib/copilot/executive-brief/synthesize";
+
 import { analyzeOperationalKnowledge } from "@/services/okl";
 import { autoIngestOklIntoInvestigations } from "@/services/okl/auto-ingest";
 import {
@@ -885,8 +888,18 @@ function ExecutiveBriefingView({
       }),
     [briefing, humanResponse, ibe, followUps, operationalKnowledge],
   );
-  return <ExecutiveBriefing brief={brief} onFollowUp={onFollowUp} />;
+  // Resolve the Canonical UIP that produced this briefing so the provenance
+  // panel can cite the same evidence set every downstream surface uses.
+  const uipId = briefing.source_uip_id;
+  const uip = useUipStore((s) => (uipId ? s.byId[uipId] : undefined));
+  return (
+    <>
+      <ExecutiveBriefing brief={brief} onFollowUp={onFollowUp} />
+      {uip && <EvidenceProvenancePanel uip={uip} />}
+    </>
+  );
 }
+
 
 
 function stageIndex(s: Stage): number {
