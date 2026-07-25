@@ -6,7 +6,15 @@
  * happens here — every value is computed by the synthesizer.
  */
 import { useState } from "react";
-import type { ExecutiveBrief, EvidenceGroup, KpiCard, TimelineEvent, IdentityResolutionSection } from "@/lib/copilot/executive-brief/synthesize";
+import type {
+  ExecutiveBrief,
+  EvidenceGroup,
+  KpiCard,
+  TimelineEvent,
+  IdentityResolutionSection,
+  AisContinuitySection,
+  AisInterruptionTimelineItem,
+} from "@/lib/copilot/executive-brief/synthesize";
 import type { EvidenceCardData } from "@/components/copilot/briefing/types";
 import {
   AlertTriangle,
