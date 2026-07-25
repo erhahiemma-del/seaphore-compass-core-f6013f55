@@ -569,6 +569,66 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: REVIEWED,
   },
+  {
+    id: "capability.mission-planning",
+    name: "AI-Assisted Mission Planning",
+    producer: "CAPABILITY",
+    description:
+      "Sprint 1G. Deterministic, evidence-backed mission planner producing objectives, tasking, resource allocation, timeline, and recommendations from PIE predictions and unified intelligence. Every mission carries an immutable audit trail; execution requires explicit officer approval per the Golden Rule (Detect. Decide. Act).",
+    state: "PROJECTED",
+    projection: {
+      surface: "Mission Planning",
+      location: "src/routes/missions.tsx",
+      component: "src/services/mission/index.ts",
+      interaction: "action",
+    },
+    reviewedAt: REVIEWED,
+  },
+  {
+    id: "capability.investigation-workflows",
+    name: "Investigation Workflows",
+    producer: "CAPABILITY",
+    description:
+      "Sprint 1G. Structured, evidence-backed case workflow for vessels, cargo, companies, people, sanctions, compliance, and incidents. Stage machine (intake → evidence → analysis → decision → closed) with linked evidence, officer-approved findings, and an immutable append-only audit trail. Additive to existing /investigate.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Investigation Workflows",
+      location: "src/routes/investigations-workflow.tsx",
+      component: "src/services/investigations-workflow/index.ts",
+      interaction: "action",
+    },
+    reviewedAt: REVIEWED,
+  },
+  {
+    id: "capability.revenue-leakage-detection",
+    name: "Revenue Leakage Detection",
+    producer: "CAPABILITY",
+    description:
+      "Sprint 1G. Deterministic detectors that scan fused evidence for manifest under-declaration, unpaid port fees, cargo under-valuation, unscheduled movement mismatches, and compliance-linked fee bypasses. Every finding carries factors, magnitude, currency, confidence, and citations, and enforcement requires officer approval.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Revenue Leakage",
+      location: "src/routes/revenue-leakage.tsx",
+      component: "src/services/revenue-leakage/index.ts",
+      interaction: "action",
+    },
+    reviewedAt: REVIEWED,
+  },
+  {
+    id: "capability.national-maritime-risk",
+    name: "National Maritime Risk Scoring Engine (NMRSE)",
+    producer: "CAPABILITY",
+    description:
+      "Sprint 1G. Continuous, explainable composite risk score (0–100) for vessels, ports, operators, companies, and activities. Composes PIE predictions, OSAE priority, sanctions proximity, compliance history, MKG connectivity, and revenue leakage with fixed weights and a per-component breakdown that carries evidence ids. OSAE remains the sole authority for operational priority.",
+    state: "PROJECTED",
+    projection: {
+      surface: "National Maritime Risk",
+      location: "src/routes/national-risk.tsx",
+      component: "src/services/nmrse/index.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: REVIEWED,
+  },
 ];
 
 export function getContractEntry(id: string): ProjectionContractEntry | undefined {

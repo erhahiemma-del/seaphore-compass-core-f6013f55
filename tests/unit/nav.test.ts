@@ -9,6 +9,7 @@ describe("navigation model", () => {
       "Mission",
       "Intelligence Lifecycle",
       "Intelligence Centres",
+      "Command & Risk",
       "System",
     ]);
   });

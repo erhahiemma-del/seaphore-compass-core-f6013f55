@@ -11,14 +11,18 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VesselRouteImport } from './routes/vessel'
 import { Route as ShareRouteImport } from './routes/share'
+import { Route as RevenueLeakageRouteImport } from './routes/revenue-leakage'
 import { Route as RevenueRouteImport } from './routes/revenue'
 import { Route as PredictionsRouteImport } from './routes/predictions'
 import { Route as PortsRouteImport } from './routes/ports'
 import { Route as OwnershipRouteImport } from './routes/ownership'
 import { Route as ObservabilityRouteImport } from './routes/observability'
+import { Route as NationalRiskRouteImport } from './routes/national-risk'
+import { Route as MissionsRouteImport } from './routes/missions'
 import { Route as MemoryRouteImport } from './routes/memory'
 import { Route as ManifestRouteImport } from './routes/manifest'
 import { Route as KnowledgeGraphRouteImport } from './routes/knowledge-graph'
+import { Route as InvestigationsWorkflowRouteImport } from './routes/investigations-workflow'
 import { Route as InvestigateRouteImport } from './routes/investigate'
 import { Route as IntelligenceEvidenceRouteImport } from './routes/intelligence-evidence'
 import { Route as EvidenceRouteImport } from './routes/evidence'
@@ -66,6 +70,11 @@ const ShareRoute = ShareRouteImport.update({
   path: '/share',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RevenueLeakageRoute = RevenueLeakageRouteImport.update({
+  id: '/revenue-leakage',
+  path: '/revenue-leakage',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RevenueRoute = RevenueRouteImport.update({
   id: '/revenue',
   path: '/revenue',
@@ -91,6 +100,16 @@ const ObservabilityRoute = ObservabilityRouteImport.update({
   path: '/observability',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NationalRiskRoute = NationalRiskRouteImport.update({
+  id: '/national-risk',
+  path: '/national-risk',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MissionsRoute = MissionsRouteImport.update({
+  id: '/missions',
+  path: '/missions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MemoryRoute = MemoryRouteImport.update({
   id: '/memory',
   path: '/memory',
@@ -104,6 +123,11 @@ const ManifestRoute = ManifestRouteImport.update({
 const KnowledgeGraphRoute = KnowledgeGraphRouteImport.update({
   id: '/knowledge-graph',
   path: '/knowledge-graph',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvestigationsWorkflowRoute = InvestigationsWorkflowRouteImport.update({
+  id: '/investigations-workflow',
+  path: '/investigations-workflow',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InvestigateRoute = InvestigateRouteImport.update({
@@ -300,14 +324,18 @@ export interface FileRoutesByFullPath {
   '/evidence': typeof EvidenceRoute
   '/intelligence-evidence': typeof IntelligenceEvidenceRoute
   '/investigate': typeof InvestigateRouteWithChildren
+  '/investigations-workflow': typeof InvestigationsWorkflowRoute
   '/knowledge-graph': typeof KnowledgeGraphRoute
   '/manifest': typeof ManifestRoute
   '/memory': typeof MemoryRoute
+  '/missions': typeof MissionsRoute
+  '/national-risk': typeof NationalRiskRoute
   '/observability': typeof ObservabilityRoute
   '/ownership': typeof OwnershipRoute
   '/ports': typeof PortsRoute
   '/predictions': typeof PredictionsRoute
   '/revenue': typeof RevenueRoute
+  '/revenue-leakage': typeof RevenueLeakageRoute
   '/share': typeof ShareRouteWithChildren
   '/vessel': typeof VesselRoute
   '/admin/connectors': typeof AdminConnectorsRoute
@@ -346,14 +374,18 @@ export interface FileRoutesByTo {
   '/detect': typeof DetectRoute
   '/evidence': typeof EvidenceRoute
   '/intelligence-evidence': typeof IntelligenceEvidenceRoute
+  '/investigations-workflow': typeof InvestigationsWorkflowRoute
   '/knowledge-graph': typeof KnowledgeGraphRoute
   '/manifest': typeof ManifestRoute
   '/memory': typeof MemoryRoute
+  '/missions': typeof MissionsRoute
+  '/national-risk': typeof NationalRiskRoute
   '/observability': typeof ObservabilityRoute
   '/ownership': typeof OwnershipRoute
   '/ports': typeof PortsRoute
   '/predictions': typeof PredictionsRoute
   '/revenue': typeof RevenueRoute
+  '/revenue-leakage': typeof RevenueLeakageRoute
   '/vessel': typeof VesselRoute
   '/admin/connectors': typeof AdminConnectorsRoute
   '/admin/osint': typeof AdminOsintRoute
@@ -394,14 +426,18 @@ export interface FileRoutesById {
   '/evidence': typeof EvidenceRoute
   '/intelligence-evidence': typeof IntelligenceEvidenceRoute
   '/investigate': typeof InvestigateRouteWithChildren
+  '/investigations-workflow': typeof InvestigationsWorkflowRoute
   '/knowledge-graph': typeof KnowledgeGraphRoute
   '/manifest': typeof ManifestRoute
   '/memory': typeof MemoryRoute
+  '/missions': typeof MissionsRoute
+  '/national-risk': typeof NationalRiskRoute
   '/observability': typeof ObservabilityRoute
   '/ownership': typeof OwnershipRoute
   '/ports': typeof PortsRoute
   '/predictions': typeof PredictionsRoute
   '/revenue': typeof RevenueRoute
+  '/revenue-leakage': typeof RevenueLeakageRoute
   '/share': typeof ShareRouteWithChildren
   '/vessel': typeof VesselRoute
   '/admin/connectors': typeof AdminConnectorsRoute
@@ -444,14 +480,18 @@ export interface FileRouteTypes {
     | '/evidence'
     | '/intelligence-evidence'
     | '/investigate'
+    | '/investigations-workflow'
     | '/knowledge-graph'
     | '/manifest'
     | '/memory'
+    | '/missions'
+    | '/national-risk'
     | '/observability'
     | '/ownership'
     | '/ports'
     | '/predictions'
     | '/revenue'
+    | '/revenue-leakage'
     | '/share'
     | '/vessel'
     | '/admin/connectors'
@@ -490,14 +530,18 @@ export interface FileRouteTypes {
     | '/detect'
     | '/evidence'
     | '/intelligence-evidence'
+    | '/investigations-workflow'
     | '/knowledge-graph'
     | '/manifest'
     | '/memory'
+    | '/missions'
+    | '/national-risk'
     | '/observability'
     | '/ownership'
     | '/ports'
     | '/predictions'
     | '/revenue'
+    | '/revenue-leakage'
     | '/vessel'
     | '/admin/connectors'
     | '/admin/osint'
@@ -537,14 +581,18 @@ export interface FileRouteTypes {
     | '/evidence'
     | '/intelligence-evidence'
     | '/investigate'
+    | '/investigations-workflow'
     | '/knowledge-graph'
     | '/manifest'
     | '/memory'
+    | '/missions'
+    | '/national-risk'
     | '/observability'
     | '/ownership'
     | '/ports'
     | '/predictions'
     | '/revenue'
+    | '/revenue-leakage'
     | '/share'
     | '/vessel'
     | '/admin/connectors'
@@ -586,14 +634,18 @@ export interface RootRouteChildren {
   EvidenceRoute: typeof EvidenceRoute
   IntelligenceEvidenceRoute: typeof IntelligenceEvidenceRoute
   InvestigateRoute: typeof InvestigateRouteWithChildren
+  InvestigationsWorkflowRoute: typeof InvestigationsWorkflowRoute
   KnowledgeGraphRoute: typeof KnowledgeGraphRoute
   ManifestRoute: typeof ManifestRoute
   MemoryRoute: typeof MemoryRoute
+  MissionsRoute: typeof MissionsRoute
+  NationalRiskRoute: typeof NationalRiskRoute
   ObservabilityRoute: typeof ObservabilityRoute
   OwnershipRoute: typeof OwnershipRoute
   PortsRoute: typeof PortsRoute
   PredictionsRoute: typeof PredictionsRoute
   RevenueRoute: typeof RevenueRoute
+  RevenueLeakageRoute: typeof RevenueLeakageRoute
   ShareRoute: typeof ShareRouteWithChildren
   VesselRoute: typeof VesselRoute
   AdminConnectorsRoute: typeof AdminConnectorsRoute
@@ -627,6 +679,13 @@ declare module '@tanstack/react-router' {
       path: '/share'
       fullPath: '/share'
       preLoaderRoute: typeof ShareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/revenue-leakage': {
+      id: '/revenue-leakage'
+      path: '/revenue-leakage'
+      fullPath: '/revenue-leakage'
+      preLoaderRoute: typeof RevenueLeakageRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/revenue': {
@@ -664,6 +723,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ObservabilityRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/national-risk': {
+      id: '/national-risk'
+      path: '/national-risk'
+      fullPath: '/national-risk'
+      preLoaderRoute: typeof NationalRiskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/missions': {
+      id: '/missions'
+      path: '/missions'
+      fullPath: '/missions'
+      preLoaderRoute: typeof MissionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/memory': {
       id: '/memory'
       path: '/memory'
@@ -683,6 +756,13 @@ declare module '@tanstack/react-router' {
       path: '/knowledge-graph'
       fullPath: '/knowledge-graph'
       preLoaderRoute: typeof KnowledgeGraphRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/investigations-workflow': {
+      id: '/investigations-workflow'
+      path: '/investigations-workflow'
+      fullPath: '/investigations-workflow'
+      preLoaderRoute: typeof InvestigationsWorkflowRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/investigate': {
@@ -998,14 +1078,18 @@ const rootRouteChildren: RootRouteChildren = {
   EvidenceRoute: EvidenceRoute,
   IntelligenceEvidenceRoute: IntelligenceEvidenceRoute,
   InvestigateRoute: InvestigateRouteWithChildren,
+  InvestigationsWorkflowRoute: InvestigationsWorkflowRoute,
   KnowledgeGraphRoute: KnowledgeGraphRoute,
   ManifestRoute: ManifestRoute,
   MemoryRoute: MemoryRoute,
+  MissionsRoute: MissionsRoute,
+  NationalRiskRoute: NationalRiskRoute,
   ObservabilityRoute: ObservabilityRoute,
   OwnershipRoute: OwnershipRoute,
   PortsRoute: PortsRoute,
   PredictionsRoute: PredictionsRoute,
   RevenueRoute: RevenueRoute,
+  RevenueLeakageRoute: RevenueLeakageRoute,
   ShareRoute: ShareRouteWithChildren,
   VesselRoute: VesselRoute,
   AdminConnectorsRoute: AdminConnectorsRoute,

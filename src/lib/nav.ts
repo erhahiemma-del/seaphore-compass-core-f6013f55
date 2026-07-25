@@ -17,6 +17,10 @@ import {
   BellRing,
   Settings,
   Sparkles,
+  Target,
+  ClipboardList,
+  Coins,
+  Gauge,
   type LucideIcon,
 } from "lucide-react";
 
@@ -94,6 +98,15 @@ export const NAV_GROUPS: NavGroup[] = [
       { title: "Knowledge Graph", subtitle: "Relational Intelligence", url: "/knowledge-graph", icon: Share2 },
       { title: "Predictive Intelligence", subtitle: "PIE · Forecasts & Alerts", url: "/predictions", icon: Radar },
       { title: "Alerts Center", url: "/alerts", icon: BellRing },
+    ],
+  },
+  {
+    label: "Command & Risk",
+    items: [
+      { title: "Mission Planning", subtitle: "AI-Assisted Missions", url: "/missions", icon: Target },
+      { title: "Investigation Workflows", subtitle: "Structured Cases", url: "/investigations-workflow", icon: ClipboardList },
+      { title: "Revenue Leakage", subtitle: "Detection & Enforcement", url: "/revenue-leakage", icon: Coins },
+      { title: "National Maritime Risk", subtitle: "NMRSE · Composite Scoring", url: "/national-risk", icon: Gauge },
     ],
   },
   {
