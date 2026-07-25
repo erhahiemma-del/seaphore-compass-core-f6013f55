@@ -237,6 +237,7 @@ interface WorkspaceState {
     assignees?: string[];
     dueAt?: string;
     estimatedRevenueImpactUsd?: number;
+    sourceUipId?: string;
   }) => string;
   setActive: (id: string | null) => void;
   updateOverview: (id: string, patch: Partial<InvestigationWorkspace>) => void;
