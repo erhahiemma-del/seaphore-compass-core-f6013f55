@@ -319,6 +319,7 @@ const STUB_INTERPRETED: InterpretedQuery = {
 export async function runOIE(
   req: OIERequest,
   providerCall: ProviderCall = nullProviderCall,
+  deps: OrchestrationDeps = {},
 ): Promise<OIEResult> {
   const started = Date.now();
   const q: OfficerQuery = req?.query ?? ({} as OfficerQuery);
