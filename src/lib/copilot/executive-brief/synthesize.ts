@@ -14,6 +14,11 @@ import type {
 } from "@/components/copilot/briefing/types";
 import type { HumanResponse } from "@/services/oie/types";
 import type { IbeResult } from "@/services/ibe/types";
+import type {
+  IdentityCandidate,
+  IdentityConfidenceResult,
+  IdentitySelection,
+} from "@/intelligence/matching/identity-confidence";
 import { sanitizeText } from "./sanitize";
 
 export type StatusTone = "positive" | "warning" | "critical" | "neutral";
