@@ -215,6 +215,7 @@ export const DEMO_UIP: UnifiedIntelligencePackage = {
   })),
   freshestSeconds: 3_600,
   hasContradictions: true,
+  rawEvidence: evidence,
 };
 
 export const DEMO_EVIDENCE = evidence;
