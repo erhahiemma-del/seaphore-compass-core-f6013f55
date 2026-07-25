@@ -35,7 +35,7 @@ export interface UipAccessEvent {
   readonly uipId: string | null;
   readonly briefingId?: string | null;
   readonly officerId?: string | null;
-  readonly action: "OPENED" | "GENERATED" | "EXPORTED" | "RESOLVED_MISS";
+  readonly action: "OPENED" | "GENERATED" | "EXPORTED" | "DOWNLOAD" | "RESOLVED_MISS";
   readonly detail?: string;
 }
 
