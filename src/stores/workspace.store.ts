@@ -265,6 +265,10 @@ interface WorkspaceState {
   ) => void;
   removeNotebookEntry: (id: string, entryId: string) => void;
 
+  // Operational Command bridges.
+  linkMission: (id: string, missionId: string, note?: string) => void;
+  linkOklPattern: (id: string, patternId: string, note?: string) => void;
+
 
   removeInvestigation: (id: string) => void;
   exportInvestigation: (id: string) => InvestigationWorkspace | null;
