@@ -885,3 +885,223 @@ function exportInvestigation(w: InvestigationWorkspace) {
 
 // Silence unused-import lints for icons only referenced conditionally.
 export const _unused = { PauseCircle };
+
+// ─────────────────────────────────────────────────────────────────────────
+// Investigation Notebook — Notes / Findings / Hypotheses / Recommendations
+// / Questions / Tasks with markdown body and append-only version history.
+// ─────────────────────────────────────────────────────────────────────────
+
+const NOTEBOOK_KINDS: NotebookKind[] = [
+  "NOTE",
+  "FINDING",
+  "HYPOTHESIS",
+  "RECOMMENDATION",
+  "QUESTION",
+  "TASK",
+];
+
+function NotebookPanel({ w }: { w: InvestigationWorkspace }) {
+  const add = useWorkspaceStore((s) => s.addNotebookEntry);
+  const update = useWorkspaceStore((s) => s.updateNotebookEntry);
+  const remove = useWorkspaceStore((s) => s.removeNotebookEntry);
+  const [kind, setKind] = useState<NotebookKind>("NOTE");
+  const [openId, setOpenId] = useState<string | null>(null);
+  const entries = w.notebook ?? [];
+  const filtered = entries.filter((e) => e.kind === kind);
+
+  return (
+    <Panel
+      title="Investigation notebook"
+      subtitle={`${entries.length} entries · markdown, version history, audit trail`}
+      icon={ScrollText}
+      action={
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            const title = window.prompt(`New ${kind.toLowerCase()} title?`);
+            if (!title) return;
+            const id = add(w.id, { kind, title, body: "", officer: w.officer });
+            setOpenId(id);
+          }}
+        >
+          + Add {kind.toLowerCase()}
+        </Button>
+      }
+    >
+      <div className="mb-3 flex flex-wrap gap-1">
+        {NOTEBOOK_KINDS.map((k) => {
+          const count = entries.filter((e) => e.kind === k).length;
+          return (
+            <button
+              key={k}
+              onClick={() => setKind(k)}
+              className={cn(
+                "rounded-full border px-2.5 py-1 text-[11px] font-medium transition",
+                kind === k
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-background text-muted-foreground hover:bg-accent",
+              )}
+            >
+              {k.charAt(0) + k.slice(1).toLowerCase()} · {count}
+            </button>
+          );
+        })}
+      </div>
+      {filtered.length === 0 ? (
+        <div className="rounded border border-dashed p-4 text-center text-xs text-muted-foreground">
+          No {kind.toLowerCase()} entries yet.
+        </div>
+      ) : (
+        <ul className="space-y-2">
+          {filtered.map((e) => (
+            <li key={e.id} className="rounded-md border bg-background p-2">
+              <div className="flex items-start justify-between gap-2">
+                <button
+                  onClick={() => setOpenId(openId === e.id ? null : e.id)}
+                  className="flex-1 text-left"
+                >
+                  <div className="text-sm font-medium">{e.title}</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {new Date(e.updatedAt).toLocaleString()} · v{e.versions.length}
+                    {e.officer ? ` · ${e.officer}` : ""}
+                  </div>
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm("Remove this entry from the notebook?")) remove(w.id, e.id);
+                  }}
+                  className="rounded p-1 text-muted-foreground hover:bg-accent"
+                  aria-label="Remove entry"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              {openId === e.id && (
+                <NotebookEditor
+                  entry={e}
+                  onSave={(body) => update(w.id, e.id, { body, officer: w.officer })}
+                />
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </Panel>
+  );
+}
+
+function NotebookEditor({ entry, onSave }: { entry: NotebookEntry; onSave: (body: string) => void }) {
+  const [body, setBody] = useState(entry.body);
+  const [showHistory, setShowHistory] = useState(false);
+  return (
+    <div className="mt-2 space-y-2">
+      <textarea
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        placeholder="Markdown body — findings, reasoning, links to evidence…"
+        className="min-h-[120px] w-full rounded border bg-background p-2 font-mono text-xs"
+      />
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => setShowHistory((v) => !v)}
+          className="text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+        >
+          {showHistory ? "Hide" : "Show"} version history ({entry.versions.length})
+        </button>
+        <Button
+          size="sm"
+          onClick={() => onSave(body)}
+          disabled={body === entry.body}
+        >
+          Save version
+        </Button>
+      </div>
+      {showHistory && (
+        <ol className="space-y-1 rounded border bg-muted/40 p-2 text-[11px]">
+          {entry.versions
+            .slice()
+            .reverse()
+            .map((v, i) => (
+              <li key={i} className="border-b border-dashed py-1 last:border-b-0">
+                <div className="font-medium text-muted-foreground">
+                  {new Date(v.at).toLocaleString()}
+                  {v.officer ? ` · ${v.officer}` : ""}
+                </div>
+                <pre className="whitespace-pre-wrap font-mono text-[11px] text-foreground/80">
+                  {v.body || <span className="italic text-muted-foreground">(empty)</span>}
+                </pre>
+              </li>
+            ))}
+        </ol>
+      )}
+      <p className="text-[10px] text-muted-foreground">
+        Evidence first. Explainable always. Officer decides. Notebook edits are audited.
+      </p>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Embedded Copilot — every investigation carries its own Copilot surface,
+// seeded with the investigation subject and current mission context.
+// ─────────────────────────────────────────────────────────────────────────
+
+function EmbeddedCopilotPanel({ w }: { w: InvestigationWorkspace }) {
+  const [open, setOpen] = useState(false);
+  const [seed, setSeed] = useState<string>("");
+  const suggestions: string[] = [
+    "What changed since the last briefing?",
+    "What supports the current recommendation?",
+    "Summarise findings for a director briefing.",
+    "Show contradictory evidence in this case.",
+    "Generate an investigation report.",
+  ];
+  const ctx: Record<string, string> = {
+    investigationId: w.id,
+    investigationTitle: w.title,
+    stage: w.stage ?? "INTAKE",
+    subject: w.subjectName ?? w.title,
+    caseType: w.caseType ?? "GENERIC",
+    priority: w.priority,
+    officer: w.officer,
+  };
+  return (
+    <Panel
+      title="Investigation Copilot"
+      subtitle="Ask about this case — every answer cites evidence in this workspace"
+      icon={MessageSquareText}
+      action={
+        <Button size="sm" onClick={() => { setSeed(""); setOpen(true); }}>
+          Ask Copilot
+        </Button>
+      }
+    >
+      <ul className="space-y-1">
+        {suggestions.map((q) => (
+          <li key={q}>
+            <button
+              onClick={() => { setSeed(q); setOpen(true); }}
+              className="w-full rounded-md border bg-background px-2.5 py-1.5 text-left text-xs hover:bg-accent"
+            >
+              {q}
+            </button>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-[10px] text-muted-foreground">
+        The Copilot answers only from this investigation's evidence, entities, hypotheses,
+        and prior briefings. Every claim references source and confidence.
+      </p>
+      <AskCopilotDialog
+        instance="seaphore"
+        open={open}
+        onOpenChange={setOpen}
+        seedQuery={seed}
+        context={ctx}
+      />
+    </Panel>
+  );
+}
+
