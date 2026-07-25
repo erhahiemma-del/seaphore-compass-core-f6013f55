@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useWorkspaceStore } from "@/stores/workspace.store";
+import { useMissionStore } from "@/services/mission";
 import { toast } from "sonner";
 import {
   buildReport,
@@ -86,6 +87,7 @@ function BriefingCentre() {
         period,
         workspaces: sourceWorkspaces,
         officer: "Officer on duty",
+        missionPlans: useMissionStore.getState().plans as never,
       });
       setReport(pkg);
       toast.success(`${REPORT_TYPE_LABEL[reportType]} assembled`, {
