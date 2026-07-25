@@ -145,6 +145,7 @@ export const copilotOverrideFn = createServerFn({ method: "POST" })
       justification: data.justification,
       modifications: data.modifications,
       workflow: data.workflow,
+      supabase: context.supabase,
     });
     return {
       id: result.id,
@@ -178,9 +179,12 @@ export const copilotPolicyCheckFn = createServerFn({ method: "POST" })
       permission: data.permission,
       workspace: data.workspace,
       investigation_id: data.investigation_id,
+      supabase: context.supabase,
     });
     if (decision.allow && data.record) {
-      await recordActionUsage(context.userId, data.permission);
+      await recordActionUsage(context.userId, data.permission, {
+        supabase: context.supabase,
+      });
     }
     return decision;
   });
@@ -225,7 +229,9 @@ export const copilotExecuteWorkflowFn = createServerFn({ method: "POST" })
     }
 
     // 2. Persistent per-day usage record for long-window auditing.
-    await recordActionUsage(context.userId, data.permission).catch(() => undefined);
+    await recordActionUsage(context.userId, data.permission, {
+      supabase: context.supabase,
+    }).catch(() => undefined);
 
     // 3. Canonical workflow dispatch.
     const record = await overrideWorkflowEngine.trigger({
