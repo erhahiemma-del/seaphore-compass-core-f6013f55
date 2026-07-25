@@ -95,13 +95,20 @@ async function httpGet<T>(
 function parseVessel(entry: unknown, fallbackQuery: string): GfwVesselIdentity | null {
   if (!entry || typeof entry !== "object") return null;
   const r = entry as Record<string, unknown>;
+  const self = Array.isArray(r.selfReportedInfo) && r.selfReportedInfo.length
+    ? (r.selfReportedInfo[0] as Record<string, unknown>)
+    : {};
+  const registry = Array.isArray(r.registryInfo) && r.registryInfo.length
+    ? (r.registryInfo[0] as Record<string, unknown>)
+    : {};
+  const vesselId = (self.id as string) ?? (registry.id as string) ?? (r.id as string) ?? fallbackQuery;
   return {
-    vesselId: String(r.id ?? r.vesselId ?? fallbackQuery),
-    imo: (r.imo as string) ?? null,
-    mmsi: (r.mmsi as string) ?? null,
-    callSign: (r.callsign as string) ?? (r.callSign as string) ?? null,
-    flag: (r.flag as string) ?? null,
-    name: (r.shipname as string) ?? (r.name as string) ?? null,
+    vesselId: String(vesselId),
+    imo: (self.imo as string) ?? (registry.imo as string) ?? null,
+    mmsi: (self.ssvid as string) ?? (registry.ssvid as string) ?? null,
+    callSign: (self.callsign as string) ?? (registry.callsign as string) ?? null,
+    flag: (self.flag as string) ?? (registry.flag as string) ?? null,
+    name: (self.shipname as string) ?? (registry.shipname as string) ?? null,
   };
 }
 
