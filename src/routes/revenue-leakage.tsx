@@ -81,8 +81,32 @@ function RevenueLeakageRoute() {
           <CardContent className="flex flex-wrap items-center gap-2 text-sm">
             <Badge variant="outline">Findings · {findings.length}</Badge>
             <Badge variant="outline">Estimated leakage · {total.toLocaleString()} USD</Badge>
+            {uip && (
+              <Badge variant="outline" className="font-mono text-[10px]">
+                UIP · {uip.id}
+              </Badge>
+            )}
           </CardContent>
         </Card>
+
+        {!uip && (
+          <Card>
+            <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
+              <Coins className="h-6 w-6 text-muted-foreground" />
+              <div className="text-sm font-medium">No Unified Intelligence Package loaded</div>
+              <div className="max-w-md text-xs text-muted-foreground">
+                Revenue Leakage scans only run against live fused evidence. Run
+                a briefing from the Copilot to populate this surface.
+              </div>
+              <Link
+                to="/copilot"
+                className="mt-2 inline-flex items-center rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium hover:bg-slate-50"
+              >
+                Open Copilot
+              </Link>
+            </CardContent>
+          </Card>
+        )}
 
         {findings.map((f) => (
           <Card key={f.id}>
