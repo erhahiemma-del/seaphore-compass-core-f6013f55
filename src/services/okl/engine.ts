@@ -849,7 +849,7 @@ export function analyzeOperationalKnowledge(
     fusion: base.fusion,
     pattern: enriched.length
       ? Math.round(
-          enriched.reduce((s, p) => s + p.confidence.pattern, 0) / patterns.length,
+          enriched.reduce((s, p) => s + p.confidence.pattern, 0) / enriched.length,
         )
       : 0,
     recommendation: topRecommendation?.confidence ?? 0,
