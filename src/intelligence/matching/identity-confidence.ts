@@ -459,12 +459,14 @@ export function selectIdentity<C extends IdentityCandidate>(
   const runner = ranked[1];
   let requiresConfirmation = false;
   let ambiguityReason: IdentitySelection<C>["ambiguityReason"] = "none";
-  if (top.confidence.score < autoSelectThreshold) {
-    requiresConfirmation = true;
-    ambiguityReason = "below-threshold";
-  } else if (runner && top.confidence.score - runner.confidence.score <= tieBandPoints) {
+  // Tie beats threshold: two candidates the officer likely cares about
+  // MUST always be disambiguated, even if both clear the auto-select bar.
+  if (runner && top.confidence.score - runner.confidence.score <= tieBandPoints) {
     requiresConfirmation = true;
     ambiguityReason = "tied-candidates";
+  } else if (top.confidence.score < autoSelectThreshold) {
+    requiresConfirmation = true;
+    ambiguityReason = "below-threshold";
   }
 
   return {
