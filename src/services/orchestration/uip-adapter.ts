@@ -31,10 +31,9 @@ function inferGrade(fused: FusedEvidence): FusedEvidencePackage["grade"] {
 
 function inferConfidence(fused: FusedEvidence): FusedEvidencePackage["confidence"] {
   const w = fused.ranked[0]?.weight ?? 0;
-  if (w >= 0.8) return "high";
-  if (w >= 0.5) return "medium";
-  if (w > 0) return "low";
-  return "unknown";
+  if (w >= 0.8) return "HIGH";
+  if (w >= 0.5) return "MEDIUM";
+  return "LOW";
 }
 
 function buildCanonical(fused: FusedEvidence): ReadonlyArray<FusedEntityRecord> {
