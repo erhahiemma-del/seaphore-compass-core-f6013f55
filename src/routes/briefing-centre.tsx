@@ -30,6 +30,7 @@ import { FileText, FileDown, Sparkles } from "lucide-react";
 import { SchedulesPanel } from "@/components/briefing/SchedulesPanel";
 import { JobHistoryPanel } from "@/components/briefing/JobHistoryPanel";
 import { useReportJobDrainer } from "@/lib/mibc/job-drainer";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/briefing-centre")({
   head: () => ({
