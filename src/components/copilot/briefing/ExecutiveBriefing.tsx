@@ -442,6 +442,7 @@ export function ExecutiveBriefing({ brief, isAdmin, onFollowUp }: ExecutiveBrief
     kpis,
     keyFacts,
     identityResolution,
+    aisContinuity,
     relationships,
     timeline,
     risks,
