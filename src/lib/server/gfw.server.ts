@@ -191,8 +191,17 @@ export async function runGfwSearch(query: string): Promise<GfwEvidencePackage | 
     }
     throw new GfwUpstreamError(searchRes.message, searchRes.status);
   }
-  const first = Array.isArray(searchRes.body.entries) ? searchRes.body.entries[0] : null;
-  const vessel = parseVessel(first, q);
+  const entries = Array.isArray(searchRes.body.entries) ? searchRes.body.entries : [];
+  // Prefer the entry with the richest identity (IMO > MMSI > any).
+  const scored = entries
+    .map((e) => parseVessel(e, q))
+    .filter((v): v is GfwVesselIdentity => v !== null)
+    .sort((a, b) => {
+      const sa = (a.imo ? 3 : 0) + (a.mmsi ? 2 : 0) + (a.flag ? 1 : 0);
+      const sb = (b.imo ? 3 : 0) + (b.mmsi ? 2 : 0) + (b.flag ? 1 : 0);
+      return sb - sa;
+    });
+  const vessel = scored[0] ?? null;
   if (!vessel) return null;
 
   const eventsRes = await httpGet<{ entries?: unknown[] }>(apiKey, EVENTS_PATH, [
