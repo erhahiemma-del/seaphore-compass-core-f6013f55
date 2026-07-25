@@ -188,6 +188,10 @@ export interface InvestigationWorkspace {
   entities: WorkspaceEntity[];
   recommendation?: WorkspaceRecommendation;
 
+  // Investigation Notebook.
+  notebook?: NotebookEntry[];
+
+
   // MIW extensions (Sprint 1H — Maritime Investigation Workspace).
   stage?: InvestigationStage;
   caseType?: InvestigationCaseType;
