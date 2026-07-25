@@ -524,6 +524,21 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: REVIEWED,
   },
+  {
+    id: "capability.unified-intelligence-package",
+    name: "Unified Intelligence Package (IFE)",
+    producer: "CAPABILITY",
+    description:
+      "Sprint 1D: the Intelligence Fusion Engine consolidates evidence from every connector into a single canonical view. Cross-connector identity resolution merges records that describe the same vessel/company under different id schemes (IMO vs MMSI vs name). Contradictions are surfaced with per-source attribution — never silently overwritten. OSAE assessments attach to the resolved canonical entity so OIE renders one coherent Executive Maritime Intelligence Brief regardless of how many connectors contributed. Connectors remain evidence providers only; OSAE remains the sole authority for operational priority.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Executive Brief · Supporting Evidence + Contradictions",
+      location: "src/components/copilot/briefing/SupportingEvidenceGroups.tsx",
+      component: "src/services/ife/unified.ts",
+      interaction: "passive-display",
+    },
+    reviewedAt: REVIEWED,
+  },
 ];
 
 export function getContractEntry(id: string): ProjectionContractEntry | undefined {
