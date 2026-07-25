@@ -51,6 +51,7 @@ export const Route = createFileRoute("/intelligence-evidence")({
     entity: typeof raw.entity === "string" ? raw.entity : undefined,
     investigation: typeof raw.investigation === "string" ? raw.investigation : undefined,
     confidence: typeof raw.confidence === "string" ? raw.confidence : undefined,
+    uip: typeof raw.uip === "string" ? raw.uip : undefined,
   }),
   head: () => ({
     meta: [
