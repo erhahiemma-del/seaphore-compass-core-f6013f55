@@ -674,6 +674,21 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: REVIEWED,
   },
+  {
+    id: "capability.investigation-mission-bridge",
+    name: "Investigation → Mission Planning bridge",
+    producer: "CAPABILITY",
+    description:
+      "Operational Command Platform integration. Mission plans may only be created from within a Maritime Investigation Workspace, and only when the investigation has (a) an officer-approved decision, (b) an officer-approved recommendation, or (c) a linked Operational Knowledge Layer pattern. Every mission inherits subjects, objectives, and citations from the investigation and appends an audit-trail entry that traces the mission back to the case ID. Mission Planning does NOT operate independently.",
+    state: "PROJECTED",
+    projection: {
+      surface: "MissionsPanel inside Investigation Workspace",
+      location: "src/components/investigation/MissionsPanel.tsx",
+      component: "src/services/mission/from-investigation.ts",
+      interaction: "action",
+    },
+    reviewedAt: REVIEWED,
+  },
 ];
 
 
