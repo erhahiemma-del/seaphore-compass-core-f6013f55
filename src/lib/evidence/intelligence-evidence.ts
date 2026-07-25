@@ -391,7 +391,7 @@ export function fromOklPattern(
     connector: "okl",
     investigationId,
     entities: inferredSubject
-      ? [{ type: "vessel", name: inferredSubject, id: entityRef?.canonicalId }]
+      ? [{ type: "vessel", name: inferredSubject, id: entityRef?.id }]
       : undefined,
     oklExplainability: {
       patternId: pattern.id,
