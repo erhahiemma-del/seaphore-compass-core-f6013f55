@@ -46,6 +46,7 @@ import { MissionsPanel } from "@/components/investigation/MissionsPanel";
 import { OklPatternsPanel } from "@/components/investigation/OklPatternsPanel";
 import { HistoricalKnowledgePanel } from "@/components/okl/HistoricalKnowledgePanel";
 import { OperationalInsightsPanel } from "@/components/oie/OperationalInsightsPanel";
+import { OutcomeCaptureCard } from "@/features/investigate/OutcomeCaptureCard";
 import { useOklAutoPersistOnClose } from "@/services/okl/use-okl-auto-persist";
 
 
@@ -161,6 +162,7 @@ function WorkspaceRoute() {
           {/* Column 3: Recommendation + Decision log + Notebook + Copilot + Timeline */}
           <div className="space-y-4">
             <RecommendationPanel w={w} />
+            <OutcomeCaptureCard w={w} />
             <NotebookPanel w={w} />
             <EmbeddedCopilotPanel w={w} />
             <DecisionLogPanel w={w} />
