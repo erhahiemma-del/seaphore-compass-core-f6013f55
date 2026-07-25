@@ -69,6 +69,14 @@ export const runOIEFn = createServerFn({ method: "POST" })
       };
     }
 
+    // Deliver the canonical UIP inline so client consumers (Evidence
+    // Explorer, Predictions, Revenue, OKL, MIW panels) can register it
+    // and stop reading demo fixtures. The registry is server-memory only,
+    // so serialising the UIP with the response is the reliable channel.
+    const uipSnapshot = result.briefing.source_uip_id
+      ? getUip(result.briefing.source_uip_id)
+      : undefined;
+
     return {
       kind: "briefing" as const,
       briefing_id: result.briefing.id,
@@ -89,5 +97,6 @@ export const runOIEFn = createServerFn({ method: "POST" })
         followUps: result.plan.followUps,
       },
       provider: result.provider,
+      uip: uipSnapshot ?? null,
     };
   });
