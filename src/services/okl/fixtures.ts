@@ -171,12 +171,12 @@ const fused: FusedEvidencePackage = {
     },
   ],
   sources: [
-    { connectorId: "gfw", sourceName: "Global Fishing Watch", grade: "CORROBORATED", coverage: 0.9, agreementScore: 0.85, weight: 1 },
-    { connectorId: "ais", sourceName: "Terrestrial AIS", grade: "OBSERVED", coverage: 0.6, agreementScore: 0.7, weight: 0.9 },
-    { connectorId: "opensanctions", sourceName: "OpenSanctions", grade: "VERIFIED", coverage: 0.4, agreementScore: 0.95, weight: 1 },
-    { connectorId: "customs", sourceName: "Customs Manifest", grade: "REPORTED", coverage: 0.5, agreementScore: 0.6, weight: 0.9 },
-    { connectorId: "portauth", sourceName: "Port Authority", grade: "REPORTED", coverage: 0.5, agreementScore: 0.7, weight: 0.9 },
-    { connectorId: "cac", sourceName: "CAC Nigeria", grade: "VERIFIED", coverage: 0.4, agreementScore: 0.9, weight: 1 },
+    { connectorId: "gfw", sourceName: "Global Fishing Watch", grade: "CORROBORATED", agreementScore: 0.85, weight: 1 },
+    { connectorId: "ais", sourceName: "Terrestrial AIS", grade: "OBSERVED", agreementScore: 0.7, weight: 0.9 },
+    { connectorId: "opensanctions", sourceName: "OpenSanctions", grade: "VERIFIED", agreementScore: 0.95, weight: 1 },
+    { connectorId: "customs", sourceName: "Customs Manifest", grade: "REPORTED", agreementScore: 0.6, weight: 0.9 },
+    { connectorId: "portauth", sourceName: "Port Authority", grade: "REPORTED", agreementScore: 0.7, weight: 0.9 },
+    { connectorId: "cac", sourceName: "CAC Nigeria", grade: "VERIFIED", agreementScore: 0.9, weight: 1 },
   ],
   report: {
     contradictions: [],
