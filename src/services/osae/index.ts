@@ -1,29 +1,45 @@
 /**
- * Operational Situation Awareness Engine (OSAE) — minimal surface.
+ * Operational Situation Awareness Engine (OSAE) — voyage-aware surface.
  *
  * OSAE is the sole authority for interpreting evidence into
  * operational priority, risk, and recommendation. Connectors and
  * analyzers publish evidence here; OSAE consumers (ICE, OIE) read the
  * resulting assessments.
  *
- * The Sprint 1C GFW connector is the first producer, publishing AIS
- * continuity evidence. Full OSAE fusion logic will land in a
- * subsequent sprint — this module reserves the boundary so no
- * connector or analyser assigns risk itself.
+ * Sprint 1D-AIS: OSAE now assesses individual segmented AIS
+ * interruption events AND produces an overall operational assessment.
+ * The overall priority is the max across per-event priorities, lifted
+ * by detected recurring patterns.
  */
 import type {
   AisContinuityReport,
   AisDarkEvidence,
+  AisPattern,
 } from "@/intelligence/analyzers/AISBehaviourAnalyzer";
 
 export type OperationalPriority = "watch" | "monitor" | "act" | "urgent";
 
+export interface PerEventAssessment {
+  startAt: string;
+  endAt: string;
+  durationHours: number;
+  kind: AisDarkEvidence["kind"];
+  priority: OperationalPriority;
+  rationale: string;
+}
+
 export interface OsaeAssessment {
   vesselId: string;
-  /** Priority assigned by OSAE — connectors never set this. */
+  /** Overall priority assigned by OSAE — connectors never set this. */
   priority: OperationalPriority;
   /** OSAE-produced narrative — never phrased as "risk level". */
   summary: string;
+  /** Per-event assessments — one per discrete interruption. */
+  eventAssessments: PerEventAssessment[];
+  /** Behavioural patterns lifted from the continuity report. */
+  patterns: AisPattern[];
+  totalInterruptions: number;
+  longestInterruptionHours: number;
   /** Evidence that fed this assessment. */
   evidence: AisDarkEvidence[];
   producedAt: string;
@@ -39,30 +55,100 @@ const state: OsaeState = {
   assessments: new Map(),
 };
 
-function assess(report: AisContinuityReport): OsaeAssessment {
-  const longestGap = report.darkEvents.reduce(
-    (m, d) => Math.max(m, d.durationHours),
-    0,
-  );
-  const historical = report.darkEvents[0]?.historicalFrequency ?? 0;
+const PRIORITY_RANK: Record<OperationalPriority, number> = {
+  watch: 0,
+  monitor: 1,
+  act: 2,
+  urgent: 3,
+};
 
-  // OSAE priority rubric — NOT a risk score. Priority controls how
-  // quickly an officer should look, not what the answer is.
-  let priority: OperationalPriority = "watch";
-  if (report.gapsDetected === 0) priority = "watch";
-  else if (longestGap >= 24 || historical >= 3) priority = "urgent";
-  else if (longestGap >= 12 || historical >= 1) priority = "act";
-  else priority = "monitor";
+function ranked(a: OperationalPriority, b: OperationalPriority): OperationalPriority {
+  return PRIORITY_RANK[a] >= PRIORITY_RANK[b] ? a : b;
+}
+
+function priorityForEvent(
+  ev: AisDarkEvidence,
+  historicalFrequency: number,
+): { priority: OperationalPriority; rationale: string } {
+  if (ev.kind === "coverage-uncertain") {
+    return {
+      priority: "watch",
+      rationale:
+        "Coverage-uncertain span — cannot be attributed to a single disabling event without additional evidence.",
+    };
+  }
+  const near =
+    typeof ev.distanceFromPortNm === "number" && ev.distanceFromPortNm <= 25;
+  if (ev.durationHours >= 24 || (near && ev.durationHours >= 6)) {
+    return {
+      priority: "urgent",
+      rationale:
+        near && ev.durationHours >= 6
+          ? "Disabling near port approach exceeding 6 hours warrants immediate officer review."
+          : "Disabling exceeding 24 hours warrants immediate officer review.",
+    };
+  }
+  if (ev.durationHours >= 12 || historicalFrequency >= 1) {
+    return {
+      priority: "act",
+      rationale: "Disabling exceeds 12 hours or repeats prior behaviour; officer review requested.",
+    };
+  }
+  if (ev.durationHours > 6) {
+    return {
+      priority: "monitor",
+      rationale: "Short disabling event above the 6-hour threshold; monitor for repetition.",
+    };
+  }
+  return { priority: "watch", rationale: "Observation logged." };
+}
+
+function assess(report: AisContinuityReport): OsaeAssessment {
+  const historicalFrequency = report.darkEvents[0]?.historicalFrequency ?? 0;
+
+  const eventAssessments: PerEventAssessment[] = report.darkEvents.map((ev) => {
+    const { priority, rationale } = priorityForEvent(ev, historicalFrequency);
+    return {
+      startAt: ev.startAt,
+      endAt: ev.endAt,
+      durationHours: ev.durationHours,
+      kind: ev.kind,
+      priority,
+      rationale,
+    };
+  });
+
+  // Overall priority = max across per-event priorities, lifted by
+  // patterns. Patterns can only *raise* priority, never lower it.
+  let overall: OperationalPriority = "watch";
+  for (const a of eventAssessments) overall = ranked(overall, a.priority);
+  for (const p of report.patterns) {
+    if (p.code === "repeated-disabling" && p.occurrences >= 3) {
+      overall = ranked(overall, "urgent");
+    } else if (p.code === "port-approach-disabling") {
+      overall = ranked(overall, "act");
+    } else if (p.code === "boundary-crossing") {
+      overall = ranked(overall, "act");
+    } else if (p.code === "offshore-loitering") {
+      overall = ranked(overall, "monitor");
+    }
+  }
 
   const summary =
-    report.gapsDetected === 0
-      ? "Continuous AIS coverage across the observed window."
-      : `${report.gapsDetected} AIS transmission gap${report.gapsDetected === 1 ? "" : "s"} observed; longest ${longestGap.toFixed(0)}h. Officer review requested.`;
+    report.totalInterruptions === 0
+      ? report.gapsDetected === 0
+        ? "Continuous AIS coverage across the observed window."
+        : `${report.gapsDetected} coverage-uncertain span${report.gapsDetected === 1 ? "" : "s"} observed; no plausible discrete disabling event attributable.`
+      : `${report.totalInterruptions} discrete AIS interruption${report.totalInterruptions === 1 ? "" : "s"} observed; longest ${report.longestInterruptionHours.toFixed(0)}h${report.patterns.length ? `; ${report.patterns.length} pattern${report.patterns.length === 1 ? "" : "s"} detected` : ""}. Officer review requested.`;
 
   return {
     vesselId: report.vesselId,
-    priority,
+    priority: overall,
     summary,
+    eventAssessments,
+    patterns: report.patterns,
+    totalInterruptions: report.totalInterruptions,
+    longestInterruptionHours: report.longestInterruptionHours,
     evidence: report.darkEvents,
     producedAt: new Date().toISOString(),
   };
@@ -71,8 +157,8 @@ function assess(report: AisContinuityReport): OsaeAssessment {
 export const OSAE = {
   /**
    * Publish an AIS continuity report from the AIS Behaviour Analyzer.
-   * Returns the OSAE assessment (priority + narrative) — the only
-   * component allowed to shape that judgement.
+   * Returns the OSAE assessment (priority + narrative + per-event
+   * assessments) — the only component allowed to shape those judgements.
    */
   publishAisContinuity(report: AisContinuityReport): OsaeAssessment {
     state.reports.set(report.vesselId, report);
