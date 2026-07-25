@@ -87,7 +87,7 @@ export interface IntelligenceEvidenceItem {
   /** Which subject the evidence relates to (vessel, company, …). */
   subject?: string;
   /** Which producer generated this evidence. */
-  producer?: "IAL" | "REASONING" | "OSAE" | "ICE" | "IFE" | "WORKSPACE";
+  producer?: "IAL" | "REASONING" | "OSAE" | "ICE" | "IFE" | "OKL" | "WORKSPACE";
   /** Hash for chain-of-custody (opaque; never a token). */
   hash?: string;
   /** Connector short-id (e.g. "gfw", "opensanctions", "companies-house"). */
@@ -99,6 +99,47 @@ export interface IntelligenceEvidenceItem {
    * per-entity filter. Extracted upstream in adapters — no raw payloads.
    */
   entities?: EvidenceEntityRef[];
+  /**
+   * Officer-facing OKL explainability. Present when the evidence row was
+   * produced by an Operational Knowledge Layer pattern detector. Carries
+   * WHY the pattern was detected, supporting/contradictory evidence ids,
+   * provenance, alternative explanations, confidence pyramid, and the
+   * machine-readable reasoning trace. Rendered alongside the timeline in
+   * the Intelligence Evidence Explorer.
+   */
+  oklExplainability?: OklExplainability;
+}
+
+export interface OklExplainability {
+  readonly patternId: string;
+  readonly patternKind: OklPatternKind;
+  readonly patternName: string;
+  readonly operationalImpact: string;
+  readonly riskLevel: RiskLevel;
+  /** One-line synthesis of "why this was detected". */
+  readonly whyDetected: string;
+  /** Full machine-readable reasoning trace from the detector. */
+  readonly reasoning: ReadonlyArray<ReasoningStep>;
+  /** Evidence ids from the UIP that support this conclusion. */
+  readonly supportingEvidenceIds: ReadonlyArray<string>;
+  /** Contradictory evidence ids surfaced by the IFE. */
+  readonly contradictoryEvidenceIds: ReadonlyArray<string>;
+  /** Connector short-ids that contributed evidence. */
+  readonly sourceConnectors: ReadonlyArray<string>;
+  /** Alternative benign explanations the officer should weigh. */
+  readonly alternatives: ReadonlyArray<AlternativeExplanation>;
+  /** Full 5-level Confidence Pyramid. */
+  readonly confidencePyramid: ConfidencePyramid;
+  /** Historical context (e.g. prior detections). */
+  readonly historicalContext?: string;
+  /** Provenance — where did this pattern come from? */
+  readonly provenance: {
+    readonly uipId: string;
+    readonly fusedPackageId: string;
+    readonly detector: OklPatternKind;
+  };
+  /** Officer-approval-gated recommendation labels, for quick scanning. */
+  readonly recommendationLabels: ReadonlyArray<string>;
 }
 
 /* ────────────────────────── grade / status helpers ────────────────────────── */
