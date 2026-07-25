@@ -162,7 +162,9 @@ function WorkspaceRoute() {
           {/* Column 3: Recommendation + Decision log + Notebook + Copilot + Timeline */}
           <div className="space-y-4">
             <RecommendationPanel w={w} />
-            <OutcomeCaptureCard w={w} />
+            {(w.stage === "DECISION" || w.stage === "CLOSED" || w.status === "CLOSED" || w.outcome) ? (
+              <OutcomeCaptureCard w={w} />
+            ) : null}
             <NotebookPanel w={w} />
             <EmbeddedCopilotPanel w={w} />
             <DecisionLogPanel w={w} />
