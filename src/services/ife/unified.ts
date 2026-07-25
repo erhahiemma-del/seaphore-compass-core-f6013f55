@@ -116,5 +116,6 @@ export function buildUnifiedIntelligencePackage({
     provenance,
     freshestSeconds: Number.isFinite(freshestSeconds) ? freshestSeconds : 0,
     hasContradictions: fused.contradictions.length > 0,
+    rawEvidence: rawRecords,
   };
 }
