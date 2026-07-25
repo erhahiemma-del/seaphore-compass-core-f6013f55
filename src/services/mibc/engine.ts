@@ -377,11 +377,199 @@ export function buildReport(input: BuildReportInput): ReportPackage {
   void workspaceIds;
 
 
+  // ── Canonical UIP projections (Sprint 2.2) ─────────────────────────
+  // Everything below in this block is derived exclusively from the UIP
+  // snapshots the orchestrator resolved. Numbers match those shown by
+  // every other UIP consumer.
+  const uipRefs = input.uipSnapshots ?? [];
+  const uipList = uipRefs.map((r) => r.uip);
+  const uipIdsFromSnapshots = uipList.map((u) => u.id);
+  const uipEvidenceCount = uipList.reduce((s, u) => s + u.rawEvidence.length, 0);
+  const uipEntityCount = uipList.reduce((s, u) => s + u.fused.canonical.length, 0);
+  const uipContradictions = uipList.reduce((s, u) => s + u.fused.contradictions.length, 0);
+
+  // Evidence Provenance — flatten per-connector attribution across UIPs.
+  const provenanceByConnector = new Map<
+    string,
+    { sourceName: string; records: number; agreementSum: number; n: number }
+  >();
+  for (const u of uipList) {
+    for (const p of u.provenance) {
+      const cur = provenanceByConnector.get(p.connectorId) ?? {
+        sourceName: p.sourceName,
+        records: 0,
+        agreementSum: 0,
+        n: 0,
+      };
+      cur.records += p.records;
+      cur.agreementSum += p.agreementScore;
+      cur.n += 1;
+      provenanceByConnector.set(p.connectorId, cur);
+    }
+  }
+  const provenanceRows = [...provenanceByConnector.entries()]
+    .map(([connectorId, v]) => ({
+      Connector: connectorId,
+      Source: v.sourceName,
+      Records: v.records,
+      Agreement: v.n ? `${Math.round((v.agreementSum / v.n) * 100)}%` : "—",
+    }))
+    .sort((a, b) => Number(b.Records) - Number(a.Records));
+
+  sections.push({
+    id: "evidence-provenance",
+    title: "Evidence Provenance",
+    body:
+      uipList.length === 0
+        ? "No Canonical UIP snapshots were resolved by the Intelligence Orchestrator for this report. Every published Seaphore report must trace to at least one UIP."
+        : `Assembled from ${uipList.length} Canonical UIP snapshot${uipList.length === 1 ? "" : "s"} carrying ${uipEvidenceCount} normalised evidence item${uipEvidenceCount === 1 ? "" : "s"} across ${provenanceByConnector.size} connector${provenanceByConnector.size === 1 ? "" : "s"}. ${uipContradictions} contradiction${uipContradictions === 1 ? "" : "s"} surfaced during fusion.`,
+    columns: ["Connector", "Source", "Records", "Agreement"],
+    rows: provenanceRows,
+    references: uipIdsFromSnapshots,
+  });
+
+  // Canonical Entities — one row per fused entity across every UIP.
+  const canonicalRows = uipList.flatMap((u) =>
+    u.fused.canonical.slice(0, 40).map((c) => ({
+      Entity: c.entity.label ?? c.entity.id,
+      Kind: c.entity.kind,
+      Confidence: c.confidence,
+      Grade: c.grade,
+      Sources: c.sources.length,
+      UIP: u.id,
+    })),
+  );
+  sections.push({
+    id: "canonical-entities",
+    title: "Canonical Entities",
+    body:
+      uipList.length === 0
+        ? "No canonical entities — no UIP resolved."
+        : `${uipEntityCount} canonical entit${uipEntityCount === 1 ? "y" : "ies"} across ${uipList.length} UIP snapshot${uipList.length === 1 ? "" : "s"}. Each row is the single fused view every Seaphore consumer reads.`,
+    columns: ["Entity", "Kind", "Confidence", "Grade", "Sources", "UIP"],
+    rows: canonicalRows.slice(0, 80),
+  });
+
+  // Confidence Pyramid — computed by OKL from the same UIPs. When many
+  // UIPs are folded into one report, we take the max per band so the
+  // officer sees the strongest supported claim.
+  const pyramids: ConfidencePyramid[] = [];
+  for (const u of uipList) {
+    try {
+      const okl = analyzeOperationalKnowledge({
+        uip: u,
+        rawEvidence: u.rawEvidence,
+        historical: [],
+        investigations: [],
+      });
+      pyramids.push(okl.summary.overallConfidence);
+    } catch {
+      // OKL is best-effort here; a bad snapshot must not sink the report.
+    }
+  }
+  const foldPyramid = (): ConfidencePyramid | null => {
+    if (pyramids.length === 0) return null;
+    const max = (k: keyof ConfidencePyramid) =>
+      Math.max(...pyramids.map((p) => (typeof p[k] === "number" ? (p[k] as number) : 0)));
+    const identity = max("identity");
+    const evidence = max("evidence");
+    const fusion = max("fusion");
+    const pattern = max("pattern");
+    const recommendation = max("recommendation");
+    // Tier is the tier reported alongside the strongest recommendation.
+    const strongest = pyramids
+      .slice()
+      .sort((a, b) => b.recommendation - a.recommendation)[0];
+    return {
+      identity,
+      evidence,
+      fusion,
+      pattern,
+      recommendation,
+      tier: strongest?.tier ?? "SUPPORTED",
+      explanation:
+        "Aggregated across the resolved Canonical UIP snapshots; each band shows the strongest available support.",
+    };
+  };
+  const pyramid = foldPyramid();
+  sections.push({
+    id: "confidence-pyramid",
+    title: "Confidence Pyramid",
+    body: pyramid
+      ? `Tier ${pyramid.tier}. ${pyramid.explanation}`
+      : "No Confidence Pyramid — OKL requires at least one resolved UIP.",
+    columns: ["Band", "Score"],
+    rows: pyramid
+      ? [
+          { Band: "Identity", Score: `${pyramid.identity}%` },
+          { Band: "Evidence", Score: `${pyramid.evidence}%` },
+          { Band: "Fusion", Score: `${pyramid.fusion}%` },
+          { Band: "Pattern", Score: `${pyramid.pattern}%` },
+          { Band: "Recommendation", Score: `${pyramid.recommendation}%` },
+        ]
+      : [],
+    confidence: pyramid?.recommendation,
+  });
+
+  // Decision Register — structured view of every officer decision in
+  // period, with the sourced workspace and its Canonical UIP.
+  const decisionRegisterRows = decisions.map((d) => {
+    const wsp = workspaces.find((w) => w.id === d.workspaceId);
+    return {
+      When: new Date(d.at).toISOString().slice(0, 16).replace("T", " "),
+      Investigation: d.workspaceTitle ?? wsp?.title ?? d.workspaceId,
+      "Source UIP": wsp?.sourceUipId ?? "—",
+      Decision: d.title,
+      Detail: d.detail ?? "",
+      Officer: d.officer ?? "—",
+    };
+  });
+  sections.push({
+    id: "decision-register",
+    title: "Decision Register",
+    body:
+      decisionRegisterRows.length === 0
+        ? "No officer decisions recorded in period. Officers must record decisions before circulation."
+        : `${decisionRegisterRows.length} officer decision${decisionRegisterRows.length === 1 ? "" : "s"} recorded. Every entry traces to a sourced investigation and its Canonical UIP.`,
+    columns: ["When", "Investigation", "Source UIP", "Decision", "Detail", "Officer"],
+    rows: decisionRegisterRows,
+    references: decisions.map((d) => d.id),
+  });
+
+  // Investigation Links — workspace ↔ Canonical UIP lineage, including
+  // orchestrator misses so the officer never sees silent gaps.
+  const linkRows = workspaces.map((w) => ({
+    Investigation: w.title,
+    "Investigation ID": w.id,
+    "Source UIP": w.sourceUipId ?? "—",
+    Resolved: w.sourceUipId
+      ? uipList.some((u) => u.id === w.sourceUipId)
+        ? "Yes"
+        : "No · UIP not registered in session"
+      : "—",
+    Stage: w.stage ?? "INTAKE",
+    Missions: (w.missionPlanIds ?? []).length,
+  }));
+  const missingIds = input.missingUipIds ?? [];
+  sections.push({
+    id: "investigation-links",
+    title: "Investigation Links",
+    body:
+      linkRows.length === 0 && uipList.length > 0
+        ? "Live Intelligence Brief — no investigation is attached to this UIP snapshot."
+        : `${linkRows.length} investigation link${linkRows.length === 1 ? "" : "s"}. ${missingIds.length} Canonical UIP id${missingIds.length === 1 ? "" : "s"} could not be resolved in this session.`,
+    columns: ["Investigation", "Investigation ID", "Source UIP", "Resolved", "Stage", "Missions"],
+    rows: linkRows,
+    references: uipIdsFromSnapshots,
+  });
+
   sections.push({
     id: "confidence",
     title: "Confidence & Explainability",
-    body: `Weighted mean investigation confidence: ${avgConfidence}%. Every claim above is traceable to the referenced Investigation Workspace(s). Reports do not read from raw connectors — only from Investigation Workspaces enriched by the Intelligence Fusion Engine and Operational Knowledge Layer.`,
-    confidence: avgConfidence,
+    body: pyramid
+      ? `Recommendation confidence ${pyramid.recommendation}% (tier ${pyramid.tier}). Weighted mean investigation confidence: ${avgConfidence}%. Every claim above is traceable to the Canonical UIP snapshots resolved by the Intelligence Orchestrator; MIBC never reads from raw connectors or intelligence tables.`
+      : `Weighted mean investigation confidence: ${avgConfidence}%. Every claim above is traceable to the referenced Investigation Workspace(s). Reports do not read from raw connectors — only through the Intelligence Orchestrator.`,
+    confidence: pyramid?.recommendation ?? avgConfidence,
   });
 
   sections.push({
@@ -390,6 +578,8 @@ export function buildReport(input: BuildReportInput): ReportPackage {
     bullets: [
       `Officer of record: ${officer}`,
       `Sourced investigation IDs: ${workspaces.map((w) => w.id).join(", ") || "—"}`,
+      `Canonical UIP ids: ${uipIdsFromSnapshots.join(", ") || "—"}`,
+      `Unresolved UIP ids: ${missingIds.join(", ") || "—"}`,
       `Tasks in period: ${tasks.length}`,
       `Decisions in period: ${decisions.length}`,
     ],
@@ -424,18 +614,35 @@ export function buildReport(input: BuildReportInput): ReportPackage {
       evidenceRefs: workspaces.map((w) => `workspace:${w.id}`),
     });
   }
+  if (provenanceRows.length > 0) {
+    charts.push({
+      id: "chart-uip-provenance",
+      title: "Canonical UIP evidence by connector",
+      kind: "bar",
+      data: provenanceRows.slice(0, 8).map((r) => ({ label: String(r.Source), value: Number(r.Records) })),
+      evidenceRefs: uipIdsFromSnapshots,
+    });
+  }
 
   // ── Origin classification ─────────────────────────────────────────
   // Every report carries an explicit origin plus the full lineage of
   // Canonical UIP ids and Mission Plan ids so the operational-runtime
   // chain (UIP → OSAE → Investigation → Mission → MIBC) is auditable.
-  const sourceUipIds = Array.from(
-    new Set(workspaces.map((w) => w.sourceUipId).filter((x): x is string => !!x)),
-  );
-  const origin: "LIVE_UIP" | "INVESTIGATION" | "OPERATIONAL_RUNTIME" =
-    linkedMissionIds.size > 0 && sourceUipIds.length > 0
-      ? "OPERATIONAL_RUNTIME"
-      : "INVESTIGATION";
+  const workspaceUipIds = workspaces
+    .map((w) => w.sourceUipId)
+    .filter((x): x is string => !!x);
+  const sourceUipIds = Array.from(new Set([...workspaceUipIds, ...uipIdsFromSnapshots]));
+  const origin: ReportPackage["origin"] =
+    input.origin ??
+    (workspaces.length === 0 && uipIdsFromSnapshots.length > 0
+      ? "LIVE_UIP"
+      : linkedMissionIds.size > 0 && sourceUipIds.length > 0
+        ? "OPERATIONAL_RUNTIME"
+        : "INVESTIGATION");
+
+  // Overall confidence — prefer the Confidence Pyramid's recommendation
+  // band (evidence-anchored) over the workspace average.
+  const overallConfidence = pyramid?.recommendation ?? avgConfidence;
 
   return {
     id: `mibc-${Date.now().toString(36)}`,
@@ -453,11 +660,16 @@ export function buildReport(input: BuildReportInput): ReportPackage {
     sourceMissionIds: [...linkedMissionIds],
     sections,
     charts,
-    overallConfidence: avgConfidence,
+    overallConfidence,
     sources,
     provenanceLine:
-      origin === "OPERATIONAL_RUNTIME"
-        ? `Operational Runtime trace · ${sourceUipIds.length} UIP → ${workspaces.length} Investigation → ${linkedMissionIds.size} Mission. Every chart and recommendation traces to evidence.`
+      origin === "LIVE_UIP"
+        ? `Live Intelligence Brief · ${uipIdsFromSnapshots.length} Canonical UIP snapshot${uipIdsFromSnapshots.length === 1 ? "" : "s"} resolved via the Intelligence Orchestrator.`
+        : origin === "OPERATIONAL_RUNTIME"
+          ? `Operational Runtime trace · ${sourceUipIds.length} UIP → ${workspaces.length} Investigation → ${linkedMissionIds.size} Mission. Every chart and recommendation traces to evidence.`
+          : `Investigation-Based Brief · ${sourceUipIds.length} Canonical UIP snapshot${sourceUipIds.length === 1 ? "" : "s"} resolved via the Intelligence Orchestrator.`,
+  };
+}
         : "Reports read only from Investigation Workspaces. Every chart and recommendation traces to evidence.",
   };
 }
