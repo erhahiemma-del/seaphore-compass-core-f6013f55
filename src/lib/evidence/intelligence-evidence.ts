@@ -329,7 +329,92 @@ export function fromWorkspaceEvidence(
   };
 }
 
-/* ────────────────────────── filters ────────────────────────── */
+const OKL_KIND_LABEL: Record<OklPatternKind, string> = {
+  REPEAT_OFFENDER: "Repeat offender",
+  SUSPICIOUS_ROUTING: "Suspicious routing",
+  AIS_DARK_PATTERN: "AIS dark pattern",
+  OWNERSHIP_LINK: "Ownership link",
+  CARGO_ANOMALY: "Cargo anomaly",
+  MANIFEST_INCONSISTENCY: "Manifest inconsistency",
+  REVENUE_LEAKAGE: "Revenue leakage",
+  COMPLIANCE_VIOLATION: "Compliance violation",
+  PORT_CONGESTION: "Port congestion",
+  CROSS_INVESTIGATION_LINK: "Cross-investigation link",
+  HISTORICAL_BEHAVIOUR: "Historical behaviour",
+};
+
+function riskToConfidence(risk: RiskLevel, tier: ConfidencePyramid["tier"]): EvidenceConfidence {
+  if (tier === "HIGH") return risk === "CRITICAL" || risk === "HIGH" ? "VERIFIED" : "OBSERVED";
+  if (tier === "MEDIUM") return "OBSERVED";
+  return "INFERRED";
+}
+
+function riskToStatus(risk: RiskLevel, hasContradictions: boolean): EvidenceStatus {
+  if (hasContradictions) return "conflicting";
+  if (risk === "CRITICAL" || risk === "HIGH") return "verified";
+  return "pending";
+}
+
+/**
+ * Adapt an OKL OperationalPattern into a projected evidence row for the
+ * Intelligence Evidence Explorer. Carries the full officer-facing
+ * explainability payload (why it was detected, supporting evidence,
+ * provenance, alternatives, and confidence pyramid) so the evidence
+ * timeline can render explainability alongside each pattern.
+ */
+export function fromOklPattern(
+  pattern: OperationalPattern,
+  subject?: string,
+  investigationId?: string,
+): IntelligenceEvidenceItem {
+  const primaryReason =
+    pattern.reasoning.find((r) => /matched|detected|flagged|found|observed/i.test(r.step))?.step ??
+    pattern.reasoning[0]?.step ??
+    pattern.operationalImpact;
+
+  const entityRef = pattern.entities[0];
+  const inferredSubject =
+    subject ??
+    (entityRef?.canonicalId?.startsWith("vessel:") ? entityRef.aliases?.[0] : undefined) ??
+    entityRef?.aliases?.[0];
+
+  return {
+    id: `okl.${pattern.id}`,
+    source: `Operational Knowledge Layer · ${OKL_KIND_LABEL[pattern.kind]}`,
+    timestamp: pattern.detectedAt,
+    confidence: riskToConfidence(pattern.riskLevel, pattern.confidence.tier),
+    confidenceScore: pattern.confidence.recommendation / 100,
+    evidenceType: "assessment",
+    status: riskToStatus(pattern.riskLevel, pattern.contradictoryEvidenceIds.length > 0),
+    claim: `${pattern.name} · ${pattern.riskLevel} risk`,
+    summary: pattern.operationalImpact,
+    subject: inferredSubject,
+    producer: "OKL",
+    connector: "okl",
+    investigationId,
+    entities: inferredSubject
+      ? [{ type: "vessel", name: inferredSubject, id: entityRef?.canonicalId }]
+      : undefined,
+    oklExplainability: {
+      patternId: pattern.id,
+      patternKind: pattern.kind,
+      patternName: pattern.name,
+      operationalImpact: pattern.operationalImpact,
+      riskLevel: pattern.riskLevel,
+      whyDetected: primaryReason,
+      reasoning: pattern.reasoning,
+      supportingEvidenceIds: pattern.supportingEvidenceIds,
+      contradictoryEvidenceIds: pattern.contradictoryEvidenceIds,
+      sourceConnectors: pattern.sourceConnectors,
+      alternatives: pattern.alternatives,
+      confidencePyramid: pattern.confidence,
+      historicalContext: pattern.historicalContext,
+      provenance: pattern.provenance,
+      recommendationLabels: pattern.recommendations.map((r) => r.label),
+    },
+  };
+}
+
 
 export interface EvidenceFilters {
   types: Set<EvidenceType>;
