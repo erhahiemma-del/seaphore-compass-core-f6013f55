@@ -10,7 +10,8 @@
  * every existing caller (server functions, override gate, UI probes) keeps
  * working unchanged.
  */
-import { supabase } from "@/integrations/supabase/client";
+import { supabase as browserSupabase } from "@/integrations/supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   PERMISSIONS,
   WORKFLOW_PERMISSION,
@@ -45,12 +46,18 @@ export interface PolicyRequest {
   permission: Permission;
   workspace?: string;
   investigation_id?: string;
+  /** Authenticated Supabase client from a server-fn context. Preferred. */
+  supabase?: SupabaseClient;
 }
 
 export interface PolicyDecision {
   allow: boolean;
   reasons: string[];
   requiresEscalation: boolean;
+}
+
+function clientOf(req: { supabase?: SupabaseClient }): SupabaseClient {
+  return req.supabase ?? (browserSupabase as unknown as SupabaseClient);
 }
 
 async function fetchOfficerRole(officer_id: string): Promise<Role | null> {
