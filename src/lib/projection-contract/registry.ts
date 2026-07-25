@@ -700,7 +700,7 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
       surface: "Investigation Workspace · Evidence / Tasks / Timeline / Stage history",
       location: "src/stores/workspace.store.ts",
       component: "src/services/okl/auto-ingest.ts",
-      interaction: "auto-projection",
+      interaction: "passive-display",
     },
     reviewedAt: REVIEWED,
   },
