@@ -455,13 +455,26 @@ export function ExecutiveBriefing({ brief, isAdmin, onFollowUp }: ExecutiveBrief
 
   const firedRisks = risks.filter((r) => r.fired);
 
+  const subject = brief.subject?.name;
+
   return (
     <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-4 text-slate-900">
+      <div className="flex flex-wrap items-center justify-end gap-2 text-[11px]">
+        <Link
+          to="/intelligence-evidence"
+          search={subject ? { entity: subject } : {}}
+          className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+        >
+          <FileText className="h-3 w-3" />
+          Explore all evidence
+        </Link>
+      </div>
       {/* Section 1 — Executive Summary */}
       <Section title="Executive Summary" icon={Sparkles}>
         <p className="text-[14px] leading-relaxed text-slate-800">{executiveSummary}</p>
         <p className="mt-3 text-[12px] italic text-slate-500">{confidence.headline}</p>
       </Section>
+
 
       {/* Section 2 — Intelligence Assessment */}
       <Section title="Intelligence Assessment" icon={Gauge}>
