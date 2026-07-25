@@ -174,6 +174,14 @@ export interface InvestigationWorkspace {
   startedAt: string;
   updatedAt: string;
   lastBriefingId?: string;
+  /**
+   * Canonical UIP id that seeded this investigation. Every downstream
+   * artifact (Mission Plan, MIBC report) traces back to this id so the
+   * end-to-end pipeline (UIP → OSAE → Investigation → Mission → MIBC)
+   * remains explainable. Set on creation from `recordBriefingToWorkspace`
+   * and never mutated thereafter.
+   */
+  sourceUipId?: string;
 
   confidenceTier: ConfidenceTier;
   confidencePct: number;
