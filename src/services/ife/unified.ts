@@ -20,6 +20,7 @@
  * `NormalizedEvidence` contract.
  */
 import type { OsaeAssessment } from "@/services/osae";
+import type { NormalizedEvidence } from "@/services/ial/types";
 import { fuseEvidence } from "./engine";
 import { resolveIdentities, type IdentityCluster } from "./identity-resolver";
 import type { FusedEvidencePackage, FusionInput } from "./types";
