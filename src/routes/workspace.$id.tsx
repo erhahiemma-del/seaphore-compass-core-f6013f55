@@ -35,10 +35,14 @@ import {
   type EvidenceCategory,
   type HypothesisStatus,
   type InvestigationWorkspace,
+  type NotebookEntry,
+  type NotebookKind,
   type TaskStatus,
   type TimelineEvent,
   type WorkspaceEvidence,
 } from "@/stores/workspace.store";
+import { AskCopilotDialog } from "@/components/ai/ask-copilot-dialog";
+
 
 export const Route = createFileRoute("/workspace/$id")({
   head: ({ params }) => ({
