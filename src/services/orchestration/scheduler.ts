@@ -3,15 +3,20 @@
  * Parallelises specialist agent execution. NEVER accesses the knowledge
  * graph directly. Enforces the Performance Budget from Layer 5.4 by aborting
  * retrievals that exceed the mode's `max` window.
+ *
+ * Sprint 2.2A — propagates the authenticated Supabase client from the
+ * orchestrator down to every agent so evidence retrieval runs under the
+ * officer's auth context (RLS applies as that officer).
  */
 import { PERF_BUDGETS } from "./constants";
 import type { BriefingMode, CapabilityId, Intent, OfficerQuery, RetrievalResult } from "./types";
-import { pickAgentForCapability } from "./agents";
+import { pickAgentForCapability, type AgentDeps } from "./agents";
 
 export async function scheduleRetrievals(
   intent: Intent,
   query: OfficerQuery,
   mode: BriefingMode,
+  deps: AgentDeps = {},
 ): Promise<RetrievalResult[]> {
   const budget = PERF_BUDGETS[mode].max;
   const tasks = intent.capabilities.map<Promise<RetrievalResult>>((cap: CapabilityId) => {
@@ -27,7 +32,7 @@ export async function scheduleRetrievals(
         error: "No agent registered for capability",
       });
     }
-    return withTimeout(agent.retrieve(cap, intent, query), budget, cap, agent.id);
+    return withTimeout(agent.retrieve(cap, intent, query, deps), budget, cap, agent.id);
   });
   return Promise.all(tasks);
 }

@@ -52,12 +52,30 @@ export async function orchestrate(
   // 1. Intent
   const intent = classifyIntent(query);
 
-  // 2. Schedule specialist retrievals in parallel
-  const results = await scheduleRetrievals(intent, query, intent.mode);
+  // 2. Schedule specialist retrievals in parallel — thread the authenticated
+  //    client so every agent reads under the officer's auth context (RLS).
+  const results = await scheduleRetrievals(intent, query, intent.mode, {
+    supabase: deps.supabase,
+  });
+  const respondedCount = results.filter((r) => r.responded).length;
+  const evidenceCount = results.reduce((n, r) => n + (r.evidence?.length ?? 0), 0);
+  console.info("[orchestrator] retrieval", {
+    officer: query.officer_id,
+    authenticated: Boolean(deps.supabase),
+    scheduled: results.length,
+    responded: respondedCount,
+    evidence: evidenceCount,
+    errors: results.filter((r) => r.error).map((r) => `${r.agent}:${r.error}`),
+  });
   await emitEvent(
     {
       event_type: "evidence.collected",
-      payload: { intent: intent.mode, sources: results.length },
+      payload: {
+        intent: intent.mode,
+        sources: results.length,
+        responded: respondedCount,
+        evidence: evidenceCount,
+      },
       emitted_by: query.officer_id,
     },
     { supabase: deps.supabase },
