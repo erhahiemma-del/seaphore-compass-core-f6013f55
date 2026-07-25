@@ -859,6 +859,9 @@ function ExecutiveBriefingView({
       }),
     [],
   );
+  useEffect(() => {
+    autoIngestOklIntoInvestigations(operationalKnowledge);
+  }, [operationalKnowledge]);
   const brief = useMemo(
     () =>
       synthesizeExecutiveBrief({
