@@ -127,6 +127,10 @@ describe("buildUnifiedIntelligencePackage", () => {
       vesselId: "vessel:mmsi:440825000", // connector produced with MMSI
       priority: "urgent",
       summary: "AIS gap detected.",
+      eventAssessments: [],
+      patterns: [],
+      totalInterruptions: 0,
+      longestInterruptionHours: 0,
       evidence: [],
       producedAt: "2026-07-25T00:00:00Z",
     };
