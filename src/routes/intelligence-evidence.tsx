@@ -21,22 +21,12 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { IntelligenceEvidenceExplorer } from "@/components/intelligence/IntelligenceEvidenceExplorer";
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
-import { AISBehaviourAnalyzer } from "@/intelligence/analyzers/AISBehaviourAnalyzer";
-import { OSAE } from "@/services/osae";
 import { analyzeOperationalKnowledge } from "@/services/okl";
-import {
-  DEMO_UIP,
-  DEMO_EVIDENCE,
-  DEMO_HISTORICAL,
-  DEMO_INVESTIGATIONS,
-} from "@/services/okl/fixtures";
+import { useUipStore } from "@/stores/uip.store";
 import { useWorkspaceStore } from "@/stores/workspace.store";
 import {
-  fromAisContinuityReport,
-  fromGfwGapEvent,
-  fromGfwIdentity,
+  fromNormalizedEvidence,
   fromOklPattern,
-  fromOsaeAssessment,
   fromWorkspaceEvidence,
   type EvidenceConfidence,
   type EvidenceType,
@@ -50,6 +40,7 @@ interface EvidenceSearch {
   entity?: string;
   investigation?: string;
   confidence?: string;
+  uip?: string;
 }
 
 export const Route = createFileRoute("/intelligence-evidence")({
