@@ -25,6 +25,7 @@ import {
   type ReportPeriod,
   type ExportFormat,
   type ReportPackage,
+  MIBC_ENGINE_VERSION,
 } from "@/services/mibc";
 import { FileText, FileDown, Sparkles, ShieldCheck } from "lucide-react";
 import { SchedulesPanel } from "@/components/briefing/SchedulesPanel";
