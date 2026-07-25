@@ -56,7 +56,7 @@ export function SchedulesPanel({
 
   const [name, setName] = useState("Daily executive brief");
   const [reportType, setReportType] = useState<ReportType>("EXECUTIVE_BRIEF");
-  const [period, setPeriod] = useState<ReportPeriod>("LAST_24H");
+  const [period, setPeriod] = useState<ReportPeriod>("LAST_7D");
   const [cadence, setCadence] = useState<RecurringCadence>("DAILY");
 
   const createMutation = useMutation({
@@ -89,13 +89,13 @@ export function SchedulesPanel({
   const runNowMutation = useMutation({
     mutationFn: (s: {
       id: string;
-      reportType: string;
+      report_type: string;
       period: string;
       workspace_ids: string[];
     }) =>
       enqueue({
         data: {
-          reportType: s.reportType as ReportType,
+          reportType: s.report_type as ReportType,
           period: s.period as ReportPeriod,
           workspaceIds: s.workspace_ids,
           scheduleId: s.id,
