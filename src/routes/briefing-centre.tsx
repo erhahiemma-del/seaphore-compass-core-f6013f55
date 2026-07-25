@@ -229,6 +229,18 @@ function BriefingCentre() {
       const blob = await exportReport(report, format);
       const ext = format.toLowerCase();
       downloadBlob(blob, `seaphore-${report.reportType.toLowerCase()}-${report.id}.${ext}`);
+      // Telemetry — one event per exported UIP so we can prove which
+      // canonical snapshot backed every file that left the platform.
+      for (const uipId of report.sourceUipIds.length > 0 ? report.sourceUipIds : [null]) {
+        recordUipAccess({
+          surface: "MIBC",
+          uipId,
+          briefingId: report.briefingId ?? null,
+          officerId,
+          action: "DOWNLOAD",
+          detail: `${format} export · ${report.reportTypeLabel}`,
+        });
+      }
       toast.success(`${format} exported`);
     } catch (err) {
       toast.error(`Failed to export ${format}`, { description: String(err) });
