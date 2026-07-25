@@ -41,69 +41,6 @@ export const Route = createFileRoute("/revenue-leakage")({
 
 const OFFICER = "officer:demo";
 
-function seedEvidence(): ReadonlyArray<NormalizedEvidence> {
-  const vessel = { id: "vessel:9411640", kind: "vessel" as const, label: "DONGWON NO.16" };
-  const port = { id: "port:unlocode:NGLOS", kind: "port" as const, label: "Lagos" };
-  const iso = new Date("2026-07-25T12:00:00Z").toISOString();
-  const base = (over: Partial<NormalizedEvidence>): NormalizedEvidence => ({
-    id: over.id ?? "seed",
-    source: over.source ?? "customs",
-    sourceName: over.sourceName ?? "Customs Declaration",
-    grade: over.grade ?? "CORROBORATED",
-    entity: over.entity ?? vessel,
-    kind: over.kind ?? "cargo",
-    fields: over.fields ?? {},
-    observedAt: over.observedAt ?? iso,
-    retrievedAt: iso,
-    freshnessSeconds: 3600,
-    hash: "seed",
-  });
-  return [
-    base({
-      id: "cargo-manifest-1",
-      kind: "cargo",
-      grade: "VERIFIED",
-      fields: { declaredTonnage: 2000, actualTonnage: 2650, feePerTonne: 20, currency: "USD" },
-    }),
-    base({
-      id: "portcall-1",
-      kind: "port-call",
-      entity: port,
-      grade: "VERIFIED",
-      fields: { expectedFee: 45_000, paidFee: 32_000, portCode: "NGLOS", currency: "USD" },
-    }),
-    base({
-      id: "cargo-value-1",
-      kind: "cargo",
-      grade: "CORROBORATED",
-      fields: { declaredValue: 400_000, marketValue: 620_000, dutyRate: 0.08, currency: "USD" },
-    }),
-    base({
-      id: "voyage-1",
-      kind: "voyage",
-      fields: {
-        declaredPort: "NGLOS",
-        actualPort: "PGLAE",
-        unscheduled: true,
-        estimatedFeeLoss: 42_000,
-      },
-    }),
-    base({
-      id: "sanc-hit",
-      kind: "sanctions",
-      source: "opensanctions",
-      sourceName: "OpenSanctions",
-      grade: "VERIFIED",
-      fields: { status: "indirect", hops: 2 },
-    }),
-    base({
-      id: "waiver-1",
-      kind: "other",
-      fields: { feeWaiver: true, waivedAmount: 55_000, currency: "USD" },
-    }),
-  ];
-}
-
 function bandColor(p: string) {
   return p === "critical"
     ? "destructive"
@@ -115,12 +52,20 @@ function bandColor(p: string) {
 }
 
 function RevenueLeakageRoute() {
+  const { uip: uipParam } = Route.useSearch();
+  const uip = useUipStore((s) => {
+    if (uipParam) return s.byId[uipParam];
+    const latestId = s.order[0];
+    return latestId ? s.byId[latestId] : undefined;
+  });
   const { findings, scan, approve, dismiss, reset } = useRevenueLeakageStore();
 
   useEffect(() => {
     reset();
-    scan(seedEvidence());
-  }, [scan, reset]);
+    if (uip && uip.rawEvidence.length > 0) {
+      scan(uip.rawEvidence);
+    }
+  }, [uip, scan, reset]);
 
   const total = findings.reduce((s, f) => s + f.magnitude, 0);
 
