@@ -183,6 +183,94 @@ function DisclosureGroup({ group }: { group: EvidenceGroup }) {
   );
 }
 
+const TIER_TONE: Record<string, string> = {
+  VERIFIED: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  OBSERVED: "bg-sky-50 text-sky-700 ring-sky-200",
+  INFERRED: "bg-amber-50 text-amber-700 ring-amber-200",
+  UNCONFIRMED: "bg-rose-50 text-rose-700 ring-rose-200",
+};
+
+function IdentityResolutionCard({ data }: { data: IdentityResolutionSection }) {
+  return (
+    <Section title="Identity Resolution" icon={Fingerprint}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-[14px] font-semibold text-slate-900">{data.selectedLabel}</div>
+          <div className="mt-0.5 flex flex-wrap gap-1.5 text-[11px] text-slate-500">
+            {data.imo ? <span className="rounded-full bg-slate-50 px-2 py-0.5 ring-1 ring-slate-200">IMO {data.imo}</span> : null}
+            {data.mmsi ? <span className="rounded-full bg-slate-50 px-2 py-0.5 ring-1 ring-slate-200">MMSI {data.mmsi}</span> : null}
+            {data.callSign ? <span className="rounded-full bg-slate-50 px-2 py-0.5 ring-1 ring-slate-200">Call {data.callSign}</span> : null}
+            {data.flag ? <span className="rounded-full bg-slate-50 px-2 py-0.5 ring-1 ring-slate-200">Flag {data.flag}</span> : null}
+          </div>
+        </div>
+        <div className={cn("rounded-2xl px-3 py-2 text-right ring-1", TIER_TONE[data.tier] ?? TIER_TONE.UNCONFIRMED)}>
+          <div className="text-[10px] uppercase tracking-wide opacity-70">Confidence</div>
+          <div className="text-lg font-semibold leading-tight">{data.confidenceScore}/100</div>
+          <div className="text-[10px] font-medium">{data.tier}</div>
+        </div>
+      </div>
+      <p className="mt-3 text-[12px] text-slate-700">{data.selectionReason}</p>
+      {data.requiresConfirmation ? (
+        <div className="mt-2 flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2 text-[12px] text-amber-800 ring-1 ring-amber-200">
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5" />
+          Officer confirmation required — the resolver did not auto-select this candidate.
+        </div>
+      ) : null}
+      {data.matchingCriteria.length ? (
+        <div className="mt-4">
+          <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Matching criteria</div>
+          <ul className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+            {data.matchingCriteria.map((m) => (
+              <li key={m.label} className="flex items-start gap-2 rounded-xl bg-emerald-50/60 px-3 py-1.5 text-[12px] text-emerald-800 ring-1 ring-emerald-200">
+                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5" />
+                <span className="min-w-0">
+                  <span className="font-medium">{m.label}</span>{" "}
+                  <span className="text-emerald-700/80">({m.points})</span>
+                  <span className="mt-0.5 block text-[11px] text-emerald-900/70">{m.detail}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {data.rejectedCandidates.length ? (
+        <div className="mt-4">
+          <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Rejected candidates</div>
+          <ul className="mt-2 space-y-1.5">
+            {data.rejectedCandidates.map((r) => (
+              <li key={r.id} className="flex items-start gap-2 rounded-xl bg-rose-50/60 px-3 py-1.5 text-[12px] text-rose-800 ring-1 ring-rose-200">
+                <XCircle className="mt-0.5 h-3.5 w-3.5" />
+                <span className="min-w-0">
+                  <span className="font-medium">{r.label}</span>{" "}
+                  <span className="text-rose-700/80">({r.score}/100)</span>
+                  <span className="mt-0.5 block text-[11px] text-rose-900/70">{r.reason}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {data.alternates.length ? (
+        <div className="mt-4">
+          <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Also considered</div>
+          <ul className="mt-2 space-y-1.5">
+            {data.alternates.map((a) => (
+              <li key={a.id} className="flex items-start gap-2 rounded-xl bg-slate-50 px-3 py-1.5 text-[12px] text-slate-700 ring-1 ring-slate-200">
+                <Circle className="mt-0.5 h-3.5 w-3.5 text-slate-400" />
+                <span className="min-w-0">
+                  <span className="font-medium">{a.label}</span>{" "}
+                  <span className="text-slate-500">({a.score}/100)</span>
+                  <span className="mt-0.5 block text-[11px] text-slate-600">{a.reason}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </Section>
+  );
+}
+
 export interface ExecutiveBriefingProps {
   brief: ExecutiveBrief;
   isAdmin?: boolean;
@@ -195,6 +283,7 @@ export function ExecutiveBriefing({ brief, isAdmin, onFollowUp }: ExecutiveBrief
     confidence,
     kpis,
     keyFacts,
+    identityResolution,
     relationships,
     timeline,
     risks,
