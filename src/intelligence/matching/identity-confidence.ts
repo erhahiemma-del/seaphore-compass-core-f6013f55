@@ -55,6 +55,8 @@ export type IdentitySignalKind =
   | "name"
   | "alias"
   | "historical"
+  | "matchFields"
+  | "vesselType"
   | "flag"
   | "provider-match-fields";
 
@@ -77,6 +79,8 @@ export interface IdentityCandidate {
   mmsi?: string | null;
   callSign?: string | null;
   flag?: string | null;
+  /** Vessel type (fishing, cargo, tanker, etc). */
+  vesselType?: string | null;
   aliases?: string[];
   historicalNames?: string[];
   /** Upstream provider's own match verdict (GFW `matchFields`). */
@@ -92,6 +96,7 @@ export interface IdentityConfidenceInput {
     mmsi?: string;
     callSign?: string;
     flag?: string;
+    vesselType?: string;
   };
 }
 
