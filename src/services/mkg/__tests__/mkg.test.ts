@@ -232,6 +232,7 @@ describe("MKG — ingestion from Unified Intelligence Package", () => {
       ],
       freshestSeconds: 1,
       hasContradictions: false,
+      rawEvidence: ev,
     };
     return { uip, ev };
   }
