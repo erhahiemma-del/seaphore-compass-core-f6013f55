@@ -255,47 +255,12 @@ function BriefingCentre() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <CalendarClock className="h-4 w-4" />
-                Scheduling
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Cadence</label>
-                <Select value={cadence} onValueChange={(v) => setCadence(v as ReportCadence)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {REPORT_CADENCES.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c.charAt(0) + c.slice(1).toLowerCase()}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button variant="outline" onClick={schedule} className="w-full">
-                Schedule this report
-              </Button>
-              <div className="space-y-1 text-xs">
-                {schedules.length === 0 ? (
-                  <p className="text-muted-foreground">No scheduled runs yet.</p>
-                ) : (
-                  schedules.map((j) => (
-                    <div key={j.id} className="flex items-center justify-between rounded border px-2 py-1">
-                      <span>
-                        {REPORT_TYPE_LABEL[j.reportType]} · {REPORT_PERIOD_LABEL[j.period]}
-                      </span>
-                      <Badge variant="outline">{j.cadence}</Badge>
-                    </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <SchedulesPanel
+            workspaceIds={selected.length === 0 ? [] : selected}
+          />
         </div>
+
+        <JobHistoryPanel />
 
         {/* Preview + exports */}
         {report && (
