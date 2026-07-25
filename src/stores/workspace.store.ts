@@ -342,6 +342,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         assignees,
         dueAt,
         estimatedRevenueImpactUsd,
+        sourceUipId,
       }) => {
         const id = uid("inv");
         const t = now();
@@ -354,6 +355,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           officer,
           startedAt: t,
           updatedAt: t,
+          sourceUipId,
           confidenceTier: "LOW",
           confidencePct: 0,
           evidenceCompleteness: 0,
@@ -378,7 +380,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           assignees: assignees ?? [officer],
           dueAt,
           estimatedRevenueImpactUsd,
-          stageHistory: [{ at: t, from: null, to: "INTAKE", officer, note: "Investigation opened" }],
+          stageHistory: [{ at: t, from: null, to: "INTAKE", officer, note: sourceUipId ? `Investigation opened · UIP ${sourceUipId}` : "Investigation opened" }],
           notebook: [],
 
         };
