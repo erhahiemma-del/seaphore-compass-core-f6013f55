@@ -275,6 +275,67 @@ function BriefingCentre() {
           </CardContent>
         </Card>
 
+        {/* Active UIP banner — makes the current source snapshot visible
+            without opening the report configuration. */}
+        <Card className="border-border/70 bg-muted/40">
+          <CardContent className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3 text-xs">
+            <div className="flex items-center gap-2 font-medium">
+              <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+              Active source
+            </div>
+            {sourceMode === "LIVE_UIP" ? (
+              liveUipId ? (
+                <>
+                  <span className="text-muted-foreground">Live UIP</span>
+                  <code className="rounded bg-background px-1.5 py-0.5 font-mono text-[11px]">
+                    {liveUipId}
+                  </code>
+                </>
+              ) : (
+                <span className="text-amber-600">
+                  No active UIP — select a Canonical snapshot below
+                </span>
+              )
+            ) : sourceWorkspaces.length > 0 ? (
+              <>
+                <span className="text-muted-foreground">
+                  Investigation-based · {sourceWorkspaces.length} workspace
+                  {sourceWorkspaces.length === 1 ? "" : "s"}
+                </span>
+                <div className="flex flex-wrap gap-1">
+                  {sourceWorkspaces.slice(0, 4).map((w) =>
+                    w.sourceUipId ? (
+                      <code
+                        key={w.id}
+                        className="rounded bg-background px-1.5 py-0.5 font-mono text-[11px]"
+                      >
+                        {w.sourceUipId}
+                      </code>
+                    ) : (
+                      <span key={w.id} className="text-amber-600">
+                        {w.title || w.id}: no UIP stamp
+                      </span>
+                    ),
+                  )}
+                  {sourceWorkspaces.length > 4 ? (
+                    <span className="text-muted-foreground">
+                      +{sourceWorkspaces.length - 4} more
+                    </span>
+                  ) : null}
+                </div>
+              </>
+            ) : (
+              <span className="text-muted-foreground">
+                No investigation workspace selected
+              </span>
+            )}
+            <div className="ml-auto text-[11px] text-muted-foreground">
+              MIBC engine {MIBC_ENGINE_VERSION}
+            </div>
+          </CardContent>
+        </Card>
+
+
         {/* Natural language */}
         <Card>
           <CardHeader className="pb-3">
