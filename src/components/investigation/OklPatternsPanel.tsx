@@ -32,11 +32,7 @@ import {
   type OperationalPattern,
   type OperationalRecommendation,
 } from "@/services/okl";
-import {
-  DEMO_UIP,
-  DEMO_HISTORICAL,
-  DEMO_INVESTIGATIONS,
-} from "@/services/okl/fixtures";
+import { useUipStore } from "@/stores/uip.store";
 import { autoIngestOklIntoInvestigations } from "@/services/okl/auto-ingest";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
