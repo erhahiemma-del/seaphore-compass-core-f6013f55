@@ -785,6 +785,7 @@ export function analyzeOperationalKnowledge(
     historical: input.historical ?? [],
     investigations: input.investigations ?? [],
     evidence: input.rawEvidence ?? [],
+    graph: input.graph,
     identityScore: base.identity,
     evidenceScore: base.evidence,
     fusionScore: base.fusion,
