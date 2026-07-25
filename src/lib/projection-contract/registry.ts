@@ -689,6 +689,21 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: REVIEWED,
   },
+  {
+    id: "capability.okl-investigation-auto-ingest",
+    name: "OKL → Investigation Workspace auto-ingest",
+    producer: "CAPABILITY",
+    description:
+      "Every Operational Knowledge Package produced by the OKL is automatically projected into all ACTIVE / MONITORING investigations whose subject overlaps a detected pattern. Patterns are linked via oklPatternIds; each pattern anchors a COLLECTED evidence entry (source OKL/<detector>, hash okl:<patternId>), each officer-approval-gated recommendation becomes a workspace task with urgency-mapped priority, contradictions land on the case timeline as conflict events, and HIGH/CRITICAL patterns auto-advance INTAKE cases to ANALYSIS with a stage-history note. Idempotent: re-runs never duplicate. Officer decides on every task.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Investigation Workspace · Evidence / Tasks / Timeline / Stage history",
+      location: "src/stores/workspace.store.ts",
+      component: "src/services/okl/auto-ingest.ts",
+      interaction: "auto-projection",
+    },
+    reviewedAt: REVIEWED,
+  },
 ];
 
 
