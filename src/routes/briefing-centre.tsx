@@ -92,16 +92,38 @@ function BriefingCentre() {
     setBusy("GENERATE");
     try {
       if (sourceMode === "LIVE_UIP") {
-        // Live Intelligence Brief — resolve a single Canonical UIP via the
-        // Intelligence Orchestrator. When no id is chosen we pick the
-        // freshest snapshot the officer generated in this session.
-        const uip =
-          intelligenceOrchestrator.getUIP(liveUipId) ??
-          intelligenceOrchestrator.getLatestUIP();
-        if (!uip) {
-          toast.error("No Canonical UIP available", {
+        // Live Intelligence Brief — resolve exactly one Canonical UIP
+        // via the Intelligence Orchestrator. NO silent fallback: the
+        // officer must explicitly pick a snapshot. Rendering a report
+        // against "whatever happens to be latest" is the exact shape
+        // of drift the Golden Rule forbids.
+        if (!liveUipId) {
+          recordUipAccess({
+            surface: "MIBC",
+            uipId: null,
+            officerId,
+            action: "RESOLVED_MISS",
+            detail: "Live brief attempted without an explicit UIP selection",
+          });
+          toast.error("No active UIP selected", {
             description:
-              "Run a Copilot query first so a Unified Intelligence Package is registered in this session.",
+              registeredUips.length === 0
+                ? "Run a Copilot query first so a Unified Intelligence Package is registered in this session."
+                : "Choose a Canonical UIP from the selector below — MIBC never assumes the latest.",
+          });
+          return;
+        }
+        const uip = intelligenceOrchestrator.getUIP(liveUipId);
+        if (!uip) {
+          recordUipAccess({
+            surface: "MIBC",
+            uipId: liveUipId,
+            officerId,
+            action: "RESOLVED_MISS",
+            detail: "Selected UIP id is not registered in this session",
+          });
+          toast.error("Selected UIP is not registered", {
+            description: `UIP ${liveUipId} is not present in the current session. Run the query again or pick another snapshot.`,
           });
           return;
         }
@@ -117,6 +139,14 @@ function BriefingCentre() {
           origin: "LIVE_UIP",
         });
         setReport(pkg);
+        recordUipAccess({
+          surface: "MIBC",
+          uipId: uip.id,
+          briefingId: uip.id,
+          officerId,
+          action: "GENERATED",
+          detail: `Live Intelligence Brief · ${pkg.overallConfidence}% confidence`,
+        });
         toast.success(`${REPORT_TYPE_LABEL[reportType]} assembled`, {
           description: `Live UIP ${uip.id} · confidence ${pkg.overallConfidence}%`,
         });
@@ -148,6 +178,25 @@ function BriefingCentre() {
         missingUipIds: batch.missing,
       });
       setReport(pkg);
+      for (const snap of uipSnapshots) {
+        recordUipAccess({
+          surface: "MIBC",
+          uipId: snap.uip.id,
+          briefingId: pkg.briefingId ?? snap.uip.id,
+          officerId,
+          action: "GENERATED",
+          detail: `Investigation-Based Brief · workspace ${snap.workspaceId ?? "—"}`,
+        });
+      }
+      for (const missingId of batch.missing) {
+        recordUipAccess({
+          surface: "MIBC",
+          uipId: missingId,
+          officerId,
+          action: "RESOLVED_MISS",
+          detail: "Workspace referenced a UIP that is not registered in this session",
+        });
+      }
       const missingNote =
         batch.missing.length > 0
           ? ` · ${batch.missing.length} UIP id${batch.missing.length === 1 ? "" : "s"} not registered in session`
