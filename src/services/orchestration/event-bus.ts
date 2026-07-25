@@ -3,7 +3,8 @@
  * All critical pipeline events flow through this bus so downstream subscribers
  * (audit, alerts, analytics) receive a single authoritative stream.
  */
-import { supabase } from "@/integrations/supabase/client";
+import { supabase as browserSupabase } from "@/integrations/supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { OrchestrationEventType } from "./types";
 
 export interface EmittedEvent {
@@ -13,19 +14,27 @@ export interface EmittedEvent {
   emitted_by?: string;
 }
 
-export async function emitEvent(evt: EmittedEvent): Promise<void> {
-  // Guard: in dev-bypass (no auth session) RLS blocks the insert. We keep
-  // the pipeline alive and silent — persistence is best-effort here.
+export interface EventBusDeps {
+  /** Authenticated Supabase client from a server-fn context. Preferred. */
+  supabase?: SupabaseClient;
+}
+
+export async function emitEvent(evt: EmittedEvent, deps: EventBusDeps = {}): Promise<void> {
   try {
-    const { data: sess } = await supabase.auth.getSession();
-    if (!sess?.session) return;
-    const { error } = await supabase.from("orchestration_events").insert({
+    const client = deps.supabase ?? browserSupabase;
+    if (!deps.supabase) {
+      // Browser fallback: only insert when the user has a session (RLS).
+      const { data: sess } = await browserSupabase.auth.getSession();
+      if (!sess?.session) return;
+    }
+    const { error } = await client.from("orchestration_events").insert({
       event_type: evt.event_type,
       entity_ids: evt.entity_ids ?? [],
       payload: (evt.payload ?? {}) as never,
       emitted_by: evt.emitted_by ?? null,
     });
     if (error) console.warn("[event-bus] emit failed:", error.message);
+    else console.info("[event-bus] emitted", evt.event_type);
   } catch (err) {
     console.warn("[event-bus] emit threw:", err);
   }

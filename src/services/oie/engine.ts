@@ -14,7 +14,7 @@ import type {
   OfficerQuery,
   SectionKind,
 } from "@/services/orchestration";
-import { orchestrate } from "@/services/orchestration";
+import { orchestrate, type OrchestrationDeps } from "@/services/orchestration";
 
 import { interpretQuery } from "./query-interpreter";
 import { resolvePronouns, isBareSkillPick } from "./conversation-resolver";
@@ -319,6 +319,7 @@ const STUB_INTERPRETED: InterpretedQuery = {
 export async function runOIE(
   req: OIERequest,
   providerCall: ProviderCall = nullProviderCall,
+  deps: OrchestrationDeps = {},
 ): Promise<OIEResult> {
   const started = Date.now();
   const q: OfficerQuery = req?.query ?? ({} as OfficerQuery);
@@ -483,16 +484,19 @@ export async function runOIE(
     const rawBriefing = await safeAsync(
       "orchestrate",
       () =>
-        orchestrate({
-          ...q,
-          query: anchoredQuery,
-          moduleHint: q.moduleHint ?? plan.primarySkill.id,
-          context: {
-            ...(q.context ?? {}),
-            ...anchorContext,
-            workspace: q.context?.workspace ?? mission.workspace,
+        orchestrate(
+          {
+            ...q,
+            query: anchoredQuery,
+            moduleHint: q.moduleHint ?? plan.primarySkill.id,
+            context: {
+              ...(q.context ?? {}),
+              ...anchorContext,
+              workspace: q.context?.workspace ?? mission.workspace,
+            },
           },
-        }),
+          deps,
+        ),
       fallbackBriefing,
     );
     const briefing = normaliseBriefing(rawBriefing, fallbackBriefing);

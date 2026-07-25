@@ -52,6 +52,7 @@ export const runOIEFn = createServerFn({ method: "POST" })
       { query: officerQuery, providerId },
       (briefing, missionSummary, plan) =>
         invokeReasoningProvider(providerId, briefing, missionSummary, plan),
+      { supabase: context.supabase },
     );
 
     if (result.kind === "clarify") {
@@ -70,6 +71,7 @@ export const runOIEFn = createServerFn({ method: "POST" })
     return {
       kind: "briefing" as const,
       briefing_id: result.briefing.id,
+      source_uip_id: result.briefing.source_uip_id,
       classification: result.briefing.classification,
       sections: result.briefing.sections,
       intelligence_status: result.briefing.intelligence_status,
