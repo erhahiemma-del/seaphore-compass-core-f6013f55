@@ -28,6 +28,8 @@ import {
   type ReportType,
   type ReportPeriod,
 } from "@/services/mibc";
+import { intelligenceOrchestrator } from "@/services/intelligence-orchestrator";
+
 import {
   claimNextReportJob,
   completeReportJob,
@@ -83,13 +85,21 @@ export function useReportJobDrainer(enabled = true): void {
             );
           }
 
+          const batch = intelligenceOrchestrator.getUIPsForWorkspaces(workspaces);
+          const uipSnapshots = batch.resolved
+            .filter((r): r is typeof r & { uip: NonNullable<typeof r.uip> } => !!r.uip)
+            .map((r) => ({ uip: r.uip, workspaceId: r.workspaceId }));
+
           const pkg = buildReport({
             reportType: job.report_type as ReportType,
             period: job.period as ReportPeriod,
             workspaces,
             officer: sess.session.user.email ?? "Officer on duty",
             missionPlans: useMissionStore.getState().plans,
+            uipSnapshots,
+            missingUipIds: batch.missing,
           });
+
 
           const blob = await exportReport(pkg, "PDF");
           const path = `${sess.session.user.id}/${job.id}.pdf`;
@@ -104,12 +114,16 @@ export function useReportJobDrainer(enabled = true): void {
               artifactPath: path,
               summary: {
                 reportId: pkg.id,
+                origin: pkg.origin,
                 overallConfidence: pkg.overallConfidence,
                 sections: pkg.sections.length,
                 workspaces: workspaces.length,
+                canonicalUips: pkg.sourceUipIds.length,
+                missingUips: batch.missing.length,
               },
             },
           });
+
         } catch (err) {
           await fail({
             data: {
