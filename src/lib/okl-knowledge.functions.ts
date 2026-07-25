@@ -85,7 +85,7 @@ export const persistOklIngest = createServerFn({ method: "POST" })
         pattern_count: patternCount,
         entity_count: entityCount,
         decision_count: decisionCount,
-        snapshot: data.snapshot,
+        snapshot: data.snapshot as never,
       })
       .select("id, created_at, version")
       .single();
