@@ -25,14 +25,10 @@ registerConnector(uscgPsixConnector);
 registerConnector(ukCompaniesHouseConnector);
 registerConnector(cacNigeriaConnector);
 registerConnector(piClubPublicationsConnector);
-// Sprint 1C — Global Fishing Watch. Registers only when credentials are
-// present; otherwise we log a warning and continue startup (per spec).
-if (globalFishingWatchConnector.hasCredentials()) {
-  registerConnector(globalFishingWatchConnector);
-} else if (typeof console !== "undefined") {
-  console.warn(
-    "[seaphore] global-fishing-watch connector not registered: GLOBAL_FISHING_WATCH_API_KEY missing.",
-  );
-}
+// Sprint 1C — Global Fishing Watch. Registration is unconditional in
+// the browser; credentials live on the server and are validated via
+// the server-side health check (`gfwHealth`). The connector proxies
+// all authenticated work to `src/lib/server/gfw.server.ts`.
+registerConnector(globalFishingWatchConnector);
 
 export { mockAisConnector, imoGisisConnector, equasisConnector, ofacSanctionsConnector, unEuSanctionsConnector, copernicusMarineConnector, uscgPsixConnector, ukCompaniesHouseConnector, cacNigeriaConnector, piClubPublicationsConnector, globalFishingWatchConnector };
