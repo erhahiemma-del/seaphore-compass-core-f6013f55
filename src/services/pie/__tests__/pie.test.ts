@@ -6,7 +6,6 @@ const VESSEL = {
   id: "vessel:9411640",
   kind: "vessel" as const,
   label: "DONGWON NO.16",
-  identifiers: { imo: "9411640", mmsi: "440825000" },
 };
 
 function ev(partial: Partial<NormalizedEvidence>): NormalizedEvidence {

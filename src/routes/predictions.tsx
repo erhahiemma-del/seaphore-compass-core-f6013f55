@@ -43,7 +43,6 @@ function seedEvidence(): ReadonlyArray<NormalizedEvidence> {
     id: "vessel:9411640",
     kind: "vessel" as const,
     label: "DONGWON NO.16",
-    identifiers: { imo: "9411640", mmsi: "440825000" },
   };
   const now = new Date("2026-07-25T12:00:00Z").getTime();
   const iso = (offsetH: number) => new Date(now - offsetH * 3600_000).toISOString();
