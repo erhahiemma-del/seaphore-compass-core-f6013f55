@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useWorkspaceStore } from "@/stores/workspace.store";
 import { useMissionStore } from "@/services/mission";
+import { useUipStore } from "@/stores/uip.store";
+import { intelligenceOrchestrator } from "@/services/intelligence-orchestrator";
 import { toast } from "sonner";
 import {
   buildReport,
@@ -37,27 +38,39 @@ export const Route = createFileRoute("/briefing-centre")({
       {
         name: "description",
         content:
-          "Enterprise reporting engine. Reports read only from Maritime Investigation Workspaces — never from raw connectors.",
+          "Enterprise reporting engine. Every report is assembled from Canonical Unified Intelligence Packages resolved via the Intelligence Orchestrator.",
       },
       { property: "og:title", content: "Maritime Intelligence Briefing Centre" },
       {
         property: "og:description",
-        content: "Executive-quality briefings sourced from curated investigation intelligence.",
+        content:
+          "Executive briefings built exclusively from Canonical UIP snapshots — Live or Investigation-based.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: BriefingCentre,
 });
 
-// Local ScheduledJob type removed; schedules are now persisted server-side
-// via report_schedules and report_jobs. See src/lib/mibc/schedules.functions.ts.
+type SourceMode = "INVESTIGATION" | "LIVE_UIP";
 
 function BriefingCentre() {
   useReportJobDrainer(true);
   const investigations = useWorkspaceStore((s) => Object.values(s.investigations));
+  // Subscribe so the Live-UIP selector re-renders as new UIPs register.
+  const uipOrder = useUipStore((s) => s.order);
+  const uipsById = useUipStore((s) => s.byId);
+  const registeredUips = useMemo(
+    () => uipOrder.map((id) => uipsById[id]).filter(Boolean),
+    [uipOrder, uipsById],
+  );
+
+  const [sourceMode, setSourceMode] = useState<SourceMode>("INVESTIGATION");
   const [reportType, setReportType] = useState<ReportType>("EXECUTIVE_BRIEF");
   const [period, setPeriod] = useState<ReportPeriod>("LAST_7D");
   const [selected, setSelected] = useState<string[]>([]);
+  const [liveUipId, setLiveUipId] = useState<string>("");
   const [nlQuery, setNlQuery] = useState("");
   const [report, setReport] = useState<ReportPackage | null>(null);
   const [busy, setBusy] = useState<ExportFormat | "GENERATE" | null>(null);
@@ -68,25 +81,67 @@ function BriefingCentre() {
   }, [investigations, selected]);
 
   const generate = () => {
-    if (sourceWorkspaces.length === 0) {
-      toast.error("No investigation workspaces available", {
-        description:
-          "Reports read only from Investigation Workspaces. Create or open one first.",
-      });
-      return;
-    }
     setBusy("GENERATE");
     try {
+      if (sourceMode === "LIVE_UIP") {
+        // Live Intelligence Brief — resolve a single Canonical UIP via the
+        // Intelligence Orchestrator. When no id is chosen we pick the
+        // freshest snapshot the officer generated in this session.
+        const uip =
+          intelligenceOrchestrator.getUIP(liveUipId) ??
+          intelligenceOrchestrator.getLatestUIP();
+        if (!uip) {
+          toast.error("No Canonical UIP available", {
+            description:
+              "Run a Copilot query first so a Unified Intelligence Package is registered in this session.",
+          });
+          return;
+        }
+        const pkg = buildReport({
+          reportType,
+          period,
+          workspaces: [],
+          officer: "Officer on duty",
+          missionPlans: useMissionStore.getState().plans,
+          uipSnapshots: [{ uip }],
+          origin: "LIVE_UIP",
+        });
+        setReport(pkg);
+        toast.success(`${REPORT_TYPE_LABEL[reportType]} assembled`, {
+          description: `Live UIP ${uip.id} · confidence ${pkg.overallConfidence}%`,
+        });
+        return;
+      }
+
+      // Investigation-Based Brief — resolve every workspace's source_uip_id
+      // through the orchestrator in one batch call.
+      if (sourceWorkspaces.length === 0) {
+        toast.error("No investigation workspaces selected", {
+          description:
+            "Open or create an Investigation Workspace, or switch to a Live Intelligence Brief.",
+        });
+        return;
+      }
+      const batch = intelligenceOrchestrator.getUIPsForWorkspaces(sourceWorkspaces);
+      const uipSnapshots = batch.resolved
+        .filter((r): r is typeof r & { uip: NonNullable<typeof r.uip> } => !!r.uip)
+        .map((r) => ({ uip: r.uip, workspaceId: r.workspaceId }));
       const pkg = buildReport({
         reportType,
         period,
         workspaces: sourceWorkspaces,
         officer: "Officer on duty",
         missionPlans: useMissionStore.getState().plans,
+        uipSnapshots,
+        missingUipIds: batch.missing,
       });
       setReport(pkg);
+      const missingNote =
+        batch.missing.length > 0
+          ? ` · ${batch.missing.length} UIP id${batch.missing.length === 1 ? "" : "s"} not registered in session`
+          : "";
       toast.success(`${REPORT_TYPE_LABEL[reportType]} assembled`, {
-        description: `${pkg.sections.length} sections · confidence ${pkg.overallConfidence}%`,
+        description: `${pkg.sections.length} sections · confidence ${pkg.overallConfidence}%${missingNote}`,
       });
     } finally {
       setBusy(null);
@@ -104,6 +159,7 @@ function BriefingCentre() {
     // Give React a tick to flush state before generating.
     queueMicrotask(generate);
   };
+
 
   const download = async (format: ExportFormat) => {
     if (!report) return;
