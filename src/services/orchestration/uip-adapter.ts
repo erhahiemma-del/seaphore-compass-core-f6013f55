@@ -11,9 +11,10 @@
  * identity resolution or IFE fusion — Slice 1 activates the registry; deeper
  * canonicalisation is a downstream slice.
  */
-import type { FusedEvidence } from "./types";
+import type { FusedEvidence, EvidenceItem } from "./types";
 import type { UnifiedIntelligencePackage } from "@/services/ife/unified";
 import type { FusedEntityRecord, FusedEvidencePackage } from "@/services/ife/types";
+import type { NormalizedEvidence, CanonicalEntityRef } from "@/services/ial/types";
 
 interface AdaptInput {
   readonly fused: FusedEvidence;
@@ -131,5 +132,45 @@ export function buildUipFromOrchestration({
     })),
     freshestSeconds: Number.isFinite(freshestSeconds) ? freshestSeconds : 0,
     hasContradictions: fused.conflicts.length > 0,
+    rawEvidence: fused.ranked.map((e) => toNormalizedEvidence(e, created)),
+  };
+}
+
+/**
+ * Best-effort synthesis of a NormalizedEvidence from an orchestration
+ * EvidenceItem so downstream consumers (OKL, PIE, Revenue, Evidence
+ * Explorer) can traverse the live UIP without demo fixtures. Later slices
+ * will replace this with a first-class NormalizedEvidence stream from the
+ * IAL — this preserves provenance, entity linkage, and confidence today.
+ */
+function toNormalizedEvidence(e: EvidenceItem, retrievedAt: string): NormalizedEvidence {
+  const entityId = e.entity_ids?.[0] ?? "unknown";
+  const kind: CanonicalEntityRef["kind"] = entityId.startsWith("vessel")
+    ? "vessel"
+    : entityId.startsWith("port")
+      ? "port"
+      : entityId.startsWith("person")
+        ? "person"
+        : "company";
+  const entity: CanonicalEntityRef = { kind, id: entityId } as CanonicalEntityRef;
+  const observedAt = e.collected_at ?? retrievedAt;
+  const freshness = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(observedAt).getTime()) / 1000),
+  );
+  return {
+    id: e.id,
+    source: e.source_system as NormalizedEvidence["source"],
+    sourceName: e.source_system,
+    grade: e.grade,
+    entity,
+    kind: "other",
+    fields: { content: e.content },
+    observedAt,
+    retrievedAt,
+    freshnessSeconds: Number.isFinite(freshness) ? freshness : 0,
+    hash: e.hash_sha256 ?? e.id,
+    providerRecordId: e.id,
+    excerpt: e.content.slice(0, 240),
   };
 }

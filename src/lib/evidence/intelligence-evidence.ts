@@ -26,6 +26,7 @@ import type {
   RiskLevel,
 } from "@/services/okl/types";
 import type { WorkspaceEvidence } from "@/stores/workspace.store";
+import type { NormalizedEvidence } from "@/services/ial/types";
 
 /** Broad category — drives the filter chips in the viewer. */
 export type EvidenceType =
@@ -325,6 +326,50 @@ export function fromWorkspaceEvidence(
     investigationId,
     entities: w.entityName
       ? [{ type: "vessel", name: w.entityName, id: w.entityId }]
+      : undefined,
+  };
+}
+
+const KIND_TO_EVIDENCE_TYPE: Record<NormalizedEvidence["kind"], EvidenceType> = {
+  identity: "identity",
+  position: "movement",
+  voyage: "movement",
+  ownership: "ownership",
+  cargo: "other",
+  sanctions: "sanctions",
+  compliance: "assessment",
+  "port-call": "movement",
+  weather: "other",
+  other: "other",
+};
+
+/**
+ * Adapt a normalised evidence record from the live Unified Intelligence
+ * Package (UIP) into a projected officer-facing row for the Intelligence
+ * Evidence Explorer. Every field is drawn from the fused UIP — never from
+ * a demo fixture.
+ */
+export function fromNormalizedEvidence(
+  n: NormalizedEvidence,
+  investigationId?: string,
+): IntelligenceEvidenceItem {
+  const entityKind = (n.entity.kind ?? "vessel") as EvidenceEntityType;
+  return {
+    id: `uip.${n.id}`,
+    source: n.sourceName,
+    timestamp: n.observedAt,
+    confidence: gradeToConfidence(n.grade),
+    evidenceType: KIND_TO_EVIDENCE_TYPE[n.kind] ?? "other",
+    status: "verified",
+    claim: n.excerpt ?? `${n.kind} record from ${n.sourceName}`,
+    summary: n.excerpt,
+    subject: n.entity.label ?? n.entity.id,
+    hash: n.hash,
+    producer: "IFE",
+    connector: n.source,
+    investigationId,
+    entities: n.entity.label
+      ? [{ type: entityKind, name: n.entity.label, id: n.entity.id }]
       : undefined,
   };
 }

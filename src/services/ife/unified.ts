@@ -20,6 +20,7 @@
  * `NormalizedEvidence` contract.
  */
 import type { OsaeAssessment } from "@/services/osae";
+import type { NormalizedEvidence } from "@/services/ial/types";
 import { fuseEvidence } from "./engine";
 import { resolveIdentities, type IdentityCluster } from "./identity-resolver";
 import type { FusedEvidencePackage, FusionInput } from "./types";
@@ -47,6 +48,12 @@ export interface UnifiedIntelligencePackage {
   readonly freshestSeconds: number;
   /** True when at least one contradiction was surfaced. */
   readonly hasContradictions: boolean;
+  /**
+   * All normalised evidence records that fed this package. This is the
+   * canonical NormalizedEvidence stream downstream capabilities (OKL, PIE,
+   * Revenue, Evidence Explorer, MIW panels) consume — never a demo fixture.
+   */
+  readonly rawEvidence: ReadonlyArray<NormalizedEvidence>;
 }
 
 export interface BuildUnifiedInput {
@@ -109,5 +116,6 @@ export function buildUnifiedIntelligencePackage({
     provenance,
     freshestSeconds: Number.isFinite(freshestSeconds) ? freshestSeconds : 0,
     hasContradictions: fused.contradictions.length > 0,
+    rawEvidence: rawRecords,
   };
 }

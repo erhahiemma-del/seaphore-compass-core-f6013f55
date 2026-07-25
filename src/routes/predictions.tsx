@@ -5,16 +5,19 @@
  * Never make a prediction without evidence.
  */
 import { useEffect, useMemo } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PredictionsPanel } from "@/components/pie/PredictionsPanel";
 import { usePieStore } from "@/services/pie";
-import type { NormalizedEvidence } from "@/services/ial/types";
+import { useUipStore } from "@/stores/uip.store";
 import { Radar } from "lucide-react";
 
 export const Route = createFileRoute("/predictions")({
+  validateSearch: (raw: Record<string, unknown>) => ({
+    uip: typeof raw.uip === "string" ? raw.uip : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Predictive Intelligence · Seaphore" },
@@ -38,78 +41,21 @@ export const Route = createFileRoute("/predictions")({
 
 /** Deterministic demo evidence set exercising every detector — mirrors the
  *  DONGWON NO.16 / MKG validation used in earlier sprints. */
-function seedEvidence(): ReadonlyArray<NormalizedEvidence> {
-  const vessel = {
-    id: "vessel:9411640",
-    kind: "vessel" as const,
-    label: "DONGWON NO.16",
-  };
-  const now = new Date("2026-07-25T12:00:00Z").getTime();
-  const iso = (offsetH: number) => new Date(now - offsetH * 3600_000).toISOString();
-  const rec = (over: Partial<NormalizedEvidence>): NormalizedEvidence => ({
-    id: over.id ?? `seed_${Math.random().toString(36).slice(2, 9)}`,
-    source: over.source ?? "gfw",
-    sourceName: over.sourceName ?? "Global Fishing Watch",
-    grade: over.grade ?? "CORROBORATED",
-    entity: over.entity ?? vessel,
-    kind: over.kind ?? "position",
-    fields: over.fields ?? {},
-    observedAt: over.observedAt ?? iso(1),
-    retrievedAt: over.retrievedAt ?? iso(0),
-    freshnessSeconds: 3600,
-    hash: over.hash ?? "seed",
-  });
-
-  return [
-    // AIS gap pattern
-    rec({ id: "ais-1", kind: "position", grade: "VERIFIED", fields: { gapHours: 28 }, observedAt: iso(72) }),
-    rec({ id: "ais-2", kind: "position", grade: "VERIFIED", fields: { gapHours: 16 }, observedAt: iso(48) }),
-    rec({ id: "ais-3", kind: "position", grade: "VERIFIED", fields: { gapHours: 4 }, observedAt: iso(24) }),
-
-    // Route deviations
-    rec({ id: "voy-1", kind: "voyage", fields: { declaredPort: "PGLAE", actualPort: "IDBOA" }, observedAt: iso(120) }),
-    rec({ id: "voy-2", kind: "voyage", fields: { declaredPort: "KRPUS", actualPort: "KRPUS" }, observedAt: iso(96) }),
-    rec({ id: "voy-3", kind: "voyage", fields: { declaredPort: "IDBOA", actualPort: "PGLAE", unscheduled: true }, observedAt: iso(48) }),
-
-    // Ownership churn
-    rec({ id: "own-1", kind: "ownership", source: "opencorporates", sourceName: "OpenCorporates", grade: "VERIFIED",
-      fields: { ownerName: "DONGWON F&B", flag: "KR" }, observedAt: iso(24 * 400) }),
-    rec({ id: "own-2", kind: "ownership", source: "opencorporates", sourceName: "OpenCorporates", grade: "VERIFIED",
-      fields: { ownerName: "Pacific Holdings SA", flag: "PA" }, observedAt: iso(24 * 180) }),
-    rec({ id: "own-3", kind: "ownership", source: "opencorporates", sourceName: "OpenCorporates", grade: "VERIFIED",
-      fields: { ownerName: "BlueSea Partners", flag: "LR" }, observedAt: iso(24 * 30) }),
-
-    // Sanctions proximity (indirect)
-    rec({ id: "sanc-1", kind: "sanctions", source: "opensanctions", sourceName: "OpenSanctions",
-      grade: "VERIFIED", fields: { status: "indirect", hops: 2, matchedEntity: "Pacific Holdings SA" }, observedAt: iso(12) }),
-
-    // Cargo baseline + spike
-    ...[48, 52, 50, 49, 51].map((t, i) =>
-      rec({ id: `cargo-${i}`, kind: "cargo", grade: "CORROBORATED", fields: { tonnage: t }, observedAt: iso(200 - i * 24) }),
-    ),
-    rec({ id: "cargo-spike", kind: "cargo", grade: "CORROBORATED", fields: { tonnage: 240 }, observedAt: iso(6) }),
-
-    // Compliance history
-    rec({ id: "comp-1", kind: "compliance", source: "psc-tokyo-mou", sourceName: "Tokyo MoU PSC",
-      grade: "VERIFIED", fields: { outcome: "detention", deficiencies: 7 }, observedAt: iso(24 * 60) }),
-    rec({ id: "comp-2", kind: "compliance", source: "psc-tokyo-mou", sourceName: "Tokyo MoU PSC",
-      grade: "VERIFIED", fields: { outcome: "deficiency", deficiencies: 4 }, observedAt: iso(24 * 20) }),
-
-    // Revenue baseline + drop
-    ...[120_000, 118_000, 122_000, 119_000].map((v, i) =>
-      rec({ id: `rev-${i}`, kind: "other", grade: "CORROBORATED", fields: { revenue: v }, observedAt: iso(200 - i * 24) }),
-    ),
-    rec({ id: "rev-drop", kind: "other", grade: "CORROBORATED", fields: { revenue: 42_000 }, observedAt: iso(4) }),
-  ];
-}
-
 function PredictionsRoute() {
+  const { uip: uipParam } = Route.useSearch();
+  const uip = useUipStore((s) => {
+    if (uipParam) return s.byId[uipParam];
+    const latestId = s.order[0];
+    return latestId ? s.byId[latestId] : undefined;
+  });
   const { predictions, lastCycle, ingest, reset } = usePieStore();
 
   useEffect(() => {
     reset();
-    ingest({ evidence: seedEvidence() });
-  }, [ingest, reset]);
+    if (uip && uip.rawEvidence.length > 0) {
+      ingest({ evidence: uip.rawEvidence });
+    }
+  }, [uip, ingest, reset]);
 
   const alertCount = useMemo(() => predictions.filter((p) => p.alert).length, [predictions]);
   const critical = predictions.filter((p) => p.severity === "critical").length;
@@ -132,6 +78,11 @@ function PredictionsRoute() {
             <Badge variant="outline">Critical · {critical}</Badge>
             <Badge variant="outline">Elevated · {elevated}</Badge>
             <Badge variant="outline">Alerts · {alertCount}</Badge>
+            {uip && (
+              <Badge variant="outline" className="font-mono text-[10px]">
+                UIP · {uip.id}
+              </Badge>
+            )}
             {lastCycle && (
               <span className="text-xs">
                 Last cycle: {new Date(lastCycle.finishedAt).toLocaleTimeString()} · {lastCycle.evidenceConsidered} evidence records
@@ -139,7 +90,26 @@ function PredictionsRoute() {
             )}
           </CardContent>
         </Card>
-        <PredictionsPanel />
+        {!uip ? (
+          <Card>
+            <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
+              <Radar className="h-6 w-6 text-muted-foreground" />
+              <div className="text-sm font-medium">No Unified Intelligence Package loaded</div>
+              <div className="max-w-md text-xs text-muted-foreground">
+                PIE only predicts against live fused evidence. Run a briefing
+                from the Copilot to populate this surface.
+              </div>
+              <Link
+                to="/copilot"
+                className="mt-2 inline-flex items-center rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium hover:bg-slate-50"
+              >
+                Open Copilot
+              </Link>
+            </CardContent>
+          </Card>
+        ) : (
+          <PredictionsPanel />
+        )}
       </div>
     </AppShell>
   );

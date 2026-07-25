@@ -237,6 +237,18 @@ function CopilotOpsPage() {
       // The server function returns a flattened briefing shape for wire
       // efficiency. Rehydrate it into the canonical OIEResult that IBE
       // expects. `devBypass` already returns the canonical shape.
+      // Also register the Canonical UIP in the client store so every
+      // downstream surface can resolve evidence via getUip(source_uip_id).
+      const uipFromResult = (rawResult as { uip?: unknown }).uip as
+        | import("@/services/ife/unified").UnifiedIntelligencePackage
+        | null
+        | undefined;
+      if (uipFromResult && uipFromResult.id) {
+        (
+          await import("@/stores/uip.store")
+        ).useUipStore.getState().register(uipFromResult);
+      }
+
       const normalisedResult: import("@/services/oie").OIEResult = (() => {
         if ((rawResult as { briefing?: unknown }).briefing) {
           return rawResult as unknown as import("@/services/oie").OIEResult;
