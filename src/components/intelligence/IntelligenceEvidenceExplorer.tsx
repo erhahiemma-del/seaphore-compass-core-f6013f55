@@ -700,6 +700,9 @@ function EvidenceList({
               )}
             </div>
           </div>
+          {item.oklExplainability && (
+            <OklExplainabilityPanel explainability={item.oklExplainability} />
+          )}
         </li>
       ))}
     </ul>
