@@ -112,13 +112,24 @@ export interface IdentityConfidenceResult {
   rationale: string;
 }
 
+export interface IdentityAlternate<C extends IdentityCandidate> {
+  candidate: C;
+  confidence: IdentityConfidenceResult;
+  /** True when the candidate was excluded from auto-selection (e.g. NO_MATCH). */
+  rejected: boolean;
+  /** Human-readable reason when `rejected` is true. */
+  rejectionReason?: string;
+}
+
 export interface IdentitySelection<C extends IdentityCandidate> {
   /** Top-ranked candidate, or null when no candidates were provided. */
   selected: C | null;
   /** Score for the selected candidate. */
   confidence: IdentityConfidenceResult | null;
   /** Ranked list of alternates with their scores (top-first). */
-  alternates: Array<{ candidate: C; confidence: IdentityConfidenceResult }>;
+  alternates: Array<IdentityAlternate<C>>;
+  /** Candidates the resolver actively rejected (e.g. NO_MATCH). */
+  rejected: Array<IdentityAlternate<C>>;
   /**
    * True when the pipeline MUST NOT auto-select — either the top
    * score is below `autoSelectThreshold` or the runner-up is within
@@ -131,6 +142,8 @@ export interface IdentitySelection<C extends IdentityCandidate> {
     | "below-threshold"
     | "tied-candidates"
     | "no-candidates";
+  /** Officer-facing sentence explaining WHY this candidate was selected. */
+  selectionReason: string;
 }
 
 export interface IdentityScoringOptions {
