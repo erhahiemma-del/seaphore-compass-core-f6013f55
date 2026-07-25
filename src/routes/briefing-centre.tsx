@@ -30,6 +30,7 @@ import { FileText, FileDown, Sparkles } from "lucide-react";
 import { SchedulesPanel } from "@/components/briefing/SchedulesPanel";
 import { JobHistoryPanel } from "@/components/briefing/JobHistoryPanel";
 import { useReportJobDrainer } from "@/lib/mibc/job-drainer";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/briefing-centre")({
   head: () => ({
@@ -57,6 +58,12 @@ type SourceMode = "INVESTIGATION" | "LIVE_UIP";
 
 function BriefingCentre() {
   useReportJobDrainer(true);
+  const { session } = useAuth();
+  const officerId = session?.user?.id;
+  const officerName =
+    session?.user?.user_metadata?.full_name ??
+    session?.user?.email ??
+    "Officer on duty";
   const investigations = useWorkspaceStore((s) => Object.values(s.investigations));
   // Subscribe so the Live-UIP selector re-renders as new UIPs register.
   const uipOrder = useUipStore((s) => s.order);
@@ -101,7 +108,9 @@ function BriefingCentre() {
           reportType,
           period,
           workspaces: [],
-          officer: "Officer on duty",
+          officer: officerName,
+          officerId,
+          briefingId: uip.id,
           missionPlans: useMissionStore.getState().plans,
           uipSnapshots: [{ uip }],
           origin: "LIVE_UIP",
@@ -130,7 +139,9 @@ function BriefingCentre() {
         reportType,
         period,
         workspaces: sourceWorkspaces,
-        officer: "Officer on duty",
+        officer: officerName,
+        officerId,
+        briefingId: sourceWorkspaces[0]?.sourceUipId,
         missionPlans: useMissionStore.getState().plans,
         uipSnapshots,
         missingUipIds: batch.missing,

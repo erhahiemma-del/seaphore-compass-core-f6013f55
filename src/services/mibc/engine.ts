@@ -93,6 +93,12 @@ export interface BuildReportInput {
    *   - `INVESTIGATION`        otherwise.
    */
   origin?: ReportPackage["origin"];
+  /** intel_briefings.id from the orchestrator run that seeded these UIPs. */
+  briefingId?: string;
+  /** Stable officer id (auth uid). Falls back to `officer` for display when omitted. */
+  officerId?: string;
+  /** Mission label for Executive Summary. */
+  mission?: string;
 }
 
 
@@ -202,15 +208,125 @@ export function buildReport(input: BuildReportInput): ReportPackage {
   const title = deriveTitle(reportType, workspaces);
   const subtitle = `${REPORT_PERIOD_LABEL[period]} · ${workspaces.length} investigation${workspaces.length === 1 ? "" : "s"} · ${evidence.length} evidence item${evidence.length === 1 ? "" : "s"}`;
 
+  // Subjects — derived from workspace subjects + top canonical UIP entities.
+  const uipRefsEarly = input.uipSnapshots ?? [];
+  const subjects = Array.from(
+    new Set([
+      ...workspaces.map((w) => w.subjectName).filter((x): x is string => !!x),
+      ...uipRefsEarly.flatMap((r) =>
+        r.uip.fused.canonical
+          .slice(0, 5)
+          .map((c) => c.entity.label ?? c.entity.id)
+          .filter((x): x is string => !!x),
+      ),
+    ]),
+  ).slice(0, 8);
+  const mission =
+    input.mission ??
+    (workspaces.find((w) => w.missionType)?.missionType || undefined);
+
+  // Overall Risk / Operational Status derived from workspace priorities.
+  const priorityRank = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 } as const;
+  const highestPriority =
+    workspaces
+      .map((w) => w.priority as keyof typeof priorityRank)
+      .sort((a, b) => (priorityRank[b] ?? 0) - (priorityRank[a] ?? 0))[0] ??
+    "MEDIUM";
+  const operationalStatus =
+    workspaces.some((w) => w.stage === "DECISION" || w.stage === "REPORT")
+      ? "Decision pending"
+      : workspaces.some((w) => w.stage === "ANALYSIS" || w.stage === "EVIDENCE")
+        ? "Active investigation"
+        : workspaces.length > 0
+          ? "Intake"
+          : uipRefsEarly.length > 0
+            ? "Live intelligence"
+            : "No active investigations";
+  const recommendedCoA =
+    workspaces.find((w) => w.recommendation)?.recommendation?.label ??
+    (uipRefsEarly[0]?.uip.osae[0]?.assessment?.summary ??
+      "Officer to review Canonical UIP and register a decision.");
+
   // ── Sections ───────────────────────────────────────────────────────
   const sections: ReportSection[] = [];
+
+  // (0) Report Metadata — every export carries provenance up-front.
+  sections.push({
+    id: "report-metadata",
+    title: "Report Metadata",
+    columns: ["Field", "Value"],
+    rows: [
+      { Field: "Briefing ID", Value: input.briefingId ?? "—" },
+      { Field: "Officer", Value: officer },
+      { Field: "Officer ID", Value: input.officerId ?? "—" },
+      { Field: "Generated at (UTC)", Value: generatedAt },
+      { Field: "Overall confidence", Value: `${avgConfidence}%` },
+      {
+        Field: "Source UIP ids",
+        Value: uipRefsEarly.map((r) => r.uip.id).join(", ") || "—",
+      },
+      {
+        Field: "Provenance summary",
+        Value: `${uipRefsEarly.length} UIP snapshot${uipRefsEarly.length === 1 ? "" : "s"} · ${uipRefsEarly.reduce((s, r) => s + r.uip.rawEvidence.length, 0)} evidence records · ${uipRefsEarly.reduce((s, r) => s + r.uip.provenance.length, 0)} connector attributions`,
+      },
+    ],
+  });
 
   sections.push({
     id: "executive-summary",
     title: "Executive Summary",
-    body: buildExecutiveSummary(reportType, workspaces, evidence.length, totalRevenue),
+    bullets: [
+      `Mission — ${mission ?? "Ad-hoc intelligence request"}`,
+      `Subject — ${subjects.join(", ") || "—"}`,
+      `Current Assessment — ${buildExecutiveSummary(reportType, workspaces, evidence.length, totalRevenue)}`,
+      `Intelligence Confidence — ${avgConfidence}%`,
+      `Operational Status — ${operationalStatus}`,
+      `Overall Risk — ${highestPriority}`,
+      `Recommended Course of Action — ${recommendedCoA}`,
+    ],
     confidence: avgConfidence,
   });
+
+  // Intelligence Assessment — structured operational summary.
+  // Watchlist / sanctions hits — surfaced by canonical UIP entities whose
+  // grade or provenance flagged sanctions. We rely on the fused entity
+  // grade rather than a bespoke OSAE field so this stays capability-safe
+  // as OSAE evolves.
+  const watchlistHits = uipRefsEarly.reduce(
+    (n, r) =>
+      n +
+      r.uip.fused.canonical.filter(
+        (c) => (c.grade ?? "").toUpperCase() === "SANCTIONED",
+      ).length,
+    0,
+  );
+  const complianceStatus =
+    watchlistHits > 0
+      ? `${watchlistHits} watchlist hit${watchlistHits === 1 ? "" : "s"}`
+      : uipRefsEarly.length > 0
+        ? "No watchlist hits in canonical UIP"
+        : "Not evaluated";
+  const investigationStatus =
+    workspaces.length === 0
+      ? "No linked investigations"
+      : `${workspaces.length} investigation${workspaces.length === 1 ? "" : "s"} · stages: ${Array.from(new Set(workspaces.map((w) => w.stage ?? "INTAKE"))).join(", ")}`;
+  sections.push({
+    id: "intelligence-assessment",
+    title: "Intelligence Assessment",
+    columns: ["Dimension", "Value"],
+    rows: [
+      { Dimension: "Overall Risk", Value: highestPriority },
+      { Dimension: "Confidence", Value: `${avgConfidence}%` },
+      { Dimension: "Operational Status", Value: operationalStatus },
+      { Dimension: "Compliance", Value: complianceStatus },
+      { Dimension: "Watchlists", Value: `${watchlistHits} hit${watchlistHits === 1 ? "" : "s"}` },
+      { Dimension: "Revenue Exposure", Value: fmtUsd(totalRevenue) },
+      { Dimension: "Investigation Status", Value: investigationStatus },
+    ],
+    confidence: avgConfidence,
+  });
+
+
 
   sections.push({
     id: "operational-overview",
@@ -331,6 +447,51 @@ export function buildReport(input: BuildReportInput): ReportPackage {
           ]
         : recBullets,
   });
+
+  // ── Explainability — every recommendation exposes evidence, confidence,
+  //    supporting sources, and reasoning chain. No black-box output.
+  const uipRefsForExplain = input.uipSnapshots ?? [];
+  const explainRows: Array<Record<string, string | number>> = [];
+  for (const w of workspaces) {
+    if (!w.recommendation) continue;
+    const uip = uipRefsForExplain.find(
+      (r) => r.workspaceId === w.id || r.uip.id === w.sourceUipId,
+    )?.uip;
+    const supportIds = w.recommendation.supportingEvidence ?? [];
+    const sources = Array.from(
+      new Set([
+        ...supportIds
+          .map((id) => w.evidence.find((e) => e.id === id)?.source)
+          .filter((x): x is string => !!x),
+        ...(uip?.provenance.map((p) => p.sourceName) ?? []),
+      ]),
+    );
+    const reasoning =
+      w.recommendation.rationale ??
+      uip?.fused.report.summary ??
+      "Officer to record reasoning before circulation.";
+    explainRows.push({
+      Recommendation: `${w.title} → ${w.recommendation.label}`,
+      Confidence: `${w.confidencePct ?? 0}%`,
+      "Evidence Used": supportIds.length
+        ? `${supportIds.length} item${supportIds.length === 1 ? "" : "s"}`
+        : `${w.evidence.length} workspace record${w.evidence.length === 1 ? "" : "s"}`,
+      "Supporting Sources": joinShort(sources, 4),
+      "Reasoning Chain": reasoning.length > 220 ? reasoning.slice(0, 217) + "…" : reasoning,
+    });
+  }
+  sections.push({
+    id: "explainability",
+    title: "Explainability",
+    body:
+      explainRows.length === 0
+        ? "No recommendation carries a supporting evidence trace yet. Officers must not release recommendations without an explicit evidence and reasoning trace."
+        : "Every recommendation below carries the evidence, confidence, sources, and reasoning chain used by the Copilot pipeline. No black-box recommendations.",
+    columns: ["Recommendation", "Confidence", "Evidence Used", "Supporting Sources", "Reasoning Chain"],
+    rows: explainRows,
+  });
+
+
 
   // ── Human Decisions ────────────────────────────────────────────────
   sections.push({
@@ -492,20 +653,81 @@ export function buildReport(input: BuildReportInput): ReportPackage {
     };
   };
   const pyramid = foldPyramid();
+  // Full 6-band Confidence Pyramid — map OKL bands to the operational
+  // dimensions officers reason about. Data Completeness and Temporal
+  // Confidence are derived from UIP evidence stats so every score is
+  // traceable to the same Canonical UIP.
+  const totalEvidenceUip = uipList.reduce((s, u) => s + u.rawEvidence.length, 0);
+  const totalCanonicalUip = uipList.reduce((s, u) => s + u.fused.canonical.length, 0);
+  const dataCompleteness = uipList.length
+    ? Math.min(
+        100,
+        Math.round(
+          uipList.reduce(
+            (s, u) =>
+              s +
+              (u.fused.stats.sourcesResponded /
+                Math.max(u.fused.stats.sourcesQueried, 1)) *
+                100,
+            0,
+          ) / uipList.length,
+        ),
+      )
+    : 0;
+  const temporalConfidence = uipList.length
+    ? Math.max(
+        0,
+        Math.round(
+          100 -
+            Math.min(
+              100,
+              (uipList.reduce((s, u) => s + u.freshestSeconds, 0) /
+                uipList.length /
+                (60 * 60 * 24)) *
+                10,
+            ),
+        ),
+      )
+    : 0;
   sections.push({
     id: "confidence-pyramid",
     title: "Confidence Pyramid",
     body: pyramid
-      ? `Tier ${pyramid.tier}. ${pyramid.explanation}`
+      ? `Tier ${pyramid.tier}. ${pyramid.explanation} Every score is explainable — Data Completeness reflects sources responded / queried across the resolved UIPs, Temporal Confidence decays with evidence age, and the OKL bands are computed by the Operational Knowledge Layer over the same Canonical UIP snapshots.`
       : "No Confidence Pyramid — OKL requires at least one resolved UIP.",
-    columns: ["Band", "Score"],
+    columns: ["Band", "Score", "Basis"],
     rows: pyramid
       ? [
-          { Band: "Identity", Score: `${pyramid.identity}%` },
-          { Band: "Evidence", Score: `${pyramid.evidence}%` },
-          { Band: "Fusion", Score: `${pyramid.fusion}%` },
-          { Band: "Pattern", Score: `${pyramid.pattern}%` },
-          { Band: "Recommendation", Score: `${pyramid.recommendation}%` },
+          {
+            Band: "Data Completeness",
+            Score: `${dataCompleteness}%`,
+            Basis: `${uipList.length} UIP · sources responded / queried`,
+          },
+          {
+            Band: "Evidence Quality",
+            Score: `${pyramid.evidence}%`,
+            Basis: `${totalEvidenceUip} normalised evidence records`,
+          },
+          {
+            Band: "Entity Resolution",
+            Score: `${pyramid.identity}%`,
+            Basis: `${totalCanonicalUip} canonical entities across ${uipList.length} UIP`,
+          },
+          {
+            Band: "Relationship Confidence",
+            Score: `${pyramid.fusion}%`,
+            Basis: `${uipContradictions} contradiction${uipContradictions === 1 ? "" : "s"} surfaced during fusion`,
+          },
+          {
+            Band: "Temporal Confidence",
+            Score: `${temporalConfidence}%`,
+            Basis: `Freshness of freshest evidence per UIP`,
+          },
+          {
+            Band: "Operational Confidence",
+            Score: `${pyramid.recommendation}%`,
+            Basis: `OKL recommendation band (tier ${pyramid.tier})`,
+          },
         ]
       : [],
     confidence: pyramid?.recommendation,
@@ -536,8 +758,10 @@ export function buildReport(input: BuildReportInput): ReportPackage {
     references: decisions.map((d) => d.id),
   });
 
-  // Investigation Links — workspace ↔ Canonical UIP lineage, including
-  // orchestrator misses so the officer never sees silent gaps.
+  // Investigation Links — workspace ↔ Canonical UIP lineage plus per-kind
+  // entity breakdown from the Canonical UIP knowledge graph, so the
+  // officer sees Subjects / Companies / Vessels / Ports / Cargo /
+  // Documents / Events in a single audit surface.
   const linkRows = workspaces.map((w) => ({
     Investigation: w.title,
     "Investigation ID": w.id,
@@ -562,6 +786,43 @@ export function buildReport(input: BuildReportInput): ReportPackage {
     rows: linkRows,
     references: uipIdsFromSnapshots,
   });
+
+  // Per-kind entity breakdown from the Canonical UIP knowledge graph.
+  const kindBuckets = new Map<string, Array<{ label: string; uipId: string; confidence: number }>>();
+  for (const u of uipList) {
+    for (const c of u.fused.canonical) {
+      const kind = String(c.entity.kind ?? "entity").toLowerCase();
+      const arr = kindBuckets.get(kind) ?? [];
+      arr.push({
+        label: c.entity.label ?? c.entity.id,
+        uipId: u.id,
+        confidence: c.confidence === "HIGH" ? 90 : c.confidence === "MEDIUM" ? 65 : 40,
+      });
+      kindBuckets.set(kind, arr);
+    }
+  }
+  const kindRows = [...kindBuckets.entries()]
+    .sort((a, b) => b[1].length - a[1].length)
+    .map(([kind, items]) => ({
+      Kind: kind,
+      Count: items.length,
+      Examples: joinShort(items.map((i) => i.label)),
+      "Avg confidence": `${Math.round(items.reduce((s, i) => s + i.confidence, 0) / items.length)}%`,
+      "UIP snapshots": Array.from(new Set(items.map((i) => i.uipId))).length,
+    }));
+  sections.push({
+    id: "investigation-entity-links",
+    title: "Investigation Entity Links",
+    body:
+      kindRows.length === 0
+        ? "No canonical entities to report. Investigation Links become richer once the Canonical UIP resolves subjects, companies, vessels, ports, cargo, documents, and events."
+        : `Breakdown across ${kindRows.reduce((s, r) => s + Number(r.Count), 0)} canonical entities from ${uipList.length} UIP snapshot${uipList.length === 1 ? "" : "s"}. Subjects, companies, vessels, ports, cargo, documents, and events all trace back to the same Canonical UIP.`,
+    columns: ["Kind", "Count", "Examples", "Avg confidence", "UIP snapshots"],
+    rows: kindRows,
+    references: uipIdsFromSnapshots,
+  });
+
+
 
   sections.push({
     id: "confidence",
@@ -655,6 +916,10 @@ export function buildReport(input: BuildReportInput): ReportPackage {
     title,
     subtitle,
     origin,
+    briefingId: input.briefingId,
+    officerId: input.officerId,
+    subjects,
+    mission,
     sourceInvestigationIds: workspaces.map((w) => w.id),
     sourceUipIds,
     sourceMissionIds: [...linkedMissionIds],

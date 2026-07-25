@@ -104,11 +104,20 @@ export interface ReportPackage {
   periodLabel: string;
   generatedAt: string;
   officer: string;
+  /** Officer's stable auth id when available (mirrors audit_log.officer_id). */
+  officerId?: string;
   title: string;
   subtitle?: string;
 
   /** Which arm of the Operational Runtime this report was assembled from. */
   origin: ReportOrigin;
+
+  /** intel_briefings.id from the orchestrator run that produced the source UIP(s). */
+  briefingId?: string;
+  /** Officer-visible subject labels (vessel names, companies, …). */
+  subjects?: string[];
+  /** Mission label / type when the report is scoped to an operational mission. */
+  mission?: string;
 
   /** Source investigation IDs — reports are ONLY built from these. */
   sourceInvestigationIds: string[];
