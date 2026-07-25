@@ -778,6 +778,74 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: REVIEWED,
   },
+
+  // ── OKL (Sprint 2.4) ───────────────────────────────────────────────────
+  {
+    id: "okl.persistent-store",
+    name: "Operational Knowledge persistent store",
+    producer: "OKL",
+    description:
+      "Immutable per-investigation ingest of entities, relationships, patterns, risks, decisions, outcomes and recommendations, each stamped with source_uip_id and briefing_id.",
+    state: "INTERNAL",
+    internal: {
+      reason: "backend-store",
+      note: "Officers do not read the raw store; projected via Historical Knowledge panel.",
+    },
+    reviewedAt: "2026-07-25",
+  },
+  {
+    id: "okl.related-investigations",
+    name: "Related investigations (cross-investigation)",
+    producer: "OKL",
+    description:
+      "Prior investigations that touched the same entities as the current workspace subject.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Investigation Workspace · Historical Knowledge panel",
+      location: "src/components/okl/HistoricalKnowledgePanel.tsx",
+      interaction: "list-with-provenance",
+    },
+    reviewedAt: "2026-07-25",
+  },
+  {
+    id: "okl.known-patterns",
+    name: "Known patterns (recurring across investigations)",
+    producer: "OKL",
+    description: "Patterns confirmed in prior investigations touching the current entity set.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Investigation Workspace · Historical Knowledge panel",
+      location: "src/components/okl/HistoricalKnowledgePanel.tsx",
+      interaction: "grouped-list",
+    },
+    reviewedAt: "2026-07-25",
+  },
+  {
+    id: "okl.historical-decisions",
+    name: "Historical officer decisions",
+    producer: "OKL",
+    description: "Decisions recorded on prior investigations touching the same entities.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Investigation Workspace · Historical Knowledge panel",
+      location: "src/components/okl/HistoricalKnowledgePanel.tsx",
+      interaction: "decision-list-with-uip-provenance",
+    },
+    reviewedAt: "2026-07-25",
+  },
+  {
+    id: "okl.recurring-risks",
+    name: "Recurring risks (cross-investigation)",
+    producer: "OKL",
+    description: "Risk levels attached to entities that recur across the OKL store.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Investigation Workspace · Historical Knowledge panel",
+      location: "src/components/okl/HistoricalKnowledgePanel.tsx",
+      interaction: "risk-tier-list",
+    },
+    reviewedAt: "2026-07-25",
+  },
 ];
 
 
