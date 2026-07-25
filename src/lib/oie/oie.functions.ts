@@ -12,6 +12,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runOIE } from "@/services/oie/engine";
 import { DEFAULT_PROVIDER_ID, type ReasoningProviderId } from "@/services/oie/reasoning-provider";
 import { invokeReasoningProvider } from "@/services/oie/provider-runtime.server";
+import { getUip } from "@/services/ife/registry";
 import type { OfficerQuery, Workspace } from "@/services/orchestration";
 
 interface OIEInput {
