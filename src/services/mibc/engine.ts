@@ -364,6 +364,18 @@ export function buildReport(input: BuildReportInput): ReportPackage {
     });
   }
 
+  // ── Origin classification ─────────────────────────────────────────
+  // Every report carries an explicit origin plus the full lineage of
+  // Canonical UIP ids and Mission Plan ids so the operational-runtime
+  // chain (UIP → OSAE → Investigation → Mission → MIBC) is auditable.
+  const sourceUipIds = Array.from(
+    new Set(workspaces.map((w) => w.sourceUipId).filter((x): x is string => !!x)),
+  );
+  const origin: "LIVE_UIP" | "INVESTIGATION" | "OPERATIONAL_RUNTIME" =
+    linkedMissionIds.length > 0 && sourceUipIds.length > 0
+      ? "OPERATIONAL_RUNTIME"
+      : "INVESTIGATION";
+
   return {
     id: `mibc-${Date.now().toString(36)}`,
     reportType,
@@ -374,13 +386,18 @@ export function buildReport(input: BuildReportInput): ReportPackage {
     officer,
     title,
     subtitle,
+    origin,
     sourceInvestigationIds: workspaces.map((w) => w.id),
+    sourceUipIds,
+    sourceMissionIds: [...linkedMissionIds],
     sections,
     charts,
     overallConfidence: avgConfidence,
     sources,
     provenanceLine:
-      "Reports read only from Investigation Workspaces. Every chart and recommendation traces to evidence.",
+      origin === "OPERATIONAL_RUNTIME"
+        ? `Operational Runtime trace · ${sourceUipIds.length} UIP → ${workspaces.length} Investigation → ${linkedMissionIds.length} Mission. Every chart and recommendation traces to evidence.`
+        : "Reports read only from Investigation Workspaces. Every chart and recommendation traces to evidence.",
   };
 }
 
