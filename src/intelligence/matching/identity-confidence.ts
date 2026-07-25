@@ -151,8 +151,10 @@ export const IDENTITY_WEIGHTS: Record<IdentitySignalKind, number> = {
   name: 20,
   alias: 10,
   historical: 10,
+  matchFields: 15, // Sprint 1C.1 — primary signal, not a modifier
+  vesselType: 5,
   flag: 5,
-  "provider-match-fields": 0, // modifier, not additive
+  "provider-match-fields": 0, // legacy modifier bookkeeping only
 };
 
 // ─────────────────────────────────────────────────────────────────────
