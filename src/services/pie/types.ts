@@ -4,9 +4,7 @@
  * Golden Rule: Predict early. Explain every prediction. Learn continuously.
  * Never make a prediction without evidence.
  */
-import type { EvidenceGrade } from "@/lib/data-model/oc-001";
-import type { NormalizedEvidence } from "@/services/ial/types";
-import type { CanonicalEntityRef } from "@/services/ial/types";
+import type { CanonicalEntityRef, EvidenceGrade, NormalizedEvidence } from "@/services/ial/types";
 
 export type PredictionHorizon = "immediate" | "short" | "medium" | "long";
 

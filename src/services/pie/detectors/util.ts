@@ -1,5 +1,4 @@
-import type { NormalizedEvidence } from "@/services/ial/types";
-import type { EvidenceGrade } from "@/lib/data-model/oc-001";
+import type { EvidenceGrade, NormalizedEvidence } from "@/services/ial/types";
 import type {
   Prediction,
   PredictionCategory,
