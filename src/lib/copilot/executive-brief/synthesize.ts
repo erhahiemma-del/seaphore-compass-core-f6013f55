@@ -116,11 +116,40 @@ export interface EvidenceGroup {
   items: EvidenceCardData[];
 }
 
+export interface IdentityResolutionRejection {
+  id: string;
+  label: string;
+  score: number;
+  reason: string;
+}
+
+export interface IdentityResolutionSection {
+  /** Human-readable label for the selected vessel/entity. */
+  selectedLabel: string;
+  selectedId: string;
+  imo?: string | null;
+  mmsi?: string | null;
+  flag?: string | null;
+  callSign?: string | null;
+  confidenceScore: number;
+  tier: IdentityConfidenceResult["tier"];
+  /** Signals that fired with positive contribution (matching criteria). */
+  matchingCriteria: Array<{ label: string; detail: string; points: string }>;
+  /** Candidates rejected outright (e.g. NO_MATCH). */
+  rejectedCandidates: IdentityResolutionRejection[];
+  /** Lower-scored alternates that were considered but not selected. */
+  alternates: IdentityResolutionRejection[];
+  /** Officer-facing sentence describing why this candidate was selected. */
+  selectionReason: string;
+  requiresConfirmation: boolean;
+}
+
 export interface ExecutiveBrief {
   executiveSummary: string;
   confidence: ConfidencePanel;
   kpis: KpiCard[];
   keyFacts: KeyFact[];
+  identityResolution?: IdentityResolutionSection;
   relationships: RelationshipNode[];
   timeline: TimelineEvent[];
   risks: RiskCheck[];
