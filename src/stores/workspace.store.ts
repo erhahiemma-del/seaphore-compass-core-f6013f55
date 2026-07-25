@@ -265,7 +265,20 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       activeId: null,
       investigations: {},
 
-      createInvestigation: ({ title, missionType = "GENERIC", priority = "MEDIUM", officer = "Officer" }) => {
+      createInvestigation: ({
+        title,
+        missionType = "GENERIC",
+        priority = "MEDIUM",
+        officer = "Officer",
+        caseType,
+        subjectId,
+        subjectName,
+        region,
+        tags,
+        assignees,
+        dueAt,
+        estimatedRevenueImpactUsd,
+      }) => {
         const id = uid("inv");
         const t = now();
         const wsp: InvestigationWorkspace = {
@@ -292,12 +305,49 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           ],
           entities: [],
           conversationTurns: [],
+          stage: "INTAKE",
+          caseType,
+          subjectId,
+          subjectName,
+          region,
+          tags,
+          assignees: assignees ?? [officer],
+          dueAt,
+          estimatedRevenueImpactUsd,
+          stageHistory: [{ at: t, from: null, to: "INTAKE", officer, note: "Investigation opened" }],
         };
         set((s) => ({ investigations: { ...s.investigations, [id]: wsp }, activeId: id }));
         return id;
       },
 
       setActive: (id) => set({ activeId: id }),
+
+      advanceStage: (id, to, note) =>
+        set((s) => {
+          const w = s.investigations[id];
+          if (!w) return s;
+          const from = w.stage ?? null;
+          if (from === to) return s;
+          const t = now();
+          const stageHistory = [
+            ...(w.stageHistory ?? []),
+            { at: t, from, to, officer: w.officer, note },
+          ];
+          const tl: TimelineEvent = {
+            id: uid("tl"),
+            at: t,
+            kind: "decision",
+            label: `Stage: ${from ?? "—"} → ${to}`,
+            detail: note,
+          };
+          const status: WorkspaceStatus = to === "CLOSED" ? "CLOSED" : w.status;
+          return {
+            investigations: {
+              ...s.investigations,
+              [id]: { ...w, stage: to, status, stageHistory, timeline: [...w.timeline, tl], updatedAt: t },
+            },
+          };
+        }),
 
       updateOverview: (id, patch) =>
         set((s) => {
