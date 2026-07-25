@@ -15,6 +15,31 @@ import { persist, createJSONStorage } from "zustand/middleware";
 export type WorkspaceStatus = "ACTIVE" | "MONITORING" | "SUSPENDED" | "CLOSED";
 export type WorkspacePriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 export type ConfidenceTier = "LOW" | "MEDIUM" | "HIGH";
+export type InvestigationStage =
+  | "INTAKE"
+  | "EVIDENCE"
+  | "ANALYSIS"
+  | "DECISION"
+  | "REPORT"
+  | "CLOSED";
+export const INVESTIGATION_STAGES: InvestigationStage[] = [
+  "INTAKE",
+  "EVIDENCE",
+  "ANALYSIS",
+  "DECISION",
+  "REPORT",
+  "CLOSED",
+];
+export type InvestigationCaseType =
+  | "VESSEL"
+  | "COMPANY"
+  | "CARGO"
+  | "PERSON"
+  | "SANCTIONS"
+  | "COMPLIANCE"
+  | "INCIDENT"
+  | "REVENUE"
+  | "GENERIC";
 
 export type EvidenceCategory = "COLLECTED" | "PENDING" | "CONFLICTING" | "REJECTED";
 export interface WorkspaceEvidence {
