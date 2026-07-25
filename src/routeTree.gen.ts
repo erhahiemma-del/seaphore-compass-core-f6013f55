@@ -23,6 +23,7 @@ import { Route as MemoryRouteImport } from './routes/memory'
 import { Route as ManifestRouteImport } from './routes/manifest'
 import { Route as KnowledgeGraphRouteImport } from './routes/knowledge-graph'
 import { Route as InvestigationsWorkflowRouteImport } from './routes/investigations-workflow'
+import { Route as InvestigationsRouteImport } from './routes/investigations'
 import { Route as InvestigateRouteImport } from './routes/investigate'
 import { Route as IntelligenceEvidenceRouteImport } from './routes/intelligence-evidence'
 import { Route as EvidenceRouteImport } from './routes/evidence'
@@ -128,6 +129,11 @@ const KnowledgeGraphRoute = KnowledgeGraphRouteImport.update({
 const InvestigationsWorkflowRoute = InvestigationsWorkflowRouteImport.update({
   id: '/investigations-workflow',
   path: '/investigations-workflow',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvestigationsRoute = InvestigationsRouteImport.update({
+  id: '/investigations',
+  path: '/investigations',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InvestigateRoute = InvestigateRouteImport.update({
@@ -324,6 +330,7 @@ export interface FileRoutesByFullPath {
   '/evidence': typeof EvidenceRoute
   '/intelligence-evidence': typeof IntelligenceEvidenceRoute
   '/investigate': typeof InvestigateRouteWithChildren
+  '/investigations': typeof InvestigationsRoute
   '/investigations-workflow': typeof InvestigationsWorkflowRoute
   '/knowledge-graph': typeof KnowledgeGraphRoute
   '/manifest': typeof ManifestRoute
@@ -374,6 +381,7 @@ export interface FileRoutesByTo {
   '/detect': typeof DetectRoute
   '/evidence': typeof EvidenceRoute
   '/intelligence-evidence': typeof IntelligenceEvidenceRoute
+  '/investigations': typeof InvestigationsRoute
   '/investigations-workflow': typeof InvestigationsWorkflowRoute
   '/knowledge-graph': typeof KnowledgeGraphRoute
   '/manifest': typeof ManifestRoute
@@ -426,6 +434,7 @@ export interface FileRoutesById {
   '/evidence': typeof EvidenceRoute
   '/intelligence-evidence': typeof IntelligenceEvidenceRoute
   '/investigate': typeof InvestigateRouteWithChildren
+  '/investigations': typeof InvestigationsRoute
   '/investigations-workflow': typeof InvestigationsWorkflowRoute
   '/knowledge-graph': typeof KnowledgeGraphRoute
   '/manifest': typeof ManifestRoute
@@ -480,6 +489,7 @@ export interface FileRouteTypes {
     | '/evidence'
     | '/intelligence-evidence'
     | '/investigate'
+    | '/investigations'
     | '/investigations-workflow'
     | '/knowledge-graph'
     | '/manifest'
@@ -530,6 +540,7 @@ export interface FileRouteTypes {
     | '/detect'
     | '/evidence'
     | '/intelligence-evidence'
+    | '/investigations'
     | '/investigations-workflow'
     | '/knowledge-graph'
     | '/manifest'
@@ -581,6 +592,7 @@ export interface FileRouteTypes {
     | '/evidence'
     | '/intelligence-evidence'
     | '/investigate'
+    | '/investigations'
     | '/investigations-workflow'
     | '/knowledge-graph'
     | '/manifest'
@@ -634,6 +646,7 @@ export interface RootRouteChildren {
   EvidenceRoute: typeof EvidenceRoute
   IntelligenceEvidenceRoute: typeof IntelligenceEvidenceRoute
   InvestigateRoute: typeof InvestigateRouteWithChildren
+  InvestigationsRoute: typeof InvestigationsRoute
   InvestigationsWorkflowRoute: typeof InvestigationsWorkflowRoute
   KnowledgeGraphRoute: typeof KnowledgeGraphRoute
   ManifestRoute: typeof ManifestRoute
@@ -763,6 +776,13 @@ declare module '@tanstack/react-router' {
       path: '/investigations-workflow'
       fullPath: '/investigations-workflow'
       preLoaderRoute: typeof InvestigationsWorkflowRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/investigations': {
+      id: '/investigations'
+      path: '/investigations'
+      fullPath: '/investigations'
+      preLoaderRoute: typeof InvestigationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/investigate': {
@@ -1078,6 +1098,7 @@ const rootRouteChildren: RootRouteChildren = {
   EvidenceRoute: EvidenceRoute,
   IntelligenceEvidenceRoute: IntelligenceEvidenceRoute,
   InvestigateRoute: InvestigateRouteWithChildren,
+  InvestigationsRoute: InvestigationsRoute,
   InvestigationsWorkflowRoute: InvestigationsWorkflowRoute,
   KnowledgeGraphRoute: KnowledgeGraphRoute,
   ManifestRoute: ManifestRoute,
