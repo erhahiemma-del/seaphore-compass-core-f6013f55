@@ -764,15 +764,16 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     reviewedAt: REVIEWED,
   },
   {
-    id: "ife.legacy-fusion-shims",
-    name: "Legacy fusion modules (Sprint 7 fusion, orchestration.evidence-fusion, ICE fusion)",
+    id: "ife.canonical-pipeline",
+    name: "Canonical IFE pipeline (IAL Bridge → Identity Resolution → Fusion → UIP)",
     producer: "IFE",
     description:
-      "Historical fusion implementations retained as internal shims while consumers migrate to the canonical IFE + UIP registry. Not projected to officers; not part of the production evidence contract.",
-    state: "INTERNAL",
-    internal: {
-      reason: "implementation-detail",
-      note: "Deprecated. New code MUST call the canonical IFE and register the UIP; these paths remain only to preserve import compatibility.",
+      "Slice 3 producer swap: retrieval evidence flows through the IAL Bridge, canonical identity resolution, and the IFE fusion engine, producing the Unified Intelligence Package registered as the single source of truth. Legacy `orchestration.evidence-fusion` and `orchestration.uip-adapter` have been retired.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Executive Briefing header · UIP chip",
+      location: "src/components/copilot/briefing/ExecutiveBriefing.tsx",
+      interaction: "hover-explainer",
     },
     reviewedAt: REVIEWED,
   },
