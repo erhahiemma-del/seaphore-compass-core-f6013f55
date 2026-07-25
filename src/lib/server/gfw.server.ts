@@ -238,7 +238,9 @@ export async function runGfwHealthCheck(): Promise<GfwHealthPayload> {
   const timeout = setTimeout(() => controller.abort(), HEALTH_TIMEOUT_MS);
   try {
     const url = new URL(SEARCH_PATH, BASE_URL);
-    url.searchParams.set("query", "healthcheck");
+    url.searchParams.append("query", "test");
+    url.searchParams.append("datasets[0]", VESSEL_IDENTITY_DATASET);
+    url.searchParams.append("limit", "1");
     const response = await fetch(url.toString(), {
       method: "GET",
       headers: buildHeaders(apiKey),
