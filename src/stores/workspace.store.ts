@@ -134,6 +134,36 @@ export interface WorkspaceRecommendation {
   supportingEvidence?: string[];
 }
 
+// Investigation Notebook — support notes / findings / questions with
+// markdown, version history, and audit trail. Hypotheses, recommendations,
+// and tasks remain first-class panels but are also linkable from notebook
+// entries by ref.
+export type NotebookKind =
+  | "NOTE"
+  | "FINDING"
+  | "HYPOTHESIS"
+  | "RECOMMENDATION"
+  | "QUESTION"
+  | "TASK";
+export interface NotebookVersion {
+  at: string;
+  body: string;
+  officer?: string;
+}
+export interface NotebookEntry {
+  id: string;
+  kind: NotebookKind;
+  title: string;
+  body: string; // markdown
+  officer?: string;
+  createdAt: string;
+  updatedAt: string;
+  refId?: string; // link to hypothesis/task/recommendation id
+  supportingEvidence?: string[];
+  versions: NotebookVersion[]; // append-only history
+}
+
+
 export interface InvestigationWorkspace {
   id: string;
   title: string;
