@@ -33,7 +33,10 @@ import type {
 const BASE_URL = "https://gateway.api.globalfishingwatch.org";
 const SEARCH_PATH = "/v3/vessels/search";
 const EVENTS_PATH = "/v3/events";
-const HEALTH_TIMEOUT_MS = 2000;
+const HEALTH_TIMEOUT_MS = 4000;
+// GFW v3 requires a datasets[] param on every vessel/event call.
+const VESSEL_IDENTITY_DATASET = "public-global-vessel-identity:latest";
+const EVENTS_DATASET = "public-global-events:latest";
 
 const ENV_KEY = "GLOBAL_FISHING_WATCH_API_KEY";
 
