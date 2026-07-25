@@ -653,20 +653,81 @@ export function buildReport(input: BuildReportInput): ReportPackage {
     };
   };
   const pyramid = foldPyramid();
+  // Full 6-band Confidence Pyramid — map OKL bands to the operational
+  // dimensions officers reason about. Data Completeness and Temporal
+  // Confidence are derived from UIP evidence stats so every score is
+  // traceable to the same Canonical UIP.
+  const totalEvidenceUip = uipList.reduce((s, u) => s + u.rawEvidence.length, 0);
+  const totalCanonicalUip = uipList.reduce((s, u) => s + u.fused.canonical.length, 0);
+  const dataCompleteness = uipList.length
+    ? Math.min(
+        100,
+        Math.round(
+          uipList.reduce(
+            (s, u) =>
+              s +
+              (u.fused.stats.sourcesResponded /
+                Math.max(u.fused.stats.sourcesQueried, 1)) *
+                100,
+            0,
+          ) / uipList.length,
+        ),
+      )
+    : 0;
+  const temporalConfidence = uipList.length
+    ? Math.max(
+        0,
+        Math.round(
+          100 -
+            Math.min(
+              100,
+              (uipList.reduce((s, u) => s + u.freshestSeconds, 0) /
+                uipList.length /
+                (60 * 60 * 24)) *
+                10,
+            ),
+        ),
+      )
+    : 0;
   sections.push({
     id: "confidence-pyramid",
     title: "Confidence Pyramid",
     body: pyramid
-      ? `Tier ${pyramid.tier}. ${pyramid.explanation}`
+      ? `Tier ${pyramid.tier}. ${pyramid.explanation} Every score is explainable — Data Completeness reflects sources responded / queried across the resolved UIPs, Temporal Confidence decays with evidence age, and the OKL bands are computed by the Operational Knowledge Layer over the same Canonical UIP snapshots.`
       : "No Confidence Pyramid — OKL requires at least one resolved UIP.",
-    columns: ["Band", "Score"],
+    columns: ["Band", "Score", "Basis"],
     rows: pyramid
       ? [
-          { Band: "Identity", Score: `${pyramid.identity}%` },
-          { Band: "Evidence", Score: `${pyramid.evidence}%` },
-          { Band: "Fusion", Score: `${pyramid.fusion}%` },
-          { Band: "Pattern", Score: `${pyramid.pattern}%` },
-          { Band: "Recommendation", Score: `${pyramid.recommendation}%` },
+          {
+            Band: "Data Completeness",
+            Score: `${dataCompleteness}%`,
+            Basis: `${uipList.length} UIP · sources responded / queried`,
+          },
+          {
+            Band: "Evidence Quality",
+            Score: `${pyramid.evidence}%`,
+            Basis: `${totalEvidenceUip} normalised evidence records`,
+          },
+          {
+            Band: "Entity Resolution",
+            Score: `${pyramid.identity}%`,
+            Basis: `${totalCanonicalUip} canonical entities across ${uipList.length} UIP`,
+          },
+          {
+            Band: "Relationship Confidence",
+            Score: `${pyramid.fusion}%`,
+            Basis: `${uipContradictions} contradiction${uipContradictions === 1 ? "" : "s"} surfaced during fusion`,
+          },
+          {
+            Band: "Temporal Confidence",
+            Score: `${temporalConfidence}%`,
+            Basis: `Freshness of freshest evidence per UIP`,
+          },
+          {
+            Band: "Operational Confidence",
+            Score: `${pyramid.recommendation}%`,
+            Basis: `OKL recommendation band (tier ${pyramid.tier})`,
+          },
         ]
       : [],
     confidence: pyramid?.recommendation,
@@ -697,8 +758,10 @@ export function buildReport(input: BuildReportInput): ReportPackage {
     references: decisions.map((d) => d.id),
   });
 
-  // Investigation Links — workspace ↔ Canonical UIP lineage, including
-  // orchestrator misses so the officer never sees silent gaps.
+  // Investigation Links — workspace ↔ Canonical UIP lineage plus per-kind
+  // entity breakdown from the Canonical UIP knowledge graph, so the
+  // officer sees Subjects / Companies / Vessels / Ports / Cargo /
+  // Documents / Events in a single audit surface.
   const linkRows = workspaces.map((w) => ({
     Investigation: w.title,
     "Investigation ID": w.id,
@@ -723,6 +786,43 @@ export function buildReport(input: BuildReportInput): ReportPackage {
     rows: linkRows,
     references: uipIdsFromSnapshots,
   });
+
+  // Per-kind entity breakdown from the Canonical UIP knowledge graph.
+  const kindBuckets = new Map<string, Array<{ label: string; uipId: string; confidence: number }>>();
+  for (const u of uipList) {
+    for (const c of u.fused.canonical) {
+      const kind = String(c.entity.kind ?? "entity").toLowerCase();
+      const arr = kindBuckets.get(kind) ?? [];
+      arr.push({
+        label: c.entity.label ?? c.entity.id,
+        uipId: u.id,
+        confidence: c.confidence,
+      });
+      kindBuckets.set(kind, arr);
+    }
+  }
+  const kindRows = [...kindBuckets.entries()]
+    .sort((a, b) => b[1].length - a[1].length)
+    .map(([kind, items]) => ({
+      Kind: kind,
+      Count: items.length,
+      Examples: joinShort(items.map((i) => i.label)),
+      "Avg confidence": `${Math.round(items.reduce((s, i) => s + i.confidence, 0) / items.length)}%`,
+      "UIP snapshots": Array.from(new Set(items.map((i) => i.uipId))).length,
+    }));
+  sections.push({
+    id: "investigation-entity-links",
+    title: "Investigation Entity Links",
+    body:
+      kindRows.length === 0
+        ? "No canonical entities to report. Investigation Links become richer once the Canonical UIP resolves subjects, companies, vessels, ports, cargo, documents, and events."
+        : `Breakdown across ${kindRows.reduce((s, r) => s + Number(r.Count), 0)} canonical entities from ${uipList.length} UIP snapshot${uipList.length === 1 ? "" : "s"}. Subjects, companies, vessels, ports, cargo, documents, and events all trace back to the same Canonical UIP.`,
+    columns: ["Kind", "Count", "Examples", "Avg confidence", "UIP snapshots"],
+    rows: kindRows,
+    references: uipIdsFromSnapshots,
+  });
+
+
 
   sections.push({
     id: "confidence",
