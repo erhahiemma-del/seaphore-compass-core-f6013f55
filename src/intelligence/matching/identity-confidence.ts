@@ -381,7 +381,15 @@ export function scoreIdentityCandidate(
     );
   }
 
-  const rawScore = signals.reduce((sum, s) => sum + s.contribution, 0);
+  // Normalise: score as a percentage of the signals that were
+  // *applicable* to this query. This lets a pure-name search reach 100
+  // when the name is exact, without being penalised for the absence of
+  // an IMO hint the officer did not supply.
+  const contributionSum = signals.reduce((s, x) => s + x.contribution, 0);
+  const applicableWeight = signals.reduce((s, x) => s + x.weight, 0);
+  const rawScore = applicableWeight > 0
+    ? Math.round((contributionSum / applicableWeight) * 100)
+    : 0;
 
   // Provider modifier
   const mf = (candidate.providerMatchFields ?? "").toUpperCase();
