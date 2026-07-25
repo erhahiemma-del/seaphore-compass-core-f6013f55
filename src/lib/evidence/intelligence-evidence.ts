@@ -373,10 +373,8 @@ export function fromOklPattern(
     pattern.operationalImpact;
 
   const entityRef = pattern.entities[0];
-  const inferredSubject =
-    subject ??
-    (entityRef?.canonicalId?.startsWith("vessel:") ? entityRef.aliases?.[0] : undefined) ??
-    entityRef?.aliases?.[0];
+  const inferredSubject = subject ?? entityRef?.label;
+
 
   return {
     id: `okl.${pattern.id}`,
