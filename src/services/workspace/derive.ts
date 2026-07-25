@@ -23,8 +23,20 @@ function priorityFromTier(tier: "low" | "medium" | "high"): WorkspacePriority {
   return "LOW";
 }
 
-/** Record a Copilot briefing into the active investigation workspace. */
-export function recordBriefingToWorkspace(briefing: AdaptiveBriefing): string | null {
+/**
+ * Record a Copilot briefing into the active investigation workspace.
+ *
+ * `sourceUipId` — the Canonical Unified Intelligence Package id that
+ * produced this briefing. When a new investigation is created here, it
+ * is permanently stamped with this id so every downstream artifact
+ * (Mission Plans, MIBC reports) can trace back to the originating UIP.
+ * For existing active investigations that have no `sourceUipId` yet, we
+ * fill it in on first briefing — but never overwrite an existing one.
+ */
+export function recordBriefingToWorkspace(
+  briefing: AdaptiveBriefing,
+  sourceUipId?: string | null,
+): string | null {
   const store = useWorkspaceStore.getState();
   let id = store.activeId;
   const missionType = briefing.missionType ?? detectMissionType(briefing);
@@ -35,14 +47,19 @@ export function recordBriefingToWorkspace(briefing: AdaptiveBriefing): string | 
       title: briefing.query.slice(0, 120),
       missionType,
       priority: priorityFromTier(briefing.classification.tier),
+      sourceUipId: sourceUipId ?? undefined,
     });
   }
   const wid = id;
 
-  // Ensure overview reflects latest briefing.
+  // Ensure overview reflects latest briefing. `sourceUipId` is set only
+  // when the workspace does not already have one — the originating UIP
+  // is immutable per the operational-runtime contract.
+  const existing = useWorkspaceStore.getState().investigations[wid];
   useWorkspaceStore.getState().updateOverview(wid, {
     missionType,
     lastBriefingId: briefing.id,
+    ...(existing && !existing.sourceUipId && sourceUipId ? { sourceUipId } : {}),
   });
 
   // Conversation turn — copilot side.
