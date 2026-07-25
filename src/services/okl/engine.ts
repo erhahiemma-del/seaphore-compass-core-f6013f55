@@ -816,11 +816,13 @@ export function analyzeOperationalKnowledge(
           for (const n of nbrs) {
             if (seen.has(n.neighbor.id)) continue;
             seen.add(n.neighbor.id);
-            related.push({
-              kind: (n.neighbor.kind ?? "vessel") as CanonicalEntityRef["kind"],
-              id: n.neighbor.id,
-              label: n.neighbor.label,
-            });
+            const k = n.neighbor.kind;
+            const canonicalKind: CanonicalEntityRef["kind"] =
+              k === "vessel" || k === "company" || k === "person" ||
+              k === "port" || k === "cargo" || k === "voyage"
+                ? k
+                : "company";
+            related.push({ kind: canonicalKind, id: n.neighbor.id, label: n.neighbor.label });
           }
         }
         return related.length
