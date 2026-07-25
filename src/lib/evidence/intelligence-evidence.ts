@@ -36,9 +36,25 @@ export type EvidenceStatus = "verified" | "pending" | "historical" | "conflictin
 export type EvidenceConfidence = "VERIFIED" | "OBSERVED" | "INFERRED" | "UNCONFIRMED";
 
 /**
- * Sanitized evidence row shown in the Intelligence Evidence Viewer.
+ * Sanitized evidence row shown in the Intelligence Evidence Explorer.
  * Never contains raw API payloads.
  */
+export type EvidenceEntityType =
+  | "vessel"
+  | "company"
+  | "person"
+  | "cargo"
+  | "port"
+  | "incident"
+  | "document";
+
+export interface EvidenceEntityRef {
+  type: EvidenceEntityType;
+  name: string;
+  /** Optional stable id (MMSI, IMO, company id) — used for dedup. */
+  id?: string;
+}
+
 export interface IntelligenceEvidenceItem {
   /** Stable id (deterministic if possible for dedup). */
   id: string;
@@ -66,6 +82,15 @@ export interface IntelligenceEvidenceItem {
   producer?: "IAL" | "REASONING" | "OSAE" | "ICE" | "IFE" | "WORKSPACE";
   /** Hash for chain-of-custody (opaque; never a token). */
   hash?: string;
+  /** Connector short-id (e.g. "gfw", "opensanctions", "companies-house"). */
+  connector?: string;
+  /** Investigation workspace id this evidence belongs to (if any). */
+  investigationId?: string;
+  /**
+   * Entities the evidence references. Drives the Relationship Graph and
+   * per-entity filter. Extracted upstream in adapters — no raw payloads.
+   */
+  entities?: EvidenceEntityRef[];
 }
 
 /* ────────────────────────── grade / status helpers ────────────────────────── */
