@@ -188,6 +188,8 @@ export function fromOsaeAssessment(a: OsaeAssessment, subject?: string): Intelli
     summary: a.summary,
     subject,
     producer: "OSAE",
+    connector: "osae",
+    entities: subject ? [{ type: "vessel", name: subject, id: a.vesselId }] : undefined,
   };
 }
 
