@@ -14,7 +14,7 @@ import type {
   OfficerQuery,
   SectionKind,
 } from "@/services/orchestration";
-import { orchestrate } from "@/services/orchestration";
+import { orchestrate, type OrchestrationDeps } from "@/services/orchestration";
 
 import { interpretQuery } from "./query-interpreter";
 import { resolvePronouns, isBareSkillPick } from "./conversation-resolver";
