@@ -509,6 +509,21 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: REVIEWED,
   },
+  {
+    id: "capability.identity-confidence",
+    name: "Identity Confidence Scorer",
+    producer: "CAPABILITY",
+    description:
+      "Every vessel search (GFW today, all identity connectors going forward) scores each candidate against the query using IMO, MMSI, call sign, name similarity, aliases, historical names, and flag, modified by the upstream provider's match verdict. When the top score falls below the auto-select threshold or a runner-up sits within the tie band, the pipeline MUST NOT auto-select — the officer is prompted to confirm.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Vessel Identity Confirmation · Copilot / Compliance",
+      location: "src/components/intelligence/VesselIdentityConfirm.tsx",
+      component: "src/components/intelligence/VesselIdentityConfirm.tsx",
+      interaction: "explicit-confirmation",
+    },
+    reviewedAt: REVIEWED,
+  },
 ];
 
 export function getContractEntry(id: string): ProjectionContractEntry | undefined {
