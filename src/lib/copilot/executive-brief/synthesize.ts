@@ -14,6 +14,11 @@ import type {
 } from "@/components/copilot/briefing/types";
 import type { HumanResponse } from "@/services/oie/types";
 import type { IbeResult } from "@/services/ibe/types";
+import type {
+  IdentityCandidate,
+  IdentityConfidenceResult,
+  IdentitySelection,
+} from "@/intelligence/matching/identity-confidence";
 import { sanitizeText } from "./sanitize";
 
 export type StatusTone = "positive" | "warning" | "critical" | "neutral";
@@ -111,11 +116,40 @@ export interface EvidenceGroup {
   items: EvidenceCardData[];
 }
 
+export interface IdentityResolutionRejection {
+  id: string;
+  label: string;
+  score: number;
+  reason: string;
+}
+
+export interface IdentityResolutionSection {
+  /** Human-readable label for the selected vessel/entity. */
+  selectedLabel: string;
+  selectedId: string;
+  imo?: string | null;
+  mmsi?: string | null;
+  flag?: string | null;
+  callSign?: string | null;
+  confidenceScore: number;
+  tier: IdentityConfidenceResult["tier"];
+  /** Signals that fired with positive contribution (matching criteria). */
+  matchingCriteria: Array<{ label: string; detail: string; points: string }>;
+  /** Candidates rejected outright (e.g. NO_MATCH). */
+  rejectedCandidates: IdentityResolutionRejection[];
+  /** Lower-scored alternates that were considered but not selected. */
+  alternates: IdentityResolutionRejection[];
+  /** Officer-facing sentence describing why this candidate was selected. */
+  selectionReason: string;
+  requiresConfirmation: boolean;
+}
+
 export interface ExecutiveBrief {
   executiveSummary: string;
   confidence: ConfidencePanel;
   kpis: KpiCard[];
   keyFacts: KeyFact[];
+  identityResolution?: IdentityResolutionSection;
   relationships: RelationshipNode[];
   timeline: TimelineEvent[];
   risks: RiskCheck[];
@@ -561,6 +595,63 @@ export function groupEvidenceForDisclosure(briefing: AdaptiveBriefingData): Evid
   return out;
 }
 
+/* ───────────────────── identity resolution ───────────────────── */
+
+export function buildIdentityResolutionSection<C extends IdentityCandidate>(
+  selection: IdentitySelection<C>,
+): IdentityResolutionSection | undefined {
+  if (!selection.selected || !selection.confidence) return undefined;
+  const c = selection.selected;
+  const conf = selection.confidence;
+  const label =
+    (c as unknown as { name?: string | null }).name ??
+    (c as unknown as { label?: string | null }).label ??
+    c.id;
+  const matchingCriteria = conf.signals
+    .filter((s) => s.contribution > 0)
+    .map((s) => ({
+      label: s.label,
+      detail: s.detail,
+      points: `${s.contribution}/${s.weight}`,
+    }));
+  const alternates: IdentityResolutionRejection[] = selection.alternates
+    .filter((a) => a.candidate.id !== c.id)
+    .slice(0, 4)
+    .map((a) => ({
+      id: a.candidate.id,
+      label:
+        (a.candidate as unknown as { name?: string | null }).name ?? a.candidate.id,
+      score: a.confidence.score,
+      reason: `${a.confidence.tier} at ${a.confidence.score}/100 — ${a.confidence.rationale}`,
+    }));
+  const rejectedCandidates: IdentityResolutionRejection[] = selection.rejected.map(
+    (a) => ({
+      id: a.candidate.id,
+      label:
+        (a.candidate as unknown as { name?: string | null }).name ?? a.candidate.id,
+      score: a.confidence.score,
+      reason:
+        a.rejectionReason ??
+        `Excluded from auto-selection at ${a.confidence.score}/100.`,
+    }),
+  );
+  return {
+    selectedLabel: label ?? c.id,
+    selectedId: c.id,
+    imo: c.imo ?? null,
+    mmsi: c.mmsi ?? null,
+    flag: c.flag ?? null,
+    callSign: c.callSign ?? null,
+    confidenceScore: conf.score,
+    tier: conf.tier,
+    matchingCriteria,
+    rejectedCandidates,
+    alternates,
+    selectionReason: selection.selectionReason,
+    requiresConfirmation: selection.requiresConfirmation,
+  };
+}
+
 /* ───────────────────────────── entry ─────────────────────────── */
 
 export function synthesizeExecutiveBrief(args: {
@@ -568,13 +659,17 @@ export function synthesizeExecutiveBrief(args: {
   humanResponse: HumanResponse | null;
   ibe: IbeResult["ibe"] | null | undefined;
   followUps: string[];
+  identitySelection?: IdentitySelection<IdentityCandidate>;
 }): ExecutiveBrief {
-  const { briefing, humanResponse, ibe, followUps } = args;
+  const { briefing, humanResponse, ibe, followUps, identitySelection } = args;
   return {
     executiveSummary: buildExecutiveSummary(briefing, humanResponse),
     confidence: buildConfidencePanel(briefing, ibe),
     kpis: buildKpiCards(briefing, ibe, humanResponse),
     keyFacts: buildKeyFacts(briefing),
+    identityResolution: identitySelection
+      ? buildIdentityResolutionSection(identitySelection)
+      : undefined,
     relationships: buildRelationshipNodes(briefing),
     timeline: buildTimelineEvents(briefing),
     risks: buildRiskChecklist(briefing),
