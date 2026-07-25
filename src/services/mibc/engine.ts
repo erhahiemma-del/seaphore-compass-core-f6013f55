@@ -208,15 +208,122 @@ export function buildReport(input: BuildReportInput): ReportPackage {
   const title = deriveTitle(reportType, workspaces);
   const subtitle = `${REPORT_PERIOD_LABEL[period]} · ${workspaces.length} investigation${workspaces.length === 1 ? "" : "s"} · ${evidence.length} evidence item${evidence.length === 1 ? "" : "s"}`;
 
+  // Subjects — derived from workspace subjects + top canonical UIP entities.
+  const uipRefsEarly = input.uipSnapshots ?? [];
+  const subjects = Array.from(
+    new Set([
+      ...workspaces.map((w) => w.subjectName).filter((x): x is string => !!x),
+      ...uipRefsEarly.flatMap((r) =>
+        r.uip.fused.canonical
+          .slice(0, 5)
+          .map((c) => c.entity.label ?? c.entity.id)
+          .filter((x): x is string => !!x),
+      ),
+    ]),
+  ).slice(0, 8);
+  const mission =
+    input.mission ??
+    (workspaces.find((w) => w.missionType)?.missionType || undefined);
+
+  // Overall Risk / Operational Status derived from workspace priorities.
+  const priorityRank = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 } as const;
+  const highestPriority =
+    workspaces
+      .map((w) => w.priority as keyof typeof priorityRank)
+      .sort((a, b) => (priorityRank[b] ?? 0) - (priorityRank[a] ?? 0))[0] ??
+    "MEDIUM";
+  const operationalStatus =
+    workspaces.some((w) => w.stage === "DECIDE" || w.stage === "SHARE")
+      ? "Decision pending"
+      : workspaces.some((w) => w.stage === "INVESTIGATE")
+        ? "Active investigation"
+        : workspaces.length > 0
+          ? "Intake"
+          : uipRefsEarly.length > 0
+            ? "Live intelligence"
+            : "No active investigations";
+  const recommendedCoA =
+    workspaces.find((w) => w.recommendation)?.recommendation?.label ??
+    (uipRefsEarly[0]?.uip.osae[0]?.assessment?.recommendedAction ??
+      "Officer to review Canonical UIP and register a decision.");
+
   // ── Sections ───────────────────────────────────────────────────────
   const sections: ReportSection[] = [];
+
+  // (0) Report Metadata — every export carries provenance up-front.
+  sections.push({
+    id: "report-metadata",
+    title: "Report Metadata",
+    columns: ["Field", "Value"],
+    rows: [
+      { Field: "Briefing ID", Value: input.briefingId ?? "—" },
+      { Field: "Officer", Value: officer },
+      { Field: "Officer ID", Value: input.officerId ?? "—" },
+      { Field: "Generated at (UTC)", Value: generatedAt },
+      { Field: "Overall confidence", Value: `${avgConfidence}%` },
+      {
+        Field: "Source UIP ids",
+        Value: uipRefsEarly.map((r) => r.uip.id).join(", ") || "—",
+      },
+      {
+        Field: "Provenance summary",
+        Value: `${uipRefsEarly.length} UIP snapshot${uipRefsEarly.length === 1 ? "" : "s"} · ${uipRefsEarly.reduce((s, r) => s + r.uip.rawEvidence.length, 0)} evidence records · ${uipRefsEarly.reduce((s, r) => s + r.uip.provenance.length, 0)} connector attributions`,
+      },
+    ],
+  });
 
   sections.push({
     id: "executive-summary",
     title: "Executive Summary",
-    body: buildExecutiveSummary(reportType, workspaces, evidence.length, totalRevenue),
+    bullets: [
+      `Mission — ${mission ?? "Ad-hoc intelligence request"}`,
+      `Subject — ${subjects.join(", ") || "—"}`,
+      `Current Assessment — ${buildExecutiveSummary(reportType, workspaces, evidence.length, totalRevenue)}`,
+      `Intelligence Confidence — ${avgConfidence}%`,
+      `Operational Status — ${operationalStatus}`,
+      `Overall Risk — ${highestPriority}`,
+      `Recommended Course of Action — ${recommendedCoA}`,
+    ],
     confidence: avgConfidence,
   });
+
+  // Intelligence Assessment — structured operational summary.
+  const watchlistHits = uipRefsEarly.reduce(
+    (n, r) =>
+      n +
+      r.uip.osae.reduce(
+        (m, o) => m + (o.assessment?.sanctions?.matches?.length ?? 0),
+        0,
+      ),
+    0,
+  );
+  const complianceStatus =
+    watchlistHits > 0
+      ? `${watchlistHits} watchlist hit${watchlistHits === 1 ? "" : "s"}`
+      : uipRefsEarly.length > 0
+        ? "No watchlist hits in canonical UIP"
+        : "Not evaluated";
+  const investigationStatus =
+    workspaces.length === 0
+      ? "No linked investigations"
+      : `${workspaces.length} investigation${workspaces.length === 1 ? "" : "s"} · stages: ${Array.from(new Set(workspaces.map((w) => w.stage ?? "INTAKE"))).join(", ")}`;
+  sections.push({
+    id: "intelligence-assessment",
+    title: "Intelligence Assessment",
+    columns: ["Dimension", "Value"],
+    rows: [
+      { Dimension: "Overall Risk", Value: highestPriority },
+      { Dimension: "Confidence", Value: `${avgConfidence}%` },
+      { Dimension: "Operational Status", Value: operationalStatus },
+      { Dimension: "Compliance", Value: complianceStatus },
+      { Dimension: "Watchlists", Value: `${watchlistHits} hit${watchlistHits === 1 ? "" : "s"}` },
+      { Dimension: "Revenue Exposure", Value: fmtUsd(totalRevenue) },
+      { Dimension: "Investigation Status", Value: investigationStatus },
+    ],
+    confidence: avgConfidence,
+  });
+
+
 
   sections.push({
     id: "operational-overview",
