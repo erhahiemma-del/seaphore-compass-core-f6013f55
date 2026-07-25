@@ -50,6 +50,7 @@ interface DetectorCtx {
   readonly historical: ReadonlyArray<OklHistoricalHint>;
   readonly investigations: ReadonlyArray<OklInvestigationHint>;
   readonly evidence: ReadonlyArray<NormalizedEvidence>;
+  readonly graph?: MaritimeKnowledgeGraph;
   readonly identityScore: number;
   readonly evidenceScore: number;
   readonly fusionScore: number;
