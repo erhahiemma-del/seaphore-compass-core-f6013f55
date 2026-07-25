@@ -25,10 +25,12 @@ import {
   type AisMovementEvent,
 } from "@/intelligence/analyzers/AISBehaviourAnalyzer";
 import type {
+  GfwCandidate,
   GfwEvidencePackage,
   GfwHealthPayload,
   GfwVesselIdentity,
 } from "@/connectors/global-fishing-watch/types";
+import { selectIdentity } from "@/intelligence/matching/identity-confidence";
 
 const BASE_URL = "https://gateway.api.globalfishingwatch.org";
 const SEARCH_PATH = "/v3/vessels/search";
