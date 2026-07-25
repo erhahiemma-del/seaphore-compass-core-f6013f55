@@ -488,14 +488,36 @@ export function selectIdentity<C extends IdentityCandidate>(
       selected: null,
       confidence: null,
       alternates: [],
+      rejected: [],
       requiresConfirmation: true,
       ambiguityReason: "no-candidates",
+      selectionReason: "No candidates returned by upstream connectors.",
     };
   }
 
-  const ranked = candidates
-    .map((c) => ({ candidate: c, confidence: scoreIdentityCandidate(c, input) }))
+  const scored = candidates.map((candidate) => {
+    const confidence = scoreIdentityCandidate(candidate, input);
+    const mf = (candidate.providerMatchFields ?? "").toUpperCase();
+    const isNoMatch = mf === "NO_MATCH";
+    return {
+      candidate,
+      confidence,
+      rejected: isNoMatch,
+      rejectionReason: isNoMatch
+        ? "Upstream provider tagged this record as NO_MATCH."
+        : undefined,
+    } satisfies IdentityAlternate<C>;
+  });
+
+  // De-prioritise NO_MATCH candidates: only surface them when nothing
+  // else is on the table. Rejected candidates are always returned in
+  // `rejected` so the officer can inspect them.
+  const survivors = scored.filter((s) => !s.rejected);
+  const rejected = scored
+    .filter((s) => s.rejected)
     .sort((a, b) => b.confidence.score - a.confidence.score);
+  const pool = survivors.length > 0 ? survivors : scored;
+  const ranked = [...pool].sort((a, b) => b.confidence.score - a.confidence.score);
 
   const top = ranked[0];
   const runner = ranked[1];
@@ -511,11 +533,28 @@ export function selectIdentity<C extends IdentityCandidate>(
     ambiguityReason = "below-threshold";
   }
 
+  const positiveSignals = top.confidence.signals
+    .filter((s) => s.contribution > 0)
+    .map((s) => s.label);
+  const criteriaText = positiveSignals.length
+    ? positiveSignals.join(", ")
+    : "no positive identity signals";
+  const selectionReason =
+    survivors.length === 0
+      ? `Only NO_MATCH candidates were available; surfaced the highest-scoring rejection at ${top.confidence.score}/100 for officer review.`
+      : ambiguityReason === "tied-candidates"
+        ? `Two candidates are within ${tieBandPoints} points (${top.confidence.score} vs ${runner!.confidence.score}); officer confirmation required. Matching criteria: ${criteriaText}.`
+        : ambiguityReason === "below-threshold"
+          ? `Top candidate scored ${top.confidence.score}/100 (below ${autoSelectThreshold}); officer confirmation required. Matching criteria: ${criteriaText}.`
+          : `Selected on ${criteriaText}; confidence ${top.confidence.score}/100 (${top.confidence.tier}).`;
+
   return {
     selected: top.candidate,
     confidence: top.confidence,
     alternates: ranked,
+    rejected,
     requiresConfirmation,
     ambiguityReason,
+    selectionReason,
   };
 }
