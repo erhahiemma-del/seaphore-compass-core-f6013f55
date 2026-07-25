@@ -196,6 +196,13 @@ export class GfwUpstreamError extends Error {
  * Perform vessel search + movement history + AIS continuity analysis
  * and return a sanitised Evidence Package. Reads credentials from
  * server env only.
+ *
+ * Identity Confidence: every candidate is scored by
+ * `selectIdentity(...)`. When the top score is below the
+ * auto-select threshold or a runner-up sits within the tie band,
+ * `requiresConfirmation` is set to `true` and the movement/continuity
+ * fetch is skipped — the officer must confirm the intended vessel
+ * before OSAE receives evidence.
  */
 export async function runGfwSearch(query: string): Promise<GfwEvidencePackage | null> {
   const q = String(query ?? "").trim();
@@ -215,17 +222,57 @@ export async function runGfwSearch(query: string): Promise<GfwEvidencePackage | 
     throw new GfwUpstreamError(searchRes.message, searchRes.status);
   }
   const entries = Array.isArray(searchRes.body.entries) ? searchRes.body.entries : [];
-  // Prefer the entry with the richest identity (IMO > MMSI > any).
-  const scored = entries
+  const candidates = entries
     .map((e) => parseVessel(e, q))
-    .filter((v): v is GfwVesselIdentity => v !== null)
-    .sort((a, b) => {
-      const sa = (a.imo ? 3 : 0) + (a.mmsi ? 2 : 0) + (a.flag ? 1 : 0);
-      const sb = (b.imo ? 3 : 0) + (b.mmsi ? 2 : 0) + (b.flag ? 1 : 0);
-      return sb - sa;
-    });
-  const vessel = scored[0] ?? null;
-  if (!vessel) return null;
+    .filter((v): v is GfwVesselIdentity => v !== null);
+
+  if (candidates.length === 0) return null;
+
+  const selection = selectIdentity(
+    candidates.map((v) => ({
+      id: v.vesselId,
+      name: v.name,
+      imo: v.imo,
+      mmsi: v.mmsi,
+      callSign: v.callSign,
+      flag: v.flag,
+      aliases: v.aliases,
+      historicalNames: v.historicalNames,
+      providerMatchFields: v.providerMatchFields,
+      _vessel: v,
+    })),
+    { query: q },
+  );
+
+  const vessel =
+    (selection.selected as (GfwVesselIdentity & { _vessel?: GfwVesselIdentity }) | null)?._vessel ??
+    null;
+  if (!vessel || !selection.confidence) return null;
+
+  const alternates: GfwCandidate[] = selection.alternates.map((a) => ({
+    vessel: (a.candidate as unknown as { _vessel: GfwVesselIdentity })._vessel,
+    confidence: a.confidence,
+  }));
+
+  const evidenceUrl = `https://globalfishingwatch.org/vessel-search/vessels/${encodeURIComponent(vessel.vesselId)}`;
+
+  // Ambiguous: skip the movement fetch. Officer must confirm first.
+  if (selection.requiresConfirmation) {
+    return {
+      vessel,
+      lastPosition: null,
+      movementHistory: [],
+      continuityReport: AISBehaviourAnalyzer.analyse({
+        vesselId: vessel.vesselId,
+        events: [],
+      }),
+      evidenceUrl,
+      identityConfidence: selection.confidence,
+      alternates,
+      requiresConfirmation: true,
+      ambiguityReason: selection.ambiguityReason,
+    };
+  }
 
   const eventsRes = await httpGet<{ entries?: unknown[] }>(apiKey, EVENTS_PATH, [
     ["vessels[0]", vessel.vesselId],
@@ -258,7 +305,11 @@ export async function runGfwSearch(query: string): Promise<GfwEvidencePackage | 
       : null,
     movementHistory: events,
     continuityReport,
-    evidenceUrl: `https://globalfishingwatch.org/vessel-search/vessels/${encodeURIComponent(vessel.vesselId)}`,
+    evidenceUrl,
+    identityConfidence: selection.confidence,
+    alternates,
+    requiresConfirmation: false,
+    ambiguityReason: "none",
   };
 }
 
