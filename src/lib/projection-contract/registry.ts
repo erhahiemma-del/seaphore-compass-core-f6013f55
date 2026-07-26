@@ -485,6 +485,22 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
   },
 
   {
+    id: "ial.environmental-intelligence-provider",
+    name: "Environmental Intelligence Provider",
+    producer: "IAL",
+    description:
+      "Sprint EP-02 — the platform's single environmental evidence source (Tier 1, keyless, hourly). Open-Meteo Marine is Source 1 behind a source-adapter architecture (NOAA, Copernicus, ECMWF, tides, currents, storm/cyclone/flood feeds plug in as adapters). Acquires observations only: waveHeight (m), waveDirection (deg), windSpeed (kn), windDirection (deg), visibility (m), seaSurfaceTemperature (degC), with location, observationTime, source, acquisition confidence, rawPayload and rawHash. Cached 1h in the existing EvidenceCache. It never characterises the sea state (no CALM/ROUGH/SAFE/UNSAFE, no severity, no forecast) — interpretation belongs to the OIE.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Evidence Provenance · citation list (environmental observations with units and observation time)",
+      location: "src/components/copilot/briefing/EvidenceProvenancePanel.tsx",
+      component: "src/connectors/implementations/EnvironmentalIntelligenceProvider.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: REVIEWED,
+  },
+
+  {
     id: "ial.provider-resolution",
     name: "Provider Resolution Strategy",
     producer: "IAL",
