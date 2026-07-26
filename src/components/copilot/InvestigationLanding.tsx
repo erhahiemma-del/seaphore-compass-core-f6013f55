@@ -724,27 +724,39 @@ export function InvestigationLanding({
           </div>
         </form>
 
-        {/* Quick start — six actions, no descriptions */}
+        {/* Smart Prompt Chips — assistive shortcuts, never filters. */}
         <div className="mt-6">
           <p className="mb-2.5 text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70">
-            Quick Start
+            Optional starters — chips insert editable text, they never filter
           </p>
-          <div data-testid="quick-start-grid" className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-            {QUICK_START.map((q) => (
+          <div
+            data-testid="prompt-chips"
+            className="flex flex-wrap items-center justify-center gap-1.5"
+          >
+            {PROMPT_CHIPS.map((c) => (
               <button
-                key={q.key}
+                key={c.key}
                 type="button"
-                onClick={() => insert(q.prompt(subject))}
-                className="flex flex-col items-center gap-1.5 rounded-xl border border-border/50 bg-background px-2 py-3 text-center transition-all hover:-translate-y-0.5 hover:border-[color:var(--color-teal)]/50 hover:shadow-sm"
+                data-testid="prompt-chip"
+                aria-pressed={activeChip === c.key}
+                title={`Insert "${c.starter.trim()}" — fully editable`}
+                onClick={() => toggleChip(c)}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11.5px] font-medium",
+                  "transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm",
+                  "motion-reduce:transition-none motion-reduce:hover:translate-y-0",
+                  activeChip === c.key
+                    ? "border-[color:var(--color-teal)]/70 bg-[color:var(--color-teal)]/10 text-foreground"
+                    : "border-border/60 bg-background text-muted-foreground hover:border-[color:var(--color-teal)]/50 hover:text-foreground",
+                )}
               >
-                <q.icon className="h-4 w-4 text-[color:var(--color-teal)]" />
-                <span className="text-[11px] font-medium leading-tight text-foreground">
-                  {q.label}
-                </span>
+                <c.icon className="h-3.5 w-3.5 text-[color:var(--color-teal)]" />
+                {c.label}
               </button>
             ))}
           </div>
         </div>
+
       </div>
     </div>
   );
