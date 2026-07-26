@@ -409,7 +409,12 @@ export async function runGfwHealthCheck(): Promise<GfwHealthPayload> {
   const started = Date.now();
   const apiKey = readApiKey();
   if (!apiKey) {
-    return { status: "down", latencyMs: 0, message: `${ENV_KEY} not configured` };
+    return {
+      status: "down",
+      latencyMs: 0,
+      message: `Credentials Missing — ${ENV_KEY} not configured`,
+    };
+
   }
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), HEALTH_TIMEOUT_MS);
