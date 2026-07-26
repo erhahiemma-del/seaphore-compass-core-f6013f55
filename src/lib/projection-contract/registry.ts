@@ -485,6 +485,21 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
   },
 
   {
+    id: "ial.provider-resolution",
+    name: "Provider Resolution Strategy",
+    producer: "IAL",
+    description:
+      "Sprint EP-01A — resolves exactly ONE active Evidence Provider per capability (explicit override → environment → priority → health failover). Hybrid simulator/live execution is disabled by default. Descriptive provider metadata (providerType, priority, environment, enabled) lives on each connector.",
+    state: "INTERNAL",
+    internal: {
+      reason: "raw-transport",
+      note: "Selection mechanics inside the Connector Framework. Officers already see WHICH provider produced each record through the Evidence Provenance citation list; the resolution decision itself is an acquisition-layer detail.",
+    },
+    reviewedAt: REVIEWED,
+  },
+
+
+  {
     id: "reasoning.ais-continuity-report",
     name: "AIS Behaviour Analyzer continuity report",
     producer: "REASONING",
