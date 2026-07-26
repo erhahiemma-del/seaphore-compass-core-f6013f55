@@ -429,10 +429,14 @@ function CopilotOpsPage() {
     }
     // Sprint UX-005 — record officer turn into the Investigation Workspace.
     try {
-      recordOfficerTurn(submitted);
+      const wid = recordOfficerTurn(submitted);
+      // Officer-supplied documents enter the evidence ledger with uploader,
+      // timestamp and storage reference so every citation stays traceable.
+      if (attachments?.length) recordAttachmentEvidence(wid, attachments);
     } catch (err) {
       console.warn("[Workspace] failed to record officer turn", err);
     }
+
     // Scroll the workspace so the officer sees streaming stages / new briefing
     // instead of the (now stale) previous briefing content above.
     requestAnimationFrame(() => {
