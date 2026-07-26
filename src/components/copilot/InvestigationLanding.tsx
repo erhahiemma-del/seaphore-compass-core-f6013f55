@@ -225,9 +225,10 @@ export function InvestigationLanding({
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  onSubmit(value);
+                  submit();
                 }
               }}
+
               placeholder={
                 recording
                   ? "Listening — speak your investigation..."
