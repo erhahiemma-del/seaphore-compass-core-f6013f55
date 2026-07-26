@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { KPI_STATE_META } from "@/lib/intelligence/coverage-model";
 import type { CargoCentreProjection } from "@/lib/intelligence/cargo-workspace-projection";
 import { useWorkspaceStore } from "@/stores/workspace.store";
+import { CargoGraphPanel } from "./CargoGraphPanel";
+
 import { cn } from "@/lib/utils";
 
 const TONE_CLASS: Record<string, string> = {
