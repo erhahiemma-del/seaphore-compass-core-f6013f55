@@ -702,7 +702,7 @@ function CopilotOpsPage() {
 
 
                 {isStreaming ? (
-                  <div className="rounded-lg border border-border/60 bg-[#FAFBFC] p-4">
+                  <div className="animate-in fade-in slide-in-from-top-2 rounded-lg border border-border/60 bg-[#FAFBFC] p-4 duration-300">
                     <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
                       Query
                     </p>
