@@ -51,6 +51,7 @@ import { Route as InvestigateIdRouteImport } from './routes/investigate.$id'
 import { Route as EntityIdRouteImport } from './routes/entity.$id'
 import { Route as DecideQueueRouteImport } from './routes/decide.queue'
 import { Route as DecideIdRouteImport } from './routes/decide.$id'
+import { Route as AdminProviderHealthRouteImport } from './routes/admin.provider-health'
 import { Route as AdminProjectionContractRouteImport } from './routes/admin.projection-contract'
 import { Route as AdminOsintRouteImport } from './routes/admin.osint'
 import { Route as AdminConnectorsRouteImport } from './routes/admin.connectors'
@@ -275,6 +276,11 @@ const DecideIdRoute = DecideIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => DecideRoute,
 } as any)
+const AdminProviderHealthRoute = AdminProviderHealthRouteImport.update({
+  id: '/admin/provider-health',
+  path: '/admin/provider-health',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminProjectionContractRoute = AdminProjectionContractRouteImport.update({
   id: '/admin/projection-contract',
   path: '/admin/projection-contract',
@@ -374,6 +380,7 @@ export interface FileRoutesByFullPath {
   '/admin/connectors': typeof AdminConnectorsRoute
   '/admin/osint': typeof AdminOsintRoute
   '/admin/projection-contract': typeof AdminProjectionContractRoute
+  '/admin/provider-health': typeof AdminProviderHealthRoute
   '/decide/$id': typeof DecideIdRoute
   '/decide/queue': typeof DecideQueueRoute
   '/entity/$id': typeof EntityIdRoute
@@ -428,6 +435,7 @@ export interface FileRoutesByTo {
   '/admin/connectors': typeof AdminConnectorsRoute
   '/admin/osint': typeof AdminOsintRoute
   '/admin/projection-contract': typeof AdminProjectionContractRoute
+  '/admin/provider-health': typeof AdminProviderHealthRoute
   '/decide/$id': typeof DecideIdRoute
   '/decide/queue': typeof DecideQueueRoute
   '/entity/$id': typeof EntityIdRoute
@@ -486,6 +494,7 @@ export interface FileRoutesById {
   '/admin/connectors': typeof AdminConnectorsRoute
   '/admin/osint': typeof AdminOsintRoute
   '/admin/projection-contract': typeof AdminProjectionContractRoute
+  '/admin/provider-health': typeof AdminProviderHealthRoute
   '/decide/$id': typeof DecideIdRoute
   '/decide/queue': typeof DecideQueueRoute
   '/entity/$id': typeof EntityIdRoute
@@ -545,6 +554,7 @@ export interface FileRouteTypes {
     | '/admin/connectors'
     | '/admin/osint'
     | '/admin/projection-contract'
+    | '/admin/provider-health'
     | '/decide/$id'
     | '/decide/queue'
     | '/entity/$id'
@@ -599,6 +609,7 @@ export interface FileRouteTypes {
     | '/admin/connectors'
     | '/admin/osint'
     | '/admin/projection-contract'
+    | '/admin/provider-health'
     | '/decide/$id'
     | '/decide/queue'
     | '/entity/$id'
@@ -656,6 +667,7 @@ export interface FileRouteTypes {
     | '/admin/connectors'
     | '/admin/osint'
     | '/admin/projection-contract'
+    | '/admin/provider-health'
     | '/decide/$id'
     | '/decide/queue'
     | '/entity/$id'
@@ -714,6 +726,7 @@ export interface RootRouteChildren {
   AdminConnectorsRoute: typeof AdminConnectorsRoute
   AdminOsintRoute: typeof AdminOsintRoute
   AdminProjectionContractRoute: typeof AdminProjectionContractRoute
+  AdminProviderHealthRoute: typeof AdminProviderHealthRoute
   EntityIdRoute: typeof EntityIdRoute
   WorkspaceIdRoute: typeof WorkspaceIdRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -1026,6 +1039,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DecideIdRouteImport
       parentRoute: typeof DecideRoute
     }
+    '/admin/provider-health': {
+      id: '/admin/provider-health'
+      path: '/admin/provider-health'
+      fullPath: '/admin/provider-health'
+      preLoaderRoute: typeof AdminProviderHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/projection-contract': {
       id: '/admin/projection-contract'
       path: '/admin/projection-contract'
@@ -1198,6 +1218,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminConnectorsRoute: AdminConnectorsRoute,
   AdminOsintRoute: AdminOsintRoute,
   AdminProjectionContractRoute: AdminProjectionContractRoute,
+  AdminProviderHealthRoute: AdminProviderHealthRoute,
   EntityIdRoute: EntityIdRoute,
   WorkspaceIdRoute: WorkspaceIdRoute,
   AdminIndexRoute: AdminIndexRoute,
