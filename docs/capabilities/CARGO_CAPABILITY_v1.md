@@ -88,6 +88,9 @@ ISO 6346 container numbers, HS commodity codes.
 | Customs Declaration | `filed_by` | Declarant (person/company) | n:1 | `rel.declarant` |
 | Revenue Assessment | `assesses` | Customs Declaration | 1:1 | `rel.declaration` |
 
+An entity relationship diagram of the same edge list is kept alongside this spec as
+`Cargo_Intelligence_ERD.mmd` (Mermaid ER diagram).
+
 Relationships are carried as canonical id references inside
 `NormalizedEvidence.fields` (`rel.*` namespace) — the MKG already ingests id references and needs
 no new edge type. A relationship never overrides provenance: an edge inherits the grade of the
@@ -407,6 +410,7 @@ states. Until a P0 cargo provider is certified, all three legitimately report
 | Projection Contract | **None at spec time** | three KPI entries already exist; provider entries are added by the provider sprint, which is the normal Symmetry rule |
 | Authentication / roles | **None** | no new role, no new gate |
 | Backend / Cloud schema | **None** | no table, no column, no RLS policy, no migration |
+| Existing providers (Equasis, OpenCorporates, IMO GISIS, MarineTraffic-class AIS) | **None** | consumed by CARGO through the UIP as supporting evidence; they keep their own capability declarations and are not re-registered under CARGO |
 | Dashboard code | **None** | Manifest/Revenue panels already project from the UIP (Sprint MIG-01) |
 
 **Verdict: PASS — zero architecture changes required.** CAPABILITY.CARGO is additive and
