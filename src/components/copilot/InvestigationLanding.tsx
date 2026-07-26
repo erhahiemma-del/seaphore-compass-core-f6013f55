@@ -203,8 +203,9 @@ export function InvestigationLanding({
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            onSubmit(value);
+            submit();
           }}
+
           className="mt-5"
         >
           <div
