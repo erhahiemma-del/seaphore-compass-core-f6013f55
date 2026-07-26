@@ -186,6 +186,57 @@ export function InvestigationLanding({
     files.clear();
   }
 
+  // --- Drag & drop -----------------------------------------------------
+  // dragenter/dragleave fire for every nested child, so a boolean flickers as
+  // the pointer crosses the textarea or buttons. Counting depth is stable.
+  const [dragging, setDragging] = useState(false);
+  const dragDepth = useRef(0);
+  const dropDisabled = pending || files.uploading;
+
+  /** True only for an OS file drag — ignores dragged text or links. */
+  function carriesFiles(e: React.DragEvent) {
+    return Array.from(e.dataTransfer?.types ?? []).includes("Files");
+  }
+
+  function onDragEnter(e: React.DragEvent) {
+    if (!carriesFiles(e)) return;
+    e.preventDefault();
+    dragDepth.current += 1;
+    if (!dropDisabled) setDragging(true);
+  }
+
+  function onDragOver(e: React.DragEvent) {
+    if (!carriesFiles(e)) return;
+    e.preventDefault(); // Required, or the browser opens the file instead.
+    e.dataTransfer.dropEffect = dropDisabled ? "none" : "copy";
+  }
+
+  function onDragLeave(e: React.DragEvent) {
+    if (!carriesFiles(e)) return;
+    dragDepth.current = Math.max(0, dragDepth.current - 1);
+    if (dragDepth.current === 0) setDragging(false);
+  }
+
+  function onDrop(e: React.DragEvent) {
+    if (!carriesFiles(e)) return;
+    e.preventDefault();
+    dragDepth.current = 0;
+    setDragging(false);
+    if (dropDisabled) return;
+    const dropped = Array.from(e.dataTransfer.files);
+    // Folders arrive as zero-byte entries with no type; say so rather than
+    // failing silently on an upload the officer believes succeeded.
+    const usable = dropped.filter((f) => f.size > 0 || f.type);
+    if (usable.length < dropped.length) {
+      toast.error("Folders can't be attached", {
+        description: "Drop the individual manifests or documents instead.",
+      });
+    }
+    if (usable.length > 0) void files.add(usable);
+  }
+
+
+
 
 
 
