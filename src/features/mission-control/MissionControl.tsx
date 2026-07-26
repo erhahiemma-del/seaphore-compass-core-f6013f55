@@ -333,7 +333,54 @@ function FeedItem({ row, onClick }: { row: FeedRow; onClick: () => void }) {
   );
 }
 
+/* ---------------- Cargo Intelligence Workspace (CAP-02) ---------------- */
+
+function CargoWorkspaceStrip() {
+  const { projections } = useCargoWorkspaceProjections();
+  return (
+    <PanelCard>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div>
+          <h2 className="type-h6 font-semibold text-foreground">Cargo Intelligence Workspace</h2>
+          <p className="type-small text-slate">
+            CAPABILITY.CARGO · six centres projected from the Canonical UIP
+          </p>
+        </div>
+        <Link
+          to="/cargo-workspace"
+          className="inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--color-blue)] hover:underline"
+        >
+          Open workspace <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+        {projections.map((p) => (
+          <Link
+            key={p.centre.id}
+            to="/cargo-workspace/$centre"
+            params={{ centre: p.centre.slug }}
+            className="rounded-md border border-line bg-surface-2 p-2.5 motion-fast hover:border-[color:var(--color-blue)]/40"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="truncate type-small font-semibold text-foreground">
+                {p.centre.title}
+              </span>
+              <CargoCentreStateChip projection={p} />
+            </div>
+            <p className="mt-1 line-clamp-2 type-small text-slate">
+              {p.data
+                ? `${p.data.evidenceCount} evidence record${p.data.evidenceCount === 1 ? "" : "s"} projected.`
+                : p.stateDetail}
+            </p>
+          </Link>
+        ))}
+      </div>
+    </PanelCard>
+  );
+}
+
 /* ---------------- Revenue Assurance ---------------- */
+
 
 function fmtMoney(n: number, currency: string): string {
   const abs = Math.abs(n);
