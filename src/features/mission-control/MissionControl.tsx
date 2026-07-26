@@ -1,6 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { getIntelligenceMetrics } from "@/lib/intelligence-metrics.functions";
+import { getIntelligenceCoverage } from "@/lib/intelligence-coverage.functions";
+import { IntelligenceReadinessCard } from "@/components/intelligence/IntelligenceReadinessCard";
+import { KpiCoverageCard } from "@/components/intelligence/KpiCoverageCard";
 import {
   Activity,
   AlertTriangle,
@@ -86,18 +88,39 @@ export function MissionControl() {
 
 function Ribbon() {
   const handoff = useHandoffNavigate();
-  const { data: metrics } = useQuery({
-    queryKey: ["intelligence-metrics"],
-    queryFn: () => getIntelligenceMetrics(),
+  const { data: coverage } = useQuery({
+    queryKey: ["intelligence-coverage"],
+    queryFn: () => getIntelligenceCoverage(),
     staleTime: 60_000,
   });
+  const kpiByKey = new Map((coverage?.kpis ?? []).map((k) => [k.key, k]));
   return (
-    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+    <div className="flex flex-col gap-3">
+      {coverage ? (
+        <IntelligenceReadinessCard
+          readiness={coverage.readiness}
+          generatedAt={coverage.generatedAt}
+        />
+      ) : null}
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
       {RIBBON_KPIS.map((kpi) => {
         const Icon = RIBBON_ICONS[kpi.key] ?? Activity;
-        const live = metrics?.[kpi.metricKey];
-        const displayMetric = live?.display ?? kpi.metric;
-        const displayConfidence = live?.confidence ?? kpi.confidence;
+        const cov = kpiByKey.get(kpi.metricKey);
+        if (cov) {
+          return (
+            <KpiCoverageCard
+              key={kpi.key}
+              kpi={cov}
+              icon={Icon}
+              onOpen={() =>
+                handoff({
+                  target: kpi.handoff,
+                  context: { fromStage: "Monitor", fromRoute: "/" },
+                })
+              }
+            />
+          );
+        }
         return (
           <button
             key={kpi.key}
@@ -118,13 +141,11 @@ function Ribbon() {
               <span className="type-label text-slate">{kpi.title}</span>
             </div>
             <div className="mt-2 type-mono text-[22px] font-bold text-foreground tabular-nums">
-              {displayMetric}
+              Checking coverage…
             </div>
-            <div className="mt-0.5 text-[11px] font-semibold text-slate">
-              {kpi.descriptor}
-            </div>
+            <div className="mt-0.5 text-[11px] font-semibold text-slate">{kpi.descriptor}</div>
             <div className="mt-2">
-              <ConfidenceChip tier={displayConfidence} size={9} />
+              <ConfidenceChip tier={kpi.confidence} size={9} />
             </div>
           </button>
         );
@@ -141,8 +162,10 @@ function Ribbon() {
           Open Detect <ArrowRight className="h-3.5 w-3.5" />
         </span>
       </Link>
+      </div>
     </div>
   );
+
 }
 
 /* ---------------- Live Map Panel ---------------- */
