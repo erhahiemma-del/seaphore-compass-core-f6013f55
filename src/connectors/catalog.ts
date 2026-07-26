@@ -74,7 +74,7 @@ export interface CatalogRow extends CatalogDeclaration {
   readonly projectionContractId: string;
 }
 
-const DOCS = "docs/EVIDENCE_PROVIDER_FRAMEWORK.md";
+const DOCS = "src/connectors/framework/EVIDENCE_PROVIDER_FRAMEWORK.md";
 const VALIDATED = "2026-07-26";
 
 type CatalogProvider = Connector & {
