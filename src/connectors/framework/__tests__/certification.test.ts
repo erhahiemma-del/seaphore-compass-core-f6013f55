@@ -184,11 +184,16 @@ describe("PF-01 · Provider Resolver compatibility", () => {
     const registry = new ConnectorRegistry();
     registry.register(openSanctionsConnector);
     registry.register(environmentalIntelligenceProvider);
-    const sanctions = resolveProvider(registry, "SANCTIONS", { environment: "production" });
-    expect(sanctions.selected?.id).toBe("open-sanctions");
-    const env = resolveProvider(registry, "ENVIRONMENTAL_INTELLIGENCE", {
+    const sanctions = resolveProvider("SANCTIONS", registry.getByCapability("SANCTIONS"), {
       environment: "production",
     });
-    expect(env.selected?.id).toBe(environmentalIntelligenceProvider.id);
+    expect(sanctions.provider?.id).toBe("open-sanctions");
+    const env = resolveProvider(
+      "ENVIRONMENTAL_INTELLIGENCE",
+      registry.getByCapability("ENVIRONMENTAL_INTELLIGENCE"),
+      { environment: "production" },
+    );
+    expect(env.provider?.id).toBe(environmentalIntelligenceProvider.id);
   });
 });
+
