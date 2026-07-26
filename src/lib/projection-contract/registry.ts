@@ -498,6 +498,22 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     reviewedAt: REVIEWED,
   },
 
+  {
+    id: "copilot.voice-dictation",
+    name: "Officer Voice Dictation (speech-to-text)",
+    producer: "REASONING",
+    description:
+      "Microphone capture in the Copilot command bar, transcribed server-side via the AI gateway at /api/copilot/transcribe. Produces the officer's own words as text only — no interpretation, enrichment, entity resolution or routing.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Copilot command bar · microphone control with live transcript",
+      location: "src/components/copilot/InvestigationLanding.tsx",
+      interaction: "inline",
+    },
+    reviewedAt: REVIEWED,
+  },
+
+
 
   {
     id: "reasoning.ais-continuity-report",
