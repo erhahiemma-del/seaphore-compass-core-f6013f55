@@ -40,12 +40,99 @@ const HEALTH_TIMEOUT_MS = 4000;
 const VESSEL_IDENTITY_DATASET = "public-global-vessel-identity:latest";
 const EVENTS_DATASET = "public-global-events:latest";
 
-const ENV_KEY = "GLOBAL_FISHING_WATCH_API_KEY";
+/**
+ * Accepted credential variables, canonical first. `GFW_API_TOKEN` is the
+ * name declared in the Evidence Provider Catalog; the legacy name is
+ * still accepted so an existing deployment keeps working.
+ */
+const ENV_KEYS = ["GFW_API_TOKEN", "GLOBAL_FISHING_WATCH_API_KEY"] as const;
+const ENV_KEY = ENV_KEYS[0];
+
+/** Read inside the execution boundary — env is injected per request. */
+function readApiKeyWithSource(): { value: string; source: string } | null {
+  for (const name of ENV_KEYS) {
+    const raw = process.env[name];
+    if (typeof raw === "string" && raw.trim().length > 0) {
+      return { value: raw.trim(), source: name };
+    }
+  }
+  return null;
+}
 
 function readApiKey(): string | null {
-  const key = process.env[ENV_KEY];
-  return key && key.length > 0 ? key : null;
+  return readApiKeyWithSource()?.value ?? null;
 }
+
+/** Officer-facing credential states — never a generic error string. */
+export type GfwCredentialState =
+  | "AUTHENTICATED"
+  | "CREDENTIALS_MISSING"
+  | "CREDENTIALS_INVALID"
+  | "PROVIDER_UNREACHABLE";
+
+export interface GfwCredentialStatus {
+  readonly state: GfwCredentialState;
+  readonly configured: boolean;
+  /** Which env var supplied the credential. Never the credential itself. */
+  readonly credentialEnv: string | null;
+  readonly message: string;
+  readonly checkedAt: string;
+  readonly latencyMs: number;
+}
+
+/**
+ * Startup validation.
+ *
+ * Called once per worker instance by the connector bootstrap: confirms
+ * the token is present AND accepted upstream, so Provider Health and the
+ * Intelligence Readiness dashboard report a validated state rather than
+ * an assumed one. The result is cached per instance; `force` re-probes.
+ */
+let startupValidation: GfwCredentialStatus | null = null;
+
+export async function validateGfwCredentials(force = false): Promise<GfwCredentialStatus> {
+  if (startupValidation && !force) return startupValidation;
+  const started = Date.now();
+  const checkedAt = new Date().toISOString();
+  const found = readApiKeyWithSource();
+  if (!found) {
+    startupValidation = {
+      state: "CREDENTIALS_MISSING",
+      configured: false,
+      credentialEnv: null,
+      message: `Credentials Missing — set ${ENV_KEY} to activate Global Fishing Watch.`,
+      checkedAt,
+      latencyMs: 0,
+    };
+    return startupValidation;
+  }
+
+  const health = await runGfwHealthCheck();
+  const msg = (health.message ?? "").toLowerCase();
+  let state: GfwCredentialState;
+  let message: string;
+  if (health.status === "healthy" || health.status === "degraded") {
+    state = "AUTHENTICATED";
+    message = `Authenticated with Global Fishing Watch via ${found.source}.`;
+  } else if (msg.includes("authentication")) {
+    state = "CREDENTIALS_INVALID";
+    message = `Credentials Invalid — Global Fishing Watch rejected ${found.source}.`;
+  } else {
+    state = "PROVIDER_UNREACHABLE";
+    message = `Provider Unreachable — ${health.message ?? "no response from Global Fishing Watch"}.`;
+  }
+
+  startupValidation = {
+    state,
+    configured: true,
+    credentialEnv: found.source,
+    message,
+    checkedAt,
+    latencyMs: Date.now() - started,
+  };
+  return startupValidation;
+}
+
 
 function buildHeaders(apiKey: string): Record<string, string> {
   return {
@@ -322,7 +409,12 @@ export async function runGfwHealthCheck(): Promise<GfwHealthPayload> {
   const started = Date.now();
   const apiKey = readApiKey();
   if (!apiKey) {
-    return { status: "down", latencyMs: 0, message: `${ENV_KEY} not configured` };
+    return {
+      status: "down",
+      latencyMs: 0,
+      message: `Credentials Missing — ${ENV_KEY} not configured`,
+    };
+
   }
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), HEALTH_TIMEOUT_MS);
@@ -338,10 +430,18 @@ export async function runGfwHealthCheck(): Promise<GfwHealthPayload> {
     });
     const latencyMs = Date.now() - started;
     if (response.status === 401 || response.status === 403) {
-      return { status: "down", latencyMs, message: "Authentication Failed" };
+      return {
+        status: "down",
+        latencyMs,
+        message: `Authentication Failed — Credentials Invalid (HTTP ${response.status})`,
+      };
     }
     if (response.status >= 500) {
-      return { status: "down", latencyMs, message: `Unavailable (HTTP ${response.status})` };
+      return {
+        status: "down",
+        latencyMs,
+        message: `Provider Unreachable — upstream returned HTTP ${response.status}`,
+      };
     }
     if (!response.ok) {
       return { status: "degraded", latencyMs, message: `HTTP ${response.status}` };
@@ -351,7 +451,7 @@ export async function runGfwHealthCheck(): Promise<GfwHealthPayload> {
     return {
       status: "down",
       latencyMs: Date.now() - started,
-      message: err instanceof Error ? err.message : String(err),
+      message: `Provider Unreachable — ${err instanceof Error ? err.message : String(err)}`,
     };
   } finally {
     clearTimeout(timeout);

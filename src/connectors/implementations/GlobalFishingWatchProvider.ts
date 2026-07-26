@@ -34,7 +34,34 @@ import type {
   EvidenceFieldValue,
   NormalizedEvidence,
 } from "@/services/ial/types";
-import { readProviderCredential, timedFetch, type ProviderOptions } from "./shared/provider-io";
+import {
+  readFirstProviderCredential,
+  timedFetch,
+  type ProviderOptions,
+} from "./shared/provider-io";
+
+/**
+ * Credential variable for this provider, as declared in the Evidence
+ * Provider Catalog. The server-side gateway additionally accepts a
+ * historical alias, which is resolved there and never named in
+ * client-reachable source.
+ */
+export const GFW_CREDENTIAL_ENV = ["GFW_API_TOKEN"] as const;
+
+/** Officer-facing authentication states — never a generic error string. */
+export type GfwAuthState =
+  | "AUTHENTICATED"
+  | "CREDENTIALS_MISSING"
+  | "CREDENTIALS_INVALID"
+  | "PROVIDER_UNREACHABLE";
+
+export const GFW_AUTH_MESSAGE: Record<GfwAuthState, string> = {
+  AUTHENTICATED: "Authenticated with Global Fishing Watch.",
+  CREDENTIALS_MISSING: `Credentials Missing — set ${GFW_CREDENTIAL_ENV[0]} to activate Global Fishing Watch.`,
+  CREDENTIALS_INVALID: `Credentials Invalid — Global Fishing Watch rejected ${GFW_CREDENTIAL_ENV[0]}.`,
+  PROVIDER_UNREACHABLE: "Provider Unreachable — Global Fishing Watch did not answer the probe.",
+};
+
 
 const API_BASE = "https://gateway.api.globalfishingwatch.org/v3";
 const TIMEOUT_MS = 8_000;
@@ -73,7 +100,12 @@ export class GlobalFishingWatchProvider extends BaseEvidenceProvider {
   ];
 
   private readonly fetchImpl: typeof fetch;
-  private readonly apiToken: string | null;
+  /** Explicit test credential. Production reads env per call, never here. */
+  private readonly injectedToken: string | null;
+  /** Last resolved authentication state — reported, never inferred. */
+  private authState: GfwAuthState = "CREDENTIALS_MISSING";
+  /** Which env var supplied the active credential, for the health surface. */
+  private credentialSource: string | null = null;
 
   constructor(opts: ProviderOptions = {}) {
     super({
@@ -82,52 +114,116 @@ export class GlobalFishingWatchProvider extends BaseEvidenceProvider {
       cacheTtlMs: opts.cacheTtlMs ?? GFW_CACHE_TTL_MS,
     });
     this.fetchImpl = opts.fetchImpl ?? ((...args) => fetch(...args));
-    this.apiToken = opts.credential ?? readProviderCredential("GFW_API_TOKEN");
+    this.injectedToken = opts.credential ?? null;
+  }
+
+  /**
+   * Resolve the API token at call time.
+   *
+   * The env read MUST stay lazy: the worker runtime injects environment
+   * per request, so a token captured in the constructor of a
+   * module-scope singleton is always null in production and the provider
+   * would report "unauthenticated" forever with a valid token set.
+   */
+  private resolveToken(): string | null {
+    if (this.injectedToken) {
+      this.credentialSource = "injected";
+      return this.injectedToken;
+    }
+    const found = readFirstProviderCredential(GFW_CREDENTIAL_ENV);
+    this.credentialSource = found?.source ?? null;
+    return found?.value ?? null;
+  }
+
+  /** Officer-facing authentication state from the most recent probe. */
+  get authenticationState(): GfwAuthState {
+    return this.authState;
+  }
+
+  /** Env var that supplied the active credential (null when unconfigured). */
+  get activeCredentialEnv(): string | null {
+    return this.credentialSource;
   }
 
   protected cacheKey(query: AcquisitionQuery): string {
     return `${this.id}:${stableHash({ text: query.text, entity: query.entity?.id })}`;
   }
 
+  private applyAuthState(state: GfwAuthState, detail?: string): void {
+    this.authState = state;
+    this.authed = state === "AUTHENTICATED";
+    this.available = state !== "PROVIDER_UNREACHABLE";
+    this.lastError =
+      state === "AUTHENTICATED"
+        ? null
+        : `${GFW_AUTH_MESSAGE[state]}${detail ? ` (${detail})` : ""}`;
+  }
+
   async connect(): Promise<void> {
+    const token = this.resolveToken();
+    if (!token) {
+      this.applyAuthState("CREDENTIALS_MISSING");
+      return;
+    }
     try {
       const res = await timedFetch(
         this.fetchImpl,
         `${API_BASE}/vessels/search?query=test&datasets[0]=public-global-vessel-identity:latest&limit=1`,
         TIMEOUT_MS,
-        { headers: this.headers() },
+        { headers: this.headers(token) },
       );
-      this.available = res.status < 500;
-      this.authed = res.status === 200;
-      this.lastError = this.available
-        ? res.status === 401 || res.status === 403
-          ? "GFW API token missing or rejected (GFW_API_TOKEN)"
-          : null
-        : `health probe returned ${res.status}`;
+      if (res.status === 401 || res.status === 403) {
+        this.applyAuthState("CREDENTIALS_INVALID", `HTTP ${res.status}`);
+        return;
+      }
+      if (res.status >= 500) {
+        this.applyAuthState("PROVIDER_UNREACHABLE", `HTTP ${res.status}`);
+        return;
+      }
+      if (res.status !== 200) {
+        // Reachable and accepted the credential, but the probe query
+        // itself was refused — degraded, not an authentication failure.
+        this.authState = "AUTHENTICATED";
+        this.authed = true;
+        this.available = true;
+        this.lastError = `Probe returned HTTP ${res.status}`;
+        return;
+      }
+      this.applyAuthState("AUTHENTICATED");
     } catch (err) {
-      this.available = false;
-      this.lastError = err instanceof Error ? err.message : String(err);
+      this.applyAuthState(
+        "PROVIDER_UNREACHABLE",
+        err instanceof Error ? err.message : String(err),
+      );
     }
   }
 
   async authenticate(): Promise<boolean> {
-    this.authed = this.apiToken !== null;
-    if (!this.authed) this.lastError = "GFW API token not configured (GFW_API_TOKEN)";
+    const token = this.resolveToken();
+    if (!token) {
+      this.applyAuthState("CREDENTIALS_MISSING");
+      return false;
+    }
+    // A present token is a configured token; validity is established by
+    // connect()/the health probe, which talks to the upstream.
+    if (this.authState === "CREDENTIALS_MISSING") this.authState = "AUTHENTICATED";
+    this.authed = this.authState === "AUTHENTICATED";
     return this.authed;
   }
 
-  private headers(): Record<string, string> {
-    return this.apiToken
-      ? { Authorization: `Bearer ${this.apiToken}`, Accept: "application/json" }
+  private headers(token: string | null = this.resolveToken()): Record<string, string> {
+    return token
+      ? { Authorization: `Bearer ${token}`, Accept: "application/json" }
       : { Accept: "application/json" };
   }
+
 
   protected async fetchEvidence(
     query: AcquisitionQuery,
   ): Promise<ReadonlyArray<NormalizedEvidence>> {
     if (!(await this.authenticate())) {
       throw new Error(
-        "Global Fishing Watch API token not configured — no AIS evidence acquired (evidence is never simulated)",
+        `${GFW_AUTH_MESSAGE.CREDENTIALS_MISSING} No AIS evidence acquired (evidence is never simulated).`,
       );
     }
     const term = (query.entity?.label ?? query.text ?? "").trim();
@@ -141,7 +237,16 @@ export class GlobalFishingWatchProvider extends BaseEvidenceProvider {
     const res = await timedFetch(this.fetchImpl, url.toString(), TIMEOUT_MS, {
       headers: this.headers(),
     });
+    if (res.status === 401 || res.status === 403) {
+      this.applyAuthState("CREDENTIALS_INVALID", `HTTP ${res.status}`);
+      throw new Error(GFW_AUTH_MESSAGE.CREDENTIALS_INVALID);
+    }
+    if (res.status >= 500) {
+      this.applyAuthState("PROVIDER_UNREACHABLE", `HTTP ${res.status}`);
+      throw new Error(GFW_AUTH_MESSAGE.PROVIDER_UNREACHABLE);
+    }
     if (res.status !== 200) throw new Error(`Global Fishing Watch returned ${res.status}`);
+
     const payload = (await res.json()) as {
       entries?: Array<{ selfReportedInfo?: GfwVessel[]; combinedSourcesInfo?: unknown } & GfwVessel>;
     };

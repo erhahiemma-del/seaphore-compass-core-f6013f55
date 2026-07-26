@@ -34,6 +34,8 @@ const PROVIDER_STATUS_LABEL: Record<ProviderCoverageStatus, string> = {
   OPERATIONAL: "🟢 Operational",
   PARTIAL: "🟡 Partial",
   AWAITING_CREDENTIALS: "🟡 Awaiting credentials",
+  CREDENTIALS_INVALID: "🟠 Credentials invalid",
+
   RATE_LIMITED: "🟠 Rate limited",
   OFFLINE: "🔴 Offline",
   NOT_REGISTERED: "🔴 Not registered",

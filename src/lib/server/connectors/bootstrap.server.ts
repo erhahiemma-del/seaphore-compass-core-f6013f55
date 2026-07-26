@@ -9,7 +9,7 @@ import {
   registerAuthenticatedConnector,
   type HealthReport,
 } from "./registry.server";
-import { runGfwHealthCheck } from "@/lib/server/gfw.server";
+import { runGfwHealthCheck, validateGfwCredentials } from "@/lib/server/gfw.server";
 
 let bootstrapped = false;
 
@@ -80,13 +80,19 @@ export function bootstrapAuthenticatedConnectors(): void {
     description:
       "Vessel identity, position, movement history, and AIS continuity evidence (Tier-1). Evidence only; OSAE assigns priority.",
     version: "1.0.0",
-    secretEnv: "GLOBAL_FISHING_WATCH_API_KEY",
+    secretEnv: "GFW_API_TOKEN",
     supportedEntityTypes: ["VESSEL"],
     probe: async () => {
       const payload = await runGfwHealthCheck();
       return toHealthReport(payload);
     },
   });
+
+  // Startup validation — confirms the GFW token is present AND accepted
+  // upstream so Provider Health reports a validated state, not an assumed
+  // one. Fire-and-forget: bootstrap must never block on a network probe,
+  // and a failed validation is itself the reported state.
+  void validateGfwCredentials().catch(() => undefined);
 
   // Future authenticated providers register here — same contract.
 }

@@ -16,7 +16,15 @@ import { ConnectorRegistry } from "@/services/ial/connectors/registry";
 import type { Connector } from "@/services/ial/connectors/base";
 import type { ConnectorHealth } from "@/services/ial/types";
 
-export type ProviderHealthState = "healthy" | "degraded" | "unauthenticated" | "offline";
+export type ProviderHealthState =
+  | "healthy"
+  | "degraded"
+  | "credentials-missing"
+  | "credentials-invalid"
+  /** Retained: not authenticated for a reason the probe could not name. */
+  | "unauthenticated"
+  | "offline";
+
 
 export interface ProviderHealthSnapshot {
   readonly id: string;
@@ -75,12 +83,28 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   });
 }
 
+/**
+ * Classify a probe result into an officer-facing state.
+ *
+ * "Unauthenticated" is deliberately split: an absent credential is an
+ * operator task, a rejected credential is a defect. Collapsing the two
+ * hides which one the officer is looking at.
+ */
 function stateOf(health: ConnectorHealth): ProviderHealthState {
-  if (!health.available) return "offline";
-  if (!health.authenticated) return "unauthenticated";
+  const err = (health.lastError ?? "").toLowerCase();
+  const rejected =
+    /credentials invalid|authentication failed|rejected|invalid token|invalid api key|\b401\b|\b403\b/.test(
+      err,
+    );
+  const missing = /credentials missing|not configured|no credential|missing api/.test(err);
+
+  if (!health.authenticated && rejected) return "credentials-invalid";
+  if (!health.available) return rejected ? "credentials-invalid" : "offline";
+  if (!health.authenticated) return missing ? "credentials-missing" : "unauthenticated";
   if (health.failureRate > 0.2 || health.lastError) return "degraded";
   return "healthy";
 }
+
 
 function baseSnapshot(connector: Connector, checkedAt: string) {
   const meta = connector.provider ?? {};

@@ -30,6 +30,7 @@ export type RootCause =
   | "NONE"
   | "PROVIDER_MISSING"
   | "CREDENTIALS_MISSING"
+  | "CREDENTIALS_INVALID"
   | "PROVIDER_OFFLINE"
   | "API_FAILURE"
   | "RATE_LIMITED"
@@ -42,6 +43,7 @@ export type ProviderCoverageStatus =
   | "OPERATIONAL"
   | "PARTIAL"
   | "AWAITING_CREDENTIALS"
+  | "CREDENTIALS_INVALID"
   | "RATE_LIMITED"
   | "OFFLINE"
   | "NOT_REGISTERED";
@@ -173,6 +175,7 @@ export const ROOT_CAUSE_LABELS: Record<RootCause, string> = {
   NONE: "None — reporting live evidence",
   PROVIDER_MISSING: "Provider Missing",
   CREDENTIALS_MISSING: "Credentials Missing",
+  CREDENTIALS_INVALID: "Credentials Invalid — rejected upstream",
   PROVIDER_OFFLINE: "Provider Offline",
   API_FAILURE: "API Failure",
   RATE_LIMITED: "Rate Limited",
@@ -289,7 +292,13 @@ export interface CoverageCatalogRow {
 /** Health projection (subset of ProviderHealthSnapshot). */
 export interface CoverageHealthRow {
   id: string;
-  state: "healthy" | "degraded" | "unauthenticated" | "offline";
+  state:
+    | "healthy"
+    | "degraded"
+    | "credentials-missing"
+    | "credentials-invalid"
+    | "unauthenticated"
+    | "offline";
   checkedAt: string;
   lastSuccessAt: string | null;
   lastError: string | null;
@@ -349,6 +358,9 @@ export function classifyProviderStatus(
       return "OPERATIONAL";
     case "degraded":
       return "PARTIAL";
+    case "credentials-invalid":
+      return "CREDENTIALS_INVALID";
+    case "credentials-missing":
     case "unauthenticated":
       return "AWAITING_CREDENTIALS";
     case "offline":
@@ -376,7 +388,9 @@ function resolveKpi(
     providerRegistered: providers.length > 0,
     providerHealthy: providers.some((p) => p.status === "OPERATIONAL"),
     credentialsConfigured: providers.every(
-      (p) => p.credentialEnv.length === 0 || p.status !== "AWAITING_CREDENTIALS",
+      (p) =>
+        p.credentialEnv.length === 0 ||
+        (p.status !== "AWAITING_CREDENTIALS" && p.status !== "CREDENTIALS_INVALID"),
     ),
     apiReachable,
     dataReturned: evidence.evidenceCount > 0,
@@ -396,10 +410,20 @@ function resolveKpi(
     state = "NO_PROVIDER";
     rootCause = "PROVIDER_MISSING";
     detail = `No Evidence Provider declares ${decl.capabilities.join(" / ")}. Nothing can populate this KPI yet.`;
-  } else if (providers.every((p) => p.status === "AWAITING_CREDENTIALS")) {
+  } else if (
+    providers.every(
+      (p) => p.status === "AWAITING_CREDENTIALS" || p.status === "CREDENTIALS_INVALID",
+    )
+  ) {
+    // Rejected credentials outrank absent ones: an invalid key is a
+    // defect the officer must be told about, not a pending setup task.
+    const invalid = providers.filter((p) => p.status === "CREDENTIALS_INVALID");
     state = "AWAITING_CREDENTIALS";
-    rootCause = "CREDENTIALS_MISSING";
-    detail = `Awaiting credentials for ${providers.map((p) => p.providerName).join(", ")}.`;
+    rootCause = invalid.length > 0 ? "CREDENTIALS_INVALID" : "CREDENTIALS_MISSING";
+    detail =
+      invalid.length > 0
+        ? `Credentials rejected upstream by ${invalid.map((p) => p.providerName).join(", ")}. Check the configured API token.`
+        : `Awaiting credentials for ${providers.map((p) => p.providerName).join(", ")}.`;
   } else if (ready.length === 0 && providers.some((p) => isRateLimitedStatus(p))) {
     state = "RATE_LIMITED";
     rootCause = "RATE_LIMITED";
@@ -510,7 +534,7 @@ export function buildIntelligenceCoverage(input: CoverageInput): IntelligenceCov
 
   const operational = idsWith(["OPERATIONAL"]);
   const partial = idsWith(["PARTIAL", "RATE_LIMITED"]);
-  const awaiting = idsWith(["AWAITING_CREDENTIALS"]);
+  const awaiting = idsWith(["AWAITING_CREDENTIALS", "CREDENTIALS_INVALID"]);
   const offline = idsWith(["OFFLINE", "NOT_REGISTERED"]);
   const total = input.catalog.length;
   const overallPct =
