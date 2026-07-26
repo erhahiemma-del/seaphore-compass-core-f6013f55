@@ -46,19 +46,44 @@ describe("OpenSanctionsConnector — metadata", () => {
   it("declares Tier-1 provider metadata", () => {
     expect(OPEN_SANCTIONS_METADATA.id).toBe("open-sanctions");
     expect(OPEN_SANCTIONS_METADATA.tier).toBe(1);
-    expect(OPEN_SANCTIONS_METADATA.requiresAuth).toBe(false);
+    // Sprint OPS-01: the hosted API rejects anonymous search (HTTP 401).
+    expect(OPEN_SANCTIONS_METADATA.requiresAuth).toBe(true);
     expect(OPEN_SANCTIONS_METADATA.entityTypes).toContain("VESSEL");
     expect(OPEN_SANCTIONS_METADATA.fieldCategories).toContain("SANCTIONS");
   });
 });
 
 describe("OpenSanctionsConnector — connect()", () => {
-  it("authenticates on HTTP 200", async () => {
+  it("authenticates on HTTP 200 when a key is configured", async () => {
+    process.env.OPENSANCTIONS_API_KEY = "test-key";
     const c = new OpenSanctionsConnector({
-      fetchImpl: vi.fn(async () => jsonResponse({ ok: true })) as unknown as typeof fetch,
+      fetchImpl: vi.fn(async () => jsonResponse({ status: "ok" })) as unknown as typeof fetch,
     });
     await c.connect();
     expect(await c.authenticate()).toBe(true);
+    delete process.env.OPENSANCTIONS_API_KEY;
+  });
+
+  it("reports a Configuration Error, not offline, when the key is missing", async () => {
+    delete process.env.OPENSANCTIONS_API_KEY;
+    const c = new OpenSanctionsConnector({
+      fetchImpl: vi.fn(async () => jsonResponse({ status: "ok" })) as unknown as typeof fetch,
+    });
+    expect(await c.authenticate()).toBe(false);
+    const h = await c.healthCheck();
+    // Reachable host: the provider is NOT offline, it is unconfigured.
+    expect(h.available).toBe(true);
+    expect(h.lastError).toMatch(/Configuration Error/i);
+    expect(h.lastError).toMatch(/OPENSANCTIONS_API_KEY/);
+  });
+
+  it("classifies a 404 base path as Invalid Endpoint", async () => {
+    const c = new OpenSanctionsConnector({
+      fetchImpl: vi.fn(async () => jsonResponse({ detail: "Not Found" }, 404)) as unknown as typeof fetch,
+    });
+    expect(await c.authenticate()).toBe(false);
+    const h = await c.healthCheck();
+    expect(h.lastError).toMatch(/Invalid Endpoint/i);
   });
 
   it("reports unavailable on non-200", async () => {
@@ -148,7 +173,7 @@ describe("OpenSanctionsConnector — search()", () => {
     });
     const res = await c.search({ text: "Ocean Pearl" });
     expect(res.ok).toBe(false);
-    expect(res.error).toBe("timeout");
+    expect(res.error).toMatch(/^Timeout — /);
     expect(res.records).toHaveLength(0);
   });
 
