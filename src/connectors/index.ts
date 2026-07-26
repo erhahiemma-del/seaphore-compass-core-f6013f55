@@ -26,6 +26,29 @@ import {
   OpenSanctionsConnector,
   openSanctionsConnector,
 } from "./implementations/OpenSanctionsConnector";
+// Sprint EP-MASTER — Evidence Expansion Program (EP-02 … EP-08).
+import {
+  OPENCORPORATES_METADATA,
+  OpenCorporatesProvider,
+  openCorporatesProvider,
+} from "./implementations/OpenCorporatesProvider";
+import { EQUASIS_METADATA, EquasisProvider, equasisProvider } from "./implementations/EquasisProvider";
+import {
+  IMO_GISIS_METADATA,
+  ImoGisisProvider,
+  imoGisisProvider,
+} from "./implementations/ImoGisisProvider";
+import {
+  GFW_METADATA,
+  GlobalFishingWatchProvider,
+  globalFishingWatchProvider,
+} from "./implementations/GlobalFishingWatchProvider";
+import { OFAC_METADATA, OfacProvider, ofacProvider } from "./implementations/OfacProvider";
+import {
+  UNSC_METADATA,
+  UnSecurityCouncilProvider,
+  unSecurityCouncilProvider,
+} from "./implementations/UnSecurityCouncilProvider";
 
 export { OpenSanctionsConnector, openSanctionsConnector, OPEN_SANCTIONS_METADATA };
 export {
@@ -35,6 +58,19 @@ export {
   ENVIRONMENTAL_CACHE_TTL_MS,
   OpenMeteoMarineAdapter,
 };
+export { OpenCorporatesProvider, openCorporatesProvider, OPENCORPORATES_METADATA };
+export { EquasisProvider, equasisProvider, EQUASIS_METADATA };
+export { ImoGisisProvider, imoGisisProvider, IMO_GISIS_METADATA };
+export { GlobalFishingWatchProvider, globalFishingWatchProvider, GFW_METADATA };
+export { OfacProvider, ofacProvider, OFAC_METADATA };
+export { UnSecurityCouncilProvider, unSecurityCouncilProvider, UNSC_METADATA };
+export {
+  buildEvidenceProviderCatalog,
+  catalogProviderIds,
+  formatCacheTtl,
+  type CatalogRow,
+} from "./catalog";
+
 export type {
   EnvironmentalRequest,
   EnvironmentalObservation,
@@ -53,7 +89,16 @@ export type {
  */
 export function registerEvidenceProviders(manager: ConnectorManager): void {
   const registered: string[] = [];
-  for (const provider of [openSanctionsConnector, environmentalIntelligenceProvider]) {
+  for (const provider of [
+    openSanctionsConnector,
+    openCorporatesProvider,
+    equasisProvider,
+    imoGisisProvider,
+    environmentalIntelligenceProvider,
+    globalFishingWatchProvider,
+    ofacProvider,
+    unSecurityCouncilProvider,
+  ]) {
     registerCertifiedProvider(manager, provider, {
       existingIds: registered,
       // Source-level prohibitions are certified in the regression suite,

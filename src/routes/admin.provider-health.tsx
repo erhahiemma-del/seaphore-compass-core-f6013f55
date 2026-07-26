@@ -323,10 +323,100 @@ function ProviderHealthPage() {
           );
         })}
       </div>
+
+      <EvidenceProviderCatalogSection />
     </div>
     </AppShell>
   );
 }
+
+/**
+ * Sprint EP-MASTER — Evidence Provider Catalog projection. Derived from
+ * the provider instances themselves, so a row cannot drift from reality.
+ */
+function EvidenceProviderCatalogSection() {
+  const catalog = useMemo(() => buildEvidenceProviderCatalog(), []);
+  return (
+    <section className="space-y-3">
+      <div>
+        <h2 className="text-lg font-semibold tracking-tight">Evidence Provider Catalog</h2>
+        <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
+          The single source of truth for every integrated Evidence Provider. Derived live from each
+          provider and re-certified on render — health status comes from the probes above.
+        </p>
+      </div>
+      <div className="space-y-3">
+        {catalog.map((row) => (
+          <Card key={row.providerId}>
+            <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 pb-3">
+              <CardTitle className="text-base">
+                {row.providerName}{" "}
+                <span className="text-xs font-normal text-muted-foreground">
+                  {row.sprint} · {row.providerId}
+                </span>
+              </CardTitle>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge
+                  variant="outline"
+                  className={
+                    row.certification === "CERTIFIED"
+                      ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-500"
+                      : "border-red-500/40 bg-red-500/15 text-red-500"
+                  }
+                >
+                  {row.certification}
+                </Badge>
+                <Badge variant="outline">spec v{row.specVersion}</Badge>
+                {row.referenceImplementation && (
+                  <Badge variant="outline">Reference implementation</Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
+              <Metric label="Capability">{row.capabilities.join(", ")}</Metric>
+              <Metric label="Provider type">
+                {row.providerType} · {row.environment} · priority {row.priority}
+              </Metric>
+              <Metric label="Cache TTL">{formatCacheTtl(row.cacheTtlMs)}</Metric>
+              <Metric label="Authentication">
+                {row.authentication === "none"
+                  ? "None (keyless)"
+                  : `${row.authentication} · ${row.credentialEnv.join(", ")}`}
+              </Metric>
+              <Metric label="Health status">Probed live (see sweep above)</Metric>
+              <Metric label="Last validation">{row.lastValidationDate}</Metric>
+              <div className="space-y-1 sm:col-span-2 lg:col-span-3">
+                <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Data source(s)
+                </dt>
+                <dd className="text-muted-foreground">{row.dataSources.join(" · ")}</dd>
+              </div>
+              <div className="space-y-1 sm:col-span-2 lg:col-span-3">
+                <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Test coverage · documentation
+                </dt>
+                <dd className="break-words font-mono text-xs text-muted-foreground">
+                  {row.testCoverage.join(" · ")} · {row.documentation}
+                </dd>
+              </div>
+              {row.certificationFailures.length > 0 && (
+                <div className="space-y-1 sm:col-span-2 lg:col-span-3">
+                  <dt className="text-xs uppercase tracking-wide text-red-500">
+                    Certification failures
+                  </dt>
+                  <dd className="break-words font-mono text-xs text-red-500">
+                    {row.certificationFailures.join(" · ")}
+                  </dd>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 
 
 function SummaryTile({ label, value }: { label: string; value: number }) {

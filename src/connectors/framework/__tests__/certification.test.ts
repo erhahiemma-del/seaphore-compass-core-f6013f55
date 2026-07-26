@@ -14,6 +14,12 @@ import { ConnectorRegistry } from "@/services/ial/connectors/registry";
 import { resolveProvider } from "@/services/ial/connectors/resolver";
 import { openSanctionsConnector } from "../../implementations/OpenSanctionsConnector";
 import { environmentalIntelligenceProvider } from "../../implementations/EnvironmentalIntelligenceProvider";
+import { openCorporatesProvider } from "../../implementations/OpenCorporatesProvider";
+import { equasisProvider } from "../../implementations/EquasisProvider";
+import { imoGisisProvider } from "../../implementations/ImoGisisProvider";
+import { globalFishingWatchProvider } from "../../implementations/GlobalFishingWatchProvider";
+import { ofacProvider } from "../../implementations/OfacProvider";
+import { unSecurityCouncilProvider } from "../../implementations/UnSecurityCouncilProvider";
 import type { Connector } from "@/services/ial/connectors/base";
 
 const ROOT = process.cwd();
@@ -31,6 +37,37 @@ const PROVIDERS = [
     name: "Environmental Intelligence",
     provider: environmentalIntelligenceProvider,
     file: "src/connectors/implementations/EnvironmentalIntelligenceProvider.ts",
+  },
+  // Sprint EP-MASTER — Evidence Expansion Program.
+  {
+    name: "OpenCorporates",
+    provider: openCorporatesProvider,
+    file: "src/connectors/implementations/OpenCorporatesProvider.ts",
+  },
+  {
+    name: "Equasis",
+    provider: equasisProvider,
+    file: "src/connectors/implementations/EquasisProvider.ts",
+  },
+  {
+    name: "IMO GISIS",
+    provider: imoGisisProvider,
+    file: "src/connectors/implementations/ImoGisisProvider.ts",
+  },
+  {
+    name: "Global Fishing Watch",
+    provider: globalFishingWatchProvider,
+    file: "src/connectors/implementations/GlobalFishingWatchProvider.ts",
+  },
+  {
+    name: "OFAC",
+    provider: ofacProvider,
+    file: "src/connectors/implementations/OfacProvider.ts",
+  },
+  {
+    name: "UN Security Council",
+    provider: unSecurityCouncilProvider,
+    file: "src/connectors/implementations/UnSecurityCouncilProvider.ts",
   },
 ];
 

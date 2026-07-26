@@ -1,0 +1,96 @@
+/**
+ * ─────────────────────────────────────────────────────────────────────
+ *  Evidence Provider I/O helpers (Sprint EP-MASTER)
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ *  Tiny, dependency-free helpers shared by provider implementations:
+ *  a timeout-bounded fetch and server-side credential reads.
+ *
+ *  This is NOT a registry, cache, event bus, orchestrator or pipeline.
+ *  It holds no state and performs no persistence. The frozen framework
+ *  (EvidenceCache, normalizeRecord, validateRecords, stableHash,
+ *  BaseEvidenceProvider) is untouched.
+ * ─────────────────────────────────────────────────────────────────────
+ */
+import type { EvidenceCache } from "@/services/ial/cache";
+
+/** Constructor options every Evidence Provider accepts. */
+export interface ProviderOptions {
+  /** Injectable fetch — tests pass a stub; production uses global fetch. */
+  readonly fetchImpl?: typeof fetch;
+  /** Injectable frozen EvidenceCache (never a provider-local cache). */
+  readonly cache?: EvidenceCache;
+  /** Injectable clock for deterministic cache-expiry tests. */
+  readonly clock?: () => number;
+  readonly cacheTtlMs?: number;
+  /** Explicit credential, bypassing the environment read (tests). */
+  readonly credential?: string | null;
+}
+
+/**
+ * Read a provider credential from the server environment.
+ *
+ * Read at construction/handler time — never at module scope of a route —
+ * and returns null when absent so providers can report "unauthenticated"
+ * honestly instead of fabricating evidence.
+ */
+export function readProviderCredential(name: string): string | null {
+  try {
+    const fromProcess =
+      typeof process !== "undefined" && process.env ? process.env[name] : undefined;
+    if (fromProcess) return String(fromProcess);
+    const env = (import.meta as unknown as { env?: Record<string, string> }).env;
+    const viteValue = env?.[`VITE_${name}`] ?? env?.[name];
+    return viteValue ? String(viteValue) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** fetch() with a hard timeout. Rejects on timeout, network error, abort. */
+export async function timedFetch(
+  fetchImpl: typeof fetch,
+  url: string,
+  timeoutMs: number,
+  init: RequestInit = {},
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetchImpl(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** First regex capture group for every match, trimmed and de-escaped. */
+export function extractAll(source: string, pattern: RegExp): string[] {
+  const out: string[] = [];
+  for (const match of source.matchAll(pattern)) {
+    const value = (match[1] ?? "").trim();
+    if (value) out.push(decodeXmlEntities(value));
+  }
+  return out;
+}
+
+/** First regex capture group, or null. */
+export function extractOne(source: string, pattern: RegExp): string | null {
+  const match = pattern.exec(source);
+  const value = (match?.[1] ?? "").trim();
+  return value ? decodeXmlEntities(value) : null;
+}
+
+export function decodeXmlEntities(value: string): string {
+  return value
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, "&");
+}
+
+/** Split an XML document into the bodies of a repeating element. */
+export function xmlBlocks(source: string, tag: string): string[] {
+  const re = new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)</${tag}>`, "g");
+  return Array.from(source.matchAll(re), (m) => m[1]);
+}
