@@ -16,7 +16,15 @@ import { ConnectorRegistry } from "@/services/ial/connectors/registry";
 import type { Connector } from "@/services/ial/connectors/base";
 import type { ConnectorHealth } from "@/services/ial/types";
 
-export type ProviderHealthState = "healthy" | "degraded" | "unauthenticated" | "offline";
+export type ProviderHealthState =
+  | "healthy"
+  | "degraded"
+  | "credentials-missing"
+  | "credentials-invalid"
+  /** Retained: not authenticated for a reason the probe could not name. */
+  | "unauthenticated"
+  | "offline";
+
 
 export interface ProviderHealthSnapshot {
   readonly id: string;
