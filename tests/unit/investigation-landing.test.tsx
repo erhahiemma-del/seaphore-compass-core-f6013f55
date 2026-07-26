@@ -29,8 +29,10 @@ vi.mock("@/hooks/use-officer-attachments", () => ({
   formatBytes: (n: number) => `${n} B`,
   useOfficerAttachments: () => ({
     attachments: [],
+    items: [],
     uploading: false,
     add: vi.fn(),
+    retry: vi.fn(),
     remove: vi.fn(),
     clear: vi.fn(),
   }),
