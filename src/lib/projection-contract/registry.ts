@@ -508,7 +508,7 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     projection: {
       surface: "Copilot command bar · microphone control with live transcript",
       location: "src/components/copilot/InvestigationLanding.tsx",
-      interaction: "inline",
+      interaction: "action",
     },
     reviewedAt: REVIEWED,
   },
