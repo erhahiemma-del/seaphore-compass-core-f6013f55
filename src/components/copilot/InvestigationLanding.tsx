@@ -94,7 +94,7 @@ export interface InvestigationLandingProps {
   subject: string;
   value: string;
   onChange: (v: string) => void;
-  onSubmit: (q: string) => void;
+  onSubmit: (q: string, attachments?: OfficerAttachment[]) => void;
   pending?: boolean;
   inputRef?: React.RefObject<HTMLTextAreaElement | null>;
 }
