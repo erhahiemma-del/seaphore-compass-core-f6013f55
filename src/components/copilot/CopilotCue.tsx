@@ -68,7 +68,7 @@ export function CopilotCue({ idle }: CopilotCueProps) {
         <span
           key={nudge}
           data-testid="copilot-nudge"
-          className="animate-in fade-in slide-in-from-bottom-1 absolute -top-6 left-0 flex w-max items-center gap-1 rounded-full border border-border/60 bg-background px-2 py-0.5 text-[10px] font-medium tracking-tight text-muted-foreground shadow-sm duration-500"
+          className="animate-in fade-in slide-in-from-bottom-1 absolute -top-7 left-0 z-10 flex w-max whitespace-nowrap items-center gap-1 rounded-full border border-border/60 bg-background px-2 py-0.5 text-[10px] font-medium tracking-tight text-muted-foreground shadow-sm duration-500"
         >
           {NUDGES[nudge]}
           <span
