@@ -177,6 +177,11 @@ export function useVoiceDictation(options: Options = {}) {
 
   const [state, setState] = useState<DictationState>("idle");
   const [supported, setSupported] = useState(true);
+  /** Set when the mic can never work here (unsupported / insecure origin). */
+  const [unavailable, setUnavailable] = useState<DictationIssue | null>(null);
+  const [permission, setPermission] = useState<DictationPermission>("unknown");
+  /** The most recent failure, kept so the UI can show persistent guidance. */
+  const [issue, setIssue] = useState<DictationIssue | null>(null);
   const [level, setLevel] = useState(0);
 
   const streamRef = useRef<MediaStream | null>(null);
@@ -191,16 +196,71 @@ export function useVoiceDictation(options: Options = {}) {
   const cbRef = useRef({ onPartial, onFinal, onError });
   cbRef.current = { onPartial, onFinal, onError };
 
-  useEffect(() => {
-    setSupported(
-      typeof window !== "undefined" &&
-        typeof navigator !== "undefined" &&
-        !!navigator.mediaDevices?.getUserMedia &&
-        (typeof window.AudioContext !== "undefined" ||
-          typeof (window as unknown as { webkitAudioContext?: unknown }).webkitAudioContext !==
-            "undefined"),
-    );
+  const raise = useCallback((code: DictationIssueCode, detail?: string) => {
+    const next = buildIssue(code, detail);
+    setIssue(next);
+    cbRef.current.onError?.(next);
+    return next;
   }, []);
+
+  const clearIssue = useCallback(() => setIssue(null), []);
+
+  // Capability + secure-origin detection. Distinguishing these two up front
+  // means the officer is told *why* the button is dead, never just that it is.
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof navigator === "undefined") return;
+
+    const hasAudioContext =
+      typeof window.AudioContext !== "undefined" ||
+      typeof (window as unknown as { webkitAudioContext?: unknown }).webkitAudioContext !==
+        "undefined";
+    const hasCapture = !!navigator.mediaDevices?.getUserMedia;
+
+    if (!hasCapture && window.isSecureContext === false) {
+      setSupported(false);
+      setUnavailable(buildIssue("insecure-context"));
+      return;
+    }
+    if (!hasCapture || !hasAudioContext) {
+      setSupported(false);
+      setUnavailable(buildIssue("unsupported-browser"));
+      return;
+    }
+    setSupported(true);
+    setUnavailable(null);
+  }, []);
+
+  // Track the browser's own permission state so the mic button can warn the
+  // officer *before* they press it, and recover the moment they unblock it.
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !navigator.permissions?.query) return;
+    let status: PermissionStatus | null = null;
+    let cancelled = false;
+
+    const sync = () => {
+      if (!status || cancelled) return;
+      const next = status.state as DictationPermission;
+      setPermission(next);
+      if (next === "denied") setIssue(buildIssue("permission-denied"));
+      else setIssue((current) => (current?.code === "permission-denied" ? null : current));
+    };
+
+    navigator.permissions
+      .query({ name: "microphone" as PermissionName })
+      .then((result) => {
+        if (cancelled) return;
+        status = result;
+        sync();
+        result.addEventListener("change", sync);
+      })
+      .catch(() => undefined); // Firefox/Safari may not expose the microphone name.
+
+    return () => {
+      cancelled = true;
+      status?.removeEventListener("change", sync);
+    };
+  }, []);
+
 
   const teardown = useCallback(() => {
     if (timerRef.current) {
