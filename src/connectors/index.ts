@@ -49,6 +49,11 @@ import {
   UnSecurityCouncilProvider,
   unSecurityCouncilProvider,
 } from "./implementations/UnSecurityCouncilProvider";
+import {
+  NCS_CUSTOMS_METADATA,
+  NcsCustomsProvider,
+  ncsCustomsProvider,
+} from "./implementations/NcsCustomsProvider";
 
 export { OpenSanctionsConnector, openSanctionsConnector, OPEN_SANCTIONS_METADATA };
 export {
