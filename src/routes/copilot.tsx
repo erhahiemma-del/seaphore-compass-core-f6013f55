@@ -738,47 +738,51 @@ function CopilotOpsPage() {
                 ) : null}
               </div>
 
-              {/* Query input */}
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleSubmit(text);
-                }}
-                className="border-t border-border/60 bg-white px-4 py-3"
-              >
-                <div className="flex items-end gap-2 rounded-lg border border-border/70 bg-white px-3 py-2 shadow-sm focus-within:border-primary">
-                  <textarea
-                    ref={inputRef}
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    placeholder="Investigate vessels, manifests, cargo, ownership, operators, ports, compliance or maritime risk…"
-                    rows={1}
-                    disabled={mutation.isPending}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSubmit(text);
-                      }
-                    }}
-                    className="max-h-32 flex-1 resize-none bg-transparent text-[13px] outline-none placeholder:text-muted-foreground disabled:opacity-60"
-                  />
-                  <Button
-                    type="submit"
-                    size="sm"
-                    disabled={mutation.isPending || !text.trim()}
-                    className="h-8 gap-1.5"
-                  >
-                    {mutation.isPending ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Send className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </div>
-                <p className="mt-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-                  SHIFT + ENTER for new line
-                </p>
-              </form>
+              {/* Investigation Mode — the input docks to the bottom and the
+                  briefing grows above it. The officer never loses the input. */}
+              {investigationMode ? (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSubmit(text);
+                  }}
+                  className="animate-in slide-in-from-bottom-2 fade-in border-t border-border/60 bg-white px-4 py-3 duration-300"
+                >
+                  <div className="flex items-end gap-2 rounded-xl border border-border/70 bg-white px-3 py-2 shadow-sm transition-shadow focus-within:border-[color:var(--color-teal)]/60 focus-within:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-teal)_12%,transparent)]">
+                    <textarea
+                      ref={inputRef}
+                      value={text}
+                      onChange={(e) => setText(e.target.value)}
+                      placeholder={`Investigate ${subjectLabel}...`}
+                      rows={1}
+                      disabled={mutation.isPending}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSubmit(text);
+                        }
+                      }}
+                      className="max-h-44 flex-1 resize-none bg-transparent text-[13px] outline-none placeholder:text-muted-foreground disabled:opacity-60"
+                    />
+                    <Button
+                      type="submit"
+                      size="sm"
+                      disabled={mutation.isPending || !text.trim()}
+                      className="h-8 gap-1.5"
+                    >
+                      {mutation.isPending ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Send className="h-3.5 w-3.5" />
+                      )}
+                    </Button>
+                  </div>
+                  <p className="mt-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Shift + Enter = New Line
+                  </p>
+                </form>
+              ) : null}
+
             </div>
           </section>
 
