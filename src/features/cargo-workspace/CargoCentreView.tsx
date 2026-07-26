@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { KPI_STATE_META } from "@/lib/intelligence/coverage-model";
 import type { CargoCentreProjection } from "@/lib/intelligence/cargo-workspace-projection";
 import { useWorkspaceStore } from "@/stores/workspace.store";
+import { CargoGraphPanel } from "./CargoGraphPanel";
+
 import { cn } from "@/lib/utils";
 
 const TONE_CLASS: Record<string, string> = {
@@ -255,7 +257,11 @@ export function CargoCentreView({ projection }: { projection: CargoCentreProject
           </PanelCard>
         </div>
       </div>
+
+      {/* ── Cargo Knowledge Graph (SPRINT CAP-03) ─────────────────── */}
+      <CargoGraphPanel focusId={data?.leads[0]?.entityId ?? null} />
     </div>
+
   );
 }
 

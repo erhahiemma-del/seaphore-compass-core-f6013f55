@@ -1381,7 +1381,98 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: "2026-07-26",
   },
+  {
+    id: "cargo.graph.model",
+    name: "Cargo Knowledge Graph — entity + relationship model",
+    producer: "IFE",
+    description:
+      "Sprint CAP-03 — the CAPABILITY.CARGO chain (company → shipment → manifest → bill of lading → container → cargo item → commodity → voyage → vessel → port → inspection → revenue → investigation) built as nodes and evidenced edges from Canonical UIP evidence only. Every node and edge carries provenance; chain gaps are reported, never inferred.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Cargo Intelligence Workspace · Cargo Knowledge Graph panel (Cargo chain tab)",
+      location: "src/features/cargo-workspace/CargoGraphPanel.tsx",
+      component: "src/services/cargo-graph/graph.ts",
+      interaction: "passive-display",
+    },
+    reviewedAt: "2026-07-26",
+  },
+  {
+    id: "cargo.graph.traversal",
+    name: "Cargo Knowledge Graph — relationship traversal and paths",
+    producer: "IFE",
+    description:
+      "Sprint CAP-03 — bounded traversal and path finding across evidenced cargo relationships. Each path is graded at its weakest link and rendered as an officer-readable narrative.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Cargo Intelligence Workspace · Cargo Knowledge Graph panel (Relationship paths tab)",
+      location: "src/features/cargo-workspace/CargoGraphPanel.tsx",
+      component: "src/services/cargo-graph/queries.ts",
+      interaction: "passive-display",
+    },
+    reviewedAt: "2026-07-26",
+  },
+  {
+    id: "cargo.graph.related",
+    name: "Cargo Knowledge Graph — related entity discovery",
+    producer: "IFE",
+    description:
+      "Sprint CAP-03 — entities reachable from the focus entity, ordered by hop distance, each with the relationship reason and supporting grade.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Cargo Intelligence Workspace · Cargo Knowledge Graph panel (Related entities tab)",
+      location: "src/features/cargo-workspace/CargoGraphPanel.tsx",
+      component: "src/services/cargo-graph/queries.ts",
+      interaction: "passive-display",
+    },
+    reviewedAt: "2026-07-26",
+  },
+  {
+    id: "cargo.graph.timeline",
+    name: "Cargo Knowledge Graph — timeline reconstruction",
+    producer: "IFE",
+    description:
+      "Sprint CAP-03 — chronological reconstruction of evidenced cargo events around the focus entity, each event citing the evidence ids that observed it.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Cargo Intelligence Workspace · Cargo Knowledge Graph panel (Timeline tab)",
+      location: "src/features/cargo-workspace/CargoGraphPanel.tsx",
+      component: "src/services/cargo-graph/queries.ts",
+      interaction: "passive-display",
+    },
+    reviewedAt: "2026-07-26",
+  },
+  {
+    id: "cargo.graph.facade",
+    name: "Cargo Knowledge Graph — OIE / Copilot query facade",
+    producer: "OIE",
+    description:
+      "Sprint CAP-03 — the four named graph operations (traverse, related, context, timeline) exposed to OIE and the Copilot. Each returns officer-readable lines plus evidence citations so the IBE 9-step response contract stays satisfiable.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Copilot answers citing cargo relationships; Cargo Knowledge Graph panel",
+      location: "src/features/cargo-workspace/CargoGraphPanel.tsx",
+      component: "src/services/cargo-graph/facade.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-07-26",
+  },
+  {
+    id: "cargo.graph.investigation-context",
+    name: "Cargo Knowledge Graph — investigation context",
+    producer: "OIE",
+    description:
+      "Sprint CAP-03 — the assembled context handed to an investigation: focus entity, evidenced chain, related entities, timeline, weakest supporting grade and the named chain gaps.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Cargo Intelligence Workspace · Cargo Knowledge Graph panel header and gap line",
+      location: "src/features/cargo-workspace/CargoGraphPanel.tsx",
+      component: "src/services/cargo-graph/queries.ts",
+      interaction: "passive-display",
+    },
+    reviewedAt: "2026-07-26",
+  },
 ];
+
 
 
 
