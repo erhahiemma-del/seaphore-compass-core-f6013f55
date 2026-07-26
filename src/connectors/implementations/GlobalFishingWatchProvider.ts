@@ -34,7 +34,34 @@ import type {
   EvidenceFieldValue,
   NormalizedEvidence,
 } from "@/services/ial/types";
-import { readProviderCredential, timedFetch, type ProviderOptions } from "./shared/provider-io";
+import {
+  readFirstProviderCredential,
+  timedFetch,
+  type ProviderOptions,
+} from "./shared/provider-io";
+
+/**
+ * Accepted credential variables, canonical first. `GFW_API_TOKEN` is the
+ * catalog-declared name; the second entry is the historical name used by
+ * the server-side GFW gateway and is accepted so an already-configured
+ * deployment does not silently fall back to "unauthenticated".
+ */
+export const GFW_CREDENTIAL_ENV = ["GFW_API_TOKEN", "GLOBAL_FISHING_WATCH_API_KEY"] as const;
+
+/** Officer-facing authentication states — never a generic error string. */
+export type GfwAuthState =
+  | "AUTHENTICATED"
+  | "CREDENTIALS_MISSING"
+  | "CREDENTIALS_INVALID"
+  | "PROVIDER_UNREACHABLE";
+
+export const GFW_AUTH_MESSAGE: Record<GfwAuthState, string> = {
+  AUTHENTICATED: "Authenticated with Global Fishing Watch.",
+  CREDENTIALS_MISSING: `Credentials Missing — set ${GFW_CREDENTIAL_ENV[0]} to activate Global Fishing Watch.`,
+  CREDENTIALS_INVALID: `Credentials Invalid — Global Fishing Watch rejected ${GFW_CREDENTIAL_ENV[0]}.`,
+  PROVIDER_UNREACHABLE: "Provider Unreachable — Global Fishing Watch did not answer the probe.",
+};
+
 
 const API_BASE = "https://gateway.api.globalfishingwatch.org/v3";
 const TIMEOUT_MS = 8_000;
