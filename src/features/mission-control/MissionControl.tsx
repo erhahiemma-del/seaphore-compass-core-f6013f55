@@ -332,69 +332,85 @@ function FeedItem({ row, onClick }: { row: FeedRow; onClick: () => void }) {
 
 /* ---------------- Revenue Assurance ---------------- */
 
+function fmtMoney(n: number, currency: string): string {
+  const abs = Math.abs(n);
+  const unit = abs >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : abs >= 1_000 ? `${(n / 1_000).toFixed(1)}K` : `${n}`;
+  return `${unit} ${currency}`;
+}
+
 function RevenueAssurancePanel() {
   const handoff = useHandoffNavigate();
+  const { data: coverage } = useCoverage();
+  const uip = useLatestUip();
+  // Reuses capability.revenue-leakage-detection — no duplicated business logic.
+  const findings = useMemo(
+    () => (uip && uip.rawEvidence.length > 0 ? scanForLeakage(uip.rawEvidence) : []),
+    [uip],
+  );
+  const projection = projectRevenueIntelligence({
+    uipId: uip?.id ?? null,
+    findings,
+    coverage: coverageFor(coverage?.kpis, "revenue"),
+  });
+  const data = projection.data;
   const openRevenue = () =>
-    handoff({ target: "/revenue", context: { fromStage: "Monitor", fromRoute: "/" } });
+    handoff({ target: "/revenue-leakage", context: { fromStage: "Monitor", fromRoute: "/" } });
+
   return (
     <PanelCard className="flex flex-col">
       <PanelHeader
         title="Revenue Assurance"
-        subtitle="Duties, tariffs, and leakage"
+        subtitle="Canonical UIP · revenue leakage detection"
         to="/revenue"
         toLabel="Go to Revenue"
         compact
       />
-      <div className="grid grid-cols-3 gap-2">
-        <MicroStat
-          label="Expected"
-          value={REVENUE_ASSURANCE.expected.value}
-          tier={REVENUE_ASSURANCE.expected.confidence}
+      {!data ? (
+        <PanelStateNotice
+          state={projection.state}
+          detail={projection.stateDetail}
+          href={projection.capabilityHref}
+          hrefLabel="Open Revenue Leakage"
         />
-        <MicroStat
-          label="Actual"
-          value={REVENUE_ASSURANCE.actual.value}
-          tier={REVENUE_ASSURANCE.actual.confidence}
-        />
-        <MicroStat
-          label="Recovered"
-          value={REVENUE_ASSURANCE.recovered.value}
-          tier={REVENUE_ASSURANCE.recovered.confidence}
-        />
-      </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-3 gap-2">
+            <MicroStat label="Findings" value={`${data.findings}`} tier={data.confidence} />
+            <MicroStat label="High / Critical" value={`${data.criticalOrHigh}`} tier={data.confidence} />
+            <MicroStat label="Officer approved" value={`${data.approved}`} tier="verified" />
+          </div>
 
-      <button
-        type="button"
-        onClick={openRevenue}
-        className="mt-3 rounded-md border border-line bg-surface-2 p-3 text-left motion-fast hover:border-[color:var(--color-red)]/40 hover:bg-[color:var(--color-red)]/5"
-      >
-        <div className="type-label text-slate">Revenue at Risk</div>
-        <div className="mt-1 flex items-baseline gap-2">
-          <span className="type-mono text-[22px] font-bold text-[color:var(--color-red)]">
-            {REVENUE_ASSURANCE.atRisk.value}
-          </span>
-          <span className="text-[11px] font-semibold text-[color:var(--color-red)]">
-            {REVENUE_ASSURANCE.atRisk.delta}
-          </span>
-        </div>
-        <div className="mt-1.5">
-          <ConfidenceChip tier={REVENUE_ASSURANCE.atRisk.confidence} size={9} />
-        </div>
-      </button>
-
-      <div className="mt-3">
-        <div className="type-label text-slate">Top Risk Drivers</div>
-        <ul className="mt-1.5 divide-y divide-line">
-          {REVENUE_ASSURANCE.drivers.map((d) => (
-            <li key={d.name} className="flex items-center justify-between py-1.5">
-              <span className="truncate pr-2 type-small text-foreground/85">{d.name}</span>
-              <span className="type-mono text-[12px] font-semibold text-foreground tabular-nums">
-                {d.amount}
+          <button
+            type="button"
+            onClick={openRevenue}
+            className="mt-3 rounded-md border border-line bg-surface-2 p-3 text-left motion-fast hover:border-[color:var(--color-red)]/40 hover:bg-[color:var(--color-red)]/5"
+          >
+            <div className="type-label text-slate">Estimated leakage at risk</div>
+            <div className="mt-1 flex items-baseline gap-2">
+              <span className="type-mono text-[22px] font-bold text-[color:var(--color-red)]">
+                {fmtMoney(data.estimatedLeakage, data.currency)}
               </span>
-            </li>
-          ))}
-        </ul>
-      </div>
+            </div>
+            <div className="mt-1.5">
+              <ConfidenceChip tier={data.confidence} size={9} />
+            </div>
+          </button>
+
+          <div className="mt-3">
+            <div className="type-label text-slate">Top Risk Drivers</div>
+            <ul className="mt-1.5 divide-y divide-line">
+              {data.drivers.map((d) => (
+                <li key={d.name} className="flex items-center justify-between py-1.5">
+                  <span className="truncate pr-2 type-small text-foreground/85">{d.name}</span>
+                  <span className="type-mono text-[12px] font-semibold text-foreground tabular-nums">
+                    {fmtMoney(d.amount, data.currency)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </>
+      )}
     </PanelCard>
   );
 }
@@ -402,27 +418,46 @@ function RevenueAssurancePanel() {
 /* ---------------- Manifest Intelligence ---------------- */
 
 function ManifestIntelligencePanel() {
+  const { data: coverage } = useCoverage();
+  const uip = useLatestUip();
+  const projection = projectManifestIntelligence({
+    uipId: uip?.id ?? null,
+    evidence: uip?.rawEvidence ?? [],
+    coverage: coverageFor(coverage?.kpis, "manifest"),
+  });
+  const data = projection.data;
   return (
     <PanelCard className="flex flex-col">
       <PanelHeader
         title="Manifest Intelligence"
-        subtitle="Declared vs actual"
+        subtitle="Canonical UIP · declared vs actual"
         to="/manifest"
         toLabel="Go to Manifest"
         compact
       />
-      <ul className="divide-y divide-line">
-        {MANIFEST_METRICS.map((m) => (
-          <li key={m.key} className="flex items-center justify-between py-2.5">
-            <span className="type-small text-foreground/85">{m.label}</span>
-            <span className="flex items-center gap-2">
-              <span className="type-mono text-[14px] font-bold text-foreground tabular-nums">
-                {m.value}
+      {!data ? (
+        <PanelStateNotice
+          state={projection.state}
+          detail={projection.stateDetail}
+          href="/admin/provider-health"
+          hrefLabel="Inspect provider coverage"
+        />
+      ) : (
+        <ul className="divide-y divide-line">
+          {data.metrics.map((m) => (
+            <li key={m.key} className="flex items-center justify-between py-2.5">
+              <span className="type-small text-foreground/85">{m.label}</span>
+              <span className="flex items-center gap-2">
+                <span className="type-mono text-[14px] font-bold text-foreground tabular-nums">
+                  {m.value}
+                </span>
+                <ConfidenceChip tier={m.confidence} size={9} />
               </span>
-              <ConfidenceChip tier={m.confidence} size={9} />
-            </span>
-          </li>
-        ))}
+            </li>
+          ))}
+        </ul>
+      )}
+
       </ul>
     </PanelCard>
   );
