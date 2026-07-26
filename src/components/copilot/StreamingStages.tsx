@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2, Square } from "lucide-react";
 
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { cn } from "@/lib/utils";
@@ -43,6 +43,11 @@ export interface StreamingStagesProps {
   interval?: number;
   /** Epoch ms the run started; drives the elapsed-time readout. */
   startedAt?: number;
+  /**
+   * When supplied, a Stop control is shown so the officer can abandon a run
+   * that is taking too long. The officer stays in control of the pipeline.
+   */
+  onCancel?: () => void;
   className?: string;
 }
 
@@ -62,6 +67,7 @@ export function StreamingStages({
   activeIndex,
   interval = 900,
   startedAt,
+  onCancel,
   className,
 }: StreamingStagesProps) {
   const reduced = useReducedMotion();
@@ -103,9 +109,23 @@ export function StreamingStages({
           <Loader2 className={cn("h-3.5 w-3.5 text-primary", !reduced && "animate-spin")} />
           {current.label} — {current.detail}
         </p>
-        <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
-          Step {internal + 1} of {STAGES.length}
-          {startedAt ? ` · ${elapsed}s` : ""}
+        <span className="flex shrink-0 items-center gap-2">
+          <span className="text-[11px] tabular-nums text-muted-foreground">
+            Step {internal + 1} of {STAGES.length}
+            {startedAt ? ` · ${elapsed}s` : ""}
+          </span>
+          {onCancel ? (
+            <button
+              type="button"
+              data-testid="cancel-run"
+              onClick={onCancel}
+              title="Stop building this briefing"
+              className="flex items-center gap-1 rounded-md border border-border/70 px-2 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Square className="h-2.5 w-2.5 fill-current" />
+              Stop
+            </button>
+          ) : null}
         </span>
       </div>
 
