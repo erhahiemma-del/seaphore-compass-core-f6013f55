@@ -1087,24 +1087,8 @@ function InvestigationRow({
   );
 }
 
-/* ---------- Empty state ---------- */
 
-function EmptyBriefing() {
-  return (
-    <div className="rounded-lg border border-dashed border-border bg-[#FAFBFC] p-8 text-center">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--color-teal)]/10 text-[color:var(--color-teal)]">
-        <Sparkles className="h-6 w-6" />
-      </div>
-      <h3 className="mt-3 text-[15px] font-semibold text-foreground">
-        Ready for an intelligence briefing
-      </h3>
-      <p className="mx-auto mt-1 max-w-md text-[12.5px] text-muted-foreground">
-        Submit a query below to run the full pipeline — agents, evidence fusion, reasoning and
-        policy — and receive a structured Adaptive Briefing.
-      </p>
-    </div>
-  );
-}
+
 
 /* ---------- Right panel widgets ---------- */
 
