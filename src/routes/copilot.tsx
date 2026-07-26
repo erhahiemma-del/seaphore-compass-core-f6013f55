@@ -472,6 +472,32 @@ function CopilotOpsPage() {
   const investigationMode = Boolean(briefing) || isStreaming || Boolean(clarify) || Boolean(error);
   const subjectLabel = (context?.label ?? "MV Ocean Pearl").split("·")[0]!.trim();
 
+  /**
+   * Focus management — the command input is remounted when the workspace
+   * slides from the Landing hero into Investigation Mode (docked input).
+   * Re-focus the docked textarea so the officer can keep typing without
+   * reaching for the mouse, and keep it in view on small viewports.
+   */
+  useEffect(() => {
+    if (!investigationMode) return;
+    const t = window.setTimeout(() => {
+      const el = inputRef.current;
+      if (!el) return;
+      el.focus({ preventScroll: true });
+      el.scrollIntoView({ block: "nearest" });
+    }, 220);
+    return () => window.clearTimeout(t);
+  }, [investigationMode]);
+
+  // Return focus to the docked input as soon as a run settles.
+  useEffect(() => {
+    if (mutation.isPending || !investigationMode) return;
+    const t = window.setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 60);
+    return () => window.clearTimeout(t);
+  }, [mutation.isPending, investigationMode]);
+
+
+
 
   return (
     <AppShell title="NIMASA Copilot" subtitle="Intelligence Orchestration Workspace">
