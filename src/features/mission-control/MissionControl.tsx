@@ -457,8 +457,6 @@ function ManifestIntelligencePanel() {
           ))}
         </ul>
       )}
-
-      </ul>
     </PanelCard>
   );
 }
