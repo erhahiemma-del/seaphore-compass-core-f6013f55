@@ -2,8 +2,8 @@
  * SPRINT CAP-03 — Cargo Knowledge Graph officer projection.
  *
  * The graph is a backend intelligence artefact, so the Golden Rule
- * requires it be visible to the officer. This panel projects the four
- * graph operations for the focused entity: the evidenced chain, related
+ * requires it be visible to the officer. This panel projects the graph
+ * operations for the focused entity: the evidenced chain, related
  * entities, relationship paths and the reconstructed timeline — each with
  * its provenance. Nothing here is inferred; gaps are named.
  */
@@ -12,7 +12,10 @@ import { Network, Share2 } from "lucide-react";
 
 import { PanelCard } from "@/components/panel-card";
 import { useCargoGraph } from "./use-cargo-graph";
-import { CARGO_ROLE_LABEL } from "@/services/cargo-graph";
+import {
+  CARGO_ROLE_LABEL,
+  type CargoInvestigationContext,
+} from "@/services/cargo-graph";
 
 const TABS = [
   { key: "chain", label: "Cargo chain" },
@@ -30,16 +33,17 @@ export function CargoGraphPanel({ focusId }: { focusId: string | null }) {
   const resolvedFocus = useMemo(() => {
     if (!facade) return null;
     if (focusId && facade.query.node(focusId)) return focusId;
-    // Fall back to the best-connected cargo node so the panel is useful
-    // without asking the officer to know canonical ids.
-    const nodes = facade.query.graph.allNodes();
-    return nodes.length > 0 ? [...nodes].sort((a, b) => a.id.localeCompare(b.id))[0].id : null;
+    // Fall back to a deterministic node so the panel is useful without
+    // the officer needing to know canonical ids.
+    const nodes = [...facade.query.graph.allNodes()].sort((a, b) => a.id.localeCompare(b.id));
+    return nodes.length > 0 ? nodes[0].id : null;
   }, [facade, focusId]);
 
-  const context = useMemo(
+  const answer = useMemo(
     () => (facade && resolvedFocus ? facade.context(resolvedFocus) : null),
     [facade, resolvedFocus],
   );
+  const ctx = (answer?.data ?? null) as CargoInvestigationContext | null;
   const traversal = useMemo(
     () => (facade && resolvedFocus ? facade.traverse(resolvedFocus, 3) : null),
     [facade, resolvedFocus],
@@ -74,27 +78,24 @@ export function CargoGraphPanel({ focusId }: { focusId: string | null }) {
         </div>
       </div>
 
-      {empty || !context ? (
-        <p className="flex items-center gap-2 type-small text-slate">
-          <Network className="h-3.5 w-3.5" />
-          No cargo relationships can be drawn: the Canonical UIP carries no cargo evidence in this
-          session. The graph reports the absence rather than inferring a chain.
+      {empty || !ctx || !ctx.focus ? (
+        <p className="flex items-start gap-2 type-small text-slate">
+          <Network className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          No cargo relationships can be drawn: the Canonical UIP carries no cargo evidence for this
+          centre in the current session. The graph reports the absence rather than inferring a
+          chain.
         </p>
       ) : (
         <div className="space-y-2">
           <p className="type-small text-slate">
-            Focus: <span className="text-foreground">{context.focus?.label ?? resolvedFocus}</span>{" "}
-            · weakest supporting grade {context.grade}
+            Focus: <span className="text-foreground">{ctx.focus.label}</span> · weakest supporting
+            grade {ctx.grade} · {ctx.evidenceCount} evidence record
+            {ctx.evidenceCount === 1 ? "" : "s"}
           </p>
 
           {tab === "chain" ? (
             <ul className="space-y-1">
-              {(context.data as ReturnType<NonNullable<typeof facade>["context"]>["data"] extends never
-                ? never
-                : typeof context)
-                ? null
-                : null}
-              {contextChain(context).map((step) => (
+              {ctx.chain.map((step) => (
                 <li
                   key={step.role}
                   className="flex items-start justify-between gap-3 rounded-md border border-line bg-surface-2 px-2.5 py-1.5"
@@ -105,7 +106,10 @@ export function CargoGraphPanel({ focusId }: { focusId: string | null }) {
                   <span className="type-small text-right text-slate">
                     {step.missing
                       ? "No evidence — reported, not inferred"
-                      : step.nodes.map((n) => n.label).slice(0, 4).join(", ")}
+                      : step.nodes
+                          .map((n) => n.label)
+                          .slice(0, 4)
+                          .join(", ")}
                   </span>
                 </li>
               ))}
@@ -114,8 +118,11 @@ export function CargoGraphPanel({ focusId }: { focusId: string | null }) {
 
           {tab === "related" ? (
             <ul className="space-y-1">
-              {contextRelated(context).slice(0, 12).map((r) => (
-                <li key={r.node.id} className="rounded-md border border-line bg-surface-2 px-2.5 py-1.5">
+              {ctx.related.slice(0, 12).map((r) => (
+                <li
+                  key={r.node.id}
+                  className="rounded-md border border-line bg-surface-2 px-2.5 py-1.5"
+                >
                   <div className="flex items-center justify-between gap-2">
                     <span className="type-small font-semibold text-foreground">
                       {CARGO_ROLE_LABEL[r.node.role]} · {r.node.label}
@@ -144,14 +151,16 @@ export function CargoGraphPanel({ focusId }: { focusId: string | null }) {
 
           {tab === "timeline" ? (
             <ol className="space-y-1">
-              {contextTimeline(context).slice(0, 14).map((e, i) => (
+              {ctx.timeline.slice(0, 14).map((e, i) => (
                 <li
                   key={`${e.at}-${e.nodeId}-${i}`}
                   className="rounded-md border border-line bg-surface-2 px-2.5 py-1.5"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="type-small font-semibold text-foreground">{e.label}</span>
-                    <span className="type-small text-slate">{e.at.slice(0, 16).replace("T", " ")}</span>
+                    <span className="type-small text-slate">
+                      {e.at.slice(0, 16).replace("T", " ")}
+                    </span>
                   </div>
                   <p className="type-small text-slate">
                     {e.description} · {e.grade}
@@ -161,10 +170,16 @@ export function CargoGraphPanel({ focusId }: { focusId: string | null }) {
             </ol>
           ) : null}
 
-          {context.citations.length > 0 ? (
+          {ctx.gaps.length > 0 ? (
             <p className="type-small text-slate">
-              {context.citations.length} evidence citation
-              {context.citations.length === 1 ? "" : "s"} back this view. System recommends; officer
+              Chain gaps: {ctx.gaps.map((g) => CARGO_ROLE_LABEL[g]).join(", ")}.
+            </p>
+          ) : null}
+
+          {answer && answer.citations.length > 0 ? (
+            <p className="type-small text-slate">
+              {answer.citations.length} evidence citation
+              {answer.citations.length === 1 ? "" : "s"} back this view. System recommends; officer
               decides.
             </p>
           ) : null}
@@ -172,20 +187,4 @@ export function CargoGraphPanel({ focusId }: { focusId: string | null }) {
       )}
     </PanelCard>
   );
-}
-
-type ContextAnswer = NonNullable<ReturnType<typeof buildContextType>>;
-declare function buildContextType(): import("@/services/cargo-graph").CargoGraphAnswer | null;
-
-function ctxData(answer: { data: unknown }) {
-  return answer.data as import("@/services/cargo-graph").CargoInvestigationContext;
-}
-function contextChain(answer: ContextAnswer) {
-  return ctxData(answer).chain;
-}
-function contextRelated(answer: ContextAnswer) {
-  return ctxData(answer).related;
-}
-function contextTimeline(answer: ContextAnswer) {
-  return ctxData(answer).timeline;
 }
