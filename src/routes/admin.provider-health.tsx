@@ -61,6 +61,15 @@ const STATE_STYLES: Record<
     label: "Unauthenticated",
     className: "border-amber-500/40 bg-amber-500/15 text-amber-500",
   },
+  "credentials-missing": {
+    label: "Credentials Missing",
+    className: "border-amber-500/40 bg-amber-500/15 text-amber-500",
+  },
+  "credentials-invalid": {
+    label: "Credentials Invalid",
+    className: "border-orange-500/40 bg-orange-500/15 text-orange-500",
+  },
+
   offline: { label: "Offline", className: "border-red-500/40 bg-red-500/15 text-red-500" },
 };
 
