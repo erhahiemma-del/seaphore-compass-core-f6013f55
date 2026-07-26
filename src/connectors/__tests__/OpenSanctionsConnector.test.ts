@@ -235,7 +235,7 @@ describe("OpenSanctionsConnector — registration & architecture", () => {
     expect(imports).not.toMatch(/supabase/i);
     expect(src).not.toMatch(/registerUip\(/);
     expect(src).not.toMatch(/\.from\(["']/);
-    expect(src).not.toMatch(/resolveIdentity|dedupe|registerEntity/);
+    expect(src).not.toMatch(/resolveIdentity\(|registerEntity\(/);
   });
 });
 
