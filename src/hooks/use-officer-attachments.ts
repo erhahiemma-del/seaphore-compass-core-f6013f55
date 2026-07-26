@@ -6,7 +6,7 @@
  * a provenance record is handed back to the caller. No intelligence logic and
  * no automatic interpretation — the officer decides what the document means.
  */
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -140,8 +140,8 @@ export function useOfficerAttachments(options?: {
         if (signed.error || !signed.data?.signedUrl) {
           throw new Error(signed.error?.message ?? "Could not start the upload.");
         }
-        const url = new URL(signed.data.signedUrl, supabaseStorageOrigin()).toString();
-        await putWithProgress(url, file, contentType, (pct) => patch(id, { progress: pct }));
+        // storage-js returns an absolute signed URL.
+        await putWithProgress(signed.data.signedUrl, file, contentType, (pct) => patch(id, { progress: pct }));
         patch(id, {
           status: "UPLOADED",
           progress: 100,
