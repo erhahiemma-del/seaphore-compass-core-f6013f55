@@ -160,7 +160,7 @@ export class OpenSanctionsConnector implements Connector {
   async authenticate(): Promise<boolean> {
     // OpenSanctions search is open (requiresAuth: false); reachability
     // is the only meaningful auth signal.
-    const ok = this.available ? true : await this.probe();
+    const ok = await this.probe();
     this.authed = ok;
     this.available = ok;
     return ok;
