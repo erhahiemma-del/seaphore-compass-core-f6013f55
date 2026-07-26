@@ -112,23 +112,12 @@ export function InvestigationLanding({
 }: InvestigationLandingProps) {
   const localRef = useRef<HTMLTextAreaElement | null>(null);
   const ref = inputRef ?? localRef;
-  const [exampleIndex, setExampleIndex] = useState(0);
   /** Rotating empty-state guidance line (UX-04 §8). */
   const [guidanceIndex, setGuidanceIndex] = useState(0);
   /** Chip whose starter prompt is currently in the box — a pure UI marker. */
   const [activeChip, setActiveChip] = useState<string | null>(null);
   /** Officer dismissed the detected-intent badge for the current text. */
   const [hintDismissed, setHintDismissed] = useState(false);
-
-  // Rotating examples — only while the officer has not typed anything.
-  useEffect(() => {
-    if (value.trim()) return;
-    const t = window.setInterval(
-      () => setExampleIndex((i) => (i + 1) % TYPING_EXAMPLES.length),
-      3200,
-    );
-    return () => window.clearInterval(t);
-  }, [value]);
 
   // Rotating guidance — fades every 4s while the box is empty.
   useEffect(() => {
@@ -395,6 +384,27 @@ export function InvestigationLanding({
 
           className="mt-5"
         >
+          {/* Detected intent — a courtesy echo, dismissible, never a filter. */}
+          <div className="mb-2 flex min-h-[22px] items-center justify-center">
+            {intentHint ? (
+              <span
+                data-testid="intent-badge"
+                className="animate-in fade-in zoom-in-95 flex items-center gap-1.5 rounded-full border border-[color:var(--color-teal)]/40 bg-[color:var(--color-teal)]/8 px-2.5 py-0.5 text-[11px] text-foreground duration-300"
+              >
+                <span className="text-muted-foreground">Detected:</span>
+                {intentHint.label}
+                <button
+                  type="button"
+                  aria-label="Dismiss detected intent"
+                  title="Dismiss — detection never restricts your query"
+                  onClick={() => setHintDismissed(true)}
+                  className="rounded-full p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ) : null}
+          </div>
           <div
             className={cn(
               "flex items-end gap-2 rounded-2xl border border-border/70 bg-background px-4 py-3",
@@ -406,6 +416,7 @@ export function InvestigationLanding({
               "focus-within:shadow-[0_0_0_4px_color-mix(in_oklab,var(--color-teal)_14%,transparent),0_12px_34px_-12px_rgba(15,42,63,0.3)]",
             )}
           >
+            <CopilotCue idle={idle} />
             <div className="relative flex-1">
             <textarea
               ref={ref}
