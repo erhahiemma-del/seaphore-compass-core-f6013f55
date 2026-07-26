@@ -322,8 +322,10 @@ function ProviderHealthPage() {
         })}
       </div>
     </div>
+    </AppShell>
   );
 }
+
 
 function SummaryTile({ label, value }: { label: string; value: number }) {
   return (
