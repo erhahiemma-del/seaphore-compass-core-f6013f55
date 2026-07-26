@@ -501,10 +501,35 @@ function CopilotOpsPage() {
     });
     // Show progress the instant the officer submits — no silent gap before
     // the mutation's first stage transition lands.
-    setRunStartedAt(Date.now());
+    const startedAt = Date.now();
+    setRunStartedAt(startedAt);
     setStage("classifying");
+    // Persist the run so a refresh or a navigation away restores the progress
+    // card and resumes the investigation instead of losing it silently.
+    useCopilotRunStore.getState().begin(submitted, startedAt);
     mutation.mutate(submitted);
   }
+
+  /**
+   * Resume an interrupted run. The pipeline call itself died with the previous
+   * page, so the run is re-issued — but the progress card reappears at the
+   * stage the officer last saw, with the original elapsed clock intact.
+   */
+  const resumedRef = useRef(false);
+  useEffect(() => {
+    if (resumedRef.current) return;
+    resumedRef.current = true;
+    const pending = readResumableRun();
+    if (!pending) return;
+    setRunStartedAt(pending.startedAt);
+    setStage(pending.stage);
+    toast.info("Resuming investigation", {
+      description: "The run was interrupted — Seaphore is rebuilding your briefing.",
+    });
+    mutation.mutate(pending.query);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
 
   async function handleOverride(submission: OverrideSubmission) {
