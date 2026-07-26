@@ -90,9 +90,11 @@ const DECLARATIONS: ReadonlyArray<{
     provider: openSanctionsConnector,
     declaration: {
       sprint: "EP-01",
-      dataSources: ["OpenSanctions /v3/search (default dataset)"],
-      authentication: "none",
-      credentialEnv: [],
+      dataSources: ["OpenSanctions /search/default (hosted yente API)"],
+      // Sprint OPS-01: the hosted API rejects anonymous search with
+      // HTTP 401, so the key requirement is now declared, not hidden.
+      authentication: "api-token",
+      credentialEnv: ["OPENSANCTIONS_API_KEY"],
       cacheTtlMs: 24 * 60 * 60 * 1000,
       testCoverage: [
         "src/connectors/framework/__tests__/certification.test.ts",

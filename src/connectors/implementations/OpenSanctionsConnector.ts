@@ -26,6 +26,7 @@
  *    • `stableHash`                   (src/services/ial/hash.ts)
  * ─────────────────────────────────────────────────────────────────────
  */
+import { readFirstProviderCredential } from "./shared/provider-io";
 import { EvidenceCache } from "@/services/ial/cache";
 import { stableHash } from "@/services/ial/hash";
 import { normalizeRecord } from "@/services/ial/normalizer";
@@ -54,12 +55,83 @@ export const OPEN_SANCTIONS_METADATA = {
   entityTypes: ["PERSON", "COMPANY", "VESSEL", "SANCTION"] as const,
   fieldCategories: ["SANCTIONS", "COMPLIANCE"] as const,
   updateFrequency: "daily" as const,
-  requiresAuth: false,
+  /**
+   * Sprint OPS-01: the hosted OpenSanctions API now rejects anonymous
+   * `/search` with HTTP 401 ("No API key provided."). Declaring
+   * `requiresAuth: false` was the second defect behind the offline
+   * report — it hid a credential requirement from the officer.
+   */
+  requiresAuth: true,
 } as const;
 
-const API_BASE = "https://api.opensanctions.org/v3";
+/**
+ * Sprint OPS-01 — endpoint correction.
+ *
+ * The previous base was `https://api.opensanctions.org/v3`, which the
+ * upstream (yente) service answers with HTTP 404 on EVERY path,
+ * including the health probe. The hosted API is unversioned: the health
+ * endpoint is `/healthz` and search is `/search/{dataset}`. That 404 on
+ * the probe is what pinned the provider at "Provider Offline" even
+ * though DNS, TLS and the host were all reachable.
+ */
+const API_BASE = "https://api.opensanctions.org";
+const HEALTH_PATH = "/healthz";
+const SEARCH_DATASET = "default";
+/** Credential variable, matching the catalog declaration. */
+const CREDENTIAL_ENV = ["OPENSANCTIONS_API_KEY"] as const;
 const CONNECT_TIMEOUT_MS = 5_000;
 const SEARCH_TIMEOUT_MS = 5_000;
+
+/**
+ * Sprint OPS-01 — connectivity failure taxonomy.
+ *
+ * The officer is told which of these is true; "Provider Offline" is
+ * never used as a catch-all for problems it does not describe.
+ */
+export type OpenSanctionsFailureClass =
+  | "OPERATIONAL"
+  | "CONFIGURATION_ERROR"
+  | "NETWORK_DNS"
+  | "TIMEOUT"
+  | "API_UNAVAILABLE"
+  | "RATE_LIMITED"
+  | "ENVIRONMENT_RESTRICTION"
+  | "INVALID_ENDPOINT";
+
+export const OPEN_SANCTIONS_FAILURE_LABEL: Record<OpenSanctionsFailureClass, string> = {
+  OPERATIONAL: "Operational",
+  CONFIGURATION_ERROR: "Configuration Error",
+  NETWORK_DNS: "Network / DNS",
+  TIMEOUT: "Timeout",
+  API_UNAVAILABLE: "API Unavailable",
+  RATE_LIMITED: "Rate Limited",
+  ENVIRONMENT_RESTRICTION: "Environment Restriction",
+  INVALID_ENDPOINT: "Invalid Endpoint",
+};
+
+/** Map an HTTP status from the upstream to a root cause. */
+export function classifyHttpStatus(status: number): OpenSanctionsFailureClass {
+  if (status === 200) return "OPERATIONAL";
+  if (status === 401 || status === 403) return "CONFIGURATION_ERROR";
+  if (status === 404) return "INVALID_ENDPOINT";
+  if (status === 429) return "RATE_LIMITED";
+  if (status >= 500) return "API_UNAVAILABLE";
+  return "API_UNAVAILABLE";
+}
+
+/** Map a thrown transport error to a root cause. */
+export function classifyTransportError(err: unknown): OpenSanctionsFailureClass {
+  const msg = describe(err).toLowerCase();
+  if (/abort|timed? ?out|timeout|deadline/.test(msg)) return "TIMEOUT";
+  if (/enotfound|eai_again|dns|getaddrinfo|name not resolved/.test(msg)) return "NETWORK_DNS";
+  if (/econnrefused|econnreset|network|socket|tls|certificate|ssl|fetch failed/.test(msg)) {
+    return "NETWORK_DNS";
+  }
+  if (/blocked|not allowed|disallowed|egress|proxy|forbidden by policy/.test(msg)) {
+    return "ENVIRONMENT_RESTRICTION";
+  }
+  return "API_UNAVAILABLE";
+}
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 /** OpenSanctions schema names, keyed by Seaphore entity kind. */
@@ -159,6 +231,8 @@ export class OpenSanctionsConnector implements Connector, EvidenceProviderV1 {
   private readonly now: () => number;
   private available = true;
   private authed = false;
+  /** Most recent classified root cause — surfaced in Provider Health. */
+  private failureClass: OpenSanctionsFailureClass = "OPERATIONAL";
   private lastError: string | null = null;
   private lastSuccessAt: string | null = null;
   private latencies: number[] = [];
@@ -182,25 +256,70 @@ export class OpenSanctionsConnector implements Connector, EvidenceProviderV1 {
   }
 
   async authenticate(): Promise<boolean> {
-    // OpenSanctions search is open (requiresAuth: false); reachability
-    // is the only meaningful auth signal.
-    const ok = await this.probe();
-    this.authed = ok;
-    this.available = ok;
-    return ok;
+    // Reachability first: an unreachable host is not a credential fault.
+    const reachable = await this.probe();
+    this.available = reachable;
+    if (!reachable) {
+      this.authed = false;
+      return false;
+    }
+    // The hosted search API requires a key. Absence is a Configuration
+    // Error the officer must see, not a silent "offline".
+    const key = this.resolveKey();
+    if (!key) {
+      this.authed = false;
+      this.failureClass = "CONFIGURATION_ERROR";
+      this.lastError =
+        "Configuration Error — Credentials Missing: set OPENSANCTIONS_API_KEY to enable sanctions screening.";
+      return false;
+    }
+    this.authed = true;
+    this.failureClass = "OPERATIONAL";
+    this.lastError = null;
+    return true;
   }
 
+  /** Resolve the API key at call time — env is injected per request. */
+  private resolveKey(): string | null {
+    return readFirstProviderCredential(CREDENTIAL_ENV)?.value ?? null;
+  }
+
+  private headers(): Record<string, string> {
+    const key = this.resolveKey();
+    return key
+      ? { Accept: "application/json", Authorization: `ApiKey ${key}` }
+      : { Accept: "application/json" };
+  }
+
+  /**
+   * Reachability probe against the unversioned health endpoint.
+   * Records the precise root cause rather than a generic failure.
+   */
   private async probe(): Promise<boolean> {
     try {
       const res = await this.withTimeout(
-        (signal) => this.fetchImpl(`${API_BASE}/`, { method: "GET", signal }),
+        (signal) =>
+          this.fetchImpl(`${API_BASE}${HEALTH_PATH}`, {
+            method: "GET",
+            headers: { Accept: "application/json" },
+            signal,
+          }),
         CONNECT_TIMEOUT_MS,
       );
-      const ok = res.status === 200;
-      this.lastError = ok ? null : `health probe returned ${res.status}`;
-      return ok;
+      const cls = classifyHttpStatus(res.status);
+      this.failureClass = cls;
+      if (cls === "OPERATIONAL") {
+        this.lastError = null;
+        return true;
+      }
+      this.lastError = `${OPEN_SANCTIONS_FAILURE_LABEL[cls]} — health probe ${API_BASE}${HEALTH_PATH} returned HTTP ${res.status}.`;
+      // A 401 on the probe means the host answered: reachable, but
+      // misconfigured. Reachability and authentication stay separate.
+      return cls === "CONFIGURATION_ERROR";
     } catch (err) {
-      this.lastError = describe(err);
+      const cls = classifyTransportError(err);
+      this.failureClass = cls;
+      this.lastError = `${OPEN_SANCTIONS_FAILURE_LABEL[cls]} — ${describe(err)}`;
       return false;
     }
   }
@@ -227,26 +346,40 @@ export class OpenSanctionsConnector implements Connector, EvidenceProviderV1 {
     // 2 — live call
     let payload: unknown;
     try {
-      const url = new URL(`${API_BASE}/search`);
+      const url = new URL(`${API_BASE}/search/${SEARCH_DATASET}`);
       url.searchParams.set("q", term);
       url.searchParams.set("schema", schema);
       const res = await this.withTimeout(
         (signal) =>
           this.fetchImpl(url.toString(), {
             method: "GET",
-            headers: { Accept: "application/json" },
+            headers: this.headers(),
             signal,
           }),
         SEARCH_TIMEOUT_MS,
       );
       if (!res.ok) {
-        return this.fail(`OpenSanctions returned ${res.status}`, started);
+        const cls = classifyHttpStatus(res.status);
+        this.failureClass = cls;
+        const hint =
+          cls === "CONFIGURATION_ERROR"
+            ? this.resolveKey()
+              ? " Credentials Invalid — OPENSANCTIONS_API_KEY was rejected."
+              : " Credentials Missing — set OPENSANCTIONS_API_KEY."
+            : "";
+        return this.fail(
+          `${OPEN_SANCTIONS_FAILURE_LABEL[cls]} — OpenSanctions returned HTTP ${res.status}.${hint}`,
+          started,
+        );
       }
+      this.failureClass = "OPERATIONAL";
       payload = await res.json();
     } catch (err) {
       // Timeout, network failure, or malformed JSON — all surface as a
-      // clean, non-throwing failed ConnectorResult.
-      return this.fail(describe(err), started);
+      // clean, non-throwing failed ConnectorResult, classified.
+      const cls = classifyTransportError(err);
+      this.failureClass = cls;
+      return this.fail(`${OPEN_SANCTIONS_FAILURE_LABEL[cls]} — ${describe(err)}`, started);
     }
 
     // 3 — normalize
@@ -394,6 +527,11 @@ export class OpenSanctionsConnector implements Connector, EvidenceProviderV1 {
       lastSuccessAt: this.lastSuccessAt,
       lastError: this.lastError,
     };
+  }
+
+  /** Officer-facing root cause from the most recent probe or call. */
+  get rootCause(): OpenSanctionsFailureClass {
+    return this.failureClass;
   }
 
   // ─── internals ────────────────────────────────────────────────────
