@@ -38,7 +38,7 @@ export function CopilotCue({ idle }: CopilotCueProps) {
     <span
       data-testid="copilot-cue"
       aria-hidden
-      className="pointer-events-none flex select-none items-center gap-2 pb-0.5"
+      className="pointer-events-none relative flex select-none items-center pb-1"
     >
       <span
         className={cn(
@@ -68,7 +68,7 @@ export function CopilotCue({ idle }: CopilotCueProps) {
         <span
           key={nudge}
           data-testid="copilot-nudge"
-          className="animate-in fade-in slide-in-from-left-1 flex items-center gap-1 text-[10.5px] font-medium tracking-tight text-muted-foreground/80 duration-500"
+          className="animate-in fade-in slide-in-from-bottom-1 absolute -top-6 left-0 flex w-max items-center gap-1 rounded-full border border-border/60 bg-background px-2 py-0.5 text-[10px] font-medium tracking-tight text-muted-foreground shadow-sm duration-500"
         >
           {NUDGES[nudge]}
           <span
