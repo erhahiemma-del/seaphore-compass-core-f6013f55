@@ -708,15 +708,15 @@ export function InvestigationLanding({
                   ))}
                 </div>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => insert(TYPING_EXAMPLES[exampleIndex]!)}
-                  className="animate-in fade-in truncate text-[11.5px] text-muted-foreground/80 duration-500 hover:text-foreground"
-                  key={exampleIndex}
+                <span
+                  key={guidanceIndex}
+                  data-testid="empty-state-guidance"
+                  className="animate-in fade-in block truncate text-[11.5px] text-muted-foreground/80 duration-700"
                 >
-                  e.g. {TYPING_EXAMPLES[exampleIndex]}
-                </button>
+                  {GUIDANCE[guidanceIndex]}
+                </span>
               )}
+
             </div>
             <p className="shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground/70">
               Shift + Enter = New Line
