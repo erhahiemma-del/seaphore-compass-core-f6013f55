@@ -218,6 +218,14 @@ export function useOfficerAttachments(options?: {
         const path = `${userId}/copilot/${id}-${sanitize(file.name)}`;
 
         sources.current.set(id, file);
+        // Visual confirmation only — images and PDFs render inline so the
+        // officer can verify the document before it travels with the query.
+        const previewable =
+          file.type.startsWith("image/") || file.type === "application/pdf";
+        const previewUrl =
+          previewable && typeof URL.createObjectURL === "function"
+            ? URL.createObjectURL(file)
+            : undefined;
         setItems((prev) => [
           ...prev,
           {
@@ -233,8 +241,10 @@ export function useOfficerAttachments(options?: {
             kind: isManifest ? "MANIFEST" : "DOCUMENT",
             status: "UPLOADING",
             progress: 0,
+            previewUrl,
           },
         ]);
+
 
 
         await upload(id, file, bucket, path);
