@@ -12,11 +12,13 @@
 import { useEffect, useRef, useState } from "react";
 import {
   AlertCircle,
+  Anchor,
   Building2,
   RotateCw,
   DollarSign,
   FileSpreadsheet,
   FileText,
+  Hash,
   Loader2,
   Mic,
   MicOff,
@@ -41,6 +43,8 @@ import {
   type OfficerAttachment,
 } from "@/hooks/use-officer-attachments";
 import { AttachmentPreviewDialog } from "@/components/copilot/AttachmentPreviewDialog";
+import { CopilotCue } from "@/components/copilot/CopilotCue";
+import { detectIntentHint } from "@/lib/copilot/intent-hints";
 import { cn } from "@/lib/utils";
 
 
