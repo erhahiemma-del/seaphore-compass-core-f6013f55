@@ -794,7 +794,7 @@ function CopilotOpsPage() {
                     e.preventDefault();
                     handleSubmit(text);
                   }}
-                  className="animate-in slide-in-from-bottom-2 fade-in border-t border-border/60 bg-white px-4 py-3 duration-300"
+                  className="animate-in slide-in-from-bottom-4 fade-in sticky bottom-0 z-10 shrink-0 border-t border-border/60 bg-white px-4 py-3 shadow-[0_-6px_16px_-12px_rgba(15,23,42,0.35)] duration-300 ease-out"
                 >
                   <div className="flex items-end gap-2 rounded-xl border border-border/70 bg-white px-3 py-2 shadow-sm transition-shadow focus-within:border-[color:var(--color-teal)]/60 focus-within:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-teal)_12%,transparent)]">
                     <textarea
