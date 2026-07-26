@@ -207,8 +207,14 @@ function CopilotOpsPage() {
   }, []);
 
 
+  // Monotonic run token. Cancelling bumps it, so any results still in flight
+  // from the abandoned run are discarded instead of overwriting the screen.
+  const runIdRef = useRef(0);
+
   const mutation = useMutation({
     mutationFn: async (q: string) => {
+      const myRun = ++runIdRef.current;
+      const abandoned = () => runIdRef.current !== myRun;
       setError(null);
       setClarify(null);
       setStage("classifying");
@@ -231,6 +237,7 @@ function CopilotOpsPage() {
           : undefined,
       };
 
+      if (abandoned()) throw new CancelledRun();
       const rawResult = devBypass
         ? await runOIE({
             query: {
@@ -247,6 +254,7 @@ function CopilotOpsPage() {
       // expects. `devBypass` already returns the canonical shape.
       // Also register the Canonical UIP in the client store so every
       // downstream surface can resolve evidence via getUip(source_uip_id).
+      if (abandoned()) throw new CancelledRun();
       const uipFromResult = (rawResult as { uip?: unknown }).uip as
         | import("@/services/ife/unified").UnifiedIntelligencePackage
         | null
@@ -392,6 +400,7 @@ function CopilotOpsPage() {
       const plan = (result as { plan?: { followUps?: string[] } }).plan;
       const ibeQuestions = result.ibe?.humanResponse?.suggestedNextQuestions;
       setFollowUps(ibeQuestions?.length ? ibeQuestions : plan?.followUps ?? []);
+      if (abandoned()) throw new CancelledRun();
       setStage("ready");
       session.appendCopilot(`Briefing: ${q}`, adapted.id);
       // Sprint UX-005 — persist briefing into the Investigation Workspace.
@@ -408,12 +417,35 @@ function CopilotOpsPage() {
       return adapted;
     },
     onError: (err: unknown, variables) => {
+      // A cancellation is an officer decision, not a system failure — the UI
+      // was already reset by handleCancel.
+      if (err instanceof CancelledRun) return;
       setStage("idle");
       setError(err instanceof Error ? err.message : "Copilot request failed");
       if (typeof variables === "string" && variables.trim()) setText(variables);
       console.error("[Copilot] OIE run failed", err);
     },
   });
+
+  /**
+   * Officer stops the run. The pipeline result is discarded, the query is put
+   * back in the input so it can be refined and resubmitted, and no partial
+   * briefing is presented as if it were complete.
+   */
+  function handleCancel() {
+    if (!mutation.isPending) return;
+    const inFlight = typeof mutation.variables === "string" ? mutation.variables : "";
+    runIdRef.current += 1; // invalidates the in-flight run
+    mutation.reset();
+    setStage("idle");
+    setRunStartedAt(null);
+    setError(null);
+    if (inFlight.trim()) setText(inFlight);
+    toast.info("Investigation stopped", {
+      description: "No briefing was produced. Your query is back in the input.",
+    });
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }
 
   function handleSubmit(q: string, attachments?: OfficerAttachment[]) {
     const clean = q.trim();
@@ -728,6 +760,7 @@ function CopilotOpsPage() {
                     <StreamingStages
                       activeIndex={stageIndex(stage)}
                       startedAt={runStartedAt ?? undefined}
+                      onCancel={handleCancel}
                     />
                   </div>
                 ) : null}
@@ -834,13 +867,17 @@ function CopilotOpsPage() {
                       className="max-h-44 flex-1 resize-none bg-transparent text-[13px] outline-none placeholder:text-muted-foreground disabled:opacity-60"
                     />
                     <Button
-                      type="submit"
+                      type={mutation.isPending ? "button" : "submit"}
                       size="sm"
-                      disabled={mutation.isPending || !text.trim()}
+                      variant={mutation.isPending ? "outline" : "default"}
+                      onClick={mutation.isPending ? handleCancel : undefined}
+                      aria-label={mutation.isPending ? "Stop this investigation" : "Send"}
+                      title={mutation.isPending ? "Stop this investigation" : undefined}
+                      disabled={!mutation.isPending && !text.trim()}
                       className="h-8 gap-1.5"
                     >
                       {mutation.isPending ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <Square className="h-3 w-3 fill-current" />
                       ) : (
                         <Send className="h-3.5 w-3.5" />
                       )}
