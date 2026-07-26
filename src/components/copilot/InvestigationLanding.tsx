@@ -17,6 +17,7 @@ import {
   FileText,
   Loader2,
   Mic,
+  MicOff,
   Package,
   Paperclip,
   Radar,
@@ -151,16 +152,23 @@ export function InvestigationLanding({
       merge(text);
       window.setTimeout(() => ref.current?.focus(), 0);
     },
-    onError: (message) => toast.error(message),
+    onError: (problem) =>
+      toast.error(problem.title, {
+        description: `${problem.detail} ${problem.hint}`,
+        duration: problem.blocking ? 10000 : 6000,
+      }),
   });
 
   const recording = dictation.state === "recording";
   const transcribing = dictation.state === "transcribing";
+  const micBlocked = !dictation.supported || dictation.permission === "denied";
+  const micNotice = dictation.unavailable ?? dictation.issue;
 
   function toggleDictation() {
     if (dictation.state === "idle") baselineRef.current = valueRef.current;
     dictation.toggle();
   }
+
 
   function insert(prompt: string) {
     onChange(prompt);
@@ -247,25 +255,41 @@ export function InvestigationLanding({
               <button
                 type="button"
                 onClick={toggleDictation}
+                /* A blocked permission keeps the button live: pressing it is how
+                   the officer gets the explanation and the unblock steps. */
                 disabled={pending || transcribing || !dictation.supported}
-                aria-label={recording ? "Stop dictation" : "Voice input"}
+                aria-label={
+                  recording
+                    ? "Stop dictation"
+                    : micBlocked
+                      ? "Voice input unavailable — see guidance"
+                      : "Voice input"
+                }
                 aria-pressed={recording}
                 title={
-                  dictation.supported
-                    ? recording
-                      ? "Stop dictation"
-                      : "Dictate your investigation"
-                    : "Voice input is not supported in this browser"
+                  !dictation.supported
+                    ? (dictation.unavailable?.title ?? "Voice input is not available here")
+                    : dictation.permission === "denied"
+                      ? "Microphone blocked — click for how to enable it"
+                      : recording
+                        ? "Stop dictation"
+                        : dictation.permission === "prompt" || dictation.permission === "unknown"
+                          ? "Dictate your investigation — your browser will ask for microphone access"
+                          : "Dictate your investigation"
                 }
                 className={cn(
                   "relative rounded-full p-2 transition-colors disabled:opacity-40",
                   recording
                     ? "bg-destructive/10 text-destructive"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                    : micBlocked
+                      ? "text-muted-foreground/70 hover:bg-accent hover:text-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
                 )}
               >
                 {transcribing ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
+                ) : micBlocked ? (
+                  <MicOff className="h-4 w-4" />
                 ) : (
                   <Mic className={cn("h-4 w-4", recording && "animate-pulse")} />
                 )}
@@ -277,6 +301,7 @@ export function InvestigationLanding({
                   />
                 ) : null}
               </button>
+
 
               <input
                 ref={fileInputRef}
@@ -317,6 +342,35 @@ export function InvestigationLanding({
               </button>
             </div>
           </div>
+
+          {/* Voice fallback notice. Persistent (not just a toast) so the
+              officer always knows why the mic is unavailable and that typing
+              remains a complete route to the investigation. */}
+          {micNotice ? (
+            <div
+              data-testid="dictation-notice"
+              role="status"
+              className="mt-2 flex items-start gap-2 rounded-xl border border-border/60 bg-muted/40 px-3 py-2 text-[12px] leading-5"
+            >
+              <MicOff className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <p className="text-muted-foreground">
+                <span className="font-medium text-foreground">{micNotice.title}.</span>{" "}
+                {micNotice.detail} {micNotice.hint}
+              </p>
+              {!dictation.unavailable ? (
+                <button
+                  type="button"
+                  aria-label="Dismiss microphone notice"
+                  onClick={dictation.clearIssue}
+                  className="ml-auto rounded-full p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+
+
 
           {files.attachments.length > 0 ? (
             <div className="mt-2 flex flex-wrap gap-1.5 px-1">

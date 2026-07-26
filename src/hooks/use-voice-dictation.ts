@@ -12,15 +12,107 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export type DictationState = "idle" | "recording" | "transcribing";
 
+/** Why dictation is unavailable or stopped — drives the officer-facing copy. */
+export type DictationIssueCode =
+  | "unsupported-browser"
+  | "insecure-context"
+  | "permission-denied"
+  | "permission-dismissed"
+  | "no-microphone"
+  | "microphone-busy"
+  | "empty-recording"
+  | "no-speech"
+  | "transcription-failed";
+
+export interface DictationIssue {
+  code: DictationIssueCode;
+  /** One-line headline. */
+  title: string;
+  /** What happened, in plain language. */
+  detail: string;
+  /** What the officer can do about it. Always offers a way forward. */
+  hint: string;
+  /** True when typing is the only remaining route (mic cannot be used at all). */
+  blocking: boolean;
+}
+
+export type DictationPermission = "unknown" | "prompt" | "granted" | "denied";
+
 interface Options {
   /** Called with each growing transcript while streaming (interim). */
   onPartial?: (text: string) => void;
   /** Called once with the final transcript. */
   onFinal?: (text: string) => void;
-  onError?: (message: string) => void;
+  /** Called with a structured, explainable failure. */
+  onError?: (issue: DictationIssue) => void;
   /** Hard cap so a forgotten open mic can't grow unbounded. */
   maxSeconds?: number;
 }
+
+const TYPE_FALLBACK = "You can type the investigation instead — nothing is lost.";
+
+const ISSUES: Record<DictationIssueCode, Omit<DictationIssue, "code">> = {
+  "unsupported-browser": {
+    title: "Voice input isn't available in this browser",
+    detail: "This browser doesn't expose microphone capture to the Copilot.",
+    hint: `Try Chrome, Edge or Safari. ${TYPE_FALLBACK}`,
+    blocking: true,
+  },
+  "insecure-context": {
+    title: "Voice input needs a secure connection",
+    detail: "Browsers only release the microphone over HTTPS or on localhost.",
+    hint: `Reopen Seaphore on its https:// address. ${TYPE_FALLBACK}`,
+    blocking: true,
+  },
+  "permission-denied": {
+    title: "Microphone access is blocked",
+    detail: "This browser has blocked Seaphore from using the microphone.",
+    hint: `Click the lock or camera icon in the address bar, set Microphone to Allow, then reload. ${TYPE_FALLBACK}`,
+    blocking: true,
+  },
+  "permission-dismissed": {
+    title: "Microphone permission wasn't granted",
+    detail: "The permission prompt was closed before access was allowed.",
+    hint: `Press the microphone button again and choose Allow. ${TYPE_FALLBACK}`,
+    blocking: false,
+  },
+  "no-microphone": {
+    title: "No microphone was found",
+    detail: "This device has no microphone the browser can reach.",
+    hint: `Connect a headset or microphone, then reload. ${TYPE_FALLBACK}`,
+    blocking: true,
+  },
+  "microphone-busy": {
+    title: "The microphone is in use",
+    detail: "Another application or browser tab is holding the microphone.",
+    hint: `Close the other call or recording, then try again. ${TYPE_FALLBACK}`,
+    blocking: false,
+  },
+  "empty-recording": {
+    title: "That recording was empty",
+    detail: "No audio reached the Copilot — the microphone may be muted.",
+    hint: "Check the mute switch and input level, then record again.",
+    blocking: false,
+  },
+  "no-speech": {
+    title: "No speech was detected",
+    detail: "The recording contained audio but no recognisable words.",
+    hint: "Speak a little closer to the microphone and try again.",
+    blocking: false,
+  },
+  "transcription-failed": {
+    title: "Transcription failed",
+    detail: "The transcription service could not process the recording.",
+    hint: `Try again in a moment. ${TYPE_FALLBACK}`,
+    blocking: false,
+  },
+};
+
+function buildIssue(code: DictationIssueCode, detail?: string): DictationIssue {
+  const base = ISSUES[code];
+  return { code, ...base, detail: detail ?? base.detail };
+}
+
 
 const TARGET_RATE = 16000;
 
@@ -85,6 +177,11 @@ export function useVoiceDictation(options: Options = {}) {
 
   const [state, setState] = useState<DictationState>("idle");
   const [supported, setSupported] = useState(true);
+  /** Set when the mic can never work here (unsupported / insecure origin). */
+  const [unavailable, setUnavailable] = useState<DictationIssue | null>(null);
+  const [permission, setPermission] = useState<DictationPermission>("unknown");
+  /** The most recent failure, kept so the UI can show persistent guidance. */
+  const [issue, setIssue] = useState<DictationIssue | null>(null);
   const [level, setLevel] = useState(0);
 
   const streamRef = useRef<MediaStream | null>(null);
@@ -99,16 +196,71 @@ export function useVoiceDictation(options: Options = {}) {
   const cbRef = useRef({ onPartial, onFinal, onError });
   cbRef.current = { onPartial, onFinal, onError };
 
-  useEffect(() => {
-    setSupported(
-      typeof window !== "undefined" &&
-        typeof navigator !== "undefined" &&
-        !!navigator.mediaDevices?.getUserMedia &&
-        (typeof window.AudioContext !== "undefined" ||
-          typeof (window as unknown as { webkitAudioContext?: unknown }).webkitAudioContext !==
-            "undefined"),
-    );
+  const raise = useCallback((code: DictationIssueCode, detail?: string) => {
+    const next = buildIssue(code, detail);
+    setIssue(next);
+    cbRef.current.onError?.(next);
+    return next;
   }, []);
+
+  const clearIssue = useCallback(() => setIssue(null), []);
+
+  // Capability + secure-origin detection. Distinguishing these two up front
+  // means the officer is told *why* the button is dead, never just that it is.
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof navigator === "undefined") return;
+
+    const hasAudioContext =
+      typeof window.AudioContext !== "undefined" ||
+      typeof (window as unknown as { webkitAudioContext?: unknown }).webkitAudioContext !==
+        "undefined";
+    const hasCapture = !!navigator.mediaDevices?.getUserMedia;
+
+    if (!hasCapture && window.isSecureContext === false) {
+      setSupported(false);
+      setUnavailable(buildIssue("insecure-context"));
+      return;
+    }
+    if (!hasCapture || !hasAudioContext) {
+      setSupported(false);
+      setUnavailable(buildIssue("unsupported-browser"));
+      return;
+    }
+    setSupported(true);
+    setUnavailable(null);
+  }, []);
+
+  // Track the browser's own permission state so the mic button can warn the
+  // officer *before* they press it, and recover the moment they unblock it.
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !navigator.permissions?.query) return;
+    let status: PermissionStatus | null = null;
+    let cancelled = false;
+
+    const sync = () => {
+      if (!status || cancelled) return;
+      const next = status.state as DictationPermission;
+      setPermission(next);
+      if (next === "denied") setIssue(buildIssue("permission-denied"));
+      else setIssue((current) => (current?.code === "permission-denied" ? null : current));
+    };
+
+    navigator.permissions
+      .query({ name: "microphone" as PermissionName })
+      .then((result) => {
+        if (cancelled) return;
+        status = result;
+        sync();
+        result.addEventListener("change", sync);
+      })
+      .catch(() => undefined); // Firefox/Safari may not expose the microphone name.
+
+    return () => {
+      cancelled = true;
+      status?.removeEventListener("change", sync);
+    };
+  }, []);
+
 
   const teardown = useCallback(() => {
     if (timerRef.current) {
@@ -178,16 +330,18 @@ export function useVoiceDictation(options: Options = {}) {
       }
 
       const final = text.trim();
-      if (!final) throw new Error("No speech was detected — please try again.");
+      if (!final) {
+        raise("no-speech");
+        return;
+      }
+      clearIssue();
       cbRef.current.onFinal?.(final);
     } catch (error) {
-      cbRef.current.onError?.(
-        error instanceof Error ? error.message : "Voice input failed. Please try again.",
-      );
+      raise("transcription-failed", error instanceof Error ? error.message : undefined);
     } finally {
       setState("idle");
     }
-  }, []);
+  }, [raise, clearIssue]);
 
   const finish = useCallback(async () => {
     const rate = ctxRef.current?.sampleRate ?? TARGET_RATE;
@@ -204,29 +358,48 @@ export function useVoiceDictation(options: Options = {}) {
     const blob = encodeWav(samples, TARGET_RATE);
     if (blob.size < 2048) {
       setState("idle");
-      cbRef.current.onError?.("That recording was empty — please try again.");
+      raise("empty-recording");
       return;
     }
     await transcribe(blob);
-  }, [teardown, transcribe]);
+  }, [teardown, transcribe, raise]);
 
   const start = useCallback(async () => {
     if (!supported) {
-      cbRef.current.onError?.("Voice input is not supported in this browser.");
+      const blocked = unavailable ?? buildIssue("unsupported-browser");
+      setIssue(blocked);
+      cbRef.current.onError?.(blocked);
       return;
     }
     cancelledRef.current = false;
     chunksRef.current = [];
+    clearIssue();
 
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       });
-    } catch {
-      cbRef.current.onError?.("Microphone access is needed to dictate an investigation.");
+    } catch (error) {
+      // Map the DOMException to advice the officer can act on. Guessing
+      // "permission denied" for a missing or busy device would misinform them.
+      const name = (error as { name?: string } | null)?.name ?? "";
+      if (name === "NotAllowedError" || name === "SecurityError") {
+        // Chrome uses NotAllowedError both for a hard block and for a prompt
+        // the officer dismissed; the Permissions API tells the two apart.
+        setPermission((current) => (current === "granted" ? "prompt" : current));
+        raise(permission === "denied" ? "permission-denied" : "permission-dismissed");
+      } else if (name === "NotFoundError" || name === "OverconstrainedError") {
+        raise("no-microphone");
+      } else if (name === "NotReadableError" || name === "AbortError") {
+        raise("microphone-busy");
+      } else {
+        raise("permission-denied");
+      }
       return;
     }
+
+    setPermission("granted");
 
     const Ctor =
       window.AudioContext ??
@@ -253,7 +426,7 @@ export function useVoiceDictation(options: Options = {}) {
     setState("recording");
 
     timerRef.current = setTimeout(() => void finish(), maxSeconds * 1000);
-  }, [supported, maxSeconds, finish]);
+  }, [supported, unavailable, permission, maxSeconds, finish, raise, clearIssue]);
 
   const stop = useCallback(() => void finish(), [finish]);
 
@@ -269,5 +442,20 @@ export function useVoiceDictation(options: Options = {}) {
     else if (state === "idle") void start();
   }, [state, start, stop]);
 
-  return { state, supported, level, start, stop, cancel, toggle };
+  return {
+    state,
+    supported,
+    /** Non-null when voice input can never run in this browser/origin. */
+    unavailable,
+    permission,
+    /** Latest failure, with officer-facing title, detail and remedy. */
+    issue,
+    clearIssue,
+    level,
+    start,
+    stop,
+    cancel,
+    toggle,
+  };
 }
+
