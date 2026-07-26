@@ -202,7 +202,7 @@ export class NcsCustomsProvider extends BaseEvidenceProvider {
     this.token = opts.credential ?? readFirstProviderCredential(TOKEN_ENV)?.value ?? null;
     this.baseUrl =
       opts.baseUrl ??
-      BASE_URL_ENV.map((n) => readProviderCredential(n)).find((v) => !!v)?.value ??
+      BASE_URL_ENV.map((n) => readProviderCredential(n)).find((v) => !!v) ??
       null;
   }
 
