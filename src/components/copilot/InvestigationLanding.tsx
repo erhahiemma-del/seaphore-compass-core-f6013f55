@@ -11,7 +11,9 @@
  */
 import { useEffect, useRef, useState } from "react";
 import {
+  AlertCircle,
   Building2,
+  RotateCw,
   DollarSign,
   FileSpreadsheet,
   FileText,
@@ -445,25 +447,72 @@ export function InvestigationLanding({
 
 
 
-          {files.attachments.length > 0 ? (
-            <div className="mt-2 flex flex-wrap gap-1.5 px-1">
-              {files.attachments.map((a) => (
+          {files.items.length > 0 ? (
+            <div data-testid="attachment-list" className="mt-2 flex flex-wrap gap-1.5 px-1">
+              {files.items.map((a) => (
                 <span
                   key={a.id}
-                  className="flex max-w-full items-center gap-1.5 rounded-full border border-border/60 bg-muted/40 py-1 pl-2.5 pr-1.5 text-[11px] text-foreground"
-                >
-                  {a.kind === "MANIFEST" ? (
-                    <FileSpreadsheet className="h-3.5 w-3.5 shrink-0 text-[color:var(--color-teal)]" />
-                  ) : (
-                    <FileText className="h-3.5 w-3.5 shrink-0 text-[color:var(--color-teal)]" />
+                  data-testid="attachment-chip"
+                  data-status={a.status}
+                  className={cn(
+                    "relative flex max-w-full items-center gap-1.5 overflow-hidden rounded-full border py-1 pl-2.5 pr-1.5 text-[11px] text-foreground",
+                    a.status === "ERROR"
+                      ? "border-destructive/50 bg-destructive/5"
+                      : "border-border/60 bg-muted/40",
                   )}
-                  <span className="truncate">{a.name}</span>
-                  <span className="shrink-0 text-muted-foreground">{formatBytes(a.size)}</span>
+                >
+                  {/* Progress fills the chip itself — no extra vertical space. */}
+                  {a.status === "UPLOADING" ? (
+                    <span
+                      aria-hidden
+                      className="absolute inset-y-0 left-0 bg-[color:var(--color-teal)]/12 transition-[width] duration-200"
+                      style={{ width: `${a.progress}%` }}
+                    />
+                  ) : null}
+                  {a.status === "ERROR" ? (
+                    <AlertCircle className="relative h-3.5 w-3.5 shrink-0 text-destructive" />
+                  ) : a.status === "UPLOADING" ? (
+                    <Loader2 className="relative h-3.5 w-3.5 shrink-0 animate-spin text-[color:var(--color-teal)]" />
+                  ) : a.kind === "MANIFEST" ? (
+                    <FileSpreadsheet className="relative h-3.5 w-3.5 shrink-0 text-[color:var(--color-teal)]" />
+                  ) : (
+                    <FileText className="relative h-3.5 w-3.5 shrink-0 text-[color:var(--color-teal)]" />
+                  )}
+                  <span className="relative truncate">{a.name}</span>
+                  <span
+                    className={cn(
+                      "relative shrink-0",
+                      a.status === "ERROR" ? "text-destructive" : "text-muted-foreground",
+                    )}
+                    role={a.status === "UPLOADING" ? "progressbar" : undefined}
+                    aria-valuenow={a.status === "UPLOADING" ? a.progress : undefined}
+                    aria-valuemin={a.status === "UPLOADING" ? 0 : undefined}
+                    aria-valuemax={a.status === "UPLOADING" ? 100 : undefined}
+                    aria-label={a.status === "UPLOADING" ? `Uploading ${a.name}` : undefined}
+                    title={a.status === "ERROR" ? a.error : undefined}
+                  >
+                    {a.status === "UPLOADING"
+                      ? `${a.progress}%`
+                      : a.status === "ERROR"
+                        ? "Upload failed"
+                        : formatBytes(a.size)}
+                  </span>
+                  {a.status === "ERROR" ? (
+                    <button
+                      type="button"
+                      aria-label={`Retry upload of ${a.name}`}
+                      title={a.error ? `${a.error} — click to retry` : "Retry upload"}
+                      onClick={() => void files.retry(a.id)}
+                      className="relative rounded-full p-0.5 text-destructive hover:bg-destructive/10"
+                    >
+                      <RotateCw className="h-3 w-3" />
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     aria-label={`Remove ${a.name}`}
                     onClick={() => void files.remove(a.id)}
-                    className="rounded-full p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                    className="relative rounded-full p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -474,6 +523,7 @@ export function InvestigationLanding({
               </span>
             </div>
           ) : null}
+
 
 
 

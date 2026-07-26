@@ -6,7 +6,7 @@
  * a provenance record is handed back to the caller. No intelligence logic and
  * no automatic interpretation — the officer decides what the document means.
  */
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -70,20 +70,95 @@ export function describeAttachments(attachments: OfficerAttachment[]): string {
   return `Officer-attached documents (uploaded evidence, treat as officer-supplied source):\n${lines.join("\n")}`;
 }
 
+/** An attachment as the officer sees it: in flight, uploaded, or failed. */
+export interface AttachmentItem extends OfficerAttachment {
+  status: "UPLOADING" | "UPLOADED" | "ERROR";
+  /** 0–100. Byte-accurate while uploading. */
+  progress: number;
+  error?: string;
+}
+
 export interface UseOfficerAttachments {
+  /** Successfully uploaded attachments only — what the pipeline may cite. */
   attachments: OfficerAttachment[];
+  /** Every attachment including in-flight and failed ones, for the UI. */
+  items: AttachmentItem[];
   uploading: boolean;
   add: (files: FileList | File[]) => Promise<void>;
+  retry: (id: string) => Promise<void>;
   remove: (id: string) => Promise<void>;
   clear: () => void;
+}
+
+/**
+ * PUT to a Supabase signed upload URL via XHR so we get byte-level progress.
+ * `supabase.storage.upload()` uses fetch, which cannot report progress.
+ */
+function putWithProgress(
+  url: string,
+  file: File,
+  contentType: string,
+  onProgress: (pct: number) => void,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url, true);
+    xhr.setRequestHeader("Content-Type", contentType);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onload = () =>
+      xhr.status >= 200 && xhr.status < 300
+        ? resolve()
+        : reject(new Error(`Storage responded ${xhr.status}`));
+    xhr.onerror = () => reject(new Error("Network error during upload"));
+    xhr.onabort = () => reject(new Error("Upload cancelled"));
+    xhr.send(file);
+  });
 }
 
 export function useOfficerAttachments(options?: {
   onError?: (message: string) => void;
 }): UseOfficerAttachments {
-  const [attachments, setAttachments] = useState<OfficerAttachment[]>([]);
-  const [uploading, setUploading] = useState(false);
+  const [items, setItems] = useState<AttachmentItem[]>([]);
   const onError = options?.onError;
+  /** Originals kept in memory so a failed upload can be retried as-is. */
+  const sources = useRef(new Map<string, File>());
+
+  const patch = useCallback((id: string, next: Partial<AttachmentItem>) => {
+    setItems((prev) => prev.map((a) => (a.id === id ? { ...a, ...next } : a)));
+  }, []);
+
+  const upload = useCallback(
+    async (id: string, file: File, bucket: OfficerAttachment["bucket"], path: string) => {
+      patch(id, { status: "UPLOADING", progress: 0, error: undefined });
+      const contentType = file.type || "application/octet-stream";
+      try {
+        const signed = await supabase.storage.from(bucket).createSignedUploadUrl(path, {
+          upsert: true,
+        });
+        if (signed.error || !signed.data?.signedUrl) {
+          throw new Error(signed.error?.message ?? "Could not start the upload.");
+        }
+        // storage-js returns an absolute signed URL.
+        await putWithProgress(signed.data.signedUrl, file, contentType, (pct) => patch(id, { progress: pct }));
+        patch(id, {
+          status: "UPLOADED",
+          progress: 100,
+          uploadedAt: new Date().toISOString(),
+          error: undefined,
+        });
+      } catch (e) {
+        const message = e instanceof Error ? e.message : "Upload failed.";
+        console.error("[Attachments] upload failed", e);
+        // The row stays in the list in ERROR state: the officer retries or
+        // removes it deliberately, rather than the file vanishing silently.
+        patch(id, { status: "ERROR", error: message });
+        onError?.(`${file.name}: upload failed — ${message}`);
+      }
+    },
+    [onError, patch],
+  );
 
   const add = useCallback(
     async (files: FileList | File[]) => {
@@ -97,68 +172,86 @@ export function useOfficerAttachments(options?: {
         return;
       }
 
-      setUploading(true);
-      try {
-        for (const file of list) {
-          const ext = extensionOf(file.name);
-          if (!ALLOWED_EXTENSIONS.includes(ext)) {
-            onError?.(`${file.name}: unsupported file type.`);
-            continue;
-          }
-          if (file.size > MAX_ATTACHMENT_BYTES) {
-            onError?.(`${file.name}: exceeds the ${formatBytes(MAX_ATTACHMENT_BYTES)} limit.`);
-            continue;
-          }
-
-          const isManifest = MANIFEST_TYPES.has(file.type) || ["csv", "xls", "xlsx"].includes(ext);
-          const bucket: OfficerAttachment["bucket"] = isManifest ? "manifests" : "evidence";
-          const id = crypto.randomUUID();
-          const path = `${userId}/copilot/${id}-${sanitize(file.name)}`;
-
-          const { error } = await supabase.storage
-            .from(bucket)
-            .upload(path, file, { contentType: file.type || "application/octet-stream" });
-
-          if (error) {
-            console.error("[Attachments] upload failed", error);
-            onError?.(`${file.name}: upload failed — ${error.message}`);
-            continue;
-          }
-
-          setAttachments((prev) => [
-            ...prev,
-            {
-              id,
-              name: file.name,
-              size: file.size,
-              contentType: file.type || "application/octet-stream",
-              bucket,
-              path,
-              uploadedAt: new Date().toISOString(),
-              kind: isManifest ? "MANIFEST" : "DOCUMENT",
-            },
-          ]);
+      for (const file of list) {
+        const ext = extensionOf(file.name);
+        if (!ALLOWED_EXTENSIONS.includes(ext)) {
+          onError?.(`${file.name}: unsupported file type.`);
+          continue;
         }
-      } finally {
-        setUploading(false);
+        if (file.size > MAX_ATTACHMENT_BYTES) {
+          onError?.(`${file.name}: exceeds the ${formatBytes(MAX_ATTACHMENT_BYTES)} limit.`);
+          continue;
+        }
+
+        const isManifest = MANIFEST_TYPES.has(file.type) || ["csv", "xls", "xlsx"].includes(ext);
+        const bucket: OfficerAttachment["bucket"] = isManifest ? "manifests" : "evidence";
+        const id = crypto.randomUUID();
+        const path = `${userId}/copilot/${id}-${sanitize(file.name)}`;
+
+        sources.current.set(id, file);
+        setItems((prev) => [
+          ...prev,
+          {
+            id,
+            name: file.name,
+            size: file.size,
+            contentType: file.type || "application/octet-stream",
+            bucket,
+            path,
+            uploadedAt: new Date().toISOString(),
+            kind: isManifest ? "MANIFEST" : "DOCUMENT",
+            status: "UPLOADING",
+            progress: 0,
+          },
+        ]);
+
+        await upload(id, file, bucket, path);
       }
     },
-    [onError],
+    [onError, upload],
+  );
+
+  const retry = useCallback(
+    async (id: string) => {
+      const target = items.find((a) => a.id === id);
+      const file = sources.current.get(id);
+      if (!target || !file) {
+        onError?.("That file is no longer available — attach it again.");
+        return;
+      }
+      await upload(id, file, target.bucket, target.path);
+    },
+    [items, onError, upload],
   );
 
   const remove = useCallback(async (id: string) => {
-    let target: OfficerAttachment | undefined;
-    setAttachments((prev) => {
+    let target: AttachmentItem | undefined;
+    setItems((prev) => {
       target = prev.find((a) => a.id === id);
       return prev.filter((a) => a.id !== id);
     });
-    if (target) {
+    sources.current.delete(id);
+    // Only an uploaded object exists in storage; a failed one has nothing to delete.
+    if (target?.status === "UPLOADED") {
       const { error } = await supabase.storage.from(target.bucket).remove([target.path]);
       if (error) console.warn("[Attachments] remove failed", error);
     }
   }, []);
 
-  const clear = useCallback(() => setAttachments([]), []);
+  const clear = useCallback(() => {
+    sources.current.clear();
+    setItems([]);
+  }, []);
 
-  return { attachments, uploading, add, remove, clear };
+  const attachments = useMemo(
+    () =>
+      items
+        .filter((a) => a.status === "UPLOADED")
+        .map(({ status: _s, progress: _p, error: _e, ...rest }) => rest),
+    [items],
+  );
+  const uploading = items.some((a) => a.status === "UPLOADING");
+
+  return { attachments, items, uploading, add, retry, remove, clear };
 }
+
