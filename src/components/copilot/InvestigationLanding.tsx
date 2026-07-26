@@ -47,54 +47,49 @@ import { cn } from "@/lib/utils";
 
 
 const TYPING_EXAMPLES = [
-  "Investigate MV Ocean Pearl ownership",
-  "Screen operator for sanctions",
-  "Compare arrivals at Tin Can",
-  "Explain revenue leakage",
+  "Investigate MV Ocean Pearl",
+  "Find ownership history",
   "Analyze cargo manifest",
-  "Check AIS activity",
+  "Check sanctions",
+  "Track previous voyages",
+  "Show inspection history",
 ];
 
-interface QuickStart {
+/** Rotating empty-state guidance — Sprint UX-04 §8. */
+const GUIDANCE = [
+  "You can ask anything.",
+  "Natural language works.",
+  "No category selection required.",
+  "Start your investigation.",
+];
+
+/**
+ * Smart Prompt Chips — Sprint UX-04 §3/§6.
+ *
+ * Assistive, never restrictive: a chip inserts an editable starter prompt into
+ * the input and nothing else. It does not filter providers, scope the query or
+ * lock the officer into a category — the submitted text is whatever the officer
+ * leaves in the box.
+ */
+interface PromptChip {
   key: string;
   label: string;
   icon: LucideIcon;
-  prompt: (subject: string) => string;
+  /** Editable starter text inserted on click. */
+  starter: string;
 }
 
-const QUICK_START: QuickStart[] = [
-  { key: "vessel", label: "Investigate Vessel", icon: Ship, prompt: (s) => `Investigate ${s}` },
-  {
-    key: "ownership",
-    label: "Ownership",
-    icon: Building2,
-    prompt: (s) => `Explain the ownership structure of ${s}`,
-  },
-  {
-    key: "sanctions",
-    label: "Sanctions",
-    icon: ShieldCheck,
-    prompt: (s) => `Screen ${s} and its operator for sanctions exposure`,
-  },
-  {
-    key: "cargo",
-    label: "Cargo",
-    icon: Package,
-    prompt: (s) => `Analyze the cargo and manifests for ${s}`,
-  },
-  {
-    key: "ais",
-    label: "AIS Replay",
-    icon: Radar,
-    prompt: (s) => `Check AIS activity and dark periods for ${s}`,
-  },
-  {
-    key: "revenue",
-    label: "Revenue",
-    icon: DollarSign,
-    prompt: (s) => `Assess revenue leakage risk for ${s}`,
-  },
+const PROMPT_CHIPS: PromptChip[] = [
+  { key: "imo", label: "IMO", icon: Hash, starter: "Investigate IMO " },
+  { key: "vessel", label: "Vessel", icon: Ship, starter: "Investigate vessel " },
+  { key: "company", label: "Company", icon: Building2, starter: "Investigate company " },
+  { key: "manifest", label: "Manifest", icon: FileSpreadsheet, starter: "Analyze manifest " },
+  { key: "container", label: "Container", icon: Package, starter: "Trace container " },
+  { key: "bol", label: "BOL", icon: FileText, starter: "Check bill of lading " },
+  { key: "voyage", label: "Voyage", icon: Radar, starter: "Show previous voyages of " },
+  { key: "port", label: "Port", icon: Anchor, starter: "Show activity at port " },
 ];
+
 
 export interface InvestigationLandingProps {
   subject: string;
