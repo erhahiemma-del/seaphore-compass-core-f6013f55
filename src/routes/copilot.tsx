@@ -198,6 +198,7 @@ function CopilotOpsPage() {
     return () => window.clearTimeout(t);
   }, []);
 
+
   const mutation = useMutation({
     mutationFn: async (q: string) => {
       setError(null);
