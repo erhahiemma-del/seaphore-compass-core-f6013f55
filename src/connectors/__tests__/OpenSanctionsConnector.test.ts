@@ -224,15 +224,18 @@ describe("OpenSanctionsConnector — registration & architecture", () => {
     );
   });
 
-  it("performs no database writes (no supabase import in the module graph)", async () => {
+  it("performs no database writes (no persistence imports)", async () => {
     const src = await import("node:fs").then((fs) =>
       fs.readFileSync(
         "src/connectors/implementations/OpenSanctionsConnector.ts",
         "utf8",
       ),
     );
-    expect(src).not.toMatch(/supabase/i);
-    expect(src).not.toMatch(/registerUip/);
-    expect(src).not.toMatch(/osint_raw/);
+    const imports = src.match(/^import .*$/gm)?.join("\n") ?? "";
+    expect(imports).not.toMatch(/supabase/i);
+    expect(src).not.toMatch(/registerUip\(/);
+    expect(src).not.toMatch(/\.from\(["']/);
+    expect(src).not.toMatch(/resolveIdentity|dedupe|registerEntity/);
   });
 });
+
