@@ -231,11 +231,17 @@ describe("OpenSanctionsConnector — registration & architecture", () => {
         "utf8",
       ),
     );
-    const imports = src.match(/^import .*$/gm)?.join("\n") ?? "";
+    // Strip comments so documentation of the prohibitions does not
+    // trip the guard — only executable code is inspected.
+    const code = src
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/^\s*\/\/.*$/gm, "");
+    const imports = code.match(/^import .*$/gm)?.join("\n") ?? "";
     expect(imports).not.toMatch(/supabase/i);
-    expect(src).not.toMatch(/registerUip\(/);
-    expect(src).not.toMatch(/\.from\(["']/);
-    expect(src).not.toMatch(/resolveIdentity\(|registerEntity\(/);
+    expect(code).not.toMatch(/registerUip\(/);
+    expect(code).not.toMatch(/\.from\(["']/);
+    expect(code).not.toMatch(/resolveIdentity\(|registerEntity\(/);
+
   });
 });
 
