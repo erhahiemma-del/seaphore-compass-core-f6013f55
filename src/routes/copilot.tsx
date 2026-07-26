@@ -216,10 +216,21 @@ function CopilotOpsPage() {
     return () => window.clearTimeout(t);
   }, []);
 
+  // Keep the persisted run in step with the visible stage so a refresh mid-run
+  // restores the progress card at the stage the officer last saw.
+  useEffect(() => {
+    if (stage === "classifying" || stage === "retrieving" || stage === "reasoning" || stage === "rendering") {
+      useCopilotRunStore.getState().setStage(stage);
+    } else {
+      useCopilotRunStore.getState().clear();
+    }
+  }, [stage]);
+
 
   // Monotonic run token. Cancelling bumps it, so any results still in flight
   // from the abandoned run are discarded instead of overwriting the screen.
   const runIdRef = useRef(0);
+
 
   const mutation = useMutation({
     mutationFn: async (q: string) => {
