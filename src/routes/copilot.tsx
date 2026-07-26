@@ -11,7 +11,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   AlertTriangle,
   Anchor,
-  ArrowRight,
   Building2,
   ClipboardCheck,
   DollarSign,
@@ -47,6 +46,8 @@ import type {
   OverrideSubmission,
 } from "@/components/copilot/briefing";
 import { StreamingStages } from "@/components/copilot/StreamingStages";
+import { InvestigationLanding } from "@/components/copilot/InvestigationLanding";
+
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { Button } from "@/components/ui/button";
 import { adaptBriefing, type CopilotQueryResponse } from "@/lib/copilot/adapt-briefing";
@@ -123,14 +124,8 @@ const RECENT: Investigation[] = [
   { id: "inv-imo-942", title: "Unusual voyage pattern — IMO 942…", subtitle: "Vessel", when: "15:22" },
 ];
 
-const SUGGESTED_QUERIES = [
-  "Investigate MV Ocean Pearl",
-  "Detect revenue leakage this week",
-  "Compare arrivals: Tin Can vs Apapa",
-  "Show high-risk vessels in 30 days",
-  "Screen operator Blue Horizon Shipping",
-  "Generate executive briefing",
-];
+
+
 
 interface OrchestrationModule {
   key: string;
@@ -458,6 +453,15 @@ function CopilotOpsPage() {
   const isStreaming =
     stage === "classifying" || stage === "retrieving" || stage === "reasoning" || stage === "rendering";
 
+  /**
+   * Sprint UX-02 — the workspace has two modes. Empty state = the
+   * Investigation Landing (hero prompt, centred). Investigation Mode =
+   * briefing above, input docked to the bottom. Same submit path.
+   */
+  const investigationMode = Boolean(briefing) || isStreaming || Boolean(clarify) || Boolean(error);
+  const subjectLabel = (context?.label ?? "MV Ocean Pearl").split("·")[0]!.trim();
+
+
   return (
     <AppShell title="NIMASA Copilot" subtitle="Intelligence Orchestration Workspace">
       <div className="flex min-h-[calc(100vh-8rem)] flex-col bg-[#F7F8FA]">
@@ -550,21 +554,8 @@ function CopilotOpsPage() {
                   ))}
                 </ul>
 
-                <SectionLabel className="mt-4">Suggested Intelligence Queries</SectionLabel>
-                <ul className="space-y-1.5">
-                  {SUGGESTED_QUERIES.map((q) => (
-                    <li key={q}>
-                      <button
-                        type="button"
-                        onClick={() => handleSubmit(q)}
-                        className="flex w-full items-center gap-2 rounded-md border border-border/60 bg-background/60 px-2.5 py-1.5 text-left text-[12px] text-foreground/85 hover:border-primary/40 hover:bg-primary/5"
-                      >
-                        <ArrowRight className="h-3 w-3 shrink-0 text-[color:var(--color-teal)]" />
-                        <span className="truncate">{q}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+
+
 
                 <button
                   type="button"
@@ -602,11 +593,12 @@ function CopilotOpsPage() {
                         Active
                       </span>
                       <span className="text-muted-foreground">
-                        Current Mission ·{" "}
+                        Mission ·{" "}
                         <span className="font-medium text-foreground">
-                          {briefing?.query ? "Intelligence briefing" : "Awaiting query"}
+                          {briefing?.query ? "Intelligence briefing" : "Awaiting Investigation"}
                         </span>
                       </span>
+
                     </div>
                   </div>
                 </div>
@@ -650,8 +642,24 @@ function CopilotOpsPage() {
                 </div>
               </div>
 
-              <div ref={workspaceScrollRef} className="flex-1 overflow-auto p-4">
-                {!briefing && !isStreaming ? <EmptyBriefing /> : null}
+              <div
+                ref={workspaceScrollRef}
+                className={cn(
+                  "flex-1 overflow-auto",
+                  investigationMode ? "p-4" : "flex p-0",
+                )}
+              >
+                {!investigationMode ? (
+                  <InvestigationLanding
+                    subject={subjectLabel}
+                    value={text}
+                    onChange={setText}
+                    onSubmit={handleSubmit}
+                    pending={mutation.isPending}
+                    inputRef={inputRef}
+                  />
+                ) : null}
+
 
                 {isStreaming ? (
                   <div className="rounded-lg border border-border/60 bg-[#FAFBFC] p-4">
@@ -731,47 +739,51 @@ function CopilotOpsPage() {
                 ) : null}
               </div>
 
-              {/* Query input */}
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleSubmit(text);
-                }}
-                className="border-t border-border/60 bg-white px-4 py-3"
-              >
-                <div className="flex items-end gap-2 rounded-lg border border-border/70 bg-white px-3 py-2 shadow-sm focus-within:border-primary">
-                  <textarea
-                    ref={inputRef}
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    placeholder="Investigate vessels, manifests, cargo, ownership, operators, ports, compliance or maritime risk…"
-                    rows={1}
-                    disabled={mutation.isPending}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSubmit(text);
-                      }
-                    }}
-                    className="max-h-32 flex-1 resize-none bg-transparent text-[13px] outline-none placeholder:text-muted-foreground disabled:opacity-60"
-                  />
-                  <Button
-                    type="submit"
-                    size="sm"
-                    disabled={mutation.isPending || !text.trim()}
-                    className="h-8 gap-1.5"
-                  >
-                    {mutation.isPending ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Send className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </div>
-                <p className="mt-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-                  SHIFT + ENTER for new line
-                </p>
-              </form>
+              {/* Investigation Mode — the input docks to the bottom and the
+                  briefing grows above it. The officer never loses the input. */}
+              {investigationMode ? (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSubmit(text);
+                  }}
+                  className="animate-in slide-in-from-bottom-2 fade-in border-t border-border/60 bg-white px-4 py-3 duration-300"
+                >
+                  <div className="flex items-end gap-2 rounded-xl border border-border/70 bg-white px-3 py-2 shadow-sm transition-shadow focus-within:border-[color:var(--color-teal)]/60 focus-within:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-teal)_12%,transparent)]">
+                    <textarea
+                      ref={inputRef}
+                      value={text}
+                      onChange={(e) => setText(e.target.value)}
+                      placeholder={`Investigate ${subjectLabel}...`}
+                      rows={1}
+                      disabled={mutation.isPending}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSubmit(text);
+                        }
+                      }}
+                      className="max-h-44 flex-1 resize-none bg-transparent text-[13px] outline-none placeholder:text-muted-foreground disabled:opacity-60"
+                    />
+                    <Button
+                      type="submit"
+                      size="sm"
+                      disabled={mutation.isPending || !text.trim()}
+                      className="h-8 gap-1.5"
+                    >
+                      {mutation.isPending ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Send className="h-3.5 w-3.5" />
+                      )}
+                    </Button>
+                  </div>
+                  <p className="mt-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Shift + Enter = New Line
+                  </p>
+                </form>
+              ) : null}
+
             </div>
           </section>
 
@@ -832,7 +844,7 @@ function CopilotOpsPage() {
                   ))}
                 </div>
 
-                <div className="space-y-4 p-3">
+                <div className="space-y-5 p-4">
                   <VesselSnapshot />
                   <RiskOverview />
                   <OwnershipGraph />
@@ -1074,24 +1086,8 @@ function InvestigationRow({
   );
 }
 
-/* ---------- Empty state ---------- */
 
-function EmptyBriefing() {
-  return (
-    <div className="rounded-lg border border-dashed border-border bg-[#FAFBFC] p-8 text-center">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--color-teal)]/10 text-[color:var(--color-teal)]">
-        <Sparkles className="h-6 w-6" />
-      </div>
-      <h3 className="mt-3 text-[15px] font-semibold text-foreground">
-        Ready for an intelligence briefing
-      </h3>
-      <p className="mx-auto mt-1 max-w-md text-[12.5px] text-muted-foreground">
-        Submit a query below to run the full pipeline — agents, evidence fusion, reasoning and
-        policy — and receive a structured Adaptive Briefing.
-      </p>
-    </div>
-  );
-}
+
 
 /* ---------- Right panel widgets ---------- */
 
