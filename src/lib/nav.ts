@@ -88,7 +88,14 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { title: "Manifest Intelligence", url: "/manifest", icon: FileText },
       { title: "Cargo Intelligence", url: "/cargo", icon: Package },
+      {
+        title: "Cargo Workspace",
+        subtitle: "CAPABILITY.CARGO · 6 centres",
+        url: "/cargo-workspace",
+        icon: Package,
+      },
       { title: "Revenue Intelligence", url: "/revenue", icon: DollarSign },
+
       { title: "Vessel Intelligence", url: "/vessel", icon: Ship },
       { title: "Port Operations", url: "/ports", icon: Anchor },
       { title: "Ownership Intelligence", url: "/ownership", icon: Building2 },

@@ -53,6 +53,7 @@ import { Route as InvestigateIdRouteImport } from './routes/investigate.$id'
 import { Route as EntityIdRouteImport } from './routes/entity.$id'
 import { Route as DecideQueueRouteImport } from './routes/decide.queue'
 import { Route as DecideIdRouteImport } from './routes/decide.$id'
+import { Route as CargoWorkspaceCentreRouteImport } from './routes/cargo-workspace.$centre'
 import { Route as AdminProviderHealthRouteImport } from './routes/admin.provider-health'
 import { Route as AdminProjectionContractRouteImport } from './routes/admin.projection-contract'
 import { Route as AdminOsintRouteImport } from './routes/admin.osint'
@@ -288,6 +289,11 @@ const DecideIdRoute = DecideIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => DecideRoute,
 } as any)
+const CargoWorkspaceCentreRoute = CargoWorkspaceCentreRouteImport.update({
+  id: '/$centre',
+  path: '/$centre',
+  getParentRoute: () => CargoWorkspaceRoute,
+} as any)
 const AdminProviderHealthRoute = AdminProviderHealthRouteImport.update({
   id: '/admin/provider-health',
   path: '/admin/provider-health',
@@ -394,6 +400,7 @@ export interface FileRoutesByFullPath {
   '/admin/osint': typeof AdminOsintRoute
   '/admin/projection-contract': typeof AdminProjectionContractRoute
   '/admin/provider-health': typeof AdminProviderHealthRoute
+  '/cargo-workspace/$centre': typeof CargoWorkspaceCentreRoute
   '/decide/$id': typeof DecideIdRoute
   '/decide/queue': typeof DecideQueueRoute
   '/entity/$id': typeof EntityIdRoute
@@ -450,6 +457,7 @@ export interface FileRoutesByTo {
   '/admin/osint': typeof AdminOsintRoute
   '/admin/projection-contract': typeof AdminProjectionContractRoute
   '/admin/provider-health': typeof AdminProviderHealthRoute
+  '/cargo-workspace/$centre': typeof CargoWorkspaceCentreRoute
   '/decide/$id': typeof DecideIdRoute
   '/decide/queue': typeof DecideQueueRoute
   '/entity/$id': typeof EntityIdRoute
@@ -511,6 +519,7 @@ export interface FileRoutesById {
   '/admin/osint': typeof AdminOsintRoute
   '/admin/projection-contract': typeof AdminProjectionContractRoute
   '/admin/provider-health': typeof AdminProviderHealthRoute
+  '/cargo-workspace/$centre': typeof CargoWorkspaceCentreRoute
   '/decide/$id': typeof DecideIdRoute
   '/decide/queue': typeof DecideQueueRoute
   '/entity/$id': typeof EntityIdRoute
@@ -573,6 +582,7 @@ export interface FileRouteTypes {
     | '/admin/osint'
     | '/admin/projection-contract'
     | '/admin/provider-health'
+    | '/cargo-workspace/$centre'
     | '/decide/$id'
     | '/decide/queue'
     | '/entity/$id'
@@ -629,6 +639,7 @@ export interface FileRouteTypes {
     | '/admin/osint'
     | '/admin/projection-contract'
     | '/admin/provider-health'
+    | '/cargo-workspace/$centre'
     | '/decide/$id'
     | '/decide/queue'
     | '/entity/$id'
@@ -689,6 +700,7 @@ export interface FileRouteTypes {
     | '/admin/osint'
     | '/admin/projection-contract'
     | '/admin/provider-health'
+    | '/cargo-workspace/$centre'
     | '/decide/$id'
     | '/decide/queue'
     | '/entity/$id'
@@ -1076,6 +1088,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DecideIdRouteImport
       parentRoute: typeof DecideRoute
     }
+    '/cargo-workspace/$centre': {
+      id: '/cargo-workspace/$centre'
+      path: '/$centre'
+      fullPath: '/cargo-workspace/$centre'
+      preLoaderRoute: typeof CargoWorkspaceCentreRouteImport
+      parentRoute: typeof CargoWorkspaceRoute
+    }
     '/admin/provider-health': {
       id: '/admin/provider-health'
       path: '/admin/provider-health'
@@ -1178,10 +1197,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface CargoWorkspaceRouteChildren {
+  CargoWorkspaceCentreRoute: typeof CargoWorkspaceCentreRoute
   CargoWorkspaceIndexRoute: typeof CargoWorkspaceIndexRoute
 }
 
 const CargoWorkspaceRouteChildren: CargoWorkspaceRouteChildren = {
+  CargoWorkspaceCentreRoute: CargoWorkspaceCentreRoute,
   CargoWorkspaceIndexRoute: CargoWorkspaceIndexRoute,
 }
 
