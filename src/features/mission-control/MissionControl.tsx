@@ -52,6 +52,9 @@ import {
 } from "@/lib/intelligence/dashboard-projection";
 import { PanelStateNotice } from "@/components/intelligence/PanelStateNotice";
 import type { KpiCoverage } from "@/lib/intelligence/coverage-model";
+import { useCargoWorkspaceProjections } from "@/features/cargo-workspace/use-cargo-projection";
+import { CargoCentreStateChip } from "@/features/cargo-workspace/CargoCentreView";
+
 
 /** One shared coverage read for every Mission Control surface. */
 function useCoverage() {
