@@ -98,7 +98,13 @@ export interface AttachmentItem extends OfficerAttachment {
   /** 0–100. Byte-accurate while uploading. */
   progress: number;
   error?: string;
+  /**
+   * Local object URL for confirmation previews (images / PDFs only).
+   * Browser-side only — never part of the evidence bundle.
+   */
+  previewUrl?: string;
 }
+
 
 export interface UseOfficerAttachments {
   /** Successfully uploaded attachments only — what the pipeline may cite. */
@@ -212,6 +218,14 @@ export function useOfficerAttachments(options?: {
         const path = `${userId}/copilot/${id}-${sanitize(file.name)}`;
 
         sources.current.set(id, file);
+        // Visual confirmation only — images and PDFs render inline so the
+        // officer can verify the document before it travels with the query.
+        const previewable =
+          file.type.startsWith("image/") || file.type === "application/pdf";
+        const previewUrl =
+          previewable && typeof URL.createObjectURL === "function"
+            ? URL.createObjectURL(file)
+            : undefined;
         setItems((prev) => [
           ...prev,
           {
@@ -227,8 +241,10 @@ export function useOfficerAttachments(options?: {
             kind: isManifest ? "MANIFEST" : "DOCUMENT",
             status: "UPLOADING",
             progress: 0,
+            previewUrl,
           },
         ]);
+
 
 
         await upload(id, file, bucket, path);
@@ -257,6 +273,7 @@ export function useOfficerAttachments(options?: {
       return prev.filter((a) => a.id !== id);
     });
     sources.current.delete(id);
+    if (target?.previewUrl) URL.revokeObjectURL(target.previewUrl);
     // Only an uploaded object exists in storage; a failed one has nothing to delete.
     if (target?.status === "UPLOADED") {
       const { error } = await supabase.storage.from(target.bucket).remove([target.path]);
@@ -266,16 +283,20 @@ export function useOfficerAttachments(options?: {
 
   const clear = useCallback(() => {
     sources.current.clear();
-    setItems([]);
+    setItems((prev) => {
+      for (const a of prev) if (a.previewUrl) URL.revokeObjectURL(a.previewUrl);
+      return [];
+    });
   }, []);
 
   const attachments = useMemo(
     () =>
       items
         .filter((a) => a.status === "UPLOADED")
-        .map(({ status: _s, progress: _p, error: _e, ...rest }) => rest),
+        .map(({ status: _s, progress: _p, error: _e, previewUrl: _u, ...rest }) => rest),
     [items],
   );
+
   const uploading = items.some((a) => a.status === "UPLOADING");
 
   return { attachments, items, uploading, add, retry, remove, clear };

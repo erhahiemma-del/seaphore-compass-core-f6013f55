@@ -39,7 +39,9 @@ import {
   useOfficerAttachments,
   type OfficerAttachment,
 } from "@/hooks/use-officer-attachments";
+import { AttachmentPreviewDialog } from "@/components/copilot/AttachmentPreviewDialog";
 import { cn } from "@/lib/utils";
+
 
 
 
@@ -181,6 +183,10 @@ export function InvestigationLanding({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const files = useOfficerAttachments({ onError: (m) => toast.error(m) });
   const canSubmit = Boolean(value.trim()) && !pending && !files.uploading;
+  /** Attachment currently open in the confirmation preview, if any. */
+  const [previewId, setPreviewId] = useState<string | null>(null);
+  const previewItem = files.items.find((a) => a.id === previewId) ?? null;
+
 
   function submit() {
     if (!canSubmit) return;
@@ -478,7 +484,17 @@ export function InvestigationLanding({
                   ) : (
                     <FileText className="relative h-3.5 w-3.5 shrink-0 text-[color:var(--color-teal)]" />
                   )}
-                  <span className="relative truncate">{a.name}</span>
+                  <button
+                    type="button"
+                    data-testid="attachment-preview-trigger"
+                    onClick={() => setPreviewId(a.id)}
+                    title={`${a.name} — ${a.kind === "MANIFEST" ? "Manifest" : "Document"}, ${a.contentType || "unknown type"}, ${formatBytes(a.size)}`}
+                    aria-label={`Preview ${a.name}`}
+                    className="relative max-w-[220px] truncate underline-offset-2 hover:underline"
+                  >
+                    {a.name}
+                  </button>
+
                   <span
                     className={cn(
                       "relative shrink-0",
@@ -495,7 +511,8 @@ export function InvestigationLanding({
                       ? `${a.progress}%`
                       : a.status === "ERROR"
                         ? "Upload failed"
-                        : formatBytes(a.size)}
+                        : `${a.kind === "MANIFEST" ? "Manifest" : "Document"} · ${formatBytes(a.size)}`}
+
                   </span>
                   {a.status === "ERROR" ? (
                     <button
@@ -519,10 +536,18 @@ export function InvestigationLanding({
                 </span>
               ))}
               <span className="self-center text-[10px] uppercase tracking-wider text-muted-foreground/70">
-                Officer-supplied evidence
+                Officer-supplied evidence — click a file to preview
               </span>
             </div>
           ) : null}
+
+          <AttachmentPreviewDialog
+            attachment={previewItem}
+            onOpenChange={(open) => {
+              if (!open) setPreviewId(null);
+            }}
+          />
+
 
 
 
