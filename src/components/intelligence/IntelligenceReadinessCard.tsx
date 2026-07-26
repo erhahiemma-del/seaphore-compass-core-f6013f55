@@ -5,9 +5,17 @@
  * Reports what the platform can actually do right now instead of letting
  * empty KPIs imply the platform is idle.
  */
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ExternalLink, Gauge } from "lucide-react";
-import type { IntelligenceReadiness } from "@/lib/intelligence/coverage-model";
+import { Download, ExternalLink, Gauge } from "lucide-react";
+import type {
+  IntelligenceCoverageReport,
+  IntelligenceReadiness,
+} from "@/lib/intelligence/coverage-model";
+import {
+  READINESS_REPORT_VERSION,
+  exportIntelligenceReadinessReport,
+} from "@/lib/intelligence/export-readiness-report";
 
 function Group({
   dot,
@@ -40,10 +48,15 @@ function Group({
 export function IntelligenceReadinessCard({
   readiness,
   generatedAt,
+  report,
 }: {
   readiness: IntelligenceReadiness;
   generatedAt?: string;
+  /** Full live diagnostic — required to export the readiness report. */
+  report?: IntelligenceCoverageReport;
 }) {
+  const [exported, setExported] = useState<string | null>(null);
+
   return (
     <section
       aria-label="Intelligence Readiness"
@@ -67,6 +80,17 @@ export function IntelligenceReadinessCard({
           <div className="type-mono text-[26px] font-bold tabular-nums text-foreground">
             {readiness.overallPct}%
           </div>
+          {report ? (
+            <button
+              type="button"
+              onClick={() => setExported(exportIntelligenceReadinessReport(report))}
+              className="inline-flex items-center gap-1.5 rounded-md border border-line px-2.5 py-1.5 text-[11px] font-semibold text-foreground transition-colors hover:bg-[color:var(--color-teal)]/10"
+              title={`Intelligence Readiness Report v${READINESS_REPORT_VERSION} — generated from live diagnostics`}
+            >
+              <Download className="h-3.5 w-3.5" />
+              Readiness Report (PDF)
+            </button>
+          ) : null}
           <Link
             to="/admin/provider-health"
             className="inline-flex items-center gap-1 text-[11px] font-semibold text-[color:var(--color-teal)]"
@@ -90,6 +114,13 @@ export function IntelligenceReadinessCard({
         <Group dot="🔴" title="Awaiting Credentials" names={readiness.awaitingConfiguration} />
         <Group dot="⚫" title="Offline" names={readiness.offline} />
       </div>
+
+      {exported ? (
+        <p className="mt-3 text-[11px] text-slate">
+          Downloaded <span className="type-mono text-foreground">{exported}</span> — generated from
+          the live diagnostic timestamped above.
+        </p>
+      ) : null}
     </section>
   );
 }
