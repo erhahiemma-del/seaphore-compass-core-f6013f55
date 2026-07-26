@@ -179,6 +179,9 @@ function CopilotOpsPage() {
 
   const [text, setText] = useState("");
   const [stage, setStage] = useState<Stage>("idle");
+  // Epoch ms of the current run — powers the elapsed-time readout so the
+  // officer always knows the pipeline is still working.
+  const [runStartedAt, setRunStartedAt] = useState<number | null>(null);
   const [briefing, setBriefing] = useState<AdaptiveBriefingData | null>(null);
   const [uipId, setUipId] = useState<string | null>(null);
 
@@ -442,6 +445,10 @@ function CopilotOpsPage() {
     requestAnimationFrame(() => {
       workspaceScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
     });
+    // Show progress the instant the officer submits — no silent gap before
+    // the mutation's first stage transition lands.
+    setRunStartedAt(Date.now());
+    setStage("classifying");
     mutation.mutate(submitted);
   }
 
@@ -718,7 +725,10 @@ function CopilotOpsPage() {
                       Query
                     </p>
                     <p className="mb-4 text-sm text-foreground">{mutation.variables ?? ""}</p>
-                    <StreamingStages activeIndex={stageIndex(stage)} />
+                    <StreamingStages
+                      activeIndex={stageIndex(stage)}
+                      startedAt={runStartedAt ?? undefined}
+                    />
                   </div>
                 ) : null}
 
