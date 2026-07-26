@@ -60,6 +60,7 @@ import { Route as ApiPublicWorkflowsRouteImport } from './routes/api/public/work
 import { Route as ApiInvestigationIdRouteImport } from './routes/api/investigation/$id'
 import { Route as ApiEvidenceIdRouteImport } from './routes/api/evidence/$id'
 import { Route as ApiEntityIdRouteImport } from './routes/api/entity/$id'
+import { Route as ApiCopilotTranscribeRouteImport } from './routes/api/copilot/transcribe'
 import { Route as ApiCopilotQueryRouteImport } from './routes/api/copilot/query'
 import { Route as ApiPublicHooksMibcTickRouteImport } from './routes/api/public/hooks/mibc-tick'
 import { Route as ApiPublicDevSeedRoleRouteImport } from './routes/api/public/dev/seed-role'
@@ -319,6 +320,11 @@ const ApiEntityIdRoute = ApiEntityIdRouteImport.update({
   path: '/api/entity/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCopilotTranscribeRoute = ApiCopilotTranscribeRouteImport.update({
+  id: '/api/copilot/transcribe',
+  path: '/api/copilot/transcribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCopilotQueryRoute = ApiCopilotQueryRouteImport.update({
   id: '/api/copilot/query',
   path: '/api/copilot/query',
@@ -382,6 +388,7 @@ export interface FileRoutesByFullPath {
   '/share/': typeof ShareIndexRoute
   '/workspace/': typeof WorkspaceIndexRoute
   '/api/copilot/query': typeof ApiCopilotQueryRoute
+  '/api/copilot/transcribe': typeof ApiCopilotTranscribeRoute
   '/api/entity/$id': typeof ApiEntityIdRoute
   '/api/evidence/$id': typeof ApiEvidenceIdRoute
   '/api/investigation/$id': typeof ApiInvestigationIdRoute
@@ -435,6 +442,7 @@ export interface FileRoutesByTo {
   '/share': typeof ShareIndexRoute
   '/workspace': typeof WorkspaceIndexRoute
   '/api/copilot/query': typeof ApiCopilotQueryRoute
+  '/api/copilot/transcribe': typeof ApiCopilotTranscribeRoute
   '/api/entity/$id': typeof ApiEntityIdRoute
   '/api/evidence/$id': typeof ApiEvidenceIdRoute
   '/api/investigation/$id': typeof ApiInvestigationIdRoute
@@ -492,6 +500,7 @@ export interface FileRoutesById {
   '/share/': typeof ShareIndexRoute
   '/workspace/': typeof WorkspaceIndexRoute
   '/api/copilot/query': typeof ApiCopilotQueryRoute
+  '/api/copilot/transcribe': typeof ApiCopilotTranscribeRoute
   '/api/entity/$id': typeof ApiEntityIdRoute
   '/api/evidence/$id': typeof ApiEvidenceIdRoute
   '/api/investigation/$id': typeof ApiInvestigationIdRoute
@@ -550,6 +559,7 @@ export interface FileRouteTypes {
     | '/share/'
     | '/workspace/'
     | '/api/copilot/query'
+    | '/api/copilot/transcribe'
     | '/api/entity/$id'
     | '/api/evidence/$id'
     | '/api/investigation/$id'
@@ -603,6 +613,7 @@ export interface FileRouteTypes {
     | '/share'
     | '/workspace'
     | '/api/copilot/query'
+    | '/api/copilot/transcribe'
     | '/api/entity/$id'
     | '/api/evidence/$id'
     | '/api/investigation/$id'
@@ -659,6 +670,7 @@ export interface FileRouteTypes {
     | '/share/'
     | '/workspace/'
     | '/api/copilot/query'
+    | '/api/copilot/transcribe'
     | '/api/entity/$id'
     | '/api/evidence/$id'
     | '/api/investigation/$id'
@@ -707,6 +719,7 @@ export interface RootRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
   WorkspaceIndexRoute: typeof WorkspaceIndexRoute
   ApiCopilotQueryRoute: typeof ApiCopilotQueryRoute
+  ApiCopilotTranscribeRoute: typeof ApiCopilotTranscribeRoute
   ApiEntityIdRoute: typeof ApiEntityIdRoute
   ApiEvidenceIdRoute: typeof ApiEvidenceIdRoute
   ApiInvestigationIdRoute: typeof ApiInvestigationIdRoute
@@ -1076,6 +1089,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiEntityIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/copilot/transcribe': {
+      id: '/api/copilot/transcribe'
+      path: '/api/copilot/transcribe'
+      fullPath: '/api/copilot/transcribe'
+      preLoaderRoute: typeof ApiCopilotTranscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/copilot/query': {
       id: '/api/copilot/query'
       path: '/api/copilot/query'
@@ -1183,6 +1203,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
   WorkspaceIndexRoute: WorkspaceIndexRoute,
   ApiCopilotQueryRoute: ApiCopilotQueryRoute,
+  ApiCopilotTranscribeRoute: ApiCopilotTranscribeRoute,
   ApiEntityIdRoute: ApiEntityIdRoute,
   ApiEvidenceIdRoute: ApiEvidenceIdRoute,
   ApiInvestigationIdRoute: ApiInvestigationIdRoute,

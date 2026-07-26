@@ -24,8 +24,11 @@ import {
   Telescope,
   type LucideIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 
+import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { cn } from "@/lib/utils";
+
 
 const TYPING_EXAMPLES = [
   "Investigate MV Ocean Pearl ownership",
@@ -120,10 +123,40 @@ export function InvestigationLanding({
     ? TYPING_EXAMPLES.filter((e) => e.toLowerCase().includes(value.trim().toLowerCase())).slice(0, 3)
     : [];
 
+  // --- Voice dictation -------------------------------------------------
+  // The transcript is appended to whatever the officer already typed and is
+  // never auto-submitted: the officer reviews the words and decides.
+  const baselineRef = useRef("");
+  const valueRef = useRef(value);
+  valueRef.current = value;
+
+  const merge = (transcript: string) => {
+    const base = baselineRef.current.trimEnd();
+    onChange(base ? `${base} ${transcript}` : transcript);
+  };
+
+  const dictation = useVoiceDictation({
+    onPartial: merge,
+    onFinal: (text) => {
+      merge(text);
+      window.setTimeout(() => ref.current?.focus(), 0);
+    },
+    onError: (message) => toast.error(message),
+  });
+
+  const recording = dictation.state === "recording";
+  const transcribing = dictation.state === "transcribing";
+
+  function toggleDictation() {
+    if (dictation.state === "idle") baselineRef.current = valueRef.current;
+    dictation.toggle();
+  }
+
   function insert(prompt: string) {
     onChange(prompt);
     window.setTimeout(() => ref.current?.focus(), 0);
   }
+
 
   return (
     <div className="animate-in fade-in flex min-h-full flex-col items-center justify-start px-4 pt-6 pb-4 duration-500">
@@ -171,18 +204,51 @@ export function InvestigationLanding({
                   onSubmit(value);
                 }
               }}
-              placeholder={`Investigate ${subject}...`}
+              placeholder={
+                recording
+                  ? "Listening — speak your investigation..."
+                  : transcribing
+                    ? "Transcribing..."
+                    : `Investigate ${subject}...`
+              }
               aria-label="Investigation query"
               className="max-h-44 min-h-[48px] flex-1 resize-none bg-transparent text-[14px] leading-6 outline-none placeholder:text-muted-foreground disabled:opacity-60"
             />
             <div className="flex items-center gap-1 pb-0.5">
               <button
                 type="button"
-                aria-label="Voice input"
-                className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                onClick={toggleDictation}
+                disabled={pending || transcribing || !dictation.supported}
+                aria-label={recording ? "Stop dictation" : "Voice input"}
+                aria-pressed={recording}
+                title={
+                  dictation.supported
+                    ? recording
+                      ? "Stop dictation"
+                      : "Dictate your investigation"
+                    : "Voice input is not supported in this browser"
+                }
+                className={cn(
+                  "relative rounded-full p-2 transition-colors disabled:opacity-40",
+                  recording
+                    ? "bg-destructive/10 text-destructive"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                )}
               >
-                <Mic className="h-4 w-4" />
+                {transcribing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Mic className={cn("h-4 w-4", recording && "animate-pulse")} />
+                )}
+                {recording ? (
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 rounded-full ring-2 ring-destructive/40 transition-transform duration-100"
+                    style={{ transform: `scale(${1 + Math.min(dictation.level, 1) * 0.35})` }}
+                  />
+                ) : null}
               </button>
+
               <button
                 type="button"
                 aria-label="Attach evidence"
