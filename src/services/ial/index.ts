@@ -90,7 +90,15 @@ export function getIntelligenceAcquisitionManager(): ConnectorManager {
     } catch {
       // Fall back to simulators below.
     }
+    // Sprint EP-01 — production Evidence Providers (OpenSanctions).
+    // Registration only; the acquisition pipeline itself is unchanged.
+    try {
+      registerEvidenceProviders(mgr);
+    } catch {
+      /* provider registration must never block the IAL */
+    }
   }
+
 
   if (mode === "simulation" || mode === "hybrid") {
     if (!mgr.listConnectors().some((c) => c.id === "ais")) mgr.register(new SimulatedAisConnector());
