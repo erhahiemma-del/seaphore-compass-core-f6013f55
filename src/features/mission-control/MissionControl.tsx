@@ -149,7 +149,8 @@ function Ribbon() {
               icon={Icon}
               onOpen={() =>
                 handoff({
-                  target: kpi.handoff,
+                  target: KPI_HANDOFF_OVERRIDE[kpi.key] ?? kpi.handoff,
+
                   context: { fromStage: "Monitor", fromRoute: "/" },
                 })
               }
