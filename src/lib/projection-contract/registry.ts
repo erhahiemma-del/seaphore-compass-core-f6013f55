@@ -1452,7 +1452,7 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
       surface: "Copilot answers citing cargo relationships; Cargo Knowledge Graph panel",
       location: "src/features/cargo-workspace/CargoGraphPanel.tsx",
       component: "src/services/cargo-graph/facade.ts",
-      interaction: "copilot-answer",
+      interaction: "drill-in",
     },
     reviewedAt: "2026-07-26",
   },
