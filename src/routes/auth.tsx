@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { getIntelligenceMetrics } from "@/lib/intelligence-metrics.functions";
+import { getIntelligenceCoverage } from "@/lib/intelligence-coverage.functions";
+import { KPI_STATE_META } from "@/lib/intelligence/coverage-model";
 import {
   Anchor,
   ArrowRight,
@@ -201,9 +202,9 @@ function AuthPage() {
   const [submitting, setSubmitting] = useState(false);
   const [devLoading, setDevLoading] = useState<RoleKey | null>(null);
   const [mfa, setMfa] = useState<{ factorId: string; factorName: string } | null>(null);
-  const { data: intelligenceMetrics } = useQuery({
-    queryKey: ["intelligence-metrics"],
-    queryFn: () => getIntelligenceMetrics(),
+  const { data: coverage } = useQuery({
+    queryKey: ["intelligence-coverage"],
+    queryFn: () => getIntelligenceCoverage(),
     staleTime: 60_000,
   });
 
@@ -444,8 +445,11 @@ function AuthPage() {
           <div className="mt-8 grid grid-cols-3 gap-3 xl:grid-cols-6 xl:gap-3">
             {KPI_CARDS.map((k) => {
               const Icon = k.icon;
-              const live = intelligenceMetrics?.[k.metricKey];
-              const value = live?.display ?? k.fallback;
+              // DIAG-02: never show a bare "—"; show the honest coverage state.
+              const cov = coverage?.kpis.find((c) => c.key === k.metricKey);
+              const isNumber = (cov?.value ?? null) !== null;
+              const value = cov ? cov.display : k.fallback;
+              const dot = cov ? KPI_STATE_META[cov.state].dot : "";
               const valueColor = k.tone === "red" ? "text-[#FF6B6B]" : "text-white";
               return (
                 <div
@@ -458,7 +462,15 @@ function AuthPage() {
                       k.tone === "red" ? "text-[#FF6B6B]" : "text-[#10E5C4]",
                     )}
                   />
-                  <div className={cn("text-[20px] font-bold leading-none", valueColor)}>
+                  <div
+                    className={cn(
+                      "font-bold leading-tight",
+                      isNumber ? "text-[20px]" : "text-[11px]",
+                      valueColor,
+                    )}
+                    title={cov?.stateDetail}
+                  >
+                    {dot ? <span aria-hidden className="mr-1">{dot}</span> : null}
                     {value}
                   </div>
                   <div
