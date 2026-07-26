@@ -56,6 +56,11 @@ export const APPROVED_LEGACY_API: ReadonlyArray<string> = [
   "constructor",
   "authenticate", // Connector contract
   "lookup", // Connector contract
+  // Capability-scoped entry points that predate the freeze. They are thin
+  // aliases over search()/lookup() and add no new architectural surface.
+  "acquire",
+  "supports",
+  "observe",
 ];
 
 /** Provider validation outcome — thin wrapper over `validateRecords`. */

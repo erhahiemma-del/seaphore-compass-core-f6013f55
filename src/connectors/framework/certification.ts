@@ -148,6 +148,11 @@ export function providerClassBody(source: string, className?: string): string {
   return (match ?? []).join("\n");
 }
 
+/** Strip block and line comments so prose never trips a code scan. */
+export function stripComments(source: string): string {
+  return source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+}
+
 /** Public method names declared in a provider class (TS visibility aware). */
 export function publicMethodsFromSource(source: string, className?: string): string[] {
   const body = providerClassBody(source, className) || source;
@@ -264,11 +269,14 @@ export function certifyProvider(
       detail: "provider source not supplied to the certifier",
     });
   } else {
+    // Comments document the prohibitions themselves ("must not call
+    // registerUip()"), so forbidden patterns are matched against code only.
+    const code = stripComments(source);
     for (const c of REQUIRED_SOURCE_PATTERNS) {
-      add(c.id, c.label, c.pattern.test(source), `${c.label} — not found in provider source`);
+      add(c.id, c.label, c.pattern.test(code), `${c.label} — not found in provider source`);
     }
     for (const c of FORBIDDEN_SOURCE_PATTERNS) {
-      add(c.id, c.label, !c.pattern.test(source), `${c.label} — prohibited pattern found`);
+      add(c.id, c.label, !c.pattern.test(code), `${c.label} — prohibited pattern found`);
     }
     const allowed = new Set<string>([...FROZEN_PROVIDER_API, ...APPROVED_LEGACY_API]);
     const extra = publicMethodsFromSource(source, opts.className).filter((m) => !allowed.has(m));
