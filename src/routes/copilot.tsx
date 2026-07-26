@@ -218,14 +218,21 @@ function CopilotOpsPage() {
   }, []);
 
   // Keep the persisted run in step with the visible stage so a refresh mid-run
-  // restores the progress card at the stage the officer last saw.
+  // restores the progress card at the stage the officer last saw. The first
+  // pass is skipped so it cannot wipe a run waiting to be resumed.
+  const stageSyncReady = useRef(false);
   useEffect(() => {
+    if (!stageSyncReady.current) {
+      stageSyncReady.current = true;
+      return;
+    }
     if (stage === "classifying" || stage === "retrieving" || stage === "reasoning" || stage === "rendering") {
       useCopilotRunStore.getState().setStage(stage);
     } else {
       useCopilotRunStore.getState().clear();
     }
   }, [stage]);
+
 
 
   // Monotonic run token. Cancelling bumps it, so any results still in flight
