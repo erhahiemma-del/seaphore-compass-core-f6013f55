@@ -31,6 +31,8 @@ import { stableHash } from "@/services/ial/hash";
 import { normalizeRecord } from "@/services/ial/normalizer";
 import { validateRecords } from "@/services/ial/validator";
 import type { Connector, ConnectorCapability } from "@/services/ial/connectors/base";
+import { EVIDENCE_PROVIDER_SPEC_VERSION } from "@/connectors/framework/spec";
+import type { EvidenceProviderV1, ProviderValidation } from "@/connectors/framework/spec";
 import type {
   AcquisitionQuery,
   ConnectorHealth,
