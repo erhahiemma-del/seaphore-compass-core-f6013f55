@@ -598,14 +598,30 @@ export function InvestigationLanding({
                       <RotateCw className="h-3 w-3" />
                     </button>
                   ) : null}
-                  <button
-                    type="button"
-                    aria-label={`Remove ${a.name}`}
-                    onClick={() => void files.remove(a.id)}
-                    className="relative rounded-full p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
+                  {a.status === "UPLOADING" ? (
+                    <button
+                      type="button"
+                      data-testid="attachment-cancel"
+                      aria-label={`Cancel upload of ${a.name}`}
+                      title="Cancel this upload and remove the file"
+                      onClick={() => {
+                        files.cancel(a.id);
+                        toast.info("Upload cancelled", { description: a.name });
+                      }}
+                      className="relative rounded-full p-0.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      aria-label={`Remove ${a.name}`}
+                      onClick={() => void files.remove(a.id)}
+                      className="relative rounded-full p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
                 </span>
               ))}
               <span className="self-center text-[10px] uppercase tracking-wider text-muted-foreground/70">

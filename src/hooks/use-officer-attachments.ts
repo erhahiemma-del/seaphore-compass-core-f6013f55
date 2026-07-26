@@ -124,6 +124,8 @@ export interface UseOfficerAttachments {
   uploading: boolean;
   add: (files: FileList | File[]) => Promise<AddResult>;
   retry: (id: string) => Promise<void>;
+  /** Abort an in-flight upload and drop the file from the list. */
+  cancel: (id: string) => void;
   remove: (id: string) => Promise<void>;
   clear: () => void;
 }
@@ -137,9 +139,12 @@ function putWithProgress(
   file: File,
   contentType: string,
   onProgress: (pct: number) => void,
+  /** Receives the request so the officer can abort it mid-transfer. */
+  onStart?: (xhr: XMLHttpRequest) => void,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
+    onStart?.(xhr);
     xhr.open("PUT", url, true);
     xhr.setRequestHeader("Content-Type", contentType);
     xhr.upload.onprogress = (e) => {
@@ -162,6 +167,10 @@ export function useOfficerAttachments(options?: {
   const onError = options?.onError;
   /** Originals kept in memory so a failed upload can be retried as-is. */
   const sources = useRef(new Map<string, File>());
+  /** In-flight requests, keyed by attachment id, so uploads can be aborted. */
+  const inflight = useRef(new Map<string, XMLHttpRequest>());
+  /** Ids the officer cancelled — these must not resurface as errors. */
+  const cancelled = useRef(new Set<string>());
 
   const patch = useCallback((id: string, next: Partial<AttachmentItem>) => {
     setItems((prev) => prev.map((a) => (a.id === id ? { ...a, ...next } : a)));
@@ -179,7 +188,15 @@ export function useOfficerAttachments(options?: {
           throw new Error(signed.error?.message ?? "Could not start the upload.");
         }
         // storage-js returns an absolute signed URL.
-        await putWithProgress(signed.data.signedUrl, file, contentType, (pct) => patch(id, { progress: pct }));
+        if (cancelled.current.has(id)) return;
+        await putWithProgress(
+          signed.data.signedUrl,
+          file,
+          contentType,
+          (pct) => patch(id, { progress: pct }),
+          (xhr) => inflight.current.set(id, xhr),
+        );
+        inflight.current.delete(id);
         patch(id, {
           status: "UPLOADED",
           progress: 100,
@@ -187,6 +204,12 @@ export function useOfficerAttachments(options?: {
           error: undefined,
         });
       } catch (e) {
+        inflight.current.delete(id);
+        // A deliberate cancellation is not a failure: the row is already gone.
+        if (cancelled.current.has(id)) {
+          cancelled.current.delete(id);
+          return;
+        }
         const message = e instanceof Error ? e.message : "Upload failed.";
         console.error("[Attachments] upload failed", e);
         // The row stays in the list in ERROR state: the officer retries or
@@ -299,6 +322,22 @@ export function useOfficerAttachments(options?: {
     [items, onError, upload],
   );
 
+  /**
+   * Stop an upload mid-transfer. The request is aborted, the file is removed
+   * from the list, and nothing is left behind in storage.
+   */
+  const cancel = useCallback((id: string) => {
+    cancelled.current.add(id);
+    inflight.current.get(id)?.abort();
+    inflight.current.delete(id);
+    sources.current.delete(id);
+    setItems((prev) => {
+      const target = prev.find((a) => a.id === id);
+      if (target?.previewUrl) URL.revokeObjectURL(target.previewUrl);
+      return prev.filter((a) => a.id !== id);
+    });
+  }, []);
+
   const remove = useCallback(async (id: string) => {
     let target: AttachmentItem | undefined;
     setItems((prev) => {
@@ -315,6 +354,11 @@ export function useOfficerAttachments(options?: {
   }, []);
 
   const clear = useCallback(() => {
+    for (const [id, xhr] of inflight.current) {
+      cancelled.current.add(id);
+      xhr.abort();
+    }
+    inflight.current.clear();
     sources.current.clear();
     setItems((prev) => {
       for (const a of prev) if (a.previewUrl) URL.revokeObjectURL(a.previewUrl);
@@ -332,6 +376,6 @@ export function useOfficerAttachments(options?: {
 
   const uploading = items.some((a) => a.status === "UPLOADING");
 
-  return { attachments, items, uploading, add, retry, remove, clear };
+  return { attachments, items, uploading, add, retry, cancel, remove, clear };
 }
 
