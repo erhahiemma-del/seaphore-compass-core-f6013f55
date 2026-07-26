@@ -34,14 +34,33 @@ architecture frozen.
 | Bill of Lading | `cargo` | `cargo:bol:{carrierScac}:{bolNo}` | bolNo, carrier, shipper, consignee |
 | Container | `cargo` | `cargo:container:{isoUnitNo}` | ISO 6346 unit no (11 char, check-digit valid) |
 | Cargo Item | `cargo` | `cargo:item:{bolNo}:{lineNo}` | lineNo, description, quantity, weightKg |
-| Commodity | `cargo` | `cargo:commodity:hs:{hsCode}` | HS code (6–10 digit) |
+| Commodity | `cargo` | `cargo:commodity:{hsCode}:{variantKey}` | commodity description + governing HS code |
+| HS Code | `cargo` | `cargo:hs:{edition}:{hsCode}` | HS code (6–10 digit), nomenclature edition (e.g. `hs2022`), duty rate band |
 | Customs Declaration | `cargo` | `cargo:declaration:{customsAuthority}:{sadNo}` | sadNo, regime, declarant |
 | Revenue Assessment | `cargo` | `cargo:assessment:{authority}:{assessmentNo}` | assessedValue, dutyPayable, currency |
 | Voyage | `voyage` | `voyage:{imo}:{departureIso}` | vessel IMO, departure, arrival |
+| Port Call | `voyage` | `voyage:portcall:{imo}:{unlocode}:{atdOrEtaIso}` | vessel IMO, UN/LOCODE, arrival + departure timestamps |
 | Vessel | `vessel` | `vessel:imo:{imo}` | IMO 7-digit |
 | Port | `port` | `port:unlocode:{unlocode}` | UN/LOCODE |
-| Shipper / Consignee / Carrier / Agent | `company` | `company:{registry}:{regNo}` | name + registry id |
+| Shipping Line (carrier) | `company` | `company:scac:{scac}` | SCAC or carrier registry id, legal name |
+| Shipper | `company` | `company:{registry}:{regNo}` | name + registry id (role `shipper`) |
+| Consignee | `company` | `company:{registry}:{regNo}` | name + registry id (role `consignee`) |
+| Agent / NVOCC / Freight forwarder | `company` | `company:{registry}:{regNo}` | name + registry id + role |
 | Declarant / Master (natural person) | `person` | `person:{registry}:{id}` | name + role |
+
+**HS Code vs Commodity.** They are separate entities on purpose: an HS Code is a *nomenclature
+node* (stable, edition-scoped, carries the duty rate) while a Commodity is the *thing actually
+shipped* (described in free text by the declarant). Misdeclaration is precisely a wrong edge
+between the two, so the model must be able to represent that edge as wrong.
+
+**Port Call vs Voyage.** A Port Call is a leg of a Voyage, keyed to one port and one arrival. It is
+the join point where container gate events become attributable to a voyage and a manifest.
+
+**Shipping Line vs Shipper/Consignee.** All three are `company`; the distinction is the
+relationship role (`rel.carrier` / `rel.shipper` / `rel.consignee`), never a different entity kind.
+The same legal entity may hold different roles across shipments, and the model must not collapse
+that.
+
 
 **Canonical units and formats (inherited, non-negotiable):** SI units (kg, m³, m), ISO 8601 UTC
 timestamps, ISO 3166 country codes, ISO 4217 currency codes, UN/LOCODE ports, 7-digit IMO,
