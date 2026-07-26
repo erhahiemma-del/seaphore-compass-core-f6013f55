@@ -33,6 +33,7 @@ import { Route as DecideRouteImport } from './routes/decide'
 import { Route as CopilotRouteImport } from './routes/copilot'
 import { Route as ComplianceRouteImport } from './routes/compliance'
 import { Route as CommandCenterRouteImport } from './routes/command-center'
+import { Route as CargoWorkspaceRouteImport } from './routes/cargo-workspace'
 import { Route as CargoRouteImport } from './routes/cargo'
 import { Route as BriefingCentreRouteImport } from './routes/briefing-centre'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -184,6 +185,11 @@ const ComplianceRoute = ComplianceRouteImport.update({
 const CommandCenterRoute = CommandCenterRouteImport.update({
   id: '/command-center',
   path: '/command-center',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CargoWorkspaceRoute = CargoWorkspaceRouteImport.update({
+  id: '/cargo-workspace',
+  path: '/cargo-workspace',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CargoRoute = CargoRouteImport.update({
@@ -353,6 +359,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/briefing-centre': typeof BriefingCentreRoute
   '/cargo': typeof CargoRoute
+  '/cargo-workspace': typeof CargoWorkspaceRoute
   '/command-center': typeof CommandCenterRoute
   '/compliance': typeof ComplianceRoute
   '/copilot': typeof CopilotRoute
@@ -411,6 +418,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/briefing-centre': typeof BriefingCentreRoute
   '/cargo': typeof CargoRoute
+  '/cargo-workspace': typeof CargoWorkspaceRoute
   '/command-center': typeof CommandCenterRoute
   '/compliance': typeof ComplianceRoute
   '/copilot': typeof CopilotRoute
@@ -467,6 +475,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/briefing-centre': typeof BriefingCentreRoute
   '/cargo': typeof CargoRoute
+  '/cargo-workspace': typeof CargoWorkspaceRoute
   '/command-center': typeof CommandCenterRoute
   '/compliance': typeof ComplianceRoute
   '/copilot': typeof CopilotRoute
@@ -527,6 +536,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/briefing-centre'
     | '/cargo'
+    | '/cargo-workspace'
     | '/command-center'
     | '/compliance'
     | '/copilot'
@@ -585,6 +595,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/briefing-centre'
     | '/cargo'
+    | '/cargo-workspace'
     | '/command-center'
     | '/compliance'
     | '/copilot'
@@ -640,6 +651,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/briefing-centre'
     | '/cargo'
+    | '/cargo-workspace'
     | '/command-center'
     | '/compliance'
     | '/copilot'
@@ -699,6 +711,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   BriefingCentreRoute: typeof BriefingCentreRoute
   CargoRoute: typeof CargoRoute
+  CargoWorkspaceRoute: typeof CargoWorkspaceRoute
   CommandCenterRoute: typeof CommandCenterRoute
   ComplianceRoute: typeof ComplianceRoute
   CopilotRoute: typeof CopilotRoute
@@ -911,6 +924,13 @@ declare module '@tanstack/react-router' {
       path: '/command-center'
       fullPath: '/command-center'
       preLoaderRoute: typeof CommandCenterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cargo-workspace': {
+      id: '/cargo-workspace'
+      path: '/cargo-workspace'
+      fullPath: '/cargo-workspace'
+      preLoaderRoute: typeof CargoWorkspaceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cargo': {
@@ -1191,6 +1211,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   BriefingCentreRoute: BriefingCentreRoute,
   CargoRoute: CargoRoute,
+  CargoWorkspaceRoute: CargoWorkspaceRoute,
   CommandCenterRoute: CommandCenterRoute,
   ComplianceRoute: ComplianceRoute,
   CopilotRoute: CopilotRoute,
