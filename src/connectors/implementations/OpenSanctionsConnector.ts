@@ -119,6 +119,14 @@ export interface OpenSanctionsConnectorOptions {
 
 export class OpenSanctionsConnector implements Connector {
   readonly id: ConnectorId = OPEN_SANCTIONS_METADATA.id;
+
+  /** Sprint EP-01A — live provider metadata used by the Provider Resolver. */
+  readonly provider = {
+    providerType: "LIVE" as const,
+    priority: 100,
+    environment: "both" as const,
+    enabled: true,
+  };
   readonly displayName = OPEN_SANCTIONS_METADATA.name;
   readonly capabilities: ReadonlyArray<ConnectorCapability> = [
     "SANCTIONS",

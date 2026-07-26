@@ -3,6 +3,7 @@
  * this shape. The OIE never sees a connector directly; it interacts with
  * the IAL only through an `EvidencePackage`.
  */
+import type { ProviderMetadata } from "./provider-metadata";
 import type {
   AcquisitionQuery,
   ConnectorHealth,
@@ -41,6 +42,15 @@ export interface Connector {
    * capabilities is invisible to capability-based selection.
    */
   readonly capabilities?: ReadonlyArray<ConnectorCapability>;
+
+  /**
+   * Sprint EP-01A — Provider metadata. Descriptive only; the Provider
+   * Resolver (`./resolver.ts`) turns it into an activation decision so
+   * exactly ONE provider serves a capability. Omitted metadata defaults
+   * to `{ providerType: "LIVE", priority: 0, environment: "both",
+   * enabled: true }`.
+   */
+  readonly provider?: Partial<ProviderMetadata>;
 
   /** One-time setup (open a pool, resolve an OAuth token, etc.). */
   connect(): Promise<void>;
