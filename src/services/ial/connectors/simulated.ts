@@ -24,6 +24,13 @@ interface SimOptions {
 }
 
 abstract class SimConnector implements Connector {
+  /** Sprint EP-01A — every simulator is a development-only provider. */
+  readonly provider = {
+    providerType: "SIMULATOR" as const,
+    priority: 10,
+    environment: "development" as const,
+    enabled: true,
+  };
   abstract readonly id: ConnectorId;
   abstract readonly displayName: string;
   protected readonly opts: SimOptions;
