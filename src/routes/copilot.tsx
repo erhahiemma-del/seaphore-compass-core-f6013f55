@@ -592,11 +592,12 @@ function CopilotOpsPage() {
                         Active
                       </span>
                       <span className="text-muted-foreground">
-                        Current Mission ·{" "}
+                        Mission ·{" "}
                         <span className="font-medium text-foreground">
-                          {briefing?.query ? "Intelligence briefing" : "Awaiting query"}
+                          {briefing?.query ? "Intelligence briefing" : "Awaiting Investigation"}
                         </span>
                       </span>
+
                     </div>
                   </div>
                 </div>
