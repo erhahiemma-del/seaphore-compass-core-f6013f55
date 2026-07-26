@@ -193,6 +193,7 @@ export function useOfficerAttachments(options?: {
         onError?.("Sign in to attach documents to an investigation.");
         return;
       }
+      const uploaderLabel = auth.user?.email ?? userId;
 
       for (const file of list) {
         const ext = extensionOf(file.name);
@@ -221,11 +222,14 @@ export function useOfficerAttachments(options?: {
             bucket,
             path,
             uploadedAt: new Date().toISOString(),
+            uploadedBy: userId,
+            uploadedByLabel: uploaderLabel,
             kind: isManifest ? "MANIFEST" : "DOCUMENT",
             status: "UPLOADING",
             progress: 0,
           },
         ]);
+
 
         await upload(id, file, bucket, path);
       }
