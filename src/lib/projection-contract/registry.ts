@@ -1245,6 +1245,36 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: "2026-07-26",
   },
+  {
+    id: "mig.dashboard-revenue-projection",
+    name: "Mission Control — Revenue Assurance (Canonical UIP projection)",
+    producer: "CAPABILITY",
+    description:
+      "Sprint MIG-01 — the Mission Control Revenue Assurance panel is a pure projection of the Canonical UIP. Findings come from capability.revenue-leakage-detection scanning uip.rawEvidence; no mock constants remain. When no UIP or no evidence exists, the panel names the operational state instead of showing a number.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Mission Control · Revenue Assurance",
+      location: "src/features/mission-control/MissionControl.tsx",
+      component: "src/lib/intelligence/dashboard-projection.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-07-26",
+  },
+  {
+    id: "mig.dashboard-manifest-projection",
+    name: "Mission Control — Manifest Intelligence (Canonical UIP projection)",
+    producer: "IFE",
+    description:
+      "Sprint MIG-01 — the Mission Control Manifest Intelligence panel counts cargo, voyage and port-call evidence directly from the Canonical UIP rawEvidence, with declared-vs-actual mismatches. Legacy MANIFEST_METRICS constants removed.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Mission Control · Manifest Intelligence",
+      location: "src/features/mission-control/MissionControl.tsx",
+      component: "src/lib/intelligence/dashboard-projection.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-07-26",
+  },
 ];
 
 
