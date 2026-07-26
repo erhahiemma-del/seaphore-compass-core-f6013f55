@@ -126,16 +126,16 @@ export function InvestigationLanding({
   }
 
   return (
-    <div className="animate-in fade-in flex min-h-full flex-col items-center justify-center px-4 py-6 duration-500">
+    <div className="animate-in fade-in flex min-h-full flex-col items-center justify-center px-4 py-4 duration-500">
       <div className="w-full max-w-2xl">
         <div className="flex flex-col items-center text-center">
           <span
             aria-hidden
-            className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[color:var(--color-teal)]/10 text-[color:var(--color-teal)]"
+            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[color:var(--color-teal)]/10 text-[color:var(--color-teal)]"
           >
-            <Telescope className="h-7 w-7" />
+            <Telescope className="h-6 w-6" />
           </span>
-          <h2 className="mt-4 text-[22px] font-semibold tracking-tight text-foreground">
+          <h2 className="mt-3 text-[20px] font-semibold tracking-tight text-foreground">
             What would you like to investigate?
           </h2>
           <p className="mt-1.5 max-w-lg text-[13px] text-muted-foreground">
@@ -149,7 +149,7 @@ export function InvestigationLanding({
             e.preventDefault();
             onSubmit(value);
           }}
-          className="mt-7"
+          className="mt-5"
         >
           <div
             className={cn(
@@ -238,7 +238,7 @@ export function InvestigationLanding({
         </form>
 
         {/* Quick start — six actions, no descriptions */}
-        <div className="mt-8">
+        <div className="mt-6">
           <p className="mb-2.5 text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70">
             Quick Start
           </p>
