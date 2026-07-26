@@ -120,10 +120,40 @@ export function InvestigationLanding({
     ? TYPING_EXAMPLES.filter((e) => e.toLowerCase().includes(value.trim().toLowerCase())).slice(0, 3)
     : [];
 
+  // --- Voice dictation -------------------------------------------------
+  // The transcript is appended to whatever the officer already typed and is
+  // never auto-submitted: the officer reviews the words and decides.
+  const baselineRef = useRef("");
+  const valueRef = useRef(value);
+  valueRef.current = value;
+
+  const merge = (transcript: string) => {
+    const base = baselineRef.current.trimEnd();
+    onChange(base ? `${base} ${transcript}` : transcript);
+  };
+
+  const dictation = useVoiceDictation({
+    onPartial: merge,
+    onFinal: (text) => {
+      merge(text);
+      window.setTimeout(() => ref.current?.focus(), 0);
+    },
+    onError: (message) => toast.error(message),
+  });
+
+  const recording = dictation.state === "recording";
+  const transcribing = dictation.state === "transcribing";
+
+  function toggleDictation() {
+    if (dictation.state === "idle") baselineRef.current = valueRef.current;
+    dictation.toggle();
+  }
+
   function insert(prompt: string) {
     onChange(prompt);
     window.setTimeout(() => ref.current?.focus(), 0);
   }
+
 
   return (
     <div className="animate-in fade-in flex min-h-full flex-col items-center justify-start px-4 pt-6 pb-4 duration-500">
