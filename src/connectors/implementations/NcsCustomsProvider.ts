@@ -199,10 +199,10 @@ export class NcsCustomsProvider extends BaseEvidenceProvider {
       cacheTtlMs: opts.cacheTtlMs ?? NCS_CUSTOMS_CACHE_TTL_MS,
     });
     this.fetchImpl = opts.fetchImpl ?? ((...args) => fetch(...args));
-    this.token = opts.credential ?? readFirstProviderCredential(TOKEN_ENV);
+    this.token = opts.credential ?? readFirstProviderCredential(TOKEN_ENV)?.value ?? null;
     this.baseUrl =
       opts.baseUrl ??
-      BASE_URL_ENV.map((n) => readProviderCredential(n)).find((v) => !!v) ??
+      BASE_URL_ENV.map((n) => readProviderCredential(n)).find((v) => !!v)?.value ??
       null;
   }
 
