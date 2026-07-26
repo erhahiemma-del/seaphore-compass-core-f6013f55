@@ -123,14 +123,8 @@ const RECENT: Investigation[] = [
   { id: "inv-imo-942", title: "Unusual voyage pattern — IMO 942…", subtitle: "Vessel", when: "15:22" },
 ];
 
-const SUGGESTED_QUERIES = [
-  "Investigate MV Ocean Pearl",
-  "Detect revenue leakage this week",
-  "Compare arrivals: Tin Can vs Apapa",
-  "Show high-risk vessels in 30 days",
-  "Screen operator Blue Horizon Shipping",
-  "Generate executive briefing",
-];
+
+
 
 interface OrchestrationModule {
   key: string;
