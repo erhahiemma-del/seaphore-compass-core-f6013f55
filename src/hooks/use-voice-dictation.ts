@@ -12,15 +12,107 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export type DictationState = "idle" | "recording" | "transcribing";
 
+/** Why dictation is unavailable or stopped — drives the officer-facing copy. */
+export type DictationIssueCode =
+  | "unsupported-browser"
+  | "insecure-context"
+  | "permission-denied"
+  | "permission-dismissed"
+  | "no-microphone"
+  | "microphone-busy"
+  | "empty-recording"
+  | "no-speech"
+  | "transcription-failed";
+
+export interface DictationIssue {
+  code: DictationIssueCode;
+  /** One-line headline. */
+  title: string;
+  /** What happened, in plain language. */
+  detail: string;
+  /** What the officer can do about it. Always offers a way forward. */
+  hint: string;
+  /** True when typing is the only remaining route (mic cannot be used at all). */
+  blocking: boolean;
+}
+
+export type DictationPermission = "unknown" | "prompt" | "granted" | "denied";
+
 interface Options {
   /** Called with each growing transcript while streaming (interim). */
   onPartial?: (text: string) => void;
   /** Called once with the final transcript. */
   onFinal?: (text: string) => void;
-  onError?: (message: string) => void;
+  /** Called with a structured, explainable failure. */
+  onError?: (issue: DictationIssue) => void;
   /** Hard cap so a forgotten open mic can't grow unbounded. */
   maxSeconds?: number;
 }
+
+const TYPE_FALLBACK = "You can type the investigation instead — nothing is lost.";
+
+const ISSUES: Record<DictationIssueCode, Omit<DictationIssue, "code">> = {
+  "unsupported-browser": {
+    title: "Voice input isn't available in this browser",
+    detail: "This browser doesn't expose microphone capture to the Copilot.",
+    hint: `Try Chrome, Edge or Safari. ${TYPE_FALLBACK}`,
+    blocking: true,
+  },
+  "insecure-context": {
+    title: "Voice input needs a secure connection",
+    detail: "Browsers only release the microphone over HTTPS or on localhost.",
+    hint: `Reopen Seaphore on its https:// address. ${TYPE_FALLBACK}`,
+    blocking: true,
+  },
+  "permission-denied": {
+    title: "Microphone access is blocked",
+    detail: "This browser has blocked Seaphore from using the microphone.",
+    hint: `Click the lock or camera icon in the address bar, set Microphone to Allow, then reload. ${TYPE_FALLBACK}`,
+    blocking: true,
+  },
+  "permission-dismissed": {
+    title: "Microphone permission wasn't granted",
+    detail: "The permission prompt was closed before access was allowed.",
+    hint: `Press the microphone button again and choose Allow. ${TYPE_FALLBACK}`,
+    blocking: false,
+  },
+  "no-microphone": {
+    title: "No microphone was found",
+    detail: "This device has no microphone the browser can reach.",
+    hint: `Connect a headset or microphone, then reload. ${TYPE_FALLBACK}`,
+    blocking: true,
+  },
+  "microphone-busy": {
+    title: "The microphone is in use",
+    detail: "Another application or browser tab is holding the microphone.",
+    hint: `Close the other call or recording, then try again. ${TYPE_FALLBACK}`,
+    blocking: false,
+  },
+  "empty-recording": {
+    title: "That recording was empty",
+    detail: "No audio reached the Copilot — the microphone may be muted.",
+    hint: "Check the mute switch and input level, then record again.",
+    blocking: false,
+  },
+  "no-speech": {
+    title: "No speech was detected",
+    detail: "The recording contained audio but no recognisable words.",
+    hint: "Speak a little closer to the microphone and try again.",
+    blocking: false,
+  },
+  "transcription-failed": {
+    title: "Transcription failed",
+    detail: "The transcription service could not process the recording.",
+    hint: `Try again in a moment. ${TYPE_FALLBACK}`,
+    blocking: false,
+  },
+};
+
+function buildIssue(code: DictationIssueCode, detail?: string): DictationIssue {
+  const base = ISSUES[code];
+  return { code, ...base, detail: detail ?? base.detail };
+}
+
 
 const TARGET_RATE = 16000;
 
