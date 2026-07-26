@@ -232,7 +232,9 @@ export function certifyProvider(
     );
   }
 
-  const failures = checks.filter((c) => c.status !== "PASS");
+  const failures = checks.filter((c) =>
+    opts.allowSkipped ? c.status === "FAIL" : c.status !== "PASS",
+  );
   return {
     providerId: id,
     specVersion: typeof p.specVersion === "string" ? p.specVersion : null,
