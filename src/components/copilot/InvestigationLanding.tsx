@@ -144,6 +144,19 @@ export function InvestigationLanding({
     return () => window.clearTimeout(id);
   }, [ref, pending]);
 
+  // The input is "idle" only while the officer has typed nothing, is not
+  // dictating and nothing is in flight — the only moment an attract cue is
+  // appropriate. Focus keeps the pulse (it is the invitation to type) but
+  // the first character removes it for good.
+  const [focused, setFocused] = useState(false);
+  const idle = !value && !recording && !transcribing && !pending;
+  const showTypewriter = idle;
+
+  const typedPlaceholder = useTypewriterPlaceholder({
+    phrases: [`Investigate ${subject}...`, ...TYPING_EXAMPLES.map((e) => `${e}...`)],
+    paused: !showTypewriter,
+  });
+
   const matches = value.trim()
     ? TYPING_EXAMPLES.filter((e) => e.toLowerCase().includes(value.trim().toLowerCase())).slice(0, 3)
     : [];
