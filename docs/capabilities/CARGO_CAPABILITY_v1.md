@@ -66,30 +66,34 @@ that.
 timestamps, ISO 3166 country codes, ISO 4217 currency codes, UN/LOCODE ports, 7-digit IMO,
 ISO 6346 container numbers, HS commodity codes.
 
-### Relationship graph
+### Entity relationships (canonical edge list)
 
-```text
-Voyage ──carried_by──► Vessel
-  │                      │
-  │ calls_at             │ calls_at
-  ▼                      ▼
-Port ◄──loading/discharge── Manifest
-              │
-              │ contains
-              ▼
-     Bill of Lading ──consigned_to──► Consignee (company)
-       │      │      ──shipped_by───► Shipper   (company)
-       │      │      ──carried_by───► Carrier   (company)
-       │      └──covers──► Container ──stows──► Cargo Item
-       │                                  │
-       │                                  └──classified_as──► Commodity (HS)
-       ▼
-  Customs Declaration ──assessed_by──► Revenue Assessment
-```
+| From | Edge | To | Cardinality | Carried as |
+| --- | --- | --- | --- | --- |
+| Voyage | `carried_by` | Vessel | n:1 | `rel.vessel` |
+| Voyage | `has_leg` | Port Call | 1:n | `rel.voyage` on the call |
+| Port Call | `occurs_at` | Port | n:1 | `rel.port` |
+| Manifest | `declared_for` | Voyage | n:1 | `rel.voyage` |
+| Manifest | `lodged_at` | Port | n:1 | `rel.portOfDischarge` |
+| Manifest | `contains` | Bill of Lading | 1:n | `rel.manifest` on the BoL |
+| Bill of Lading | `shipped_by` | Shipper (company) | n:1 | `rel.shipper` |
+| Bill of Lading | `consigned_to` | Consignee (company) | n:1 | `rel.consignee` |
+| Bill of Lading | `carried_by` | Shipping Line (company) | n:1 | `rel.carrier` |
+| Bill of Lading | `covers` | Container | 1:n | `rel.bol` on the container |
+| Container | `stows` | Cargo Item | 1:n | `rel.container` |
+| Container | `moved_at` | Port Call | n:n | `rel.portCall` on the gate event |
+| Cargo Item | `is_commodity` | Commodity | n:1 | `rel.commodity` |
+| Commodity | `classified_as` | HS Code | n:1 | `cargo.hsCode` + `rel.hsCode` |
+| Customs Declaration | `declares` | Bill of Lading | n:n | `rel.bol` |
+| Customs Declaration | `filed_by` | Declarant (person/company) | n:1 | `rel.declarant` |
+| Revenue Assessment | `assesses` | Customs Declaration | 1:1 | `rel.declaration` |
 
 Relationships are carried as canonical id references inside
 `NormalizedEvidence.fields` (`rel.*` namespace) — the MKG already ingests id references and needs
-no new edge type.
+no new edge type. A relationship never overrides provenance: an edge inherits the grade of the
+evidence record that asserted it, and two providers asserting the same edge is what produces
+`CORROBORATED`.
+
 
 ---
 
