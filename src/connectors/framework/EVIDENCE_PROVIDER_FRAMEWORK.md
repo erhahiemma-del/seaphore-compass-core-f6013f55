@@ -142,3 +142,33 @@ sources live *inside* one provider rather than as separate registrations.
 ---
 
 Evidence first. Explainable always. Officer decides.
+
+---
+
+## Evidence Provider Catalog (Sprint EP-MASTER)
+
+The catalog is the single source of truth for every integrated provider and is
+**derived, never hand-maintained**: `src/connectors/catalog.ts` reads identity,
+capabilities, spec version, provider type, environment, priority and cache TTL
+off the provider instances and re-runs certification on every build. Officers
+see it on **Provider Health → Evidence Provider Catalog**
+(`src/routes/admin.provider-health.tsx`).
+
+| Sprint | Provider | Capability | Auth | Cache TTL | Source |
+| --- | --- | --- | --- | --- | --- |
+| EP-01 | OpenSanctions *(reference)* | SANCTIONS, screening | none | 24h | OpenSanctions `/v3/search` |
+| EP-02 | OpenCorporates | OWNERSHIP, COMPANY_SCREENING, IDENTITY | `OPENCORPORATES_API_TOKEN` | 12h | OpenCorporates `/v0.4/companies/search` |
+| EP-03 | Equasis | IDENTITY, OWNERSHIP, VESSEL_SCREENING, COMPLIANCE | `EQUASIS_USERNAME` + `EQUASIS_PASSWORD` | 24h | Equasis restricted ship search |
+| EP-04 | IMO GISIS | IDENTITY, OWNERSHIP, COMPLIANCE | `IMO_GISIS_API_TOKEN` | 7d | IMO GISIS ship module |
+| EP-05 | Environmental Intelligence | ENVIRONMENTAL_INTELLIGENCE | none | 1h | Open-Meteo Marine (Source 1) |
+| EP-06 | Global Fishing Watch | POSITION, PORT_CALL, IDENTITY | `GFW_API_TOKEN` | 1h | GFW API v3 |
+| EP-07 | OFAC | SANCTIONS + screening | none | 24h | US Treasury SDN XML export |
+| EP-08 | UN Security Council | SANCTIONS, PERSON/COMPANY screening | none | 24h | UN consolidated XML export |
+
+**Provider Resolution is unchanged.** OpenSanctions remains the resolved
+SANCTIONS provider (priority 100); OFAC (90) and UNSC (80) are primary-source
+corroborators. Equasis (100) leads IDENTITY with IMO GISIS (90) as fallback.
+
+**Honesty rule for credentialed providers.** When a credential is absent the
+provider returns `ok: false` with an explicit error and zero records. It never
+simulates, infers or substitutes evidence.

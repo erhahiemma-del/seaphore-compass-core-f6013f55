@@ -500,6 +500,119 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     reviewedAt: REVIEWED,
   },
 
+  // ── Sprint EP-MASTER — Evidence Expansion Program (EP-02 … EP-08) ──
+  {
+    id: "ial.opencorporates-evidence-provider",
+    name: "OpenCorporates Evidence Provider",
+    producer: "IAL",
+    description:
+      "Sprint EP-02 — corporate registry evidence (company name, number, jurisdiction, type, status, incorporation/dissolution dates, registered address, evidenceUrl, rawHash) from OpenCorporates /v0.4/companies/search, cached 12h. Acquisition only: no beneficial-ownership inference, no identity resolution, no DB writes, no UIP creation.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Evidence Provenance · citation list (corporate registry records) and Ownership Centre sources",
+      location: "src/components/copilot/briefing/EvidenceProvenancePanel.tsx",
+      component: "src/connectors/implementations/OpenCorporatesProvider.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: REVIEWED,
+  },
+
+  {
+    id: "ial.equasis-evidence-provider",
+    name: "Equasis Evidence Provider",
+    producer: "IAL",
+    description:
+      "Sprint EP-03 — ship particulars, management and classification evidence (vesselName, imoNumber, mmsi, callSign, flagState, shipType, grossTonnage, deadweight, yearOfBuild, registeredOwner, ismManager, classificationSociety, rawHash) from Equasis, cached 24h. Account-gated: with no credentials configured the provider reports an explicit acquisition failure and never simulates particulars.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Evidence Provenance · citation list (ship particulars with source and observation time)",
+      location: "src/components/copilot/briefing/EvidenceProvenancePanel.tsx",
+      component: "src/connectors/implementations/EquasisProvider.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: REVIEWED,
+  },
+
+  {
+    id: "ial.imo-gisis-evidence-provider",
+    name: "IMO GISIS Evidence Provider",
+    producer: "IAL",
+    description:
+      "Sprint EP-04 — IMO registry evidence (vesselName, imoNumber, formerNames, flagState, flagRegistrationDate, shipType, grossTonnage, yearOfBuild, registeredOwner, operator, registryStatus, rawHash) from GISIS, cached 7d. Account-gated: absent credentials produce an explicit acquisition failure, never fabricated registry data.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Evidence Provenance · citation list (IMO registry records incl. former names and flag history)",
+      location: "src/components/copilot/briefing/EvidenceProvenancePanel.tsx",
+      component: "src/connectors/implementations/ImoGisisProvider.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: REVIEWED,
+  },
+
+  {
+    id: "ial.global-fishing-watch-evidence-provider",
+    name: "Global Fishing Watch Evidence Provider",
+    producer: "IAL",
+    description:
+      "Sprint EP-06 — AIS-derived identity and activity evidence (vesselName, imoNumber, mmsi, callSign, flagState, vesselType, gearTypes, first/lastTransmissionDate, gfwVesselId, rawHash) from Global Fishing Watch API v3, cached 1h. Observations are reported verbatim: the provider never labels behaviour dark/suspicious, never scores risk and never infers intent — interpretation belongs to the IFE/OIE.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Evidence Provenance · citation list (AIS observations) and Supporting Evidence · AIS continuity",
+      location: "src/components/copilot/briefing/EvidenceProvenancePanel.tsx",
+      component: "src/connectors/implementations/GlobalFishingWatchProvider.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: REVIEWED,
+  },
+
+  {
+    id: "ial.ofac-evidence-provider",
+    name: "OFAC Evidence Provider",
+    producer: "IAL",
+    description:
+      "Sprint EP-07 — primary-source US Treasury OFAC SDN designations (entityName, sdnType, sanctionLists, sanctionPrograms, aliases, countries, imoNumber, callSign, vesselFlag, vesselType, remarks, listPublishDate, evidenceUrl, rawHash) from Treasury's published export, cached 24h. Keyless. Corroborates OpenSanctions; asserts no match and scores no risk.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Evidence Provenance · citation list (OFAC SDN designations with programme and publish date)",
+      location: "src/components/copilot/briefing/EvidenceProvenancePanel.tsx",
+      component: "src/connectors/implementations/OfacProvider.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: REVIEWED,
+  },
+
+  {
+    id: "ial.un-security-council-evidence-provider",
+    name: "UN Security Council Evidence Provider",
+    producer: "IAL",
+    description:
+      "Sprint EP-08 — primary-source UN Security Council consolidated designations (entityName, sanctionLists, sanctionPrograms/unListType, unReferenceNumber, committee, startDate, aliases, countries, remarks, evidenceUrl, rawHash) from the UN's published consolidated XML, cached 24h. Keyless. Corroborates OpenSanctions; asserts no match and scores no risk.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Evidence Provenance · citation list (UN consolidated-list designations with reference number)",
+      location: "src/components/copilot/briefing/EvidenceProvenancePanel.tsx",
+      component: "src/connectors/implementations/UnSecurityCouncilProvider.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: REVIEWED,
+  },
+
+  {
+    id: "ial.evidence-provider-catalog",
+    name: "Evidence Provider Catalog",
+    producer: "IAL",
+    description:
+      "Sprint EP-MASTER — derived single source of truth for every integrated Evidence Provider: name, capabilities, specVersion, provider type, data sources, authentication requirement, cache TTL, live health status, live certification status, test coverage, last validation date, reference implementation flag and documentation link. Read-only projection: registers, caches and persists nothing.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Provider Health · Evidence Provider Catalog table",
+      location: "src/routes/admin.provider-health.tsx",
+      component: "src/connectors/catalog.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: REVIEWED,
+  },
+
   {
     id: "ial.provider-resolution",
     name: "Provider Resolution Strategy",
