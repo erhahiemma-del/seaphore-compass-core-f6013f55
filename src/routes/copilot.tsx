@@ -51,6 +51,8 @@ class CancelledRun extends Error {
 }
 
 import { AdaptiveBriefing } from "@/components/copilot/briefing";
+import { CargoDossierPanel } from "@/components/copilot/cargo/CargoDossierPanel";
+import { buildCargoDossier, type CargoDossier } from "@/services/copilot/cargo";
 import type {
   AdaptiveBriefingData,
   OverrideSubmission,
@@ -196,6 +198,10 @@ function CopilotOpsPage() {
   // officer always knows the pipeline is still working.
   const [runStartedAt, setRunStartedAt] = useState<number | null>(null);
   const [briefing, setBriefing] = useState<AdaptiveBriefingData | null>(null);
+  // SPRINT CAP-04 — cargo dossier for the current answer, plus the sticky
+  // cargo subject so follow-ups like "show related vessels" keep their focus.
+  const [cargoDossier, setCargoDossier] = useState<CargoDossier | null>(null);
+  const cargoFocusRef = useRef<string | null>(null);
   const [uipId, setUipId] = useState<string | null>(null);
 
   const [lineage, setLineage] = useState<import("@/lib/lineage/types").LineageTrace | null>(null);
@@ -390,6 +396,24 @@ function CopilotOpsPage() {
       );
       setStage("rendering");
       setBriefing(adapted);
+
+      // SPRINT CAP-04 — Cargo Investigation Copilot. If this question is a
+      // cargo investigation, project a dossier from the Canonical UIP through
+      // the Cargo Knowledge Graph. Non-cargo questions route through untouched.
+      try {
+        const cargoEvidence = uipFromResult?.rawEvidence ?? [];
+        const dossier = buildCargoDossier({
+          query: q,
+          evidence: cargoEvidence,
+          uipId: uipFromResult?.id ?? null,
+          stickyFocusId: cargoFocusRef.current,
+        });
+        setCargoDossier(dossier);
+        if (dossier?.focus) cargoFocusRef.current = dossier.focus.id;
+      } catch {
+        setCargoDossier(null);
+      }
+
       // Assemble the Evidence Lineage Trace from existing artefacts (OIE
       // citations, IBE hypotheses, mission context, workspace state). This
       // projects backend intelligence into an officer-facing chain-of-custody.
@@ -841,6 +865,12 @@ function CopilotOpsPage() {
                       mission={activeMission}
                       briefingId={ibeProjection?.briefingId}
                     />
+                    {cargoDossier ? (
+                      <CargoDossierPanel
+                        dossier={cargoDossier}
+                        onFollowUp={(q: string) => handleSubmit(q)}
+                      />
+                    ) : null}
                     <ExecutiveBriefingView
                       briefing={briefing}
                       humanResponse={ibeProjection?.humanResponse ?? null}
