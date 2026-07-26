@@ -113,6 +113,9 @@ export function MissionControl() {
           <PortOperationsPanel />
         </div>
 
+        <CargoWorkspaceStrip />
+
+
         <div className="grid gap-4 lg:grid-cols-[1fr_1.3fr]">
           <TodaysPrioritiesPanel />
           <RecentBriefingsPanel />
