@@ -20,7 +20,7 @@ import type { LeakageFinding } from "@/services/revenue-leakage";
 import type { KpiCoverage, KpiStateCode } from "./coverage-model";
 import { KPI_STATE_META } from "./coverage-model";
 
-export type PanelConfidence = "verified" | "observed" | "inferred" | "unverified";
+export type PanelConfidence = "verified" | "observed" | "inferred" | "unconfirmed";
 
 export interface PanelProjection<T> {
   readonly state: KpiStateCode;
@@ -60,7 +60,7 @@ const GRADE_TO_TIER: Record<EvidenceGrade, PanelConfidence> = {
   OBSERVED: "observed",
   REPORTED: "observed",
   INFERRED: "inferred",
-  UNKNOWN: "unverified",
+  UNKNOWN: "unconfirmed",
 };
 
 const GRADE_RANK: Record<EvidenceGrade, number> = {
@@ -73,7 +73,7 @@ const GRADE_RANK: Record<EvidenceGrade, number> = {
 };
 
 export function gradeToTier(grade: EvidenceGrade | undefined): PanelConfidence {
-  return grade ? GRADE_TO_TIER[grade] : "unverified";
+  return grade ? GRADE_TO_TIER[grade] : "unconfirmed";
 }
 
 function weakest(grades: ReadonlyArray<EvidenceGrade>): EvidenceGrade {
