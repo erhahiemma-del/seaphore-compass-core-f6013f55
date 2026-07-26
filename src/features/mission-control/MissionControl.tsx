@@ -135,6 +135,7 @@ function Ribbon() {
         <IntelligenceReadinessCard
           readiness={coverage.readiness}
           generatedAt={coverage.generatedAt}
+          report={coverage}
         />
       ) : null}
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
