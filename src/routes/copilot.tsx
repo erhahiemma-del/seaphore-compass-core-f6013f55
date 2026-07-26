@@ -681,6 +681,8 @@ function CopilotOpsPage() {
 
               <div
                 ref={workspaceScrollRef}
+                data-testid="copilot-workspace-scroll"
+
                 className={cn(
                   "min-h-0 flex-1 overflow-auto overscroll-contain scroll-smooth",
                   investigationMode ? "p-4" : "flex p-0",
