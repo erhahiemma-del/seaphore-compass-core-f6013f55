@@ -89,7 +89,12 @@ import {
   type CommandPermission,
 } from "@/services/copilot/commands/registry";
 import { routeCommand } from "@/services/copilot/commands/router";
-import { recordBriefingToWorkspace, recordOfficerTurn } from "@/services/workspace/derive";
+import {
+  recordAttachmentEvidence,
+  recordBriefingToWorkspace,
+  recordOfficerTurn,
+} from "@/services/workspace/derive";
+
 
 
 export const Route = createFileRoute("/copilot")({
