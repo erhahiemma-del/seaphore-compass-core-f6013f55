@@ -50,6 +50,9 @@ import {
 // `src/lib/osint/registry`. Bridged into the IAL registry below.
 import "@/lib/osint/connectors";
 import { listConnectors as listOsintConnectors } from "@/lib/osint/registry";
+// Sprint EP-01 — production Evidence Provider registration surface.
+import { registerEvidenceProviders } from "@/connectors";
+
 import type { AcquisitionQuery, EvidencePackage } from "./types";
 
 let defaultManager: ConnectorManager | null = null;
