@@ -43,6 +43,7 @@ import { Route as WorkspaceIndexRouteImport } from './routes/workspace.index'
 import { Route as ShareIndexRouteImport } from './routes/share.index'
 import { Route as InvestigateIndexRouteImport } from './routes/investigate.index'
 import { Route as DecideIndexRouteImport } from './routes/decide.index'
+import { Route as CargoWorkspaceIndexRouteImport } from './routes/cargo-workspace.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as WorkspaceIdRouteImport } from './routes/workspace.$id'
 import { Route as ShareQueueRouteImport } from './routes/share.queue'
@@ -237,6 +238,11 @@ const DecideIndexRoute = DecideIndexRouteImport.update({
   path: '/',
   getParentRoute: () => DecideRoute,
 } as any)
+const CargoWorkspaceIndexRoute = CargoWorkspaceIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CargoWorkspaceRoute,
+} as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
@@ -359,7 +365,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/briefing-centre': typeof BriefingCentreRoute
   '/cargo': typeof CargoRoute
-  '/cargo-workspace': typeof CargoWorkspaceRoute
+  '/cargo-workspace': typeof CargoWorkspaceRouteWithChildren
   '/command-center': typeof CommandCenterRoute
   '/compliance': typeof ComplianceRoute
   '/copilot': typeof CopilotRoute
@@ -397,6 +403,7 @@ export interface FileRoutesByFullPath {
   '/share/queue': typeof ShareQueueRoute
   '/workspace/$id': typeof WorkspaceIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/cargo-workspace/': typeof CargoWorkspaceIndexRoute
   '/decide/': typeof DecideIndexRoute
   '/investigate/': typeof InvestigateIndexRoute
   '/share/': typeof ShareIndexRoute
@@ -418,7 +425,6 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/briefing-centre': typeof BriefingCentreRoute
   '/cargo': typeof CargoRoute
-  '/cargo-workspace': typeof CargoWorkspaceRoute
   '/command-center': typeof CommandCenterRoute
   '/compliance': typeof ComplianceRoute
   '/copilot': typeof CopilotRoute
@@ -453,6 +459,7 @@ export interface FileRoutesByTo {
   '/share/queue': typeof ShareQueueRoute
   '/workspace/$id': typeof WorkspaceIdRoute
   '/admin': typeof AdminIndexRoute
+  '/cargo-workspace': typeof CargoWorkspaceIndexRoute
   '/decide': typeof DecideIndexRoute
   '/investigate': typeof InvestigateIndexRoute
   '/share': typeof ShareIndexRoute
@@ -475,7 +482,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/briefing-centre': typeof BriefingCentreRoute
   '/cargo': typeof CargoRoute
-  '/cargo-workspace': typeof CargoWorkspaceRoute
+  '/cargo-workspace': typeof CargoWorkspaceRouteWithChildren
   '/command-center': typeof CommandCenterRoute
   '/compliance': typeof ComplianceRoute
   '/copilot': typeof CopilotRoute
@@ -513,6 +520,7 @@ export interface FileRoutesById {
   '/share/queue': typeof ShareQueueRoute
   '/workspace/$id': typeof WorkspaceIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/cargo-workspace/': typeof CargoWorkspaceIndexRoute
   '/decide/': typeof DecideIndexRoute
   '/investigate/': typeof InvestigateIndexRoute
   '/share/': typeof ShareIndexRoute
@@ -574,6 +582,7 @@ export interface FileRouteTypes {
     | '/share/queue'
     | '/workspace/$id'
     | '/admin/'
+    | '/cargo-workspace/'
     | '/decide/'
     | '/investigate/'
     | '/share/'
@@ -595,7 +604,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/briefing-centre'
     | '/cargo'
-    | '/cargo-workspace'
     | '/command-center'
     | '/compliance'
     | '/copilot'
@@ -630,6 +638,7 @@ export interface FileRouteTypes {
     | '/share/queue'
     | '/workspace/$id'
     | '/admin'
+    | '/cargo-workspace'
     | '/decide'
     | '/investigate'
     | '/share'
@@ -689,6 +698,7 @@ export interface FileRouteTypes {
     | '/share/queue'
     | '/workspace/$id'
     | '/admin/'
+    | '/cargo-workspace/'
     | '/decide/'
     | '/investigate/'
     | '/share/'
@@ -711,7 +721,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   BriefingCentreRoute: typeof BriefingCentreRoute
   CargoRoute: typeof CargoRoute
-  CargoWorkspaceRoute: typeof CargoWorkspaceRoute
+  CargoWorkspaceRoute: typeof CargoWorkspaceRouteWithChildren
   CommandCenterRoute: typeof CommandCenterRoute
   ComplianceRoute: typeof ComplianceRoute
   CopilotRoute: typeof CopilotRoute
@@ -996,6 +1006,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DecideIndexRouteImport
       parentRoute: typeof DecideRoute
     }
+    '/cargo-workspace/': {
+      id: '/cargo-workspace/'
+      path: '/'
+      fullPath: '/cargo-workspace/'
+      preLoaderRoute: typeof CargoWorkspaceIndexRouteImport
+      parentRoute: typeof CargoWorkspaceRoute
+    }
     '/admin/': {
       id: '/admin/'
       path: '/admin'
@@ -1160,6 +1177,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface CargoWorkspaceRouteChildren {
+  CargoWorkspaceIndexRoute: typeof CargoWorkspaceIndexRoute
+}
+
+const CargoWorkspaceRouteChildren: CargoWorkspaceRouteChildren = {
+  CargoWorkspaceIndexRoute: CargoWorkspaceIndexRoute,
+}
+
+const CargoWorkspaceRouteWithChildren = CargoWorkspaceRoute._addFileChildren(
+  CargoWorkspaceRouteChildren,
+)
+
 interface DecideRouteChildren {
   DecideIdRoute: typeof DecideIdRoute
   DecideQueueRoute: typeof DecideQueueRoute
@@ -1211,7 +1240,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   BriefingCentreRoute: BriefingCentreRoute,
   CargoRoute: CargoRoute,
-  CargoWorkspaceRoute: CargoWorkspaceRoute,
+  CargoWorkspaceRoute: CargoWorkspaceRouteWithChildren,
   CommandCenterRoute: CommandCenterRoute,
   ComplianceRoute: ComplianceRoute,
   CopilotRoute: CopilotRoute,
