@@ -186,14 +186,87 @@ export function InvestigationLanding({
     files.clear();
   }
 
+  // --- Drag & drop -----------------------------------------------------
+  // dragenter/dragleave fire for every nested child, so a boolean flickers as
+  // the pointer crosses the textarea or buttons. Counting depth is stable.
+  const [dragging, setDragging] = useState(false);
+  const dragDepth = useRef(0);
+  const dropDisabled = pending || files.uploading;
+
+  /** True only for an OS file drag — ignores dragged text or links. */
+  function carriesFiles(e: React.DragEvent) {
+    return Array.from(e.dataTransfer?.types ?? []).includes("Files");
+  }
+
+  function onDragEnter(e: React.DragEvent) {
+    if (!carriesFiles(e)) return;
+    e.preventDefault();
+    dragDepth.current += 1;
+    if (!dropDisabled) setDragging(true);
+  }
+
+  function onDragOver(e: React.DragEvent) {
+    if (!carriesFiles(e)) return;
+    e.preventDefault(); // Required, or the browser opens the file instead.
+    e.dataTransfer.dropEffect = dropDisabled ? "none" : "copy";
+  }
+
+  function onDragLeave(e: React.DragEvent) {
+    if (!carriesFiles(e)) return;
+    dragDepth.current = Math.max(0, dragDepth.current - 1);
+    if (dragDepth.current === 0) setDragging(false);
+  }
+
+  function onDrop(e: React.DragEvent) {
+    if (!carriesFiles(e)) return;
+    e.preventDefault();
+    dragDepth.current = 0;
+    setDragging(false);
+    if (dropDisabled) return;
+    const dropped = Array.from(e.dataTransfer.files);
+    // Folders arrive as zero-byte entries with no type; say so rather than
+    // failing silently on an upload the officer believes succeeded.
+    const usable = dropped.filter((f) => f.size > 0 || f.type);
+    if (usable.length < dropped.length) {
+      toast.error("Folders can't be attached", {
+        description: "Drop the individual manifests or documents instead.",
+      });
+    }
+    if (usable.length > 0) void files.add(usable);
+  }
+
+
+
 
 
 
   return (
     <div
       data-testid="investigation-landing"
-      className="animate-in fade-in flex min-h-full flex-col items-center justify-start px-4 pt-6 pb-4 duration-500"
+      onDragEnter={onDragEnter}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      className="animate-in fade-in relative flex min-h-full flex-col items-center justify-start px-4 pt-6 pb-4 duration-500"
     >
+      {dragging && (
+        <div
+          data-testid="attachment-dropzone"
+          className={cn(
+            "animate-in fade-in pointer-events-none absolute inset-2 z-20 flex flex-col items-center justify-center gap-2",
+            "rounded-2xl border-2 border-dashed border-[color:var(--color-teal)]/70",
+            "bg-background/85 backdrop-blur-[2px] duration-150",
+          )}
+        >
+          <Paperclip className="h-6 w-6 text-[color:var(--color-teal)]" />
+          <p className="text-[14px] font-semibold text-foreground">Drop to attach</p>
+          <p className="text-[12px] text-muted-foreground">
+            Manifests and documents are uploaded as officer-supplied evidence.
+          </p>
+        </div>
+      )}
+
+
 
       <div className="w-full max-w-2xl">
         <div className="flex flex-col items-center text-center">
