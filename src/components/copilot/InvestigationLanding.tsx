@@ -478,7 +478,17 @@ export function InvestigationLanding({
                   ) : (
                     <FileText className="relative h-3.5 w-3.5 shrink-0 text-[color:var(--color-teal)]" />
                   )}
-                  <span className="relative truncate">{a.name}</span>
+                  <button
+                    type="button"
+                    data-testid="attachment-preview-trigger"
+                    onClick={() => setPreviewId(a.id)}
+                    title={`${a.name} — ${a.kind === "MANIFEST" ? "Manifest" : "Document"}, ${a.contentType || "unknown type"}, ${formatBytes(a.size)}`}
+                    aria-label={`Preview ${a.name}`}
+                    className="relative max-w-[220px] truncate underline-offset-2 hover:underline"
+                  >
+                    {a.name}
+                  </button>
+
                   <span
                     className={cn(
                       "relative shrink-0",
