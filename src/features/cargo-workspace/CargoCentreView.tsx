@@ -255,7 +255,11 @@ export function CargoCentreView({ projection }: { projection: CargoCentreProject
           </PanelCard>
         </div>
       </div>
+
+      {/* ── Cargo Knowledge Graph (SPRINT CAP-03) ─────────────────── */}
+      <CargoGraphPanel focusId={data?.leads[0]?.entityId ?? null} />
     </div>
+
   );
 }
 
