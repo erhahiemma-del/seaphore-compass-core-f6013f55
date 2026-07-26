@@ -368,7 +368,8 @@ export function buildReadinessReportPdf(report: IntelligenceCoverageReport): jsP
       doc.setFontSize(size);
       let x = MARGIN_X;
       cells.forEach((lines_, i) => {
-        doc.setTextColor(...(i === 0 ? COLORS.ink : COLORS.muted));
+        const cellColor: readonly [number, number, number] = i === 0 ? COLORS.ink : COLORS.muted;
+        doc.setTextColor(...cellColor);
         lines_.forEach((line, li) => {
           doc.text(line, x + padX, cur.y + 9 + li * (size + 2.6));
         });
