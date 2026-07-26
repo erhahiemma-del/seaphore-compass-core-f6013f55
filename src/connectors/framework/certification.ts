@@ -101,19 +101,65 @@ const REQUIRED_SOURCE_PATTERNS: ReadonlyArray<{
   { id: "returns-connector-result", label: "Returns ConnectorResult", pattern: /ConnectorResult/ },
 ];
 
-/** Public method names declared in a provider's source (TS visibility aware). */
-export function publicMethodsFromSource(source: string): string[] {
+const JS_KEYWORDS = new Set([
+  "if",
+  "for",
+  "while",
+  "switch",
+  "catch",
+  "return",
+  "do",
+  "else",
+  "function",
+]);
+
+/**
+ * Body of the provider class inside a module: the exported class that
+ * declares `specVersion` (the Evidence Provider). Adapter classes and
+ * helper interfaces in the same file are deliberately out of scope for
+ * the API freeze — only the provider's own surface is frozen.
+ */
+export function providerClassBody(source: string, className?: string): string {
+  const lines = source.split("\n");
+  const blocks: string[][] = [];
+  let current: string[] | null = null;
+  for (const line of lines) {
+    if (/^export\s+(?:abstract\s+)?class\s+\w+/.test(line)) {
+      if (current) blocks.push(current);
+      current = [line];
+      continue;
+    }
+    if (current) {
+      current.push(line);
+      if (/^}\s*$/.test(line)) {
+        blocks.push(current);
+        current = null;
+      }
+    }
+  }
+  if (current) blocks.push(current);
+  const match = blocks.find((b) =>
+    className
+      ? new RegExp(`^export\\s+(?:abstract\\s+)?class\\s+${className}\\b`).test(b[0])
+      : b.some((l) => /\bspecVersion\b/.test(l)),
+  );
+  return (match ?? []).join("\n");
+}
+
+/** Public method names declared in a provider class (TS visibility aware). */
+export function publicMethodsFromSource(source: string, className?: string): string[] {
+  const body = providerClassBody(source, className) || source;
   const out: string[] = [];
-  const re = /^\s{2}(?!\/\/)(?:public\s+)?(?:override\s+)?(?:async\s+)?([A-Za-z_]\w*)\s*\(/gm;
-  const privateRe = /^\s{2}(?:private|protected|#)/;
-  for (const line of source.split("\n")) {
-    if (privateRe.test(line)) continue;
-    re.lastIndex = 0;
+  const re = /^\s{2}(?:public\s+)?(?:override\s+)?(?:async\s+)?([A-Za-z_]\w*)\s*\(/;
+  const skipRe = /^\s{2}(?:private|protected|#|\*|\/\/|\/\*)/;
+  for (const line of body.split("\n")) {
+    if (skipRe.test(line)) continue;
     const m = re.exec(line);
-    if (m) out.push(m[1]);
+    if (m && !JS_KEYWORDS.has(m[1])) out.push(m[1]);
   }
   return Array.from(new Set(out));
 }
+
 
 /**
  * Certify a provider against Evidence Provider Specification v1.0.
