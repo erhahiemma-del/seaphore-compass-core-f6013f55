@@ -24,6 +24,7 @@ import { openSanctionsConnector } from "./implementations/OpenSanctionsConnector
 import { openCorporatesProvider, OPENCORPORATES_CACHE_TTL_MS } from "./implementations/OpenCorporatesProvider";
 import { equasisProvider, EQUASIS_CACHE_TTL_MS } from "./implementations/EquasisProvider";
 import { imoGisisProvider, IMO_GISIS_CACHE_TTL_MS } from "./implementations/ImoGisisProvider";
+import { ncsCustomsProvider, NCS_CUSTOMS_CACHE_TTL_MS } from "./implementations/NcsCustomsProvider";
 import {
   globalFishingWatchProvider,
   GFW_CACHE_TTL_MS,
@@ -158,6 +159,21 @@ const DECLARATIONS: ReadonlyArray<{
       referenceImplementation: false,
       documentation: DOCS,
       sourceFile: "src/connectors/implementations/ImoGisisProvider.ts",
+    },
+  },
+  {
+    provider: ncsCustomsProvider,
+    declaration: {
+      sprint: "EP-CARGO-01",
+      dataSources: ["Nigeria Customs Service declarations / NICIS II (credentialed)"],
+      authentication: "api-token",
+      credentialEnv: ["NCS_CUSTOMS_API_BASE_URL", "NCS_CUSTOMS_API_TOKEN"],
+      cacheTtlMs: NCS_CUSTOMS_CACHE_TTL_MS,
+      testCoverage: ["src/connectors/framework/__tests__/certification.test.ts"],
+      lastValidationDate: VALIDATED,
+      referenceImplementation: false,
+      documentation: DOCS,
+      sourceFile: "src/connectors/implementations/NcsCustomsProvider.ts",
     },
   },
   {

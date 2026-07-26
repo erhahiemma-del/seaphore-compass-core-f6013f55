@@ -49,6 +49,11 @@ import {
   UnSecurityCouncilProvider,
   unSecurityCouncilProvider,
 } from "./implementations/UnSecurityCouncilProvider";
+import {
+  NCS_CUSTOMS_METADATA,
+  NcsCustomsProvider,
+  ncsCustomsProvider,
+} from "./implementations/NcsCustomsProvider";
 
 export { OpenSanctionsConnector, openSanctionsConnector, OPEN_SANCTIONS_METADATA };
 export {
@@ -64,6 +69,7 @@ export { ImoGisisProvider, imoGisisProvider, IMO_GISIS_METADATA };
 export { GlobalFishingWatchProvider, globalFishingWatchProvider, GFW_METADATA };
 export { OfacProvider, ofacProvider, OFAC_METADATA };
 export { UnSecurityCouncilProvider, unSecurityCouncilProvider, UNSC_METADATA };
+export { NcsCustomsProvider, ncsCustomsProvider, NCS_CUSTOMS_METADATA };
 export {
   buildEvidenceProviderCatalog,
   catalogProviderIds,
@@ -98,6 +104,7 @@ export function registerEvidenceProviders(manager: ConnectorManager): void {
     globalFishingWatchProvider,
     ofacProvider,
     unSecurityCouncilProvider,
+    ncsCustomsProvider,
   ]) {
     registerCertifiedProvider(manager, provider, {
       existingIds: registered,
