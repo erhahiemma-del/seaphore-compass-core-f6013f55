@@ -111,11 +111,17 @@ export async function runSanctionsScreening(
   req: SanctionsScreeningRequest,
 ): Promise<SanctionsScreeningResult> {
   const mgr = req.manager ?? getIntelligenceAcquisitionManager();
-  const providers = mgr.getByCapability("SANCTIONS");
+  const capable = mgr.getByCapability("SANCTIONS");
+  // Officer intent `SANCTION_SCREEN` (implicit default here) or explicit
+  // connector hints select which registered providers are queried.
+  const hints = new Set(req.connectorHints ?? []);
+  const hinted = hints.size > 0 ? capable.filter((p) => hints.has(p.id)) : [];
+  const providers = hinted.length > 0 ? hinted : capable;
   const query: AcquisitionQuery = {
     ...buildQuery(req.target),
     connectors: providers.map((p) => p.id),
   };
+
   const pkg = req.manager
     ? await mgr.acquire(query)
     : await acquireEvidence(query);
