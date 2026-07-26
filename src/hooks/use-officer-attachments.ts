@@ -98,7 +98,13 @@ export interface AttachmentItem extends OfficerAttachment {
   /** 0–100. Byte-accurate while uploading. */
   progress: number;
   error?: string;
+  /**
+   * Local object URL for confirmation previews (images / PDFs only).
+   * Browser-side only — never part of the evidence bundle.
+   */
+  previewUrl?: string;
 }
+
 
 export interface UseOfficerAttachments {
   /** Successfully uploaded attachments only — what the pipeline may cite. */
@@ -257,6 +263,7 @@ export function useOfficerAttachments(options?: {
       return prev.filter((a) => a.id !== id);
     });
     sources.current.delete(id);
+    if (target?.previewUrl) URL.revokeObjectURL(target.previewUrl);
     // Only an uploaded object exists in storage; a failed one has nothing to delete.
     if (target?.status === "UPLOADED") {
       const { error } = await supabase.storage.from(target.bucket).remove([target.path]);
@@ -266,16 +273,20 @@ export function useOfficerAttachments(options?: {
 
   const clear = useCallback(() => {
     sources.current.clear();
-    setItems([]);
+    setItems((prev) => {
+      for (const a of prev) if (a.previewUrl) URL.revokeObjectURL(a.previewUrl);
+      return [];
+    });
   }, []);
 
   const attachments = useMemo(
     () =>
       items
         .filter((a) => a.status === "UPLOADED")
-        .map(({ status: _s, progress: _p, error: _e, ...rest }) => rest),
+        .map(({ status: _s, progress: _p, error: _e, previewUrl: _u, ...rest }) => rest),
     [items],
   );
+
   const uploading = items.some((a) => a.status === "UPLOADING");
 
   return { attachments, items, uploading, add, retry, remove, clear };
