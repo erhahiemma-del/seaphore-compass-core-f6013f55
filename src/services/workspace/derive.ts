@@ -13,6 +13,11 @@ import type {
 } from "@/stores/workspace.store";
 import { useWorkspaceStore } from "@/stores/workspace.store";
 import {
+  storageRef,
+  type OfficerAttachment,
+} from "@/hooks/use-officer-attachments";
+
+import {
   detectMissionType,
   getProfile,
 } from "@/components/copilot/briefing/profiles";
