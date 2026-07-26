@@ -430,10 +430,18 @@ export async function runGfwHealthCheck(): Promise<GfwHealthPayload> {
     });
     const latencyMs = Date.now() - started;
     if (response.status === 401 || response.status === 403) {
-      return { status: "down", latencyMs, message: "Authentication Failed" };
+      return {
+        status: "down",
+        latencyMs,
+        message: `Authentication Failed — Credentials Invalid (HTTP ${response.status})`,
+      };
     }
     if (response.status >= 500) {
-      return { status: "down", latencyMs, message: `Unavailable (HTTP ${response.status})` };
+      return {
+        status: "down",
+        latencyMs,
+        message: `Provider Unreachable — upstream returned HTTP ${response.status}`,
+      };
     }
     if (!response.ok) {
       return { status: "degraded", latencyMs, message: `HTTP ${response.status}` };
@@ -443,7 +451,7 @@ export async function runGfwHealthCheck(): Promise<GfwHealthPayload> {
     return {
       status: "down",
       latencyMs: Date.now() - started,
-      message: err instanceof Error ? err.message : String(err),
+      message: `Provider Unreachable — ${err instanceof Error ? err.message : String(err)}`,
     };
   } finally {
     clearTimeout(timeout);
