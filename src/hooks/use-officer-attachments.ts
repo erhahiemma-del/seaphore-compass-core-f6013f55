@@ -10,6 +10,16 @@ import { useCallback, useMemo, useRef, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 
+/** Outcome of an `add()` batch — used to confirm how many files attached. */
+export interface AddResult {
+  /** Files accepted and uploaded (or attempted). */
+  accepted: number;
+  /** Files rejected by type or size checks. */
+  rejected: number;
+  /** Files handed to `add()`. */
+  total: number;
+}
+
 export const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024; // 20 MB
 
 const MANIFEST_TYPES = new Set([
@@ -188,26 +198,43 @@ export function useOfficerAttachments(options?: {
     [onError, patch],
   );
 
+  /**
+   * Attach one or many files. Multi-file drops are the normal case: every
+   * file is registered in the list first (so the officer immediately sees
+   * how many arrived), then the uploads run together.
+   *
+   * Returns the accepted/rejected tally so the caller can confirm the count.
+   */
   const add = useCallback(
-    async (files: FileList | File[]) => {
+    async (files: FileList | File[]): Promise<AddResult> => {
       const list = Array.from(files);
-      if (list.length === 0) return;
+      if (list.length === 0) return { accepted: 0, rejected: 0, total: 0 };
 
       const { data: auth } = await supabase.auth.getUser();
       const userId = auth.user?.id;
       if (!userId) {
         onError?.("Sign in to attach documents to an investigation.");
-        return;
+        return { accepted: 0, rejected: list.length, total: list.length };
       }
       const uploaderLabel = auth.user?.email ?? userId;
+
+      const queued: Array<{
+        id: string;
+        file: File;
+        bucket: OfficerAttachment["bucket"];
+        path: string;
+      }> = [];
+      let rejected = 0;
 
       for (const file of list) {
         const ext = extensionOf(file.name);
         if (!ALLOWED_EXTENSIONS.includes(ext)) {
+          rejected += 1;
           onError?.(`${file.name}: unsupported file type.`);
           continue;
         }
         if (file.size > MAX_ATTACHMENT_BYTES) {
+          rejected += 1;
           onError?.(`${file.name}: exceeds the ${formatBytes(MAX_ATTACHMENT_BYTES)} limit.`);
           continue;
         }
@@ -247,8 +274,14 @@ export function useOfficerAttachments(options?: {
 
 
 
-        await upload(id, file, bucket, path);
+        queued.push({ id, file, bucket, path });
       }
+
+      // Upload the batch together — a five-document drop should not queue
+      // behind itself one file at a time.
+      await Promise.all(queued.map((q) => upload(q.id, q.file, q.bucket, q.path)));
+
+      return { accepted: queued.length, rejected, total: list.length };
     },
     [onError, upload],
   );
