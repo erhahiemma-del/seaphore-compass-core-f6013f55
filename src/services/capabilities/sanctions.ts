@@ -40,11 +40,27 @@ export interface SanctionsScreeningTarget {
   readonly imo?: string;
 }
 
+/** Officer intent that resolves to the SANCTIONS capability. */
+export type SanctionsIntent = "SANCTION_SCREEN";
+
 export interface SanctionsScreeningRequest {
   readonly target: SanctionsScreeningTarget;
   /** Optional injected manager (tests / non-default registries). */
   readonly manager?: ConnectorManager;
+  /**
+   * Sprint EP-01 — officer intent. `SANCTION_SCREEN` (the default for
+   * this capability) acquires evidence through the Connector Registry.
+   */
+  readonly intent?: SanctionsIntent;
+  /**
+   * Sprint EP-01 — explicit provider hints (e.g. `["open-sanctions"]`).
+   * When present, acquisition is narrowed to the hinted connectors that
+   * are actually registered. Purely a selection filter — the acquisition
+   * pipeline, fusion, and persistence remain unchanged.
+   */
+  readonly connectorHints?: ReadonlyArray<ConnectorId>;
 }
+
 
 export interface SanctionsScreeningResult {
   readonly capability: "SANCTIONS";
