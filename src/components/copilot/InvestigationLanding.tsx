@@ -204,18 +204,51 @@ export function InvestigationLanding({
                   onSubmit(value);
                 }
               }}
-              placeholder={`Investigate ${subject}...`}
+              placeholder={
+                recording
+                  ? "Listening — speak your investigation..."
+                  : transcribing
+                    ? "Transcribing..."
+                    : `Investigate ${subject}...`
+              }
               aria-label="Investigation query"
               className="max-h-44 min-h-[48px] flex-1 resize-none bg-transparent text-[14px] leading-6 outline-none placeholder:text-muted-foreground disabled:opacity-60"
             />
             <div className="flex items-center gap-1 pb-0.5">
               <button
                 type="button"
-                aria-label="Voice input"
-                className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                onClick={toggleDictation}
+                disabled={pending || transcribing || !dictation.supported}
+                aria-label={recording ? "Stop dictation" : "Voice input"}
+                aria-pressed={recording}
+                title={
+                  dictation.supported
+                    ? recording
+                      ? "Stop dictation"
+                      : "Dictate your investigation"
+                    : "Voice input is not supported in this browser"
+                }
+                className={cn(
+                  "relative rounded-full p-2 transition-colors disabled:opacity-40",
+                  recording
+                    ? "bg-destructive/10 text-destructive"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                )}
               >
-                <Mic className="h-4 w-4" />
+                {transcribing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Mic className={cn("h-4 w-4", recording && "animate-pulse")} />
+                )}
+                {recording ? (
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 rounded-full ring-2 ring-destructive/40 transition-transform duration-100"
+                    style={{ transform: `scale(${1 + Math.min(dictation.level, 1) * 0.35})` }}
+                  />
+                ) : null}
               </button>
+
               <button
                 type="button"
                 aria-label="Attach evidence"
