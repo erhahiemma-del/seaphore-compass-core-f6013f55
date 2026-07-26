@@ -722,7 +722,7 @@ export function InvestigationLanding({
                 <span
                   key={guidanceIndex}
                   data-testid="empty-state-guidance"
-                  className="animate-in fade-in block truncate text-[11.5px] text-muted-foreground/80 duration-700"
+                  className="animate-in fade-in block text-[11.5px] leading-4 text-muted-foreground/80 duration-700"
                 >
                   {GUIDANCE[guidanceIndex]}
                 </span>
