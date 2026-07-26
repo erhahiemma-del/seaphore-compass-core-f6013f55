@@ -14,12 +14,33 @@
  */
 import type { ConnectorManager } from "@/services/ial/manager";
 import {
+  ENVIRONMENTAL_CACHE_TTL_MS,
+  ENVIRONMENTAL_INTELLIGENCE_METADATA,
+  EnvironmentalIntelligenceProvider,
+  OpenMeteoMarineAdapter,
+  environmentalIntelligenceProvider,
+} from "./implementations/EnvironmentalIntelligenceProvider";
+import {
   OPEN_SANCTIONS_METADATA,
   OpenSanctionsConnector,
   openSanctionsConnector,
 } from "./implementations/OpenSanctionsConnector";
 
 export { OpenSanctionsConnector, openSanctionsConnector, OPEN_SANCTIONS_METADATA };
+export {
+  EnvironmentalIntelligenceProvider,
+  environmentalIntelligenceProvider,
+  ENVIRONMENTAL_INTELLIGENCE_METADATA,
+  ENVIRONMENTAL_CACHE_TTL_MS,
+  OpenMeteoMarineAdapter,
+};
+export type {
+  EnvironmentalRequest,
+  EnvironmentalObservation,
+  EnvironmentalSourceAdapter,
+  EnvironmentalAdapterContext,
+  EnvironmentalTimeRange,
+} from "./implementations/EnvironmentalIntelligenceProvider";
 
 /**
  * Register every production Evidence Provider on a ConnectorManager.
@@ -30,4 +51,8 @@ export { OpenSanctionsConnector, openSanctionsConnector, OPEN_SANCTIONS_METADATA
  */
 export function registerEvidenceProviders(manager: ConnectorManager): void {
   manager.register(openSanctionsConnector);
+  // Sprint EP-02 — the single environmental evidence source. Future
+  // environmental providers are ADAPTERS inside this provider, so this
+  // registration line never changes as sources are added.
+  manager.register(environmentalIntelligenceProvider);
 }
