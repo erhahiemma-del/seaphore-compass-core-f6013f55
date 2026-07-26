@@ -511,7 +511,8 @@ export function InvestigationLanding({
                       ? `${a.progress}%`
                       : a.status === "ERROR"
                         ? "Upload failed"
-                        : formatBytes(a.size)}
+                        : `${a.kind === "MANIFEST" ? "Manifest" : "Document"} · ${formatBytes(a.size)}`}
+
                   </span>
                   {a.status === "ERROR" ? (
                     <button
@@ -535,10 +536,18 @@ export function InvestigationLanding({
                 </span>
               ))}
               <span className="self-center text-[10px] uppercase tracking-wider text-muted-foreground/70">
-                Officer-supplied evidence
+                Officer-supplied evidence — click a file to preview
               </span>
             </div>
           ) : null}
+
+          <AttachmentPreviewDialog
+            attachment={previewItem}
+            onOpenChange={(open) => {
+              if (!open) setPreviewId(null);
+            }}
+          />
+
 
 
 
