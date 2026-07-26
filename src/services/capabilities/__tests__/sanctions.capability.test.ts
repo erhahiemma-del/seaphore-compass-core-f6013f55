@@ -138,26 +138,28 @@ describe("Capability: SANCTIONS", () => {
     expect(Array.isArray(rec?.fields.sanctionLists)).toBe(true);
   });
 
-  it("supports multiple SANCTIONS providers via capability metadata", async () => {
+  it("resolves exactly ONE SANCTIONS provider (Sprint EP-01A)", async () => {
     const mgr = buildManager(true);
     await mgr.warmup();
 
-    const providers = mgr.getByCapability("SANCTIONS");
-    expect(providers.length).toBe(2);
+    // Discovery still sees every registered provider…
+    expect(mgr.getByCapability("SANCTIONS").length).toBe(2);
+    // …but resolution activates exactly one.
+    expect(mgr.resolveActiveProviderIds("SANCTIONS").length).toBe(1);
 
     const result = await runSanctionsScreening({
       manager: mgr,
       target: { kind: "vessel", name: "MV Ocean Pearl", imo: "9438291" },
     });
 
+    expect(result.providers.length).toBe(1);
     const sources = new Set(
       result.package.verified
         .filter((r) => r.kind === "sanctions")
         .map((r) => r.source),
     );
-    // Both registered providers should have contributed; orchestration
-    // did not name either one.
-    expect(sources.size).toBe(2);
+    // Hybrid execution is eliminated: a single provider contributed.
+    expect(sources.size).toBeLessThanOrEqual(1);
   });
 
   it("emits the fixed follow-up prompts owned by the capability", async () => {
