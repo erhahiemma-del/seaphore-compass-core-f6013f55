@@ -32,6 +32,7 @@ import {
   Ship,
   Sparkles,
   Split,
+  Square,
   TrendingDown,
   Users,
   Wallet,
@@ -39,6 +40,15 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+
+/** Thrown when the officer stops a run — discarded, never shown as an error. */
+class CancelledRun extends Error {
+  constructor() {
+    super("Investigation cancelled by officer");
+    this.name = "CancelledRun";
+  }
+}
 
 import { AdaptiveBriefing } from "@/components/copilot/briefing";
 import type {
