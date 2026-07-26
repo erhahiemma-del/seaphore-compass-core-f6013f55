@@ -122,7 +122,7 @@ export interface UseOfficerAttachments {
   /** Every attachment including in-flight and failed ones, for the UI. */
   items: AttachmentItem[];
   uploading: boolean;
-  add: (files: FileList | File[]) => Promise<void>;
+  add: (files: FileList | File[]) => Promise<AddResult>;
   retry: (id: string) => Promise<void>;
   remove: (id: string) => Promise<void>;
   clear: () => void;
