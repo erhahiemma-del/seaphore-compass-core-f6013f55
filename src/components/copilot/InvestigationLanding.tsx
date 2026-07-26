@@ -17,6 +17,7 @@ import {
   FileText,
   Loader2,
   Mic,
+  MicOff,
   Package,
   Paperclip,
   Radar,
