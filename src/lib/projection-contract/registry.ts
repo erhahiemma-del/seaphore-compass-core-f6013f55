@@ -1275,7 +1275,114 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: "2026-07-26",
   },
+  // ── CAP-02 · Cargo Intelligence Workspace ─────────────────────────────
+  {
+    id: "cargo.workspace.manifest",
+    name: "Cargo Workspace — Manifest Intelligence centre",
+    producer: "CAPABILITY",
+    description:
+      "Sprint CAP-02 — manifest, bill-of-lading and voyage evidence counted directly off the Canonical UIP, with declared-vs-actual tonnage mismatches. No mock data; honest state when no UIP or provider exists.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Cargo Intelligence Workspace · Manifest Intelligence",
+      location: "src/routes/cargo-workspace.$centre.tsx",
+      component: "src/lib/intelligence/cargo-workspace-projection.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-07-26",
+  },
+  {
+    id: "cargo.workspace.container",
+    name: "Cargo Workspace — Container Intelligence centre",
+    producer: "CAPABILITY",
+    description:
+      "Sprint CAP-02 — distinct container numbers, movement events and unattributed cargo rows projected from Canonical UIP cargo and port-call evidence.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Cargo Intelligence Workspace · Container Intelligence",
+      location: "src/routes/cargo-workspace.$centre.tsx",
+      component: "src/lib/intelligence/cargo-workspace-projection.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-07-26",
+  },
+  {
+    id: "cargo.workspace.cargo",
+    name: "Cargo Workspace — Cargo Intelligence centre",
+    producer: "CAPABILITY",
+    description:
+      "Sprint CAP-02 — cargo items, distinct HS codes, commodities and dangerous-goods flags projected from Canonical UIP cargo evidence.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Cargo Intelligence Workspace · Cargo Intelligence",
+      location: "src/routes/cargo-workspace.$centre.tsx",
+      component: "src/lib/intelligence/cargo-workspace-projection.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-07-26",
+  },
+  {
+    id: "cargo.workspace.trade",
+    name: "Cargo Workspace — Trade Intelligence centre",
+    producer: "CAPABILITY",
+    description:
+      "Sprint CAP-02 — shippers, consignees, trade lanes and ownership links projected from Canonical UIP cargo, voyage and ownership evidence.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Cargo Intelligence Workspace · Trade Intelligence",
+      location: "src/routes/cargo-workspace.$centre.tsx",
+      component: "src/lib/intelligence/cargo-workspace-projection.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-07-26",
+  },
+  {
+    id: "cargo.workspace.revenue",
+    name: "Cargo Workspace — Revenue Intelligence centre",
+    producer: "CAPABILITY",
+    description:
+      "Sprint CAP-02 — leakage findings, estimated exposure, priority mix and officer approvals. Findings are produced by capability.revenue-leakage-detection; the centre only projects them.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Cargo Intelligence Workspace · Revenue Intelligence",
+      location: "src/routes/cargo-workspace.$centre.tsx",
+      component: "src/lib/intelligence/cargo-workspace-projection.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-07-26",
+  },
+  {
+    id: "cargo.workspace.risk",
+    name: "Cargo Workspace — Cargo Risk Intelligence centre",
+    producer: "CAPABILITY",
+    description:
+      "Sprint CAP-02 — screened records, screening hits, compliance records and screened cargo chains projected from Canonical UIP sanctions and compliance evidence.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Cargo Intelligence Workspace · Cargo Risk Intelligence",
+      location: "src/routes/cargo-workspace.$centre.tsx",
+      component: "src/lib/intelligence/cargo-workspace-projection.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-07-26",
+  },
+  {
+    id: "cargo.workspace.state",
+    name: "Cargo Workspace — intelligence state vocabulary",
+    producer: "IAL",
+    description:
+      "Sprint CAP-02 — each cargo centre reports one honest state: Active, Awaiting Provider, Awaiting Credentials, No Evidence, Projection Missing or Provider Offline, inherited from the DIAG-02 coverage report.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Cargo Intelligence Workspace · Intelligence Status panel",
+      location: "src/features/cargo-workspace/CargoCentreView.tsx",
+      component: "src/lib/intelligence/cargo-workspace-projection.ts",
+      interaction: "passive-display",
+    },
+    reviewedAt: "2026-07-26",
+  },
 ];
+
 
 
 export function getContractEntry(id: string): ProjectionContractEntry | undefined {

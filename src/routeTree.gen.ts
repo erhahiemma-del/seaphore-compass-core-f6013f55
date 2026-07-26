@@ -33,6 +33,7 @@ import { Route as DecideRouteImport } from './routes/decide'
 import { Route as CopilotRouteImport } from './routes/copilot'
 import { Route as ComplianceRouteImport } from './routes/compliance'
 import { Route as CommandCenterRouteImport } from './routes/command-center'
+import { Route as CargoWorkspaceRouteImport } from './routes/cargo-workspace'
 import { Route as CargoRouteImport } from './routes/cargo'
 import { Route as BriefingCentreRouteImport } from './routes/briefing-centre'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -42,6 +43,7 @@ import { Route as WorkspaceIndexRouteImport } from './routes/workspace.index'
 import { Route as ShareIndexRouteImport } from './routes/share.index'
 import { Route as InvestigateIndexRouteImport } from './routes/investigate.index'
 import { Route as DecideIndexRouteImport } from './routes/decide.index'
+import { Route as CargoWorkspaceIndexRouteImport } from './routes/cargo-workspace.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as WorkspaceIdRouteImport } from './routes/workspace.$id'
 import { Route as ShareQueueRouteImport } from './routes/share.queue'
@@ -51,6 +53,7 @@ import { Route as InvestigateIdRouteImport } from './routes/investigate.$id'
 import { Route as EntityIdRouteImport } from './routes/entity.$id'
 import { Route as DecideQueueRouteImport } from './routes/decide.queue'
 import { Route as DecideIdRouteImport } from './routes/decide.$id'
+import { Route as CargoWorkspaceCentreRouteImport } from './routes/cargo-workspace.$centre'
 import { Route as AdminProviderHealthRouteImport } from './routes/admin.provider-health'
 import { Route as AdminProjectionContractRouteImport } from './routes/admin.projection-contract'
 import { Route as AdminOsintRouteImport } from './routes/admin.osint'
@@ -186,6 +189,11 @@ const CommandCenterRoute = CommandCenterRouteImport.update({
   path: '/command-center',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CargoWorkspaceRoute = CargoWorkspaceRouteImport.update({
+  id: '/cargo-workspace',
+  path: '/cargo-workspace',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CargoRoute = CargoRouteImport.update({
   id: '/cargo',
   path: '/cargo',
@@ -231,6 +239,11 @@ const DecideIndexRoute = DecideIndexRouteImport.update({
   path: '/',
   getParentRoute: () => DecideRoute,
 } as any)
+const CargoWorkspaceIndexRoute = CargoWorkspaceIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CargoWorkspaceRoute,
+} as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
@@ -275,6 +288,11 @@ const DecideIdRoute = DecideIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => DecideRoute,
+} as any)
+const CargoWorkspaceCentreRoute = CargoWorkspaceCentreRouteImport.update({
+  id: '/$centre',
+  path: '/$centre',
+  getParentRoute: () => CargoWorkspaceRoute,
 } as any)
 const AdminProviderHealthRoute = AdminProviderHealthRouteImport.update({
   id: '/admin/provider-health',
@@ -353,6 +371,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/briefing-centre': typeof BriefingCentreRoute
   '/cargo': typeof CargoRoute
+  '/cargo-workspace': typeof CargoWorkspaceRouteWithChildren
   '/command-center': typeof CommandCenterRoute
   '/compliance': typeof ComplianceRoute
   '/copilot': typeof CopilotRoute
@@ -381,6 +400,7 @@ export interface FileRoutesByFullPath {
   '/admin/osint': typeof AdminOsintRoute
   '/admin/projection-contract': typeof AdminProjectionContractRoute
   '/admin/provider-health': typeof AdminProviderHealthRoute
+  '/cargo-workspace/$centre': typeof CargoWorkspaceCentreRoute
   '/decide/$id': typeof DecideIdRoute
   '/decide/queue': typeof DecideQueueRoute
   '/entity/$id': typeof EntityIdRoute
@@ -390,6 +410,7 @@ export interface FileRoutesByFullPath {
   '/share/queue': typeof ShareQueueRoute
   '/workspace/$id': typeof WorkspaceIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/cargo-workspace/': typeof CargoWorkspaceIndexRoute
   '/decide/': typeof DecideIndexRoute
   '/investigate/': typeof InvestigateIndexRoute
   '/share/': typeof ShareIndexRoute
@@ -436,6 +457,7 @@ export interface FileRoutesByTo {
   '/admin/osint': typeof AdminOsintRoute
   '/admin/projection-contract': typeof AdminProjectionContractRoute
   '/admin/provider-health': typeof AdminProviderHealthRoute
+  '/cargo-workspace/$centre': typeof CargoWorkspaceCentreRoute
   '/decide/$id': typeof DecideIdRoute
   '/decide/queue': typeof DecideQueueRoute
   '/entity/$id': typeof EntityIdRoute
@@ -445,6 +467,7 @@ export interface FileRoutesByTo {
   '/share/queue': typeof ShareQueueRoute
   '/workspace/$id': typeof WorkspaceIdRoute
   '/admin': typeof AdminIndexRoute
+  '/cargo-workspace': typeof CargoWorkspaceIndexRoute
   '/decide': typeof DecideIndexRoute
   '/investigate': typeof InvestigateIndexRoute
   '/share': typeof ShareIndexRoute
@@ -467,6 +490,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/briefing-centre': typeof BriefingCentreRoute
   '/cargo': typeof CargoRoute
+  '/cargo-workspace': typeof CargoWorkspaceRouteWithChildren
   '/command-center': typeof CommandCenterRoute
   '/compliance': typeof ComplianceRoute
   '/copilot': typeof CopilotRoute
@@ -495,6 +519,7 @@ export interface FileRoutesById {
   '/admin/osint': typeof AdminOsintRoute
   '/admin/projection-contract': typeof AdminProjectionContractRoute
   '/admin/provider-health': typeof AdminProviderHealthRoute
+  '/cargo-workspace/$centre': typeof CargoWorkspaceCentreRoute
   '/decide/$id': typeof DecideIdRoute
   '/decide/queue': typeof DecideQueueRoute
   '/entity/$id': typeof EntityIdRoute
@@ -504,6 +529,7 @@ export interface FileRoutesById {
   '/share/queue': typeof ShareQueueRoute
   '/workspace/$id': typeof WorkspaceIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/cargo-workspace/': typeof CargoWorkspaceIndexRoute
   '/decide/': typeof DecideIndexRoute
   '/investigate/': typeof InvestigateIndexRoute
   '/share/': typeof ShareIndexRoute
@@ -527,6 +553,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/briefing-centre'
     | '/cargo'
+    | '/cargo-workspace'
     | '/command-center'
     | '/compliance'
     | '/copilot'
@@ -555,6 +582,7 @@ export interface FileRouteTypes {
     | '/admin/osint'
     | '/admin/projection-contract'
     | '/admin/provider-health'
+    | '/cargo-workspace/$centre'
     | '/decide/$id'
     | '/decide/queue'
     | '/entity/$id'
@@ -564,6 +592,7 @@ export interface FileRouteTypes {
     | '/share/queue'
     | '/workspace/$id'
     | '/admin/'
+    | '/cargo-workspace/'
     | '/decide/'
     | '/investigate/'
     | '/share/'
@@ -610,6 +639,7 @@ export interface FileRouteTypes {
     | '/admin/osint'
     | '/admin/projection-contract'
     | '/admin/provider-health'
+    | '/cargo-workspace/$centre'
     | '/decide/$id'
     | '/decide/queue'
     | '/entity/$id'
@@ -619,6 +649,7 @@ export interface FileRouteTypes {
     | '/share/queue'
     | '/workspace/$id'
     | '/admin'
+    | '/cargo-workspace'
     | '/decide'
     | '/investigate'
     | '/share'
@@ -640,6 +671,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/briefing-centre'
     | '/cargo'
+    | '/cargo-workspace'
     | '/command-center'
     | '/compliance'
     | '/copilot'
@@ -668,6 +700,7 @@ export interface FileRouteTypes {
     | '/admin/osint'
     | '/admin/projection-contract'
     | '/admin/provider-health'
+    | '/cargo-workspace/$centre'
     | '/decide/$id'
     | '/decide/queue'
     | '/entity/$id'
@@ -677,6 +710,7 @@ export interface FileRouteTypes {
     | '/share/queue'
     | '/workspace/$id'
     | '/admin/'
+    | '/cargo-workspace/'
     | '/decide/'
     | '/investigate/'
     | '/share/'
@@ -699,6 +733,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   BriefingCentreRoute: typeof BriefingCentreRoute
   CargoRoute: typeof CargoRoute
+  CargoWorkspaceRoute: typeof CargoWorkspaceRouteWithChildren
   CommandCenterRoute: typeof CommandCenterRoute
   ComplianceRoute: typeof ComplianceRoute
   CopilotRoute: typeof CopilotRoute
@@ -913,6 +948,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CommandCenterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cargo-workspace': {
+      id: '/cargo-workspace'
+      path: '/cargo-workspace'
+      fullPath: '/cargo-workspace'
+      preLoaderRoute: typeof CargoWorkspaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cargo': {
       id: '/cargo'
       path: '/cargo'
@@ -976,6 +1018,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DecideIndexRouteImport
       parentRoute: typeof DecideRoute
     }
+    '/cargo-workspace/': {
+      id: '/cargo-workspace/'
+      path: '/'
+      fullPath: '/cargo-workspace/'
+      preLoaderRoute: typeof CargoWorkspaceIndexRouteImport
+      parentRoute: typeof CargoWorkspaceRoute
+    }
     '/admin/': {
       id: '/admin/'
       path: '/admin'
@@ -1038,6 +1087,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/decide/$id'
       preLoaderRoute: typeof DecideIdRouteImport
       parentRoute: typeof DecideRoute
+    }
+    '/cargo-workspace/$centre': {
+      id: '/cargo-workspace/$centre'
+      path: '/$centre'
+      fullPath: '/cargo-workspace/$centre'
+      preLoaderRoute: typeof CargoWorkspaceCentreRouteImport
+      parentRoute: typeof CargoWorkspaceRoute
     }
     '/admin/provider-health': {
       id: '/admin/provider-health'
@@ -1140,6 +1196,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface CargoWorkspaceRouteChildren {
+  CargoWorkspaceCentreRoute: typeof CargoWorkspaceCentreRoute
+  CargoWorkspaceIndexRoute: typeof CargoWorkspaceIndexRoute
+}
+
+const CargoWorkspaceRouteChildren: CargoWorkspaceRouteChildren = {
+  CargoWorkspaceCentreRoute: CargoWorkspaceCentreRoute,
+  CargoWorkspaceIndexRoute: CargoWorkspaceIndexRoute,
+}
+
+const CargoWorkspaceRouteWithChildren = CargoWorkspaceRoute._addFileChildren(
+  CargoWorkspaceRouteChildren,
+)
+
 interface DecideRouteChildren {
   DecideIdRoute: typeof DecideIdRoute
   DecideQueueRoute: typeof DecideQueueRoute
@@ -1191,6 +1261,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   BriefingCentreRoute: BriefingCentreRoute,
   CargoRoute: CargoRoute,
+  CargoWorkspaceRoute: CargoWorkspaceRouteWithChildren,
   CommandCenterRoute: CommandCenterRoute,
   ComplianceRoute: ComplianceRoute,
   CopilotRoute: CopilotRoute,
@@ -1237,3 +1308,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

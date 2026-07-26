@@ -164,6 +164,8 @@ interface OrchestrationModule {
  */
 const ORCHESTRATION_MODULES: OrchestrationModule[] = [
   { key: "manifest", label: "Manifest", route: "/manifest", icon: FileText },
+  { key: "cargo-workspace", label: "Cargo Workspace", route: "/cargo-workspace", icon: FileText },
+
   { key: "revenue", label: "Revenue", route: "/revenue", icon: DollarSign },
   { key: "vessel", label: "Vessel", route: "/vessel", icon: Ship },
   { key: "ownership", label: "Ownership", route: "/ownership", icon: Building2 },
