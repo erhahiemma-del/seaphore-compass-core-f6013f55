@@ -641,8 +641,24 @@ function CopilotOpsPage() {
                 </div>
               </div>
 
-              <div ref={workspaceScrollRef} className="flex-1 overflow-auto p-4">
-                {!briefing && !isStreaming ? <EmptyBriefing /> : null}
+              <div
+                ref={workspaceScrollRef}
+                className={cn(
+                  "flex-1 overflow-auto",
+                  investigationMode ? "p-4" : "flex p-0",
+                )}
+              >
+                {!investigationMode ? (
+                  <InvestigationLanding
+                    subject={subjectLabel}
+                    value={text}
+                    onChange={setText}
+                    onSubmit={handleSubmit}
+                    pending={mutation.isPending}
+                    inputRef={inputRef}
+                  />
+                ) : null}
+
 
                 {isStreaming ? (
                   <div className="rounded-lg border border-border/60 bg-[#FAFBFC] p-4">
