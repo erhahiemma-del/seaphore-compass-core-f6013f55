@@ -1123,6 +1123,128 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: "2026-07-25",
   },
+
+  // ── DIAG-02: Intelligence Coverage & Readiness ─────────────────────────
+  {
+    id: "kpi.manifest-intelligence",
+    name: "Manifest Intelligence KPI",
+    producer: "IAL",
+    description:
+      "Sprint DIAG-02 — CARGO evidence coverage behind indexed manifest records. Projected as a smart KPI state (Active / Waiting for Credentials / Provider Offline / Rate Limited / No Evidence Found / Projection Missing / Dashboard Mapping Error) with an expandable coverage trace: provider, status, last successful sync, evidence count, coverage %, confidence, projection status, dashboard status and root cause.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Mission Control ribbon · Manifest Intelligence KPI card (expandable coverage details)",
+      location: "src/features/mission-control/MissionControl.tsx",
+      component: "src/components/intelligence/KpiCoverageCard.tsx",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-07-26",
+  },
+  {
+    id: "kpi.vessel-intelligence",
+    name: "Vessel Intelligence KPI",
+    producer: "IAL",
+    description:
+      "Sprint DIAG-02 — IDENTITY / VESSEL_SCREENING evidence coverage behind vessel profiles. Projected as a smart KPI state (Active / Waiting for Credentials / Provider Offline / Rate Limited / No Evidence Found / Projection Missing / Dashboard Mapping Error) with an expandable coverage trace: provider, status, last successful sync, evidence count, coverage %, confidence, projection status, dashboard status and root cause.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Mission Control ribbon · Vessel Intelligence KPI card (expandable coverage details)",
+      location: "src/features/mission-control/MissionControl.tsx",
+      component: "src/components/intelligence/KpiCoverageCard.tsx",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-07-26",
+  },
+  {
+    id: "kpi.container-intelligence",
+    name: "Container Intelligence KPI",
+    producer: "IAL",
+    description:
+      "Sprint DIAG-02 — CARGO evidence coverage behind tracked container movements. Projected as a smart KPI state (Active / Waiting for Credentials / Provider Offline / Rate Limited / No Evidence Found / Projection Missing / Dashboard Mapping Error) with an expandable coverage trace: provider, status, last successful sync, evidence count, coverage %, confidence, projection status, dashboard status and root cause.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Mission Control ribbon · Container Intelligence KPI card (expandable coverage details)",
+      location: "src/features/mission-control/MissionControl.tsx",
+      component: "src/components/intelligence/KpiCoverageCard.tsx",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-07-26",
+  },
+  {
+    id: "kpi.revenue-intelligence",
+    name: "Revenue Intelligence KPI",
+    producer: "IAL",
+    description:
+      "Sprint DIAG-02 — CARGO-derived revenue-at-risk evidence coverage. Projected as a smart KPI state (Active / Waiting for Credentials / Provider Offline / Rate Limited / No Evidence Found / Projection Missing / Dashboard Mapping Error) with an expandable coverage trace: provider, status, last successful sync, evidence count, coverage %, confidence, projection status, dashboard status and root cause.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Mission Control ribbon · Revenue Intelligence KPI card (expandable coverage details)",
+      location: "src/features/mission-control/MissionControl.tsx",
+      component: "src/components/intelligence/KpiCoverageCard.tsx",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-07-26",
+  },
+  {
+    id: "kpi.risk-intelligence",
+    name: "Risk Intelligence KPI",
+    producer: "IAL",
+    description:
+      "Sprint DIAG-02 — SANCTIONS screening evidence coverage behind risk exposure. Projected as a smart KPI state (Active / Waiting for Credentials / Provider Offline / Rate Limited / No Evidence Found / Projection Missing / Dashboard Mapping Error) with an expandable coverage trace: provider, status, last successful sync, evidence count, coverage %, confidence, projection status, dashboard status and root cause.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Mission Control ribbon · Risk Intelligence KPI card (expandable coverage details)",
+      location: "src/features/mission-control/MissionControl.tsx",
+      component: "src/components/intelligence/KpiCoverageCard.tsx",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-07-26",
+  },
+  {
+    id: "kpi.historical-intelligence",
+    name: "Historical Intelligence KPI",
+    producer: "IAL",
+    description:
+      "Sprint DIAG-02 — POSITION / PORT_CALL evidence coverage behind movement history. Projected as a smart KPI state (Active / Waiting for Credentials / Provider Offline / Rate Limited / No Evidence Found / Projection Missing / Dashboard Mapping Error) with an expandable coverage trace: provider, status, last successful sync, evidence count, coverage %, confidence, projection status, dashboard status and root cause.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Mission Control ribbon · Historical Intelligence KPI card (expandable coverage details)",
+      location: "src/features/mission-control/MissionControl.tsx",
+      component: "src/components/intelligence/KpiCoverageCard.tsx",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-07-26",
+  },
+  {
+    id: "diag.intelligence-readiness",
+    name: "Platform Intelligence Readiness",
+    producer: "IAL",
+    description:
+      "Sprint DIAG-02 — platform-wide readiness score derived from the Evidence Provider Catalog plus live healthCheck() probes: operational, partially operational, awaiting configuration and offline providers. Read-only classification; acquires, fuses and persists nothing.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Mission Control · Intelligence Readiness card",
+      location: "src/features/mission-control/MissionControl.tsx",
+      component: "src/components/intelligence/IntelligenceReadinessCard.tsx",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-07-26",
+  },
+  {
+    id: "diag.kpi-root-cause",
+    name: "KPI Root Cause Classification",
+    producer: "IAL",
+    description:
+      "Sprint DIAG-02 — automatic classification of why a KPI is not reporting a genuine number: Provider Missing, Credentials Missing, Provider Offline, API Failure, Rate Limited, Empty Evidence, Canonical UIP Missing, Projection Missing or Dashboard Mapping Error.",
+    state: "PROJECTED",
+    projection: {
+      surface: "KPI coverage details · Root cause row",
+      location: "src/components/intelligence/KpiCoverageCard.tsx",
+      component: "src/lib/intelligence/coverage-model.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-07-26",
+  },
 ];
 
 
