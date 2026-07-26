@@ -13,6 +13,8 @@ import { useEffect, useRef, useState } from "react";
 import {
   Building2,
   DollarSign,
+  FileSpreadsheet,
+  FileText,
   Loader2,
   Mic,
   Package,
@@ -22,12 +24,20 @@ import {
   ShieldCheck,
   Ship,
   Telescope,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
+import {
+  ATTACHMENT_ACCEPT,
+  formatBytes,
+  useOfficerAttachments,
+  type OfficerAttachment,
+} from "@/hooks/use-officer-attachments";
 import { cn } from "@/lib/utils";
+
 
 
 const TYPING_EXAMPLES = [
