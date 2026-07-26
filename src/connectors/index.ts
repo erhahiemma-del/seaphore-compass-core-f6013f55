@@ -45,14 +45,22 @@ export type {
 /**
  * Register every production Evidence Provider on a ConnectorManager.
  *
- * Called once by `getIntelligenceAcquisitionManager()` — the existing
- * IAL bootstrap. Callers with their own manager (tests, admin tooling)
- * may call this directly.
+ * Sprint PF-01 — registration now runs through the Evidence Provider
+ * certification gate. Failed certification = failed registration. No new
+ * registry is introduced: the gate simply calls the existing
+ * `ConnectorManager.register`.
  */
 export function registerEvidenceProviders(manager: ConnectorManager): void {
-  manager.register(openSanctionsConnector);
-  // Sprint EP-02 — the single environmental evidence source. Future
-  // environmental providers are ADAPTERS inside this provider, so this
-  // registration line never changes as sources are added.
-  manager.register(environmentalIntelligenceProvider);
+  const registered: string[] = [];
+  for (const provider of [openSanctionsConnector, environmentalIntelligenceProvider]) {
+    registerCertifiedProvider(manager, provider, {
+      existingIds: registered,
+      // Source-level prohibitions are certified in the regression suite,
+      // where provider files are readable; the bundle only carries the
+      // runtime-checkable subset.
+      allowSkipped: true,
+    });
+    registered.push(provider.id);
+  }
 }
+
