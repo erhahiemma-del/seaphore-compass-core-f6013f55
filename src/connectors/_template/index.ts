@@ -229,7 +229,12 @@ export class TemplateConnector implements ConnectorInterface {
           imo: raw["imo"],
           name: raw["name"],
           flag: raw["flag"],
+          // Relationship-bearing fields must be normalized here, because
+          // mapToGraph() reads `data` (never rawData) to emit edges.
+          owner: raw["owner"],
+          lastPort: raw["lastPort"],
         },
+
         rawData: raw as Record<string, unknown>,
         confidence,
         // Default confidenceLevel for raw OSINT is OBSERVED; override

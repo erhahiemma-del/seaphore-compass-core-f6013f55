@@ -1,0 +1,159 @@
+/**
+ * ───────────────────────────────────────────────────────────────────
+ *  EVIDENCE PROVIDER TEMPLATE — Evidence Provider Specification v1.0
+ * ───────────────────────────────────────────────────────────────────
+ *
+ *  Copy this file to:
+ *    src/connectors/implementations/<Name>Provider.ts
+ *
+ *  Then, in order:
+ *    1. Replace every TODO.
+ *    2. Declare the officer-facing projection in
+ *       src/lib/projection-contract/registry.ts and paste its id below.
+ *    3. Register it in src/connectors/index.ts via
+ *       registerCertifiedProvider(). Certification failure = registration
+ *       failure; there is no bypass.
+ *    4. Add the provider to the PROVIDERS list in
+ *       src/connectors/framework/__tests__/certification.test.ts.
+ *
+ *  A provider is a LEAF. It fetches, normalizes and flags. It MUST NOT:
+ *    • write to the database or any store
+ *    • resolve identity, score risk, or fuse evidence
+ *    • create briefings or publish Unified Intelligence Packages
+ *    • hold its own registry or cache
+ *  Those belong to IFE / UIP / OKL, which the freeze does not touch.
+ *
+ *  Reference implementation: OpenSanctionsConnector.ts
+ * ───────────────────────────────────────────────────────────────────
+ */
+
+import type {
+  Connector,
+  ConnectorCapability,
+  ConnectorHealth,
+  ConnectorId,
+  ConnectorResult,
+  EvidenceQuery,
+  NormalizedEvidence,
+  RawRecord,
+} from "@/services/ial/connectors/base";
+import type { ProviderMetadata } from "@/services/ial/connectors/provider-metadata";
+import { EvidenceCache } from "@/services/ial/cache";
+import { stableHash } from "@/services/ial/hash";
+import { validateRecords } from "@/services/ial/validator";
+import { EVIDENCE_PROVIDER_SPEC_VERSION } from "@/connectors/framework/spec";
+import type { EvidenceProviderV1, ProviderValidation } from "@/connectors/framework/spec";
+
+// ─── Metadata ───────────────────────────────────────────────────────
+
+/** TODO: rename and register the id in the Provider Resolver. */
+export const TEMPLATE_PROVIDER_METADATA: ProviderMetadata = {
+  id: "template-provider" as ConnectorId,
+  name: "Template Provider",
+  providerType: "SIMULATED", // TODO: "LIVE" once the real endpoint is wired
+  environment: "development", // TODO: "production" after certification review
+  priority: 100,
+  enabled: false, // TODO: enable when the provider is ready to serve officers
+  description: "TODO: one sentence an officer would understand.",
+  attribution: "TODO: source attribution shown in evidence lineage.",
+};
+
+const CACHE_TTL_MS = 15 * 60 * 1000;
+
+// ─── Provider ───────────────────────────────────────────────────────
+
+export class TemplateEvidenceProvider implements Connector, EvidenceProviderV1 {
+  readonly specVersion = EVIDENCE_PROVIDER_SPEC_VERSION;
+  /** TODO: the id you added to the Projection Contract registry. */
+  readonly projectionContractId = "TODO.projection-contract-id";
+  readonly id: ConnectorId = TEMPLATE_PROVIDER_METADATA.id;
+  readonly displayName = TEMPLATE_PROVIDER_METADATA.name;
+  readonly provider = TEMPLATE_PROVIDER_METADATA;
+  /** TODO: the capabilities this provider answers for. */
+  readonly capabilities: ReadonlyArray<ConnectorCapability> = ["SANCTIONS"];
+
+  private readonly cache = new EvidenceCache<ConnectorResult>(CACHE_TTL_MS);
+
+  // ── 1. connect() ──────────────────────────────────────────────────
+  async connect(): Promise<void> {
+    // TODO: resolve configuration / base URL. No network calls needed here.
+  }
+
+  async authenticate(): Promise<boolean> {
+    // TODO: return true when credentials (if any) are present.
+    return true;
+  }
+
+  // ── 2. healthCheck() ──────────────────────────────────────────────
+  async healthCheck(): Promise<ConnectorHealth> {
+    return {
+      connectorId: this.id,
+      available: TEMPLATE_PROVIDER_METADATA.enabled,
+      authenticated: await this.authenticate(),
+      latencyMsP50: 0,
+      failureRate: 0,
+      quotaRemaining: null,
+      lastSuccessAt: null,
+      lastError: null,
+    };
+  }
+
+  // ── 3. search() ───────────────────────────────────────────────────
+  async search(query: EvidenceQuery): Promise<ConnectorResult> {
+    const key = stableHash({ id: this.id, query });
+    const cached = this.cache.get(key);
+    if (cached) return cached;
+
+    const startedAt = Date.now();
+    let raw: ReadonlyArray<RawRecord> = [];
+    let ok = true;
+    let error: string | null = null;
+    try {
+      raw = await this.fetchRaw(query);
+    } catch (e) {
+      ok = false;
+      error = e instanceof Error ? e.message : String(e);
+    }
+
+    const records = raw
+      .map((r) => this.normalize(r))
+      .filter((r): r is NormalizedEvidence => r !== null);
+
+    const result: ConnectorResult = {
+      connectorId: this.id,
+      ok,
+      records,
+      latencyMs: Date.now() - startedAt,
+      error,
+      // Validation FLAGS quality problems; it never drops evidence.
+      validation: this.validate(records).issues,
+    };
+    if (ok) this.cache.set(key, result);
+    return result;
+  }
+
+  async lookup(query: EvidenceQuery): Promise<ConnectorResult> {
+    return this.search(query);
+  }
+
+  // ── 4. normalize() ────────────────────────────────────────────────
+  normalize(_raw: RawRecord): NormalizedEvidence | null {
+    // TODO: map the upstream payload onto NormalizedEvidence. Every field
+    // must carry provenance and an OBSERVED / DERIVED / INFERRED class.
+    // Return null for records that cannot be honestly represented.
+    return null;
+  }
+
+  // ── 5. validate() ─────────────────────────────────────────────────
+  validate(records: ReadonlyArray<NormalizedEvidence>): ProviderValidation {
+    return validateRecords(records);
+  }
+
+  // ── private ───────────────────────────────────────────────────────
+  private async fetchRaw(_query: EvidenceQuery): Promise<ReadonlyArray<RawRecord>> {
+    // TODO: call the upstream API here (fetch only — no persistence).
+    return [];
+  }
+}
+
+export const templateEvidenceProvider = new TemplateEvidenceProvider();
