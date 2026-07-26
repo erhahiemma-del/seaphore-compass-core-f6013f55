@@ -39,7 +39,9 @@ import {
   useOfficerAttachments,
   type OfficerAttachment,
 } from "@/hooks/use-officer-attachments";
+import { AttachmentPreviewDialog } from "@/components/copilot/AttachmentPreviewDialog";
 import { cn } from "@/lib/utils";
+
 
 
 
@@ -181,6 +183,10 @@ export function InvestigationLanding({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const files = useOfficerAttachments({ onError: (m) => toast.error(m) });
   const canSubmit = Boolean(value.trim()) && !pending && !files.uploading;
+  /** Attachment currently open in the confirmation preview, if any. */
+  const [previewId, setPreviewId] = useState<string | null>(null);
+  const previewItem = files.items.find((a) => a.id === previewId) ?? null;
+
 
   function submit() {
     if (!canSubmit) return;
