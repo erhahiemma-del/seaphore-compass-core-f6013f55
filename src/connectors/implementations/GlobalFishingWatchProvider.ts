@@ -223,7 +223,7 @@ export class GlobalFishingWatchProvider extends BaseEvidenceProvider {
   ): Promise<ReadonlyArray<NormalizedEvidence>> {
     if (!(await this.authenticate())) {
       throw new Error(
-        "Global Fishing Watch API token not configured — no AIS evidence acquired (evidence is never simulated)",
+        `${GFW_AUTH_MESSAGE.CREDENTIALS_MISSING} No AIS evidence acquired (evidence is never simulated).`,
       );
     }
     const term = (query.entity?.label ?? query.text ?? "").trim();
@@ -237,7 +237,16 @@ export class GlobalFishingWatchProvider extends BaseEvidenceProvider {
     const res = await timedFetch(this.fetchImpl, url.toString(), TIMEOUT_MS, {
       headers: this.headers(),
     });
+    if (res.status === 401 || res.status === 403) {
+      this.applyAuthState("CREDENTIALS_INVALID", `HTTP ${res.status}`);
+      throw new Error(GFW_AUTH_MESSAGE.CREDENTIALS_INVALID);
+    }
+    if (res.status >= 500) {
+      this.applyAuthState("PROVIDER_UNREACHABLE", `HTTP ${res.status}`);
+      throw new Error(GFW_AUTH_MESSAGE.PROVIDER_UNREACHABLE);
+    }
     if (res.status !== 200) throw new Error(`Global Fishing Watch returned ${res.status}`);
+
     const payload = (await res.json()) as {
       entries?: Array<{ selfReportedInfo?: GfwVessel[]; combinedSourcesInfo?: unknown } & GfwVessel>;
     };
