@@ -151,16 +151,23 @@ export function InvestigationLanding({
       merge(text);
       window.setTimeout(() => ref.current?.focus(), 0);
     },
-    onError: (message) => toast.error(message),
+    onError: (problem) =>
+      toast.error(problem.title, {
+        description: `${problem.detail} ${problem.hint}`,
+        duration: problem.blocking ? 10000 : 6000,
+      }),
   });
 
   const recording = dictation.state === "recording";
   const transcribing = dictation.state === "transcribing";
+  const micBlocked = !dictation.supported || dictation.permission === "denied";
+  const micNotice = dictation.unavailable ?? dictation.issue;
 
   function toggleDictation() {
     if (dictation.state === "idle") baselineRef.current = valueRef.current;
     dictation.toggle();
   }
+
 
   function insert(prompt: string) {
     onChange(prompt);
