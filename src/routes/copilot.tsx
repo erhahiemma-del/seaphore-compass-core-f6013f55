@@ -724,7 +724,7 @@ function CopilotOpsPage() {
                 ) : null}
 
                 {briefing ? (
-                  <>
+                  <div key={briefing.id} className="animate-in fade-in slide-in-from-bottom-3 duration-300">
                     <IntelligenceProjectionPanel
                       ibe={ibeProjection?.ibe ?? null}
                       humanResponse={ibeProjection?.humanResponse ?? null}
@@ -740,7 +740,13 @@ function CopilotOpsPage() {
                       onFollowUp={(q: string) => handleSubmit(q)}
                     />
 
-                    <details className="mt-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-[12px] text-slate-700 open:shadow-sm">
+                    {/* The Adaptive Briefing is expanded on arrival — the
+                        officer sees the full reasoning immediately rather than
+                        having to discover a collapsed panel. */}
+                    <details
+                      open
+                      className="mt-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-[12px] text-slate-700 open:shadow-sm"
+                    >
                       <summary className="cursor-pointer font-medium text-slate-800">
                         Analyst view — full adaptive briefing
                       </summary>
@@ -754,8 +760,9 @@ function CopilotOpsPage() {
                         />
                       </div>
                     </details>
-                  </>
+                  </div>
                 ) : null}
+
 
                 {briefing && followUps.length > 0 ? (
                   <div className="mt-3 rounded-lg border border-border/60 bg-[#FAFBFC] p-3">
