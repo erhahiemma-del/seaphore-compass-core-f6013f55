@@ -100,7 +100,12 @@ export class GlobalFishingWatchProvider extends BaseEvidenceProvider {
   ];
 
   private readonly fetchImpl: typeof fetch;
-  private readonly apiToken: string | null;
+  /** Explicit test credential. Production reads env per call, never here. */
+  private readonly injectedToken: string | null;
+  /** Last resolved authentication state — reported, never inferred. */
+  private authState: GfwAuthState = "CREDENTIALS_MISSING";
+  /** Which env var supplied the active credential, for the health surface. */
+  private credentialSource: string | null = null;
 
   constructor(opts: ProviderOptions = {}) {
     super({
@@ -109,45 +114,109 @@ export class GlobalFishingWatchProvider extends BaseEvidenceProvider {
       cacheTtlMs: opts.cacheTtlMs ?? GFW_CACHE_TTL_MS,
     });
     this.fetchImpl = opts.fetchImpl ?? ((...args) => fetch(...args));
-    this.apiToken = opts.credential ?? readProviderCredential("GFW_API_TOKEN");
+    this.injectedToken = opts.credential ?? null;
+  }
+
+  /**
+   * Resolve the API token at call time.
+   *
+   * The env read MUST stay lazy: the worker runtime injects environment
+   * per request, so a token captured in the constructor of a
+   * module-scope singleton is always null in production and the provider
+   * would report "unauthenticated" forever with a valid token set.
+   */
+  private resolveToken(): string | null {
+    if (this.injectedToken) {
+      this.credentialSource = "injected";
+      return this.injectedToken;
+    }
+    const found = readFirstProviderCredential(GFW_CREDENTIAL_ENV);
+    this.credentialSource = found?.source ?? null;
+    return found?.value ?? null;
+  }
+
+  /** Officer-facing authentication state from the most recent probe. */
+  get authenticationState(): GfwAuthState {
+    return this.authState;
+  }
+
+  /** Env var that supplied the active credential (null when unconfigured). */
+  get activeCredentialEnv(): string | null {
+    return this.credentialSource;
   }
 
   protected cacheKey(query: AcquisitionQuery): string {
     return `${this.id}:${stableHash({ text: query.text, entity: query.entity?.id })}`;
   }
 
+  private applyAuthState(state: GfwAuthState, detail?: string): void {
+    this.authState = state;
+    this.authed = state === "AUTHENTICATED";
+    this.available = state !== "PROVIDER_UNREACHABLE";
+    this.lastError =
+      state === "AUTHENTICATED"
+        ? null
+        : `${GFW_AUTH_MESSAGE[state]}${detail ? ` (${detail})` : ""}`;
+  }
+
   async connect(): Promise<void> {
+    const token = this.resolveToken();
+    if (!token) {
+      this.applyAuthState("CREDENTIALS_MISSING");
+      return;
+    }
     try {
       const res = await timedFetch(
         this.fetchImpl,
         `${API_BASE}/vessels/search?query=test&datasets[0]=public-global-vessel-identity:latest&limit=1`,
         TIMEOUT_MS,
-        { headers: this.headers() },
+        { headers: this.headers(token) },
       );
-      this.available = res.status < 500;
-      this.authed = res.status === 200;
-      this.lastError = this.available
-        ? res.status === 401 || res.status === 403
-          ? "GFW API token missing or rejected (GFW_API_TOKEN)"
-          : null
-        : `health probe returned ${res.status}`;
+      if (res.status === 401 || res.status === 403) {
+        this.applyAuthState("CREDENTIALS_INVALID", `HTTP ${res.status}`);
+        return;
+      }
+      if (res.status >= 500) {
+        this.applyAuthState("PROVIDER_UNREACHABLE", `HTTP ${res.status}`);
+        return;
+      }
+      if (res.status !== 200) {
+        // Reachable and accepted the credential, but the probe query
+        // itself was refused — degraded, not an authentication failure.
+        this.authState = "AUTHENTICATED";
+        this.authed = true;
+        this.available = true;
+        this.lastError = `Probe returned HTTP ${res.status}`;
+        return;
+      }
+      this.applyAuthState("AUTHENTICATED");
     } catch (err) {
-      this.available = false;
-      this.lastError = err instanceof Error ? err.message : String(err);
+      this.applyAuthState(
+        "PROVIDER_UNREACHABLE",
+        err instanceof Error ? err.message : String(err),
+      );
     }
   }
 
   async authenticate(): Promise<boolean> {
-    this.authed = this.apiToken !== null;
-    if (!this.authed) this.lastError = "GFW API token not configured (GFW_API_TOKEN)";
+    const token = this.resolveToken();
+    if (!token) {
+      this.applyAuthState("CREDENTIALS_MISSING");
+      return false;
+    }
+    // A present token is a configured token; validity is established by
+    // connect()/the health probe, which talks to the upstream.
+    if (this.authState === "CREDENTIALS_MISSING") this.authState = "AUTHENTICATED";
+    this.authed = this.authState === "AUTHENTICATED";
     return this.authed;
   }
 
-  private headers(): Record<string, string> {
-    return this.apiToken
-      ? { Authorization: `Bearer ${this.apiToken}`, Accept: "application/json" }
+  private headers(token: string | null = this.resolveToken()): Record<string, string> {
+    return token
+      ? { Authorization: `Bearer ${token}`, Accept: "application/json" }
       : { Accept: "application/json" };
   }
+
 
   protected async fetchEvidence(
     query: AcquisitionQuery,
