@@ -123,7 +123,12 @@ export async function runSanctionsScreening(
     : [];
   const query: AcquisitionQuery = {
     ...buildQuery(req.target),
-    connectors: providers.map((p) => p.id),
+    // No provider resolved → acquire against an empty target set so the
+    // caller still receives a well-formed (empty) EvidencePackage rather
+    // than a silent fan-out across every registered connector.
+    connectors: providers.length
+      ? providers.map((p) => p.id)
+      : (["__no-active-provider__"] as ReadonlyArray<ConnectorId>),
   };
 
   const pkg = req.manager
