@@ -43,6 +43,8 @@ import {
 import { AttachmentPreviewDialog } from "@/components/copilot/AttachmentPreviewDialog";
 import { CopilotCue } from "@/components/copilot/CopilotCue";
 import { detectIntentHint } from "@/lib/copilot/intent-hints";
+import { appendContinuation } from "@/lib/copilot/continuations";
+import { useIdleContinuations } from "@/hooks/use-idle-continuations";
 import { cn } from "@/lib/utils";
 
 
@@ -236,6 +238,26 @@ export function InvestigationLanding({
 
   const intentHint = hintDismissed ? null : detectIntentHint(value);
 
+  /**
+   * Inline continuations — appear ~1.5s after the officer pauses typing and
+   * disappear on the next keystroke. Assistive only: ignore, Tab, or click.
+   */
+  const continuations = useIdleContinuations({
+    value,
+    paused: pending || recording || transcribing,
+  });
+
+  function acceptContinuation(fragment: string) {
+    const next = appendContinuation(value, fragment);
+    handleChange(next);
+    window.setTimeout(() => {
+      const el = ref.current;
+      if (!el) return;
+      el.focus();
+      el.setSelectionRange(el.value.length, el.value.length);
+    }, 0);
+  }
+
   // --- Officer attachments (manifests / documents) ---------------------
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const files = useOfficerAttachments({ onError: (m) => toast.error(m) });
@@ -428,6 +450,13 @@ export function InvestigationLanding({
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   submit();
+                  return;
+                }
+                // Tab accepts the first ghost continuation, Cursor-style; with
+                // no suggestions showing, Tab keeps its normal focus behaviour.
+                if (e.key === "Tab" && !e.shiftKey && continuations.length > 0) {
+                  e.preventDefault();
+                  acceptContinuation(continuations[0]);
                 }
               }}
 
@@ -702,6 +731,35 @@ export function InvestigationLanding({
 
 
 
+
+          {/* Ghost continuations — faint, inline, dismissible by typing. */}
+          {continuations.length > 0 ? (
+            <div
+              data-testid="continuation-row"
+              className="animate-in fade-in slide-in-from-top-1 mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 px-1 duration-300 motion-reduce:animate-none"
+            >
+              <span className="text-[11px] text-muted-foreground/60">
+                Continue with...
+              </span>
+              {continuations.map((c, i) => (
+                <button
+                  key={c}
+                  type="button"
+                  data-testid="continuation-suggestion"
+                  title="Click or press Tab to append — never submitted for you"
+                  onClick={() => acceptContinuation(c)}
+                  className="rounded-md px-1.5 py-0.5 text-[11.5px] text-muted-foreground/55 transition-colors hover:bg-[color:var(--color-teal)]/8 hover:text-foreground"
+                >
+                  {c}
+                  {i === 0 ? (
+                    <span className="ml-1.5 rounded border border-border/60 px-1 text-[9px] uppercase tracking-wider text-muted-foreground/60">
+                      Tab
+                    </span>
+                  ) : null}
+                </button>
+              ))}
+            </div>
+          ) : null}
 
           <div className="mt-2 flex min-h-[18px] items-center justify-between gap-3 px-1">
             <div className="min-w-0 flex-1">
