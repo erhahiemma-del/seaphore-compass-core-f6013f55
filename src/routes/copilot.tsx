@@ -47,6 +47,11 @@ import type {
 } from "@/components/copilot/briefing";
 import { StreamingStages } from "@/components/copilot/StreamingStages";
 import { InvestigationLanding } from "@/components/copilot/InvestigationLanding";
+import {
+  describeAttachments,
+  type OfficerAttachment,
+} from "@/hooks/use-officer-attachments";
+
 
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { Button } from "@/components/ui/button";
@@ -401,20 +406,24 @@ function CopilotOpsPage() {
     },
   });
 
-  function handleSubmit(q: string) {
+  function handleSubmit(q: string, attachments?: OfficerAttachment[]) {
     const clean = q.trim();
     if (!clean || mutation.isPending) return;
     setText("");
     setError(null);
     setClarify(null);
+    // Officer-attached manifests/documents travel with the query as
+    // officer-supplied context — the pipeline stays the single path.
+    const context = attachments?.length ? describeAttachments(attachments) : "";
+    const submitted = context ? `${clean}\n\n${context}` : clean;
     try {
-      session.appendOfficer(clean);
+      session.appendOfficer(submitted);
     } catch (err) {
       console.warn("[Copilot] failed to log officer turn", err);
     }
     // Sprint UX-005 — record officer turn into the Investigation Workspace.
     try {
-      recordOfficerTurn(clean);
+      recordOfficerTurn(submitted);
     } catch (err) {
       console.warn("[Workspace] failed to record officer turn", err);
     }
@@ -423,8 +432,9 @@ function CopilotOpsPage() {
     requestAnimationFrame(() => {
       workspaceScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
     });
-    mutation.mutate(clean);
+    mutation.mutate(submitted);
   }
+
 
   async function handleOverride(submission: OverrideSubmission) {
     if (!briefing) return;

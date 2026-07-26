@@ -13,6 +13,8 @@ import { useEffect, useRef, useState } from "react";
 import {
   Building2,
   DollarSign,
+  FileSpreadsheet,
+  FileText,
   Loader2,
   Mic,
   Package,
@@ -22,12 +24,20 @@ import {
   ShieldCheck,
   Ship,
   Telescope,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
+import {
+  ATTACHMENT_ACCEPT,
+  formatBytes,
+  useOfficerAttachments,
+  type OfficerAttachment,
+} from "@/hooks/use-officer-attachments";
 import { cn } from "@/lib/utils";
+
 
 
 const TYPING_EXAMPLES = [
@@ -84,7 +94,7 @@ export interface InvestigationLandingProps {
   subject: string;
   value: string;
   onChange: (v: string) => void;
-  onSubmit: (q: string) => void;
+  onSubmit: (q: string, attachments?: OfficerAttachment[]) => void;
   pending?: boolean;
   inputRef?: React.RefObject<HTMLTextAreaElement | null>;
 }
@@ -157,6 +167,19 @@ export function InvestigationLanding({
     window.setTimeout(() => ref.current?.focus(), 0);
   }
 
+  // --- Officer attachments (manifests / documents) ---------------------
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const files = useOfficerAttachments({ onError: (m) => toast.error(m) });
+  const canSubmit = Boolean(value.trim()) && !pending && !files.uploading;
+
+  function submit() {
+    if (!canSubmit) return;
+    onSubmit(value, files.attachments);
+    files.clear();
+  }
+
+
+
 
   return (
     <div className="animate-in fade-in flex min-h-full flex-col items-center justify-start px-4 pt-6 pb-4 duration-500">
@@ -180,8 +203,9 @@ export function InvestigationLanding({
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            onSubmit(value);
+            submit();
           }}
+
           className="mt-5"
         >
           <div
@@ -201,9 +225,10 @@ export function InvestigationLanding({
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  onSubmit(value);
+                  submit();
                 }
               }}
+
               placeholder={
                 recording
                   ? "Listening — speak your investigation..."
@@ -249,17 +274,35 @@ export function InvestigationLanding({
                 ) : null}
               </button>
 
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept={ATTACHMENT_ACCEPT}
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files?.length) void files.add(e.target.files);
+                  e.target.value = "";
+                }}
+              />
               <button
                 type="button"
-                aria-label="Attach evidence"
-                className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                aria-label="Attach manifest or document"
+                title="Attach a manifest or document (PDF, CSV, XLSX, DOCX, image — max 20 MB)"
+                disabled={pending || files.uploading}
+                onClick={() => fileInputRef.current?.click()}
+                className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40"
               >
-                <Paperclip className="h-4 w-4" />
+                {files.uploading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Paperclip className="h-4 w-4" />
+                )}
               </button>
               <button
                 type="submit"
                 aria-label="Start investigation"
-                disabled={pending || !value.trim()}
+                disabled={!canSubmit}
                 className="ml-1 flex h-9 w-9 items-center justify-center rounded-full bg-[color:var(--color-teal)] text-white transition-opacity hover:opacity-90 disabled:opacity-40"
               >
                 {pending ? (
@@ -270,6 +313,38 @@ export function InvestigationLanding({
               </button>
             </div>
           </div>
+
+          {files.attachments.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-1.5 px-1">
+              {files.attachments.map((a) => (
+                <span
+                  key={a.id}
+                  className="flex max-w-full items-center gap-1.5 rounded-full border border-border/60 bg-muted/40 py-1 pl-2.5 pr-1.5 text-[11px] text-foreground"
+                >
+                  {a.kind === "MANIFEST" ? (
+                    <FileSpreadsheet className="h-3.5 w-3.5 shrink-0 text-[color:var(--color-teal)]" />
+                  ) : (
+                    <FileText className="h-3.5 w-3.5 shrink-0 text-[color:var(--color-teal)]" />
+                  )}
+                  <span className="truncate">{a.name}</span>
+                  <span className="shrink-0 text-muted-foreground">{formatBytes(a.size)}</span>
+                  <button
+                    type="button"
+                    aria-label={`Remove ${a.name}`}
+                    onClick={() => void files.remove(a.id)}
+                    className="rounded-full p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+              <span className="self-center text-[10px] uppercase tracking-wider text-muted-foreground/70">
+                Officer-supplied evidence
+              </span>
+            </div>
+          ) : null}
+
+
 
           <div className="mt-2 flex min-h-[18px] items-center justify-between gap-3 px-1">
             <div className="min-w-0 flex-1">
