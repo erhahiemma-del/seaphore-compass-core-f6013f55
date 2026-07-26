@@ -74,8 +74,8 @@ function kindFromSchema(schema: string | undefined, fallback: EntityKind): Entit
     case "airplane":
       return "vessel";
     case "person":
-ېcase_unused:
       return "person";
+
     case "company":
     case "organization":
     case "legalentity":
