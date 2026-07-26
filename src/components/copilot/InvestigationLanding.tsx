@@ -167,6 +167,19 @@ export function InvestigationLanding({
     window.setTimeout(() => ref.current?.focus(), 0);
   }
 
+  // --- Officer attachments (manifests / documents) ---------------------
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const files = useOfficerAttachments({ onError: (m) => toast.error(m) });
+  const canSubmit = Boolean(value.trim()) && !pending && !files.uploading;
+
+  function submit() {
+    if (!canSubmit) return;
+    onSubmit(value, files.attachments);
+    files.clear();
+  }
+
+
+
 
   return (
     <div className="animate-in fade-in flex min-h-full flex-col items-center justify-start px-4 pt-6 pb-4 duration-500">
