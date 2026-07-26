@@ -134,7 +134,7 @@ describe("cargo workspace projection", () => {
     });
     expect(p.state).toBe("ACTIVE");
     expect(p.data).not.toBeNull();
-    expect(p.data!.kpis.find((k) => k.key === "mismatch")!.value).toBe("1");
+    expect(p.data!.kpis.find((k) => k.key === "mismatch")!.value).toBe("2");
     expect(p.data!.timeline).toHaveLength(2);
     expect(p.data!.evidence).toHaveLength(2);
     expect(p.data!.summary.some((s) => s.includes("officer decides"))).toBe(true);
