@@ -24,8 +24,11 @@ import {
   Telescope,
   type LucideIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 
+import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { cn } from "@/lib/utils";
+
 
 const TYPING_EXAMPLES = [
   "Investigate MV Ocean Pearl ownership",
