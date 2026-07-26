@@ -387,7 +387,7 @@ export function InvestigationLanding({
           <p className="mb-2.5 text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70">
             Quick Start
           </p>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+          <div data-testid="quick-start-grid" className="grid grid-cols-3 gap-2 sm:grid-cols-6">
             {QUICK_START.map((q) => (
               <button
                 key={q.key}
