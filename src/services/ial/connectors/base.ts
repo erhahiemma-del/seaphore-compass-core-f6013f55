@@ -29,7 +29,12 @@ export type ConnectorCapability =
   | "POSITION"
   | "PORT_CALL"
   | "COMPLIANCE"
-  | "CARGO";
+  | "CARGO"
+  /** Sprint EP-02 — environmental observations (sea state, wind,
+   *  visibility, SST). Served by ONE Environmental Intelligence Provider
+   *  behind which every environmental source is an adapter. */
+  | "ENVIRONMENTAL_INTELLIGENCE";
+
 
 export interface Connector {
   readonly id: ConnectorId;
