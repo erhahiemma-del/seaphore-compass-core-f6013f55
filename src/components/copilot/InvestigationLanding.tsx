@@ -254,25 +254,41 @@ export function InvestigationLanding({
               <button
                 type="button"
                 onClick={toggleDictation}
+                /* A blocked permission keeps the button live: pressing it is how
+                   the officer gets the explanation and the unblock steps. */
                 disabled={pending || transcribing || !dictation.supported}
-                aria-label={recording ? "Stop dictation" : "Voice input"}
+                aria-label={
+                  recording
+                    ? "Stop dictation"
+                    : micBlocked
+                      ? "Voice input unavailable — see guidance"
+                      : "Voice input"
+                }
                 aria-pressed={recording}
                 title={
-                  dictation.supported
-                    ? recording
-                      ? "Stop dictation"
-                      : "Dictate your investigation"
-                    : "Voice input is not supported in this browser"
+                  !dictation.supported
+                    ? (dictation.unavailable?.title ?? "Voice input is not available here")
+                    : dictation.permission === "denied"
+                      ? "Microphone blocked — click for how to enable it"
+                      : recording
+                        ? "Stop dictation"
+                        : dictation.permission === "prompt" || dictation.permission === "unknown"
+                          ? "Dictate your investigation — your browser will ask for microphone access"
+                          : "Dictate your investigation"
                 }
                 className={cn(
                   "relative rounded-full p-2 transition-colors disabled:opacity-40",
                   recording
                     ? "bg-destructive/10 text-destructive"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                    : micBlocked
+                      ? "text-muted-foreground/70 hover:bg-accent hover:text-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
                 )}
               >
                 {transcribing ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
+                ) : micBlocked ? (
+                  <MicOff className="h-4 w-4" />
                 ) : (
                   <Mic className={cn("h-4 w-4", recording && "animate-pulse")} />
                 )}
@@ -284,6 +300,7 @@ export function InvestigationLanding({
                   />
                 ) : null}
               </button>
+
 
               <input
                 ref={fileInputRef}
