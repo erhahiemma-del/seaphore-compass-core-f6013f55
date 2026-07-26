@@ -47,6 +47,26 @@ export function readProviderCredential(name: string): string | null {
   }
 }
 
+/**
+ * Read the first present credential from a list of accepted env names.
+ *
+ * Used where a provider accepts a canonical variable plus historical
+ * aliases (e.g. `GFW_API_TOKEN`, previously
+ * `GLOBAL_FISHING_WATCH_API_KEY`). Order is significant: the first name
+ * is canonical. Returns the value AND the variable it came from so the
+ * officer-facing health surface can state exactly what is configured.
+ */
+export function readFirstProviderCredential(
+  names: ReadonlyArray<string>,
+): { value: string; source: string } | null {
+  for (const name of names) {
+    const value = readProviderCredential(name);
+    if (value && value.trim().length > 0) return { value: value.trim(), source: name };
+  }
+  return null;
+}
+
+
 /** fetch() with a hard timeout. Rejects on timeout, network error, abort. */
 export async function timedFetch(
   fetchImpl: typeof fetch,
