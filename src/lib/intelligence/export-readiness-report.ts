@@ -158,7 +158,7 @@ export function rollUpProviders(report: IntelligenceCoverageReport): ProviderRol
         lastError: null,
         lastCheckedAt: report.generatedAt,
         lastSuccessfulSync: null,
-        serves: ["No KPI mapping"],
+        serves: [],
       });
     }
   }
@@ -188,8 +188,12 @@ export function outstandingConfiguration(report: IntelligenceCoverageReport): Co
         severity: "BLOCKING",
         subject: `${p.providerName} — credentials missing`,
         detail: p.credentialEnv.length
-          ? `Set ${p.credentialEnv.join(" or ")} to activate ${p.serves.join(", ")}.`
-          : `Credential required before ${p.serves.join(", ")} can report live evidence.`,
+          ? p.serves.length
+            ? `Set ${p.credentialEnv.join(" or ")} to activate ${p.serves.join(", ")}.`
+            : `Set ${p.credentialEnv.join(" or ")}. This provider is registered but not yet mapped to a KPI.`
+          : p.serves.length
+            ? `Credential required before ${p.serves.join(", ")} can report live evidence.`
+            : "Credential required. This provider is registered but not yet mapped to a KPI.",
       });
     } else if (p.status === "CREDENTIALS_INVALID") {
       items.push({
@@ -555,11 +559,11 @@ export function buildReadinessReportPdf(report: IntelligenceCoverageReport): jsP
   table(
     ["Disposition", "Provider", "Serves", "Blocking detail"],
     [
-      ...operational.map((p) => ["Operational", p.providerName, p.serves.join(", "), "—"]),
+      ...operational.map((p) => ["Operational", p.providerName, p.serves.join(", ") || "No KPI mapping", "—"]),
       ...pending.map((p) => [
         `Pending — ${PROVIDER_STATUS_LABEL[p.status]}`,
         p.providerName,
-        p.serves.join(", "),
+        p.serves.join(", ") || "No KPI mapping",
         p.lastError ??
           (p.credentialEnv.length
             ? `Credentials missing — set ${p.credentialEnv.join(" or ")}.`
