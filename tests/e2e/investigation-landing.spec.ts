@@ -48,6 +48,9 @@ async function subjectOf(page: Page): Promise<string> {
 }
 
 test.describe("Investigation Landing — empty state", () => {
+  // Standard laptop viewport — the honest baseline for "no scrolling".
+  test.use({ viewport: { width: 1440, height: 900 } });
+
   test("fits without scrolling and shows all six Quick Start cards", async ({ page }) => {
     await openLanding(page);
 
