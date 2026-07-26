@@ -349,9 +349,19 @@ export interface EnvironmentalIntelligenceProviderOptions {
   readonly sources?: ReadonlyArray<EnvironmentalSourceAdapter>;
 }
 
-export class EnvironmentalIntelligenceProvider implements Connector {
+export class EnvironmentalIntelligenceProvider implements Connector, EvidenceProviderV1 {
+  /** Sprint PF-01 — Evidence Provider Specification v1.0. */
+  readonly specVersion = EVIDENCE_PROVIDER_SPEC_VERSION;
+  /** Officer-facing projection declared in the Projection Contract. */
+  readonly projectionContractId = "ial.environmental-intelligence-provider";
   readonly id: ConnectorId = ENVIRONMENTAL_INTELLIGENCE_METADATA.id;
   readonly displayName = ENVIRONMENTAL_INTELLIGENCE_METADATA.name;
+
+  /** Spec v1.0 validation entry point — flags, never drops. */
+  validate(records: ReadonlyArray<NormalizedEvidence>): ProviderValidation {
+    return validateRecords(records);
+  }
+
 
   /** One capability only. Every environmental source feeds it. */
   readonly capabilities: ReadonlyArray<ConnectorCapability> = ["ENVIRONMENTAL_INTELLIGENCE"];
