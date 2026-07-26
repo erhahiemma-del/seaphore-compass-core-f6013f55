@@ -220,6 +220,8 @@ export function InvestigationLanding({
   // dragenter/dragleave fire for every nested child, so a boolean flickers as
   // the pointer crosses the textarea or buttons. Counting depth is stable.
   const [dragging, setDragging] = useState(false);
+  /** How many files the OS drag is carrying, so the overlay can say so. */
+  const [dragCount, setDragCount] = useState(0);
   const dragDepth = useRef(0);
   const dropDisabled = pending || files.uploading;
 
@@ -232,6 +234,9 @@ export function InvestigationLanding({
     if (!carriesFiles(e)) return;
     e.preventDefault();
     dragDepth.current += 1;
+    setDragCount(
+      Array.from(e.dataTransfer?.items ?? []).filter((i) => i.kind === "file").length,
+    );
     if (!dropDisabled) setDragging(true);
   }
 
@@ -244,15 +249,21 @@ export function InvestigationLanding({
   function onDragLeave(e: React.DragEvent) {
     if (!carriesFiles(e)) return;
     dragDepth.current = Math.max(0, dragDepth.current - 1);
-    if (dragDepth.current === 0) setDragging(false);
+    if (dragDepth.current === 0) {
+      setDragging(false);
+      setDragCount(0);
+    }
   }
 
-  function onDrop(e: React.DragEvent) {
+  async function onDrop(e: React.DragEvent) {
     if (!carriesFiles(e)) return;
     e.preventDefault();
     dragDepth.current = 0;
     setDragging(false);
+    setDragCount(0);
     if (dropDisabled) return;
+    // A multi-file drop is the normal case — every file in the transfer is
+    // taken, not just the first.
     const dropped = Array.from(e.dataTransfer.files);
     // Folders arrive as zero-byte entries with no type; say so rather than
     // failing silently on an upload the officer believes succeeded.
@@ -262,7 +273,19 @@ export function InvestigationLanding({
         description: "Drop the individual manifests or documents instead.",
       });
     }
-    if (usable.length > 0) void files.add(usable);
+    if (usable.length === 0) return;
+    const result = await files.add(usable);
+    if (result.accepted > 0) {
+      toast.success(
+        `${result.accepted} ${result.accepted === 1 ? "document" : "documents"} attached`,
+        {
+          description:
+            result.rejected > 0
+              ? `${result.rejected} skipped — see the errors above.`
+              : "Officer-supplied evidence, logged with your name and timestamp.",
+        },
+      );
+    }
   }
 
 
@@ -276,7 +299,7 @@ export function InvestigationLanding({
       onDragEnter={onDragEnter}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
-      onDrop={onDrop}
+      onDrop={(e) => void onDrop(e)}
       className="animate-in fade-in relative flex min-h-full flex-col items-center justify-start px-4 pt-6 pb-4 duration-500"
     >
       {dragging && (
@@ -289,9 +312,12 @@ export function InvestigationLanding({
           )}
         >
           <Paperclip className="h-6 w-6 text-[color:var(--color-teal)]" />
-          <p className="text-[14px] font-semibold text-foreground">Drop to attach</p>
+          <p className="text-[14px] font-semibold text-foreground">
+            {dragCount > 1 ? `Drop ${dragCount} files to attach` : "Drop to attach"}
+          </p>
           <p className="text-[12px] text-muted-foreground">
-            Manifests and documents are uploaded as officer-supplied evidence.
+            Multiple manifests and documents can be dropped at once — each is
+            uploaded as officer-supplied evidence.
           </p>
         </div>
       )}
@@ -583,7 +609,12 @@ export function InvestigationLanding({
                 </span>
               ))}
               <span className="self-center text-[10px] uppercase tracking-wider text-muted-foreground/70">
-                Officer-supplied evidence — click a file to preview
+                {files.items.length} attached
+                {files.items.filter((a) => a.status === "UPLOADED").length !==
+                files.items.length
+                  ? ` · ${files.items.filter((a) => a.status === "UPLOADED").length} uploaded`
+                  : ""}{" "}
+                — officer-supplied evidence, click a file to preview
               </span>
             </div>
           ) : null}
