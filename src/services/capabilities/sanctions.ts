@@ -111,12 +111,16 @@ export async function runSanctionsScreening(
   req: SanctionsScreeningRequest,
 ): Promise<SanctionsScreeningResult> {
   const mgr = req.manager ?? getIntelligenceAcquisitionManager();
-  const capable = mgr.getByCapability("SANCTIONS");
-  // Officer intent `SANCTION_SCREEN` (implicit default here) or explicit
-  // connector hints select which registered providers are queried.
-  const hints = new Set(req.connectorHints ?? []);
-  const hinted = hints.size > 0 ? capable.filter((p) => hints.has(p.id)) : [];
-  const providers = hinted.length > 0 ? hinted : capable;
+  // Sprint EP-01A — ONE capability resolves to ONE active provider.
+  // An officer connector hint acts as the explicit provider override;
+  // otherwise the resolver picks by environment, priority and health.
+  const override = req.connectorHints?.[0];
+  const resolution = mgr.resolveProvider("SANCTIONS", {
+    override: override ? String(override) : undefined,
+  });
+  const providers = resolution.provider
+    ? [{ id: resolution.provider.id, displayName: resolution.provider.displayName }]
+    : [];
   const query: AcquisitionQuery = {
     ...buildQuery(req.target),
     connectors: providers.map((p) => p.id),

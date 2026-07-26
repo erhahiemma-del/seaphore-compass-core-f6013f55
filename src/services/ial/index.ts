@@ -22,6 +22,27 @@ export * from "./types";
 export { ConnectorRegistry } from "./connectors/registry";
 export { ConnectorManager } from "./manager";
 export type { Connector, ConnectorCapability } from "./connectors/base";
+// Sprint EP-01A — Provider Resolution (one capability = one provider).
+export {
+  resolveProvider,
+  resolveActiveProviders,
+} from "./connectors/resolver";
+export type {
+  ProviderResolution,
+  ResolveProviderOptions,
+} from "./connectors/resolver";
+export {
+  providerMetadata,
+  resolveRuntimeEnvironment,
+  hybridExecutionEnabled,
+  DEFAULT_PROVIDER_METADATA,
+} from "./connectors/provider-metadata";
+export type {
+  ProviderMetadata,
+  ProviderType,
+  ProviderEnvironment,
+  RuntimeEnvironment,
+} from "./connectors/provider-metadata";
 export { EvidenceCache } from "./cache";
 export { HealthTracker } from "./health";
 export { normalizeRecord, canonicalEntityId } from "./normalizer";

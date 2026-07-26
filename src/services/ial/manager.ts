@@ -16,6 +16,12 @@ import { HealthTracker } from "./health";
 import { buildEvidencePackage } from "./package-builder";
 import { stableHash } from "./hash";
 import type { Connector, ConnectorCapability } from "./connectors/base";
+import {
+  resolveActiveProviders,
+  resolveProvider as resolveProviderFor,
+  type ProviderResolution,
+  type ResolveProviderOptions,
+} from "./connectors/resolver";
 import type {
   AcquisitionQuery,
   ConnectorHealth,
@@ -142,6 +148,8 @@ export class ConnectorManager {
    * a connector that declares the SANCTIONS capability — no changes to
    * the orchestrator, planner, or OIE.
    */
+  /** @deprecated Sprint EP-01A — discovery only. Use `resolveProvider()`
+   *  for execution: one capability resolves to one active provider. */
   getByCapability(
     capability: ConnectorCapability,
   ): ReadonlyArray<{ id: ConnectorId; displayName: string }> {
@@ -149,6 +157,43 @@ export class ConnectorManager {
       id: c.id,
       displayName: c.displayName,
     }));
+  }
+
+  /**
+   * Sprint EP-01A — Provider Resolution.
+   *
+   * Returns the SINGLE active provider for a capability. Callers must
+   * use this instead of fanning out over `getByCapability()`; hybrid
+   * simulator/live execution is disabled by default.
+   */
+  resolveProvider(
+    capability: ConnectorCapability,
+    opts: ResolveProviderOptions = {},
+  ): ProviderResolution {
+    return resolveProviderFor(capability, this.registry.getByCapability(capability), {
+      isHealthy: (c) => this.isProviderHealthy(c.id),
+      ...opts,
+    });
+  }
+
+  /**
+   * The connector ids that may execute for a capability. Exactly one
+   * unless an intentional Multi-Provider strategy is enabled.
+   */
+  resolveActiveProviderIds(
+    capability: ConnectorCapability,
+    opts: ResolveProviderOptions = {},
+  ): ReadonlyArray<ConnectorId> {
+    return resolveActiveProviders(capability, this.registry.getByCapability(capability), {
+      isHealthy: (c) => this.isProviderHealthy(c.id),
+      ...opts,
+    }).map((c) => c.id);
+  }
+
+  /** A provider is unhealthy only once a real failure has been recorded. */
+  private isProviderHealthy(id: ConnectorId): boolean {
+    const h = this.health.snapshot(id);
+    return h.available || h.lastError === null;
   }
 
   cacheStats(): { hits: number; misses: number; size: number } {
