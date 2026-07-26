@@ -12,11 +12,12 @@
 import { useEffect, useRef, useState } from "react";
 import {
   AlertCircle,
+  Anchor,
   Building2,
   RotateCw,
-  DollarSign,
   FileSpreadsheet,
   FileText,
+  Hash,
   Loader2,
   Mic,
   MicOff,
@@ -24,7 +25,6 @@ import {
   Paperclip,
   Radar,
   Send,
-  ShieldCheck,
   Ship,
   Telescope,
   X,
@@ -41,60 +41,57 @@ import {
   type OfficerAttachment,
 } from "@/hooks/use-officer-attachments";
 import { AttachmentPreviewDialog } from "@/components/copilot/AttachmentPreviewDialog";
+import { CopilotCue } from "@/components/copilot/CopilotCue";
+import { detectIntentHint } from "@/lib/copilot/intent-hints";
 import { cn } from "@/lib/utils";
 
 
 
 
 const TYPING_EXAMPLES = [
-  "Investigate MV Ocean Pearl ownership",
-  "Screen operator for sanctions",
-  "Compare arrivals at Tin Can",
-  "Explain revenue leakage",
+  "Investigate MV Ocean Pearl",
+  "Find ownership history",
   "Analyze cargo manifest",
-  "Check AIS activity",
+  "Check sanctions",
+  "Track previous voyages",
+  "Show inspection history",
 ];
 
-interface QuickStart {
+/** Rotating empty-state guidance — Sprint UX-04 §8. */
+const GUIDANCE = [
+  "You can ask anything.",
+  "Natural language works.",
+  "No category selection required.",
+  "Start your investigation.",
+];
+
+/**
+ * Smart Prompt Chips — Sprint UX-04 §3/§6.
+ *
+ * Assistive, never restrictive: a chip inserts an editable starter prompt into
+ * the input and nothing else. It does not filter providers, scope the query or
+ * lock the officer into a category — the submitted text is whatever the officer
+ * leaves in the box.
+ */
+interface PromptChip {
   key: string;
   label: string;
   icon: LucideIcon;
-  prompt: (subject: string) => string;
+  /** Editable starter text inserted on click. */
+  starter: string;
 }
 
-const QUICK_START: QuickStart[] = [
-  { key: "vessel", label: "Investigate Vessel", icon: Ship, prompt: (s) => `Investigate ${s}` },
-  {
-    key: "ownership",
-    label: "Ownership",
-    icon: Building2,
-    prompt: (s) => `Explain the ownership structure of ${s}`,
-  },
-  {
-    key: "sanctions",
-    label: "Sanctions",
-    icon: ShieldCheck,
-    prompt: (s) => `Screen ${s} and its operator for sanctions exposure`,
-  },
-  {
-    key: "cargo",
-    label: "Cargo",
-    icon: Package,
-    prompt: (s) => `Analyze the cargo and manifests for ${s}`,
-  },
-  {
-    key: "ais",
-    label: "AIS Replay",
-    icon: Radar,
-    prompt: (s) => `Check AIS activity and dark periods for ${s}`,
-  },
-  {
-    key: "revenue",
-    label: "Revenue",
-    icon: DollarSign,
-    prompt: (s) => `Assess revenue leakage risk for ${s}`,
-  },
+const PROMPT_CHIPS: PromptChip[] = [
+  { key: "imo", label: "IMO", icon: Hash, starter: "Investigate IMO " },
+  { key: "vessel", label: "Vessel", icon: Ship, starter: "Investigate vessel " },
+  { key: "company", label: "Company", icon: Building2, starter: "Investigate company " },
+  { key: "manifest", label: "Manifest", icon: FileSpreadsheet, starter: "Analyze manifest " },
+  { key: "container", label: "Container", icon: Package, starter: "Trace container " },
+  { key: "bol", label: "BOL", icon: FileText, starter: "Check bill of lading " },
+  { key: "voyage", label: "Voyage", icon: Radar, starter: "Show previous voyages of " },
+  { key: "port", label: "Port", icon: Anchor, starter: "Show activity at port " },
 ];
+
 
 export interface InvestigationLandingProps {
   subject: string;
@@ -115,14 +112,19 @@ export function InvestigationLanding({
 }: InvestigationLandingProps) {
   const localRef = useRef<HTMLTextAreaElement | null>(null);
   const ref = inputRef ?? localRef;
-  const [exampleIndex, setExampleIndex] = useState(0);
+  /** Rotating empty-state guidance line (UX-04 §8). */
+  const [guidanceIndex, setGuidanceIndex] = useState(0);
+  /** Chip whose starter prompt is currently in the box — a pure UI marker. */
+  const [activeChip, setActiveChip] = useState<string | null>(null);
+  /** Officer dismissed the detected-intent badge for the current text. */
+  const [hintDismissed, setHintDismissed] = useState(false);
 
-  // Rotating examples — only while the officer has not typed anything.
+  // Rotating guidance — fades every 4s while the box is empty.
   useEffect(() => {
     if (value.trim()) return;
     const t = window.setInterval(
-      () => setExampleIndex((i) => (i + 1) % TYPING_EXAMPLES.length),
-      3200,
+      () => setGuidanceIndex((i) => (i + 1) % GUIDANCE.length),
+      4000,
     );
     return () => window.clearInterval(t);
   }, [value]);
@@ -198,8 +200,41 @@ export function InvestigationLanding({
 
   function insert(prompt: string) {
     onChange(prompt);
+    setActiveChip(null);
     window.setTimeout(() => ref.current?.focus(), 0);
   }
+
+  /**
+   * Chip toggle (UX-04 §6): first click inserts the editable starter prompt,
+   * a second click removes it again. "No chip selected" is always valid, and
+   * neither state filters or constrains the investigation.
+   */
+  function toggleChip(chip: PromptChip) {
+    if (activeChip === chip.key) {
+      onChange(value === chip.starter ? "" : value);
+      setActiveChip(null);
+    } else {
+      onChange(chip.starter);
+      setActiveChip(chip.key);
+    }
+    setHintDismissed(false);
+    window.setTimeout(() => {
+      const el = ref.current;
+      if (!el) return;
+      el.focus();
+      el.setSelectionRange(el.value.length, el.value.length);
+    }, 0);
+  }
+
+  /** Typing by hand drops the chip marker — the officer owns the text. */
+  function handleChange(next: string) {
+    const chip = PROMPT_CHIPS.find((c) => c.key === activeChip);
+    if (chip && next !== chip.starter) setActiveChip(null);
+    if (!next.trim()) setHintDismissed(false);
+    onChange(next);
+  }
+
+  const intentHint = hintDismissed ? null : detectIntentHint(value);
 
   // --- Officer attachments (manifests / documents) ---------------------
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -349,6 +384,27 @@ export function InvestigationLanding({
 
           className="mt-5"
         >
+          {/* Detected intent — a courtesy echo, dismissible, never a filter. */}
+          <div className="mb-2 flex min-h-[22px] items-center justify-center">
+            {intentHint ? (
+              <span
+                data-testid="intent-badge"
+                className="animate-in fade-in zoom-in-95 flex items-center gap-1.5 rounded-full border border-[color:var(--color-teal)]/40 bg-[color:var(--color-teal)]/8 px-2.5 py-0.5 text-[11px] text-foreground duration-300"
+              >
+                <span className="text-muted-foreground">Detected:</span>
+                {intentHint.label}
+                <button
+                  type="button"
+                  aria-label="Dismiss detected intent"
+                  title="Dismiss — detection never restricts your query"
+                  onClick={() => setHintDismissed(true)}
+                  className="rounded-full p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ) : null}
+          </div>
           <div
             className={cn(
               "flex items-end gap-2 rounded-2xl border border-border/70 bg-background px-4 py-3",
@@ -360,13 +416,14 @@ export function InvestigationLanding({
               "focus-within:shadow-[0_0_0_4px_color-mix(in_oklab,var(--color-teal)_14%,transparent),0_12px_34px_-12px_rgba(15,42,63,0.3)]",
             )}
           >
+            <CopilotCue idle={idle} />
             <div className="relative flex-1">
             <textarea
               ref={ref}
               value={value}
               rows={2}
               disabled={pending}
-              onChange={(e) => onChange(e.target.value)}
+              onChange={(e) => handleChange(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -662,15 +719,15 @@ export function InvestigationLanding({
                   ))}
                 </div>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => insert(TYPING_EXAMPLES[exampleIndex]!)}
-                  className="animate-in fade-in truncate text-[11.5px] text-muted-foreground/80 duration-500 hover:text-foreground"
-                  key={exampleIndex}
+                <span
+                  key={guidanceIndex}
+                  data-testid="empty-state-guidance"
+                  className="animate-in fade-in block text-[11.5px] leading-4 text-muted-foreground/80 duration-700"
                 >
-                  e.g. {TYPING_EXAMPLES[exampleIndex]}
-                </button>
+                  {GUIDANCE[guidanceIndex]}
+                </span>
               )}
+
             </div>
             <p className="shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground/70">
               Shift + Enter = New Line
@@ -678,27 +735,39 @@ export function InvestigationLanding({
           </div>
         </form>
 
-        {/* Quick start — six actions, no descriptions */}
+        {/* Smart Prompt Chips — assistive shortcuts, never filters. */}
         <div className="mt-6">
           <p className="mb-2.5 text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70">
-            Quick Start
+            Optional starters — chips insert editable text, they never filter
           </p>
-          <div data-testid="quick-start-grid" className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-            {QUICK_START.map((q) => (
+          <div
+            data-testid="prompt-chips"
+            className="flex flex-wrap items-center justify-center gap-1.5"
+          >
+            {PROMPT_CHIPS.map((c) => (
               <button
-                key={q.key}
+                key={c.key}
                 type="button"
-                onClick={() => insert(q.prompt(subject))}
-                className="flex flex-col items-center gap-1.5 rounded-xl border border-border/50 bg-background px-2 py-3 text-center transition-all hover:-translate-y-0.5 hover:border-[color:var(--color-teal)]/50 hover:shadow-sm"
+                data-testid="prompt-chip"
+                aria-pressed={activeChip === c.key}
+                title={`Insert "${c.starter.trim()}" — fully editable`}
+                onClick={() => toggleChip(c)}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11.5px] font-medium",
+                  "transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm",
+                  "motion-reduce:transition-none motion-reduce:hover:translate-y-0",
+                  activeChip === c.key
+                    ? "border-[color:var(--color-teal)]/70 bg-[color:var(--color-teal)]/10 text-foreground"
+                    : "border-border/60 bg-background text-muted-foreground hover:border-[color:var(--color-teal)]/50 hover:text-foreground",
+                )}
               >
-                <q.icon className="h-4 w-4 text-[color:var(--color-teal)]" />
-                <span className="text-[11px] font-medium leading-tight text-foreground">
-                  {q.label}
-                </span>
+                <c.icon className="h-3.5 w-3.5 text-[color:var(--color-teal)]" />
+                {c.label}
               </button>
             ))}
           </div>
         </div>
+
       </div>
     </div>
   );

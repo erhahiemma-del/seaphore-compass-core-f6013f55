@@ -42,14 +42,19 @@ import { InvestigationLanding } from "@/components/copilot/InvestigationLanding"
 
 const SUBJECT = "MV Ocean Pearl";
 
-/** The Quick Start contract — label → prompt inserted into the command bar. */
-const EXPECTED_PROMPTS: Array<[label: RegExp, prompt: string]> = [
-  [/^investigate vessel$/i, `Investigate ${SUBJECT}`],
-  [/^ownership$/i, `Explain the ownership structure of ${SUBJECT}`],
-  [/^sanctions$/i, `Screen ${SUBJECT} and its operator for sanctions exposure`],
-  [/^cargo$/i, `Analyze the cargo and manifests for ${SUBJECT}`],
-  [/^ais replay$/i, `Check AIS activity and dark periods for ${SUBJECT}`],
-  [/^revenue$/i, `Assess revenue leakage risk for ${SUBJECT}`],
+/**
+ * Sprint UX-04 — Smart Prompt Chip contract. A chip is assistive only: it
+ * inserts an editable starter prompt and never filters or locks the query.
+ */
+const EXPECTED_CHIPS: Array<[label: RegExp, starter: string]> = [
+  [/^imo$/i, "Investigate IMO "],
+  [/^vessel$/i, "Investigate vessel "],
+  [/^company$/i, "Investigate company "],
+  [/^manifest$/i, "Analyze manifest "],
+  [/^container$/i, "Trace container "],
+  [/^bol$/i, "Check bill of lading "],
+  [/^voyage$/i, "Show previous voyages of "],
+  [/^port$/i, "Show activity at port "],
 ];
 
 function renderLanding(overrides: Partial<React.ComponentProps<typeof InvestigationLanding>> = {}) {
@@ -73,28 +78,47 @@ afterEach(() => {
   cleanup();
 });
 
-describe("InvestigationLanding · Quick Start", () => {
-  it("renders exactly six Quick Start actions", () => {
+describe("InvestigationLanding · Smart Prompt Chips", () => {
+  it("renders every assistive chip", () => {
     renderLanding();
-    for (const [label] of EXPECTED_PROMPTS) {
+    for (const [label] of EXPECTED_CHIPS) {
       expect(screen.getByRole("button", { name: label })).toBeTruthy();
     }
-    expect(EXPECTED_PROMPTS).toHaveLength(6);
+    expect(EXPECTED_CHIPS).toHaveLength(8);
   });
 
-  it.each(EXPECTED_PROMPTS)("inserts the correct prompt for %s", (label, prompt) => {
+  it.each(EXPECTED_CHIPS)("inserts an editable starter prompt for %s", (label, starter) => {
     const { onChange, onSubmit } = renderLanding();
     fireEvent.click(screen.getByRole("button", { name: label }));
-    expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange).toHaveBeenCalledWith(prompt);
-    // Officer decides — a Quick Start card never submits on its own.
+    expect(onChange).toHaveBeenCalledWith(starter);
+    // Officer decides — a chip never submits on its own.
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  it("keeps the prompt subject-aware", () => {
-    const { onChange } = renderLanding({ subject: "MT Niger Runner" });
-    fireEvent.click(screen.getByRole("button", { name: /^ownership$/i }));
-    expect(onChange).toHaveBeenCalledWith("Explain the ownership structure of MT Niger Runner");
+  it("clears the starter prompt when the same chip is clicked again", () => {
+    const chip = () => screen.getByRole("button", { name: /^imo$/i });
+    const { onChange, rerender } = renderLanding();
+    fireEvent.click(chip());
+    expect(onChange).toHaveBeenLastCalledWith("Investigate IMO ");
+    rerender(
+      <InvestigationLanding
+        subject={SUBJECT}
+        value="Investigate IMO "
+        onChange={onChange}
+        onSubmit={vi.fn()}
+      />,
+    );
+    fireEvent.click(chip());
+    expect(onChange).toHaveBeenLastCalledWith("");
+  });
+
+  it("leaves no chip selected by default — a valid state", () => {
+    renderLanding();
+    for (const [label] of EXPECTED_CHIPS) {
+      expect(screen.getByRole("button", { name: label }).getAttribute("aria-pressed")).toBe(
+        "false",
+      );
+    }
   });
 });
 
@@ -114,5 +138,19 @@ describe("InvestigationLanding · command bar", () => {
     const { onSubmit } = renderLanding({ value: "Investigate MV Ocean Pearl", pending: true });
     fireEvent.keyDown(screen.getByLabelText(/investigation query/i), { key: "Enter" });
     expect(onSubmit).not.toHaveBeenCalled();
+  });
+});
+
+describe("InvestigationLanding · detected intent", () => {
+  it("surfaces a dismissible intent hint for free text", () => {
+    renderLanding({ value: "Who owns Ocean Pearl?" });
+    expect(screen.getByTestId("intent-badge").textContent).toContain("Company Investigation");
+    fireEvent.click(screen.getByRole("button", { name: /dismiss detected intent/i }));
+    expect(screen.queryByTestId("intent-badge")).toBeNull();
+  });
+
+  it("shows no hint when the box is empty", () => {
+    renderLanding();
+    expect(screen.queryByTestId("intent-badge")).toBeNull();
   });
 });
