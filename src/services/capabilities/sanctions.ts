@@ -40,11 +40,27 @@ export interface SanctionsScreeningTarget {
   readonly imo?: string;
 }
 
+/** Officer intent that resolves to the SANCTIONS capability. */
+export type SanctionsIntent = "SANCTION_SCREEN";
+
 export interface SanctionsScreeningRequest {
   readonly target: SanctionsScreeningTarget;
   /** Optional injected manager (tests / non-default registries). */
   readonly manager?: ConnectorManager;
+  /**
+   * Sprint EP-01 — officer intent. `SANCTION_SCREEN` (the default for
+   * this capability) acquires evidence through the Connector Registry.
+   */
+  readonly intent?: SanctionsIntent;
+  /**
+   * Sprint EP-01 — explicit provider hints (e.g. `["open-sanctions"]`).
+   * When present, acquisition is narrowed to the hinted connectors that
+   * are actually registered. Purely a selection filter — the acquisition
+   * pipeline, fusion, and persistence remain unchanged.
+   */
+  readonly connectorHints?: ReadonlyArray<ConnectorId>;
 }
+
 
 export interface SanctionsScreeningResult {
   readonly capability: "SANCTIONS";
@@ -95,11 +111,17 @@ export async function runSanctionsScreening(
   req: SanctionsScreeningRequest,
 ): Promise<SanctionsScreeningResult> {
   const mgr = req.manager ?? getIntelligenceAcquisitionManager();
-  const providers = mgr.getByCapability("SANCTIONS");
+  const capable = mgr.getByCapability("SANCTIONS");
+  // Officer intent `SANCTION_SCREEN` (implicit default here) or explicit
+  // connector hints select which registered providers are queried.
+  const hints = new Set(req.connectorHints ?? []);
+  const hinted = hints.size > 0 ? capable.filter((p) => hints.has(p.id)) : [];
+  const providers = hinted.length > 0 ? hinted : capable;
   const query: AcquisitionQuery = {
     ...buildQuery(req.target),
     connectors: providers.map((p) => p.id),
   };
+
   const pkg = req.manager
     ? await mgr.acquire(query)
     : await acquireEvidence(query);

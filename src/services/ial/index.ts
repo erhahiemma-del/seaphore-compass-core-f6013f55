@@ -50,6 +50,9 @@ import {
 // `src/lib/osint/registry`. Bridged into the IAL registry below.
 import "@/lib/osint/connectors";
 import { listConnectors as listOsintConnectors } from "@/lib/osint/registry";
+// Sprint EP-01 — production Evidence Provider registration surface.
+import { registerEvidenceProviders } from "@/connectors";
+
 import type { AcquisitionQuery, EvidencePackage } from "./types";
 
 let defaultManager: ConnectorManager | null = null;
@@ -90,7 +93,15 @@ export function getIntelligenceAcquisitionManager(): ConnectorManager {
     } catch {
       // Fall back to simulators below.
     }
+    // Sprint EP-01 — production Evidence Providers (OpenSanctions).
+    // Registration only; the acquisition pipeline itself is unchanged.
+    try {
+      registerEvidenceProviders(mgr);
+    } catch {
+      /* provider registration must never block the IAL */
+    }
   }
+
 
   if (mode === "simulation" || mode === "hybrid") {
     if (!mgr.listConnectors().some((c) => c.id === "ais")) mgr.register(new SimulatedAisConnector());

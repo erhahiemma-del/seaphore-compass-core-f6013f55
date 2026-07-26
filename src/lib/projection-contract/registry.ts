@@ -469,6 +469,22 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     reviewedAt: REVIEWED,
   },
   {
+    id: "ial.opensanctions-evidence-provider",
+    name: "OpenSanctions Evidence Provider",
+    producer: "IAL",
+    description:
+      "Sprint EP-01 — first production Evidence Provider (Tier 1, no auth, daily refresh). Live OpenSanctions /v3/search results normalized into the Seaphore evidence model (entityName, aliases, countries, sanctionLists, sanctionPrograms, imoNumber, startDate/endDate, lastUpdated, confidence, evidenceUrl, rawPayload, rawHash) and cached 24h. Connector responsibility ends at a validated EvidencePackage: no DB writes, no identity resolution, no dedupe, no UIP creation.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Evidence Provenance · citation list (and MIBC evidence sources)",
+      location: "src/components/copilot/briefing/EvidenceProvenancePanel.tsx",
+      component: "src/connectors/implementations/OpenSanctionsConnector.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: REVIEWED,
+  },
+
+  {
     id: "reasoning.ais-continuity-report",
     name: "AIS Behaviour Analyzer continuity report",
     producer: "REASONING",
