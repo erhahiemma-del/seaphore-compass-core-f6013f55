@@ -330,16 +330,18 @@ export function useVoiceDictation(options: Options = {}) {
       }
 
       const final = text.trim();
-      if (!final) throw new Error("No speech was detected — please try again.");
+      if (!final) {
+        raise("no-speech");
+        return;
+      }
+      clearIssue();
       cbRef.current.onFinal?.(final);
     } catch (error) {
-      cbRef.current.onError?.(
-        error instanceof Error ? error.message : "Voice input failed. Please try again.",
-      );
+      raise("transcription-failed", error instanceof Error ? error.message : undefined);
     } finally {
       setState("idle");
     }
-  }, []);
+  }, [raise, clearIssue]);
 
   const finish = useCallback(async () => {
     const rate = ctxRef.current?.sampleRate ?? TARGET_RATE;
@@ -356,29 +358,48 @@ export function useVoiceDictation(options: Options = {}) {
     const blob = encodeWav(samples, TARGET_RATE);
     if (blob.size < 2048) {
       setState("idle");
-      cbRef.current.onError?.("That recording was empty — please try again.");
+      raise("empty-recording");
       return;
     }
     await transcribe(blob);
-  }, [teardown, transcribe]);
+  }, [teardown, transcribe, raise]);
 
   const start = useCallback(async () => {
     if (!supported) {
-      cbRef.current.onError?.("Voice input is not supported in this browser.");
+      const blocked = unavailable ?? buildIssue("unsupported-browser");
+      setIssue(blocked);
+      cbRef.current.onError?.(blocked);
       return;
     }
     cancelledRef.current = false;
     chunksRef.current = [];
+    clearIssue();
 
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       });
-    } catch {
-      cbRef.current.onError?.("Microphone access is needed to dictate an investigation.");
+    } catch (error) {
+      // Map the DOMException to advice the officer can act on. Guessing
+      // "permission denied" for a missing or busy device would misinform them.
+      const name = (error as { name?: string } | null)?.name ?? "";
+      if (name === "NotAllowedError" || name === "SecurityError") {
+        // Chrome uses NotAllowedError both for a hard block and for a prompt
+        // the officer dismissed; the Permissions API tells the two apart.
+        setPermission((current) => (current === "granted" ? "prompt" : current));
+        raise(permission === "denied" ? "permission-denied" : "permission-dismissed");
+      } else if (name === "NotFoundError" || name === "OverconstrainedError") {
+        raise("no-microphone");
+      } else if (name === "NotReadableError" || name === "AbortError") {
+        raise("microphone-busy");
+      } else {
+        raise("permission-denied");
+      }
       return;
     }
+
+    setPermission("granted");
 
     const Ctor =
       window.AudioContext ??
@@ -405,7 +426,7 @@ export function useVoiceDictation(options: Options = {}) {
     setState("recording");
 
     timerRef.current = setTimeout(() => void finish(), maxSeconds * 1000);
-  }, [supported, maxSeconds, finish]);
+  }, [supported, unavailable, permission, maxSeconds, finish, raise, clearIssue]);
 
   const stop = useCallback(() => void finish(), [finish]);
 
@@ -421,5 +442,20 @@ export function useVoiceDictation(options: Options = {}) {
     else if (state === "idle") void start();
   }, [state, start, stop]);
 
-  return { state, supported, level, start, stop, cancel, toggle };
+  return {
+    state,
+    supported,
+    /** Non-null when voice input can never run in this browser/origin. */
+    unavailable,
+    permission,
+    /** Latest failure, with officer-facing title, detail and remedy. */
+    issue,
+    clearIssue,
+    level,
+    start,
+    stop,
+    cancel,
+    toggle,
+  };
 }
+
