@@ -119,7 +119,21 @@ export interface OpenSanctionsConnectorOptions {
 //  SECTION 2: CONNECTOR
 // ───────────────────────────────────────────────────────────────────
 
-export class OpenSanctionsConnector implements Connector {
+export class OpenSanctionsConnector implements Connector, EvidenceProviderV1 {
+  /**
+   * Sprint PF-01 — reference implementation of Evidence Provider
+   * Specification v1.0. Every future provider mirrors these three
+   * declarations plus the frozen five-method API.
+   */
+  readonly specVersion = EVIDENCE_PROVIDER_SPEC_VERSION;
+  /** Officer-facing projection declared in the Projection Contract. */
+  readonly projectionContractId = "ial.opensanctions-evidence-provider";
+
+  /** Spec v1.0 validation entry point — flags, never drops. */
+  validate(records: ReadonlyArray<NormalizedEvidence>): ProviderValidation {
+    return validateRecords(records);
+  }
+
   readonly id: ConnectorId = OPEN_SANCTIONS_METADATA.id;
 
   /** Sprint EP-01A — live provider metadata used by the Provider Resolver. */
