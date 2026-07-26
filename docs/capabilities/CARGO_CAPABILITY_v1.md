@@ -34,43 +34,69 @@ architecture frozen.
 | Bill of Lading | `cargo` | `cargo:bol:{carrierScac}:{bolNo}` | bolNo, carrier, shipper, consignee |
 | Container | `cargo` | `cargo:container:{isoUnitNo}` | ISO 6346 unit no (11 char, check-digit valid) |
 | Cargo Item | `cargo` | `cargo:item:{bolNo}:{lineNo}` | lineNo, description, quantity, weightKg |
-| Commodity | `cargo` | `cargo:commodity:hs:{hsCode}` | HS code (6–10 digit) |
+| Commodity | `cargo` | `cargo:commodity:{hsCode}:{variantKey}` | commodity description + governing HS code |
+| HS Code | `cargo` | `cargo:hs:{edition}:{hsCode}` | HS code (6–10 digit), nomenclature edition (e.g. `hs2022`), duty rate band |
 | Customs Declaration | `cargo` | `cargo:declaration:{customsAuthority}:{sadNo}` | sadNo, regime, declarant |
 | Revenue Assessment | `cargo` | `cargo:assessment:{authority}:{assessmentNo}` | assessedValue, dutyPayable, currency |
 | Voyage | `voyage` | `voyage:{imo}:{departureIso}` | vessel IMO, departure, arrival |
+| Port Call | `voyage` | `voyage:portcall:{imo}:{unlocode}:{atdOrEtaIso}` | vessel IMO, UN/LOCODE, arrival + departure timestamps |
 | Vessel | `vessel` | `vessel:imo:{imo}` | IMO 7-digit |
 | Port | `port` | `port:unlocode:{unlocode}` | UN/LOCODE |
-| Shipper / Consignee / Carrier / Agent | `company` | `company:{registry}:{regNo}` | name + registry id |
+| Shipping Line (carrier) | `company` | `company:scac:{scac}` | SCAC or carrier registry id, legal name |
+| Shipper | `company` | `company:{registry}:{regNo}` | name + registry id (role `shipper`) |
+| Consignee | `company` | `company:{registry}:{regNo}` | name + registry id (role `consignee`) |
+| Agent / NVOCC / Freight forwarder | `company` | `company:{registry}:{regNo}` | name + registry id + role |
 | Declarant / Master (natural person) | `person` | `person:{registry}:{id}` | name + role |
+
+**HS Code vs Commodity.** They are separate entities on purpose: an HS Code is a *nomenclature
+node* (stable, edition-scoped, carries the duty rate) while a Commodity is the *thing actually
+shipped* (described in free text by the declarant). Misdeclaration is precisely a wrong edge
+between the two, so the model must be able to represent that edge as wrong.
+
+**Port Call vs Voyage.** A Port Call is a leg of a Voyage, keyed to one port and one arrival. It is
+the join point where container gate events become attributable to a voyage and a manifest.
+
+**Shipping Line vs Shipper/Consignee.** All three are `company`; the distinction is the
+relationship role (`rel.carrier` / `rel.shipper` / `rel.consignee`), never a different entity kind.
+The same legal entity may hold different roles across shipments, and the model must not collapse
+that.
+
 
 **Canonical units and formats (inherited, non-negotiable):** SI units (kg, m³, m), ISO 8601 UTC
 timestamps, ISO 3166 country codes, ISO 4217 currency codes, UN/LOCODE ports, 7-digit IMO,
 ISO 6346 container numbers, HS commodity codes.
 
-### Relationship graph
+### Entity relationships (canonical edge list)
 
-```text
-Voyage ──carried_by──► Vessel
-  │                      │
-  │ calls_at             │ calls_at
-  ▼                      ▼
-Port ◄──loading/discharge── Manifest
-              │
-              │ contains
-              ▼
-     Bill of Lading ──consigned_to──► Consignee (company)
-       │      │      ──shipped_by───► Shipper   (company)
-       │      │      ──carried_by───► Carrier   (company)
-       │      └──covers──► Container ──stows──► Cargo Item
-       │                                  │
-       │                                  └──classified_as──► Commodity (HS)
-       ▼
-  Customs Declaration ──assessed_by──► Revenue Assessment
-```
+| From | Edge | To | Cardinality | Carried as |
+| --- | --- | --- | --- | --- |
+| Voyage | `carried_by` | Vessel | n:1 | `rel.vessel` |
+| Voyage | `has_leg` | Port Call | 1:n | `rel.voyage` on the call |
+| Port Call | `occurs_at` | Port | n:1 | `rel.port` |
+| Manifest | `declared_for` | Voyage | n:1 | `rel.voyage` |
+| Manifest | `lodged_at` | Port | n:1 | `rel.portOfDischarge` |
+| Manifest | `contains` | Bill of Lading | 1:n | `rel.manifest` on the BoL |
+| Bill of Lading | `shipped_by` | Shipper (company) | n:1 | `rel.shipper` |
+| Bill of Lading | `consigned_to` | Consignee (company) | n:1 | `rel.consignee` |
+| Bill of Lading | `carried_by` | Shipping Line (company) | n:1 | `rel.carrier` |
+| Bill of Lading | `covers` | Container | 1:n | `rel.bol` on the container |
+| Container | `stows` | Cargo Item | 1:n | `rel.container` |
+| Container | `moved_at` | Port Call | n:n | `rel.portCall` on the gate event |
+| Cargo Item | `is_commodity` | Commodity | n:1 | `rel.commodity` |
+| Commodity | `classified_as` | HS Code | n:1 | `cargo.hsCode` + `rel.hsCode` |
+| Customs Declaration | `declares` | Bill of Lading | n:n | `rel.bol` |
+| Customs Declaration | `filed_by` | Declarant (person/company) | n:1 | `rel.declarant` |
+| Revenue Assessment | `assesses` | Customs Declaration | 1:1 | `rel.declaration` |
+
+An entity relationship diagram of the same edge list is kept alongside this spec as
+`Cargo_Intelligence_ERD.mmd` (Mermaid ER diagram).
 
 Relationships are carried as canonical id references inside
 `NormalizedEvidence.fields` (`rel.*` namespace) — the MKG already ingests id references and needs
-no new edge type.
+no new edge type. A relationship never overrides provenance: an edge inherits the grade of the
+evidence record that asserted it, and two providers asserting the same edge is what produces
+`CORROBORATED`.
+
 
 ---
 
@@ -205,33 +231,154 @@ absent evidence is stated as absent, never rendered as zero.
 
 ---
 
-## 6. Candidate Provider Matrix (specification only — no connectors built)
+## 6. Candidate Cargo Evidence Provider Strategy (specification only — no connectors built)
 
-| Provider | Entities supported | Auth model | Coverage | Grade ceiling | Priority |
-| --- | --- | --- | --- | --- | --- |
-| Nigeria Customs Service (NICIS/SAD) | Declaration, Assessment, Manifest, Cargo Item, Commodity | MoU + issued API key / secure file exchange | Nigeria, authoritative | VERIFIED | **P0** |
-| NIMASA cargo & voyage returns | Manifest, Voyage, Vessel, Port | Internal integration | Nigeria, authoritative | VERIFIED | **P0** |
-| Terminal operator gate systems (APMT, Ports & Cargo, Josepdam) | Container, gate events, dwell | Per-terminal API key | Per-terminal, deep | OBSERVED | **P1** |
-| Carrier / NVOCC EDI (CUSCAR, IFTMIN, BAPLIE) | Manifest, BoL, Container, Cargo Item | SFTP/AS2 partner credentials | Carrier-scoped, high fidelity | CORROBORATED | **P1** |
-| UN Comtrade | Commodity, trade-flow baselines | Public / free key | Global, aggregate, lagging | REPORTED | **P2** |
-| Port Community System (where available) | Manifest, Container, port-call linkage | PCS account | Port-scoped | OBSERVED | **P2** |
-| Commercial container track & trace (project44 / Datalastic-class) | Container, milestones | Commercial API key | Global, partial | OBSERVED | **P3** |
-| Open commodity price references | Commodity valuation benchmark for undervaluation tests | Public | Global | INFERRED (derived) | **P3** |
+All candidates must fit `EvidenceProviderV1` unchanged (`connect`, `healthCheck`, `search`,
+`normalize`, `validate` + `specVersion`, `projectionContractId`). Credentials go through the
+existing secret mechanism; missing credentials surface as **Waiting for Credentials**, never as a
+fabricated number.
 
-All candidates fit `EvidenceProviderV1` unchanged: `connect`, `healthCheck`, `search`, `normalize`,
-`validate`, plus `specVersion`, `projectionContractId`. Credentials go through the existing secret
-mechanism; missing credentials surface as **Waiting for Credentials**, not as a fake number.
+### 6.1 Named candidates — full assessment
 
-### Recommended implementation order
+Each block documents the nine mandated attributes. Coverage and confidence statements are
+capability judgements, not measurements; the certified `healthCheck` at implementation time is what
+establishes the real numbers.
 
-1. **NCS declarations (P0)** — unlocks Revenue Intelligence with VERIFIED grade; the only source
-   that makes leakage findings actionable.
-2. **NIMASA manifest/voyage returns (P0)** — unlocks Manifest Intelligence and links cargo to the
-   existing vessel/voyage graph.
+#### ImportGenius
+- **Supported entities:** Bill of Lading, Cargo Item, Commodity, HS Code, Shipper, Consignee, Shipping Line, Container (partial), Vessel/Voyage references.
+- **Data available:** Transactional BoL records sourced from customs manifests — parties, goods description, HS, weight, container counts, ports, carrier, arrival dates.
+- **Authentication model:** Commercial subscription; API key / account-scoped token.
+- **Coverage:** Strongest on US import BoL and a set of Latin American and Asian customs feeds. Nigeria/West Africa coverage is thin — the exact gap that matters here.
+- **Confidence ceiling:** `REPORTED`, upgraded to `CORROBORATED` where a second provider agrees. Not authoritative for Nigerian duty.
+- **Licensing:** Paid, redistribution-restricted. Officer-visible excerpts must respect the licence — cite, do not republish bulk records.
+- **Update frequency:** Daily to weekly by lane.
+- **Integration complexity:** Low–medium (REST, paginated, stable schema).
+- **Recommended priority:** **P2** — counterparty/trade-pattern corroboration, not a primary Nigerian source.
+
+#### PIERS (S&P Global)
+- **Supported entities:** Bill of Lading, Cargo Item, Commodity, HS Code, Shipper, Consignee, Shipping Line, Port, Vessel.
+- **Data available:** Long-history waterborne trade transactions with normalised party names and commodity classification; the reference dataset for trade benchmarking.
+- **Authentication model:** Enterprise contract; entitlement-scoped credentials, often delivered as bulk extract rather than open API.
+- **Coverage:** Deep US and global lane history; excellent time depth for baselines.
+- **Confidence ceiling:** `REPORTED` for individual shipments, `CORROBORATED` when matched to a manifest; `INFERRED` when used as a valuation baseline.
+- **Licensing:** Expensive enterprise licence with strict redistribution terms — likely the biggest commercial blocker.
+- **Update frequency:** Weekly/monthly extracts.
+- **Integration complexity:** High (contracting, entitlement, bulk ingestion path).
+- **Recommended priority:** **P3** — valuable for undervaluation baselines once P0 sources exist.
+
+#### Volza
+- **Supported entities:** Bill of Lading, Cargo Item, Commodity, HS Code, Shipper, Consignee, Shipping Line.
+- **Data available:** Global import/export shipment records with HS-level detail, declared values in many lanes, and buyer/supplier linkage.
+- **Authentication model:** Commercial subscription; API key.
+- **Coverage:** Broad country list including several African markets; per-country depth varies sharply and is self-reported.
+- **Confidence ceiling:** `REPORTED`. Declared values are second-hand and must never be projected as an assessment.
+- **Licensing:** Paid, seat/volume limited.
+- **Update frequency:** Daily to monthly by country.
+- **Integration complexity:** Low–medium.
+- **Recommended priority:** **P2** — first commercial trade-data candidate to trial for Nigeria lanes because of stated African coverage.
+
+#### TradeMo
+- **Supported entities:** Bill of Lading, Cargo Item, Commodity, HS Code, Shipper, Consignee.
+- **Data available:** Global trade transactions and supplier/buyer intelligence with HS-level aggregation.
+- **Authentication model:** Commercial subscription; API key.
+- **Coverage:** Global breadth, shallower per-record fidelity; newer entrant with less independent verification.
+- **Confidence ceiling:** `REPORTED`.
+- **Licensing:** Paid.
+- **Update frequency:** Daily to monthly.
+- **Integration complexity:** Low.
+- **Recommended priority:** **P3** — evaluate only as an alternative to Volza; do not run both without a measured coverage gain.
+
+#### MarineTraffic
+- **Supported entities:** Vessel, Voyage, Port Call, Port. **No cargo-level entities.**
+- **Data available:** AIS positions, port calls, ETAs, vessel particulars.
+- **Authentication model:** Commercial API key, credit-metered.
+- **Coverage:** Global AIS, strong port-call resolution.
+- **Confidence ceiling:** `OBSERVED` for AIS-derived movement.
+- **Licensing:** Paid, per-call credits; caching restrictions apply.
+- **Update frequency:** Near real-time.
+- **Integration complexity:** Low.
+- **Recommended priority:** **P1 as a CARGO *supporting* provider only.** It supplies the Port Call spine that container gate events attach to. It must be registered under the existing vessel/movement capability, and CAPABILITY.CARGO consumes it through the UIP — CARGO must not claim it as a cargo source.
+
+#### Datalastic
+- **Supported entities:** Vessel, Voyage, Port Call, Port. **No cargo-level entities.**
+- **Data available:** AIS positions, port calls, vessel database; cheaper AIS alternative.
+- **Authentication model:** API key.
+- **Coverage:** Global AIS with lower cost and lower guaranteed completeness than MarineTraffic.
+- **Confidence ceiling:** `OBSERVED`.
+- **Licensing:** Paid, comparatively permissive.
+- **Update frequency:** Near real-time.
+- **Integration complexity:** Low.
+- **Recommended priority:** **P2 supporting** — fallback/corroboration for the Port Call spine.
+
+#### Equasis
+- **Supported entities:** Vessel, Shipping Line / ownership-management companies. **No cargo-level entities.**
+- **Data available:** Vessel particulars, registered owner, ISM manager, class, PSC inspection history.
+- **Authentication model:** Free account credentials (`EQUASIS_USERNAME` / `EQUASIS_PASSWORD`) — already registered in the catalog.
+- **Coverage:** Global merchant fleet.
+- **Confidence ceiling:** `VERIFIED` for vessel identity and management.
+- **Licensing:** Free for non-commercial use; terms restrict systematic bulk harvesting.
+- **Update frequency:** Periodic (days–weeks).
+- **Integration complexity:** Medium (session-based access, brittle to change).
+- **Recommended priority:** **P1 supporting** — resolves the carrier/vessel side of a manifest. Already an existing provider; CARGO adds no new connector for it.
+
+#### OpenCorporates
+- **Supported entities:** Shipper, Consignee, Shipping Line, agents — all `company`. **No cargo-level entities.**
+- **Data available:** Company registration, jurisdiction, status, officers, filings.
+- **Authentication model:** API token (`OPENCORPORATES_API_TOKEN`) — already registered in the catalog.
+- **Coverage:** Very broad jurisdiction coverage; Nigerian CAC coverage is partial.
+- **Confidence ceiling:** `VERIFIED` for registry facts, `REPORTED` for name-only matches.
+- **Licensing:** Paid/attribution-bound API terms.
+- **Update frequency:** Registry-dependent.
+- **Integration complexity:** Low.
+- **Recommended priority:** **P1 supporting** — turns a consignee name on a BoL into a resolvable legal entity, which is what makes revenue findings actionable.
+
+#### IMO GISIS
+- **Supported entities:** Vessel, Port, Shipping Line/company references. **No cargo-level entities.**
+- **Data available:** Ship particulars, company/registered-owner records, port reception facilities, casualty and PSC modules.
+- **Authentication model:** Registered account (`IMO_GISIS_API_TOKEN` in the catalog); no open public API.
+- **Coverage:** Global, authoritative for identity.
+- **Confidence ceiling:** `VERIFIED` for identity data.
+- **Licensing:** Restricted, account-bound; not redistributable.
+- **Update frequency:** Slow (weeks–months).
+- **Integration complexity:** Medium–high (no clean API contract).
+- **Recommended priority:** **P2 supporting** — identity backstop only.
+
+### 6.2 Authoritative sources CAP-01 still ranks above every commercial candidate
+
+None of the nine named candidates can produce a `VERIFIED` Nigerian duty figure. Revenue
+Intelligence is only actionable from the authority of record, so these remain P0:
+
+| Provider | Entities supported | Auth model | Coverage | Confidence ceiling | Update freq. | Complexity | Priority |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Nigeria Customs Service (NICIS/SAD) | Declaration, Assessment, Manifest, Cargo Item, Commodity, HS Code | MoU + issued key / secure file exchange | Nigeria, authoritative | `VERIFIED` | Daily | High (institutional) | **P0** |
+| NIMASA cargo & voyage returns | Manifest, Voyage, Port Call, Vessel, Port | Internal integration | Nigeria, authoritative | `VERIFIED` | Daily | Medium | **P0** |
+| Terminal operator gate systems (APMT, Ports & Cargo, Josepdam) | Container, gate events, dwell | Per-terminal API key | Per-terminal, deep | `OBSERVED` | Real-time | Medium | **P1** |
+| Carrier / NVOCC EDI (CUSCAR, IFTMIN, BAPLIE) | Manifest, BoL, Container, Cargo Item | SFTP/AS2 partner credentials | Carrier-scoped, high fidelity | `CORROBORATED` | Per-voyage | Medium–high | **P1** |
+| UN Comtrade | Commodity, HS Code, trade-flow baselines | Public / free key | Global, aggregate, lagging | `REPORTED` | Monthly | Low | **P2** |
+
+### 6.3 Provider roadmap
+
+| Wave | Providers | Capability unlocked | Exit criterion |
+| --- | --- | --- | --- |
+| **Wave 1 — Authority** | NCS declarations; NIMASA manifest/voyage returns | Manifest Intelligence + Revenue Intelligence at `VERIFIED` | Both certified; `kpi.manifest-intelligence` and `kpi.revenue-intelligence` leave NO_PROVIDER |
+| **Wave 2 — Movement** | Terminal gate systems; MarineTraffic (Port Call spine, supporting); Equasis + OpenCorporates (identity, supporting, already registered) | Container Intelligence; party and carrier resolution | `kpi.container-intelligence` reports live dwell/gate pairs |
+| **Wave 3 — Corroboration** | Carrier/NVOCC EDI; Volza; ImportGenius; Datalastic | Single-source records upgrade to `CORROBORATED`; counterparty patterns | Measurable corroboration rate on Nigerian lanes, else drop the provider |
+| **Wave 4 — Baseline** | UN Comtrade; PIERS; TradeMo; commodity price references; IMO GISIS | Undervaluation baselines and identity backstop | Baseline-driven leakage findings carry an explicit `INFERRED` chip |
+
+**Sequencing rule:** no commercial trade-data provider is contracted before Wave 1 is certified.
+Buying breadth before the authority of record exists produces confident-looking numbers the state
+cannot act on — the precise failure mode the Golden Rule exists to prevent.
+
+### 6.4 Recommended implementation order
+
+1. **NCS declarations (P0)** — unlocks Revenue Intelligence with `VERIFIED` grade; the only source that makes leakage findings actionable.
+2. **NIMASA manifest/voyage returns (P0)** — unlocks Manifest Intelligence and links cargo to the existing vessel/voyage graph.
 3. **Terminal gate systems (P1)** — unlocks Container Intelligence and dwell analytics.
-4. **Carrier EDI (P1)** — corroboration layer; upgrades single-source records to CORROBORATED.
-5. **UN Comtrade + price references (P2/P3)** — benchmark layer for undervaluation detection.
-6. **Commercial track & trace (P3)** — coverage fill only, after authoritative sources exist.
+4. **Supporting identity/movement providers (P1)** — MarineTraffic Port Calls, Equasis, OpenCorporates; all already fit existing capabilities.
+5. **Carrier EDI (P1)** — corroboration layer; upgrades single-source records to `CORROBORATED`.
+6. **Volza / ImportGenius (P2)** — first commercial trade-data trial, judged on measured Nigerian lane coverage.
+7. **UN Comtrade, PIERS, TradeMo, price references, IMO GISIS (P2/P3)** — benchmark and backstop layer.
+
 
 ---
 
@@ -263,6 +410,7 @@ states. Until a P0 cargo provider is certified, all three legitimately report
 | Projection Contract | **None at spec time** | three KPI entries already exist; provider entries are added by the provider sprint, which is the normal Symmetry rule |
 | Authentication / roles | **None** | no new role, no new gate |
 | Backend / Cloud schema | **None** | no table, no column, no RLS policy, no migration |
+| Existing providers (Equasis, OpenCorporates, IMO GISIS, MarineTraffic-class AIS) | **None** | consumed by CARGO through the UIP as supporting evidence; they keep their own capability declarations and are not re-registered under CARGO |
 | Dashboard code | **None** | Manifest/Revenue panels already project from the UIP (Sprint MIG-01) |
 
 **Verdict: PASS — zero architecture changes required.** CAPABILITY.CARGO is additive and
