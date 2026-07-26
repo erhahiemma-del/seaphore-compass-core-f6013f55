@@ -13,6 +13,11 @@ import type {
 } from "@/stores/workspace.store";
 import { useWorkspaceStore } from "@/stores/workspace.store";
 import {
+  storageRef,
+  type OfficerAttachment,
+} from "@/hooks/use-officer-attachments";
+
+import {
   detectMissionType,
   getProfile,
 } from "@/components/copilot/briefing/profiles";
@@ -163,4 +168,36 @@ export function recordOfficerTurn(text: string, defaultTitle?: string): string {
   return id;
 }
 
+/**
+ * Record officer-uploaded attachments as workspace evidence with full
+ * provenance — uploader, upload timestamp and the exact storage reference.
+ * Officer-supplied documents are evidence like any other source, so they
+ * enter the ledger traceably rather than only as prompt text.
+ */
+export function recordAttachmentEvidence(
+  workspaceId: string,
+  attachments: OfficerAttachment[],
+): void {
+  if (attachments.length === 0) return;
+  const store = useWorkspaceStore.getState();
+  for (const a of attachments) {
+    store.addEvidence(workspaceId, {
+      id: `att-${a.id}`,
+      title: a.name,
+      source: `Officer upload — ${a.uploadedByLabel}`,
+      category: "COLLECTED",
+      grade: "OFFICER_SUPPLIED",
+      summary: [
+        `${a.kind.toLowerCase()} · ${a.contentType}`,
+        `uploaded_by: ${a.uploadedByLabel} (${a.uploadedBy})`,
+        `uploaded_at: ${a.uploadedAt}`,
+        `storage_ref: ${storageRef(a)}`,
+      ].join(" | "),
+      collectedAt: a.uploadedAt,
+      hash: storageRef(a),
+    });
+  }
+}
+
 export type { InvestigationWorkspace };
+
