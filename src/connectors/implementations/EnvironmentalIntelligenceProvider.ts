@@ -45,9 +45,10 @@
  *    • `stableHash`           (src/services/ial/hash.ts)
  *    • Provider Resolver metadata (`provider` block below)
  *
- *  NEVER: persist · resolve identities · deduplicate · score risk ·
- *         merge investigations · registerUip() · create reports ·
- *         trigger workflows. There are no Supabase imports in this file.
+ *  NEVER: persist to the database · resolve identities · remove
+ *         duplicates · score risk · merge investigations · create the
+ *         canonical intelligence package · create reports · trigger
+ *         workflows. This file has no database imports whatsoever.
  * ─────────────────────────────────────────────────────────────────────
  */
 import { EvidenceCache } from "@/services/ial/cache";
@@ -521,7 +522,7 @@ export class EnvironmentalIntelligenceProvider implements Connector {
     return this.search(query);
   }
 
-  /** Normalization ONLY — no enrichment, no merging, no dedupe. */
+  /** Normalization ONLY — no enrichment, no merging, no duplicate removal. */
   normalize(raw: unknown, query: AcquisitionQuery): NormalizedEvidence | null {
     const observation = raw as EnvironmentalObservation | null;
     if (!observation || typeof observation !== "object") return null;
