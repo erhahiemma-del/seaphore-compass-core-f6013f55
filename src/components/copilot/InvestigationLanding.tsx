@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { useTypewriterPlaceholder } from "@/hooks/use-typewriter-placeholder";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import {
   ATTACHMENT_ACCEPT,
@@ -134,6 +135,15 @@ export function InvestigationLanding({
     el.style.height = `${Math.min(el.scrollHeight, 176)}px`;
   }, [value, ref]);
 
+  // Sprint UX-03 — the console asks a question, so the caret belongs in the
+  // input the moment the screen appears. Officer starts typing, nothing else.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || pending) return;
+    const id = window.setTimeout(() => el.focus({ preventScroll: true }), 0);
+    return () => window.clearTimeout(id);
+  }, [ref, pending]);
+
   const matches = value.trim()
     ? TYPING_EXAMPLES.filter((e) => e.toLowerCase().includes(value.trim().toLowerCase())).slice(0, 3)
     : [];
@@ -167,6 +177,18 @@ export function InvestigationLanding({
   const transcribing = dictation.state === "transcribing";
   const micBlocked = !dictation.supported || dictation.permission === "denied";
   const micNotice = dictation.unavailable ?? dictation.issue;
+
+  // The input is "idle" only while the officer has typed nothing, is not
+  // dictating and nothing is in flight — the only moment an attract cue is
+  // appropriate. The first typed character removes it for good.
+  const idle = !value && !recording && !transcribing && !pending;
+  const showTypewriter = idle;
+
+  const typedPlaceholder = useTypewriterPlaceholder({
+    phrases: [`Investigate ${subject}...`, ...TYPING_EXAMPLES.map((e) => `${e}...`)],
+    paused: !showTypewriter,
+  });
+
 
   function toggleDictation() {
     if (dictation.state === "idle") baselineRef.current = valueRef.current;
@@ -305,10 +327,14 @@ export function InvestigationLanding({
             className={cn(
               "flex items-end gap-2 rounded-2xl border border-border/70 bg-background px-4 py-3",
               "shadow-[0_10px_30px_-12px_rgba(15,42,63,0.25)] transition-all duration-300",
+              // Idle-only attract pulse; it disappears the moment the officer
+              // starts typing or focuses in, so it never competes with editing.
+              idle && "input-attract",
               "focus-within:border-[color:var(--color-teal)]/60",
               "focus-within:shadow-[0_0_0_4px_color-mix(in_oklab,var(--color-teal)_14%,transparent),0_12px_34px_-12px_rgba(15,42,63,0.3)]",
             )}
           >
+            <div className="relative flex-1">
             <textarea
               ref={ref}
               value={value}
@@ -327,11 +353,27 @@ export function InvestigationLanding({
                   ? "Listening — speak your investigation..."
                   : transcribing
                     ? "Transcribing..."
-                    : `Investigate ${subject}...`
+                    : showTypewriter
+                      ? ""
+                      : `Investigate ${subject}...`
               }
               aria-label="Investigation query"
-              className="max-h-44 min-h-[48px] flex-1 resize-none bg-transparent text-[14px] leading-6 outline-none placeholder:text-muted-foreground disabled:opacity-60"
+              className="max-h-44 min-h-[48px] w-full resize-none bg-transparent text-[14px] leading-6 outline-none placeholder:text-muted-foreground disabled:opacity-60"
             />
+            {/* Typewriter placeholder. Purely decorative and aria-hidden — the
+                textarea keeps its own accessible label, and screen readers get
+                the static prompt rather than a shifting string. */}
+            {showTypewriter ? (
+              <span
+                aria-hidden
+                data-testid="typewriter-placeholder"
+                className="pointer-events-none absolute left-0 top-0 select-none text-[14px] leading-6 text-muted-foreground"
+              >
+                {typedPlaceholder}
+                <span className="caret-blink ml-[1px] inline-block h-[1.05em] w-[2px] translate-y-[3px] bg-[color:var(--color-teal)]" />
+              </span>
+            ) : null}
+            </div>
             <div className="flex items-center gap-1 pb-0.5">
               <button
                 type="button"
@@ -372,7 +414,12 @@ export function InvestigationLanding({
                 ) : micBlocked ? (
                   <MicOff className="h-4 w-4" />
                 ) : (
-                  <Mic className={cn("h-4 w-4", recording && "animate-pulse")} />
+                  <Mic
+                    className={cn(
+                      "h-4 w-4",
+                      recording ? "animate-pulse" : idle && "mic-breathe",
+                    )}
+                  />
                 )}
                 {recording ? (
                   <span
@@ -401,19 +448,19 @@ export function InvestigationLanding({
                 title="Attach a manifest or document (PDF, CSV, XLSX, DOCX, image — max 20 MB)"
                 disabled={pending || files.uploading}
                 onClick={() => fileInputRef.current?.click()}
-                className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40"
+                className="group/attach rounded-full p-2 text-muted-foreground/60 transition-colors duration-200 hover:bg-accent hover:text-foreground disabled:opacity-40"
               >
                 {files.uploading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <Paperclip className="h-4 w-4" />
+                  <Paperclip className="h-4 w-4 opacity-70 transition-opacity duration-200 group-hover/attach:opacity-100" />
                 )}
               </button>
               <button
                 type="submit"
                 aria-label="Start investigation"
                 disabled={!canSubmit}
-                className="ml-1 flex h-9 w-9 items-center justify-center rounded-full bg-[color:var(--color-teal)] text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+                className="ml-1 flex h-9 w-9 items-center justify-center rounded-full bg-[color:var(--color-teal)] text-white transition-[transform,opacity] duration-200 hover:scale-105 hover:opacity-90 active:scale-95 disabled:opacity-40 motion-reduce:transition-none motion-reduce:hover:scale-100"
               >
                 {pending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

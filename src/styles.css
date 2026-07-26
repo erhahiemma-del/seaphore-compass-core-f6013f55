@@ -304,3 +304,72 @@
   }
 }
 
+
+/* ---------------------------------------------------------------------------
+   Sprint UX-03 — Investigation input micro-animations.
+   Presentation only. All of them collapse under prefers-reduced-motion.
+--------------------------------------------------------------------------- */
+
+@keyframes seaphore-caret-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes seaphore-input-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 color-mix(in oklab, var(--color-teal) 0%, transparent),
+      0 10px 30px -12px rgba(15, 42, 63, 0.25);
+  }
+  40% {
+    box-shadow:
+      0 0 0 4px color-mix(in oklab, var(--color-teal) 12%, transparent),
+      0 10px 30px -12px rgba(15, 42, 63, 0.25);
+  }
+}
+
+@keyframes seaphore-mic-breathe {
+  0%,
+  88%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  92% {
+    transform: scale(1.14);
+    opacity: 0.75;
+  }
+  96% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@utility caret-blink {
+  animation: seaphore-caret-blink 1.06s steps(1, end) infinite;
+}
+
+/* Subtle teal breath on the idle investigation input: 600ms of movement
+   inside a 5s cycle, so it invites without nagging. */
+@utility input-attract {
+  animation: seaphore-input-pulse 5s ease-in-out infinite;
+}
+
+@utility mic-breathe {
+  animation: seaphore-mic-breathe 8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caret-blink,
+  .input-attract,
+  .mic-breathe {
+    animation: none !important;
+  }
+}
