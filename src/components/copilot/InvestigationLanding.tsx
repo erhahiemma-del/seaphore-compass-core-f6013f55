@@ -243,8 +243,30 @@ export function InvestigationLanding({
   return (
     <div
       data-testid="investigation-landing"
-      className="animate-in fade-in flex min-h-full flex-col items-center justify-start px-4 pt-6 pb-4 duration-500"
+      onDragEnter={onDragEnter}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      className="animate-in fade-in relative flex min-h-full flex-col items-center justify-start px-4 pt-6 pb-4 duration-500"
     >
+      {dragging && (
+        <div
+          data-testid="attachment-dropzone"
+          className={cn(
+            "animate-in fade-in pointer-events-none absolute inset-2 z-20 flex flex-col items-center justify-center gap-2",
+            "rounded-2xl border-2 border-dashed border-[color:var(--color-teal)]/70",
+            "bg-background/85 backdrop-blur-[2px] duration-150",
+          )}
+        >
+          <Paperclip className="h-6 w-6 text-[color:var(--color-teal)]" />
+          <p className="text-[14px] font-semibold text-foreground">Drop to attach</p>
+          <p className="text-[12px] text-muted-foreground">
+            Manifests and documents are uploaded as officer-supplied evidence.
+          </p>
+        </div>
+      )}
+
+
 
       <div className="w-full max-w-2xl">
         <div className="flex flex-col items-center text-center">
