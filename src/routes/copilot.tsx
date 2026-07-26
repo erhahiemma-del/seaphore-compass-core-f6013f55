@@ -198,6 +198,7 @@ function CopilotOpsPage() {
     return () => window.clearTimeout(t);
   }, []);
 
+
   const mutation = useMutation({
     mutationFn: async (q: string) => {
       setError(null);
@@ -471,6 +472,32 @@ function CopilotOpsPage() {
   const investigationMode = Boolean(briefing) || isStreaming || Boolean(clarify) || Boolean(error);
   const subjectLabel = (context?.label ?? "MV Ocean Pearl").split("·")[0]!.trim();
 
+  /**
+   * Focus management — the command input is remounted when the workspace
+   * slides from the Landing hero into Investigation Mode (docked input).
+   * Re-focus the docked textarea so the officer can keep typing without
+   * reaching for the mouse, and keep it in view on small viewports.
+   */
+  useEffect(() => {
+    if (!investigationMode) return;
+    const t = window.setTimeout(() => {
+      const el = inputRef.current;
+      if (!el) return;
+      el.focus({ preventScroll: true });
+      el.scrollIntoView({ block: "nearest" });
+    }, 220);
+    return () => window.clearTimeout(t);
+  }, [investigationMode]);
+
+  // Return focus to the docked input as soon as a run settles.
+  useEffect(() => {
+    if (mutation.isPending || !investigationMode) return;
+    const t = window.setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 60);
+    return () => window.clearTimeout(t);
+  }, [mutation.isPending, investigationMode]);
+
+
+
 
   return (
     <AppShell title="NIMASA Copilot" subtitle="Intelligence Orchestration Workspace">
@@ -655,24 +682,27 @@ function CopilotOpsPage() {
               <div
                 ref={workspaceScrollRef}
                 className={cn(
-                  "flex-1 overflow-auto",
+                  "min-h-0 flex-1 overflow-auto overscroll-contain scroll-smooth",
                   investigationMode ? "p-4" : "flex p-0",
                 )}
               >
                 {!investigationMode ? (
-                  <InvestigationLanding
-                    subject={subjectLabel}
-                    value={text}
-                    onChange={setText}
-                    onSubmit={handleSubmit}
-                    pending={mutation.isPending}
-                    inputRef={inputRef}
-                  />
+                  <div className="flex flex-1 animate-in fade-in zoom-in-95 duration-300">
+                    <InvestigationLanding
+                      subject={subjectLabel}
+                      value={text}
+                      onChange={setText}
+                      onSubmit={handleSubmit}
+                      pending={mutation.isPending}
+                      inputRef={inputRef}
+                    />
+                  </div>
                 ) : null}
 
 
+
                 {isStreaming ? (
-                  <div className="rounded-lg border border-border/60 bg-[#FAFBFC] p-4">
+                  <div className="animate-in fade-in slide-in-from-top-2 rounded-lg border border-border/60 bg-[#FAFBFC] p-4 duration-300">
                     <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
                       Query
                     </p>
@@ -694,7 +724,7 @@ function CopilotOpsPage() {
                 ) : null}
 
                 {briefing ? (
-                  <>
+                  <div key={briefing.id} className="animate-in fade-in slide-in-from-bottom-3 duration-300">
                     <IntelligenceProjectionPanel
                       ibe={ibeProjection?.ibe ?? null}
                       humanResponse={ibeProjection?.humanResponse ?? null}
@@ -710,7 +740,13 @@ function CopilotOpsPage() {
                       onFollowUp={(q: string) => handleSubmit(q)}
                     />
 
-                    <details className="mt-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-[12px] text-slate-700 open:shadow-sm">
+                    {/* The Adaptive Briefing is expanded on arrival — the
+                        officer sees the full reasoning immediately rather than
+                        having to discover a collapsed panel. */}
+                    <details
+                      open
+                      className="mt-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-[12px] text-slate-700 open:shadow-sm"
+                    >
                       <summary className="cursor-pointer font-medium text-slate-800">
                         Analyst view — full adaptive briefing
                       </summary>
@@ -724,8 +760,9 @@ function CopilotOpsPage() {
                         />
                       </div>
                     </details>
-                  </>
+                  </div>
                 ) : null}
+
 
                 {briefing && followUps.length > 0 ? (
                   <div className="mt-3 rounded-lg border border-border/60 bg-[#FAFBFC] p-3">
@@ -757,7 +794,7 @@ function CopilotOpsPage() {
                     e.preventDefault();
                     handleSubmit(text);
                   }}
-                  className="animate-in slide-in-from-bottom-2 fade-in border-t border-border/60 bg-white px-4 py-3 duration-300"
+                  className="animate-in slide-in-from-bottom-4 fade-in sticky bottom-0 z-10 shrink-0 border-t border-border/60 bg-white px-4 py-3 shadow-[0_-6px_16px_-12px_rgba(15,23,42,0.35)] duration-300 ease-out"
                 >
                   <div className="flex items-end gap-2 rounded-xl border border-border/70 bg-white px-3 py-2 shadow-sm transition-shadow focus-within:border-[color:var(--color-teal)]/60 focus-within:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-teal)_12%,transparent)]">
                     <textarea
