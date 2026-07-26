@@ -544,21 +544,8 @@ function CopilotOpsPage() {
                   ))}
                 </ul>
 
-                <SectionLabel className="mt-4">Suggested Intelligence Queries</SectionLabel>
-                <ul className="space-y-1.5">
-                  {SUGGESTED_QUERIES.map((q) => (
-                    <li key={q}>
-                      <button
-                        type="button"
-                        onClick={() => handleSubmit(q)}
-                        className="flex w-full items-center gap-2 rounded-md border border-border/60 bg-background/60 px-2.5 py-1.5 text-left text-[12px] text-foreground/85 hover:border-primary/40 hover:bg-primary/5"
-                      >
-                        <ArrowRight className="h-3 w-3 shrink-0 text-[color:var(--color-teal)]" />
-                        <span className="truncate">{q}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+
+
 
                 <button
                   type="button"
