@@ -133,6 +133,36 @@ export function rollUpProviders(report: IntelligenceCoverageReport): ProviderRol
     }
   }
 
+  /**
+   * A provider can be registered in the catalog yet mapped to no KPI.
+   * It must still appear here, otherwise the Provider Health Summary
+   * would list fewer providers than the Executive Summary counts.
+   */
+  const bands: ReadonlyArray<[ReadonlyArray<string>, ProviderCoverageStatus]> = [
+    [report.readiness.operational, "OPERATIONAL"],
+    [report.readiness.partial, "PARTIAL"],
+    [report.readiness.awaitingConfiguration, "AWAITING_CREDENTIALS"],
+    [report.readiness.offline, "OFFLINE"],
+  ];
+  const known = new Set(Array.from(byId.values()).map((p) => p.providerName));
+  for (const [names, status] of bands) {
+    for (const name of names) {
+      if (known.has(name)) continue;
+      known.add(name);
+      byId.set(`unmapped:${name}`, {
+        providerId: `unmapped:${name}`,
+        providerName: name,
+        status,
+        certification: "UNKNOWN",
+        credentialEnv: [],
+        lastError: null,
+        lastCheckedAt: report.generatedAt,
+        lastSuccessfulSync: null,
+        serves: ["No KPI mapping"],
+      });
+    }
+  }
+
   return Array.from(byId.values()).sort(
     (a, b) => severity[a.status] - severity[b.status] || a.providerName.localeCompare(b.providerName),
   );
@@ -492,7 +522,7 @@ export function buildReadinessReportPdf(report: IntelligenceCoverageReport): jsP
       k.confidence,
       k.providers.length ? k.providers.map((p) => p.providerName).join(", ") : "None registered",
     ]),
-    [0.19, 0.16, 0.16, 0.09, 0.12, 0.28],
+    [0.18, 0.16, 0.16, 0.11, 0.11, 0.28],
   );
 
   /* ── 5. Root cause matrix ── */
@@ -530,7 +560,10 @@ export function buildReadinessReportPdf(report: IntelligenceCoverageReport): jsP
         `Pending — ${PROVIDER_STATUS_LABEL[p.status]}`,
         p.providerName,
         p.serves.join(", "),
-        p.lastError ?? "Awaiting configuration",
+        p.lastError ??
+          (p.credentialEnv.length
+            ? `Credentials missing — set ${p.credentialEnv.join(" or ")}.`
+            : "Awaiting configuration"),
       ]),
     ],
     [0.2, 0.2, 0.24, 0.36],
