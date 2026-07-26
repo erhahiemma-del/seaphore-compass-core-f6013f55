@@ -11,7 +11,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   AlertTriangle,
   Anchor,
-  ArrowRight,
   Building2,
   ClipboardCheck,
   DollarSign,
@@ -845,7 +844,7 @@ function CopilotOpsPage() {
                   ))}
                 </div>
 
-                <div className="space-y-4 p-3">
+                <div className="space-y-5 p-4">
                   <VesselSnapshot />
                   <RiskOverview />
                   <OwnershipGraph />
