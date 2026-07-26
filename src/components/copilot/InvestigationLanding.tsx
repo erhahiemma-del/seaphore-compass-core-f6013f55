@@ -343,6 +343,35 @@ export function InvestigationLanding({
             </div>
           </div>
 
+          {/* Voice fallback notice. Persistent (not just a toast) so the
+              officer always knows why the mic is unavailable and that typing
+              remains a complete route to the investigation. */}
+          {micNotice ? (
+            <div
+              data-testid="dictation-notice"
+              role="status"
+              className="mt-2 flex items-start gap-2 rounded-xl border border-border/60 bg-muted/40 px-3 py-2 text-[12px] leading-5"
+            >
+              <MicOff className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <p className="text-muted-foreground">
+                <span className="font-medium text-foreground">{micNotice.title}.</span>{" "}
+                {micNotice.detail} {micNotice.hint}
+              </p>
+              {!dictation.unavailable ? (
+                <button
+                  type="button"
+                  aria-label="Dismiss microphone notice"
+                  onClick={dictation.clearIssue}
+                  className="ml-auto rounded-full p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+
+
+
           {files.attachments.length > 0 ? (
             <div className="mt-2 flex flex-wrap gap-1.5 px-1">
               {files.attachments.map((a) => (
