@@ -35,13 +35,13 @@ async function openLanding(page: Page) {
     [DEV_MODE_STORAGE_KEY, DEV_MODE_VALUE],
   );
   await page.goto("/copilot");
-  await expect(page.getByText(/what would you like to investigate\?/i)).toBeVisible();
-  await expect(page.getByText(/^Quick Start$/)).toBeVisible();
+  await expect(page.getByTestId("investigation-landing")).toBeVisible();
 }
 
 /** The subject the landing personalises its prompts with. */
 async function subjectOf(page: Page): Promise<string> {
   const placeholder = await page
+    .getByTestId("investigation-landing")
     .getByLabel(/investigation query/i)
     .getAttribute("placeholder");
   return (placeholder ?? "").replace(/^Investigate\s+/, "").replace(/\.\.\.$/, "").trim();
@@ -51,24 +51,26 @@ test.describe("Investigation Landing — empty state", () => {
   test("fits without scrolling and shows all six Quick Start cards", async ({ page }) => {
     await openLanding(page);
 
+    const grid = page.getByTestId("quick-start-grid");
+    await expect(grid.getByRole("button")).toHaveCount(6);
     for (const [label] of QUICK_START) {
-      await expect(page.getByRole("button", { name: label, exact: true })).toBeVisible();
+      await expect(grid.getByRole("button", { name: label, exact: true })).toBeVisible();
     }
 
     // The workspace column must not overflow: no scrollbar in the empty state.
-    const overflow = await page.evaluate(() => {
-      const scroller = Array.from(document.querySelectorAll<HTMLElement>("div")).find(
-        (el) =>
-          getComputedStyle(el).overflowY === "auto" &&
-          el.textContent?.includes("Quick Start"),
-      );
-      if (!scroller) return null;
-      return { scrollHeight: scroller.scrollHeight, clientHeight: scroller.clientHeight };
-    });
+    const overflow = await page
+      .getByTestId("copilot-workspace-scroll")
+      .evaluate((el) => ({ scrollHeight: el.scrollHeight, clientHeight: el.clientHeight }));
 
-    expect(overflow, "workspace scroll container not found").not.toBeNull();
     // 1px tolerance for sub-pixel layout rounding.
-    expect(overflow!.scrollHeight).toBeLessThanOrEqual(overflow!.clientHeight + 1);
+    expect(overflow.scrollHeight).toBeLessThanOrEqual(overflow.clientHeight + 1);
+
+    // And the last row of cards is inside the viewport, not clipped below it.
+    const lastCard = grid.getByRole("button").last();
+    const box = await lastCard.boundingBox();
+    const viewport = page.viewportSize()!;
+    expect(box).not.toBeNull();
+    expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height);
   });
 });
 
@@ -76,14 +78,18 @@ test.describe("Investigation Landing — Quick Start prompts", () => {
   for (const [label, prompt] of QUICK_START) {
     test(`"${label}" inserts the correct prompt`, async ({ page }) => {
       await openLanding(page);
+      const landing = page.getByTestId("investigation-landing");
       const subject = await subjectOf(page);
-      const input = page.getByLabel(/investigation query/i);
+      const input = landing.getByLabel(/investigation query/i);
 
-      await page.getByRole("button", { name: label, exact: true }).click();
+      await page
+        .getByTestId("quick-start-grid")
+        .getByRole("button", { name: label, exact: true })
+        .click();
 
       await expect(input).toHaveValue(prompt(subject));
       // Staged, not submitted — the landing hero is still on screen.
-      await expect(page.getByText(/what would you like to investigate\?/i)).toBeVisible();
+      await expect(landing).toBeVisible();
       await expect(input).toBeFocused();
     });
   }
