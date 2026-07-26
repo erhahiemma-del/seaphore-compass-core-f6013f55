@@ -15,7 +15,6 @@ import {
   Anchor,
   Building2,
   RotateCw,
-  DollarSign,
   FileSpreadsheet,
   FileText,
   Hash,
@@ -26,7 +25,6 @@ import {
   Paperclip,
   Radar,
   Send,
-  ShieldCheck,
   Ship,
   Telescope,
   X,
@@ -115,6 +113,12 @@ export function InvestigationLanding({
   const localRef = useRef<HTMLTextAreaElement | null>(null);
   const ref = inputRef ?? localRef;
   const [exampleIndex, setExampleIndex] = useState(0);
+  /** Rotating empty-state guidance line (UX-04 §8). */
+  const [guidanceIndex, setGuidanceIndex] = useState(0);
+  /** Chip whose starter prompt is currently in the box — a pure UI marker. */
+  const [activeChip, setActiveChip] = useState<string | null>(null);
+  /** Officer dismissed the detected-intent badge for the current text. */
+  const [hintDismissed, setHintDismissed] = useState(false);
 
   // Rotating examples — only while the officer has not typed anything.
   useEffect(() => {
@@ -122,6 +126,16 @@ export function InvestigationLanding({
     const t = window.setInterval(
       () => setExampleIndex((i) => (i + 1) % TYPING_EXAMPLES.length),
       3200,
+    );
+    return () => window.clearInterval(t);
+  }, [value]);
+
+  // Rotating guidance — fades every 4s while the box is empty.
+  useEffect(() => {
+    if (value.trim()) return;
+    const t = window.setInterval(
+      () => setGuidanceIndex((i) => (i + 1) % GUIDANCE.length),
+      4000,
     );
     return () => window.clearInterval(t);
   }, [value]);
@@ -197,8 +211,41 @@ export function InvestigationLanding({
 
   function insert(prompt: string) {
     onChange(prompt);
+    setActiveChip(null);
     window.setTimeout(() => ref.current?.focus(), 0);
   }
+
+  /**
+   * Chip toggle (UX-04 §6): first click inserts the editable starter prompt,
+   * a second click removes it again. "No chip selected" is always valid, and
+   * neither state filters or constrains the investigation.
+   */
+  function toggleChip(chip: PromptChip) {
+    if (activeChip === chip.key) {
+      onChange(value === chip.starter ? "" : value);
+      setActiveChip(null);
+    } else {
+      onChange(chip.starter);
+      setActiveChip(chip.key);
+    }
+    setHintDismissed(false);
+    window.setTimeout(() => {
+      const el = ref.current;
+      if (!el) return;
+      el.focus();
+      el.setSelectionRange(el.value.length, el.value.length);
+    }, 0);
+  }
+
+  /** Typing by hand drops the chip marker — the officer owns the text. */
+  function handleChange(next: string) {
+    const chip = PROMPT_CHIPS.find((c) => c.key === activeChip);
+    if (chip && next !== chip.starter) setActiveChip(null);
+    if (!next.trim()) setHintDismissed(false);
+    onChange(next);
+  }
+
+  const intentHint = hintDismissed ? null : detectIntentHint(value);
 
   // --- Officer attachments (manifests / documents) ---------------------
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -365,7 +412,7 @@ export function InvestigationLanding({
               value={value}
               rows={2}
               disabled={pending}
-              onChange={(e) => onChange(e.target.value)}
+              onChange={(e) => handleChange(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
