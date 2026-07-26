@@ -87,6 +87,7 @@ import type { IbeResult } from "@/services/ibe/types";
 import { ClarifyCard } from "@/components/copilot/ClarifyCard";
 import { useAuthStore } from "@/stores/auth.store";
 import { useCopilotStore } from "@/stores/copilot.store";
+import { useCopilotRunStore, readResumableRun } from "@/stores/copilot-run.store";
 import { useIsDevBypass } from "@/stores/dev-mode.store";
 import { useMissionContextStore } from "@/stores/mission-context.store";
 import { useWorkspaceStore } from "@/stores/workspace.store";
@@ -216,10 +217,28 @@ function CopilotOpsPage() {
     return () => window.clearTimeout(t);
   }, []);
 
+  // Keep the persisted run in step with the visible stage so a refresh mid-run
+  // restores the progress card at the stage the officer last saw. The first
+  // pass is skipped so it cannot wipe a run waiting to be resumed.
+  const stageSyncReady = useRef(false);
+  useEffect(() => {
+    if (!stageSyncReady.current) {
+      stageSyncReady.current = true;
+      return;
+    }
+    if (stage === "classifying" || stage === "retrieving" || stage === "reasoning" || stage === "rendering") {
+      useCopilotRunStore.getState().setStage(stage);
+    } else {
+      useCopilotRunStore.getState().clear();
+    }
+  }, [stage]);
+
+
 
   // Monotonic run token. Cancelling bumps it, so any results still in flight
   // from the abandoned run are discarded instead of overwriting the screen.
   const runIdRef = useRef(0);
+
 
   const mutation = useMutation({
     mutationFn: async (q: string) => {
@@ -489,10 +508,35 @@ function CopilotOpsPage() {
     });
     // Show progress the instant the officer submits — no silent gap before
     // the mutation's first stage transition lands.
-    setRunStartedAt(Date.now());
+    const startedAt = Date.now();
+    setRunStartedAt(startedAt);
     setStage("classifying");
+    // Persist the run so a refresh or a navigation away restores the progress
+    // card and resumes the investigation instead of losing it silently.
+    useCopilotRunStore.getState().begin(submitted, startedAt);
     mutation.mutate(submitted);
   }
+
+  /**
+   * Resume an interrupted run. The pipeline call itself died with the previous
+   * page, so the run is re-issued — but the progress card reappears at the
+   * stage the officer last saw, with the original elapsed clock intact.
+   */
+  const resumedRef = useRef(false);
+  useEffect(() => {
+    if (resumedRef.current) return;
+    resumedRef.current = true;
+    const pending = readResumableRun();
+    if (!pending) return;
+    setRunStartedAt(pending.startedAt);
+    setStage(pending.stage);
+    toast.info("Resuming investigation", {
+      description: "The run was interrupted — Seaphore is rebuilding your briefing.",
+    });
+    mutation.mutate(pending.query);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
 
   async function handleOverride(submission: OverrideSubmission) {
