@@ -182,7 +182,11 @@ export function InvestigationLanding({
 
 
   return (
-    <div className="animate-in fade-in flex min-h-full flex-col items-center justify-start px-4 pt-6 pb-4 duration-500">
+    <div
+      data-testid="investigation-landing"
+      className="animate-in fade-in flex min-h-full flex-col items-center justify-start px-4 pt-6 pb-4 duration-500"
+    >
+
       <div className="w-full max-w-2xl">
         <div className="flex flex-col items-center text-center">
           <span
