@@ -682,20 +682,23 @@ function CopilotOpsPage() {
               <div
                 ref={workspaceScrollRef}
                 className={cn(
-                  "flex-1 overflow-auto",
+                  "min-h-0 flex-1 overflow-auto overscroll-contain scroll-smooth",
                   investigationMode ? "p-4" : "flex p-0",
                 )}
               >
                 {!investigationMode ? (
-                  <InvestigationLanding
-                    subject={subjectLabel}
-                    value={text}
-                    onChange={setText}
-                    onSubmit={handleSubmit}
-                    pending={mutation.isPending}
-                    inputRef={inputRef}
-                  />
+                  <div className="flex flex-1 animate-in fade-in zoom-in-95 duration-300">
+                    <InvestigationLanding
+                      subject={subjectLabel}
+                      value={text}
+                      onChange={setText}
+                      onSubmit={handleSubmit}
+                      pending={mutation.isPending}
+                      inputRef={inputRef}
+                    />
+                  </div>
                 ) : null}
+
 
 
                 {isStreaming ? (
