@@ -24,6 +24,7 @@ import { openSanctionsConnector } from "./implementations/OpenSanctionsConnector
 import { openCorporatesProvider, OPENCORPORATES_CACHE_TTL_MS } from "./implementations/OpenCorporatesProvider";
 import { equasisProvider, EQUASIS_CACHE_TTL_MS } from "./implementations/EquasisProvider";
 import { imoGisisProvider, IMO_GISIS_CACHE_TTL_MS } from "./implementations/ImoGisisProvider";
+import { ncsCustomsProvider, NCS_CUSTOMS_CACHE_TTL_MS } from "./implementations/NcsCustomsProvider";
 import {
   globalFishingWatchProvider,
   GFW_CACHE_TTL_MS,
