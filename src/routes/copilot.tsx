@@ -87,6 +87,7 @@ import type { IbeResult } from "@/services/ibe/types";
 import { ClarifyCard } from "@/components/copilot/ClarifyCard";
 import { useAuthStore } from "@/stores/auth.store";
 import { useCopilotStore } from "@/stores/copilot.store";
+import { useCopilotRunStore, readResumableRun } from "@/stores/copilot-run.store";
 import { useIsDevBypass } from "@/stores/dev-mode.store";
 import { useMissionContextStore } from "@/stores/mission-context.store";
 import { useWorkspaceStore } from "@/stores/workspace.store";
