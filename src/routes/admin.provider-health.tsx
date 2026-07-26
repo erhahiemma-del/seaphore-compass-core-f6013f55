@@ -167,7 +167,13 @@ function ProviderHealthPage() {
   }, [rows]);
 
   return (
+    <AppShell
+      title="Provider Health"
+      subtitle="Certified Evidence Providers · Scheduled healthCheck() probes"
+      mode="dark"
+    >
     <div className="mx-auto w-full max-w-6xl space-y-6 px-6 py-8">
+
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Provider Health</h1>
