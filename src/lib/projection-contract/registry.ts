@@ -1382,6 +1382,51 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     reviewedAt: "2026-07-26",
   },
   {
+    id: "cargo.copilot.routing",
+    name: "Cargo Investigation Copilot — prompt routing",
+    producer: "OIE",
+    description:
+      "Sprint CAP-04 — classification of an officer question into a cargo investigation intent (investigate shipment, containers for company, bills of lading, revenue leakage, cargo risk, related vessels, cargo timeline) and resolution of its subject against the Canonical UIP. Unresolved subjects are stated, never guessed.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Copilot answer header — intent, resolved subject and resolution note",
+      location: "src/components/copilot/cargo/CargoDossierPanel.tsx",
+      component: "src/services/copilot/cargo/routing.ts",
+      interaction: "passive-display",
+    },
+    reviewedAt: "2026-07-26",
+  },
+  {
+    id: "cargo.copilot.dossier",
+    name: "Cargo Investigation Copilot — ten-section dossier",
+    producer: "OIE",
+    description:
+      "Sprint CAP-04 — Executive Summary, Cargo Timeline, Related Companies, Related Containers, Manifest Summary, Revenue Analysis, Risk Assessment, Customs Intelligence, AI Recommendations and Next Best Actions, projected from Canonical UIP evidence through the Cargo Knowledge Graph and the revenue-leakage capability. Every section carries its weakest grade and citations; absent evidence is reported as a gap.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Copilot · Cargo Investigation dossier panel",
+      location: "src/components/copilot/cargo/CargoDossierPanel.tsx",
+      component: "src/services/copilot/cargo/dossier.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-07-26",
+  },
+  {
+    id: "cargo.copilot.sticky-focus",
+    name: "Cargo Investigation Copilot — sticky investigation subject",
+    producer: "OIE",
+    description:
+      "Sprint CAP-04 — the cargo entity carried between turns so follow-up questions such as \"show related vessels\" stay on the same subject. The carried subject is always named back to the officer in the resolution note.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Copilot answer header — resolution note naming the carried entity",
+      location: "src/components/copilot/cargo/CargoDossierPanel.tsx",
+      component: "src/routes/copilot.tsx",
+      interaction: "passive-display",
+    },
+    reviewedAt: "2026-07-26",
+  },
+  {
     id: "cargo.graph.model",
     name: "Cargo Knowledge Graph — entity + relationship model",
     producer: "IFE",
