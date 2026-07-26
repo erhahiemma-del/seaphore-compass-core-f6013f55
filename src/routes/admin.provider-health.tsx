@@ -24,6 +24,7 @@ import {
   probeSingleProviderHealthFn,
   type ProviderHealthSnapshot,
 } from "@/lib/provider-health.functions";
+import { buildEvidenceProviderCatalog, formatCacheTtl } from "@/connectors/catalog";
 
 export const Route = createFileRoute("/admin/provider-health")({
   component: ProviderHealthPage,
