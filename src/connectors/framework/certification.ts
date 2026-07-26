@@ -51,6 +51,14 @@ export interface CertificationOptions {
   readonly existingIds?: ReadonlyArray<string>;
   /** Projection contract ids (defaults to the live registry). */
   readonly projectionContractIds?: ReadonlyArray<string>;
+  /**
+   * Runtime gate mode. Source text is not available inside the browser
+   * bundle, so runtime registration certifies the runtime-checkable
+   * subset and tolerates SKIPPED source checks. The regression suite
+   * always certifies WITH source, so the architectural prohibitions are
+   * still enforced — just at test time, where the files are readable.
+   */
+  readonly allowSkipped?: boolean;
 }
 
 const FORBIDDEN_SOURCE_PATTERNS: ReadonlyArray<{
