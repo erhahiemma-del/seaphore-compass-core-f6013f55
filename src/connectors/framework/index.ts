@@ -20,6 +20,7 @@ export {
   certifyProvider,
   formatCertificationReport,
   publicMethodsFromSource,
+  providerClassBody,
 } from "./certification";
 export type {
   CertificationCheck,

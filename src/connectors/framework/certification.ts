@@ -59,6 +59,8 @@ export interface CertificationOptions {
    * still enforced — just at test time, where the files are readable.
    */
   readonly allowSkipped?: boolean;
+  /** Provider class name, when a module declares several classes. */
+  readonly className?: string;
 }
 
 const FORBIDDEN_SOURCE_PATTERNS: ReadonlyArray<{
@@ -269,7 +271,7 @@ export function certifyProvider(
       add(c.id, c.label, !c.pattern.test(source), `${c.label} — prohibited pattern found`);
     }
     const allowed = new Set<string>([...FROZEN_PROVIDER_API, ...APPROVED_LEGACY_API]);
-    const extra = publicMethodsFromSource(source).filter((m) => !allowed.has(m));
+    const extra = publicMethodsFromSource(source, opts.className).filter((m) => !allowed.has(m));
     add(
       "api-freeze",
       "Connector API freeze respected",
