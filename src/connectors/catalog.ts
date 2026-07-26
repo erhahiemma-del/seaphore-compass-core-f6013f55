@@ -161,6 +161,21 @@ const DECLARATIONS: ReadonlyArray<{
     },
   },
   {
+    provider: ncsCustomsProvider,
+    declaration: {
+      sprint: "EP-CARGO-01",
+      dataSources: ["Nigeria Customs Service declarations / NICIS II (credentialed)"],
+      authentication: "api-token",
+      credentialEnv: ["NCS_CUSTOMS_API_BASE_URL", "NCS_CUSTOMS_API_TOKEN"],
+      cacheTtlMs: NCS_CUSTOMS_CACHE_TTL_MS,
+      testCoverage: ["src/connectors/framework/__tests__/certification.test.ts"],
+      lastValidationDate: VALIDATED,
+      referenceImplementation: false,
+      documentation: DOCS,
+      sourceFile: "src/connectors/implementations/NcsCustomsProvider.ts",
+    },
+  },
+  {
     provider: environmentalIntelligenceProvider,
     declaration: {
       sprint: "EP-05",
