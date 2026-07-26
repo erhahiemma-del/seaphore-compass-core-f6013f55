@@ -126,11 +126,8 @@ export function MissionControl() {
 
 function Ribbon() {
   const handoff = useHandoffNavigate();
-  const { data: coverage } = useQuery({
-    queryKey: ["intelligence-coverage"],
-    queryFn: () => getIntelligenceCoverage(),
-    staleTime: 60_000,
-  });
+  const { data: coverage } = useCoverage();
+
   const kpiByKey = new Map((coverage?.kpis ?? []).map((k) => [k.key, k]));
   return (
     <div className="flex flex-col gap-3">
