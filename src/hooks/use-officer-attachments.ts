@@ -41,7 +41,12 @@ export interface OfficerAttachment {
   contentType: string;
   bucket: "manifests" | "evidence";
   path: string;
+  /** ISO timestamp of the moment the object landed in storage. */
   uploadedAt: string;
+  /** Uploading officer's account id — the provenance owner of this evidence. */
+  uploadedBy: string;
+  /** Human-readable uploader label (email where available). */
+  uploadedByLabel: string;
   kind: "MANIFEST" | "DOCUMENT";
 }
 
@@ -60,15 +65,32 @@ export function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-/** Renders the attachment set as officer-authored context for the pipeline. */
+/** Canonical storage reference for an attachment: `bucket://path`. */
+export function storageRef(a: OfficerAttachment): string {
+  return `${a.bucket}://${a.path}`;
+}
+
+/**
+ * Renders the attachment set as officer-authored context for the pipeline.
+ * Every line carries full provenance — uploader, upload time and the exact
+ * storage reference — so nothing downstream cites a document it cannot trace.
+ */
 export function describeAttachments(attachments: OfficerAttachment[]): string {
   if (attachments.length === 0) return "";
   const lines = attachments.map(
     (a) =>
-      `- ${a.name} (${a.kind.toLowerCase()}, ${formatBytes(a.size)}) [${a.bucket}://${a.path}]`,
+      `- ${a.name} — ${a.kind.toLowerCase()}, ${formatBytes(a.size)}, ${a.contentType}\n` +
+      `  uploaded_by: ${a.uploadedByLabel} (${a.uploadedBy})\n` +
+      `  uploaded_at: ${a.uploadedAt}\n` +
+      `  storage_ref: ${storageRef(a)}`,
   );
-  return `Officer-attached documents (uploaded evidence, treat as officer-supplied source):\n${lines.join("\n")}`;
+  return [
+    "Officer-attached documents (officer-supplied evidence — provenance below).",
+    "Cite these only by name and storage_ref; do not infer content that was not read.",
+    ...lines,
+  ].join("\n");
 }
+
 
 /** An attachment as the officer sees it: in flight, uploaded, or failed. */
 export interface AttachmentItem extends OfficerAttachment {
