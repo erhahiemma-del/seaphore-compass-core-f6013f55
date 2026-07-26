@@ -51,8 +51,8 @@ export function readProviderCredential(name: string): string | null {
  * Read the first present credential from a list of accepted env names.
  *
  * Used where a provider accepts a canonical variable plus historical
- * aliases (e.g. `GFW_API_TOKEN`, previously
- * `GLOBAL_FISHING_WATCH_API_KEY`). Order is significant: the first name
+ * aliases (e.g. `GFW_API_TOKEN` plus a historical
+ * alias resolved server-side). Order is significant: the first name
  * is canonical. Returns the value AND the variable it came from so the
  * officer-facing health surface can state exactly what is configured.
  */

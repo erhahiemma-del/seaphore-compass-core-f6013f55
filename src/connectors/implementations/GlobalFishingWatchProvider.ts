@@ -41,12 +41,12 @@ import {
 } from "./shared/provider-io";
 
 /**
- * Accepted credential variables, canonical first. `GFW_API_TOKEN` is the
- * catalog-declared name; the second entry is the historical name used by
- * the server-side GFW gateway and is accepted so an already-configured
- * deployment does not silently fall back to "unauthenticated".
+ * Credential variable for this provider, as declared in the Evidence
+ * Provider Catalog. The server-side gateway additionally accepts a
+ * historical alias, which is resolved there and never named in
+ * client-reachable source.
  */
-export const GFW_CREDENTIAL_ENV = ["GFW_API_TOKEN", "GLOBAL_FISHING_WATCH_API_KEY"] as const;
+export const GFW_CREDENTIAL_ENV = ["GFW_API_TOKEN"] as const;
 
 /** Officer-facing authentication states — never a generic error string. */
 export type GfwAuthState =
