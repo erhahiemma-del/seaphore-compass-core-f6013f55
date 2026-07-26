@@ -34,17 +34,54 @@ import { cn } from "@/lib/utils";
 import {
   COMPLIANCE_METRICS,
   INTELLIGENCE_FEED,
-  MANIFEST_METRICS,
   MAP_VESSELS,
   PORT_CONGESTION,
   RECENT_BRIEFINGS,
-  REVENUE_ASSURANCE,
   RIBBON_KPIS,
   TODAYS_PRIORITIES,
   type FeedRow,
   type PortCongestion,
   type Priority,
 } from "@/lib/mission-control-data";
+import { useUipStore } from "@/stores/uip.store";
+import { scanForLeakage } from "@/services/revenue-leakage";
+import {
+  projectManifestIntelligence,
+  projectRevenueIntelligence,
+} from "@/lib/intelligence/dashboard-projection";
+import { PanelStateNotice } from "@/components/intelligence/PanelStateNotice";
+import type { KpiCoverage } from "@/lib/intelligence/coverage-model";
+
+/** One shared coverage read for every Mission Control surface. */
+function useCoverage() {
+  return useQuery({
+    queryKey: ["intelligence-coverage"],
+    queryFn: () => getIntelligenceCoverage(),
+    staleTime: 60_000,
+  });
+}
+
+/** The Canonical UIP this session is projecting from. */
+function useLatestUip() {
+  return useUipStore((s) => {
+    const id = s.order[0];
+    return id ? s.byId[id] : undefined;
+  });
+}
+
+function coverageFor(
+  kpis: ReadonlyArray<KpiCoverage> | undefined,
+  key: string,
+): KpiCoverage | undefined {
+  return (kpis ?? []).find((k) => k.key === key);
+}
+
+/** Officer-facing capability routes reused by the ribbon (no duplicates). */
+const KPI_HANDOFF_OVERRIDE: Record<string, string> = {
+  "revenue-intelligence": "/revenue-leakage",
+  "risk-intelligence": "/national-risk",
+};
+
 
 const RIBBON_ICONS: Record<string, LucideIcon> = {
   "manifest-intelligence": FileText,
