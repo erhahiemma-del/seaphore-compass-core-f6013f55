@@ -452,6 +452,15 @@ function CopilotOpsPage() {
   const isStreaming =
     stage === "classifying" || stage === "retrieving" || stage === "reasoning" || stage === "rendering";
 
+  /**
+   * Sprint UX-02 — the workspace has two modes. Empty state = the
+   * Investigation Landing (hero prompt, centred). Investigation Mode =
+   * briefing above, input docked to the bottom. Same submit path.
+   */
+  const investigationMode = Boolean(briefing) || isStreaming || Boolean(clarify) || Boolean(error);
+  const subjectLabel = (context?.label ?? "MV Ocean Pearl").split("·")[0]!.trim();
+
+
   return (
     <AppShell title="NIMASA Copilot" subtitle="Intelligence Orchestration Workspace">
       <div className="flex min-h-[calc(100vh-8rem)] flex-col bg-[#F7F8FA]">
