@@ -47,6 +47,8 @@ import type {
   OverrideSubmission,
 } from "@/components/copilot/briefing";
 import { StreamingStages } from "@/components/copilot/StreamingStages";
+import { InvestigationLanding } from "@/components/copilot/InvestigationLanding";
+
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { Button } from "@/components/ui/button";
 import { adaptBriefing, type CopilotQueryResponse } from "@/lib/copilot/adapt-briefing";
