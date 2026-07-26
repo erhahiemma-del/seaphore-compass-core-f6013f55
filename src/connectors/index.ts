@@ -13,6 +13,7 @@
  * ─────────────────────────────────────────────────────────────────────
  */
 import type { ConnectorManager } from "@/services/ial/manager";
+import { registerCertifiedProvider } from "./framework";
 import {
   ENVIRONMENTAL_CACHE_TTL_MS,
   ENVIRONMENTAL_INTELLIGENCE_METADATA,
