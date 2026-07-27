@@ -182,10 +182,10 @@ function withCanonicalId(record: NormalizedEvidence, id: string): NormalizedEvid
 /* ─── Provider ───────────────────────────────────────────────────────── */
 
 export class NcsCustomsProvider extends BaseEvidenceProvider {
-  readonly id: ConnectorId = "customs";
+  readonly id: ConnectorId = "ncs-customs";
   readonly displayName = "Nigeria Customs Service — Declarations";
   readonly provider: ProviderMetadata = NCS_CUSTOMS_METADATA;
-  readonly projectionContractId = "capability.cargo";
+  readonly projectionContractId = "ial.ncs-customs-evidence-provider";
   readonly capabilities: ReadonlyArray<ConnectorCapability> = ["CARGO", "COMPLIANCE"];
 
   private readonly fetchImpl: typeof fetch;

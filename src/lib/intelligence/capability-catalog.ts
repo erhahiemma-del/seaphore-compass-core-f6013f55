@@ -186,7 +186,7 @@ export const CAPABILITY_CATALOG: ReadonlyArray<CapabilityEntry> = [
     owner: "Cargo Intelligence Capability (CAP-02, EP-CARGO-01)",
     canonicalEntities: ["cargo", "vessel", "company", "port"],
     evidenceProviders: [
-      { id: "customs", name: "NCS Customs (NICIS II)", sprint: "EP-CARGO-01", credentialStatus: "AWAITING_CREDENTIALS" },
+      { id: "ncs-customs", name: "NCS Customs (NICIS II)", sprint: "EP-CARGO-01", credentialStatus: "AWAITING_CREDENTIALS" },
     ],
     uipProjections: [
       "cargo.workspace.manifest",
@@ -260,7 +260,7 @@ export const CAPABILITY_CATALOG: ReadonlyArray<CapabilityEntry> = [
     owner: "Revenue Leakage Detection Engine (Sprint 1G)",
     canonicalEntities: ["cargo", "company", "vessel", "port"],
     evidenceProviders: [
-      { id: "customs", name: "NCS Customs (NICIS II)", sprint: "EP-CARGO-01", credentialStatus: "AWAITING_CREDENTIALS" },
+      { id: "ncs-customs", name: "NCS Customs (NICIS II)", sprint: "EP-CARGO-01", credentialStatus: "AWAITING_CREDENTIALS" },
     ],
     uipProjections: [
       "capability.revenue-leakage-detection",

@@ -254,16 +254,18 @@ describe("EP-08 · UN Security Council", () => {
 describe("EP-MASTER · Evidence Provider Catalog", () => {
   const catalog = buildEvidenceProviderCatalog();
 
-  it("lists all eight integrated providers in sprint order", () => {
+  it("lists all ten integrated providers in sprint order", () => {
     expect(catalog.map((row) => row.providerId)).toEqual([
       "open-sanctions",
       "opencorporates",
       "equasis",
       "imo-gisis",
+      "ncs-customs",
       "environmental-intelligence",
       "global-fishing-watch",
       "ofac",
       "un-security-council",
+      "copernicus-cdse",
     ]);
   });
 

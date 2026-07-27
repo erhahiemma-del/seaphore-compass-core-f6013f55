@@ -1517,6 +1517,25 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     reviewedAt: "2026-07-26",
   },
   {
+    id: "ial.ncs-customs-evidence-provider",
+    name: "NCS Customs Evidence Provider",
+    producer: "IAL",
+    description:
+      "Sprint EP-CARGO-01 — Nigeria Customs Service declarations and NICIS II manifest data. " +
+      "Authority-of-record cargo provider: declaration → manifest → bill-of-lading → containers → " +
+      "items → assessment expand() cascade. Grade: VERIFIED (government authority of record). " +
+      "Credentials: NCS_CUSTOMS_API_BASE_URL and NCS_CUSTOMS_API_TOKEN. " +
+      "Cache TTL: 6h. Acquisition only — no persistence, no registerUip(), no identity resolution.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Cargo Intelligence Workspace — manifest, container, cargo, trade, revenue, risk centres",
+      location: "src/routes/cargo-workspace.$centre.tsx",
+      component: "src/connectors/implementations/NcsCustomsProvider.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-07-27",
+  },
+  {
     id: "ial.copernicus-cdse-evidence-provider",
     name: "Copernicus Data Space Ecosystem Evidence Provider",
     producer: "IAL",
