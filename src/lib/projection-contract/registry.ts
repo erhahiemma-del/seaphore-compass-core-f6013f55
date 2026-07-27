@@ -1516,10 +1516,22 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: "2026-07-26",
   },
+  {
+    id: "ial.copernicus-cdse-evidence-provider",
+    name: "Copernicus Data Space Ecosystem Evidence Provider",
+    producer: "IAL",
+    description:
+      "Sprint EP-COPERNICUS-01 — satellite imagery metadata from the Copernicus Data Space Ecosystem (CDSE). Sentinel-1 SAR, Sentinel-2 multispectral and all Copernicus mission collections. Metadata only: scene IDs, bounding boxes, acquisition times, collection names, cloud cover, GSD, SAR mode, polarisation, and licensing. OAuth 2.0 password-grant authentication with automatic token refresh. Credentials: COPERNICUS_USERNAME and COPERNICUS_PASSWORD. Grade: CORROBORATED (government ESA satellite acquisition). Never downloads imagery. Acquisition only: no vessel detection, no risk scoring, no SAR interpretation. Interpretation belongs to the IFE/OIE reasoning layers.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Evidence Provenance — satellite scene metadata with coordinates and acquisition time",
+      location: "src/components/copilot/briefing/EvidenceProvenancePanel.tsx",
+      component: "src/connectors/implementations/CopernicusProvider.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-07-27",
+  },
 ];
-
-
-
 
 export function getContractEntry(id: string): ProjectionContractEntry | undefined {
   return PROJECTION_CONTRACT.find((e) => e.id === id);

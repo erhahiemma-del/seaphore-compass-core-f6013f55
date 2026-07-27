@@ -34,6 +34,10 @@ import {
   unSecurityCouncilProvider,
   UNSC_CACHE_TTL_MS,
 } from "./implementations/UnSecurityCouncilProvider";
+import {
+  copernicusProvider,
+  COPERNICUS_CACHE_TTL_MS,
+} from "./implementations/CopernicusProvider";
 
 /** Descriptive, human-authored half of a catalog row. */
 interface CatalogDeclaration {
@@ -246,6 +250,26 @@ const DECLARATIONS: ReadonlyArray<{
       referenceImplementation: false,
       documentation: DOCS,
       sourceFile: "src/connectors/implementations/UnSecurityCouncilProvider.ts",
+    },
+  },
+  {
+    provider: copernicusProvider,
+    declaration: {
+      sprint: "EP-COPERNICUS-01",
+      dataSources: [
+        "Copernicus Data Space Ecosystem STAC API — Sentinel-1, Sentinel-2, and all Copernicus collections",
+      ],
+      authentication: "account-credentials",
+      credentialEnv: ["COPERNICUS_USERNAME", "COPERNICUS_PASSWORD"],
+      cacheTtlMs: COPERNICUS_CACHE_TTL_MS,
+      testCoverage: [
+        "src/connectors/__tests__/CopernicusProvider.test.ts",
+        "src/connectors/framework/__tests__/certification.test.ts",
+      ],
+      lastValidationDate: "2026-07-27",
+      referenceImplementation: false,
+      documentation: DOCS,
+      sourceFile: "src/connectors/implementations/CopernicusProvider.ts",
     },
   },
 ];

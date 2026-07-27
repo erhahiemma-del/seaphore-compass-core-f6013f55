@@ -54,6 +54,13 @@ import {
   NcsCustomsProvider,
   ncsCustomsProvider,
 } from "./implementations/NcsCustomsProvider";
+import {
+  COPERNICUS_METADATA,
+  COPERNICUS_CACHE_TTL_MS,
+  COPERNICUS_CREDENTIAL_ENV,
+  CopernicusProvider,
+  copernicusProvider,
+} from "./implementations/CopernicusProvider";
 
 export { OpenSanctionsConnector, openSanctionsConnector, OPEN_SANCTIONS_METADATA };
 export {
@@ -70,6 +77,18 @@ export { GlobalFishingWatchProvider, globalFishingWatchProvider, GFW_METADATA };
 export { OfacProvider, ofacProvider, OFAC_METADATA };
 export { UnSecurityCouncilProvider, unSecurityCouncilProvider, UNSC_METADATA };
 export { NcsCustomsProvider, ncsCustomsProvider, NCS_CUSTOMS_METADATA };
+export {
+  CopernicusProvider,
+  copernicusProvider,
+  COPERNICUS_METADATA,
+  COPERNICUS_CACHE_TTL_MS,
+  COPERNICUS_CREDENTIAL_ENV,
+};
+export type {
+  CopernicusAuthState,
+  CdseStacFeature,
+  CopernicusProviderOptions,
+} from "./implementations/CopernicusProvider";
 export {
   buildEvidenceProviderCatalog,
   catalogProviderIds,
@@ -105,6 +124,7 @@ export function registerEvidenceProviders(manager: ConnectorManager): void {
     ofacProvider,
     unSecurityCouncilProvider,
     ncsCustomsProvider,
+    copernicusProvider,
   ]) {
     registerCertifiedProvider(manager, provider, {
       existingIds: registered,
