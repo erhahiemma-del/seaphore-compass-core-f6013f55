@@ -55,6 +55,7 @@ import {
   Users,
   Workflow,
   Zap,
+  Map,
 } from "lucide-react";
 import {
   CartesianGrid,
@@ -108,7 +109,8 @@ type SectionId =
   | "health"
   | "audit"
   | "reports"
-  | "settings";
+  | "settings"
+  | "capability-catalog";
 
 
 interface NavItem {
@@ -132,6 +134,7 @@ const NAV: NavItem[] = [
   { id: "health", label: "System Health", icon: HeartPulse },
   { id: "audit", label: "Audit Centre", icon: History },
   { id: "reports", label: "Reports & Analytics", icon: FileBarChart },
+  { id: "capability-catalog", label: "Capability Catalog", icon: Map },
   { id: "settings", label: "Settings", icon: Cog },
 ];
 
@@ -386,9 +389,40 @@ function SectionContent({
   if (section === "audit") return <AuditCentreSection />;
   if (section === "data-sources") return <DataSourceMatrixPanel />;
   if (section === "ial") return <IalAdminPanel />;
+  if (section === "capability-catalog") return <CapabilityCatalogSection />;
   return <PlaceholderSection section={section} />;
 }
 
+
+function CapabilityCatalogSection() {
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg border border-line bg-surface p-4">
+        <div className="flex items-center gap-2">
+          <Map className="h-4 w-4 text-[color:var(--color-teal)]" />
+          <h2 className="type-h2 text-foreground">Intelligence Capability Catalog</h2>
+        </div>
+        <p className="type-small text-slate mt-1">
+          Single source of truth for all Seaphore intelligence domains. Open the dedicated
+          catalog view for the full interactive governance surface.
+        </p>
+      </div>
+      <div className="rounded-lg border border-dashed border-line bg-surface/50 p-8 text-center">
+        <Map className="mx-auto h-8 w-8 text-slate mb-3" />
+        <p className="type-body text-foreground">Intelligence Capability Catalog</p>
+        <p className="type-small text-slate mt-1 mb-4">
+          View the full catalog, dependency matrix, and roadmap in the dedicated admin page.
+        </p>
+        <a
+          href="/admin/capability-catalog"
+          className="inline-flex items-center gap-2 rounded-md bg-[color:var(--color-teal)] px-4 py-2 type-small font-medium text-white hover:opacity-90"
+        >
+          Open Capability Catalog →
+        </a>
+      </div>
+    </div>
+  );
+}
 
 function PlaceholderSection({ section }: { section: SectionId }) {
   const item = NAV.find((n) => n.id === section)!;
