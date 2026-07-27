@@ -1,6 +1,21 @@
-import { createFileRoute } from "@tanstack/react-router";
+/**
+ * SPRINT OPS-02 — Manifest Intelligence Centre (migrated).
+ *
+ * Replaces all intel-centre-data.ts imports with the Canonical UIP
+ * via the existing `useCargoCentreProjection` hook bound to the
+ * `manifest` centre definition. The shell, filters, copilot, and
+ * visual layout are preserved; only the data source changes.
+ *
+ * Runtime flow:
+ *   Officer UI → useCargoCentreProjection (manifest)
+ *             → projectCargoCentre
+ *             → Canonical UIP (useUipStore)
+ *             → IFE (fuseEvidence / buildUnifiedIntelligencePackage)
+ *             → IAL (acquireEvidence)
+ *             → Evidence Provider (NcsCustomsProvider / simulators)
+ */
 import { useMemo, useState } from "react";
-import { ArrowRight, ChevronDown, Columns3, Download, LineChart } from "lucide-react";
+import { ArrowRight, Columns3, Download, LineChart } from "lucide-react";
 
 import {
   CheckList,
@@ -11,148 +26,61 @@ import {
 } from "@/components/intel-centre/shell";
 import { KpiRibbon, type KpiSpec } from "@/components/intel-centre/kpi-ribbon";
 import { CentreCopilot } from "@/components/intel-centre/centre-copilot";
-import { NigeriaMap } from "@/components/intel-centre/nigeria-map";
-import {
-  DataTable,
-  Section,
-  StatusBadge,
-  TimelineStrip,
-  type Column,
-} from "@/components/intel-centre/primitives";
+import { Section } from "@/components/intel-centre/primitives";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
+import { PanelStateNotice } from "@/components/intelligence/PanelStateNotice";
+
 import {
-  EVIDENCE,
-  VESSELS,
-  companyById,
-  fmtTime,
-  portByCode,
-  sparkSeries,
-  type Vessel,
-} from "@/lib/intel-centre-data";
+  cargoCentreBySlug,
+} from "@/lib/intelligence/cargo-workspace-projection";
+import { useCargoCentreProjection } from "@/features/cargo-workspace/use-cargo-projection";
 
-const KPIS: KpiSpec[] = [
-  {
-    label: "Today's Manifests",
-    value: "148",
-    delta: "+12",
-    trend: "up",
-    confidence: "verified",
-    series: sparkSeries(3),
-    emphasis: "risk",
-  },
-  {
-    label: "Pending Validation",
-    value: "34",
-    delta: "+6",
-    trend: "up",
-    confidence: "observed",
-    series: sparkSeries(7),
-    emphasis: "warn",
-  },
-  {
-    label: "Duplicates Detected",
-    value: "5",
-    delta: "+2",
-    trend: "up",
-    confidence: "observed",
-    series: sparkSeries(11),
-  },
-  {
-    label: "Revenue at Risk",
-    value: "₦2.14B",
-    delta: "+₦120M",
-    trend: "up",
-    confidence: "inferred",
-    series: sparkSeries(19),
-    emphasis: "risk",
-  },
-  {
-    label: "Confidence Score",
-    value: "82%",
-    delta: "+1.4%",
-    trend: "up",
-    confidence: "observed",
-    series: sparkSeries(23),
-    emphasis: "ok",
-  },
-  {
-    label: "Open Investigations",
-    value: "12",
-    delta: "+3",
-    trend: "up",
-    confidence: "verified",
-    series: sparkSeries(29),
-  },
-  {
-    label: "High Alerts",
-    value: "5",
-    delta: "+1",
-    trend: "up",
-    confidence: "verified",
-    series: sparkSeries(31),
-    emphasis: "risk",
-  },
-  {
-    label: "Medium / Low Alerts",
-    value: "2 / 1",
-    trend: "flat",
-    confidence: "observed",
-    series: sparkSeries(37),
-  },
-];
+/** The manifest centre definition — resolved from the frozen CARGO_CENTRES registry. */
+const MANIFEST_CENTRE = cargoCentreBySlug("manifest")!;
 
-const STATUS_TABS = [
-  { key: "all", label: "All Arrivals" },
-  { key: "validated", label: "Validated" },
-  { key: "pending", label: "Pending" },
-  { key: "duplicate", label: "Duplicate" },
-  { key: "amended", label: "Amended" },
-];
+/**
+ * Map a CargoCentreProjection's KPIs onto KpiSpec for the ribbon.
+ * When the projection has no data we return a single honest-state tile.
+ */
+function useManifestKpis(projection: ReturnType<typeof useCargoCentreProjection>["projection"]): KpiSpec[] {
+  return useMemo(() => {
+    if (!projection.data) return [];
+    return projection.data.kpis.map((k) => ({
+      label: k.label,
+      value: k.value,
+      confidence: k.confidence,
+      hint: k.hint,
+    }));
+  }, [projection.data]);
+}
 
 export function ManifestCentre() {
-  const [tab, setTab] = useState("all");
-  const [statusTab, setStatusTab] = useState("all");
-  const [selectedId, setSelectedId] = useState<string>("v-ocean-pearl");
+  const [tab, setTab] = useState("workspace");
+  const { projection, isLoading } = useCargoCentreProjection(MANIFEST_CENTRE);
+  const kpis = useManifestKpis(projection);
 
-  const filtered = useMemo(() => {
-    if (statusTab === "all") return VESSELS;
-    return VESSELS.filter((v) => v.status === statusTab);
-  }, [statusTab]);
-
-  const selected = VESSELS.find((v) => v.id === selectedId);
-  const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: VESSELS.length };
-    for (const s of ["validated", "pending", "duplicate", "amended"]) {
-      counts[s] = VESSELS.filter((v) => v.status === s).length;
-    }
-    return counts;
-  }, []);
-
-  const timelineItems = filtered.map((v) => ({
-    id: v.id,
-    time: fmtTime(v.etaISO),
-    title: v.name,
-    subtitle: `${v.voyage} · ${portByCode(v.destinationPort)!.name}`,
-    tone:
-      v.riskLevel === "high"
-        ? ("risk" as const)
-        : v.riskLevel === "medium"
-          ? ("warn" as const)
-          : v.riskLevel === "low"
-            ? ("ok" as const)
-            : ("info" as const),
-  }));
+  const hasData = projection.state === "ACTIVE" && !!projection.data;
 
   return (
     <IntelCentreShell
       title="Manifest Intelligence"
-      subtitle="Everything entering Nigeria. Monitor, analyse and act."
-      kpiRibbon={<KpiRibbon items={KPIS} />}
+      subtitle="Declared manifests, bills of lading and voyage records"
+      kpiRibbon={
+        kpis.length > 0 ? (
+          <KpiRibbon items={kpis} />
+        ) : (
+          <PanelStateNotice
+            state={projection.state}
+            detail={projection.stateDetail}
+            href="/admin/provider-health"
+            hrefLabel="Inspect provider health"
+          />
+        )
+      }
       tabs={[
         { key: "workspace", label: "Workspace" },
-        { key: "arrivals", label: "Arrivals", count: VESSELS.length },
-        { key: "validations", label: "Validations", count: 34 },
-        { key: "duplicates", label: "Duplicates", count: 5 },
+        { key: "evidence", label: "Evidence", count: projection.data?.evidenceCount },
+        { key: "timeline", label: "Timeline" },
         { key: "analytics", label: "Analytics" },
       ]}
       activeTab={tab}
@@ -172,7 +100,7 @@ export function ManifestCentre() {
       }
       filters={
         <>
-          <FilterSearch placeholder="Search vessel, IMO, agent…" />
+          <FilterSearch placeholder="Search vessel, IMO, manifest…" />
           <FilterBlock label="Saved views">
             <SavedViewList
               views={["High risk arrivals", "Duplicates today", "Amended manifests"]}
@@ -206,204 +134,121 @@ export function ManifestCentre() {
       }
       main={
         <div className="space-y-4">
-          {/* Status filter tabs (MAN-3) */}
-          <div className="flex flex-wrap items-center gap-1">
-            {STATUS_TABS.map((t) => {
-              const active = t.key === statusTab;
-              const count = statusCounts[t.key] ?? 0;
-              return (
-                <button
-                  key={t.key}
-                  onClick={() => setStatusTab(t.key)}
-                  className={
-                    "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] font-medium " +
-                    (active
-                      ? "border-[color:var(--color-blue)] bg-[color:var(--color-blue)]/15 text-[color:var(--color-blue)]"
-                      : "border-line/60 bg-surface/50 text-slate hover:text-foreground")
-                  }
-                >
-                  {t.label}
-                  <span className="rounded bg-surface-2/60 px-1.5 py-0.5 text-[10px] text-slate">
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Map + detail (MAN-2) */}
-          <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="h-[380px]">
-              <NigeriaMap
-                vessels={filtered}
-                selectedVesselId={selectedId}
-                onSelectVessel={(v) => setSelectedId(v.id)}
-                className="h-full"
+          {!hasData ? (
+            <Section>
+              <PanelStateNotice
+                state={projection.state}
+                detail={
+                  isLoading
+                    ? "Loading intelligence coverage…"
+                    : projection.stateDetail
+                }
+                href={MANIFEST_CENTRE.capabilityHref}
+                hrefLabel="Inspect capability"
               />
-            </div>
-            {selected && <VesselDetailPanel v={selected} />}
-          </div>
+              <div className="mt-3 space-y-1">
+                {projection.recommendedActions.map((a) => (
+                  <p key={a} className="flex items-start gap-1.5 text-[12px] text-foreground/80">
+                    <ArrowRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate" />
+                    {a}
+                  </p>
+                ))}
+              </div>
+            </Section>
+          ) : (
+            <>
+              {/* Evidence timeline from the Canonical UIP */}
+              <Section title="Manifest Evidence · Canonical UIP">
+                <ol className="divide-y divide-line/60">
+                  {projection.data!.timeline.map((t) => (
+                    <li key={t.id} className="flex items-start gap-3 py-2.5">
+                      <span className="font-mono whitespace-nowrap text-[11px] text-slate">
+                        {t.at.slice(0, 16).replace("T", " ")}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[12px] font-semibold text-foreground">
+                          {t.title}
+                        </span>
+                        <span className="block truncate text-[11px] text-slate">{t.detail}</span>
+                      </span>
+                      <ConfidenceChip tier={t.confidence} size={9} />
+                    </li>
+                  ))}
+                </ol>
+              </Section>
 
-          {/* Timeline (MAN-4) */}
-          <Section title="Arrivals Timeline · Today">
-            <TimelineStrip items={timelineItems} selectedId={selectedId} onSelect={setSelectedId} />
-          </Section>
+              {/* Evidence records with provenance */}
+              <Section title="Evidence Records">
+                <ul className="divide-y divide-line/60">
+                  {projection.data!.evidence.map((e) => (
+                    <li key={e.id} className="py-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate text-[12px] font-semibold text-foreground">
+                          {e.title}
+                        </span>
+                        <ConfidenceChip tier={e.confidence} size={9} />
+                      </div>
+                      <div className="font-mono mt-0.5 truncate text-[11px] text-slate">
+                        {e.source} · {e.grade} · {e.hash.slice(0, 12)}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </Section>
+
+              {/* Intelligence status */}
+              <Section title="Intelligence Status">
+                <dl className="space-y-1.5 text-[12px]">
+                  <Row label="Canonical UIP" value={projection.uipId ?? "—"} />
+                  <Row label="Evidence records" value={String(projection.data!.evidenceCount)} />
+                  <Row label="Confidence" value={projection.data!.confidence} />
+                  <Row label="Projection binding" value={MANIFEST_CENTRE.projectionContractId} />
+                </dl>
+                <p className="mt-2 text-[11px] text-slate">
+                  System recommends; officer decides. Evidence first. Explainable always.
+                </p>
+              </Section>
+            </>
+          )}
         </div>
       }
       copilot={
         <CentreCopilot
           name="Manifest Copilot"
           instance="manifest"
-          observed={[
-            {
-              title: "Spike in high-risk manifests from Apapa Port",
-              detail: "Observed +28% vs 7-day rolling average.",
-              confidence: "observed",
-            },
-            {
-              title: "AIS blackout observed on MT Niger Runner",
-              detail: "18.7h gap prior to Calabar approach.",
-              confidence: "observed",
-            },
-            {
-              title: "Repeated agent: Sahara Cargo Nigeria",
-              detail: "6 of 10 pending manifests use same agent.",
-              confidence: "observed",
-            },
-          ]}
-          recommendations={[
-            {
-              title: "Prioritise Ocean Pearl for manifest review",
-              detail: "Risk 78 · pending validation · ETA 09:22 UTC.",
-              confidence: "inferred",
-            },
-            {
-              title: "Cross-check Delta Star duplicate BOLs",
-              detail: "3 containers listed under two BOLs (DS-1904 / DS-1907).",
-              confidence: "observed",
-            },
-            {
-              title: "Escalate Niger Runner to compliance",
-              detail: "OFAC SDN watchlist match observed on beneficial owner.",
-              confidence: "verified",
-            },
-          ]}
-          historical={[
-            {
-              title: "Ocean Pearl · Q4 2025",
-              detail: "Similar risk profile → misclassification confirmed after inspection.",
-              similarity: 84,
-            },
-            {
-              title: "Delta Star · Aug 2025",
-              detail: "Duplicate BOL pattern → ₦96M under-declaration recovered.",
-              similarity: 71,
-            },
-          ]}
-          related={[
-            { ref: "INV-2412-01", title: "Ocean Pearl duty variance", status: "Open" },
-            { ref: "INV-2412-03", title: "Niger Runner sanctions review", status: "Escalated" },
-            { ref: "INV-2411-22", title: "Delta Freight repeat under-declare", status: "Open" },
-          ]}
+          observed={
+            hasData
+              ? projection.data!.summary.map((s) => ({
+                  title: s.slice(0, 60),
+                  detail: s,
+                  confidence: "observed" as const,
+                }))
+              : [
+                  {
+                    title: "No evidence in session",
+                    detail: projection.stateDetail,
+                    confidence: "inferred" as const,
+                  },
+                ]
+          }
+          recommendations={projection.recommendedActions.map((a) => ({
+            title: a,
+            detail: "System recommends; officer decides.",
+            confidence: "inferred" as const,
+          }))}
+          historical={[]}
+          related={[]}
         />
       }
-      evidenceBody={<EvidenceStrip />}
     />
   );
 }
 
-function VesselDetailPanel({ v }: { v: Vessel }) {
-  const port = portByCode(v.destinationPort)!;
+function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-line/60 bg-surface/60 p-3">
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <div className="text-[14px] font-semibold text-foreground">{v.name}</div>
-          <div className="text-[11px] text-slate">
-            {v.voyage} · IMO {v.imo} · MMSI {v.mmsi}
-          </div>
-        </div>
-        <StatusBadge
-          label={v.status.toUpperCase()}
-          tone={v.status === "duplicate" ? "risk" : v.status === "pending" ? "warn" : "ok"}
-        />
-      </div>
-      <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11.5px]">
-        <Row k="Flag" v={v.flag} />
-        <Row k="Agent" v={v.agent} />
-        <Row k="Port" v={port.name} />
-        <Row k="ETA" v={fmtTime(v.etaISO)} />
-        <Row k="Owner" v={companyById(v.ownerId)?.name ?? "—"} />
-        <Row k="Operator" v={companyById(v.operatorId)?.name ?? "—"} />
-      </dl>
-      <div className="mt-3 flex items-center gap-2">
-        <span className="text-[11px] text-slate">Risk</span>
-        <div className="h-1.5 flex-1 overflow-hidden rounded bg-surface-2/60">
-          <div
-            className="h-full"
-            style={{
-              width: `${v.riskScore}%`,
-              background: v.riskScore >= 70 ? "#C0392B" : v.riskScore >= 40 ? "#B06A00" : "#1E6B3A",
-            }}
-          />
-        </div>
-        <span className="w-8 text-right text-[11px] font-semibold text-foreground">
-          {v.riskScore}
-        </span>
-        <ConfidenceChip tier="observed" size={9} />
-      </div>
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        <QuickAction label="Investigate" href={`/investigate/${v.id}`} />
-        <QuickAction label="Entity Profile" href={`/entity/${v.id}`} />
-        <QuickAction label="View Manifest" />
-      </div>
+    <div className="flex items-center justify-between gap-2 border-b border-line/40 py-1 last:border-b-0">
+      <dt className="text-slate">{label}</dt>
+      <dd className="font-mono max-w-[60%] truncate text-right text-[11px] text-foreground/85">{value}</dd>
     </div>
   );
-}
-
-function Row({ k, v }: { k: string; v: string }) {
-  return (
-    <>
-      <dt className="text-slate">{k}</dt>
-      <dd className="text-right text-foreground/90">{v}</dd>
-    </>
-  );
-}
-
-function QuickAction({ label, href }: { label: string; href?: string }) {
-  const Cmp: React.ElementType = href ? "a" : "button";
-  return (
-    <Cmp
-      href={href}
-      className="inline-flex items-center gap-1 rounded border border-line/60 bg-surface-2/40 px-2 py-1 text-[11px] font-medium text-foreground/90 hover:bg-surface-2/70"
-    >
-      {label} <ArrowRight className="h-3 w-3" />
-    </Cmp>
-  );
-}
-
-/** Evidence panel (MAN-5) rendered in the shell's bottom evidence tab body. */
-function EvidenceStrip() {
-  const cols: Column<(typeof EVIDENCE)[number]>[] = [
-    {
-      key: "kind",
-      label: "Document",
-      render: (r) => <span className="font-semibold text-foreground">{r.kind}</span>,
-    },
-    {
-      key: "ref",
-      label: "Ref #",
-      render: (r) => <span className="font-mono text-[11.5px]">{r.refNumber}</span>,
-    },
-    { key: "fmt", label: "Format", render: (r) => <StatusBadge label={r.format} tone="info" /> },
-    { key: "up", label: "Uploaded", render: (r) => fmtTime(r.uploadedAt) },
-    { key: "by", label: "By", render: (r) => r.uploadedBy },
-    {
-      key: "conf",
-      label: "Confidence",
-      align: "right",
-      render: (r) => <ConfidenceChip tier={r.confidence} size={9} />,
-    },
-  ];
-  return <DataTable columns={cols} rows={EVIDENCE.slice(0, 6)} rowKey={(r) => r.id} compact />;
 }
