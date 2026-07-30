@@ -9,204 +9,73 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as VesselRouteImport } from './routes/vessel'
-import { Route as ShareRouteImport } from './routes/share'
-import { Route as RevenueLeakageRouteImport } from './routes/revenue-leakage'
-import { Route as RevenueRouteImport } from './routes/revenue'
-import { Route as PredictionsRouteImport } from './routes/predictions'
-import { Route as PortsRouteImport } from './routes/ports'
-import { Route as OwnershipRouteImport } from './routes/ownership'
-import { Route as OperationalKnowledgeRouteImport } from './routes/operational-knowledge'
-import { Route as ObservabilityRouteImport } from './routes/observability'
-import { Route as NationalRiskRouteImport } from './routes/national-risk'
-import { Route as MissionsRouteImport } from './routes/missions'
-import { Route as MemoryRouteImport } from './routes/memory'
-import { Route as ManifestRouteImport } from './routes/manifest'
-import { Route as KnowledgeGraphRouteImport } from './routes/knowledge-graph'
-import { Route as InvestigationsWorkflowRouteImport } from './routes/investigations-workflow'
-import { Route as InvestigationsRouteImport } from './routes/investigations'
-import { Route as InvestigateRouteImport } from './routes/investigate'
-import { Route as IntelligenceEvidenceRouteImport } from './routes/intelligence-evidence'
-import { Route as EvidenceRouteImport } from './routes/evidence'
-import { Route as DetectRouteImport } from './routes/detect'
-import { Route as DecideRouteImport } from './routes/decide'
-import { Route as CopilotRouteImport } from './routes/copilot'
-import { Route as ComplianceRouteImport } from './routes/compliance'
-import { Route as CommandCenterRouteImport } from './routes/command-center'
-import { Route as CargoWorkspaceRouteImport } from './routes/cargo-workspace'
-import { Route as CargoRouteImport } from './routes/cargo'
-import { Route as BriefingCentreRouteImport } from './routes/briefing-centre'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AlertsRouteImport } from './routes/alerts'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as WorkspaceIndexRouteImport } from './routes/workspace.index'
-import { Route as ShareIndexRouteImport } from './routes/share.index'
-import { Route as InvestigateIndexRouteImport } from './routes/investigate.index'
-import { Route as DecideIndexRouteImport } from './routes/decide.index'
-import { Route as CargoWorkspaceIndexRouteImport } from './routes/cargo-workspace.index'
+import { Route as AlertsRouteImport } from './routes/alerts'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as BriefingCentreRouteImport } from './routes/briefing-centre'
+import { Route as CargoRouteImport } from './routes/cargo'
+import { Route as CargoWorkspaceRouteImport } from './routes/cargo-workspace'
+import { Route as CommandCenterRouteImport } from './routes/command-center'
+import { Route as ComplianceRouteImport } from './routes/compliance'
+import { Route as CopilotRouteImport } from './routes/copilot'
+import { Route as DecideRouteImport } from './routes/decide'
+import { Route as DetectRouteImport } from './routes/detect'
+import { Route as EvidenceRouteImport } from './routes/evidence'
+import { Route as IntelligenceEvidenceRouteImport } from './routes/intelligence-evidence'
+import { Route as InvestigateRouteImport } from './routes/investigate'
+import { Route as InvestigationsRouteImport } from './routes/investigations'
+import { Route as InvestigationsWorkflowRouteImport } from './routes/investigations-workflow'
+import { Route as KnowledgeGraphRouteImport } from './routes/knowledge-graph'
+import { Route as ManifestRouteImport } from './routes/manifest'
+import { Route as MemoryRouteImport } from './routes/memory'
+import { Route as MissionsRouteImport } from './routes/missions'
+import { Route as NationalRiskRouteImport } from './routes/national-risk'
+import { Route as ObservabilityRouteImport } from './routes/observability'
+import { Route as OperationalKnowledgeRouteImport } from './routes/operational-knowledge'
+import { Route as OwnershipRouteImport } from './routes/ownership'
+import { Route as PortsRouteImport } from './routes/ports'
+import { Route as PredictionsRouteImport } from './routes/predictions'
+import { Route as RevenueRouteImport } from './routes/revenue'
+import { Route as RevenueLeakageRouteImport } from './routes/revenue-leakage'
+import { Route as ShareRouteImport } from './routes/share'
+import { Route as VesselRouteImport } from './routes/vessel'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as WorkspaceIdRouteImport } from './routes/workspace.$id'
-import { Route as ShareQueueRouteImport } from './routes/share.queue'
-import { Route as ShareIdRouteImport } from './routes/share.$id'
-import { Route as InvestigateOpenRouteImport } from './routes/investigate.open'
-import { Route as InvestigateIdRouteImport } from './routes/investigate.$id'
-import { Route as EntityIdRouteImport } from './routes/entity.$id'
-import { Route as DecideQueueRouteImport } from './routes/decide.queue'
-import { Route as DecideIdRouteImport } from './routes/decide.$id'
-import { Route as CargoWorkspaceCentreRouteImport } from './routes/cargo-workspace.$centre'
-import { Route as AdminProviderHealthRouteImport } from './routes/admin.provider-health'
-import { Route as AdminProjectionContractRouteImport } from './routes/admin.projection-contract'
-import { Route as AdminOsintRouteImport } from './routes/admin.osint'
+import { Route as AdminCapabilityCatalogRouteImport } from './routes/admin.capability-catalog'
 import { Route as AdminConnectorsRouteImport } from './routes/admin.connectors'
-import { Route as ApiSessionIdRouteImport } from './routes/api/session/$id'
-import { Route as ApiRelationshipIdRouteImport } from './routes/api/relationship/$id'
-import { Route as ApiPublicWorkflowsRouteImport } from './routes/api/public/workflows'
-import { Route as ApiInvestigationIdRouteImport } from './routes/api/investigation/$id'
-import { Route as ApiEvidenceIdRouteImport } from './routes/api/evidence/$id'
-import { Route as ApiEntityIdRouteImport } from './routes/api/entity/$id'
-import { Route as ApiCopilotTranscribeRouteImport } from './routes/api/copilot/transcribe'
+import { Route as AdminCopernicusValidateRouteImport } from './routes/admin.copernicus-validate'
+import { Route as AdminIntelligenceCoreRouteImport } from './routes/admin.intelligence-core'
+import { Route as AdminMioRouteImport } from './routes/admin.mio'
+import { Route as AdminOsintRouteImport } from './routes/admin.osint'
+import { Route as AdminProjectionContractRouteImport } from './routes/admin.projection-contract'
+import { Route as AdminProviderHealthRouteImport } from './routes/admin.provider-health'
+import { Route as CargoWorkspaceIndexRouteImport } from './routes/cargo-workspace.index'
+import { Route as CargoWorkspaceCentreRouteImport } from './routes/cargo-workspace.$centre'
+import { Route as DecideIndexRouteImport } from './routes/decide.index'
+import { Route as DecideIdRouteImport } from './routes/decide.$id'
+import { Route as DecideQueueRouteImport } from './routes/decide.queue'
+import { Route as EntityIdRouteImport } from './routes/entity.$id'
+import { Route as InvestigateIndexRouteImport } from './routes/investigate.index'
+import { Route as InvestigateIdRouteImport } from './routes/investigate.$id'
+import { Route as InvestigateOpenRouteImport } from './routes/investigate.open'
+import { Route as ShareIndexRouteImport } from './routes/share.index'
+import { Route as ShareIdRouteImport } from './routes/share.$id'
+import { Route as ShareQueueRouteImport } from './routes/share.queue'
+import { Route as WorkspaceIndexRouteImport } from './routes/workspace.index'
+import { Route as WorkspaceIdRouteImport } from './routes/workspace.$id'
 import { Route as ApiCopilotQueryRouteImport } from './routes/api/copilot/query'
-import { Route as ApiPublicHooksMibcTickRouteImport } from './routes/api/public/hooks/mibc-tick'
+import { Route as ApiCopilotTranscribeRouteImport } from './routes/api/copilot/transcribe'
+import { Route as ApiEntityIdRouteImport } from './routes/api/entity/$id'
+import { Route as ApiEvidenceIdRouteImport } from './routes/api/evidence/$id'
+import { Route as ApiInvestigationIdRouteImport } from './routes/api/investigation/$id'
+import { Route as ApiPublicWorkflowsRouteImport } from './routes/api/public/workflows'
+import { Route as ApiRelationshipIdRouteImport } from './routes/api/relationship/$id'
+import { Route as ApiSessionIdRouteImport } from './routes/api/session/$id'
 import { Route as ApiPublicDevSeedRoleRouteImport } from './routes/api/public/dev/seed-role'
+import { Route as ApiPublicHooksMibcTickRouteImport } from './routes/api/public/hooks/mibc-tick'
 
-const VesselRoute = VesselRouteImport.update({
-  id: '/vessel',
-  path: '/vessel',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ShareRoute = ShareRouteImport.update({
-  id: '/share',
-  path: '/share',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RevenueLeakageRoute = RevenueLeakageRouteImport.update({
-  id: '/revenue-leakage',
-  path: '/revenue-leakage',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RevenueRoute = RevenueRouteImport.update({
-  id: '/revenue',
-  path: '/revenue',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PredictionsRoute = PredictionsRouteImport.update({
-  id: '/predictions',
-  path: '/predictions',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PortsRoute = PortsRouteImport.update({
-  id: '/ports',
-  path: '/ports',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OwnershipRoute = OwnershipRouteImport.update({
-  id: '/ownership',
-  path: '/ownership',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OperationalKnowledgeRoute = OperationalKnowledgeRouteImport.update({
-  id: '/operational-knowledge',
-  path: '/operational-knowledge',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ObservabilityRoute = ObservabilityRouteImport.update({
-  id: '/observability',
-  path: '/observability',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NationalRiskRoute = NationalRiskRouteImport.update({
-  id: '/national-risk',
-  path: '/national-risk',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MissionsRoute = MissionsRouteImport.update({
-  id: '/missions',
-  path: '/missions',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MemoryRoute = MemoryRouteImport.update({
-  id: '/memory',
-  path: '/memory',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ManifestRoute = ManifestRouteImport.update({
-  id: '/manifest',
-  path: '/manifest',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const KnowledgeGraphRoute = KnowledgeGraphRouteImport.update({
-  id: '/knowledge-graph',
-  path: '/knowledge-graph',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InvestigationsWorkflowRoute = InvestigationsWorkflowRouteImport.update({
-  id: '/investigations-workflow',
-  path: '/investigations-workflow',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InvestigationsRoute = InvestigationsRouteImport.update({
-  id: '/investigations',
-  path: '/investigations',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InvestigateRoute = InvestigateRouteImport.update({
-  id: '/investigate',
-  path: '/investigate',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IntelligenceEvidenceRoute = IntelligenceEvidenceRouteImport.update({
-  id: '/intelligence-evidence',
-  path: '/intelligence-evidence',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EvidenceRoute = EvidenceRouteImport.update({
-  id: '/evidence',
-  path: '/evidence',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DetectRoute = DetectRouteImport.update({
-  id: '/detect',
-  path: '/detect',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DecideRoute = DecideRouteImport.update({
-  id: '/decide',
-  path: '/decide',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CopilotRoute = CopilotRouteImport.update({
-  id: '/copilot',
-  path: '/copilot',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ComplianceRoute = ComplianceRouteImport.update({
-  id: '/compliance',
-  path: '/compliance',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CommandCenterRoute = CommandCenterRouteImport.update({
-  id: '/command-center',
-  path: '/command-center',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CargoWorkspaceRoute = CargoWorkspaceRouteImport.update({
-  id: '/cargo-workspace',
-  path: '/cargo-workspace',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CargoRoute = CargoRouteImport.update({
-  id: '/cargo',
-  path: '/cargo',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BriefingCentreRoute = BriefingCentreRouteImport.update({
-  id: '/briefing-centre',
-  path: '/briefing-centre',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AlertsRoute = AlertsRouteImport.update({
@@ -214,99 +83,154 @@ const AlertsRoute = AlertsRouteImport.update({
   path: '/alerts',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const WorkspaceIndexRoute = WorkspaceIndexRouteImport.update({
-  id: '/workspace/',
-  path: '/workspace/',
+const BriefingCentreRoute = BriefingCentreRouteImport.update({
+  id: '/briefing-centre',
+  path: '/briefing-centre',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ShareIndexRoute = ShareIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => ShareRoute,
+const CargoRoute = CargoRouteImport.update({
+  id: '/cargo',
+  path: '/cargo',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const InvestigateIndexRoute = InvestigateIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => InvestigateRoute,
+const CargoWorkspaceRoute = CargoWorkspaceRouteImport.update({
+  id: '/cargo-workspace',
+  path: '/cargo-workspace',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const DecideIndexRoute = DecideIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => DecideRoute,
+const CommandCenterRoute = CommandCenterRouteImport.update({
+  id: '/command-center',
+  path: '/command-center',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const CargoWorkspaceIndexRoute = CargoWorkspaceIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => CargoWorkspaceRoute,
+const ComplianceRoute = ComplianceRouteImport.update({
+  id: '/compliance',
+  path: '/compliance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CopilotRoute = CopilotRouteImport.update({
+  id: '/copilot',
+  path: '/copilot',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DecideRoute = DecideRouteImport.update({
+  id: '/decide',
+  path: '/decide',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DetectRoute = DetectRouteImport.update({
+  id: '/detect',
+  path: '/detect',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EvidenceRoute = EvidenceRouteImport.update({
+  id: '/evidence',
+  path: '/evidence',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IntelligenceEvidenceRoute = IntelligenceEvidenceRouteImport.update({
+  id: '/intelligence-evidence',
+  path: '/intelligence-evidence',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvestigateRoute = InvestigateRouteImport.update({
+  id: '/investigate',
+  path: '/investigate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvestigationsRoute = InvestigationsRouteImport.update({
+  id: '/investigations',
+  path: '/investigations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvestigationsWorkflowRoute = InvestigationsWorkflowRouteImport.update({
+  id: '/investigations-workflow',
+  path: '/investigations-workflow',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KnowledgeGraphRoute = KnowledgeGraphRouteImport.update({
+  id: '/knowledge-graph',
+  path: '/knowledge-graph',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ManifestRoute = ManifestRouteImport.update({
+  id: '/manifest',
+  path: '/manifest',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MemoryRoute = MemoryRouteImport.update({
+  id: '/memory',
+  path: '/memory',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MissionsRoute = MissionsRouteImport.update({
+  id: '/missions',
+  path: '/missions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NationalRiskRoute = NationalRiskRouteImport.update({
+  id: '/national-risk',
+  path: '/national-risk',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ObservabilityRoute = ObservabilityRouteImport.update({
+  id: '/observability',
+  path: '/observability',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OperationalKnowledgeRoute = OperationalKnowledgeRouteImport.update({
+  id: '/operational-knowledge',
+  path: '/operational-knowledge',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OwnershipRoute = OwnershipRouteImport.update({
+  id: '/ownership',
+  path: '/ownership',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortsRoute = PortsRouteImport.update({
+  id: '/ports',
+  path: '/ports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PredictionsRoute = PredictionsRouteImport.update({
+  id: '/predictions',
+  path: '/predictions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RevenueRoute = RevenueRouteImport.update({
+  id: '/revenue',
+  path: '/revenue',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RevenueLeakageRoute = RevenueLeakageRouteImport.update({
+  id: '/revenue-leakage',
+  path: '/revenue-leakage',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShareRoute = ShareRouteImport.update({
+  id: '/share',
+  path: '/share',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VesselRoute = VesselRouteImport.update({
+  id: '/vessel',
+  path: '/vessel',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const WorkspaceIdRoute = WorkspaceIdRouteImport.update({
-  id: '/workspace/$id',
-  path: '/workspace/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ShareQueueRoute = ShareQueueRouteImport.update({
-  id: '/queue',
-  path: '/queue',
-  getParentRoute: () => ShareRoute,
-} as any)
-const ShareIdRoute = ShareIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => ShareRoute,
-} as any)
-const InvestigateOpenRoute = InvestigateOpenRouteImport.update({
-  id: '/open',
-  path: '/open',
-  getParentRoute: () => InvestigateRoute,
-} as any)
-const InvestigateIdRoute = InvestigateIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => InvestigateRoute,
-} as any)
-const EntityIdRoute = EntityIdRouteImport.update({
-  id: '/entity/$id',
-  path: '/entity/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DecideQueueRoute = DecideQueueRouteImport.update({
-  id: '/queue',
-  path: '/queue',
-  getParentRoute: () => DecideRoute,
-} as any)
-const DecideIdRoute = DecideIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => DecideRoute,
-} as any)
-const CargoWorkspaceCentreRoute = CargoWorkspaceCentreRouteImport.update({
-  id: '/$centre',
-  path: '/$centre',
-  getParentRoute: () => CargoWorkspaceRoute,
-} as any)
-const AdminProviderHealthRoute = AdminProviderHealthRouteImport.update({
-  id: '/admin/provider-health',
-  path: '/admin/provider-health',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminProjectionContractRoute = AdminProjectionContractRouteImport.update({
-  id: '/admin/projection-contract',
-  path: '/admin/projection-contract',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminOsintRoute = AdminOsintRouteImport.update({
-  id: '/admin/osint',
-  path: '/admin/osint',
+const AdminCapabilityCatalogRoute = AdminCapabilityCatalogRouteImport.update({
+  id: '/admin/capability-catalog',
+  path: '/admin/capability-catalog',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminConnectorsRoute = AdminConnectorsRouteImport.update({
@@ -314,39 +238,104 @@ const AdminConnectorsRoute = AdminConnectorsRouteImport.update({
   path: '/admin/connectors',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiSessionIdRoute = ApiSessionIdRouteImport.update({
-  id: '/api/session/$id',
-  path: '/api/session/$id',
+const AdminCopernicusValidateRoute = AdminCopernicusValidateRouteImport.update({
+  id: '/admin/copernicus-validate',
+  path: '/admin/copernicus-validate',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiRelationshipIdRoute = ApiRelationshipIdRouteImport.update({
-  id: '/api/relationship/$id',
-  path: '/api/relationship/$id',
+const AdminIntelligenceCoreRoute = AdminIntelligenceCoreRouteImport.update({
+  id: '/admin/intelligence-core',
+  path: '/admin/intelligence-core',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicWorkflowsRoute = ApiPublicWorkflowsRouteImport.update({
-  id: '/api/public/workflows',
-  path: '/api/public/workflows',
+const AdminMioRoute = AdminMioRouteImport.update({
+  id: '/admin/mio',
+  path: '/admin/mio',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiInvestigationIdRoute = ApiInvestigationIdRouteImport.update({
-  id: '/api/investigation/$id',
-  path: '/api/investigation/$id',
+const AdminOsintRoute = AdminOsintRouteImport.update({
+  id: '/admin/osint',
+  path: '/admin/osint',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiEvidenceIdRoute = ApiEvidenceIdRouteImport.update({
-  id: '/api/evidence/$id',
-  path: '/api/evidence/$id',
+const AdminProjectionContractRoute = AdminProjectionContractRouteImport.update({
+  id: '/admin/projection-contract',
+  path: '/admin/projection-contract',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiEntityIdRoute = ApiEntityIdRouteImport.update({
-  id: '/api/entity/$id',
-  path: '/api/entity/$id',
+const AdminProviderHealthRoute = AdminProviderHealthRouteImport.update({
+  id: '/admin/provider-health',
+  path: '/admin/provider-health',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiCopilotTranscribeRoute = ApiCopilotTranscribeRouteImport.update({
-  id: '/api/copilot/transcribe',
-  path: '/api/copilot/transcribe',
+const CargoWorkspaceIndexRoute = CargoWorkspaceIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CargoWorkspaceRoute,
+} as any)
+const CargoWorkspaceCentreRoute = CargoWorkspaceCentreRouteImport.update({
+  id: '/$centre',
+  path: '/$centre',
+  getParentRoute: () => CargoWorkspaceRoute,
+} as any)
+const DecideIndexRoute = DecideIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DecideRoute,
+} as any)
+const DecideIdRoute = DecideIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => DecideRoute,
+} as any)
+const DecideQueueRoute = DecideQueueRouteImport.update({
+  id: '/queue',
+  path: '/queue',
+  getParentRoute: () => DecideRoute,
+} as any)
+const EntityIdRoute = EntityIdRouteImport.update({
+  id: '/entity/$id',
+  path: '/entity/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvestigateIndexRoute = InvestigateIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => InvestigateRoute,
+} as any)
+const InvestigateIdRoute = InvestigateIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => InvestigateRoute,
+} as any)
+const InvestigateOpenRoute = InvestigateOpenRouteImport.update({
+  id: '/open',
+  path: '/open',
+  getParentRoute: () => InvestigateRoute,
+} as any)
+const ShareIndexRoute = ShareIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ShareRoute,
+} as any)
+const ShareIdRoute = ShareIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ShareRoute,
+} as any)
+const ShareQueueRoute = ShareQueueRouteImport.update({
+  id: '/queue',
+  path: '/queue',
+  getParentRoute: () => ShareRoute,
+} as any)
+const WorkspaceIndexRoute = WorkspaceIndexRouteImport.update({
+  id: '/workspace/',
+  path: '/workspace/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkspaceIdRoute = WorkspaceIdRouteImport.update({
+  id: '/workspace/$id',
+  path: '/workspace/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiCopilotQueryRoute = ApiCopilotQueryRouteImport.update({
@@ -354,14 +343,49 @@ const ApiCopilotQueryRoute = ApiCopilotQueryRouteImport.update({
   path: '/api/copilot/query',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicHooksMibcTickRoute = ApiPublicHooksMibcTickRouteImport.update({
-  id: '/api/public/hooks/mibc-tick',
-  path: '/api/public/hooks/mibc-tick',
+const ApiCopilotTranscribeRoute = ApiCopilotTranscribeRouteImport.update({
+  id: '/api/copilot/transcribe',
+  path: '/api/copilot/transcribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEntityIdRoute = ApiEntityIdRouteImport.update({
+  id: '/api/entity/$id',
+  path: '/api/entity/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEvidenceIdRoute = ApiEvidenceIdRouteImport.update({
+  id: '/api/evidence/$id',
+  path: '/api/evidence/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiInvestigationIdRoute = ApiInvestigationIdRouteImport.update({
+  id: '/api/investigation/$id',
+  path: '/api/investigation/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicWorkflowsRoute = ApiPublicWorkflowsRouteImport.update({
+  id: '/api/public/workflows',
+  path: '/api/public/workflows',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRelationshipIdRoute = ApiRelationshipIdRouteImport.update({
+  id: '/api/relationship/$id',
+  path: '/api/relationship/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSessionIdRoute = ApiSessionIdRouteImport.update({
+  id: '/api/session/$id',
+  path: '/api/session/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicDevSeedRoleRoute = ApiPublicDevSeedRoleRouteImport.update({
   id: '/api/public/dev/seed-role',
   path: '/api/public/dev/seed-role',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHooksMibcTickRoute = ApiPublicHooksMibcTickRouteImport.update({
+  id: '/api/public/hooks/mibc-tick',
+  path: '/api/public/hooks/mibc-tick',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -396,7 +420,11 @@ export interface FileRoutesByFullPath {
   '/revenue-leakage': typeof RevenueLeakageRoute
   '/share': typeof ShareRouteWithChildren
   '/vessel': typeof VesselRoute
+  '/admin/capability-catalog': typeof AdminCapabilityCatalogRoute
   '/admin/connectors': typeof AdminConnectorsRoute
+  '/admin/copernicus-validate': typeof AdminCopernicusValidateRoute
+  '/admin/intelligence-core': typeof AdminIntelligenceCoreRoute
+  '/admin/mio': typeof AdminMioRoute
   '/admin/osint': typeof AdminOsintRoute
   '/admin/projection-contract': typeof AdminProjectionContractRoute
   '/admin/provider-health': typeof AdminProviderHealthRoute
@@ -453,7 +481,11 @@ export interface FileRoutesByTo {
   '/revenue': typeof RevenueRoute
   '/revenue-leakage': typeof RevenueLeakageRoute
   '/vessel': typeof VesselRoute
+  '/admin/capability-catalog': typeof AdminCapabilityCatalogRoute
   '/admin/connectors': typeof AdminConnectorsRoute
+  '/admin/copernicus-validate': typeof AdminCopernicusValidateRoute
+  '/admin/intelligence-core': typeof AdminIntelligenceCoreRoute
+  '/admin/mio': typeof AdminMioRoute
   '/admin/osint': typeof AdminOsintRoute
   '/admin/projection-contract': typeof AdminProjectionContractRoute
   '/admin/provider-health': typeof AdminProviderHealthRoute
@@ -515,7 +547,11 @@ export interface FileRoutesById {
   '/revenue-leakage': typeof RevenueLeakageRoute
   '/share': typeof ShareRouteWithChildren
   '/vessel': typeof VesselRoute
+  '/admin/capability-catalog': typeof AdminCapabilityCatalogRoute
   '/admin/connectors': typeof AdminConnectorsRoute
+  '/admin/copernicus-validate': typeof AdminCopernicusValidateRoute
+  '/admin/intelligence-core': typeof AdminIntelligenceCoreRoute
+  '/admin/mio': typeof AdminMioRoute
   '/admin/osint': typeof AdminOsintRoute
   '/admin/projection-contract': typeof AdminProjectionContractRoute
   '/admin/provider-health': typeof AdminProviderHealthRoute
@@ -578,7 +614,11 @@ export interface FileRouteTypes {
     | '/revenue-leakage'
     | '/share'
     | '/vessel'
+    | '/admin/capability-catalog'
     | '/admin/connectors'
+    | '/admin/copernicus-validate'
+    | '/admin/intelligence-core'
+    | '/admin/mio'
     | '/admin/osint'
     | '/admin/projection-contract'
     | '/admin/provider-health'
@@ -635,7 +675,11 @@ export interface FileRouteTypes {
     | '/revenue'
     | '/revenue-leakage'
     | '/vessel'
+    | '/admin/capability-catalog'
     | '/admin/connectors'
+    | '/admin/copernicus-validate'
+    | '/admin/intelligence-core'
+    | '/admin/mio'
     | '/admin/osint'
     | '/admin/projection-contract'
     | '/admin/provider-health'
@@ -696,7 +740,11 @@ export interface FileRouteTypes {
     | '/revenue-leakage'
     | '/share'
     | '/vessel'
+    | '/admin/capability-catalog'
     | '/admin/connectors'
+    | '/admin/copernicus-validate'
+    | '/admin/intelligence-core'
+    | '/admin/mio'
     | '/admin/osint'
     | '/admin/projection-contract'
     | '/admin/provider-health'
@@ -758,7 +806,11 @@ export interface RootRouteChildren {
   RevenueLeakageRoute: typeof RevenueLeakageRoute
   ShareRoute: typeof ShareRouteWithChildren
   VesselRoute: typeof VesselRoute
+  AdminCapabilityCatalogRoute: typeof AdminCapabilityCatalogRoute
   AdminConnectorsRoute: typeof AdminConnectorsRoute
+  AdminCopernicusValidateRoute: typeof AdminCopernicusValidateRoute
+  AdminIntelligenceCoreRoute: typeof AdminIntelligenceCoreRoute
+  AdminMioRoute: typeof AdminMioRoute
   AdminOsintRoute: typeof AdminOsintRoute
   AdminProjectionContractRoute: typeof AdminProjectionContractRoute
   AdminProviderHealthRoute: typeof AdminProviderHealthRoute
@@ -780,200 +832,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/vessel': {
-      id: '/vessel'
-      path: '/vessel'
-      fullPath: '/vessel'
-      preLoaderRoute: typeof VesselRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/share': {
-      id: '/share'
-      path: '/share'
-      fullPath: '/share'
-      preLoaderRoute: typeof ShareRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/revenue-leakage': {
-      id: '/revenue-leakage'
-      path: '/revenue-leakage'
-      fullPath: '/revenue-leakage'
-      preLoaderRoute: typeof RevenueLeakageRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/revenue': {
-      id: '/revenue'
-      path: '/revenue'
-      fullPath: '/revenue'
-      preLoaderRoute: typeof RevenueRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/predictions': {
-      id: '/predictions'
-      path: '/predictions'
-      fullPath: '/predictions'
-      preLoaderRoute: typeof PredictionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/ports': {
-      id: '/ports'
-      path: '/ports'
-      fullPath: '/ports'
-      preLoaderRoute: typeof PortsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/ownership': {
-      id: '/ownership'
-      path: '/ownership'
-      fullPath: '/ownership'
-      preLoaderRoute: typeof OwnershipRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/operational-knowledge': {
-      id: '/operational-knowledge'
-      path: '/operational-knowledge'
-      fullPath: '/operational-knowledge'
-      preLoaderRoute: typeof OperationalKnowledgeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/observability': {
-      id: '/observability'
-      path: '/observability'
-      fullPath: '/observability'
-      preLoaderRoute: typeof ObservabilityRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/national-risk': {
-      id: '/national-risk'
-      path: '/national-risk'
-      fullPath: '/national-risk'
-      preLoaderRoute: typeof NationalRiskRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/missions': {
-      id: '/missions'
-      path: '/missions'
-      fullPath: '/missions'
-      preLoaderRoute: typeof MissionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/memory': {
-      id: '/memory'
-      path: '/memory'
-      fullPath: '/memory'
-      preLoaderRoute: typeof MemoryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/manifest': {
-      id: '/manifest'
-      path: '/manifest'
-      fullPath: '/manifest'
-      preLoaderRoute: typeof ManifestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/knowledge-graph': {
-      id: '/knowledge-graph'
-      path: '/knowledge-graph'
-      fullPath: '/knowledge-graph'
-      preLoaderRoute: typeof KnowledgeGraphRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/investigations-workflow': {
-      id: '/investigations-workflow'
-      path: '/investigations-workflow'
-      fullPath: '/investigations-workflow'
-      preLoaderRoute: typeof InvestigationsWorkflowRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/investigations': {
-      id: '/investigations'
-      path: '/investigations'
-      fullPath: '/investigations'
-      preLoaderRoute: typeof InvestigationsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/investigate': {
-      id: '/investigate'
-      path: '/investigate'
-      fullPath: '/investigate'
-      preLoaderRoute: typeof InvestigateRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/intelligence-evidence': {
-      id: '/intelligence-evidence'
-      path: '/intelligence-evidence'
-      fullPath: '/intelligence-evidence'
-      preLoaderRoute: typeof IntelligenceEvidenceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/evidence': {
-      id: '/evidence'
-      path: '/evidence'
-      fullPath: '/evidence'
-      preLoaderRoute: typeof EvidenceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/detect': {
-      id: '/detect'
-      path: '/detect'
-      fullPath: '/detect'
-      preLoaderRoute: typeof DetectRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/decide': {
-      id: '/decide'
-      path: '/decide'
-      fullPath: '/decide'
-      preLoaderRoute: typeof DecideRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/copilot': {
-      id: '/copilot'
-      path: '/copilot'
-      fullPath: '/copilot'
-      preLoaderRoute: typeof CopilotRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/compliance': {
-      id: '/compliance'
-      path: '/compliance'
-      fullPath: '/compliance'
-      preLoaderRoute: typeof ComplianceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/command-center': {
-      id: '/command-center'
-      path: '/command-center'
-      fullPath: '/command-center'
-      preLoaderRoute: typeof CommandCenterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/cargo-workspace': {
-      id: '/cargo-workspace'
-      path: '/cargo-workspace'
-      fullPath: '/cargo-workspace'
-      preLoaderRoute: typeof CargoWorkspaceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/cargo': {
-      id: '/cargo'
-      path: '/cargo'
-      fullPath: '/cargo'
-      preLoaderRoute: typeof CargoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/briefing-centre': {
-      id: '/briefing-centre'
-      path: '/briefing-centre'
-      fullPath: '/briefing-centre'
-      preLoaderRoute: typeof BriefingCentreRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/alerts': {
@@ -983,47 +846,201 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AlertsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/workspace/': {
-      id: '/workspace/'
-      path: '/workspace'
-      fullPath: '/workspace/'
-      preLoaderRoute: typeof WorkspaceIndexRouteImport
+    '/briefing-centre': {
+      id: '/briefing-centre'
+      path: '/briefing-centre'
+      fullPath: '/briefing-centre'
+      preLoaderRoute: typeof BriefingCentreRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/share/': {
-      id: '/share/'
-      path: '/'
-      fullPath: '/share/'
-      preLoaderRoute: typeof ShareIndexRouteImport
-      parentRoute: typeof ShareRoute
+    '/cargo': {
+      id: '/cargo'
+      path: '/cargo'
+      fullPath: '/cargo'
+      preLoaderRoute: typeof CargoRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/investigate/': {
-      id: '/investigate/'
-      path: '/'
-      fullPath: '/investigate/'
-      preLoaderRoute: typeof InvestigateIndexRouteImport
-      parentRoute: typeof InvestigateRoute
+    '/cargo-workspace': {
+      id: '/cargo-workspace'
+      path: '/cargo-workspace'
+      fullPath: '/cargo-workspace'
+      preLoaderRoute: typeof CargoWorkspaceRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/decide/': {
-      id: '/decide/'
-      path: '/'
-      fullPath: '/decide/'
-      preLoaderRoute: typeof DecideIndexRouteImport
-      parentRoute: typeof DecideRoute
+    '/command-center': {
+      id: '/command-center'
+      path: '/command-center'
+      fullPath: '/command-center'
+      preLoaderRoute: typeof CommandCenterRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/cargo-workspace/': {
-      id: '/cargo-workspace/'
-      path: '/'
-      fullPath: '/cargo-workspace/'
-      preLoaderRoute: typeof CargoWorkspaceIndexRouteImport
-      parentRoute: typeof CargoWorkspaceRoute
+    '/compliance': {
+      id: '/compliance'
+      path: '/compliance'
+      fullPath: '/compliance'
+      preLoaderRoute: typeof ComplianceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/copilot': {
+      id: '/copilot'
+      path: '/copilot'
+      fullPath: '/copilot'
+      preLoaderRoute: typeof CopilotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/decide': {
+      id: '/decide'
+      path: '/decide'
+      fullPath: '/decide'
+      preLoaderRoute: typeof DecideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/detect': {
+      id: '/detect'
+      path: '/detect'
+      fullPath: '/detect'
+      preLoaderRoute: typeof DetectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/evidence': {
+      id: '/evidence'
+      path: '/evidence'
+      fullPath: '/evidence'
+      preLoaderRoute: typeof EvidenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/intelligence-evidence': {
+      id: '/intelligence-evidence'
+      path: '/intelligence-evidence'
+      fullPath: '/intelligence-evidence'
+      preLoaderRoute: typeof IntelligenceEvidenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/investigate': {
+      id: '/investigate'
+      path: '/investigate'
+      fullPath: '/investigate'
+      preLoaderRoute: typeof InvestigateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/investigations': {
+      id: '/investigations'
+      path: '/investigations'
+      fullPath: '/investigations'
+      preLoaderRoute: typeof InvestigationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/investigations-workflow': {
+      id: '/investigations-workflow'
+      path: '/investigations-workflow'
+      fullPath: '/investigations-workflow'
+      preLoaderRoute: typeof InvestigationsWorkflowRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/knowledge-graph': {
+      id: '/knowledge-graph'
+      path: '/knowledge-graph'
+      fullPath: '/knowledge-graph'
+      preLoaderRoute: typeof KnowledgeGraphRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/manifest': {
+      id: '/manifest'
+      path: '/manifest'
+      fullPath: '/manifest'
+      preLoaderRoute: typeof ManifestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/memory': {
+      id: '/memory'
+      path: '/memory'
+      fullPath: '/memory'
+      preLoaderRoute: typeof MemoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/missions': {
+      id: '/missions'
+      path: '/missions'
+      fullPath: '/missions'
+      preLoaderRoute: typeof MissionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/national-risk': {
+      id: '/national-risk'
+      path: '/national-risk'
+      fullPath: '/national-risk'
+      preLoaderRoute: typeof NationalRiskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/observability': {
+      id: '/observability'
+      path: '/observability'
+      fullPath: '/observability'
+      preLoaderRoute: typeof ObservabilityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/operational-knowledge': {
+      id: '/operational-knowledge'
+      path: '/operational-knowledge'
+      fullPath: '/operational-knowledge'
+      preLoaderRoute: typeof OperationalKnowledgeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ownership': {
+      id: '/ownership'
+      path: '/ownership'
+      fullPath: '/ownership'
+      preLoaderRoute: typeof OwnershipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ports': {
+      id: '/ports'
+      path: '/ports'
+      fullPath: '/ports'
+      preLoaderRoute: typeof PortsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/predictions': {
+      id: '/predictions'
+      path: '/predictions'
+      fullPath: '/predictions'
+      preLoaderRoute: typeof PredictionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/revenue': {
+      id: '/revenue'
+      path: '/revenue'
+      fullPath: '/revenue'
+      preLoaderRoute: typeof RevenueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/revenue-leakage': {
+      id: '/revenue-leakage'
+      path: '/revenue-leakage'
+      fullPath: '/revenue-leakage'
+      preLoaderRoute: typeof RevenueLeakageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/share': {
+      id: '/share'
+      path: '/share'
+      fullPath: '/share'
+      preLoaderRoute: typeof ShareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vessel': {
+      id: '/vessel'
+      path: '/vessel'
+      fullPath: '/vessel'
+      preLoaderRoute: typeof VesselRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/': {
       id: '/admin/'
@@ -1032,88 +1049,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/workspace/$id': {
-      id: '/workspace/$id'
-      path: '/workspace/$id'
-      fullPath: '/workspace/$id'
-      preLoaderRoute: typeof WorkspaceIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/share/queue': {
-      id: '/share/queue'
-      path: '/queue'
-      fullPath: '/share/queue'
-      preLoaderRoute: typeof ShareQueueRouteImport
-      parentRoute: typeof ShareRoute
-    }
-    '/share/$id': {
-      id: '/share/$id'
-      path: '/$id'
-      fullPath: '/share/$id'
-      preLoaderRoute: typeof ShareIdRouteImport
-      parentRoute: typeof ShareRoute
-    }
-    '/investigate/open': {
-      id: '/investigate/open'
-      path: '/open'
-      fullPath: '/investigate/open'
-      preLoaderRoute: typeof InvestigateOpenRouteImport
-      parentRoute: typeof InvestigateRoute
-    }
-    '/investigate/$id': {
-      id: '/investigate/$id'
-      path: '/$id'
-      fullPath: '/investigate/$id'
-      preLoaderRoute: typeof InvestigateIdRouteImport
-      parentRoute: typeof InvestigateRoute
-    }
-    '/entity/$id': {
-      id: '/entity/$id'
-      path: '/entity/$id'
-      fullPath: '/entity/$id'
-      preLoaderRoute: typeof EntityIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/decide/queue': {
-      id: '/decide/queue'
-      path: '/queue'
-      fullPath: '/decide/queue'
-      preLoaderRoute: typeof DecideQueueRouteImport
-      parentRoute: typeof DecideRoute
-    }
-    '/decide/$id': {
-      id: '/decide/$id'
-      path: '/$id'
-      fullPath: '/decide/$id'
-      preLoaderRoute: typeof DecideIdRouteImport
-      parentRoute: typeof DecideRoute
-    }
-    '/cargo-workspace/$centre': {
-      id: '/cargo-workspace/$centre'
-      path: '/$centre'
-      fullPath: '/cargo-workspace/$centre'
-      preLoaderRoute: typeof CargoWorkspaceCentreRouteImport
-      parentRoute: typeof CargoWorkspaceRoute
-    }
-    '/admin/provider-health': {
-      id: '/admin/provider-health'
-      path: '/admin/provider-health'
-      fullPath: '/admin/provider-health'
-      preLoaderRoute: typeof AdminProviderHealthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/projection-contract': {
-      id: '/admin/projection-contract'
-      path: '/admin/projection-contract'
-      fullPath: '/admin/projection-contract'
-      preLoaderRoute: typeof AdminProjectionContractRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/osint': {
-      id: '/admin/osint'
-      path: '/admin/osint'
-      fullPath: '/admin/osint'
-      preLoaderRoute: typeof AdminOsintRouteImport
+    '/admin/capability-catalog': {
+      id: '/admin/capability-catalog'
+      path: '/admin/capability-catalog'
+      fullPath: '/admin/capability-catalog'
+      preLoaderRoute: typeof AdminCapabilityCatalogRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/connectors': {
@@ -1123,53 +1063,144 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminConnectorsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/session/$id': {
-      id: '/api/session/$id'
-      path: '/api/session/$id'
-      fullPath: '/api/session/$id'
-      preLoaderRoute: typeof ApiSessionIdRouteImport
+    '/admin/copernicus-validate': {
+      id: '/admin/copernicus-validate'
+      path: '/admin/copernicus-validate'
+      fullPath: '/admin/copernicus-validate'
+      preLoaderRoute: typeof AdminCopernicusValidateRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/relationship/$id': {
-      id: '/api/relationship/$id'
-      path: '/api/relationship/$id'
-      fullPath: '/api/relationship/$id'
-      preLoaderRoute: typeof ApiRelationshipIdRouteImport
+    '/admin/intelligence-core': {
+      id: '/admin/intelligence-core'
+      path: '/admin/intelligence-core'
+      fullPath: '/admin/intelligence-core'
+      preLoaderRoute: typeof AdminIntelligenceCoreRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/workflows': {
-      id: '/api/public/workflows'
-      path: '/api/public/workflows'
-      fullPath: '/api/public/workflows'
-      preLoaderRoute: typeof ApiPublicWorkflowsRouteImport
+    '/admin/mio': {
+      id: '/admin/mio'
+      path: '/admin/mio'
+      fullPath: '/admin/mio'
+      preLoaderRoute: typeof AdminMioRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/investigation/$id': {
-      id: '/api/investigation/$id'
-      path: '/api/investigation/$id'
-      fullPath: '/api/investigation/$id'
-      preLoaderRoute: typeof ApiInvestigationIdRouteImport
+    '/admin/osint': {
+      id: '/admin/osint'
+      path: '/admin/osint'
+      fullPath: '/admin/osint'
+      preLoaderRoute: typeof AdminOsintRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/evidence/$id': {
-      id: '/api/evidence/$id'
-      path: '/api/evidence/$id'
-      fullPath: '/api/evidence/$id'
-      preLoaderRoute: typeof ApiEvidenceIdRouteImport
+    '/admin/projection-contract': {
+      id: '/admin/projection-contract'
+      path: '/admin/projection-contract'
+      fullPath: '/admin/projection-contract'
+      preLoaderRoute: typeof AdminProjectionContractRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/entity/$id': {
-      id: '/api/entity/$id'
-      path: '/api/entity/$id'
-      fullPath: '/api/entity/$id'
-      preLoaderRoute: typeof ApiEntityIdRouteImport
+    '/admin/provider-health': {
+      id: '/admin/provider-health'
+      path: '/admin/provider-health'
+      fullPath: '/admin/provider-health'
+      preLoaderRoute: typeof AdminProviderHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/copilot/transcribe': {
-      id: '/api/copilot/transcribe'
-      path: '/api/copilot/transcribe'
-      fullPath: '/api/copilot/transcribe'
-      preLoaderRoute: typeof ApiCopilotTranscribeRouteImport
+    '/cargo-workspace/': {
+      id: '/cargo-workspace/'
+      path: '/'
+      fullPath: '/cargo-workspace/'
+      preLoaderRoute: typeof CargoWorkspaceIndexRouteImport
+      parentRoute: typeof CargoWorkspaceRoute
+    }
+    '/cargo-workspace/$centre': {
+      id: '/cargo-workspace/$centre'
+      path: '/$centre'
+      fullPath: '/cargo-workspace/$centre'
+      preLoaderRoute: typeof CargoWorkspaceCentreRouteImport
+      parentRoute: typeof CargoWorkspaceRoute
+    }
+    '/decide/': {
+      id: '/decide/'
+      path: '/'
+      fullPath: '/decide/'
+      preLoaderRoute: typeof DecideIndexRouteImport
+      parentRoute: typeof DecideRoute
+    }
+    '/decide/$id': {
+      id: '/decide/$id'
+      path: '/$id'
+      fullPath: '/decide/$id'
+      preLoaderRoute: typeof DecideIdRouteImport
+      parentRoute: typeof DecideRoute
+    }
+    '/decide/queue': {
+      id: '/decide/queue'
+      path: '/queue'
+      fullPath: '/decide/queue'
+      preLoaderRoute: typeof DecideQueueRouteImport
+      parentRoute: typeof DecideRoute
+    }
+    '/entity/$id': {
+      id: '/entity/$id'
+      path: '/entity/$id'
+      fullPath: '/entity/$id'
+      preLoaderRoute: typeof EntityIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/investigate/': {
+      id: '/investigate/'
+      path: '/'
+      fullPath: '/investigate/'
+      preLoaderRoute: typeof InvestigateIndexRouteImport
+      parentRoute: typeof InvestigateRoute
+    }
+    '/investigate/$id': {
+      id: '/investigate/$id'
+      path: '/$id'
+      fullPath: '/investigate/$id'
+      preLoaderRoute: typeof InvestigateIdRouteImport
+      parentRoute: typeof InvestigateRoute
+    }
+    '/investigate/open': {
+      id: '/investigate/open'
+      path: '/open'
+      fullPath: '/investigate/open'
+      preLoaderRoute: typeof InvestigateOpenRouteImport
+      parentRoute: typeof InvestigateRoute
+    }
+    '/share/': {
+      id: '/share/'
+      path: '/'
+      fullPath: '/share/'
+      preLoaderRoute: typeof ShareIndexRouteImport
+      parentRoute: typeof ShareRoute
+    }
+    '/share/$id': {
+      id: '/share/$id'
+      path: '/$id'
+      fullPath: '/share/$id'
+      preLoaderRoute: typeof ShareIdRouteImport
+      parentRoute: typeof ShareRoute
+    }
+    '/share/queue': {
+      id: '/share/queue'
+      path: '/queue'
+      fullPath: '/share/queue'
+      preLoaderRoute: typeof ShareQueueRouteImport
+      parentRoute: typeof ShareRoute
+    }
+    '/workspace/': {
+      id: '/workspace/'
+      path: '/workspace'
+      fullPath: '/workspace/'
+      preLoaderRoute: typeof WorkspaceIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workspace/$id': {
+      id: '/workspace/$id'
+      path: '/workspace/$id'
+      fullPath: '/workspace/$id'
+      preLoaderRoute: typeof WorkspaceIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/copilot/query': {
@@ -1179,11 +1210,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCopilotQueryRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/mibc-tick': {
-      id: '/api/public/hooks/mibc-tick'
-      path: '/api/public/hooks/mibc-tick'
-      fullPath: '/api/public/hooks/mibc-tick'
-      preLoaderRoute: typeof ApiPublicHooksMibcTickRouteImport
+    '/api/copilot/transcribe': {
+      id: '/api/copilot/transcribe'
+      path: '/api/copilot/transcribe'
+      fullPath: '/api/copilot/transcribe'
+      preLoaderRoute: typeof ApiCopilotTranscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/entity/$id': {
+      id: '/api/entity/$id'
+      path: '/api/entity/$id'
+      fullPath: '/api/entity/$id'
+      preLoaderRoute: typeof ApiEntityIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/evidence/$id': {
+      id: '/api/evidence/$id'
+      path: '/api/evidence/$id'
+      fullPath: '/api/evidence/$id'
+      preLoaderRoute: typeof ApiEvidenceIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/investigation/$id': {
+      id: '/api/investigation/$id'
+      path: '/api/investigation/$id'
+      fullPath: '/api/investigation/$id'
+      preLoaderRoute: typeof ApiInvestigationIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/workflows': {
+      id: '/api/public/workflows'
+      path: '/api/public/workflows'
+      fullPath: '/api/public/workflows'
+      preLoaderRoute: typeof ApiPublicWorkflowsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/relationship/$id': {
+      id: '/api/relationship/$id'
+      path: '/api/relationship/$id'
+      fullPath: '/api/relationship/$id'
+      preLoaderRoute: typeof ApiRelationshipIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/session/$id': {
+      id: '/api/session/$id'
+      path: '/api/session/$id'
+      fullPath: '/api/session/$id'
+      preLoaderRoute: typeof ApiSessionIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/dev/seed-role': {
@@ -1191,6 +1264,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/dev/seed-role'
       fullPath: '/api/public/dev/seed-role'
       preLoaderRoute: typeof ApiPublicDevSeedRoleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/mibc-tick': {
+      id: '/api/public/hooks/mibc-tick'
+      path: '/api/public/hooks/mibc-tick'
+      fullPath: '/api/public/hooks/mibc-tick'
+      preLoaderRoute: typeof ApiPublicHooksMibcTickRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -1286,7 +1366,11 @@ const rootRouteChildren: RootRouteChildren = {
   RevenueLeakageRoute: RevenueLeakageRoute,
   ShareRoute: ShareRouteWithChildren,
   VesselRoute: VesselRoute,
+  AdminCapabilityCatalogRoute: AdminCapabilityCatalogRoute,
   AdminConnectorsRoute: AdminConnectorsRoute,
+  AdminCopernicusValidateRoute: AdminCopernicusValidateRoute,
+  AdminIntelligenceCoreRoute: AdminIntelligenceCoreRoute,
+  AdminMioRoute: AdminMioRoute,
   AdminOsintRoute: AdminOsintRoute,
   AdminProjectionContractRoute: AdminProjectionContractRoute,
   AdminProviderHealthRoute: AdminProviderHealthRoute,
@@ -1308,3 +1392,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
