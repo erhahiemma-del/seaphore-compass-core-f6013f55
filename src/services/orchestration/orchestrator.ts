@@ -33,6 +33,7 @@ import { supabase as browserSupabase } from "@/integrations/supabase/client";
 import { PERF_BUDGETS } from "./constants";
 import { hashQuery, registerUip, getUip } from "@/services/ife/registry";
 import { buildUnifiedIntelligencePackage } from "@/services/ife/unified";
+import { processMicBootstrap } from "@/services/mic/bootstrap";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Briefing, OfficerQuery } from "./types";
 
@@ -108,6 +109,23 @@ export async function orchestrate(
   if (!roundtrip) {
     console.warn("[uip] REGISTRY MISS — getUip returned undefined for", uipId);
   }
+
+  // 4.6 Maritime Intelligence Core — process the UIP through the MIC pipeline.
+  //     Runs synchronously, silently, after UIP registration. The MIC never
+  //     throws — failures are isolated and logged. The rest of the pipeline
+  //     continues unchanged regardless of MIC outcome.
+  const micResult = processMicBootstrap(uip, uipId);
+  console.info("[MIC] bootstrap", {
+    executionId: micResult.executionId,
+    outcome:     micResult.outcome,
+    durationMs:  micResult.telemetry.totalDurationMs,
+    entities:    micResult.telemetry.entitiesRegistered,
+    evidence:    micResult.telemetry.evidenceRegistered,
+    risk:        micResult.telemetry.riskProfilesComputed,
+    timeline:    micResult.telemetry.timelineEvents,
+    warnings:    micResult.telemetry.warnings.length,
+    errors:      micResult.telemetry.errors.length,
+  });
 
   // 5. Compat projection for the reasoning engine + briefing builder.
   const fused = projectFusedView(results, uip);

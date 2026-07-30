@@ -66,3 +66,12 @@ export {
   MicRiskRegistry,
   MicReasoningRegistry,
 } from "./registries";
+
+// ── Bootstrap integration ─────────────────────────────────────────────
+export { processMicBootstrap } from "./bootstrap";
+export type { MicBootstrapResult } from "./bootstrap";
+
+// ── Telemetry ─────────────────────────────────────────────────────────
+export type { MicExecutionTelemetry, MicTelemetrySink, MicExecutionOutcome, MicPipelineStage } from "./telemetry/types";
+export { ConsoleSink, CapturingSink, CompositeSink } from "./telemetry/sinks";
+export { globalMicSink, mioCaptureSink } from "./telemetry-registry";

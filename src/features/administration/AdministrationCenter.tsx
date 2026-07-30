@@ -56,6 +56,7 @@ import {
   Workflow,
   Zap,
   Map,
+  Telescope,
 } from "lucide-react";
 import {
   CartesianGrid,
@@ -110,7 +111,8 @@ type SectionId =
   | "audit"
   | "reports"
   | "settings"
-  | "capability-catalog";
+  | "capability-catalog"
+  | "observatory";
 
 
 interface NavItem {
@@ -135,6 +137,7 @@ const NAV: NavItem[] = [
   { id: "audit", label: "Audit Centre", icon: History },
   { id: "reports", label: "Reports & Analytics", icon: FileBarChart },
   { id: "capability-catalog", label: "Capability Catalog", icon: Map },
+  { id: "observatory", label: "MIO Observatory", icon: Telescope },
   { id: "settings", label: "Settings", icon: Cog },
 ];
 
@@ -390,9 +393,40 @@ function SectionContent({
   if (section === "data-sources") return <DataSourceMatrixPanel />;
   if (section === "ial") return <IalAdminPanel />;
   if (section === "capability-catalog") return <CapabilityCatalogSection />;
+  if (section === "observatory") return <ObservatorySection />;
   return <PlaceholderSection section={section} />;
 }
 
+
+function ObservatorySection() {
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg border border-line bg-surface p-4">
+        <div className="flex items-center gap-2">
+          <Telescope className="h-4 w-4 text-[color:var(--color-teal)]" />
+          <h2 className="type-h2 text-foreground">Maritime Intelligence Observatory</h2>
+        </div>
+        <p className="type-small text-slate mt-1">
+          Live operational visibility into every intelligence service. Pipeline health, registry state,
+          execution history, risk distribution, and connector status.
+        </p>
+      </div>
+      <div className="rounded-lg border border-dashed border-line bg-surface/50 p-8 text-center">
+        <Telescope className="mx-auto h-8 w-8 text-slate mb-3" />
+        <p className="type-body text-foreground">Maritime Intelligence Observatory</p>
+        <p className="type-small text-slate mt-1 mb-4">
+          Full observability platform — pipeline monitor, registry explorer, execution history, risk monitor.
+        </p>
+        <a
+          href="/admin/mio"
+          className="inline-flex items-center gap-2 rounded-md bg-[color:var(--color-teal)] px-4 py-2 type-small font-medium text-white hover:opacity-90"
+        >
+          Open MIO Observatory →
+        </a>
+      </div>
+    </div>
+  );
+}
 
 function CapabilityCatalogSection() {
   return (
