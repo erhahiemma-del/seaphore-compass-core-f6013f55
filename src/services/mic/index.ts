@@ -75,3 +75,6 @@ export type { MicBootstrapResult } from "./bootstrap";
 export type { MicExecutionTelemetry, MicTelemetrySink, MicExecutionOutcome, MicPipelineStage } from "./telemetry/types";
 export { ConsoleSink, CapturingSink, CompositeSink } from "./telemetry/sinks";
 export { globalMicSink, mioCaptureSink } from "./telemetry-registry";
+// ── Feature flag ─────────────────────────────────────────────────────
+export { isMicEnabled, setMicEnabled, resetMicFlag, getMicFlagState } from "./feature-flag";
+export type { MicFlagState } from "./feature-flag";

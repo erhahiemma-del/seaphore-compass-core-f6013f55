@@ -57,6 +57,7 @@ import {
   Zap,
   Map,
   Telescope,
+  Activity,
 } from "lucide-react";
 import {
   CartesianGrid,
@@ -112,7 +113,8 @@ type SectionId =
   | "reports"
   | "settings"
   | "capability-catalog"
-  | "observatory";
+  | "observatory"
+  | "intelligence-core";
 
 
 interface NavItem {
@@ -138,6 +140,7 @@ const NAV: NavItem[] = [
   { id: "reports", label: "Reports & Analytics", icon: FileBarChart },
   { id: "capability-catalog", label: "Capability Catalog", icon: Map },
   { id: "observatory", label: "MIO Observatory", icon: Telescope },
+  { id: "intelligence-core", label: "Intelligence Core", icon: Activity },
   { id: "settings", label: "Settings", icon: Cog },
 ];
 
@@ -394,9 +397,35 @@ function SectionContent({
   if (section === "ial") return <IalAdminPanel />;
   if (section === "capability-catalog") return <CapabilityCatalogSection />;
   if (section === "observatory") return <ObservatorySection />;
+  if (section === "intelligence-core") return <IntelligenceCoreSection />;
   return <PlaceholderSection section={section} />;
 }
 
+
+function IntelligenceCoreSection() {
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg border border-line bg-surface p-4">
+        <div className="flex items-center gap-2">
+          <Activity className="h-4 w-4 text-[color:var(--color-teal)]" />
+          <h2 className="type-h2 text-foreground">Intelligence Core Health</h2>
+        </div>
+        <p className="type-small text-slate mt-1">
+          Runtime status, feature flag, registry counts, performance metrics, and scaling thresholds.
+        </p>
+      </div>
+      <div className="rounded-lg border border-dashed border-line bg-surface/50 p-8 text-center">
+        <Activity className="mx-auto h-8 w-8 text-slate mb-3" />
+        <a
+          href="/admin/intelligence-core"
+          className="inline-flex items-center gap-2 rounded-md bg-[color:var(--color-teal)] px-4 py-2 type-small font-medium text-white hover:opacity-90"
+        >
+          Open Intelligence Core Health →
+        </a>
+      </div>
+    </div>
+  );
+}
 
 function ObservatorySection() {
   return (

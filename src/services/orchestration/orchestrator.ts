@@ -34,6 +34,7 @@ import { PERF_BUDGETS } from "./constants";
 import { hashQuery, registerUip, getUip } from "@/services/ife/registry";
 import { buildUnifiedIntelligencePackage } from "@/services/ife/unified";
 import { processMicBootstrap } from "@/services/mic/bootstrap";
+import { isMicEnabled } from "@/services/mic/feature-flag";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Briefing, OfficerQuery } from "./types";
 
@@ -110,22 +111,28 @@ export async function orchestrate(
     console.warn("[uip] REGISTRY MISS — getUip returned undefined for", uipId);
   }
 
-  // 4.6 Maritime Intelligence Core — process the UIP through the MIC pipeline.
-  //     Runs synchronously, silently, after UIP registration. The MIC never
-  //     throws — failures are isolated and logged. The rest of the pipeline
-  //     continues unchanged regardless of MIC outcome.
-  const micResult = processMicBootstrap(uip, uipId);
-  console.info("[MIC] bootstrap", {
-    executionId: micResult.executionId,
-    outcome:     micResult.outcome,
-    durationMs:  micResult.telemetry.totalDurationMs,
-    entities:    micResult.telemetry.entitiesRegistered,
-    evidence:    micResult.telemetry.evidenceRegistered,
-    risk:        micResult.telemetry.riskProfilesComputed,
-    timeline:    micResult.telemetry.timelineEvents,
-    warnings:    micResult.telemetry.warnings.length,
-    errors:      micResult.telemetry.errors.length,
-  });
+  // 4.6 Maritime Intelligence Core — feature-flag-gated, failure-isolated.
+  //     When MIC_ENABLED=false the block is skipped entirely and the pipeline
+  //     continues exactly as it did before the MIC existed.
+  //     When enabled: process() runs, telemetry emits, result is captured.
+  //     On any failure: caught, logged, outcome=failed — pipeline continues.
+  if (isMicEnabled()) {
+    const micResult = processMicBootstrap(uip, uipId);
+    console.info("[MIC] bootstrap", {
+      executionId: micResult.executionId,
+      outcome:     micResult.outcome,
+      durationMs:  micResult.telemetry.totalDurationMs,
+      entities:    micResult.telemetry.entitiesRegistered,
+      evidence:    micResult.telemetry.evidenceRegistered,
+      risk:        micResult.telemetry.riskProfilesComputed,
+      timeline:    micResult.telemetry.timelineEvents,
+      flag:        "enabled",
+      warnings:    micResult.telemetry.warnings.length,
+      errors:      micResult.telemetry.errors.length,
+    });
+  } else {
+    console.info("[MIC] bootstrap skipped — MIC_ENABLED=false");
+  }
 
   // 5. Compat projection for the reasoning engine + briefing builder.
   const fused = projectFusedView(results, uip);
