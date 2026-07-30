@@ -91,9 +91,10 @@ export class EntityRegistry {
       }
       const attrs = attributes.get(id) ?? {};
       for (const [k, v] of Object.entries(r.fields)) {
-        if (v === null || v === undefined || Array.isArray(v)) continue;
+        if (typeof v !== "string" && typeof v !== "number" && typeof v !== "boolean") continue;
         if (!(k in attrs)) attrs[k] = v;
       }
+
       attributes.set(id, attrs);
       typeHints.set(id, deriveEntityType(id));
     }
