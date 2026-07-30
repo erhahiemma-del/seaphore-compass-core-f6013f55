@@ -35,6 +35,8 @@ import { hashQuery, registerUip, getUip } from "@/services/ife/registry";
 import { buildUnifiedIntelligencePackage } from "@/services/ife/unified";
 import { processMicBootstrap } from "@/services/mic/bootstrap";
 import { isMicEnabled } from "@/services/mic/feature-flag";
+import { buildIpefRecord, ipefRegistry } from "@/services/ipef";
+import type { MicBootstrapResult } from "@/services/mic/bootstrap";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Briefing, OfficerQuery } from "./types";
 
@@ -49,7 +51,9 @@ export async function orchestrate(
   deps: OrchestrationDeps = {},
 ): Promise<Briefing> {
   const started = performance.now();
+  const orchestrationStartedAt = Date.now();  // wall-clock for IPEF telemetry
   const session = ensureSession(query);
+  let micBootstrapResult: MicBootstrapResult | null = null;  // captured for IPEF
 
   // 1. Intent
   const intent = classifyIntent(query);
@@ -118,6 +122,7 @@ export async function orchestrate(
   //     On any failure: caught, logged, outcome=failed — pipeline continues.
   if (isMicEnabled()) {
     const micResult = processMicBootstrap(uip, uipId);
+    micBootstrapResult = micResult;  // captured for IPEF
     console.info("[MIC] bootstrap", {
       executionId: micResult.executionId,
       outcome:     micResult.outcome,
@@ -217,5 +222,35 @@ export async function orchestrate(
   );
 
   appendHistory(session.session_id, query.query, briefing);
+
+  // IPEF — build and register provenance record.
+  // Runs after the briefing is complete. Never throws — IPEF failure is silent.
+  try {
+    const collectionMs = Math.round(
+      (performance.now() - started) - (briefing.latency_ms ?? 0),
+    );
+    const ipefRecord = buildIpefRecord({
+      correlationId:          uipId,
+      uip,
+      micBootstrapResult,
+      briefing,
+      orchestrationStartedAt,
+      evidenceCollectionMs:   Math.max(0, collectionMs),
+      sourcesQueried:         briefing.sources_queried,
+      sourcesResponded:       briefing.sources_responded,
+      sourcesCorroborated:    briefing.sources_corroborated,
+      evidenceCount,
+    });
+    ipefRegistry.register(ipefRecord);
+    console.info("[IPEF] record registered", {
+      correlationId: ipefRecord.correlationId,
+      contributors:  ipefRecord.contributors.length,
+      gaps:          ipefRecord.intelligenceGaps.length,
+      status:        ipefRecord.overallStatus,
+    });
+  } catch (err) {
+    console.warn("[IPEF] record build failed (non-fatal):", err);
+  }
+
   return briefing;
 }
