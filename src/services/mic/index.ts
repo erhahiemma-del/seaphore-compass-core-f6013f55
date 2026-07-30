@@ -78,3 +78,32 @@ export { globalMicSink, mioCaptureSink } from "./telemetry-registry";
 // ── Feature flag ─────────────────────────────────────────────────────
 export { isMicEnabled, setMicEnabled, resetMicFlag, getMicFlagState } from "./feature-flag";
 export type { MicFlagState } from "./feature-flag";
+
+// ── Intelligence Object Model (INT-01B) ─────────────────────────────
+export type {
+  IntelligenceObjectKind,
+  IntelligenceObjectBase,
+  IntelligenceObject,
+  AttributesForKind,
+  VesselAttributes,
+  VoyageAttributes,
+  PortAttributes,
+  CargoAttributes,
+  ManifestAttributes,
+  ContainerAttributes,
+  CompanyAttributes,
+  PersonAttributes,
+  DirectorAttributes,
+  OwnerAttributes,
+  OrganisationAttributes,
+  SanctionAttributes,
+  InspectionAttributes,
+  IncidentAttributes,
+  DocumentAttributes,
+  SatelliteObservationAttributes,
+  WeatherEventAttributes,
+  LocationAttributes,
+  InsuranceAttributes,
+  ClassificationSocietyAttributes,
+} from "./entities/types";
+export { INTELLIGENCE_OBJECT_KINDS, IntelligenceObjectRegistry, buildIntelligenceObjects } from "./entities";

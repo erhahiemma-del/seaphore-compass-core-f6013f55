@@ -21,6 +21,8 @@
 import type { UnifiedIntelligencePackage } from "@/services/ife/unified";
 import { MaritimeKnowledgeGraph } from "@/services/mkg/graph";
 import { ingestUnifiedPackage } from "@/services/mkg/ingest";
+import { IntelligenceObjectRegistry } from "./entities/registry";
+import { buildIntelligenceObjects } from "./entities/builder";
 
 import {
   MicConfidenceRegistry,
@@ -63,6 +65,9 @@ export class MicContainer {
   readonly risk:          MicRiskRegistry;
   readonly reasoning:     MicReasoningRegistry;
 
+  // ── INT-01B: Typed Intelligence Object registry ──────────────────────
+  readonly intelligenceObjects: IntelligenceObjectRegistry;
+
   // ── Shared graph (the MKG) — written by process(), read by all ──────
   readonly mkg: MaritimeKnowledgeGraph;
 
@@ -78,7 +83,8 @@ export class MicContainer {
     this.graph         = new MicGraphRegistry();
     this.risk          = new MicRiskRegistry();
     this.reasoning     = new MicReasoningRegistry();
-    this.mkg           = new MaritimeKnowledgeGraph();
+    this.mkg                 = new MaritimeKnowledgeGraph();
+    this.intelligenceObjects = new IntelligenceObjectRegistry();
   }
 
   // ─────────────────────────────────────────────────────────────────────
@@ -110,8 +116,14 @@ export class MicContainer {
     ingestUnifiedPackage(this.mkg, uip, { evidence: uip.rawEvidence });
     const snapshot = this.mkg.toSnapshot();
 
+    // Compute alias node ids once — shared by registerEntities and buildIntelligenceObjects.
+    // A node is an alias-only node if it is the fromId of an ALIAS_OF edge.
+    const aliasNodeIds = new Set(
+      snapshot.edges.filter((e) => e.type === "ALIAS_OF").map((e) => e.fromId),
+    );
+
     // ── Step 2: Register entities ────────────────────────────────────────
-    const entityEntries = this.registerEntities(uip, snapshot.nodes);
+    const entityEntries = this.registerEntities(uip, snapshot.nodes, aliasNodeIds);
 
     // ── Step 3: Register relationships ──────────────────────────────────
     const relEntries = this.registerRelationships(snapshot.edges, uip.id);
@@ -136,6 +148,9 @@ export class MicContainer {
       edges: snapshot.edges.length,
       primaryEntityId,
     });
+
+    // ── Step 9: Build typed Intelligence Objects (INT-01B) ───────────────
+    buildIntelligenceObjects(uip, snapshot.nodes, aliasNodeIds, this.intelligenceObjects);
 
     return {
       uip,
@@ -164,15 +179,9 @@ export class MicContainer {
   private registerEntities(
     uip: UnifiedIntelligencePackage,
     nodes: ReadonlyArray<MkgNode>,
+    aliasNodeIds: Set<string>,
   ) {
     const evByEntity = groupByEntity(uip.rawEvidence);
-    // Collect all canonical ids so we can skip alias-only nodes.
-    // A node is canonical if it is NOT the source (fromId) of an ALIAS_OF edge.
-    const aliasNodeIds = new Set(
-      this.mkg.toSnapshot().edges
-        .filter((e) => e.type === "ALIAS_OF")
-        .map((e) => e.fromId),
-    );
     return nodes
       .filter((n) => !aliasNodeIds.has(n.id))
       .filter((n) => n.kind !== "sanction" && n.kind !== "manifest" && n.kind !== "incident" && n.kind !== "inspection")
@@ -403,17 +412,21 @@ export class MicContainer {
 
   /** Stats snapshot for the admin / health dashboard. */
   stats() {
+    const snap = this.mkg.toSnapshot();
+    const ioStats = this.intelligenceObjects.stats();
     return {
-      entities:      this.entities.size,
-      relationships: this.relationships.size,
-      evidence:      this.evidence.size,
-      confidence:    this.confidence.size,
-      timelineEvents:this.timeline.size,
-      graphs:        this.graph.size,
-      riskProfiles:  this.risk.size,
-      reasoningLogs: this.reasoning.size,
-      mkgNodes:      this.mkg.toSnapshot().nodes.length,
-      mkgEdges:      this.mkg.toSnapshot().edges.length,
+      entities:           this.entities.size,
+      relationships:      this.relationships.size,
+      evidence:           this.evidence.size,
+      confidence:         this.confidence.size,
+      timelineEvents:     this.timeline.size,
+      graphs:             this.graph.size,
+      riskProfiles:       this.risk.size,
+      reasoningLogs:      this.reasoning.size,
+      mkgNodes:           snap.nodes.length,
+      mkgEdges:           snap.edges.length,
+      intelligenceObjects:this.intelligenceObjects.size,
+      intelligenceObjectsByKind: ioStats,
     };
   }
 }
