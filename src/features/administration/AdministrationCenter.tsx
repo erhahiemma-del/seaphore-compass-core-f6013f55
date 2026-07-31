@@ -57,7 +57,6 @@ import {
   Zap,
   Map,
   Telescope,
-  Activity,
 } from "lucide-react";
 import {
   CartesianGrid,

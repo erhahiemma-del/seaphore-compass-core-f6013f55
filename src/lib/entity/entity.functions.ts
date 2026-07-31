@@ -20,8 +20,8 @@ import type { IntelligenceObjectKind } from "@/services/mic/entities/types";
 
 export const getEntityFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ data }: { data: { id: string } }) => {
-    const { id } = data;
+  .handler(async (ctx: any) => {
+    const { id } = ctx.data as { id: string };
 
     // Resolve alias to canonical
     const canonicalId = mic.entities.resolveAlias(id) ?? id;
@@ -55,7 +55,7 @@ export const getEntityFn = createServerFn({ method: "GET" })
         lastSeenAt:  ioEntry?.lastSeenAt     ?? null,
         revision:    baseEntry?.revision     ?? ioEntry?.revision ?? 1,
         // Typed attributes from Intelligence Object layer
-        attributes:  ioEntry ? (ioEntry.attributes as Record<string, unknown>) : {},
+        attributes:  ioEntry ? (ioEntry.attributes as unknown as Record<string, unknown>) : {},
       },
       risk: risk
         ? {
@@ -116,8 +116,8 @@ export const getEntityFn = createServerFn({ method: "GET" })
 
 export const searchEntitiesFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ data }: { data: { kind?: string; query?: string; limit?: number } }) => {
-    const { kind, query, limit = 50 } = data ?? {};
+  .handler(async (ctx: any) => {
+    const { kind, query, limit = 50 } = (ctx.data ?? {}) as { kind?: string; query?: string; limit?: number };
 
     const allEntities = kind
       ? mic.intelligenceObjects.getByKind(kind as IntelligenceObjectKind)
@@ -155,8 +155,8 @@ export const searchEntitiesFn = createServerFn({ method: "GET" })
 
 export const getEntityRelationshipsFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ data }: { data: { id: string; depth?: number } }) => {
-    const { id, depth = 2 } = data ?? {};
+  .handler(async (ctx: any) => {
+    const { id, depth = 2 } = (ctx.data ?? {}) as { id: string; depth?: number };
     const canonicalId = mic.entities.resolveAlias(id) ?? id;
 
     // BFS up to `depth` hops through the MKG
@@ -198,7 +198,8 @@ export const getEntityRelationshipsFn = createServerFn({ method: "GET" })
 
 export const getEntityTimelineFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ data }: { data: { id: string } }) => {
+  .handler(async (ctx: any) => {
+    const data = ctx.data as { id: string };
     const canonicalId = mic.entities.resolveAlias(data.id) ?? data.id;
     const events = mic.timeline.getForEntity(canonicalId);
     return {
@@ -254,7 +255,7 @@ export const getEntityResolutionLogFn = createServerFn({ method: "GET" })
 
 // ── helpers ───────────────────────────────────────────────────────────
 
-function groupCount<T>(arr: T[], key: (item: T) => string): Record<string, number> {
+function groupCount<T>(arr: readonly T[], key: (item: T) => string): Record<string, number> {
   const result: Record<string, number> = {};
   for (const item of arr) {
     const k = key(item);

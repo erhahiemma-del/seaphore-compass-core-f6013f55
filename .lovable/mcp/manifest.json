@@ -1,0 +1,168 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.1",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://wkxgohtejlbdhnfjihhe.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "seaphore-foundation",
+      "version": "0.1.0",
+      "title": "Seaphore Foundation"
+    },
+    "tools": [
+      {
+        "name": "search_entities",
+        "title": "Search entities",
+        "description": "Search the Seaphore entity registry (vessels, companies, persons, ports, cargo) by name or alias. Returns id, type, confidence grade and risk score.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Name or partial name to search for."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "description": "Max rows (default 10)."
+            }
+          },
+          "required": [
+            "query"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_entity_profile",
+        "title": "Get entity profile",
+        "description": "Retrieve a Seaphore entity by id with its recent intelligence signals and open alerts. Every record carries its own confidence grade — the system reports, the officer decides.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "entity_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Entity UUID from search_entities."
+            }
+          },
+          "required": [
+            "entity_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_investigations",
+        "title": "List investigations",
+        "description": "List Seaphore investigations visible to the signed-in officer, newest first. Optionally filter by status.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Filter by investigation status."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "description": "Max rows (default 20)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_investigation",
+        "title": "Get investigation dossier",
+        "description": "Retrieve one Seaphore investigation with its evidence records and recorded officer decisions. Decisions are immutable — this tool only reads them.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "investigation_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Investigation UUID from list_investigations."
+            }
+          },
+          "required": [
+            "investigation_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_alerts",
+        "title": "List alerts",
+        "description": "List recent Seaphore alerts with severity, status and confidence grade. Optionally filter by status or severity.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Filter by alert status."
+            },
+            "severity": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Filter by severity."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "description": "Max rows (default 20)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
