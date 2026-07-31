@@ -69,7 +69,12 @@ export type IntelligenceObjectKind =
   | "location"
   // Financial / operational
   | "insurance"
-  | "classification-society";
+  | "classification-society"
+  | "terminal"
+  | "bill-of-lading"
+  | "importer"
+  | "exporter"
+  | "consignee";
 
 // ─────────────────────────────────────────────────────────────────────
 //  MARITIME INTELLIGENCE OBJECTS
@@ -384,6 +389,84 @@ export interface ClassificationSocietyAttributes {
 //  DISCRIMINATED UNION — the Intelligence Object
 // ─────────────────────────────────────────────────────────────────────
 
+
+// ─────────────────────────────────────────────────────────────────────
+//  TRADE PARTICIPANT INTELLIGENCE OBJECTS  (INT-01B extended)
+// ─────────────────────────────────────────────────────────────────────
+
+/** Typed attributes for a Terminal Intelligence Object. */
+export interface TerminalAttributes {
+  readonly name: string | null;
+  readonly portId: string | null;            // canonical port entity id
+  readonly portUnlocode: string | null;
+  readonly operatorId: string | null;        // canonical company entity id
+  readonly terminalType: "container" | "bulk" | "liquid" | "ro-ro" | "multipurpose" | null;
+  readonly latitude: number | null;
+  readonly longitude: number | null;
+  readonly totalQuayLength: number | null;   // metres
+  readonly maxVesselDraft: number | null;    // metres
+  readonly craneCount: number | null;
+  readonly maxThroughput: number | null;     // TEU/year
+  readonly operationalStatus: "active" | "suspended" | "decommissioned" | null;
+}
+
+/** Typed attributes for a Bill of Lading Intelligence Object. */
+export interface BillOfLadingAttributes {
+  readonly bolNumber: string | null;
+  readonly issuedDate: string | null;        // ISO 8601 date
+  readonly carrier: string | null;
+  readonly carrierId: string | null;         // canonical company entity id
+  readonly shipperId: string | null;         // canonical company/person entity id
+  readonly consigneeId: string | null;       // canonical company/person entity id
+  readonly notifyPartyId: string | null;
+  readonly portOfLoading: string | null;
+  readonly portOfDischarge: string | null;
+  readonly vesselId: string | null;
+  readonly voyageId: string | null;
+  readonly manifestId: string | null;
+  readonly freightPayment: "prepaid" | "collect" | "as-arranged" | null;
+  readonly bolType: "master" | "house" | "sea-waybill" | null;
+  readonly status: "draft" | "issued" | "surrendered" | "expired" | null;
+}
+
+/** Typed attributes for an Importer Intelligence Object. */
+export interface ImporterAttributes {
+  readonly registeredName: string | null;
+  readonly registrationNumber: string | null;
+  readonly country: string | null;
+  readonly address: string | null;
+  readonly taxId: string | null;
+  readonly importerCode: string | null;     // country-specific importer code
+  readonly riskCategory: "low" | "medium" | "high" | null;
+  readonly cumulativeImports: number | null; // total declared import value
+  readonly lastImportDate: string | null;    // ISO 8601
+}
+
+/** Typed attributes for an Exporter Intelligence Object. */
+export interface ExporterAttributes {
+  readonly registeredName: string | null;
+  readonly registrationNumber: string | null;
+  readonly country: string | null;
+  readonly address: string | null;
+  readonly taxId: string | null;
+  readonly exporterCode: string | null;
+  readonly riskCategory: "low" | "medium" | "high" | null;
+  readonly cumulativeExports: number | null;
+  readonly lastExportDate: string | null;    // ISO 8601
+}
+
+/** Typed attributes for a Consignee Intelligence Object. */
+export interface ConsigneeAttributes {
+  readonly registeredName: string | null;
+  readonly registrationNumber: string | null;
+  readonly country: string | null;
+  readonly address: string | null;
+  readonly consigneeCode: string | null;
+  readonly isNotifyParty: boolean | null;
+  readonly riskCategory: "low" | "medium" | "high" | null;
+  readonly linkedImporterId: string | null;  // canonical importer entity id
+}
+
 /**
  * A fully-typed Intelligence Object.
  * The discriminant is `objectKind` — every consumer can switch on it
@@ -412,7 +495,12 @@ export type IntelligenceObject =
   | (IntelligenceObjectBase & { readonly objectKind: "weather-event";           readonly attributes: WeatherEventAttributes })
   | (IntelligenceObjectBase & { readonly objectKind: "location";                readonly attributes: LocationAttributes })
   | (IntelligenceObjectBase & { readonly objectKind: "insurance";               readonly attributes: InsuranceAttributes })
-  | (IntelligenceObjectBase & { readonly objectKind: "classification-society";  readonly attributes: ClassificationSocietyAttributes });
+  | (IntelligenceObjectBase & { readonly objectKind: "classification-society";  readonly attributes: ClassificationSocietyAttributes })
+  | (IntelligenceObjectBase & { readonly objectKind: "terminal";                readonly attributes: TerminalAttributes })
+  | (IntelligenceObjectBase & { readonly objectKind: "bill-of-lading";          readonly attributes: BillOfLadingAttributes })
+  | (IntelligenceObjectBase & { readonly objectKind: "importer";                readonly attributes: ImporterAttributes })
+  | (IntelligenceObjectBase & { readonly objectKind: "exporter";                readonly attributes: ExporterAttributes })
+  | (IntelligenceObjectBase & { readonly objectKind: "consignee";               readonly attributes: ConsigneeAttributes });
 
 /** Attribute map keyed by kind — for generic attribute access without a switch. */
 export type AttributesForKind<K extends IntelligenceObjectKind> =
@@ -425,4 +513,5 @@ export const INTELLIGENCE_OBJECT_KINDS: ReadonlyArray<IntelligenceObjectKind> = 
   "sanction", "inspection", "incident", "document",
   "satellite-observation", "weather-event", "location",
   "insurance", "classification-society",
+  "terminal", "bill-of-lading", "importer", "exporter", "consignee",
 ] as const;

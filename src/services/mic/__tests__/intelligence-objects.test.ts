@@ -83,8 +83,8 @@ function makeUip(evidence: NormalizedEvidence[], id = "uip_test"): UnifiedIntell
 // ─── 1. INTELLIGENCE OBJECT KINDS ─────────────────────────────────────
 
 describe("INT-01B · INTELLIGENCE_OBJECT_KINDS", () => {
-  it("defines exactly 20 kinds", () => {
-    expect(INTELLIGENCE_OBJECT_KINDS).toHaveLength(20);
+  it("defines exactly 25 kinds (20 original + 5 trade participants)", () => {
+    expect(INTELLIGENCE_OBJECT_KINDS).toHaveLength(25);
   });
 
   it("includes all specified kinds", () => {

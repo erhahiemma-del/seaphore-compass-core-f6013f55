@@ -26,6 +26,11 @@ export type {
   LocationAttributes,
   InsuranceAttributes,
   ClassificationSocietyAttributes,
+  TerminalAttributes,
+  BillOfLadingAttributes,
+  ImporterAttributes,
+  ExporterAttributes,
+  ConsigneeAttributes,
 } from "./types";
 export { INTELLIGENCE_OBJECT_KINDS } from "./types";
 export { IntelligenceObjectRegistry } from "./registry";

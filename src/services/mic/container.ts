@@ -23,6 +23,8 @@ import { MaritimeKnowledgeGraph } from "@/services/mkg/graph";
 import { ingestUnifiedPackage } from "@/services/mkg/ingest";
 import { IntelligenceObjectRegistry } from "./entities/registry";
 import { buildIntelligenceObjects } from "./entities/builder";
+import { resolveEntities } from "./resolution/engine";
+import type { EntityResolutionResult } from "./resolution/types";
 
 import {
   MicConfidenceRegistry,
@@ -67,6 +69,8 @@ export class MicContainer {
 
   // ── INT-01B: Typed Intelligence Object registry ──────────────────────
   readonly intelligenceObjects: IntelligenceObjectRegistry;
+  /** Entity resolution decisions — logged per process() call. */
+  private readonly _resolutionLog: EntityResolutionResult[] = [];
 
   // ── Shared graph (the MKG) — written by process(), read by all ──────
   readonly mkg: MaritimeKnowledgeGraph;
@@ -151,6 +155,13 @@ export class MicContainer {
 
     // ── Step 9: Build typed Intelligence Objects (INT-01B) ───────────────
     buildIntelligenceObjects(uip, snapshot.nodes, aliasNodeIds, this.intelligenceObjects);
+
+    // ── Step 10: Entity Resolution (INT-01B) ────────────────────────────
+    // De-duplicate entities sharing identifiers (container#, BOL, IMO, etc.)
+    const resolutionResult = resolveEntities(this.intelligenceObjects);
+    if (resolutionResult.mergesPerformed > 0) {
+      this._resolutionLog.push(resolutionResult);
+    }
 
     return {
       uip,
@@ -376,6 +387,11 @@ export class MicContainer {
   // ─────────────────────────────────────────────────────────────────────
 
   /** Resolve any id (canonical or alias) to a registered entity. */
+  /** Entity resolution decisions from all process() calls. */
+  get resolutionLog(): ReadonlyArray<EntityResolutionResult> {
+    return this._resolutionLog;
+  }
+
   resolveEntity(id: string) {
     const canonical = this.entities.resolveAlias(id) ?? id;
     return this.entities.get(canonical);
@@ -427,6 +443,8 @@ export class MicContainer {
       mkgEdges:           snap.edges.length,
       intelligenceObjects:this.intelligenceObjects.size,
       intelligenceObjectsByKind: ioStats,
+      resolutionMergesTotal: this._resolutionLog.reduce((s, r) => s + r.mergesPerformed, 0),
+      resolutionRuns: this._resolutionLog.length,
     };
   }
 }

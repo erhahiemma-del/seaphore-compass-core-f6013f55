@@ -16,14 +16,17 @@ export const getMioRegistrySnapshotFn = createServerFn({ method: "GET" })
     const snap  = mic.mkg.toSnapshot();
     return {
       registries: {
-        entities:      stats.entities,
-        relationships: stats.relationships,
-        evidence:      stats.evidence,
-        confidence:    stats.confidence,
-        timelineEvents:stats.timelineEvents,
-        graphs:        stats.graphs,
-        riskProfiles:  stats.riskProfiles,
-        reasoningLogs: stats.reasoningLogs,
+        entities:           stats.entities,
+        relationships:      stats.relationships,
+        evidence:           stats.evidence,
+        confidence:         stats.confidence,
+        timelineEvents:     stats.timelineEvents,
+        graphs:             stats.graphs,
+        riskProfiles:       stats.riskProfiles,
+        reasoningLogs:      stats.reasoningLogs,
+        intelligenceObjects:stats.intelligenceObjects,
+        intelligenceObjectsByKind: stats.intelligenceObjectsByKind ?? {},
+        resolutionMerges:   (stats as any).resolutionMergesTotal ?? 0,
       },
       graph: {
         nodes:      stats.mkgNodes,

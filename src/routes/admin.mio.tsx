@@ -217,15 +217,29 @@ function MIOPage() {
             {registrySnap ? (
               <>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-4">
-                  <StatCard label="Entities"           value={registrySnap.registries.entities}      sub="canonical intelligence objects" />
+                  <StatCard label="Base entities"      value={registrySnap.registries.entities}      sub="canonical intelligence objects" />
+                  <StatCard label="IO objects"         value={(registrySnap.registries as any).intelligenceObjects ?? 0} sub="typed entity layer" />
+                  <StatCard label="Resolution merges"  value={(registrySnap.registries as any).resolutionMerges ?? 0} sub="duplicate entities merged" />
                   <StatCard label="Relationships"      value={registrySnap.registries.relationships} sub="graph edges (non-alias)" />
                   <StatCard label="Evidence records"   value={registrySnap.registries.evidence}      sub="from all providers" />
                   <StatCard label="Confidence entries" value={registrySnap.registries.confidence}    sub="multi-factor scores" />
                   <StatCard label="Timeline events"    value={registrySnap.registries.timelineEvents}sub="chronological intelligence" />
                   <StatCard label="Risk profiles"      value={registrySnap.registries.riskProfiles}  sub="entity risk scores" />
-                  <StatCard label="Reasoning logs"     value={registrySnap.registries.reasoningLogs} sub="Copilot sessions" />
-                  <StatCard label="Graph sessions"     value={registrySnap.registries.graphs}        sub="UIP ingest records" />
                 </div>
+                {(registrySnap.registries as any).intelligenceObjectsByKind &&
+                  Object.keys((registrySnap.registries as any).intelligenceObjectsByKind).length > 0 && (
+                  <div className="rounded-lg border border-border bg-card p-4">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Entity Activity by Kind</div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {Object.entries((registrySnap.registries as any).intelligenceObjectsByKind as Record<string,number>).map(([kind, count]) => (
+                        <div key={kind} className="flex items-center justify-between text-xs border border-border rounded p-2">
+                          <span className="text-muted-foreground">{kind}</span>
+                          <span className="font-semibold text-foreground">{count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="rounded-lg border border-border bg-card p-4">
