@@ -31,6 +31,7 @@ import {
 /** Kinds of ambient state a command can require before it runs. */
 export type CommandContextRequirement =
   | "vessel"
+  | "entity"
   | "investigation"
   | "intelligence_package"
   | "ais_context";
@@ -58,6 +59,10 @@ export interface CommandExecutionContext {
   hasAisContext?: boolean;
   /** Officer role — drives permission gating. */
   role?: CommandPermission;
+  /** Canonical entity id currently in focus (e.g. vessel:imo:9438291). */
+  entityId?: string;
+  /** Human-readable entity label for display in prompts. */
+  entityLabel?: string;
 }
 
 export interface CopilotCommand {
@@ -91,7 +96,9 @@ export function resolvePromptTemplate(
   return template
     .replaceAll("{{vessel}}", ctx.vessel ?? fallback)
     .replaceAll("{{investigation}}", ctx.investigation ?? "the current investigation")
-    .replaceAll("{{port}}", ctx.port ?? "the current port");
+    .replaceAll("{{port}}", ctx.port ?? "the current port")
+    .replaceAll("{{entity}}", ctx.entityId ?? ctx.vessel ?? "the selected entity")
+    .replaceAll("{{entityLabel}}", ctx.entityLabel ?? ctx.vessel ?? "the selected entity");
 }
 
 /**
@@ -108,6 +115,9 @@ export function evaluateAvailability(
     return { available: false, reason: `Requires role: ${cmd.permissions.join(" / ")}.` };
   }
   for (const req of cmd.requiredContext) {
+    if (req === "entity" && !ctx.entityId && !ctx.vessel) {
+      return { available: false, reason: "No entity in context" };
+    }
     if (req === "vessel" && !ctx.vessel) {
       return { available: false, reason: "Select a vessel to enable this command." };
     }
@@ -339,7 +349,114 @@ export const COPILOT_COMMANDS: CopilotCommand[] = [
       "Include full intelligence report",
     ],
   },
+  // ── Entity Intelligence Commands (INT-01B) ───────────────────────────
+  {
+    commandId: "show_vessel_profile",
+    displayName: "Vessel Profile",
+    description: "Full 360° intelligence profile for the current vessel — identity, ownership, risk, and timeline.",
+    icon: Ship,
+    category: "intelligence",
+    promptTemplate: "Show me the full intelligence profile for {{vessel}}, including ownership, risk assessment, timeline of key events, and all related entities.",
+    requiredContext: ["vessel"],
+    missionType: "vessel_profile",
+    permissions: ["officer", "analyst", "director", "administrator"],
+    followUpGenerator: (ctx) => [
+      `Who owns ${ctx.vessel ?? "this vessel"}?`,
+      `What is the risk score for ${ctx.vessel ?? "this vessel"}?`,
+      `Show me the ownership history for ${ctx.vessel ?? "this vessel"}.`,
+    ],
+  },
+  {
+    commandId: "show_related_entities",
+    displayName: "Related Entities",
+    description: "Every entity connected to this vessel or entity in the intelligence graph.",
+    icon: Building2,
+    category: "intelligence",
+    promptTemplate: "Show me all entities related to {{entityLabel}} in the intelligence graph — companies, persons, ports, and vessels. Explain each relationship and its supporting evidence.",
+    requiredContext: [],
+    missionType: "entity_relationships",
+    permissions: ["officer", "analyst", "director", "administrator"],
+    followUpGenerator: (ctx) => [
+      "Are any related entities sanctioned?",
+      `Expand the ownership network for ${ctx.entityLabel ?? ctx.vessel ?? "this entity"}.`,
+      "Show me shared directors across related companies.",
+    ],
+  },
+  {
+    commandId: "show_investigation_history",
+    displayName: "Investigation History",
+    description: "All investigations linked to the current vessel or entity.",
+    icon: FileSearch,
+    category: "intelligence",
+    promptTemplate: "What investigations are associated with {{entityLabel}}? Summarise the findings, timeline, and current status of each investigation.",
+    requiredContext: [],
+    missionType: "investigation_history",
+    permissions: ["officer", "analyst", "director", "administrator"],
+    followUpGenerator: (ctx) => [
+      `What were the outcomes of prior investigations into ${ctx.entityLabel ?? ctx.vessel ?? "this entity"}?`,
+      "Are there any open investigations?",
+      "Link this entity to a new investigation.",
+    ],
+  },
+  {
+    commandId: "show_evidence",
+    displayName: "Show Evidence",
+    description: "All evidence records for the current entity, grouped by provider and grade.",
+    icon: FileText,
+    category: "intelligence",
+    promptTemplate: "Show me all evidence records for {{entityLabel}}, grouped by source provider and confidence grade. Identify any contradictions or information gaps.",
+    requiredContext: [],
+    missionType: "evidence_review",
+    permissions: ["officer", "analyst", "director", "administrator"],
+    followUpGenerator: (ctx) => [
+      `Which evidence sources are most authoritative for ${ctx.entityLabel ?? ctx.vessel ?? "this entity"}?`,
+      "Are there contradictions in the evidence?",
+      "What evidence is missing?",
+    ],
+  },
+  {
+    commandId: "show_confidence",
+    displayName: "Confidence Breakdown",
+    description: "Explain the confidence score — provider authority, freshness, cross-source agreement, identity certainty.",
+    icon: ShieldCheck,
+    category: "intelligence",
+    promptTemplate: "Explain the confidence score for {{entityLabel}}. Break down contributing factors: provider authority, evidence freshness, cross-source agreement, and identity certainty. What would improve confidence?",
+    requiredContext: [],
+    missionType: "confidence_review",
+    permissions: ["officer", "analyst", "director", "administrator"],
+    followUpGenerator: (ctx) => [
+      `How can we improve confidence for ${ctx.entityLabel ?? ctx.vessel ?? "this entity"}?`,
+      "Which sources would most increase confidence?",
+      "What is the confidence breakdown for related entities?",
+    ],
+  },
+  {
+    commandId: "show_relationship_graph",
+    displayName: "Relationship Graph",
+    description: "Full relationship graph — ownership chains, operational links, sanctions proximity.",
+    icon: MapPin,
+    category: "intelligence",
+    promptTemplate: "Generate a relationship graph for {{entityLabel}}. Show ownership structure, operational relationships, shared directors, sanctions proximity, and flag-state connections. Highlight any high-risk links.",
+    requiredContext: [],
+    missionType: "relationship_graph",
+    permissions: ["officer", "analyst", "director", "administrator"],
+    followUpGenerator: (ctx) => [
+      `Who are the key persons in the network around ${ctx.entityLabel ?? ctx.vessel ?? "this entity"}?`,
+      "Are any graph neighbours sanctioned?",
+      "Expand the graph two hops further.",
+    ],
+  },
 ];
+
+/** Entity intelligence command ids added in INT-01B. */
+export const ENTITY_INTELLIGENCE_COMMAND_IDS = [
+  "show_vessel_profile",
+  "show_related_entities",
+  "show_investigation_history",
+  "show_evidence",
+  "show_confidence",
+  "show_relationship_graph",
+] as const;
 
 /** Blocked command — never registered. Kept to keep bundle explicit. */
 export const _NEVER_REGISTERED_SENTINEL: LucideIcon = Ban;

@@ -82,8 +82,8 @@ export class IntelligenceObjectRegistry {
         ...base,
         objectKind: existing.objectKind,
         attributes: mergeAttributes(
-          existing.attributes as Record<string, unknown>,
-          obj.attributes as Partial<Record<string, unknown>>,
+          existing.attributes as unknown as Record<string, unknown>,
+          obj.attributes as unknown as Partial<Record<string, unknown>>,
           obj.grade,
           existing.grade,
         ),
