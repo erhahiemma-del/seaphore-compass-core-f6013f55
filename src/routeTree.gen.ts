@@ -27,6 +27,7 @@ import { Route as InvestigationsRouteImport } from './routes/investigations'
 import { Route as InvestigationsWorkflowRouteImport } from './routes/investigations-workflow'
 import { Route as KnowledgeGraphRouteImport } from './routes/knowledge-graph'
 import { Route as ManifestRouteImport } from './routes/manifest'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as MemoryRouteImport } from './routes/memory'
 import { Route as MissionsRouteImport } from './routes/missions'
 import { Route as NationalRiskRouteImport } from './routes/national-risk'
@@ -39,6 +40,8 @@ import { Route as RevenueRouteImport } from './routes/revenue'
 import { Route as RevenueLeakageRouteImport } from './routes/revenue-leakage'
 import { Route as ShareRouteImport } from './routes/share'
 import { Route as VesselRouteImport } from './routes/vessel'
+import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminCapabilityCatalogRouteImport } from './routes/admin.capability-catalog'
 import { Route as AdminConnectorsRouteImport } from './routes/admin.connectors'
@@ -62,6 +65,8 @@ import { Route as ShareIdRouteImport } from './routes/share.$id'
 import { Route as ShareQueueRouteImport } from './routes/share.queue'
 import { Route as WorkspaceIndexRouteImport } from './routes/workspace.index'
 import { Route as WorkspaceIdRouteImport } from './routes/workspace.$id'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
+import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as ApiCopilotQueryRouteImport } from './routes/api/copilot/query'
 import { Route as ApiCopilotTranscribeRouteImport } from './routes/api/copilot/transcribe'
 import { Route as ApiEntityIdRouteImport } from './routes/api/entity/$id'
@@ -163,6 +168,11 @@ const ManifestRoute = ManifestRouteImport.update({
   path: '/manifest',
   getParentRoute: () => rootRouteImport,
 } as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MemoryRoute = MemoryRouteImport.update({
   id: '/memory',
   path: '/memory',
@@ -223,6 +233,18 @@ const VesselRoute = VesselRouteImport.update({
   path: '/vessel',
   getParentRoute: () => rootRouteImport,
 } as any)
+const Char91DotmcpChar93ListToolsRoute =
+  Char91DotmcpChar93ListToolsRouteImport.update({
+    id: '/.mcp/list-tools',
+    path: '/.mcp/list-tools',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
@@ -338,6 +360,17 @@ const WorkspaceIdRoute = WorkspaceIdRouteImport.update({
   path: '/workspace/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Char91DotmcpChar93InvokeToolToolRoute =
+  Char91DotmcpChar93InvokeToolToolRouteImport.update({
+    id: '/.mcp/invoke-tool/$tool',
+    path: '/.mcp/invoke-tool/$tool',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiCopilotQueryRoute = ApiCopilotQueryRouteImport.update({
   id: '/api/copilot/query',
   path: '/api/copilot/query',
@@ -408,6 +441,7 @@ export interface FileRoutesByFullPath {
   '/investigations-workflow': typeof InvestigationsWorkflowRoute
   '/knowledge-graph': typeof KnowledgeGraphRoute
   '/manifest': typeof ManifestRoute
+  '/mcp': typeof McpRoute
   '/memory': typeof MemoryRoute
   '/missions': typeof MissionsRoute
   '/national-risk': typeof NationalRiskRoute
@@ -420,6 +454,8 @@ export interface FileRoutesByFullPath {
   '/revenue-leakage': typeof RevenueLeakageRoute
   '/share': typeof ShareRouteWithChildren
   '/vessel': typeof VesselRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/capability-catalog': typeof AdminCapabilityCatalogRoute
   '/admin/connectors': typeof AdminConnectorsRoute
   '/admin/copernicus-validate': typeof AdminCopernicusValidateRoute
@@ -443,6 +479,8 @@ export interface FileRoutesByFullPath {
   '/investigate/': typeof InvestigateIndexRoute
   '/share/': typeof ShareIndexRoute
   '/workspace/': typeof WorkspaceIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/copilot/query': typeof ApiCopilotQueryRoute
   '/api/copilot/transcribe': typeof ApiCopilotTranscribeRoute
   '/api/entity/$id': typeof ApiEntityIdRoute
@@ -470,6 +508,7 @@ export interface FileRoutesByTo {
   '/investigations-workflow': typeof InvestigationsWorkflowRoute
   '/knowledge-graph': typeof KnowledgeGraphRoute
   '/manifest': typeof ManifestRoute
+  '/mcp': typeof McpRoute
   '/memory': typeof MemoryRoute
   '/missions': typeof MissionsRoute
   '/national-risk': typeof NationalRiskRoute
@@ -481,6 +520,8 @@ export interface FileRoutesByTo {
   '/revenue': typeof RevenueRoute
   '/revenue-leakage': typeof RevenueLeakageRoute
   '/vessel': typeof VesselRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/capability-catalog': typeof AdminCapabilityCatalogRoute
   '/admin/connectors': typeof AdminConnectorsRoute
   '/admin/copernicus-validate': typeof AdminCopernicusValidateRoute
@@ -504,6 +545,8 @@ export interface FileRoutesByTo {
   '/investigate': typeof InvestigateIndexRoute
   '/share': typeof ShareIndexRoute
   '/workspace': typeof WorkspaceIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/copilot/query': typeof ApiCopilotQueryRoute
   '/api/copilot/transcribe': typeof ApiCopilotTranscribeRoute
   '/api/entity/$id': typeof ApiEntityIdRoute
@@ -535,6 +578,7 @@ export interface FileRoutesById {
   '/investigations-workflow': typeof InvestigationsWorkflowRoute
   '/knowledge-graph': typeof KnowledgeGraphRoute
   '/manifest': typeof ManifestRoute
+  '/mcp': typeof McpRoute
   '/memory': typeof MemoryRoute
   '/missions': typeof MissionsRoute
   '/national-risk': typeof NationalRiskRoute
@@ -547,6 +591,8 @@ export interface FileRoutesById {
   '/revenue-leakage': typeof RevenueLeakageRoute
   '/share': typeof ShareRouteWithChildren
   '/vessel': typeof VesselRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/capability-catalog': typeof AdminCapabilityCatalogRoute
   '/admin/connectors': typeof AdminConnectorsRoute
   '/admin/copernicus-validate': typeof AdminCopernicusValidateRoute
@@ -570,6 +616,8 @@ export interface FileRoutesById {
   '/investigate/': typeof InvestigateIndexRoute
   '/share/': typeof ShareIndexRoute
   '/workspace/': typeof WorkspaceIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/copilot/query': typeof ApiCopilotQueryRoute
   '/api/copilot/transcribe': typeof ApiCopilotTranscribeRoute
   '/api/entity/$id': typeof ApiEntityIdRoute
@@ -602,6 +650,7 @@ export interface FileRouteTypes {
     | '/investigations-workflow'
     | '/knowledge-graph'
     | '/manifest'
+    | '/mcp'
     | '/memory'
     | '/missions'
     | '/national-risk'
@@ -614,6 +663,8 @@ export interface FileRouteTypes {
     | '/revenue-leakage'
     | '/share'
     | '/vessel'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/admin/capability-catalog'
     | '/admin/connectors'
     | '/admin/copernicus-validate'
@@ -637,6 +688,8 @@ export interface FileRouteTypes {
     | '/investigate/'
     | '/share/'
     | '/workspace/'
+    | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
     | '/api/copilot/query'
     | '/api/copilot/transcribe'
     | '/api/entity/$id'
@@ -664,6 +717,7 @@ export interface FileRouteTypes {
     | '/investigations-workflow'
     | '/knowledge-graph'
     | '/manifest'
+    | '/mcp'
     | '/memory'
     | '/missions'
     | '/national-risk'
@@ -675,6 +729,8 @@ export interface FileRouteTypes {
     | '/revenue'
     | '/revenue-leakage'
     | '/vessel'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/admin/capability-catalog'
     | '/admin/connectors'
     | '/admin/copernicus-validate'
@@ -698,6 +754,8 @@ export interface FileRouteTypes {
     | '/investigate'
     | '/share'
     | '/workspace'
+    | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
     | '/api/copilot/query'
     | '/api/copilot/transcribe'
     | '/api/entity/$id'
@@ -728,6 +786,7 @@ export interface FileRouteTypes {
     | '/investigations-workflow'
     | '/knowledge-graph'
     | '/manifest'
+    | '/mcp'
     | '/memory'
     | '/missions'
     | '/national-risk'
@@ -740,6 +799,8 @@ export interface FileRouteTypes {
     | '/revenue-leakage'
     | '/share'
     | '/vessel'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/admin/capability-catalog'
     | '/admin/connectors'
     | '/admin/copernicus-validate'
@@ -763,6 +824,8 @@ export interface FileRouteTypes {
     | '/investigate/'
     | '/share/'
     | '/workspace/'
+    | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
     | '/api/copilot/query'
     | '/api/copilot/transcribe'
     | '/api/entity/$id'
@@ -794,6 +857,7 @@ export interface RootRouteChildren {
   InvestigationsWorkflowRoute: typeof InvestigationsWorkflowRoute
   KnowledgeGraphRoute: typeof KnowledgeGraphRoute
   ManifestRoute: typeof ManifestRoute
+  McpRoute: typeof McpRoute
   MemoryRoute: typeof MemoryRoute
   MissionsRoute: typeof MissionsRoute
   NationalRiskRoute: typeof NationalRiskRoute
@@ -806,6 +870,8 @@ export interface RootRouteChildren {
   RevenueLeakageRoute: typeof RevenueLeakageRoute
   ShareRoute: typeof ShareRouteWithChildren
   VesselRoute: typeof VesselRoute
+  Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   AdminCapabilityCatalogRoute: typeof AdminCapabilityCatalogRoute
   AdminConnectorsRoute: typeof AdminConnectorsRoute
   AdminCopernicusValidateRoute: typeof AdminCopernicusValidateRoute
@@ -818,6 +884,8 @@ export interface RootRouteChildren {
   WorkspaceIdRoute: typeof WorkspaceIdRoute
   AdminIndexRoute: typeof AdminIndexRoute
   WorkspaceIndexRoute: typeof WorkspaceIndexRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
+  Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiCopilotQueryRoute: typeof ApiCopilotQueryRoute
   ApiCopilotTranscribeRoute: typeof ApiCopilotTranscribeRoute
   ApiEntityIdRoute: typeof ApiEntityIdRoute
@@ -958,6 +1026,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManifestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/memory': {
       id: '/memory'
       path: '/memory'
@@ -1040,6 +1115,20 @@ declare module '@tanstack/react-router' {
       path: '/vessel'
       fullPath: '/vessel'
       preLoaderRoute: typeof VesselRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/list-tools': {
+      id: '/.mcp/list-tools'
+      path: '/.mcp/list-tools'
+      fullPath: '/.mcp/list-tools'
+      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -1203,6 +1292,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/copilot/query': {
       id: '/api/copilot/query'
       path: '/api/copilot/query'
@@ -1354,6 +1457,7 @@ const rootRouteChildren: RootRouteChildren = {
   InvestigationsWorkflowRoute: InvestigationsWorkflowRoute,
   KnowledgeGraphRoute: KnowledgeGraphRoute,
   ManifestRoute: ManifestRoute,
+  McpRoute: McpRoute,
   MemoryRoute: MemoryRoute,
   MissionsRoute: MissionsRoute,
   NationalRiskRoute: NationalRiskRoute,
@@ -1366,6 +1470,9 @@ const rootRouteChildren: RootRouteChildren = {
   RevenueLeakageRoute: RevenueLeakageRoute,
   ShareRoute: ShareRouteWithChildren,
   VesselRoute: VesselRoute,
+  Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
   AdminCapabilityCatalogRoute: AdminCapabilityCatalogRoute,
   AdminConnectorsRoute: AdminConnectorsRoute,
   AdminCopernicusValidateRoute: AdminCopernicusValidateRoute,
@@ -1378,6 +1485,8 @@ const rootRouteChildren: RootRouteChildren = {
   WorkspaceIdRoute: WorkspaceIdRoute,
   AdminIndexRoute: AdminIndexRoute,
   WorkspaceIndexRoute: WorkspaceIndexRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
+  Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiCopilotQueryRoute: ApiCopilotQueryRoute,
   ApiCopilotTranscribeRoute: ApiCopilotTranscribeRoute,
   ApiEntityIdRoute: ApiEntityIdRoute,
