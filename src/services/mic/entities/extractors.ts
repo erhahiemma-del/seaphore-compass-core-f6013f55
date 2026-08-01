@@ -349,9 +349,9 @@ export function extractInspectionAttributes(ev: NormalizedEvidence): Partial<Ins
     const result = str(fields.result ?? fields.outcome);
     if (result) {
       const r = result.toLowerCase();
-      out.result = (["passed", "deficiencies", "detained", "failed"].includes(r)
-        ? r
-        : null) as InspectionAttributes["result"];
+      out.result = (
+        ["passed", "deficiencies", "detained", "failed"].includes(r) ? r : null
+      ) as InspectionAttributes["result"];
     }
     const def = num(fields.deficiencies ?? fields.deficiencyCount);
     if (def !== null) out.deficiencies = def;

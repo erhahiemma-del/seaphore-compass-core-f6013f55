@@ -198,7 +198,9 @@ export function resolveEntities(
 
     // Name similarity pass for persons and companies (no hard identifier)
     if (kind === "person" || kind === "company") {
-      const fresh = registry.getByKind(kind as IntelligenceObject["objectKind"]).filter((o: IntelligenceObject) => !mergedIds.has(o.objectId));
+      const fresh = registry
+        .getByKind(kind as IntelligenceObject["objectKind"])
+        .filter((o: IntelligenceObject) => !mergedIds.has(o.objectId));
       for (let i = 0; i < fresh.length - 1; i++) {
         const a = fresh[i];
         for (let j = i + 1; j < fresh.length; j++) {
