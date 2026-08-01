@@ -23,6 +23,14 @@ import type {
 } from "./types";
 import { PIPELINE_STAGE_ORDER } from "./types";
 
+/** Shape of a `critical_findings` briefing-section entry consumed for lineage. */
+interface IpefCriticalFinding {
+  title?: string;
+  priority?: string;
+  grade?: string;
+  source?: string;
+}
+
 export interface IpefBuildInput {
   readonly correlationId: string; // == source_uip_id / uipId
   readonly uip: UnifiedIntelligencePackage;
