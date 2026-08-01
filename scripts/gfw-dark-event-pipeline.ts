@@ -51,10 +51,25 @@ const gapsResp = await gfw("/events", {
 line(
   `  GET /v3/events (public-global-gaps-events:latest)  → HTTP ${gapsResp.status}  ${gapsResp.ms}ms`,
 );
-const entries = (gapsResp.body as any).entries as any[];
+interface GfwGapEntry {
+  vessel?: { name?: string; ssvid?: string; flag?: string };
+  gap?: { intentionalDisabling?: boolean };
+  [key: string]: unknown;
+}
+interface GfwEventsBody {
+  entries?: GfwGapEntry[];
+  total?: number;
+}
+interface GfwVesselIdentityEntry {
+  vesselId?: string;
+  selfReportedInfo?: Array<{ shipname?: string; ssvid?: string; imo?: string }>;
+  [key: string]: unknown;
+}
+const gapsBody = gapsResp.body as GfwEventsBody;
+const entries = gapsBody.entries ?? [];
 // Pick the first entry that has a named vessel and intentionalDisabling flag.
 const picked = entries.find((e) => e.vessel?.name && e.gap?.intentionalDisabling) ?? entries[0];
-line(`  candidates=${entries.length}  total_in_window=${(gapsResp.body as any).total}`);
+line(`  candidates=${entries.length}  total_in_window=${gapsBody.total}`);
 line(
   `  selected vessel: ${picked.vessel.name}  (MMSI ${picked.vessel.ssvid}, flag ${picked.vessel.flag})`,
 );
@@ -66,7 +81,7 @@ const idResp = await gfw("/vessels/search", {
   limit: "5",
   offset: "0",
 });
-const idEntry = (idResp.body as any).entries?.[0];
+const idEntry = (idResp.body as { entries?: GfwVesselIdentityEntry[] }).entries?.[0];
 const sri = idEntry?.selfReportedInfo?.[0];
 line(`  HTTP ${idResp.status}  ${idResp.ms}ms`);
 line(`  vesselId : ${idEntry?.vesselId ?? "—"}`);
