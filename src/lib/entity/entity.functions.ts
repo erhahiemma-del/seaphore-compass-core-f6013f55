@@ -58,7 +58,10 @@ export const getEntityFn = createServerFn({ method: "GET" })
         revision: baseEntry?.revision ?? ioEntry?.revision ?? 1,
         // Typed attributes from Intelligence Object layer
         attributes: ioEntry
-          ? (JSON.parse(JSON.stringify(ioEntry.attributes)) as Record<string, string | number | boolean | null>)
+          ? (JSON.parse(JSON.stringify(ioEntry.attributes)) as Record<
+              string,
+              string | number | boolean | null
+            >)
           : {},
       },
       risk: risk

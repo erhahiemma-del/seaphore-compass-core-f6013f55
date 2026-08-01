@@ -318,15 +318,17 @@ function MIOPage() {
                   />
                 </div>
                 {(registrySnap.registries as MioRegistryExtras).intelligenceObjectsByKind &&
-                  Object.keys((registrySnap.registries as MioRegistryExtras).intelligenceObjectsByKind ?? {}).length >
-                    0 && (
+                  Object.keys(
+                    (registrySnap.registries as MioRegistryExtras).intelligenceObjectsByKind ?? {},
+                  ).length > 0 && (
                     <div className="rounded-lg border border-border bg-card p-4">
                       <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
                         Entity Activity by Kind
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         {Object.entries(
-                          (registrySnap.registries as MioRegistryExtras).intelligenceObjectsByKind ?? {},
+                          (registrySnap.registries as MioRegistryExtras)
+                            .intelligenceObjectsByKind ?? {},
                         ).map(([kind, count]) => (
                           <div
                             key={kind}

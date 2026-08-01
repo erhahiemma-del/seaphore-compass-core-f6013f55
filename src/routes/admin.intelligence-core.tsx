@@ -43,15 +43,7 @@ function Chip({ label }: { label: string }) {
   );
 }
 
-function KV({
-  k,
-  v,
-  mono,
-}: {
-  k: string;
-  v: ReactNode;
-  mono?: boolean;
-}) {
+function KV({ k, v, mono }: { k: string; v: ReactNode; mono?: boolean }) {
   return (
     <div className="flex items-center justify-between gap-3 py-1.5 border-b border-border last:border-b-0">
       <dt className="text-xs text-muted-foreground">{k}</dt>
