@@ -55,7 +55,7 @@ const KNOWN_PORTS = [
 ];
 
 /** Simple vessel-name heuristic: MV/MT/M/V tokens followed by CAPS name. */
-const VESSEL_REGEX = /\b(?:MV|MT|M\/V|M\/T)\s+([A-Z][A-Z0-9 .\-]{2,40}?)(?:\s{2,}|[.,;)]|$)/g;
+const VESSEL_REGEX = /\b(?:MV|MT|M\/V|M\/T)\s+([A-Z][A-Z0-9 .-]{2,40}?)(?:\s{2,}|[.,;)]|$)/g;
 
 const SEED: PiClubRaw[] = [
   {

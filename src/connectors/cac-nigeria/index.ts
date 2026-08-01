@@ -99,7 +99,7 @@ function parseCacHtml(html: string, query: string): CacRaw | null {
     const rcMatch = stripped.match(/RC\s*(?:Number|No\.?)?[:\s]*([0-9]{4,10})/i);
     const nameMatch =
       stripped.match(
-        /Company Name[:\s]+([A-Z0-9 &.,'\-]{3,120}?)(?:\s{2,}|RC|Status|Type|Incorporation)/i,
+        /Company Name[:\s]+([A-Z0-9 &.,'-]{3,120}?)(?:\s{2,}|RC|Status|Type|Incorporation)/i,
       ) ??
       stripped.match(
         new RegExp(`(${query.split(/\s+/).slice(0, 2).join("\\s+")}[A-Z0-9 &.,'\\-]{0,80})`, "i"),
@@ -110,7 +110,7 @@ function parseCacHtml(html: string, query: string): CacRaw | null {
       /(?:Date of Incorporation|Registration Date)[:\s]+(\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{2,4})/i,
     );
     const addrMatch = stripped.match(
-      /(?:Registered )?Address[:\s]+([A-Za-z0-9 ,.\-]{5,200}?)(?:\s{2,}|Directors|Status)/i,
+      /(?:Registered )?Address[:\s]+([A-Za-z0-9 ,.-]{5,200}?)(?:\s{2,}|Directors|Status)/i,
     );
     if (!rcMatch) return null;
     const rc = rcMatch[1];
