@@ -6,6 +6,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useState } from "react";
 import {
+  getMioRegistrySnapshotFn,
+  getMioExecutionHistoryFn,
+  getMioPipelineStatusFn,
+  getMioConnectorStatusFn,
+  getMioRiskDistributionFn,
+} from "@/lib/mio/mio.functions";
 
 /** Optional registry counters projected by newer MIC revisions. */
 interface MioRegistryExtras {
@@ -13,12 +19,6 @@ interface MioRegistryExtras {
   resolutionMerges?: number;
   intelligenceObjectsByKind?: Record<string, number>;
 }
-  getMioRegistrySnapshotFn,
-  getMioExecutionHistoryFn,
-  getMioPipelineStatusFn,
-  getMioConnectorStatusFn,
-  getMioRiskDistributionFn,
-} from "@/lib/mio/mio.functions";
 
 export const Route = createFileRoute("/admin/mio")({
   head: () => ({
