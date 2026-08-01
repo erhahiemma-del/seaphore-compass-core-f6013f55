@@ -92,7 +92,7 @@ describe("GOV-01 · Capability Catalog — integrity", () => {
       "environmental",
       "operational",
     ]) {
-      expect(domains.has(d as any)).toBe(true);
+      expect(domains.has(d as never)).toBe(true);
     }
   });
 });

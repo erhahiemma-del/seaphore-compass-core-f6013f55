@@ -19,7 +19,7 @@ function makeVessel(id: string, imoNumber: string | null, label = "MV TEST") {
     lastSeenAt: null,
     revision: 1,
     attributes: { imoNumber },
-  } as any;
+  } as never;
 }
 
 function makeCompany(id: string, regNum: string | null, label: string) {
@@ -36,7 +36,7 @@ function makeCompany(id: string, regNum: string | null, label: string) {
     lastSeenAt: null,
     revision: 1,
     attributes: { registrationNumber: regNum },
-  } as any;
+  } as never;
 }
 
 describe("Entity Resolution · IMO match", () => {

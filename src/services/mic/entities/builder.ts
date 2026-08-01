@@ -183,5 +183,5 @@ function bestGrade(
 ): "VERIFIED" | "CORROBORATED" | "OBSERVED" | "REPORTED" | "INFERRED" | "UNKNOWN" {
   if (!grades.length) return "UNKNOWN";
   const best = Math.max(...grades.map((g) => GRADE_RANK[g] ?? 0));
-  return GRADE_BY_RANK[best] as any;
+  return GRADE_BY_RANK[best] as EvidenceGrade;
 }

@@ -436,10 +436,10 @@ describe("INT-01B · IntelligenceObjectRegistry", () => {
       lastSeenAt: "2026-07-01T00:00:00Z",
       revision: 1,
       attributes: { imoNumber: "9438291", flag: "NG" },
-    } as any);
+    } as never);
     const obj = reg.get(VESSEL_ID);
     expect(obj?.objectKind).toBe("vessel");
-    expect((obj?.attributes as any).imoNumber).toBe("9438291");
+    expect((obj?.attributes as never).imoNumber).toBe("9438291");
   });
 
   it("grade-wins: higher grade overwrites a populated field", () => {
@@ -456,7 +456,7 @@ describe("INT-01B · IntelligenceObjectRegistry", () => {
       lastSeenAt: null,
       revision: 1,
       attributes: { imoNumber: "9438291", vesselType: "Tanker" },
-    } as any);
+    } as never);
     reg.upsert({
       objectId: VESSEL_ID,
       objectKind: "vessel",
@@ -470,9 +470,9 @@ describe("INT-01B · IntelligenceObjectRegistry", () => {
       lastSeenAt: null,
       revision: 1,
       attributes: { imoNumber: "9438291", vesselType: "Crude Oil Tanker" },
-    } as any);
+    } as never);
     const obj = reg.get(VESSEL_ID);
-    expect((obj?.attributes as any).vesselType).toBe("Crude Oil Tanker");
+    expect((obj?.attributes as never).vesselType).toBe("Crude Oil Tanker");
     expect(obj?.revision).toBe(2);
   });
 
@@ -490,7 +490,7 @@ describe("INT-01B · IntelligenceObjectRegistry", () => {
       lastSeenAt: null,
       revision: 1,
       attributes: { imoNumber: "9438291" },
-    } as any);
+    } as never);
     reg.upsert({
       objectId: VESSEL_ID,
       objectKind: "vessel",
@@ -504,8 +504,8 @@ describe("INT-01B · IntelligenceObjectRegistry", () => {
       lastSeenAt: null,
       revision: 1,
       attributes: { imoNumber: null }, // null — must not overwrite
-    } as any);
-    expect((reg.get(VESSEL_ID)?.attributes as any).imoNumber).toBe("9438291");
+    } as never);
+    expect((reg.get(VESSEL_ID)?.attributes as never).imoNumber).toBe("9438291");
   });
 
   it("getByKind returns typed objects for a specific kind", () => {
@@ -522,7 +522,7 @@ describe("INT-01B · IntelligenceObjectRegistry", () => {
       lastSeenAt: null,
       revision: 1,
       attributes: {},
-    } as any);
+    } as never);
     reg.upsert({
       objectId: "company:oc:1",
       objectKind: "company",
@@ -536,7 +536,7 @@ describe("INT-01B · IntelligenceObjectRegistry", () => {
       lastSeenAt: null,
       revision: 1,
       attributes: {},
-    } as any);
+    } as never);
     expect(reg.getByKind("vessel")).toHaveLength(1);
     expect(reg.getByKind("company")).toHaveLength(1);
     expect(reg.getByKind("port")).toHaveLength(0);
@@ -556,7 +556,7 @@ describe("INT-01B · IntelligenceObjectRegistry", () => {
       lastSeenAt: null,
       revision: 1,
       attributes: {},
-    } as any);
+    } as never);
     const s = reg.stats();
     expect(s.vessel).toBe(1);
   });
@@ -583,9 +583,9 @@ describe("INT-01B · MicContainer integration", () => {
     expect(mic.intelligenceObjects.size).toBeGreaterThan(0);
     const obj = mic.intelligenceObjects.get(VESSEL_ID);
     expect(obj?.objectKind).toBe("vessel");
-    expect((obj?.attributes as any).imoNumber).toBe("9438291");
-    expect((obj?.attributes as any).flag).toBe("NG");
-    expect((obj?.attributes as any).vesselType).toBe("Tanker");
+    expect((obj?.attributes as never).imoNumber).toBe("9438291");
+    expect((obj?.attributes as never).flag).toBe("NG");
+    expect((obj?.attributes as never).vesselType).toBe("Tanker");
   });
 
   it("stats() includes intelligenceObjects count and byKind breakdown", () => {
@@ -669,7 +669,7 @@ describe("INT-01B · Discriminated union narrowing", () => {
       lastSeenAt: null,
       revision: 1,
       attributes: { imoNumber: "9438291", flag: "NG" },
-    } as any);
+    } as never);
     const obj = reg.get(VESSEL_ID)!;
     // TypeScript discriminated union — compile-time narrowing verified by type checker
     if (obj.objectKind === "vessel") {
@@ -695,7 +695,7 @@ describe("INT-01B · Discriminated union narrowing", () => {
       lastSeenAt: null,
       revision: 1,
       attributes: { sanctionListName: "OFAC SDN", status: "active", programmeName: "RUSSIA" },
-    } as any);
+    } as never);
     const obj = reg.get("sanction:ofac:12345")!;
     if (obj.objectKind === "sanction") {
       expect(obj.attributes.sanctionListName).toBe("OFAC SDN");

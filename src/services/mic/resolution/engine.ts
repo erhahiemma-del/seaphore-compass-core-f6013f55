@@ -122,7 +122,7 @@ export function resolveEntities(
   const mergedIds = new Set<string>(); // ids already absorbed — skip in outer loop
 
   for (const kind of kinds) {
-    const objects = registry.getByKind(kind as any);
+    const objects = registry.getByKind(kind as IntelligenceObject["objectKind"]);
     if (objects.length < 2) continue;
 
     // Build identifier index: value → objectId[]
@@ -134,11 +134,11 @@ export function resolveEntities(
       // Exact identifier signals
       const extractors = extractsForKind(kind);
       for (const extractor of extractors) {
-        const val = (extractor as any)(obj);
+        const val = (extractor as (o: IntelligenceObject) => string | null)(obj);
         if (!val) continue;
         // Key format: `${kind}:${extractorName}:${value}`
         // We derive the field name from the extractor function name.
-        const fieldName = (extractor as any).name ?? "id";
+        const fieldName = (extractor as { name?: string }).name ?? "id";
         const key = `${kind}:${fieldName}:${val}`;
         const existing = identifierIndex.get(key) ?? [];
         existing.push(obj.objectId);
@@ -198,7 +198,7 @@ export function resolveEntities(
 
     // Name similarity pass for persons and companies (no hard identifier)
     if (kind === "person" || kind === "company") {
-      const fresh = registry.getByKind(kind as any).filter((o: any) => !mergedIds.has(o.objectId));
+      const fresh = registry.getByKind(kind as IntelligenceObject["objectKind"]).filter((o: IntelligenceObject) => !mergedIds.has(o.objectId));
       for (let i = 0; i < fresh.length - 1; i++) {
         const a = fresh[i];
         for (let j = i + 1; j < fresh.length; j++) {

@@ -341,7 +341,7 @@ export function extractInspectionAttributes(ev: NormalizedEvidence): Partial<Ins
     if (type)
       out.inspectionType = (
         ["PSC", "flag", "class", "internal", "ISM"].includes(type as string) ? type : null
-      ) as any;
+      ) as VesselAttributes["status"];
     const auth = str(fields.authority ?? fields.pscAuthority);
     if (auth) out.authority = auth;
     const date = str(fields.inspectionDate ?? fields.date);
@@ -349,7 +349,9 @@ export function extractInspectionAttributes(ev: NormalizedEvidence): Partial<Ins
     const result = str(fields.result ?? fields.outcome);
     if (result) {
       const r = result.toLowerCase();
-      out.result = (["passed", "deficiencies", "detained", "failed"].includes(r) ? r : null) as any;
+      out.result = (["passed", "deficiencies", "detained", "failed"].includes(r)
+        ? r
+        : null) as InspectionAttributes["result"];
     }
     const def = num(fields.deficiencies ?? fields.deficiencyCount);
     if (def !== null) out.deficiencies = def;

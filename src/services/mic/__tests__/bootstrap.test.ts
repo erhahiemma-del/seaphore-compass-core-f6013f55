@@ -170,8 +170,8 @@ describe("INT-01A.1 · Bootstrap — core behaviour", () => {
   });
 
   it("does NOT throw even when passed a malformed UIP", () => {
-    expect(() => processMicBootstrap({} as any, null)).not.toThrow();
-    const result = processMicBootstrap({} as any, null);
+    expect(() => processMicBootstrap({} as never, null)).not.toThrow();
+    const result = processMicBootstrap({} as never, null);
     expect(result.outcome).toBe("failed");
     expect(result.telemetry.errors.length).toBeGreaterThan(0);
   });
@@ -181,18 +181,18 @@ describe("INT-01A.1 · Bootstrap — core behaviour", () => {
 
 describe("INT-01A.1 · Failure isolation", () => {
   it("outcome is 'failed' when process() throws, result is null", () => {
-    const result = processMicBootstrap(null as any, null);
+    const result = processMicBootstrap(null as never, null);
     expect(result.outcome).toBe("failed");
     expect(result.result).toBeNull();
   });
 
   it("errors array is populated on failure", () => {
-    const result = processMicBootstrap(undefined as any, null);
+    const result = processMicBootstrap(undefined as never, null);
     expect(result.telemetry.errors.length).toBeGreaterThan(0);
   });
 
   it("executionId is always returned — even on failure", () => {
-    const result = processMicBootstrap(null as any, null);
+    const result = processMicBootstrap(null as never, null);
     expect(result.executionId).toMatch(/^mic_exec_/);
   });
 
@@ -200,7 +200,7 @@ describe("INT-01A.1 · Failure isolation", () => {
     const capture = new CapturingSink();
     // The globalMicSink is process-wide — we can't intercept it without DI.
     // Instead verify the returned telemetry object is structurally complete.
-    const result = processMicBootstrap(null as any, null);
+    const result = processMicBootstrap(null as never, null);
     expect(result.telemetry.outcome).toBe("failed");
     expect(result.telemetry.timestamp).toMatch(/^\d{4}-/);
   });
@@ -358,7 +358,7 @@ describe("INT-01A.1 · Telemetry sinks", () => {
     };
     const good = new CapturingSink();
     const composite = new CompositeSink(bad, good);
-    expect(() => composite.emit({} as any)).not.toThrow();
+    expect(() => composite.emit({} as never)).not.toThrow();
     // good sink still received the emission despite bad sink throwing
     expect(good.executions).toHaveLength(1);
   });
