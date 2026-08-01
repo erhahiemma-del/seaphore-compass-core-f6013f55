@@ -472,7 +472,9 @@ describe("INT-01B · IntelligenceObjectRegistry", () => {
       attributes: { imoNumber: "9438291", vesselType: "Crude Oil Tanker" },
     } as never);
     const obj = reg.get(VESSEL_ID);
-    expect((obj?.attributes as unknown as Record<string, unknown>).vesselType).toBe("Crude Oil Tanker");
+    expect((obj?.attributes as unknown as Record<string, unknown>).vesselType).toBe(
+      "Crude Oil Tanker",
+    );
     expect(obj?.revision).toBe(2);
   });
 
@@ -505,7 +507,9 @@ describe("INT-01B · IntelligenceObjectRegistry", () => {
       revision: 1,
       attributes: { imoNumber: null }, // null — must not overwrite
     } as never);
-    expect((reg.get(VESSEL_ID)?.attributes as unknown as Record<string, unknown>).imoNumber).toBe("9438291");
+    expect((reg.get(VESSEL_ID)?.attributes as unknown as Record<string, unknown>).imoNumber).toBe(
+      "9438291",
+    );
   });
 
   it("getByKind returns typed objects for a specific kind", () => {
