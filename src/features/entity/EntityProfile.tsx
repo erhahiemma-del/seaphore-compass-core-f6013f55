@@ -45,8 +45,78 @@ type Tab =
   | "provenance"
   | "graph"
   | "copilot";
-type EntityData = Awaited<ReturnType<typeof getEntityFn>>;
-type EntityFound = Extract<EntityData, { found: true }>;
+interface EntityRiskIndicator {
+  kind: string;
+  label: string;
+  points: number;
+  rationale: string;
+  confidence: string;
+}
+
+interface EntityRisk {
+  score: number;
+  band: string;
+  confidence: string;
+  indicators: EntityRiskIndicator[];
+  narrative: string;
+  computedAt: string;
+}
+
+interface EntityConfidenceComponent {
+  factor: string;
+  contribution: number;
+  explanation: string;
+}
+
+interface EntityEvidenceRecord {
+  evidenceId: string;
+  connectorId: string;
+  sourceName: string;
+  grade: string;
+  kind: string;
+  observedAt: string;
+}
+
+interface EntityIdentity {
+  canonicalId: string;
+  label: string;
+  kind: string;
+  aliases: string[];
+  confidence: string;
+  confidenceScore: number;
+  confidenceComponents: EntityConfidenceComponent[];
+  grade: string;
+  citations: unknown[];
+  sourceUipIds: string[];
+  firstSeenAt: string | null;
+  lastSeenAt: string | null;
+  revision: number;
+  attributes: Record<string, unknown>;
+}
+
+/** Shape returned by `getEntityFn` when the entity exists in the MIC. */
+interface EntityFound {
+  found: true;
+  id: string;
+  entity: EntityIdentity;
+  risk: EntityRisk | null;
+  evidenceSummary: {
+    total: number;
+    byConnector: Record<string, number>;
+    byGrade: Record<string, number>;
+    byKind: Record<string, number>;
+    records: EntityEvidenceRecord[];
+  };
+  timestamp: string;
+}
+
+interface EntityNotFound {
+  found: false;
+  id: string;
+  timestamp: string;
+}
+
+type EntityData = EntityFound | EntityNotFound;
 type GraphData = Awaited<ReturnType<typeof getEntityRelationshipsFn>>;
 type TimelineData = Awaited<ReturnType<typeof getEntityTimelineFn>>;
 
@@ -540,7 +610,7 @@ export function EntityProfile() {
     setError(null);
     try {
       const [ed, gd, td, ipef] = await Promise.all([
-        fetchEntity({ data: { id } }),
+        fetchEntity({ data: { id } }) as Promise<EntityData>,
         fetchGraph({ data: { id, depth: 2 } }),
         fetchTimeline({ data: { id } }),
         fetchIpef({}).catch(() => null),
