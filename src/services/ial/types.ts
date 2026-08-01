@@ -67,6 +67,8 @@ export interface NormalizedEvidence {
     | "sanctions"
     | "compliance"
     | "port-call"
+    | "inspection"
+    | "incident"
     | "weather"
     | "other";
 

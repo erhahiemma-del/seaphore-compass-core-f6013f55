@@ -56,32 +56,32 @@ function getStr(attrs: Fields, ...keys: string[]): string | null {
 
 function vesselImo(obj: IntelligenceObject): string | null {
   if (obj.objectKind !== "vessel") return null;
-  return getStr(obj.attributes as Fields, "imoNumber", "imo");
+  return getStr(obj.attributes as unknown as Fields, "imoNumber", "imo");
 }
 
 function vesselMmsi(obj: IntelligenceObject): string | null {
   if (obj.objectKind !== "vessel") return null;
-  return getStr(obj.attributes as Fields, "mmsi");
+  return getStr(obj.attributes as unknown as Fields, "mmsi");
 }
 
 function containerNum(obj: IntelligenceObject): string | null {
   if (obj.objectKind !== "container") return null;
-  return getStr(obj.attributes as Fields, "containerNumber");
+  return getStr(obj.attributes as unknown as Fields, "containerNumber");
 }
 
 function bolRef(obj: IntelligenceObject): string | null {
   if (obj.objectKind !== "bill-of-lading") return null;
-  return getStr(obj.attributes as Fields, "bolNumber", "documentNumber");
+  return getStr(obj.attributes as unknown as Fields, "bolNumber", "documentNumber");
 }
 
 function companyReg(obj: IntelligenceObject): string | null {
   if (obj.objectKind !== "company") return null;
-  return getStr(obj.attributes as Fields, "registrationNumber", "cacNumber");
+  return getStr(obj.attributes as unknown as Fields, "registrationNumber", "cacNumber");
 }
 
 function companyLei(obj: IntelligenceObject): string | null {
   if (obj.objectKind !== "company") return null;
-  return getStr(obj.attributes as Fields, "leiCode", "lei");
+  return getStr(obj.attributes as unknown as Fields, "leiCode", "lei");
 }
 
 function entityLabel(obj: IntelligenceObject): string {
