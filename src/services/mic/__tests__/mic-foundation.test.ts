@@ -80,7 +80,7 @@ function makeCluster(overrides: Partial<IdentityCluster> = {}): IdentityCluster 
       reasons: ["IMO match", "MMSI match"],
     },
     evidenceIds: ["ev_001"],
-  };
+  } as unknown as IdentityCluster;
 }
 
 function makeUip(evidenceList: NormalizedEvidence[]): UnifiedIntelligencePackage {
