@@ -12,6 +12,7 @@
  * getEntityResolutionLogFn — merge decisions from resolution engine
  */
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { mic } from "@/services/mic/container";
 import type { IntelligenceObjectKind } from "@/services/mic/entities/types";
@@ -20,8 +21,9 @@ import type { IntelligenceObjectKind } from "@/services/mic/entities/types";
 
 export const getEntityFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async (ctx: any) => {
-    const { id } = ctx.data as { id: string };
+  .inputValidator((data) => z.object({ id: z.string() }).parse(data))
+  .handler(async ({ data }) => {
+    const { id } = data;
 
     // Resolve alias to canonical
     const canonicalId = mic.entities.resolveAlias(id) ?? id;
@@ -116,12 +118,13 @@ export const getEntityFn = createServerFn({ method: "GET" })
 
 export const searchEntitiesFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async (ctx: any) => {
-    const {
-      kind,
-      query,
-      limit = 50,
-    } = (ctx.data ?? {}) as { kind?: string; query?: string; limit?: number };
+  .inputValidator((data) =>
+    z
+      .object({ kind: z.string().optional(), query: z.string().optional(), limit: z.number().optional() })
+      .parse(data ?? {}),
+  )
+  .handler(async ({ data }) => {
+    const { kind, query, limit = 50 } = data;
 
     const allEntities = kind
       ? mic.intelligenceObjects.getByKind(kind as IntelligenceObjectKind)
@@ -159,8 +162,11 @@ export const searchEntitiesFn = createServerFn({ method: "GET" })
 
 export const getEntityRelationshipsFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async (ctx: any) => {
-    const { id, depth = 2 } = (ctx.data ?? {}) as { id: string; depth?: number };
+  .inputValidator((data) =>
+    z.object({ id: z.string(), depth: z.number().optional() }).parse(data ?? {}),
+  )
+  .handler(async ({ data }) => {
+    const { id, depth = 2 } = data;
     const canonicalId = mic.entities.resolveAlias(id) ?? id;
 
     // BFS up to `depth` hops through the MKG
@@ -204,8 +210,8 @@ export const getEntityRelationshipsFn = createServerFn({ method: "GET" })
 
 export const getEntityTimelineFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async (ctx: any) => {
-    const data = ctx.data as { id: string };
+  .inputValidator((data) => z.object({ id: z.string() }).parse(data))
+  .handler(async ({ data }) => {
     const canonicalId = mic.entities.resolveAlias(data.id) ?? data.id;
     const events = mic.timeline.getForEntity(canonicalId);
     return {
