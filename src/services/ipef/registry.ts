@@ -32,7 +32,12 @@ class IpefRegistry {
 
   /** Find by correlationId (== source_uip_id). */
   getByCorrelationId(correlationId: string): IpefRecord | null {
-    return this._records.findLast((r) => r.correlationId === correlationId) ?? null;
+    return (
+      this._records
+        .slice()
+        .reverse()
+        .find((r) => r.correlationId === correlationId) ?? null
+    );
   }
 
   get latest(): IpefRecord | null {

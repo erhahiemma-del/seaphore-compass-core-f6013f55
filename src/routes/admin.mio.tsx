@@ -318,7 +318,7 @@ function MIOPage() {
                   />
                 </div>
                 {(registrySnap.registries as MioRegistryExtras).intelligenceObjectsByKind &&
-                  Object.keys((registrySnap.registries as MioRegistryExtras).intelligenceObjectsByKind).length >
+                  Object.keys((registrySnap.registries as MioRegistryExtras).intelligenceObjectsByKind ?? {}).length >
                     0 && (
                     <div className="rounded-lg border border-border bg-card p-4">
                       <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">

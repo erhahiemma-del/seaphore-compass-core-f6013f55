@@ -150,7 +150,7 @@ function CapabilityCatalogPage() {
           filtered={filtered}
           domain={domain}
           status={status}
-          selected={selectedCap}
+          selected={selectedCap ?? null}
           onDomainChange={setDomain}
           onStatusChange={setStatus}
           onSelect={(id) => setSelected(selected === id ? null : id)}
