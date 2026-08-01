@@ -86,7 +86,7 @@ function OfficerBadge() {
   if (!session) {
     return (
       <Button asChild size="sm" variant="default">
-        <Link to="/auth" search={{ redirect: undefined }}>
+        <Link to="/auth" search={{} as { redirect: string }}>
           <LogIn className="mr-1.5 h-3.5 w-3.5" />
           Sign in
         </Link>

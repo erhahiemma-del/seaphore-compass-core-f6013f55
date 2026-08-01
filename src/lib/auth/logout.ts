@@ -32,5 +32,5 @@ export async function performLogout(opts: {
   // the visitor as authenticated the moment we land on /auth.
   useDevModeStore.getState().clearBypass();
   await supabase.auth.signOut();
-  opts.router.navigate({ to: "/auth", replace: true });
+  opts.router.navigate({ to: "/auth", replace: true, search: {} as { redirect: string } });
 }
