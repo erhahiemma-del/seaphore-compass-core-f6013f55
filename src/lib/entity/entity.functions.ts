@@ -57,7 +57,9 @@ export const getEntityFn = createServerFn({ method: "GET" })
         lastSeenAt: ioEntry?.lastSeenAt ?? null,
         revision: baseEntry?.revision ?? ioEntry?.revision ?? 1,
         // Typed attributes from Intelligence Object layer
-        attributes: ioEntry ? (ioEntry.attributes as unknown as Record<string, unknown>) : {},
+        attributes: ioEntry
+          ? (JSON.parse(JSON.stringify(ioEntry.attributes)) as Record<string, string | number | boolean | null>)
+          : {},
       },
       risk: risk
         ? {
@@ -174,15 +176,13 @@ export const getEntityRelationshipsFn = createServerFn({ method: "GET" })
     const canonicalId = mic.entities.resolveAlias(id) ?? id;
 
     // BFS up to `depth` hops through the MKG
-    const paths = mic.mkg.traverse(canonicalId, { maxHops: depth, maxResults: 200 });
+    const paths = mic.mkg.traverse(canonicalId, { maxDepth: depth });
     const nodeIds = new Set<string>([canonicalId]);
     const edgeIds = new Set<string>();
 
     for (const path of paths) {
-      for (const step of path.steps) {
-        nodeIds.add(step.toId);
-        edgeIds.add(step.edge.id);
-      }
+      for (const nodeId of path.nodeIds) nodeIds.add(nodeId);
+      for (const edgeId of path.edgeIds) edgeIds.add(edgeId);
     }
 
     const snapshot = mic.mkg.toSnapshot();
