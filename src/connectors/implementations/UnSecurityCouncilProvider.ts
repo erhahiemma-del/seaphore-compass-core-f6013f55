@@ -175,9 +175,7 @@ export class UnSecurityCouncilProvider extends BaseEvidenceProvider {
       committee: designation.committee ?? null,
       startDate: designation.listedOn ?? null,
       aliases: designation.aliases?.length ? designation.aliases.join(" | ") : null,
-      countries: designation.nationalities?.length
-        ? designation.nationalities.join(" | ")
-        : null,
+      countries: designation.nationalities?.length ? designation.nationalities.join(" | ") : null,
       remarks: designation.comments ?? null,
       evidenceUrl: "https://www.un.org/securitycouncil/content/un-sc-consolidated-list",
       rawHash: stableHash(designation),

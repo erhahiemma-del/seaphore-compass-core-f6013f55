@@ -15,10 +15,7 @@
  * grades, workspace REJECTED bucket, mission gaps).
  */
 import { useMemo } from "react";
-import type {
-  ConfidenceLevel,
-  ConfidenceTier,
-} from "@/components/intelligence/ConfidenceChip";
+import type { ConfidenceLevel, ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
 import type {
   DiscardedEvidence,
   LineageEvidence,
@@ -76,12 +73,7 @@ const TIER_RANK: Record<ConfidenceTier, number> = {
   unconfirmed: 0,
 };
 
-const RANK_TIER: ConfidenceTier[] = [
-  "unconfirmed",
-  "inferred",
-  "observed",
-  "verified",
-];
+const RANK_TIER: ConfidenceTier[] = ["unconfirmed", "inferred", "observed", "verified"];
 
 function tierFromBadge(badge?: string): ConfidenceTier | null {
   if (!badge) return null;
@@ -137,9 +129,7 @@ function downgradeIfSparse(
 }
 
 function corroboratedGradeCount(supporting: LineageEvidence[]): number {
-  return supporting.filter(
-    (e) => e.grade === "VERIFIED" || e.grade === "CORROBORATED",
-  ).length;
+  return supporting.filter((e) => e.grade === "VERIFIED" || e.grade === "CORROBORATED").length;
 }
 
 function mostRecent(supporting: LineageEvidence[]): string | null {
@@ -172,15 +162,8 @@ function relativeLabel(iso: string | null): string | null {
 
 /* ─────────────── hook ─────────────── */
 
-export function useConfidenceExplainer(
-  input: ConfidenceExplainerInput,
-): ConfidenceExplanation {
-  const {
-    confidenceBadge,
-    supporting = [],
-    discarded = [],
-    compositeConfidence,
-  } = input;
+export function useConfidenceExplainer(input: ConfidenceExplainerInput): ConfidenceExplanation {
+  const { confidenceBadge, supporting = [], discarded = [], compositeConfidence } = input;
 
   return useMemo<ConfidenceExplanation>(() => {
     const supportingCount = supporting.length;

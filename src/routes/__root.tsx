@@ -135,7 +135,6 @@ function RootComponent() {
     showStaleChunkNoticeIfAny();
   }, []);
 
-
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") {
@@ -192,7 +191,6 @@ function DevModeBadgeLazy() {
   }, []);
   return Comp ? <Comp /> : null;
 }
-
 
 function DevToolbarLazy() {
   const [Comp, setComp] = useState<React.ComponentType | null>(null);

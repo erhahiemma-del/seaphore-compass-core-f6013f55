@@ -67,9 +67,7 @@ function buildUserPrompt(req: ReasoningRequest, topK: number): string {
     workspaceOverlay(req.workspace),
     "",
     `Officer query: ${req.query}`,
-    req.context?.entityFocus?.length
-      ? `Entity focus: ${req.context.entityFocus.join(", ")}`
-      : "",
+    req.context?.entityFocus?.length ? `Entity focus: ${req.context.entityFocus.join(", ")}` : "",
     "",
     "Ranked evidence bundle follows. Reason ONLY over these items.",
     "Return a single JSON object matching the Response Contract. No markdown, no prose.",
@@ -160,7 +158,13 @@ export async function reason(
   for (let i = 0; i < chain.length; i++) {
     const client = chain[i];
     try {
-      const { parsed, retries } = await runOnce(client, SYSTEM_PROMPT, user, opts.signal, maxRetries);
+      const { parsed, retries } = await runOnce(
+        client,
+        SYSTEM_PROMPT,
+        user,
+        opts.signal,
+        maxRetries,
+      );
       const anchor = anchorFromEvidence(request.evidence.ranked);
       const propagation = propagate(anchor);
 
@@ -174,10 +178,7 @@ export async function reason(
       const band = bandOf(boundedAssessment);
       const counters = enforceCounterHypotheses(parsed, boundedAssessment, request.evidence);
       const citations = Array.from(
-        new Set([
-          ...(parsed.citations ?? []),
-          ...parsed.whyChain.flatMap((s) => s.evidenceIds),
-        ]),
+        new Set([...(parsed.citations ?? []), ...parsed.whyChain.flatMap((s) => s.evidenceIds)]),
       );
 
       const response: ReasoningResponse = {

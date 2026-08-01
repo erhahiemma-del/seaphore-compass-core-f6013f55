@@ -13,11 +13,25 @@ import {
 } from "@/services/workflows";
 import { canTransition, isTerminal } from "@/services/workflows/state-machine";
 
-const OFFICER: OfficerContext = { officerId: "u_officer", officerName: "K. Bello", role: "officer" };
-const DIRECTOR: OfficerContext = { officerId: "u_director", officerName: "A. Danjuma", role: "director" };
-const ANALYST: OfficerContext = { officerId: "u_analyst", officerName: "M. Adeyemi", role: "analyst" };
+const OFFICER: OfficerContext = {
+  officerId: "u_officer",
+  officerName: "K. Bello",
+  role: "officer",
+};
+const DIRECTOR: OfficerContext = {
+  officerId: "u_director",
+  officerName: "A. Danjuma",
+  role: "director",
+};
+const ANALYST: OfficerContext = {
+  officerId: "u_analyst",
+  officerName: "M. Adeyemi",
+  role: "analyst",
+};
 
-function engine(overrides: Partial<Parameters<typeof WorkflowEngine.prototype.constructor>[0]> = {}) {
+function engine(
+  overrides: Partial<Parameters<typeof WorkflowEngine.prototype.constructor>[0]> = {},
+) {
   return new WorkflowEngine(overrides as ConstructorParameters<typeof WorkflowEngine>[0]);
 }
 
@@ -49,7 +63,13 @@ describe("Sprint 9 · policy engine (Layer 2.14)", () => {
     expect(defaultPolicyEngine.can(ANALYST, "open_investigation", {}).allowed).toBe(false);
   });
   it("permits directors on every workflow", () => {
-    const wf: WorkflowId[] = ["open_investigation", "notify_customs", "request_manifest", "assign_officer", "freeze_clearance"];
+    const wf: WorkflowId[] = [
+      "open_investigation",
+      "notify_customs",
+      "request_manifest",
+      "assign_officer",
+      "freeze_clearance",
+    ];
     for (const w of wf) expect(defaultPolicyEngine.can(DIRECTOR, w, {}).allowed).toBe(true);
   });
 });
@@ -72,7 +92,10 @@ describe("Sprint 9 · end-to-end workflows (mocked adapters)", () => {
     const r = await wf.trigger({
       workflow: "notify_customs",
       officer: OFFICER,
-      input: { subject: "Manifest discrepancy", body: "Container count mismatch on MAN-2026-0714-APP" },
+      input: {
+        subject: "Manifest discrepancy",
+        body: "Container count mismatch on MAN-2026-0714-APP",
+      },
     });
     expect(r.status).toBe("completed");
     expect(r.result?.messageId).toMatch(/^MSG-/);
@@ -144,7 +167,9 @@ describe("Sprint 9 · failure, retry, and audit", () => {
   });
 
   it("surfaces error and supports officer-initiated retry after budget exhaustion", async () => {
-    const adapters = createMockAdapters({ openCase: { failNext: 2, failMessage: "case-mgmt 500" } });
+    const adapters = createMockAdapters({
+      openCase: { failNext: 2, failMessage: "case-mgmt 500" },
+    });
     const wf = engine({ adapters });
     const failed = await wf.trigger({
       workflow: "open_investigation",
@@ -162,8 +187,16 @@ describe("Sprint 9 · failure, retry, and audit", () => {
   it("records history under the officer profile", async () => {
     const wf = engine();
     await wf.trigger({ workflow: "open_investigation", officer: OFFICER, input: { title: "One" } });
-    await wf.trigger({ workflow: "notify_customs", officer: OFFICER, input: { subject: "S", body: "B" } });
-    await wf.trigger({ workflow: "freeze_clearance", officer: DIRECTOR, input: { vesselId: "V", reason: "R" } });
+    await wf.trigger({
+      workflow: "notify_customs",
+      officer: OFFICER,
+      input: { subject: "S", body: "B" },
+    });
+    await wf.trigger({
+      workflow: "freeze_clearance",
+      officer: DIRECTOR,
+      input: { vesselId: "V", reason: "R" },
+    });
 
     const officerHistory = wf.historyFor(OFFICER.officerId);
     expect(officerHistory).toHaveLength(2);

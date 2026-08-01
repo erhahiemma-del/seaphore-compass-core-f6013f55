@@ -57,7 +57,6 @@ export interface OfficerQuery {
   mission?: Record<string, unknown>;
 }
 
-
 /** 2.1 output of the Intent Classifier. */
 export interface Intent {
   mode: BriefingMode;

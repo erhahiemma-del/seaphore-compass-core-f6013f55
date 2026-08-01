@@ -12,15 +12,25 @@
  * so every mission trace to evidence is preserved and explainable.
  */
 import type { InvestigationWorkspace } from "@/stores/workspace.store";
-import { planMission, useMissionStore, type MissionPlan, type MissionType, type MissionSubject } from "./index";
+import {
+  planMission,
+  useMissionStore,
+  type MissionPlan,
+  type MissionType,
+  type MissionSubject,
+} from "./index";
 
 export type MissionEligibility =
-  | { eligible: true; reason: "APPROVED_DECISION" | "APPROVED_RECOMMENDATION" | "OKL_PATTERN_LINKED" }
+  | {
+      eligible: true;
+      reason: "APPROVED_DECISION" | "APPROVED_RECOMMENDATION" | "OKL_PATTERN_LINKED";
+    }
   | { eligible: false; reason: string };
 
 export function evaluateMissionEligibility(w: InvestigationWorkspace): MissionEligibility {
-  const hasDecision =
-    (w.decisions ?? []).some((d) => d.title.toLowerCase() !== "investigation opened");
+  const hasDecision = (w.decisions ?? []).some(
+    (d) => d.title.toLowerCase() !== "investigation opened",
+  );
   if (hasDecision) return { eligible: true, reason: "APPROVED_DECISION" };
   if (w.recommendation) return { eligible: true, reason: "APPROVED_RECOMMENDATION" };
   if ((w.oklPatternIds ?? []).length > 0) return { eligible: true, reason: "OKL_PATTERN_LINKED" };

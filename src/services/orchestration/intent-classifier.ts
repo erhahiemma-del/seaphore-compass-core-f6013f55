@@ -48,7 +48,6 @@ const MODULE_HINT_CAPABILITY: Record<string, CapabilityId> = {
   seaphore: "EVIDENCE_SEARCH",
 };
 
-
 export function classifyIntent(query: OfficerQuery): Intent {
   const q = query.query;
 
@@ -80,7 +79,6 @@ export function classifyIntent(query: OfficerQuery): Intent {
   }
 
   if (capabilities.length === 0) capabilities.push("EVIDENCE_SEARCH");
-
 
   // Entity extraction — non-fabricating; only lifts literals present in query
   const entities: Intent["entities"] = [];

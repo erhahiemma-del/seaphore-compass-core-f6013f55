@@ -77,9 +77,7 @@ export function fuseField(disagreement: FieldDisagreement | ValueCandidate[]): F
   }
 
   // Rule R2 — official government/regulator source present wins.
-  const officialCandidates = candidates.filter((c) =>
-    c.sources.some((s) => isOfficialSource(s)),
-  );
+  const officialCandidates = candidates.filter((c) => c.sources.some((s) => isOfficialSource(s)));
   if (officialCandidates.length === 1) {
     const winner = officialCandidates[0];
     const losers = candidates.filter((c) => c !== winner);
@@ -134,9 +132,7 @@ export function fuseField(disagreement: FieldDisagreement | ValueCandidate[]): F
   };
 }
 
-function normaliseCandidates(
-  input: FieldDisagreement | ValueCandidate[],
-): ValueCandidate[] {
+function normaliseCandidates(input: FieldDisagreement | ValueCandidate[]): ValueCandidate[] {
   if (Array.isArray(input)) return input;
   return input.groups.map((g) => toCandidate(g.value, g.records));
 }
@@ -160,9 +156,8 @@ const GRADE_RANK: Record<EvidenceGrade, number> = {
 };
 
 function pickGrade(c: ValueCandidate, conf: FusionConfidence): EvidenceGrade {
-  const highest = c.records
-    .map((r) => r.grade)
-    .sort((a, b) => GRADE_RANK[b] - GRADE_RANK[a])[0] ?? "OBSERVED";
+  const highest =
+    c.records.map((r) => r.grade).sort((a, b) => GRADE_RANK[b] - GRADE_RANK[a])[0] ?? "OBSERVED";
   if (conf === "HIGH") {
     // Corroborated by ≥2 sources → promote OBSERVED to CORROBORATED.
     if (c.sources.length >= 2 && GRADE_RANK[highest] < GRADE_RANK.CORROBORATED) {

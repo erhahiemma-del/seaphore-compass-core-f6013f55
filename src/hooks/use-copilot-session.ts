@@ -19,9 +19,7 @@ export interface CopilotSession {
 
 export function useCopilotSession(): CopilotSession {
   const activeId = useMissionContextStore((s) => s.activeId ?? MISSION_AMBIENT_ID);
-  const history = useMissionContextStore(
-    (s) => s.missions[activeId]?.conversation ?? [],
-  );
+  const history = useMissionContextStore((s) => s.missions[activeId]?.conversation ?? []);
   const appendConversation = useMissionContextStore((s) => s.appendConversation);
   const resetConversation = useMissionContextStore((s) => s.resetConversation);
 

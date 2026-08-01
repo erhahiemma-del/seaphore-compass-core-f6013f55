@@ -34,7 +34,6 @@ import {
   type IntelligenceEvidenceItem,
 } from "@/lib/evidence/intelligence-evidence";
 
-
 interface EvidenceSearch {
   mode?: string;
   type?: string;
@@ -103,12 +102,7 @@ const EVIDENCE_TYPES: EvidenceType[] = [
   "assessment",
   "other",
 ];
-const CONFIDENCE_CHIPS: EvidenceConfidence[] = [
-  "VERIFIED",
-  "OBSERVED",
-  "INFERRED",
-  "UNCONFIRMED",
-];
+const CONFIDENCE_CHIPS: EvidenceConfidence[] = ["VERIFIED", "OBSERVED", "INFERRED", "UNCONFIRMED"];
 
 function IntelligenceEvidenceRoute() {
   const investigations = useWorkspaceStore((s) => s.investigations);
@@ -158,10 +152,9 @@ function IntelligenceEvidenceRoute() {
     <AppShell title="Intelligence Evidence" subtitle="Explorer · List · Graph · Timeline · Source">
       <div className="mx-auto max-w-6xl px-4 py-6">
         <p className="mb-4 max-w-3xl text-[12px] leading-relaxed text-muted-foreground">
-          Every conclusion in Seaphore is anchored on evidence. Explore evidence
-          as a list, a relationship graph, a timeline, or grouped by source.
-          Conflicting evidence is surfaced instead of hidden, and every axis of
-          the confidence chip is inspectable.
+          Every conclusion in Seaphore is anchored on evidence. Explore evidence as a list, a
+          relationship graph, a timeline, or grouped by source. Conflicting evidence is surfaced
+          instead of hidden, and every axis of the confidence chip is inspectable.
         </p>
         {uip && <UipCanonicalPanel uip={uip} />}
         <IntelligenceEvidenceExplorer
@@ -173,4 +166,3 @@ function IntelligenceEvidenceRoute() {
     </AppShell>
   );
 }
-

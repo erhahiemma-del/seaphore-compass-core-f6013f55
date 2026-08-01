@@ -55,7 +55,11 @@ export interface ProviderResolution {
   readonly rule: "override" | "environment" | "priority" | "none";
   /** Ordered failover chain (winner first). Never executed together. */
   readonly chain: ReadonlyArray<Connector>;
-  readonly considered: ReadonlyArray<{ id: string; type: ProviderMetadata["providerType"]; priority: number }>;
+  readonly considered: ReadonlyArray<{
+    id: string;
+    type: ProviderMetadata["providerType"];
+    priority: number;
+  }>;
   readonly rejected: ReadonlyArray<{ id: string; reason: ProviderRejectionReason }>;
 }
 
@@ -146,7 +150,9 @@ export function resolveProvider(
         chain: chain.map((c) => c.connector),
         considered,
         rejected: rejected.concat(
-          chain.slice(1).map((c) => ({ id: String(c.connector.id), reason: "not-selected" as const })),
+          chain
+            .slice(1)
+            .map((c) => ({ id: String(c.connector.id), reason: "not-selected" as const })),
         ),
       };
     }
@@ -154,9 +160,11 @@ export function resolveProvider(
 
   // Rules 2 + 3 — environment fit first, then priority, then stable id.
   const ordered = [...eligible].sort((a, b) => {
-    const envDelta = environmentRank(b.metadata, environment) - environmentRank(a.metadata, environment);
+    const envDelta =
+      environmentRank(b.metadata, environment) - environmentRank(a.metadata, environment);
     if (envDelta !== 0) return envDelta;
-    if (b.metadata.priority !== a.metadata.priority) return b.metadata.priority - a.metadata.priority;
+    if (b.metadata.priority !== a.metadata.priority)
+      return b.metadata.priority - a.metadata.priority;
     return String(a.connector.id).localeCompare(String(b.connector.id));
   });
 

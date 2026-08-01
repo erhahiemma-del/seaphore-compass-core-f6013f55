@@ -5,9 +5,7 @@
  * (HR-3, HR-6 in the Honesty Rules).
  */
 
-import type {
-  ConflictRow, CorroborationRow, FusedField, MatrixCell,
-} from "./types";
+import type { ConflictRow, CorroborationRow, FusedField, MatrixCell } from "./types";
 import { SOURCE_LABEL } from "./field-config";
 import { groupByField } from "./correlation";
 
@@ -17,13 +15,14 @@ export interface ExplainInputs {
   readonly corroborations: ReadonlyArray<CorroborationRow>;
 }
 
-export function explainAll(
-  fused: FusedField[],
-  inputs: ExplainInputs,
-): FusedField[] {
+export function explainAll(fused: FusedField[], inputs: ExplainInputs): FusedField[] {
   const groups = groupByField(inputs.cells as MatrixCell[]);
-  const conflictByKey = new Map(inputs.conflicts.map((c) => [`${c.canonicalId}::${c.fieldName}`, c]));
-  const corrByKey     = new Map(inputs.corroborations.map((c) => [`${c.canonicalId}::${c.fieldName}`, c]));
+  const conflictByKey = new Map(
+    inputs.conflicts.map((c) => [`${c.canonicalId}::${c.fieldName}`, c]),
+  );
+  const corrByKey = new Map(
+    inputs.corroborations.map((c) => [`${c.canonicalId}::${c.fieldName}`, c]),
+  );
 
   return fused.map((f) => {
     const key = `${f.canonicalId}::${f.fieldName}`;
@@ -41,7 +40,8 @@ function explainOne(
   corr: CorroborationRow | undefined,
 ): string {
   const conf = Math.round(f.confidence * 100);
-  const pretty = (v: unknown) => v == null ? "—" : typeof v === "object" ? JSON.stringify(v) : String(v);
+  const pretty = (v: unknown) =>
+    v == null ? "—" : typeof v === "object" ? JSON.stringify(v) : String(v);
   const label = (id: string) => SOURCE_LABEL[id] ?? id;
 
   if (f.hasMissingData && f.fusedValue == null) {

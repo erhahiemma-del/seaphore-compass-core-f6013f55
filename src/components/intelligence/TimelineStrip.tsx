@@ -33,9 +33,7 @@ interface CollapsedEvent extends TimelineEvent {
 
 function orderAndDedupe(events: TimelineEvent[]): CollapsedEvent[] {
   // Stable newest-first ordering keyed on the parsed ISO instant.
-  const sorted = [...events].sort(
-    (a, b) => new Date(b.at).getTime() - new Date(a.at).getTime(),
-  );
+  const sorted = [...events].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
   const byInstant = new Map<number, CollapsedEvent>();
   const order: number[] = [];
   for (const ev of sorted) {
@@ -102,12 +100,7 @@ export function TimelineStrip({ events, selectedId, onSelect }: TimelineStripPro
             </button>
           </li>
         ) : (
-          <li
-            key={e.id}
-            className={cls}
-            data-testid={`ais-timeline-item-${e.id}`}
-            data-at={e.at}
-          >
+          <li key={e.id} className={cls} data-testid={`ais-timeline-item-${e.id}`} data-at={e.at}>
             {content}
           </li>
         );

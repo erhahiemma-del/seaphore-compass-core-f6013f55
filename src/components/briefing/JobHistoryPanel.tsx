@@ -15,13 +15,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  listReportJobs,
-  retryReportJob,
-  signArtifactUrl,
-} from "@/lib/mibc/schedules.functions";
+import { listReportJobs, retryReportJob, signArtifactUrl } from "@/lib/mibc/schedules.functions";
 import { formatRelative } from "@/lib/mibc/cadence";
-import { REPORT_TYPE_LABEL, REPORT_PERIOD_LABEL, type ReportType, type ReportPeriod } from "@/services/mibc";
+import {
+  REPORT_TYPE_LABEL,
+  REPORT_PERIOD_LABEL,
+  type ReportType,
+  type ReportPeriod,
+} from "@/services/mibc";
 
 const STATUS_ICON: Record<string, React.ReactNode> = {
   QUEUED: <Clock className="h-3.5 w-3.5 text-muted-foreground" />,
@@ -31,10 +32,7 @@ const STATUS_ICON: Record<string, React.ReactNode> = {
   DEAD: <XCircle className="h-3.5 w-3.5 text-destructive" />,
 };
 
-const STATUS_VARIANT: Record<
-  string,
-  "default" | "secondary" | "destructive" | "outline"
-> = {
+const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
   QUEUED: "outline",
   CLAIMED: "secondary",
   SUCCEEDED: "default",
@@ -107,12 +105,10 @@ export function JobHistoryPanel() {
                     </span>
                   </div>
                   <p className="mt-0.5 text-muted-foreground">
-                    scheduled {formatRelative(j.scheduled_for)} · attempts{" "}
-                    {j.attempts}/{j.max_attempts}
+                    scheduled {formatRelative(j.scheduled_for)} · attempts {j.attempts}/
+                    {j.max_attempts}
                     {j.last_error ? (
-                      <span className="ml-2 text-destructive">
-                        · {j.last_error.slice(0, 140)}
-                      </span>
+                      <span className="ml-2 text-destructive">· {j.last_error.slice(0, 140)}</span>
                     ) : null}
                   </p>
                 </div>
@@ -127,11 +123,7 @@ export function JobHistoryPanel() {
                     </Button>
                   ) : null}
                   {(j.status === "FAILED" || j.status === "DEAD") && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => retryMutation.mutate(j.id)}
-                    >
+                    <Button size="sm" variant="ghost" onClick={() => retryMutation.mutate(j.id)}>
                       <RotateCw className="mr-1 h-3.5 w-3.5" /> Retry
                     </Button>
                   )}

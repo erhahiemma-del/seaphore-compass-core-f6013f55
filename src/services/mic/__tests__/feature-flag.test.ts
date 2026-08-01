@@ -71,7 +71,7 @@ describe("MIC Feature Flag · runtime override", () => {
     setMicEnabled(true);
     expect(isMicEnabled()).toBe(true);
     setMicEnabled(null);
-    expect(isMicEnabled()).toBe(false);  // now reads env
+    expect(isMicEnabled()).toBe(false); // now reads env
     delete process.env["MIC_ENABLED"];
   });
 
@@ -79,7 +79,7 @@ describe("MIC Feature Flag · runtime override", () => {
     setMicEnabled(false);
     resetMicFlag();
     delete process.env["MIC_ENABLED"];
-    expect(isMicEnabled()).toBe(true);  // back to default=true
+    expect(isMicEnabled()).toBe(true); // back to default=true
   });
 });
 

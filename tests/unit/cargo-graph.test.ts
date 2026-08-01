@@ -118,9 +118,15 @@ describe("cargo knowledge graph — builder", () => {
 
   it("emits reverse edges so the documentary chain reads top-down", () => {
     const { graph } = buildCargoGraph(chainEvidence());
-    expect(graph.getEdge("contains::cargo:manifest:NCS:MF-100->cargo:bol:MSCU:BL-88213")).toBeDefined();
-    expect(graph.getEdge("covers::cargo:bol:MSCU:BL-88213->cargo:container:MSCU7811203")).toBeDefined();
-    expect(graph.getEdge("stows::cargo:container:MSCU7811203->cargo:item:BL-88213:1")).toBeDefined();
+    expect(
+      graph.getEdge("contains::cargo:manifest:NCS:MF-100->cargo:bol:MSCU:BL-88213"),
+    ).toBeDefined();
+    expect(
+      graph.getEdge("covers::cargo:bol:MSCU:BL-88213->cargo:container:MSCU7811203"),
+    ).toBeDefined();
+    expect(
+      graph.getEdge("stows::cargo:container:MSCU7811203->cargo:item:BL-88213:1"),
+    ).toBeDefined();
   });
 
   it("strengthens an edge when a second source asserts it, never overwrites", () => {

@@ -32,8 +32,9 @@ export function needsClarification(interpreted: InterpretedQuery): boolean {
 
 export function buildClarification(interpreted: InterpretedQuery): Clarification {
   const subjectEntity: EntityMention | undefined =
-    interpreted.entities.find((e) => e.type === "vessel" || e.type === "company" || e.type === "imo") ??
-    interpreted.anchor;
+    interpreted.entities.find(
+      (e) => e.type === "vessel" || e.type === "company" || e.type === "imo",
+    ) ?? interpreted.anchor;
   const subject = subjectEntity?.value;
 
   const options: Array<{ id: string; label: string; hint?: string }> = [];

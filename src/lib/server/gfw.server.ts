@@ -133,7 +133,6 @@ export async function validateGfwCredentials(force = false): Promise<GfwCredenti
   return startupValidation;
 }
 
-
 function buildHeaders(apiKey: string): Record<string, string> {
   return {
     Accept: "application/json",
@@ -192,7 +191,8 @@ function parseVessel(entry: unknown, fallbackQuery: string): GfwVesselIdentity |
     : [];
   const self = selfArr[0] ?? {};
   const registry = registryArr[0] ?? {};
-  const vesselId = (self.id as string) ?? (registry.id as string) ?? (r.id as string) ?? fallbackQuery;
+  const vesselId =
+    (self.id as string) ?? (registry.id as string) ?? (r.id as string) ?? fallbackQuery;
 
   // Aliases: every distinct shipname across self-reported + registry
   // beyond the primary. Historical names: `registryOwners`/`priorNames`
@@ -414,7 +414,6 @@ export async function runGfwHealthCheck(): Promise<GfwHealthPayload> {
       latencyMs: 0,
       message: `Credentials Missing — ${ENV_KEY} not configured`,
     };
-
   }
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), HEALTH_TIMEOUT_MS);

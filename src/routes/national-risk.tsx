@@ -28,8 +28,7 @@ export const Route = createFileRoute("/national-risk")({
       { property: "og:title", content: "National Maritime Risk · Seaphore" },
       {
         property: "og:description",
-        content:
-          "Fused-intelligence composite risk with per-component breakdown and citations.",
+        content: "Fused-intelligence composite risk with per-component breakdown and citations.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

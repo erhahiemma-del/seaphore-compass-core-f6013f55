@@ -56,10 +56,7 @@ function clamp(n: number, lo = 0, hi = 100) {
   return Math.max(lo, Math.min(hi, n));
 }
 
-function pushProv(
-  map: Map<string, OieProvenanceRef>,
-  r: OklRow,
-) {
+function pushProv(map: Map<string, OieProvenanceRef>, r: OklRow) {
   const key = `${r.investigation_id}::${r.source_uip_id}::${r.briefing_id ?? ""}`;
   const cur = map.get(key) ?? {
     investigationId: r.investigation_id,
@@ -212,7 +209,7 @@ export const generateOieInsights = createServerFn({ method: "POST" })
       const prov = new Map<string, OieProvenanceRef>();
       for (const r of p.rows) pushProv(prov, r);
       const breadth = clamp(20 + p.invs.size * 15);
-      const conf = clamp(Math.round((p.maxConf * 0.6) + breadth * 0.4));
+      const conf = clamp(Math.round(p.maxConf * 0.6 + breadth * 0.4));
       insights.push({
         id: `oie:pattern:${p.kind}`,
         kind: "RECURRING_PATTERN",
@@ -236,7 +233,8 @@ export const generateOieInsights = createServerFn({ method: "POST" })
       if (subjectInvId && invId === subjectInvId) continue;
       const decisions = list.filter((r) => r.kind === "DECISION");
       const outcomes = list.filter(
-        (r) => r.kind === "OUTCOME" || r.kind === "LESSON_LEARNED" || r.kind === "RECOMMENDATION_RESULT",
+        (r) =>
+          r.kind === "OUTCOME" || r.kind === "LESSON_LEARNED" || r.kind === "RECOMMENDATION_RESULT",
       );
       if (decisions.length === 0 && outcomes.length === 0) continue;
       const rows = [...decisions, ...outcomes];
@@ -259,7 +257,8 @@ export const generateOieInsights = createServerFn({ method: "POST" })
         provenance: provList(prov),
         createdAt: now,
       });
-      if (insights.filter((i) => i.kind === "HISTORICAL_OUTCOME").length >= data.limitPerLens) break;
+      if (insights.filter((i) => i.kind === "HISTORICAL_OUTCOME").length >= data.limitPerLens)
+        break;
     }
 
     // ── 4. EMERGING_RISK ────────────────────────────────────────────────

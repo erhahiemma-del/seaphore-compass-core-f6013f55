@@ -20,16 +20,16 @@ import type { IntelligenceObjectRegistry } from "./registry";
 /** Map MkgNodeKind → IntelligenceObjectKind. */
 function toObjectKind(mkgKind: MkgNode["kind"]): IntelligenceObjectKind | null {
   const map: Partial<Record<MkgNode["kind"], IntelligenceObjectKind>> = {
-    vessel:     "vessel",
-    company:    "company",
-    person:     "person",
-    port:       "port",
-    cargo:      "cargo",
-    voyage:     "voyage",
-    manifest:   "manifest",
-    sanction:   "sanction",
+    vessel: "vessel",
+    company: "company",
+    person: "person",
+    port: "port",
+    cargo: "cargo",
+    voyage: "voyage",
+    manifest: "manifest",
+    sanction: "sanction",
     inspection: "inspection",
-    incident:   "incident",
+    incident: "incident",
   };
   return map[mkgKind] ?? null;
 }
@@ -37,10 +37,14 @@ function toObjectKind(mkgKind: MkgNode["kind"]): IntelligenceObjectKind | null {
 /** Infer the object kind from evidence kind when not available from MKG. */
 function inferObjectKindFromEvidence(ev: NormalizedEvidence): IntelligenceObjectKind | null {
   switch (ev.kind) {
-    case "weather":     return "weather-event";
-    case "other":       return "satellite-observation";
-    case "compliance":  return "document";
-    default:            return null;
+    case "weather":
+      return "weather-event";
+    case "other":
+      return "satellite-observation";
+    case "compliance":
+      return "document";
+    default:
+      return null;
   }
 }
 
@@ -59,7 +63,7 @@ export function buildIntelligenceObjects(
 
   // 1. Build from canonical MKG nodes
   for (const node of nodes) {
-    if (aliasNodeIds.has(node.id)) continue;  // skip alias-only nodes
+    if (aliasNodeIds.has(node.id)) continue; // skip alias-only nodes
 
     const objectKind = toObjectKind(node.kind);
     if (!objectKind) continue;
@@ -70,7 +74,7 @@ export function buildIntelligenceObjects(
     const score = micScoreFromGrade(grade);
 
     // Merge attributes from all evidence records for this entity
-    let mergedAttributes: Record<string, unknown> = {};
+    const mergedAttributes: Record<string, unknown> = {};
     for (const ev of nodeEvidence) {
       const partial = extractAttributes(ev, objectKind);
       if (partial) {
@@ -82,26 +86,29 @@ export function buildIntelligenceObjects(
       }
     }
 
-    const firstSeen = nodeEvidence.length > 0
-      ? nodeEvidence.map((e) => e.observedAt).sort()[0]
-      : null;
-    const lastSeen = nodeEvidence.length > 0
-      ? nodeEvidence.map((e) => e.observedAt).sort().reverse()[0]
-      : null;
+    const firstSeen =
+      nodeEvidence.length > 0 ? nodeEvidence.map((e) => e.observedAt).sort()[0] : null;
+    const lastSeen =
+      nodeEvidence.length > 0
+        ? nodeEvidence
+            .map((e) => e.observedAt)
+            .sort()
+            .reverse()[0]
+        : null;
 
     const obj = {
-      objectId:     node.id,
+      objectId: node.id,
       objectKind,
-      label:        node.label,
-      aliases:      node.aliases.slice(),
-      confidence:   micTierFromScore(score),
+      label: node.label,
+      aliases: node.aliases.slice(),
+      confidence: micTierFromScore(score),
       grade,
       citations,
       sourceUipIds: [uip.id],
-      firstSeenAt:  firstSeen,
-      lastSeenAt:   lastSeen,
-      revision:     1,
-      attributes:   mergedAttributes,
+      firstSeenAt: firstSeen,
+      lastSeenAt: lastSeen,
+      revision: 1,
+      attributes: mergedAttributes,
     } as unknown as IntelligenceObject;
 
     registry.upsert(obj);
@@ -112,8 +119,11 @@ export function buildIntelligenceObjects(
   //    (satellite observations, weather events, documents)
   for (const ev of uip.rawEvidence) {
     // Skip if already captured via MKG node
-    if (evidenceByEntity.get(ev.entity.id)?.length &&
-        toObjectKind(ev.entity.kind as MkgNode["kind"])) continue;
+    if (
+      evidenceByEntity.get(ev.entity.id)?.length &&
+      toObjectKind(ev.entity.kind as MkgNode["kind"])
+    )
+      continue;
 
     const objectKind = inferObjectKindFromEvidence(ev);
     if (!objectKind) continue;
@@ -123,18 +133,18 @@ export function buildIntelligenceObjects(
     const score = micScoreFromGrade(ev.grade);
 
     const obj = {
-      objectId:     `${objectKind}:${ev.id}`,
+      objectId: `${objectKind}:${ev.id}`,
       objectKind,
-      label:        ev.excerpt ?? ev.id,
-      aliases:      [],
-      confidence:   micTierFromScore(score),
-      grade:        ev.grade,
-      citations:    [citation],
+      label: ev.excerpt ?? ev.id,
+      aliases: [],
+      confidence: micTierFromScore(score),
+      grade: ev.grade,
+      citations: [citation],
       sourceUipIds: [uip.id],
-      firstSeenAt:  ev.observedAt,
-      lastSeenAt:   ev.observedAt,
-      revision:     1,
-      attributes:   partial,
+      firstSeenAt: ev.observedAt,
+      lastSeenAt: ev.observedAt,
+      revision: 1,
+      attributes: partial,
     } as unknown as IntelligenceObject;
 
     registry.upsert(obj);
@@ -146,7 +156,9 @@ export function buildIntelligenceObjects(
 
 // ─── helpers ─────────────────────────────────────────────────────────
 
-function groupByEntity(records: ReadonlyArray<NormalizedEvidence>): Map<string, NormalizedEvidence[]> {
+function groupByEntity(
+  records: ReadonlyArray<NormalizedEvidence>,
+): Map<string, NormalizedEvidence[]> {
   const m = new Map<string, NormalizedEvidence[]>();
   for (const r of records) {
     const list = m.get(r.entity.id) ?? [];
@@ -157,11 +169,18 @@ function groupByEntity(records: ReadonlyArray<NormalizedEvidence>): Map<string, 
 }
 
 const GRADE_RANK: Record<string, number> = {
-  VERIFIED: 5, CORROBORATED: 4, OBSERVED: 3, REPORTED: 2, INFERRED: 1, UNKNOWN: 0,
+  VERIFIED: 5,
+  CORROBORATED: 4,
+  OBSERVED: 3,
+  REPORTED: 2,
+  INFERRED: 1,
+  UNKNOWN: 0,
 };
-const GRADE_BY_RANK = ["UNKNOWN","INFERRED","REPORTED","OBSERVED","CORROBORATED","VERIFIED"];
+const GRADE_BY_RANK = ["UNKNOWN", "INFERRED", "REPORTED", "OBSERVED", "CORROBORATED", "VERIFIED"];
 
-function bestGrade(grades: ReadonlyArray<string>): "VERIFIED"|"CORROBORATED"|"OBSERVED"|"REPORTED"|"INFERRED"|"UNKNOWN" {
+function bestGrade(
+  grades: ReadonlyArray<string>,
+): "VERIFIED" | "CORROBORATED" | "OBSERVED" | "REPORTED" | "INFERRED" | "UNKNOWN" {
   if (!grades.length) return "UNKNOWN";
   const best = Math.max(...grades.map((g) => GRADE_RANK[g] ?? 0));
   return GRADE_BY_RANK[best] as any;

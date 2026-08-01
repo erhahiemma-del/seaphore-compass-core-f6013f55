@@ -77,7 +77,8 @@ const FORBIDDEN_SOURCE_PATTERNS: ReadonlyArray<{
   {
     id: "no-persistence",
     label: "No persistence",
-    pattern: /\.from\(["'][a-z_]+["']\)\s*\.\s*(insert|upsert|update|delete)|localStorage|\.persist\(/,
+    pattern:
+      /\.from\(["'][a-z_]+["']\)\s*\.\s*(insert|upsert|update|delete)|localStorage|\.persist\(/,
   },
   {
     id: "no-identity-resolution",
@@ -167,7 +168,6 @@ export function publicMethodsFromSource(source: string, className?: string): str
   return Array.from(new Set(out));
 }
 
-
 /**
  * Certify a provider against Evidence Provider Specification v1.0.
  * Pure and side-effect free — callers decide what to do with the report.
@@ -179,8 +179,7 @@ export function certifyProvider(
   const checks: CertificationCheck[] = [];
   const p = provider as Partial<EvidenceProviderV1> & Connector;
   const source = opts.source;
-  const contractIds =
-    opts.projectionContractIds ?? PROJECTION_CONTRACT.map((e) => e.id);
+  const contractIds = opts.projectionContractIds ?? PROJECTION_CONTRACT.map((e) => e.id);
 
   const add = (id: string, label: string, ok: boolean, detail?: string) =>
     checks.push({ id, label, status: ok ? "PASS" : "FAIL", detail: ok ? undefined : detail });

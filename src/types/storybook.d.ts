@@ -15,9 +15,7 @@ declare module "@storybook/react" {
     tags?: string[];
   }
   export interface StoryObj<TComponent = unknown> {
-    args?: TComponent extends (props: infer P) => unknown
-      ? Partial<P>
-      : Record<string, unknown>;
+    args?: TComponent extends (props: infer P) => unknown ? Partial<P> : Record<string, unknown>;
     render?: (args: Record<string, unknown>) => JSX.Element;
     parameters?: Record<string, unknown>;
   }

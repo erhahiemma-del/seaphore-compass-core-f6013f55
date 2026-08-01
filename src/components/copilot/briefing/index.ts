@@ -1,10 +1,6 @@
 export { AdaptiveBriefing } from "./AdaptiveBriefing";
 export type { AdaptiveBriefingProps } from "./AdaptiveBriefing";
-export {
-  BRIEFING_PROFILES,
-  detectMissionType,
-  getProfile,
-} from "./profiles";
+export { BRIEFING_PROFILES, detectMissionType, getProfile } from "./profiles";
 export type {
   BriefingProfile,
   BriefingSlot,

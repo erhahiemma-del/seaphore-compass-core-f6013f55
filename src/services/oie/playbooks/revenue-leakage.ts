@@ -36,7 +36,8 @@ export const revenueLeakagePlaybook: Playbook = {
       description: "Applied tariff rate must match published schedule.",
       severity: "warn",
       onFail: "Applied tariff rate is inconsistent with the published schedule.",
-      when: (ctx) => hasFinding(ctx, ["tariff", "rate", "levy"]) && hasFinding(ctx, ["mismatch", "wrong"]),
+      when: (ctx) =>
+        hasFinding(ctx, ["tariff", "rate", "levy"]) && hasFinding(ctx, ["mismatch", "wrong"]),
     },
   ],
   reasoningRules: [

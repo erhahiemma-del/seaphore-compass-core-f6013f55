@@ -18,11 +18,11 @@ export type PipelineStage = (typeof PIPELINE_STAGES)[number];
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
 export interface QueryLog {
-  readonly id: string;                       // trace id (also correlationId)
-  readonly at: string;                       // ISO
-  readonly officerHash: string;              // anonymized (see pii.ts)
-  readonly intent: string;                   // e.g. "revenue_leakage_query"
-  readonly queryText: string;                // PII-scrubbed
+  readonly id: string; // trace id (also correlationId)
+  readonly at: string; // ISO
+  readonly officerHash: string; // anonymized (see pii.ts)
+  readonly intent: string; // e.g. "revenue_leakage_query"
+  readonly queryText: string; // PII-scrubbed
   readonly workspace?: string;
   readonly workflow?: WorkflowId;
 }
@@ -30,7 +30,7 @@ export interface QueryLog {
 export interface StageTiming {
   readonly traceId: string;
   readonly stage: PipelineStage;
-  readonly startedAt: number;                // epoch ms
+  readonly startedAt: number; // epoch ms
   readonly durationMs: number;
   readonly ok: boolean;
 }
@@ -38,7 +38,7 @@ export interface StageTiming {
 export interface ModelUsage {
   readonly traceId: string;
   readonly stage: PipelineStage;
-  readonly model: string;                    // "gemini-2.5-flash", "mock", ...
+  readonly model: string; // "gemini-2.5-flash", "mock", ...
   readonly tier: 1 | 2 | 3;
   readonly promptTokens: number;
   readonly completionTokens: number;
@@ -48,8 +48,8 @@ export interface ModelUsage {
 export interface EvidenceUsage {
   readonly traceId: string;
   readonly evidenceId: string;
-  readonly grade: string;                    // "SIGINT_VERIFIED", etc.
-  readonly weight: number;                   // fusion confidence
+  readonly grade: string; // "SIGINT_VERIFIED", etc.
+  readonly weight: number; // fusion confidence
 }
 
 export type FeedbackOutcome = "agree" | "disagree" | "modify" | "dismiss";
@@ -59,7 +59,7 @@ export interface OfficerFeedback {
   readonly at: string;
   readonly officerHash: string;
   readonly outcome: FeedbackOutcome;
-  readonly note?: string;                    // PII-scrubbed
+  readonly note?: string; // PII-scrubbed
 }
 
 export interface ErrorLog {

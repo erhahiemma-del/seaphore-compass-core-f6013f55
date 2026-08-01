@@ -61,10 +61,13 @@ export function defaultRules(): AlertRule[] {
       severity: "warning",
       description: "Officer disagree/dismiss ratio > 30% over the window.",
       evaluate: (s) => {
-        const dis = (s.counters['feedback_total{outcome="disagree"}'] ?? 0)
-                  + (s.counters['feedback_total{outcome="dismiss"}'] ?? 0);
-        const total = ["agree", "disagree", "modify", "dismiss"]
-          .reduce((acc, o) => acc + (s.counters[`feedback_total{outcome="${o}"}`] ?? 0), 0);
+        const dis =
+          (s.counters['feedback_total{outcome="disagree"}'] ?? 0) +
+          (s.counters['feedback_total{outcome="dismiss"}'] ?? 0);
+        const total = ["agree", "disagree", "modify", "dismiss"].reduce(
+          (acc, o) => acc + (s.counters[`feedback_total{outcome="${o}"}`] ?? 0),
+          0,
+        );
         return total >= 10 && dis / total > 0.3;
       },
     },
@@ -84,7 +87,9 @@ export function createAlertEngine(rules: AlertRule[] = defaultRules()): AlertEng
   const history: AlertEvent[] = [];
 
   return {
-    addRule(rule) { ruleList.push(rule); },
+    addRule(rule) {
+      ruleList.push(rule);
+    },
     evaluate(registry) {
       const snap = registry.snapshot();
       const snapshotAt = new Date().toISOString();
@@ -92,18 +97,34 @@ export function createAlertEngine(rules: AlertRule[] = defaultRules()): AlertEng
       for (const r of ruleList) {
         if (r.evaluate(snap)) {
           const evt: AlertEvent = Object.freeze({
-            at: snapshotAt, snapshotAt,
-            rule: r.name, severity: r.severity, description: r.description,
+            at: snapshotAt,
+            snapshotAt,
+            rule: r.name,
+            severity: r.severity,
+            description: r.description,
           });
           fired.push(evt);
           history.push(evt);
-          for (const fn of subs) { try { fn(evt); } catch { /* noop */ } }
+          for (const fn of subs) {
+            try {
+              fn(evt);
+            } catch {
+              /* noop */
+            }
+          }
         }
       }
       if (history.length > 500) history.splice(0, history.length - 500);
       return fired;
     },
-    subscribe(fn) { subs.add(fn); return () => { subs.delete(fn); }; },
-    recent(limit = 50) { return history.slice(-limit).reverse(); },
+    subscribe(fn) {
+      subs.add(fn);
+      return () => {
+        subs.delete(fn);
+      };
+    },
+    recent(limit = 50) {
+      return history.slice(-limit).reverse();
+    },
   };
 }

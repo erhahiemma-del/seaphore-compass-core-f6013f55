@@ -190,7 +190,12 @@ export function projectManifestIntelligence(input: {
     metrics: [
       { key: "cargo", label: "Cargo declarations in UIP", value: cargo.length, confidence: tier },
       { key: "voyages", label: "Voyage records", value: voyages.length, confidence: tier },
-      { key: "port-calls", label: "Port calls observed", value: portCalls.length, confidence: tier },
+      {
+        key: "port-calls",
+        label: "Port calls observed",
+        value: portCalls.length,
+        confidence: tier,
+      },
       {
         key: "mismatch",
         label: "Declared vs actual mismatches",

@@ -25,11 +25,7 @@ import type {
 
 const IGP_ENDPOINT = "https://www.igpandi.org/circulars";
 
-type AlertType =
-  | "PORT_RESTRICTION"
-  | "VESSEL_CAUTION"
-  | "INSURANCE_CANCELLED"
-  | "GENERAL_ADVISORY";
+type AlertType = "PORT_RESTRICTION" | "VESSEL_CAUTION" | "INSURANCE_CANCELLED" | "GENERAL_ADVISORY";
 
 interface PiClubRaw {
   sourceRef: string;
@@ -45,8 +41,17 @@ interface PiClubRaw {
 
 /** Known ports the parser will match on title/summary text. */
 const KNOWN_PORTS = [
-  "Apapa", "Tin Can Island", "Onne", "Lagos", "Port Harcourt",
-  "Warri", "Calabar", "Lome", "Cotonou", "Tema", "Abidjan",
+  "Apapa",
+  "Tin Can Island",
+  "Onne",
+  "Lagos",
+  "Port Harcourt",
+  "Warri",
+  "Calabar",
+  "Lome",
+  "Cotonou",
+  "Tema",
+  "Abidjan",
 ];
 
 /** Simple vessel-name heuristic: MV/MT/M/V tokens followed by CAPS name. */
@@ -103,8 +108,10 @@ const SEED: PiClubRaw[] = [
 function classifyAlertType(title: string, summary: string): AlertType {
   const t = `${title} ${summary}`.toLowerCase();
   if (/(cover|insurance|p&i).*(cancel|withdrawn|terminated)/i.test(t)) return "INSURANCE_CANCELLED";
-  if (/(port|berth|anchorage).*(restrict|closed|congest|suspend)/i.test(t)) return "PORT_RESTRICTION";
-  if (/(caution|piracy|boarding|attack|incident|dark ship|sanction)/i.test(t)) return "VESSEL_CAUTION";
+  if (/(port|berth|anchorage).*(restrict|closed|congest|suspend)/i.test(t))
+    return "PORT_RESTRICTION";
+  if (/(caution|piracy|boarding|attack|incident|dark ship|sanction)/i.test(t))
+    return "VESSEL_CAUTION";
   return "GENERAL_ADVISORY";
 }
 
@@ -198,18 +205,16 @@ export class PiClubPublicationsConnector implements ConnectorInterface {
       const title = String(raw["title"] ?? "");
       const summary = String(raw["summary"] ?? "");
       const club = String(raw["club"] ?? "P&I Club");
-      const publicationDate = String(raw["publicationDate"] ?? new Date().toISOString().slice(0, 10));
+      const publicationDate = String(
+        raw["publicationDate"] ?? new Date().toISOString().slice(0, 10),
+      );
       const url = String(raw["url"] ?? IGP_ENDPOINT);
       const affectedVessels =
-        (raw["affectedVessels"] as string[] | undefined) ??
-        extractVessels(`${title} ${summary}`);
+        (raw["affectedVessels"] as string[] | undefined) ?? extractVessels(`${title} ${summary}`);
       const affectedPorts =
-        (raw["affectedPorts"] as string[] | undefined) ??
-        extractPorts(`${title} ${summary}`);
+        (raw["affectedPorts"] as string[] | undefined) ?? extractPorts(`${title} ${summary}`);
       const alertType = classifyAlertType(title, summary);
-      const entityId = affectedVessels[0]
-        ? `${circularId}::${affectedVessels[0]}`
-        : circularId;
+      const entityId = affectedVessels[0] ? `${circularId}::${affectedVessels[0]}` : circularId;
       const now = new Date().toISOString();
       return {
         sourceId: this.name,
@@ -271,7 +276,11 @@ export class PiClubPublicationsConnector implements ConnectorInterface {
     if (!connectorId) throw new Error(`Connector ${this.name} is not registered`);
     const { data: run } = await supabaseAdmin
       .from("osint_sync_runs")
-      .insert({ connector_id: connectorId, started_at: new Date().toISOString(), status: "running" })
+      .insert({
+        connector_id: connectorId,
+        started_at: new Date().toISOString(),
+        status: "running",
+      })
       .select("id")
       .single();
     const runId = (run as { id: string } | null)?.id ?? "";

@@ -38,44 +38,184 @@ function bundleOf(atoms: RawEvidence[]): FusedEvidenceBundle {
 // ── Fixture builders ────────────────────────────────────────────────────────
 function ownershipAtoms(): RawEvidence[] {
   return [
-    { id: "o1", agent: "ownership", sourceSystem: "CAC", entityIds: [E], attribute: "ownership.legal_owner", value: "Oceanic Lines Ltd", unit: null, grade: "verified", collectedAt: iso(1) },
-    { id: "u1", agent: "ownership", sourceSystem: "CAC", entityIds: [E], attribute: "ownership.ubo.adeyemi", value: 62.5, unit: "PCT", grade: "verified", collectedAt: iso(2) },
-    { id: "s1", agent: "ownership", sourceSystem: "OpenSanctions", entityIds: [E], attribute: "sanctions.hit", value: false, unit: null, grade: "verified", collectedAt: iso(0.5) },
+    {
+      id: "o1",
+      agent: "ownership",
+      sourceSystem: "CAC",
+      entityIds: [E],
+      attribute: "ownership.legal_owner",
+      value: "Oceanic Lines Ltd",
+      unit: null,
+      grade: "verified",
+      collectedAt: iso(1),
+    },
+    {
+      id: "u1",
+      agent: "ownership",
+      sourceSystem: "CAC",
+      entityIds: [E],
+      attribute: "ownership.ubo.adeyemi",
+      value: 62.5,
+      unit: "PCT",
+      grade: "verified",
+      collectedAt: iso(2),
+    },
+    {
+      id: "s1",
+      agent: "ownership",
+      sourceSystem: "OpenSanctions",
+      entityIds: [E],
+      attribute: "sanctions.hit",
+      value: false,
+      unit: null,
+      grade: "verified",
+      collectedAt: iso(0.5),
+    },
   ];
 }
 function revenueConflictAtoms(): RawEvidence[] {
   return [
-    { id: "r1", agent: "revenue", sourceSystem: "CUSTOMS_DB", entityIds: [E], attribute: "revenue.declared", value: 1_240_000, unit: "USD", grade: "verified", collectedAt: iso(1) },
-    { id: "r2", agent: "revenue", sourceSystem: "INVOICE_DB", entityIds: [E], attribute: "revenue.declared", value: 1_612_500, unit: "USD", grade: "observed", collectedAt: iso(2) },
+    {
+      id: "r1",
+      agent: "revenue",
+      sourceSystem: "CUSTOMS_DB",
+      entityIds: [E],
+      attribute: "revenue.declared",
+      value: 1_240_000,
+      unit: "USD",
+      grade: "verified",
+      collectedAt: iso(1),
+    },
+    {
+      id: "r2",
+      agent: "revenue",
+      sourceSystem: "INVOICE_DB",
+      entityIds: [E],
+      attribute: "revenue.declared",
+      value: 1_612_500,
+      unit: "USD",
+      grade: "observed",
+      collectedAt: iso(2),
+    },
   ];
 }
 function manifestConflictAtoms(): RawEvidence[] {
   return [
-    { id: "m1", agent: "manifest", sourceSystem: "MANIFEST_DB", entityIds: [E], attribute: "manifest.container_count", value: 348, unit: "TEU", grade: "verified", collectedAt: iso(1) },
-    { id: "m2", agent: "manifest", sourceSystem: "CONTAINER_DB", entityIds: [E], attribute: "manifest.container_count", value: 351, unit: "TEU", grade: "observed", collectedAt: iso(1) },
+    {
+      id: "m1",
+      agent: "manifest",
+      sourceSystem: "MANIFEST_DB",
+      entityIds: [E],
+      attribute: "manifest.container_count",
+      value: 348,
+      unit: "TEU",
+      grade: "verified",
+      collectedAt: iso(1),
+    },
+    {
+      id: "m2",
+      agent: "manifest",
+      sourceSystem: "CONTAINER_DB",
+      entityIds: [E],
+      attribute: "manifest.container_count",
+      value: 351,
+      unit: "TEU",
+      grade: "observed",
+      collectedAt: iso(1),
+    },
   ];
 }
 function complianceAtoms(): RawEvidence[] {
   return [
-    { id: "c1", agent: "compliance", sourceSystem: "CERTIFICATE_REGISTRY", entityIds: [E], attribute: "compliance.cert.smc", value: "2027-03-11", unit: null, grade: "verified", collectedAt: iso(5) },
-    { id: "c2", agent: "compliance", sourceSystem: "CERTIFICATE_REGISTRY", entityIds: [E], attribute: "compliance.cert.isps", value: "2027-01-04", unit: null, grade: "verified", collectedAt: iso(6) },
+    {
+      id: "c1",
+      agent: "compliance",
+      sourceSystem: "CERTIFICATE_REGISTRY",
+      entityIds: [E],
+      attribute: "compliance.cert.smc",
+      value: "2027-03-11",
+      unit: null,
+      grade: "verified",
+      collectedAt: iso(5),
+    },
+    {
+      id: "c2",
+      agent: "compliance",
+      sourceSystem: "CERTIFICATE_REGISTRY",
+      entityIds: [E],
+      attribute: "compliance.cert.isps",
+      value: "2027-01-04",
+      unit: null,
+      grade: "verified",
+      collectedAt: iso(6),
+    },
   ];
 }
 function forecastAtoms(): RawEvidence[] {
   return [
-    { id: "f1", agent: "forecast", sourceSystem: "PATTERN_ENGINE", entityIds: [E], attribute: "forecast.pattern.dwell", value: 0.81, unit: "SCORE", grade: "inferred", collectedAt: iso(1) },
-    { id: "f2", agent: "forecast", sourceSystem: "PATTERN_ENGINE", entityIds: [E], attribute: "forecast.pattern.ubo_layering", value: 0.64, unit: "SCORE", grade: "inferred", collectedAt: iso(3) },
+    {
+      id: "f1",
+      agent: "forecast",
+      sourceSystem: "PATTERN_ENGINE",
+      entityIds: [E],
+      attribute: "forecast.pattern.dwell",
+      value: 0.81,
+      unit: "SCORE",
+      grade: "inferred",
+      collectedAt: iso(1),
+    },
+    {
+      id: "f2",
+      agent: "forecast",
+      sourceSystem: "PATTERN_ENGINE",
+      entityIds: [E],
+      attribute: "forecast.pattern.ubo_layering",
+      value: 0.64,
+      unit: "SCORE",
+      grade: "inferred",
+      collectedAt: iso(3),
+    },
   ];
 }
 function evidenceAtoms(): RawEvidence[] {
   return [
-    { id: "e1", agent: "evidence", sourceSystem: "AIS_STREAM", entityIds: [E], attribute: "evidence.ais_ping", value: "sha256:abc", unit: null, grade: "verified", collectedAt: iso(0.1) },
-    { id: "e2", agent: "evidence", sourceSystem: "DOCUMENT_STORE", entityIds: [E], attribute: "evidence.bill_of_lading", value: "sha256:def", unit: null, grade: "corroborated", collectedAt: iso(1) },
+    {
+      id: "e1",
+      agent: "evidence",
+      sourceSystem: "AIS_STREAM",
+      entityIds: [E],
+      attribute: "evidence.ais_ping",
+      value: "sha256:abc",
+      unit: null,
+      grade: "verified",
+      collectedAt: iso(0.1),
+    },
+    {
+      id: "e2",
+      agent: "evidence",
+      sourceSystem: "DOCUMENT_STORE",
+      entityIds: [E],
+      attribute: "evidence.bill_of_lading",
+      value: "sha256:def",
+      unit: null,
+      grade: "corroborated",
+      collectedAt: iso(1),
+    },
   ];
 }
 function staleAtoms(): RawEvidence[] {
   return [
-    { id: "h1", agent: "forecast", sourceSystem: "HISTORICAL_DB", entityIds: [E], attribute: "history.prior_dwells", value: 42, unit: "HOURS", grade: "reported", collectedAt: iso(400) },
+    {
+      id: "h1",
+      agent: "forecast",
+      sourceSystem: "HISTORICAL_DB",
+      entityIds: [E],
+      attribute: "history.prior_dwells",
+      value: 42,
+      unit: "HOURS",
+      grade: "reported",
+      collectedAt: iso(400),
+    },
   ];
 }
 function combinedRichAtoms(): RawEvidence[] {
@@ -93,26 +233,62 @@ function combinedRichAtoms(): RawEvidence[] {
 // 20+ realistic maritime intelligence queries
 const QUERIES: Array<{ q: string; ws: Workspace; atoms: () => RawEvidence[] }> = [
   { q: "Who is the legal owner of MV Crimson Endeavour?", ws: "ownership", atoms: ownershipAtoms },
-  { q: "List the ultimate beneficial owners over 25% stake.", ws: "ownership", atoms: ownershipAtoms },
+  {
+    q: "List the ultimate beneficial owners over 25% stake.",
+    ws: "ownership",
+    atoms: ownershipAtoms,
+  },
   { q: "Is this vessel operator sanctioned?", ws: "ownership", atoms: ownershipAtoms },
   { q: "Show the revenue gap for the last voyage.", ws: "revenue", atoms: revenueConflictAtoms },
-  { q: "Compare declared vs observed revenue at Apapa.", ws: "revenue", atoms: revenueConflictAtoms },
-  { q: "How many containers were declared vs unloaded?", ws: "manifest", atoms: manifestConflictAtoms },
-  { q: "Highlight cargo mismatches on the current manifest.", ws: "manifest", atoms: manifestConflictAtoms },
+  {
+    q: "Compare declared vs observed revenue at Apapa.",
+    ws: "revenue",
+    atoms: revenueConflictAtoms,
+  },
+  {
+    q: "How many containers were declared vs unloaded?",
+    ws: "manifest",
+    atoms: manifestConflictAtoms,
+  },
+  {
+    q: "Highlight cargo mismatches on the current manifest.",
+    ws: "manifest",
+    atoms: manifestConflictAtoms,
+  },
   { q: "Are the SMC and ISPS certificates still valid?", ws: "compliance", atoms: complianceAtoms },
   { q: "Summarise open port-state findings.", ws: "compliance", atoms: complianceAtoms },
-  { q: "What behavioural patterns match this vessel's recent activity?", ws: "forecast", atoms: forecastAtoms },
+  {
+    q: "What behavioural patterns match this vessel's recent activity?",
+    ws: "forecast",
+    atoms: forecastAtoms,
+  },
   { q: "Is there a suspected UBO layering pattern?", ws: "forecast", atoms: forecastAtoms },
   { q: "Show all AIS pings from the last 24 hours.", ws: "evidence", atoms: evidenceAtoms },
   { q: "Which bill of lading corroborates the manifest?", ws: "evidence", atoms: evidenceAtoms },
   { q: "Provide a full risk snapshot for the vessel.", ws: "general", atoms: combinedRichAtoms },
-  { q: "Are there any contradictions in the current evidence bundle?", ws: "general", atoms: combinedRichAtoms },
+  {
+    q: "Are there any contradictions in the current evidence bundle?",
+    ws: "general",
+    atoms: combinedRichAtoms,
+  },
   { q: "What is the most recent verified observation?", ws: "general", atoms: combinedRichAtoms },
-  { q: "Assess dwell-time anomalies at Apapa Anchorage.", ws: "forecast", atoms: combinedRichAtoms },
-  { q: "Are there any expired certificates in the last 12 months?", ws: "compliance", atoms: complianceAtoms },
+  {
+    q: "Assess dwell-time anomalies at Apapa Anchorage.",
+    ws: "forecast",
+    atoms: combinedRichAtoms,
+  },
+  {
+    q: "Are there any expired certificates in the last 12 months?",
+    ws: "compliance",
+    atoms: complianceAtoms,
+  },
   { q: "How stale is the historical dwell record?", ws: "forecast", atoms: staleAtoms },
   { q: "Provide an assessment even when evidence is thin.", ws: "general", atoms: staleAtoms },
-  { q: "Do we have enough evidence to reach a high-confidence assessment?", ws: "general", atoms: combinedRichAtoms },
+  {
+    q: "Do we have enough evidence to reach a high-confidence assessment?",
+    ws: "general",
+    atoms: combinedRichAtoms,
+  },
 ];
 
 describe("Sprint 8 · Reasoning Engine — 20+ query suite", () => {
@@ -151,7 +327,10 @@ describe("Sprint 8 · Reasoning Engine — 20+ query suite", () => {
     expect(res.recommendation.confidence).toBeLessThanOrEqual(p.recommendation + 1e-9);
 
     // Layer 2.3 — counter-hypotheses REQUIRED at medium+ confidence
-    if (bandOf(res.assessment.confidence) !== "low" && bandOf(res.assessment.confidence) !== "insufficient") {
+    if (
+      bandOf(res.assessment.confidence) !== "low" &&
+      bandOf(res.assessment.confidence) !== "insufficient"
+    ) {
       expect(res.counterHypotheses.length).toBeGreaterThanOrEqual(1);
     }
 
@@ -220,8 +399,14 @@ describe("Sprint 8 · conflict preservation + retries + fallback", () => {
 
   it("is model-agnostic: swapping the client changes nothing about the output shape", async () => {
     const evidence = bundleOf(ownershipAtoms());
-    const a = await reason({ query: "Owner?", workspace: "ownership", evidence }, { tier1: createMockModel({ id: "A" }) });
-    const b = await reason({ query: "Owner?", workspace: "ownership", evidence }, { tier2: createMockModel({ id: "B", tier: "tier2" }) });
+    const a = await reason(
+      { query: "Owner?", workspace: "ownership", evidence },
+      { tier1: createMockModel({ id: "A" }) },
+    );
+    const b = await reason(
+      { query: "Owner?", workspace: "ownership", evidence },
+      { tier2: createMockModel({ id: "B", tier: "tier2" }) },
+    );
     expect(Object.keys(a).sort()).toEqual(Object.keys(b).sort());
     expect(a.model.modelId).toBe("A");
     expect(b.model.modelId).toBe("B");

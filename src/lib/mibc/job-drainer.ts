@@ -22,19 +22,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspaceStore } from "@/stores/workspace.store";
 import { useMissionStore } from "@/services/mission";
-import {
-  buildReport,
-  exportReport,
-  type ReportType,
-  type ReportPeriod,
-} from "@/services/mibc";
+import { buildReport, exportReport, type ReportType, type ReportPeriod } from "@/services/mibc";
 import { intelligenceOrchestrator } from "@/services/intelligence-orchestrator";
 
-import {
-  claimNextReportJob,
-  completeReportJob,
-  failReportJob,
-} from "./schedules.functions";
+import { claimNextReportJob, completeReportJob, failReportJob } from "./schedules.functions";
 
 const POLL_MS = 15_000;
 
@@ -70,9 +61,7 @@ export function useReportJobDrainer(enabled = true): void {
         if (!job || cancelled) return;
 
         try {
-          const investigations = Object.values(
-            useWorkspaceStore.getState().investigations,
-          );
+          const investigations = Object.values(useWorkspaceStore.getState().investigations);
           const targetIds: string[] = job.workspace_ids ?? [];
           const workspaces =
             targetIds.length === 0
@@ -80,9 +69,7 @@ export function useReportJobDrainer(enabled = true): void {
               : investigations.filter((w) => targetIds.includes(w.id));
 
           if (workspaces.length === 0) {
-            throw new Error(
-              "No investigation workspaces available in this browser session.",
-            );
+            throw new Error("No investigation workspaces available in this browser session.");
           }
 
           const batch = intelligenceOrchestrator.getUIPsForWorkspaces(workspaces);
@@ -99,7 +86,6 @@ export function useReportJobDrainer(enabled = true): void {
             uipSnapshots,
             missingUipIds: batch.missing,
           });
-
 
           const blob = await exportReport(pkg, "PDF");
           const path = `${sess.session.user.id}/${job.id}.pdf`;
@@ -123,7 +109,6 @@ export function useReportJobDrainer(enabled = true): void {
               },
             },
           });
-
         } catch (err) {
           await fail({
             data: {

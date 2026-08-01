@@ -98,9 +98,7 @@ export function buildEvidencePackage(input: PackageBuilderInput): EvidencePackag
   };
 }
 
-function pickHighestGrade(
-  records: ReadonlyArray<NormalizedEvidence>,
-): NormalizedEvidence["grade"] {
+function pickHighestGrade(records: ReadonlyArray<NormalizedEvidence>): NormalizedEvidence["grade"] {
   let best: NormalizedEvidence["grade"] = "UNKNOWN";
   for (const r of records) {
     if (GRADE_RANK[r.grade] > GRADE_RANK[best]) best = r.grade;
@@ -111,7 +109,12 @@ function pickHighestGrade(
 function detectConflicts(records: ReadonlyArray<NormalizedEvidence>): EvidenceConflict[] {
   const perEntityField = new Map<
     string,
-    { value: EvidenceFieldValue; evidenceId: string; source: NormalizedEvidence["source"]; grade: NormalizedEvidence["grade"] }[]
+    {
+      value: EvidenceFieldValue;
+      evidenceId: string;
+      source: NormalizedEvidence["source"];
+      grade: NormalizedEvidence["grade"];
+    }[]
   >();
   for (const r of records) {
     for (const [field, value] of Object.entries(r.fields)) {

@@ -17,16 +17,12 @@ import {
 
 // ── Fetch stubs ────────────────────────────────────────────────────────
 
-function tokenFetch(
-  accessToken: string,
-  expiresIn = 600,
-  status = 200,
-): typeof fetch {
+function tokenFetch(accessToken: string, expiresIn = 600, status = 200): typeof fetch {
   return (async () =>
-    new Response(
-      JSON.stringify({ access_token: accessToken, expires_in: expiresIn }),
-      { status, headers: { "Content-Type": "application/json" } },
-    )) as unknown as typeof fetch;
+    new Response(JSON.stringify({ access_token: accessToken, expires_in: expiresIn }), {
+      status,
+      headers: { "Content-Type": "application/json" },
+    })) as unknown as typeof fetch;
 }
 
 function stacFetch(features: CdseStacFeature[], status = 200): typeof fetch {
@@ -79,7 +75,15 @@ const SENTINEL1_FEATURE: CdseStacFeature = {
   type: "Feature",
   geometry: {
     type: "Polygon",
-    coordinates: [[[3.3, 6.4], [3.45, 6.4], [3.45, 6.5], [3.3, 6.5], [3.3, 6.4]]],
+    coordinates: [
+      [
+        [3.3, 6.4],
+        [3.45, 6.4],
+        [3.45, 6.5],
+        [3.3, 6.5],
+        [3.3, 6.4],
+      ],
+    ],
   },
   bbox: [3.3, 6.4, 3.45, 6.5],
   properties: {
@@ -190,10 +194,10 @@ describe("EP-COPERNICUS-01 · Token Refresh", () => {
       const u = String(url);
       calls.push(u);
       if (u.includes("openid-connect/token")) {
-        return new Response(
-          JSON.stringify({ access_token: "tok_abc", expires_in: 600 }),
-          { status: 200, headers: { "Content-Type": "application/json" } },
-        );
+        return new Response(JSON.stringify({ access_token: "tok_abc", expires_in: 600 }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
       }
       return new Response(
         JSON.stringify({ type: "FeatureCollection", features: [], numberReturned: 0 }),
@@ -245,8 +249,7 @@ describe("EP-COPERNICUS-01 · Token Refresh", () => {
 
 describe("EP-COPERNICUS-01 · Provider Health", () => {
   it("healthCheck() returns available=false when STAC root is unreachable", async () => {
-    const downFetch = (async () =>
-      new Response("{}", { status: 503 })) as unknown as typeof fetch;
+    const downFetch = (async () => new Response("{}", { status: 503 })) as unknown as typeof fetch;
     const provider = new CopernicusProvider({
       fetchImpl: downFetch,
       cache: new EvidenceCache(),
@@ -260,10 +263,10 @@ describe("EP-COPERNICUS-01 · Provider Health", () => {
     const upFetch = (async (url: RequestInfo | URL) => {
       const u = String(url);
       if (u.includes("openid-connect/token")) {
-        return new Response(
-          JSON.stringify({ access_token: "tok", expires_in: 600 }),
-          { status: 200, headers: { "Content-Type": "application/json" } },
-        );
+        return new Response(JSON.stringify({ access_token: "tok", expires_in: 600 }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
       }
       return new Response("{}", { status: 200 });
     }) as unknown as typeof fetch;
@@ -318,13 +321,13 @@ describe("EP-COPERNICUS-01 · Search", () => {
     const capturingFetch = (async (url: RequestInfo | URL, init?: RequestInit) => {
       const u = String(url);
       if (u.includes("openid-connect/token")) {
-        return new Response(
-          JSON.stringify({ access_token: "tok", expires_in: 600 }),
-          { status: 200, headers: { "Content-Type": "application/json" } },
-        );
+        return new Response(JSON.stringify({ access_token: "tok", expires_in: 600 }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
       }
       if (u.includes("/search")) {
-        searchBodies.push(JSON.parse(init?.body as string ?? "{}"));
+        searchBodies.push(JSON.parse((init?.body as string) ?? "{}"));
       }
       return new Response(
         JSON.stringify({ type: "FeatureCollection", features: [SENTINEL1_FEATURE] }),
@@ -353,10 +356,10 @@ describe("EP-COPERNICUS-01 · Search", () => {
       const u = String(url);
       networkCalls.push(u);
       if (u.includes("openid-connect/token")) {
-        return new Response(
-          JSON.stringify({ access_token: "tok", expires_in: 600 }),
-          { status: 200, headers: { "Content-Type": "application/json" } },
-        );
+        return new Response(JSON.stringify({ access_token: "tok", expires_in: 600 }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
       }
       return new Response(
         JSON.stringify({ type: "FeatureCollection", features: [SENTINEL1_FEATURE] }),
@@ -506,9 +509,9 @@ describe("EP-COPERNICUS-01 · Canonical UIP population", () => {
     // Structural check: the provider source must not import registerUip
     // This is enforced by the certification framework at registration;
     // here we verify the contract at the test level too.
-    const src = await import(
-      /* @vite-ignore */ "../implementations/CopernicusProvider?raw"
-    ).catch(() => null);
+    const src = await import(/* @vite-ignore */ "../implementations/CopernicusProvider?raw").catch(
+      () => null,
+    );
     if (src) {
       expect(src.default).not.toContain("registerUip");
       expect(src.default).not.toContain("supabase");
@@ -527,9 +530,9 @@ describe("EP-COPERNICUS-01 · No secrets committed", () => {
   });
 
   it("provider module does not hardcode any credential strings", async () => {
-    const src = await import(
-      /* @vite-ignore */ "../implementations/CopernicusProvider?raw"
-    ).catch(() => ({ default: "" }));
+    const src = await import(/* @vite-ignore */ "../implementations/CopernicusProvider?raw").catch(
+      () => ({ default: "" }),
+    );
     const code = src?.default ?? "";
     // Should not contain any real credential pattern
     expect(code).not.toMatch(/password\s*=\s*["'][^"']{6,}/);

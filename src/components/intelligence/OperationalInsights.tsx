@@ -74,12 +74,7 @@ function Bar({ label, value }: { label: string; value: number }) {
 
 function PyramidCard({ p, dense }: { p: ConfidencePyramid; dense?: boolean }) {
   return (
-    <div
-      className={cn(
-        "rounded-lg ring-1 ring-slate-200 bg-white",
-        dense ? "p-2.5" : "p-3",
-      )}
-    >
+    <div className={cn("rounded-lg ring-1 ring-slate-200 bg-white", dense ? "p-2.5" : "p-3")}>
       <div className="flex items-center gap-2">
         <Layers className="h-3.5 w-3.5 text-slate-500" />
         <span className="text-xs font-semibold uppercase tracking-wide text-slate-700">
@@ -185,9 +180,7 @@ function PatternRow({ pattern }: { pattern: OperationalPattern }) {
                     <span className="text-slate-400 tabular-nums">{i + 1}.</span>
                     <span>
                       <span className="font-medium">{r.step}</span>
-                      {r.detail ? (
-                        <span className="text-slate-500"> — {r.detail}</span>
-                      ) : null}
+                      {r.detail ? <span className="text-slate-500"> — {r.detail}</span> : null}
                     </span>
                   </li>
                 ))}
@@ -243,14 +236,9 @@ function PatternRow({ pattern }: { pattern: OperationalPattern }) {
             ) : (
               <ul className="mt-2 space-y-2">
                 {pattern.recommendations.map((r) => (
-                  <li
-                    key={r.id}
-                    className="rounded-md bg-white p-2.5 ring-1 ring-indigo-100"
-                  >
+                  <li key={r.id} className="rounded-md bg-white p-2.5 ring-1 ring-indigo-100">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-xs font-semibold text-slate-900">
-                        {r.label}
-                      </span>
+                      <span className="text-xs font-semibold text-slate-900">{r.label}</span>
                       <span
                         className={cn(
                           "rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1",
@@ -263,9 +251,7 @@ function PatternRow({ pattern }: { pattern: OperationalPattern }) {
                       >
                         {r.urgency}
                       </span>
-                      <span className="text-[10px] text-slate-500">
-                        Confidence {r.confidence}
-                      </span>
+                      <span className="text-[10px] text-slate-500">Confidence {r.confidence}</span>
                       {r.requiresOfficerApproval && (
                         <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-600 ring-1 ring-slate-200">
                           <ShieldAlert className="h-3 w-3" /> Officer approval required
@@ -288,9 +274,7 @@ function PatternRow({ pattern }: { pattern: OperationalPattern }) {
               <ul className="mt-1 space-y-0.5">
                 {pattern.entities.map((e) => (
                   <li key={e.id} className="truncate">
-                    <span className="uppercase tracking-wide text-slate-400">
-                      {e.kind}
-                    </span>{" "}
+                    <span className="uppercase tracking-wide text-slate-400">{e.kind}</span>{" "}
                     {e.label ?? e.id}
                   </li>
                 ))}
@@ -370,12 +354,10 @@ export function OperationalInsights({
             <Brain className="h-4.5 w-4.5" aria-hidden />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-slate-900">
-              Operational Knowledge Layer
-            </h3>
+            <h3 className="text-sm font-semibold text-slate-900">Operational Knowledge Layer</h3>
             <p className="text-[11px] text-slate-500">
-              {pkg.summary.total} operational pattern(s) derived from the fused
-              intelligence package.
+              {pkg.summary.total} operational pattern(s) derived from the fused intelligence
+              package.
             </p>
           </div>
         </div>
@@ -416,8 +398,7 @@ export function OperationalInsights({
         <div className="rounded-xl bg-white p-6 text-center ring-1 ring-slate-200">
           <CircleAlert className="mx-auto h-5 w-5 text-slate-400" />
           <p className="mt-2 text-sm text-slate-600">
-            No operational patterns detected in the current fused intelligence
-            package.
+            No operational patterns detected in the current fused intelligence package.
           </p>
           <p className="text-[11px] text-slate-400">
             OKL will re-run when new evidence enters the UIP.

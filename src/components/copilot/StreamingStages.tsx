@@ -154,8 +154,7 @@ export function StreamingStages({
               className={cn(
                 "flex items-center gap-3 rounded-md border px-3 py-2 text-[13px] transition-colors",
                 state === "done" && "border-primary/40 bg-primary/5 text-foreground",
-                state === "active" &&
-                  "border-primary/60 bg-primary/10 text-foreground shadow-sm",
+                state === "active" && "border-primary/60 bg-primary/10 text-foreground shadow-sm",
                 state === "pending" && "border-border/60 bg-muted/30 text-muted-foreground",
               )}
             >

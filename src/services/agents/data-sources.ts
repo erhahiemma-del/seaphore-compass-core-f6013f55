@@ -29,7 +29,10 @@ type Handler = (args: Record<string, unknown>, signal: AbortSignal) => Promise<u
 const HANDLERS: Record<DataSourceId, Handler> = {
   cac_registry: async (args, signal) => {
     await delay(20, signal);
-    return { entityId: args.entityId, legalOwner: { name: "Oceanic Lines Ltd", jurisdiction: "LR" } };
+    return {
+      entityId: args.entityId,
+      legalOwner: { name: "Oceanic Lines Ltd", jurisdiction: "LR" },
+    };
   },
   company_registry: async (args, signal) => {
     await delay(30, signal);
@@ -63,7 +66,11 @@ const HANDLERS: Record<DataSourceId, Handler> = {
     return {
       observedContainers: 351,
       mismatches: [
-        { containerNo: "OCLU 774218-5", declared: "Palm oil, refined", observed: "Palm oil + unlisted drums" },
+        {
+          containerNo: "OCLU 774218-5",
+          declared: "Palm oil, refined",
+          observed: "Palm oil + unlisted drums",
+        },
       ],
     };
   },
@@ -83,7 +90,11 @@ const HANDLERS: Record<DataSourceId, Handler> = {
   },
   port_state_db: async (_a, signal) => {
     await delay(30, signal);
-    return { findings: [{ port: "Apapa", finding: "Dwell > 48h without manifest update", severity: "med" as const }] };
+    return {
+      findings: [
+        { port: "Apapa", finding: "Dwell > 48h without manifest update", severity: "med" as const },
+      ],
+    };
   },
   document_store: async (a, signal) => {
     await delay(20, signal);
@@ -122,8 +133,18 @@ const HANDLERS: Record<DataSourceId, Handler> = {
     await delay(25, signal);
     return {
       patterns: [
-        { id: "pat_dwell_apapa", label: "Extended dwell at Apapa", matchScore: 0.81, windowDays: 90 },
-        { id: "pat_ubo_layering", label: "Suspected UBO layering", matchScore: 0.64, windowDays: 365 },
+        {
+          id: "pat_dwell_apapa",
+          label: "Extended dwell at Apapa",
+          matchScore: 0.81,
+          windowDays: 90,
+        },
+        {
+          id: "pat_ubo_layering",
+          label: "Suspected UBO layering",
+          matchScore: 0.64,
+          windowDays: 365,
+        },
       ],
     };
   },

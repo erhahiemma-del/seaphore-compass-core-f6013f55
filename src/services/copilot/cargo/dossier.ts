@@ -162,9 +162,7 @@ function assembleDossier(args: {
       route,
       focus: null,
       context: null,
-      sections: SECTION_ORDER.map((id) =>
-        section(id, [], [], unresolvedGap(route)),
-      ),
+      sections: SECTION_ORDER.map((id) => section(id, [], [], unresolvedGap(route))),
       timeline: [],
       gaps: [],
       grade: "UNKNOWN",
@@ -235,7 +233,8 @@ function assembleDossier(args: {
     section(
       "related-companies",
       companies.map(
-        (c) => `${c.node.label} — ${c.reason} (${c.hops} hop${c.hops === 1 ? "" : "s"}, ${c.grade})`,
+        (c) =>
+          `${c.node.label} — ${c.reason} (${c.hops} hop${c.hops === 1 ? "" : "s"}, ${c.grade})`,
       ),
       companies.map((c) => c.node),
       companies.length === 0
@@ -260,16 +259,19 @@ function assembleDossier(args: {
 
   /* 5 — Manifest Summary */
   const manifestLines: string[] = [];
-  for (const m of manifests) manifestLines.push(`Manifest ${m.node.label} — ${m.reason} (${m.grade})`);
-  for (const b of bols) manifestLines.push(`Bill of Lading ${b.node.label} — ${b.reason} (${b.grade})`);
+  for (const m of manifests)
+    manifestLines.push(`Manifest ${m.node.label} — ${m.reason} (${m.grade})`);
+  for (const b of bols)
+    manifestLines.push(`Bill of Lading ${b.node.label} — ${b.reason} (${b.grade})`);
   if (items.length > 0)
     manifestLines.push(
-      `${items.length} declared cargo item${items.length === 1 ? "" : "s"}: ${items.slice(0, 6).map((i) => i.node.label).join(", ")}.`,
+      `${items.length} declared cargo item${items.length === 1 ? "" : "s"}: ${items
+        .slice(0, 6)
+        .map((i) => i.node.label)
+        .join(", ")}.`,
     );
   if (commodities.length > 0)
-    manifestLines.push(
-      `Commodities declared: ${commodities.map((c) => c.node.label).join(", ")}.`,
-    );
+    manifestLines.push(`Commodities declared: ${commodities.map((c) => c.node.label).join(", ")}.`);
   sections.push(
     section(
       "manifest-summary",
@@ -317,7 +319,9 @@ function assembleDossier(args: {
 
   /* 7 — Risk Assessment */
   const riskLines: string[] = [];
-  const highPriority = scopedFindings.filter((f) => f.priority === "critical" || f.priority === "high");
+  const highPriority = scopedFindings.filter(
+    (f) => f.priority === "critical" || f.priority === "high",
+  );
   if (highPriority.length > 0)
     riskLines.push(
       `${highPriority.length} high or critical revenue finding${highPriority.length === 1 ? "" : "s"}: ${highPriority.map((f) => f.headline).join("; ")}.`,
@@ -329,7 +333,9 @@ function assembleDossier(args: {
   );
   for (const n of flagged)
     riskLines.push(
-      `${CARGO_ROLE_LABEL[n.role]} ${n.label} carries risk attributes on the evidence record: ${Object.keys(n.attributes)
+      `${CARGO_ROLE_LABEL[n.role]} ${n.label} carries risk attributes on the evidence record: ${Object.keys(
+        n.attributes,
+      )
         .filter((k) => ["sanctioned", "dangerousGoods", "flagged", "riskScore"].includes(k))
         .join(", ")} (${n.grade}).`,
     );
@@ -403,14 +409,14 @@ function assembleDossier(args: {
       "The evidenced chain supports no specific recommendation. Acquire further cargo evidence before acting.",
     );
   recommendations.push("The system recommends; the officer decides.");
-  sections.push(
-    section("ai-recommendations", recommendations, [focus], null),
-  );
+  sections.push(section("ai-recommendations", recommendations, [focus], null));
 
   /* 10 — Next Best Actions */
   const actions: string[] = [
     `Open an investigation seeded with the ${ctx.evidenceCount} evidence record${ctx.evidenceCount === 1 ? "" : "s"} behind this dossier.`,
-    ...ctx.gaps.slice(0, 3).map((g) => `Acquire ${CARGO_ROLE_LABEL[g]} evidence to close the chain gap.`),
+    ...ctx.gaps
+      .slice(0, 3)
+      .map((g) => `Acquire ${CARGO_ROLE_LABEL[g]} evidence to close the chain gap.`),
   ];
   if (companies.length > 0)
     actions.push(`Run ownership and sanctions checks on ${companies[0].node.label}.`);

@@ -26,12 +26,7 @@ import type {
   SeaphoreRecord,
 } from "@/lib/osint/types";
 import { baseConfidence, confidenceLevelFor } from "@/lib/osint/confidence";
-import {
-  AuthError,
-  NetworkError,
-  ParseError,
-  RateLimitError,
-} from "@/lib/osint/errors";
+import { AuthError, NetworkError, ParseError, RateLimitError } from "@/lib/osint/errors";
 
 /**
  * The engine calls this to persist normalized records. The template
@@ -55,9 +50,7 @@ async function runSharedIngestionPipeline(
     .single();
   const connectorId = (connectorRow as { id: string } | null)?.id;
   if (!connectorId) {
-    throw new Error(
-      `Connector ${connector.name} is not registered — cannot ingest`,
-    );
+    throw new Error(`Connector ${connector.name} is not registered — cannot ingest`);
   }
   const { data: run } = await supabaseAdmin
     .from("osint_sync_runs")
@@ -239,9 +232,8 @@ export class TemplateConnector implements ConnectorInterface {
         confidence,
         // Default confidenceLevel for raw OSINT is OBSERVED; override
         // only if the source is verified/audited by construction.
-        confidenceLevel: this.provenance === "government"
-          ? confidenceLevelFor(confidence)
-          : "OBSERVED",
+        confidenceLevel:
+          this.provenance === "government" ? confidenceLevelFor(confidence) : "OBSERVED",
         fetchedAt: now,
         validFrom: now,
         validTo: null,

@@ -18,10 +18,18 @@ function ring<T>(capacity: number) {
       buf.push(item);
       if (buf.length > capacity) buf.splice(0, buf.length - capacity);
     },
-    all(): readonly T[] { return buf.slice(); },
-    filter(pred: (t: T) => boolean): readonly T[] { return buf.filter(pred); },
-    size(): number { return buf.length; },
-    clear(): void { buf.length = 0; },
+    all(): readonly T[] {
+      return buf.slice();
+    },
+    filter(pred: (t: T) => boolean): readonly T[] {
+      return buf.filter(pred);
+    },
+    size(): number {
+      return buf.length;
+    },
+    clear(): void {
+      buf.length = 0;
+    },
   };
 }
 

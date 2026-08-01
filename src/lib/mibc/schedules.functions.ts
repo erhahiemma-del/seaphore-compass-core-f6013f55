@@ -75,10 +75,7 @@ export const deleteReportSchedule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((raw: unknown) => idInput.parse(raw))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("report_schedules")
-      .delete()
-      .eq("id", data.id);
+    const { error } = await context.supabase.from("report_schedules").delete().eq("id", data.id);
     if (error) throw error;
     return { ok: true };
   });
@@ -126,10 +123,9 @@ export const claimNextReportJob = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((raw: unknown) => workerInput.parse(raw))
   .handler(async ({ data, context }) => {
-    const { data: rows, error } = await context.supabase.rpc(
-      "mibc_claim_next_job",
-      { _worker: data.worker },
-    );
+    const { data: rows, error } = await context.supabase.rpc("mibc_claim_next_job", {
+      _worker: data.worker,
+    });
     if (error) throw error;
     return (rows && rows[0]) ?? null;
   });

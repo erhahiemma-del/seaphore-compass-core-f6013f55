@@ -8,18 +8,21 @@
  */
 
 export class NonRetryableError extends Error {
-  constructor(message: string, readonly cause?: unknown) {
+  constructor(
+    message: string,
+    readonly cause?: unknown,
+  ) {
     super(message);
     this.name = "NonRetryableError";
   }
 }
 
 export interface RetryOptions {
-  retries?: number;         // default 3 (Sprint 12 AC)
-  baseMs?: number;          // default 100
-  maxMs?: number;           // default 5_000
-  factor?: number;          // default 2
-  jitter?: boolean;         // default true (full jitter)
+  retries?: number; // default 3 (Sprint 12 AC)
+  baseMs?: number; // default 100
+  maxMs?: number; // default 5_000
+  factor?: number; // default 2
+  jitter?: boolean; // default true (full jitter)
   signal?: AbortSignal;
   onRetry?: (attempt: number, err: unknown, delayMs: number) => void;
   isRetryable?: (err: unknown) => boolean;
@@ -29,8 +32,14 @@ export interface RetryOptions {
 const defaultSleep = (ms: number, signal?: AbortSignal) =>
   new Promise<void>((resolve, reject) => {
     if (signal?.aborted) return reject(signal.reason ?? new Error("aborted"));
-    const t = setTimeout(() => { signal?.removeEventListener("abort", onAbort); resolve(); }, ms);
-    const onAbort = () => { clearTimeout(t); reject(signal?.reason ?? new Error("aborted")); };
+    const t = setTimeout(() => {
+      signal?.removeEventListener("abort", onAbort);
+      resolve();
+    }, ms);
+    const onAbort = () => {
+      clearTimeout(t);
+      reject(signal?.reason ?? new Error("aborted"));
+    };
     signal?.addEventListener("abort", onAbort, { once: true });
   });
 

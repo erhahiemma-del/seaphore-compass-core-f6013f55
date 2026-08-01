@@ -22,11 +22,7 @@ export const ownershipInvestigationPlaybook: Playbook = {
     "Expand corporate network two hops",
   ],
   requiredEvidence: {
-    mandatory: [
-      "Registered owner",
-      "Beneficial owner chain",
-      "Sanctions screening result",
-    ],
+    mandatory: ["Registered owner", "Beneficial owner chain", "Sanctions screening result"],
     optional: ["Corporate registry filing", "Affiliated vessels list"],
     minimumBeforeReasoning: 2,
   },
@@ -107,16 +103,14 @@ export const ownershipInvestigationPlaybook: Playbook = {
       when: (ctx) => hasFinding(ctx, ["opaque", "shell", "unknown owner"]),
       action: "Request beneficial-ownership verification from the operator",
       priority: "critical",
-      rationale: () =>
-        "SOP requires a natural-person or state terminus for the beneficial chain.",
+      rationale: () => "SOP requires a natural-person or state terminus for the beneficial chain.",
     },
     {
       id: "ownership.rec.sanctions_hold",
       when: (ctx) => hasFinding(ctx, ["sanction", "ofac", "watchlist"]),
       action: "Hold operations pending sanctions clearance",
       priority: "critical",
-      rationale: () =>
-        "Sanctioned party in the network blocks routine clearance under SOP.",
+      rationale: () => "Sanctioned party in the network blocks routine clearance under SOP.",
     },
     {
       id: "ownership.rec.expand_network",

@@ -97,7 +97,8 @@ async function main() {
       .order("granted_at", { ascending: true })
       .limit(1)
       .maybeSingle();
-    if (!role?.user_id) throw new Error("Seed a user_role first — investigations.lead_officer_id is NOT NULL");
+    if (!role?.user_id)
+      throw new Error("Seed a user_role first — investigations.lead_officer_id is NOT NULL");
     const { error } = await db.from("investigations").insert({
       id: invEntityId,
       case_number: "INV-2026-00431",
@@ -111,15 +112,21 @@ async function main() {
 
   // Verified edges
   const edges = [
-    { source_id: companyId, target_id: vesselId, type: "OPERATES", confidence: "VERIFIED" as const },
-    { source_id: vesselId, target_id: portId, type: "DOCKED_AT", confidence: "CORROBORATED" as const },
+    {
+      source_id: companyId,
+      target_id: vesselId,
+      type: "OPERATES",
+      confidence: "VERIFIED" as const,
+    },
+    {
+      source_id: vesselId,
+      target_id: portId,
+      type: "DOCKED_AT",
+      confidence: "CORROBORATED" as const,
+    },
   ];
   for (const e of edges) {
-    const { data: exists } = await db
-      .from("relationships")
-      .select("id")
-      .match(e)
-      .maybeSingle();
+    const { data: exists } = await db.from("relationships").select("id").match(e).maybeSingle();
     if (!exists) await db.from("relationships").insert(e).throwOnError();
   }
 

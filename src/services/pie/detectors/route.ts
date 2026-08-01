@@ -60,7 +60,8 @@ export const routeDeviationDetector: Detector = {
             {
               label: "Operational weather / port congestion",
               probability: 0.2,
-              rationale: "Deviations can be legitimate operational reroutes recorded by the master.",
+              rationale:
+                "Deviations can be legitimate operational reroutes recorded by the master.",
             },
           ],
           now: ctx.now,

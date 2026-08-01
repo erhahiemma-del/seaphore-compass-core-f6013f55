@@ -22,11 +22,7 @@ export const vesselRiskAssessmentPlaybook: Playbook = {
     "Cross-check institutional memory for prior cases",
   ],
   requiredEvidence: {
-    mandatory: [
-      "Vessel registry record",
-      "AIS movement history",
-      "Owner and operator record",
-    ],
+    mandatory: ["Vessel registry record", "AIS movement history", "Owner and operator record"],
     optional: ["PSC deficiency history", "Prior incident record"],
     minimumBeforeReasoning: 2,
   },
@@ -115,22 +111,17 @@ export const vesselRiskAssessmentPlaybook: Playbook = {
       when: (ctx) => hasFinding(ctx, ["detention", "psc", "deficiency"]),
       action: "Schedule an enhanced Port State Control inspection",
       priority: "high",
-      rationale: () =>
-        "Prior PSC issues are on file; SOP requires an enhanced boarding.",
+      rationale: () => "Prior PSC issues are on file; SOP requires an enhanced boarding.",
     },
     {
       id: "vessel.rec.monitor",
       when: (ctx) => ctx.criticalFindings.length === 0,
       action: "Log the dossier and monitor next port call",
       priority: "monitor",
-      rationale: () =>
-        "No SOP rule breached; retain the vessel dossier for institutional memory.",
+      rationale: () => "No SOP rule breached; retain the vessel dossier for institutional memory.",
     },
   ],
-  baselineInformationGaps: [
-    "Beneficial-owner confirmation",
-    "Live AIS position",
-  ],
+  baselineInformationGaps: ["Beneficial-owner confirmation", "Live AIS position"],
   followUps: [
     "Show voyage history",
     "Review ownership network",

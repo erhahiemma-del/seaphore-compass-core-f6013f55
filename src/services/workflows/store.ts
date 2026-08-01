@@ -10,7 +10,11 @@ import type { AuditEntry, WorkflowId, WorkflowRecord, WorkflowStatus } from "./t
 export interface WorkflowStore {
   put(record: WorkflowRecord): void;
   get(id: string): WorkflowRecord | undefined;
-  list(filter?: { officerId?: string; workflow?: WorkflowId; status?: WorkflowStatus }): readonly WorkflowRecord[];
+  list(filter?: {
+    officerId?: string;
+    workflow?: WorkflowId;
+    status?: WorkflowStatus;
+  }): readonly WorkflowRecord[];
 }
 
 export interface AuditLog {

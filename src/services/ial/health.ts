@@ -96,15 +96,18 @@ export class HealthTracker {
       let written = 0;
       for (const id of this.state.keys()) {
         const h = this.snapshot(id);
-        const { error } = await supabaseAdmin.from("data_source_health").upsert({
-          source_id: String(id),
-          status: h.available ? "healthy" : h.lastError ? "down" : "degraded",
-          latency_ms: h.latencyMsP50,
-          failure_rate: h.failureRate,
-          last_success_at: h.lastSuccessAt,
-          last_error: h.lastError,
-          updated_at: new Date().toISOString(),
-        } as never, { onConflict: "source_id" } as never);
+        const { error } = await supabaseAdmin.from("data_source_health").upsert(
+          {
+            source_id: String(id),
+            status: h.available ? "healthy" : h.lastError ? "down" : "degraded",
+            latency_ms: h.latencyMsP50,
+            failure_rate: h.failureRate,
+            last_success_at: h.lastSuccessAt,
+            last_error: h.lastError,
+            updated_at: new Date().toISOString(),
+          } as never,
+          { onConflict: "source_id" } as never,
+        );
         if (!error) written++;
       }
       return { written, skipped: this.state.size - written };

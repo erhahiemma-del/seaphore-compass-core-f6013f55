@@ -19,7 +19,7 @@ function isChunkLoadError(err: unknown): boolean {
       ? err.message
       : typeof err === "string"
         ? err
-        : (err as { message?: string })?.message ?? "";
+        : ((err as { message?: string })?.message ?? "");
   return (
     /Failed to fetch dynamically imported module/i.test(msg) ||
     /Importing a module script failed/i.test(msg) ||
@@ -62,8 +62,7 @@ export function showStaleChunkNoticeIfAny() {
   }
   if (!shouldShow) return;
   toast.info("App refreshed to load the latest build", {
-    description:
-      "An outdated version was detected and reloaded. Please retry your last action.",
+    description: "An outdated version was detected and reloaded. Please retry your last action.",
     duration: 10_000,
     action: {
       label: "Retry",

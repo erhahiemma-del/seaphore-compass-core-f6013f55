@@ -39,9 +39,7 @@ export const DEFAULT_PROVIDER_METADATA: ProviderMetadata = {
 };
 
 /** Normalise partial metadata declared by a connector. */
-export function providerMetadata(
-  partial?: Partial<ProviderMetadata>,
-): ProviderMetadata {
+export function providerMetadata(partial?: Partial<ProviderMetadata>): ProviderMetadata {
   return { ...DEFAULT_PROVIDER_METADATA, ...(partial ?? {}) };
 }
 
@@ -53,13 +51,10 @@ export type RuntimeEnvironment = "development" | "production";
  * Precedence: explicit override → VITE_PROVIDER_ENV / PROVIDER_ENV →
  * MODE / NODE_ENV → "development".
  */
-export function resolveRuntimeEnvironment(
-  override?: RuntimeEnvironment,
-): RuntimeEnvironment {
+export function resolveRuntimeEnvironment(override?: RuntimeEnvironment): RuntimeEnvironment {
   if (override) return override;
   const env =
-    (typeof import.meta !== "undefined" &&
-      (import.meta as { env?: Record<string, string> }).env) ||
+    (typeof import.meta !== "undefined" && (import.meta as { env?: Record<string, string> }).env) ||
     undefined;
   const raw =
     env?.VITE_PROVIDER_ENV ||
@@ -76,8 +71,7 @@ export function resolveRuntimeEnvironment(
  */
 export function hybridExecutionEnabled(): boolean {
   const env =
-    (typeof import.meta !== "undefined" &&
-      (import.meta as { env?: Record<string, string> }).env) ||
+    (typeof import.meta !== "undefined" && (import.meta as { env?: Record<string, string> }).env) ||
     undefined;
   const raw =
     env?.VITE_PROVIDER_HYBRID ||
@@ -92,11 +86,9 @@ export function hybridExecutionEnabled(): boolean {
 export function providerOverrideFor(capability: string): string | undefined {
   const key = `PROVIDER_OVERRIDE_${capability.toUpperCase()}`;
   const env =
-    (typeof import.meta !== "undefined" &&
-      (import.meta as { env?: Record<string, string> }).env) ||
+    (typeof import.meta !== "undefined" && (import.meta as { env?: Record<string, string> }).env) ||
     undefined;
   const raw =
-    env?.[`VITE_${key}`] ||
-    (typeof process !== "undefined" ? process.env?.[key] : undefined);
+    env?.[`VITE_${key}`] || (typeof process !== "undefined" ? process.env?.[key] : undefined);
   return raw ? String(raw) : undefined;
 }

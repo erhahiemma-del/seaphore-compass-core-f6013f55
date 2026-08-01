@@ -14,12 +14,12 @@
  * Approval, cooldown, conflict banners).
  */
 import type { OfficerContext, WorkflowId } from "@/services/workflows";
-import type { PolicyDecision as WorkflowPolicyDecision, PolicyEngine as WorkflowPolicyEngine } from "@/services/workflows/policy";
+import type {
+  PolicyDecision as WorkflowPolicyDecision,
+  PolicyEngine as WorkflowPolicyEngine,
+} from "@/services/workflows/policy";
 import { createMemoryDecisionAuditLog, type DecisionAuditLog } from "./audit";
-import {
-  noopConflictDetector,
-  type ConflictDetector,
-} from "./conflicts";
+import { noopConflictDetector, type ConflictDetector } from "./conflicts";
 import type { Decision } from "./decision";
 import { approvalSatisfies, escalationFor, type ApprovalToken } from "./escalation";
 import { WORKFLOW_PERMISSION } from "./permissions";
@@ -95,7 +95,11 @@ export class PolicyEngine implements WorkflowPolicyEngine {
     }
 
     // 3. Conflicts
-    const conflict = this.conflicts.detect({ workflow: req.workflow, officer: req.officer, input: req.input });
+    const conflict = this.conflicts.detect({
+      workflow: req.workflow,
+      officer: req.officer,
+      input: req.input,
+    });
     if (conflict) {
       return this.record({
         ...base,
@@ -133,7 +137,11 @@ export class PolicyEngine implements WorkflowPolicyEngine {
   }
 
   /** Sprint 9 compatibility. */
-  can(officer: OfficerContext, workflow: WorkflowId, input: Readonly<Record<string, unknown>>): WorkflowPolicyDecision {
+  can(
+    officer: OfficerContext,
+    workflow: WorkflowId,
+    input: Readonly<Record<string, unknown>>,
+  ): WorkflowPolicyDecision {
     const d = this.evaluate({ workflow, officer, input });
     return d.allowed ? { allowed: true } : { allowed: false, reason: `[${d.outcome}] ${d.reason}` };
   }
@@ -144,22 +152,65 @@ export class PolicyEngine implements WorkflowPolicyEngine {
     const at = this.now();
     const permission = WORKFLOW_PERMISSION[req.workflow];
     const role = req.officer.role as Role;
-    const base = { workflow: req.workflow, permission, officerId: req.officer.officerId, at: at.toISOString() } as const;
+    const base = {
+      workflow: req.workflow,
+      permission,
+      officerId: req.officer.officerId,
+      at: at.toISOString(),
+    } as const;
     if (!roleHas(role, permission)) {
-      return { ...base, outcome: "deny_permission", allowed: false, reason: `Role '${role}' lacks ${permission}.` };
+      return {
+        ...base,
+        outcome: "deny_permission",
+        allowed: false,
+        reason: `Role '${role}' lacks ${permission}.`,
+      };
     }
     const rule = escalationFor(req.workflow, role);
     if (rule && !approvalSatisfies(rule, req.approval)) {
-      return { ...base, outcome: "escalate", allowed: false, reason: `Requires ${rule.approverRoles.join("/")} approval.`, meta: { approverRoles: rule.approverRoles } };
+      return {
+        ...base,
+        outcome: "escalate",
+        allowed: false,
+        reason: `Requires ${rule.approverRoles.join("/")} approval.`,
+        meta: { approverRoles: rule.approverRoles },
+      };
     }
-    const conflict = this.conflicts.detect({ workflow: req.workflow, officer: req.officer, input: req.input });
-    if (conflict) return { ...base, outcome: "conflict", allowed: false, reason: conflict.explanation, meta: { conflictWith: conflict.conflictWith } };
+    const conflict = this.conflicts.detect({
+      workflow: req.workflow,
+      officer: req.officer,
+      input: req.input,
+    });
+    if (conflict)
+      return {
+        ...base,
+        outcome: "conflict",
+        allowed: false,
+        reason: conflict.explanation,
+        meta: { conflictWith: conflict.conflictWith },
+      };
     const limit = limitFor(req.workflow);
-    const current = this.rl.count(keyFor(req.officer.officerId, req.workflow), at.getTime(), WINDOW_MS);
+    const current = this.rl.count(
+      keyFor(req.officer.officerId, req.workflow),
+      at.getTime(),
+      WINDOW_MS,
+    );
     if (current >= limit) {
-      return { ...base, outcome: "rate_limited", allowed: false, reason: `Hourly limit ${limit} reached.`, meta: { limit, current } };
+      return {
+        ...base,
+        outcome: "rate_limited",
+        allowed: false,
+        reason: `Hourly limit ${limit} reached.`,
+        meta: { limit, current },
+      };
     }
-    return { ...base, outcome: "allow", allowed: true, reason: "Policy allows.", meta: { limit, current } };
+    return {
+      ...base,
+      outcome: "allow",
+      allowed: true,
+      reason: "Policy allows.",
+      meta: { limit, current },
+    };
   }
 
   private record(d: Decision): Decision {

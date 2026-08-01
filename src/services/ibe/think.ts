@@ -9,11 +9,7 @@
 import type { OIEResult } from "@/services/oie/types";
 import type { IbeContext, IbeThought } from "./types";
 
-export function think(
-  query: string,
-  ctx: IbeContext,
-  oie: OIEResult | null,
-): IbeThought {
+export function think(query: string, ctx: IbeContext, oie: OIEResult | null): IbeThought {
   const mission = ctx.mission;
   const known: string[] = [];
   const missing: string[] = [];

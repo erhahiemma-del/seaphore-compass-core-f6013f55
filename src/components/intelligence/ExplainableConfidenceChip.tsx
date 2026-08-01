@@ -12,11 +12,7 @@
 import type { ReactNode } from "react";
 import { CheckCircle2, Info, MinusCircle, XCircle } from "lucide-react";
 import { ConfidenceChip, type ConfidenceChipProps } from "./ConfidenceChip";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import {
   useConfidenceExplainer,
   type ConfidenceExplainerInput,
@@ -25,8 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export interface ExplainableConfidenceChipProps
-  extends ConfidenceExplainerInput,
-    Pick<ConfidenceChipProps, "size" | "className"> {
+  extends ConfidenceExplainerInput, Pick<ConfidenceChipProps, "size" | "className"> {
   /** Optional heading displayed inside the popover. */
   heading?: string;
 }
@@ -69,11 +64,7 @@ export function ExplainableConfidenceChip({
           <Info className="h-3 w-3 text-muted-foreground/70" aria-hidden />
         </button>
       </HoverCardTrigger>
-      <HoverCardContent
-        align="end"
-        side="top"
-        className="w-80 space-y-2 p-3 text-[12px]"
-      >
+      <HoverCardContent align="end" side="top" className="w-80 space-y-2 p-3 text-[12px]">
         <div className="flex items-center justify-between gap-2">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             {heading}
@@ -87,13 +78,9 @@ export function ExplainableConfidenceChip({
               <li key={f.key} className="flex items-start gap-2">
                 <span className="mt-0.5 shrink-0">{TONE_ICON[f.tone]}</span>
                 <span className="min-w-0 flex-1">
-                  <span className="block font-medium text-foreground">
-                    {f.label}
-                  </span>
+                  <span className="block font-medium text-foreground">{f.label}</span>
                   {f.detail && (
-                    <span className="block text-[11px] text-muted-foreground">
-                      {f.detail}
-                    </span>
+                    <span className="block text-[11px] text-muted-foreground">{f.detail}</span>
                   )}
                 </span>
               </li>

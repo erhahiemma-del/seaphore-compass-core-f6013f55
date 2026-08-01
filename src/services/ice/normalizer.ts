@@ -26,9 +26,7 @@ export function normaliseFieldName(field: string): string {
   return ALIAS_TO_CANONICAL.get(field) ?? field;
 }
 
-export function normaliseEvidence(
-  ev: NormalizedEvidence,
-): NormalizedEvidence {
+export function normaliseEvidence(ev: NormalizedEvidence): NormalizedEvidence {
   const out: Record<string, NormalizedEvidence["fields"][string]> = {};
   for (const [k, v] of Object.entries(ev.fields)) {
     const canonical = normaliseFieldName(k);

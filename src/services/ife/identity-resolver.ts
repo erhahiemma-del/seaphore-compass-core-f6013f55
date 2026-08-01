@@ -96,9 +96,17 @@ function extractSignals(r: NormalizedEvidence): Signals {
     else if (kind === "callsign" && !s.callSign) s.callSign = val;
   }
   const aliasField = f.aliases;
-  if (Array.isArray(aliasField)) for (const a of aliasField) { const v = readStr(a); if (v) s.aliases.add(v); }
+  if (Array.isArray(aliasField))
+    for (const a of aliasField) {
+      const v = readStr(a);
+      if (v) s.aliases.add(v);
+    }
   const histField = f.historicalNames ?? f.priorNames;
-  if (Array.isArray(histField)) for (const h of histField) { const v = readStr(h); if (v) s.historicalNames.add(v); }
+  if (Array.isArray(histField))
+    for (const h of histField) {
+      const v = readStr(h);
+      if (v) s.historicalNames.add(v);
+    }
   return s;
 }
 
@@ -118,7 +126,10 @@ function mergeSignals(a: Signals, b: Signals): Signals {
 class DSU {
   private parent = new Map<number, number>();
   find(x: number): number {
-    if (!this.parent.has(x)) { this.parent.set(x, x); return x; }
+    if (!this.parent.has(x)) {
+      this.parent.set(x, x);
+      return x;
+    }
     let cur = x;
     let p = this.parent.get(cur)!;
     while (p !== cur) {
@@ -130,7 +141,8 @@ class DSU {
     return cur;
   }
   union(a: number, b: number): void {
-    const ra = this.find(a); const rb = this.find(b);
+    const ra = this.find(a);
+    const rb = this.find(b);
     if (ra !== rb) this.parent.set(ra, rb);
   }
 }
@@ -172,23 +184,28 @@ export function resolveIdentities(records: ReadonlyArray<NormalizedEvidence>): I
     const s = signals[i];
     if (s.imo) {
       const anchor = byImo.get(s.imo);
-      if (anchor !== undefined) dsu.union(i, anchor); else byImo.set(s.imo, i);
+      if (anchor !== undefined) dsu.union(i, anchor);
+      else byImo.set(s.imo, i);
     }
     if (s.mmsi) {
       const anchor = byMmsi.get(s.mmsi);
-      if (anchor !== undefined) dsu.union(i, anchor); else byMmsi.set(s.mmsi, i);
+      if (anchor !== undefined) dsu.union(i, anchor);
+      else byMmsi.set(s.mmsi, i);
     }
     if (s.callSign) {
       const key = s.callSign.toUpperCase();
       const anchor = byCall.get(key);
-      if (anchor !== undefined) dsu.union(i, anchor); else byCall.set(key, i);
+      if (anchor !== undefined) dsu.union(i, anchor);
+      else byCall.set(key, i);
     }
   }
   // Second pass: fuzzy-name merge, only when no strong id disagreement exists.
   for (let a = 0; a < mergeableIdx.length; a++) {
     for (let b = a + 1; b < mergeableIdx.length; b++) {
-      const i = mergeableIdx[a]; const j = mergeableIdx[b];
-      const si = signals[i]; const sj = signals[j];
+      const i = mergeableIdx[a];
+      const j = mergeableIdx[b];
+      const si = signals[i];
+      const sj = signals[j];
       if (dsu.find(i) === dsu.find(j)) continue;
       if (si.imo && sj.imo && si.imo !== sj.imo) continue;
       if (si.mmsi && sj.mmsi && si.mmsi !== sj.mmsi) continue;
@@ -209,9 +226,10 @@ export function resolveIdentities(records: ReadonlyArray<NormalizedEvidence>): I
   const clusterMap = new Map<number, Bucket>();
   for (let i = 0; i < records.length; i++) {
     const r = records[i];
-    const root = (r.entity.kind === "vessel" || r.entity.kind === "company" || r.entity.kind === "person")
-      ? dsu.find(i)
-      : i; // non-mergeable: cluster of one
+    const root =
+      r.entity.kind === "vessel" || r.entity.kind === "company" || r.entity.kind === "person"
+        ? dsu.find(i)
+        : i; // non-mergeable: cluster of one
     let bucket = clusterMap.get(root);
     if (!bucket) {
       bucket = {
@@ -234,13 +252,18 @@ export function resolveIdentities(records: ReadonlyArray<NormalizedEvidence>): I
   const rewritten: NormalizedEvidence[] = new Array(records.length);
   const clusters: IdentityCluster[] = [];
   for (const bucket of clusterMap.values()) {
-    const canonicalId = electCanonicalId(bucket.kind, bucket.signals, records[bucket.indices[0]].entity.id);
+    const canonicalId = electCanonicalId(
+      bucket.kind,
+      bucket.signals,
+      records[bucket.indices[0]].entity.id,
+    );
     const label = bucket.label ?? bucket.signals.name ?? canonicalId;
     for (const i of bucket.indices) {
       const r = records[i];
-      rewritten[i] = r.entity.id === canonicalId
-        ? r
-        : { ...r, entity: { kind: bucket.kind, id: canonicalId, label } };
+      rewritten[i] =
+        r.entity.id === canonicalId
+          ? r
+          : { ...r, entity: { kind: bucket.kind, id: canonicalId, label } };
     }
     // Confidence: score the cluster's strongest name/imo/mmsi against itself.
     const query = bucket.signals.imo ?? bucket.signals.mmsi ?? bucket.signals.name ?? label;

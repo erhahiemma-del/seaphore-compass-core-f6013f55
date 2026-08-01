@@ -73,14 +73,17 @@ export function useSessionTimeout(opts: SessionTimeoutOptions = {}): SessionTime
       clearAll();
       setWarning(false);
       deadlineRef.current = Date.now() + timeoutMs;
-      warnTimer.current = setTimeout(() => {
-        setWarning(true);
-        setRemainingMs(warnBeforeMs);
-        tickTimer.current = setInterval(() => {
-          const left = Math.max(0, deadlineRef.current - Date.now());
-          setRemainingMs(left);
-        }, 1_000);
-      }, Math.max(0, timeoutMs - warnBeforeMs));
+      warnTimer.current = setTimeout(
+        () => {
+          setWarning(true);
+          setRemainingMs(warnBeforeMs);
+          tickTimer.current = setInterval(() => {
+            const left = Math.max(0, deadlineRef.current - Date.now());
+            setRemainingMs(left);
+          }, 1_000);
+        },
+        Math.max(0, timeoutMs - warnBeforeMs),
+      );
       logoutTimer.current = setTimeout(() => {
         void performLogout({ queryClient, router });
       }, timeoutMs);

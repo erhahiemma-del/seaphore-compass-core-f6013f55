@@ -33,7 +33,7 @@ export function detectConflicts(cells: MatrixCell[]): ConflictRow[] {
 
     conflicts.push({
       canonicalId: group[0].canonicalId,
-      fieldName:   group[0].fieldName,
+      fieldName: group[0].fieldName,
       majorityValue: maj.cells[0].normalizedValue,
       majoritySources: maj.cells.map((c) => c.sourceId),
       minorityValue: min.cells[0].normalizedValue,
@@ -72,7 +72,8 @@ export function valuesEqual(a: unknown, b: unknown): boolean {
   }
   if (typeof a === "string" && typeof b === "string") {
     if (looksLikeDate(a) && looksLikeDate(b)) {
-      const da = Date.parse(a), db = Date.parse(b);
+      const da = Date.parse(a),
+        db = Date.parse(b);
       if (!isNaN(da) && !isNaN(db)) {
         return Math.abs(da - db) <= TIMESTAMP_TOLERANCE_MINUTES * 60_000;
       }

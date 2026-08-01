@@ -28,30 +28,144 @@ const ENTITY = "ent_vessel_9837456";
 
 const RAW: RawEvidence[] = [
   // Revenue — conflict pair (declared vs observed from independent sources)
-  { id: "r1", agent: "revenue", sourceSystem: "CUSTOMS_DB", entityIds: [ENTITY], attribute: "revenue.declared", value: 1_240_000, unit: "USD", grade: "verified", collectedAt: iso(1) },
-  { id: "r2", agent: "revenue", sourceSystem: "INVOICE_DB", entityIds: [ENTITY], attribute: "revenue.declared", value: 1_612_500, unit: "USD", grade: "observed", collectedAt: iso(2) },
+  {
+    id: "r1",
+    agent: "revenue",
+    sourceSystem: "CUSTOMS_DB",
+    entityIds: [ENTITY],
+    attribute: "revenue.declared",
+    value: 1_240_000,
+    unit: "USD",
+    grade: "verified",
+    collectedAt: iso(1),
+  },
+  {
+    id: "r2",
+    agent: "revenue",
+    sourceSystem: "INVOICE_DB",
+    entityIds: [ENTITY],
+    attribute: "revenue.declared",
+    value: 1_612_500,
+    unit: "USD",
+    grade: "observed",
+    collectedAt: iso(2),
+  },
   // Manifest — conflict pair on container count
-  { id: "m1", agent: "manifest", sourceSystem: "MANIFEST_DB", entityIds: [ENTITY], attribute: "manifest.container_count", value: 348, unit: "TEU", grade: "verified", collectedAt: iso(1) },
-  { id: "m2", agent: "manifest", sourceSystem: "CONTAINER_DB", entityIds: [ENTITY], attribute: "manifest.container_count", value: 351, unit: "TEU", grade: "observed", collectedAt: iso(1) },
+  {
+    id: "m1",
+    agent: "manifest",
+    sourceSystem: "MANIFEST_DB",
+    entityIds: [ENTITY],
+    attribute: "manifest.container_count",
+    value: 348,
+    unit: "TEU",
+    grade: "verified",
+    collectedAt: iso(1),
+  },
+  {
+    id: "m2",
+    agent: "manifest",
+    sourceSystem: "CONTAINER_DB",
+    entityIds: [ENTITY],
+    attribute: "manifest.container_count",
+    value: 351,
+    unit: "TEU",
+    grade: "observed",
+    collectedAt: iso(1),
+  },
   // Ownership — legal owner (single source, no conflict)
-  { id: "o1", agent: "ownership", sourceSystem: "CAC", entityIds: [ENTITY], attribute: "ownership.legal_owner", value: "Oceanic Lines Ltd", unit: null, grade: "verified", collectedAt: iso(3) },
+  {
+    id: "o1",
+    agent: "ownership",
+    sourceSystem: "CAC",
+    entityIds: [ENTITY],
+    attribute: "ownership.legal_owner",
+    value: "Oceanic Lines Ltd",
+    unit: null,
+    grade: "verified",
+    collectedAt: iso(3),
+  },
   // Ownership — duplicate of o1 with weaker grade (should be deduped)
-  { id: "o1_dup", agent: "ownership", sourceSystem: "CAC", entityIds: [ENTITY], attribute: "ownership.legal_owner", value: "Oceanic Lines Ltd", unit: null, grade: "reported", collectedAt: iso(10) },
+  {
+    id: "o1_dup",
+    agent: "ownership",
+    sourceSystem: "CAC",
+    entityIds: [ENTITY],
+    attribute: "ownership.legal_owner",
+    value: "Oceanic Lines Ltd",
+    unit: null,
+    grade: "reported",
+    collectedAt: iso(10),
+  },
   // Compliance — SMC certificate
-  { id: "c1", agent: "compliance", sourceSystem: "CERTIFICATE_REGISTRY", entityIds: [ENTITY], attribute: "compliance.cert.smc", value: "2027-03-11", unit: null, grade: "verified", collectedAt: iso(5) },
+  {
+    id: "c1",
+    agent: "compliance",
+    sourceSystem: "CERTIFICATE_REGISTRY",
+    entityIds: [ENTITY],
+    attribute: "compliance.cert.smc",
+    value: "2027-03-11",
+    unit: null,
+    grade: "verified",
+    collectedAt: iso(5),
+  },
   // Forecast pattern
-  { id: "f1", agent: "forecast", sourceSystem: "PATTERN_ENGINE", entityIds: [ENTITY], attribute: "forecast.pattern.dwell", value: 0.81, unit: "SCORE", grade: "inferred", collectedAt: iso(1) },
+  {
+    id: "f1",
+    agent: "forecast",
+    sourceSystem: "PATTERN_ENGINE",
+    entityIds: [ENTITY],
+    attribute: "forecast.pattern.dwell",
+    value: 0.81,
+    unit: "SCORE",
+    grade: "inferred",
+    collectedAt: iso(1),
+  },
   // Evidence library artefact
-  { id: "e1", agent: "evidence", sourceSystem: "AIS_STREAM", entityIds: [ENTITY], attribute: "evidence.ais_ping", value: "sha256:abc", unit: null, grade: "verified", collectedAt: iso(0.1) },
+  {
+    id: "e1",
+    agent: "evidence",
+    sourceSystem: "AIS_STREAM",
+    entityIds: [ENTITY],
+    attribute: "evidence.ais_ping",
+    value: "sha256:abc",
+    unit: null,
+    grade: "verified",
+    collectedAt: iso(0.1),
+  },
   // Sanctions — different attribute, independent source
-  { id: "s1", agent: "ownership", sourceSystem: "OpenSanctions", entityIds: [ENTITY], attribute: "sanctions.hit", value: false, unit: null, grade: "verified", collectedAt: iso(0.5) },
+  {
+    id: "s1",
+    agent: "ownership",
+    sourceSystem: "OpenSanctions",
+    entityIds: [ENTITY],
+    attribute: "sanctions.hit",
+    value: false,
+    unit: null,
+    grade: "verified",
+    collectedAt: iso(0.5),
+  },
   // Stale reported item — recency should pull it down
-  { id: "h1", agent: "forecast", sourceSystem: "HISTORICAL_DB", entityIds: [ENTITY], attribute: "history.prior_dwells", value: 42, unit: "HOURS", grade: "reported", collectedAt: iso(400) },
+  {
+    id: "h1",
+    agent: "forecast",
+    sourceSystem: "HISTORICAL_DB",
+    entityIds: [ENTITY],
+    attribute: "history.prior_dwells",
+    value: 42,
+    unit: "HOURS",
+    grade: "reported",
+    collectedAt: iso(400),
+  },
 ];
 
 describe("Sprint 7 · normalise", () => {
   it("canonicalises value/unit/timestamp and preserves raw", () => {
-    const n = normalizeOne({ ...RAW[0], value: "  Oceanic  Lines   Ltd " as unknown as number, unit: "usd" });
+    const n = normalizeOne({
+      ...RAW[0],
+      value: "  Oceanic  Lines   Ltd " as unknown as number,
+      unit: "usd",
+    });
     expect(n.unit).toBe("USD");
     expect(n.value).toBe("Oceanic Lines Ltd");
     expect(n.attribute).toBe("revenue.declared");

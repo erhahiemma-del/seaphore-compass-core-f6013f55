@@ -10,11 +10,7 @@
  * providers contributed.
  */
 
-import type {
-  CanonicalEntityRef,
-  ConnectorId,
-  NormalizedEvidence,
-} from "@/services/ial/types";
+import type { CanonicalEntityRef, ConnectorId, NormalizedEvidence } from "@/services/ial/types";
 
 export type FieldCategory =
   | "IDENTITY"
@@ -129,7 +125,7 @@ export interface FusedField {
   readonly fusedValue: unknown;
   readonly winningSource: ConnectorId | null;
   readonly winningEvidenceScore: number;
-  readonly confidence: number;         // 0..1
+  readonly confidence: number; // 0..1
   readonly confidenceLevel: ConfidenceLevel;
   readonly cellStatus: CellStatus;
   readonly hasConflict: boolean;

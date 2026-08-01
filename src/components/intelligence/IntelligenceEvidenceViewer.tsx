@@ -86,10 +86,7 @@ export function IntelligenceEvidenceViewer({
   const [sources, setSources] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
 
-  const allSources = useMemo(
-    () => Array.from(new Set(items.map((i) => i.source))).sort(),
-    [items],
-  );
+  const allSources = useMemo(() => Array.from(new Set(items.map((i) => i.source))).sort(), [items]);
 
   const filtered = useMemo(
     () =>
@@ -131,11 +128,7 @@ export function IntelligenceEvidenceViewer({
       <div className="flex flex-col gap-2 rounded-md border border-border/60 bg-muted/30 p-3">
         <FilterRow label="Type" icon>
           {(Object.keys(TYPE_LABEL) as EvidenceType[]).map((t) => (
-            <FilterChip
-              key={t}
-              active={types.has(t)}
-              onClick={() => toggle(types, t, setTypes)}
-            >
+            <FilterChip key={t} active={types.has(t)} onClick={() => toggle(types, t, setTypes)}>
               {TYPE_LABEL[t]}
             </FilterChip>
           ))}
@@ -194,15 +187,11 @@ export function IntelligenceEvidenceViewer({
                       {TYPE_LABEL[item.evidenceType]}
                     </span>
                     {item.subject && (
-                      <span className="text-[11px] text-muted-foreground">
-                        · {item.subject}
-                      </span>
+                      <span className="text-[11px] text-muted-foreground">· {item.subject}</span>
                     )}
                   </div>
 
-                  <p className="mt-1.5 text-[13px] font-medium text-foreground">
-                    {item.claim}
-                  </p>
+                  <p className="mt-1.5 text-[13px] font-medium text-foreground">{item.claim}</p>
                   {item.summary && (
                     <p className="mt-0.5 line-clamp-2 text-[12px] text-muted-foreground">
                       {item.summary}
@@ -236,11 +225,7 @@ export function IntelligenceEvidenceViewer({
                       size="sm"
                       className="h-7 gap-1 px-2 text-[11px]"
                     >
-                      <a
-                        href={item.sourceUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
+                      <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer">
                         <ExternalLink className="h-3 w-3" />
                         Source
                       </a>

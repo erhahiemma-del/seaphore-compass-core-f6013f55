@@ -53,7 +53,9 @@ function EvidenceRow({ ev }: { ev: LineageEvidence }) {
           <p className="mt-0.5 line-clamp-2 text-[11px] text-muted-foreground">{ev.excerpt}</p>
         )}
         <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-          {ev.collectedAt && <span>Collected {ev.collectedAt.slice(0, 16).replace("T", " ")}Z</span>}
+          {ev.collectedAt && (
+            <span>Collected {ev.collectedAt.slice(0, 16).replace("T", " ")}Z</span>
+          )}
           {ev.hash && <span title={ev.hash}>Hash {ev.hash.slice(0, 10)}…</span>}
           <span title={ev.id}>Id {ev.id.slice(0, 10)}</span>
         </div>
@@ -217,8 +219,7 @@ export function EvidenceLineageView({ trace }: { trace: LineageTrace }) {
 
       {recCount === 0 ? (
         <p className="rounded-md border border-dashed border-border/60 p-3 text-[12px] italic text-muted-foreground">
-          No recommendations were produced for this turn, so there is no lineage
-          to project.
+          No recommendations were produced for this turn, so there is no lineage to project.
         </p>
       ) : (
         <>

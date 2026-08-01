@@ -21,10 +21,7 @@ import { findAnchor } from "@/services/oie/conversation-resolver";
 import { extractEntities } from "@/services/oie/query-interpreter";
 
 import { AdaptiveBriefing } from "@/components/copilot/briefing";
-import type {
-  AdaptiveBriefingData,
-  OverrideSubmission,
-} from "@/components/copilot/briefing";
+import type { AdaptiveBriefingData, OverrideSubmission } from "@/components/copilot/briefing";
 import { ClarifyCard } from "@/components/copilot/ClarifyCard";
 import { ContextBar } from "@/components/copilot/ContextBar";
 import { StreamingStages } from "@/components/copilot/StreamingStages";
@@ -179,7 +176,6 @@ export function CopilotWorkspace({
       session.appendCopilot(`Briefing: ${q}`, adapted.id, instance);
       await queryClient.invalidateQueries({ queryKey: ["intel", "briefings"] });
 
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const _keepBriefing = briefing;
       return { kind: "briefing", briefing: adapted, followUps };
     },
@@ -302,7 +298,7 @@ export function CopilotWorkspace({
                 )}
               >
                 <span className="mr-1 font-semibold uppercase tracking-wider text-[9.5px] text-muted-foreground">
-                  {entry.role === "officer" ? "Officer" : entry.instance ?? "Copilot"}
+                  {entry.role === "officer" ? "Officer" : (entry.instance ?? "Copilot")}
                 </span>
                 {entry.text}
               </li>

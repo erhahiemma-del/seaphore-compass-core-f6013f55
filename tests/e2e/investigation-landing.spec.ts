@@ -44,7 +44,10 @@ async function subjectOf(page: Page): Promise<string> {
     .getByTestId("investigation-landing")
     .getByLabel(/investigation query/i)
     .getAttribute("placeholder");
-  return (placeholder ?? "").replace(/^Investigate\s+/, "").replace(/\.\.\.$/, "").trim();
+  return (placeholder ?? "")
+    .replace(/^Investigate\s+/, "")
+    .replace(/\.\.\.$/, "")
+    .trim();
 }
 
 test.describe("Investigation Landing — empty state", () => {

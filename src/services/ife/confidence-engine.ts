@@ -3,11 +3,7 @@
  * fused package.
  */
 import type { EvidenceGrade } from "@/services/ial/types";
-import type {
-  Contradiction,
-  FusedEntityRecord,
-  FusionConfidence,
-} from "./types";
+import type { Contradiction, FusedEntityRecord, FusionConfidence } from "./types";
 
 const CONF_RANK: Record<FusionConfidence, number> = { LOW: 1, MEDIUM: 2, HIGH: 3 };
 const RANK_TO_CONF: FusionConfidence[] = ["LOW", "LOW", "MEDIUM", "HIGH"];

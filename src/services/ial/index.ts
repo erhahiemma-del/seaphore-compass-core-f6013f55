@@ -23,14 +23,8 @@ export { ConnectorRegistry } from "./connectors/registry";
 export { ConnectorManager } from "./manager";
 export type { Connector, ConnectorCapability } from "./connectors/base";
 // Sprint EP-01A — Provider Resolution (one capability = one provider).
-export {
-  resolveProvider,
-  resolveActiveProviders,
-} from "./connectors/resolver";
-export type {
-  ProviderResolution,
-  ResolveProviderOptions,
-} from "./connectors/resolver";
+export { resolveProvider, resolveActiveProviders } from "./connectors/resolver";
+export type { ProviderResolution, ResolveProviderOptions } from "./connectors/resolver";
 export {
   providerMetadata,
   resolveRuntimeEnvironment,
@@ -82,7 +76,8 @@ type IalMode = "production" | "simulation" | "hybrid";
 
 function resolveMode(): IalMode {
   const raw =
-    (typeof import.meta !== "undefined" && (import.meta as { env?: Record<string, string> }).env?.VITE_IAL_MODE) ||
+    (typeof import.meta !== "undefined" &&
+      (import.meta as { env?: Record<string, string> }).env?.VITE_IAL_MODE) ||
     (typeof process !== "undefined" && process.env?.IAL_MODE) ||
     "hybrid";
   const m = String(raw).toLowerCase();
@@ -123,19 +118,26 @@ export function getIntelligenceAcquisitionManager(): ConnectorManager {
     }
   }
 
-
   if (mode === "simulation" || mode === "hybrid") {
-    if (!mgr.listConnectors().some((c) => c.id === "ais")) mgr.register(new SimulatedAisConnector());
-    if (!mgr.listConnectors().some((c) => c.id === "equasis")) mgr.register(new SimulatedEquasisConnector());
-    if (!mgr.listConnectors().some((c) => c.id === "imo-gisis")) mgr.register(new SimulatedImoConnector());
-    if (!mgr.listConnectors().some((c) => c.id === "marinetraffic")) mgr.register(new SimulatedMarineTrafficConnector());
-    if (!mgr.listConnectors().some((c) => c.id === "opensanctions")) mgr.register(new SimulatedOpenSanctionsConnector());
+    if (!mgr.listConnectors().some((c) => c.id === "ais"))
+      mgr.register(new SimulatedAisConnector());
+    if (!mgr.listConnectors().some((c) => c.id === "equasis"))
+      mgr.register(new SimulatedEquasisConnector());
+    if (!mgr.listConnectors().some((c) => c.id === "imo-gisis"))
+      mgr.register(new SimulatedImoConnector());
+    if (!mgr.listConnectors().some((c) => c.id === "marinetraffic"))
+      mgr.register(new SimulatedMarineTrafficConnector());
+    if (!mgr.listConnectors().some((c) => c.id === "opensanctions"))
+      mgr.register(new SimulatedOpenSanctionsConnector());
   }
 
   defaultManager = mgr;
   // Kick off a background warmup so `healthCheck()` state is populated
   // before the first officer query lands. Never throws.
-  void mgr.warmup().then(() => mgr.getHealth()).catch(() => undefined);
+  void mgr
+    .warmup()
+    .then(() => mgr.getHealth())
+    .catch(() => undefined);
   return mgr;
 }
 

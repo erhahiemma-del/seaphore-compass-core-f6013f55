@@ -22,11 +22,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import {
-  ConnectorManager,
-  SimulatedEquasisConnector,
-  SimulatedImoConnector,
-} from "@/services/ial";
+import { ConnectorManager, SimulatedEquasisConnector, SimulatedImoConnector } from "@/services/ial";
 import type { Connector } from "@/services/ial";
 import type {
   AcquisitionQuery,
@@ -53,12 +49,14 @@ const HOUR_MS = 3_600_000;
  * Build a `NormalizedEvidence` record directly — bypassing `normalizeRecord`
  * — so we can inject deliberately malformed shapes.
  */
-function raw(partial: Partial<NormalizedEvidence> & {
-  source: ConnectorId;
-  fields: Record<string, unknown>;
-  entityId?: string;
-  ageHrs?: number;
-}): NormalizedEvidence {
+function raw(
+  partial: Partial<NormalizedEvidence> & {
+    source: ConnectorId;
+    fields: Record<string, unknown>;
+    entityId?: string;
+    ageHrs?: number;
+  },
+): NormalizedEvidence {
   const now = Date.now();
   const ageMs = (partial.ageHrs ?? 1) * HOUR_MS;
   const observedAt = new Date(now - ageMs).toISOString();
@@ -76,8 +74,7 @@ function raw(partial: Partial<NormalizedEvidence> & {
     fields: partial.fields as NormalizedEvidence["fields"],
     observedAt: partial.observedAt ?? observedAt,
     retrievedAt: partial.retrievedAt ?? observedAt,
-    freshnessSeconds:
-      partial.freshnessSeconds ?? Math.round(ageMs / 1000),
+    freshnessSeconds: partial.freshnessSeconds ?? Math.round(ageMs / 1000),
     hash: partial.hash ?? `hash_${Math.random().toString(36).slice(2, 12)}`,
     providerRecordId: partial.providerRecordId,
     excerpt: partial.excerpt,

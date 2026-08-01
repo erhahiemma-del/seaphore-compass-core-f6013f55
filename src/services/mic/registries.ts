@@ -75,7 +75,7 @@ abstract class BaseRegistry<T extends { id: string; revision: number }> {
 
 export class MicEntityRegistry extends BaseRegistry<MicEntityRegistryEntry> {
   private readonly byKind = new Map<string, Set<string>>();
-  private readonly byAlias = new Map<string, string>();  // alias → canonical id
+  private readonly byAlias = new Map<string, string>(); // alias → canonical id
 
   register(entry: Omit<MicEntityRegistryEntry, "id" | "revision">): MicEntityRegistryEntry {
     const existing = this.store.get(entry.canonicalId);
@@ -124,7 +124,9 @@ export class MicEntityRegistry extends BaseRegistry<MicEntityRegistryEntry> {
   getByKind(kind: MkgNode["kind"]): ReadonlyArray<MicEntityRegistryEntry> {
     const ids = this.byKind.get(kind);
     if (!ids) return [];
-    return Array.from(ids).map((id) => this.store.get(id)!).filter(Boolean);
+    return Array.from(ids)
+      .map((id) => this.store.get(id)!)
+      .filter(Boolean);
   }
 }
 
@@ -133,9 +135,11 @@ export class MicEntityRegistry extends BaseRegistry<MicEntityRegistryEntry> {
 // ─────────────────────────────────────────────────────────────────────
 
 export class MicRelationshipRegistry extends BaseRegistry<MicRelationshipRegistryEntry> {
-  private readonly byEntity = new Map<string, Set<string>>();   // entityId → edgeIds
+  private readonly byEntity = new Map<string, Set<string>>(); // entityId → edgeIds
 
-  register(entry: Omit<MicRelationshipRegistryEntry, "id" | "revision">): MicRelationshipRegistryEntry {
+  register(
+    entry: Omit<MicRelationshipRegistryEntry, "id" | "revision">,
+  ): MicRelationshipRegistryEntry {
     const existing = this.store.get(entry.edgeId);
     const now = new Date().toISOString();
     const revision = (existing?.revision ?? 0) + 1;
@@ -172,7 +176,9 @@ export class MicRelationshipRegistry extends BaseRegistry<MicRelationshipRegistr
   getForEntity(entityId: string): ReadonlyArray<MicRelationshipRegistryEntry> {
     const ids = this.byEntity.get(entityId);
     if (!ids) return [];
-    return Array.from(ids).map((id) => this.store.get(id)!).filter(Boolean);
+    return Array.from(ids)
+      .map((id) => this.store.get(id)!)
+      .filter(Boolean);
   }
 }
 
@@ -409,5 +415,7 @@ function idsToEntries<T extends { id: string }>(
 ): T[] {
   const ids = index.get(key);
   if (!ids) return [];
-  return Array.from(ids).map((id) => store.get(id)!).filter(Boolean);
+  return Array.from(ids)
+    .map((id) => store.get(id)!)
+    .filter(Boolean);
 }

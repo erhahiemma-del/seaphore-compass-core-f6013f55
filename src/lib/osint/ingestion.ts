@@ -8,12 +8,7 @@
  * always preserved alongside the normalized payload.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type {
-  ConnectorInterface,
-  IngestionError,
-  IngestionResult,
-  SeaphoreRecord,
-} from "./types";
+import type { ConnectorInterface, IngestionError, IngestionResult, SeaphoreRecord } from "./types";
 import { validateRecord } from "./pipeline";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -31,7 +26,8 @@ export async function ingestRecords(
   for (const r of records) {
     const v = validateRecord({ ...r, syncRunId });
     if (v.ok) valid.push(v.record);
-    else errors.push({ sourceRef: r.sourceRef ?? "unknown", error: v.error, rawPayload: r.rawData });
+    else
+      errors.push({ sourceRef: r.sourceRef ?? "unknown", error: v.error, rawPayload: r.rawData });
   }
 
   let ingested = 0;
@@ -72,9 +68,10 @@ export async function ingestRecords(
           entity_id: row.entity_id,
           record_id: row.id,
         }));
-        await db
-          .from("osint_entity_index")
-          .upsert(idxRows, { onConflict: "entity_type,entity_id,record_id", ignoreDuplicates: true });
+        await db.from("osint_entity_index").upsert(idxRows, {
+          onConflict: "entity_type,entity_id,record_id",
+          ignoreDuplicates: true,
+        });
       }
     }
   }

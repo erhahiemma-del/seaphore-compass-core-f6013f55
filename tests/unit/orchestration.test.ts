@@ -133,7 +133,6 @@ describe("Canonical Fusion Pipeline (IAL Bridge → IFE → UIP → View)", () =
   });
 });
 
-
 describe("Confidence propagation (Layer 2.11)", () => {
   it("degrades through each reasoning step", () => {
     const p = propagateConfidence(1);

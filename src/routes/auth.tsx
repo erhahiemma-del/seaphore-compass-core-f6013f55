@@ -308,7 +308,10 @@ function AuthPage() {
               d="M0 0 L460 0 A460 460 0 0 1 397 230 Z"
               fill="url(#sweep)"
               opacity="0.55"
-              style={{ transformOrigin: "0 0", animation: "seaphore-radar-sweep 6s linear infinite" }}
+              style={{
+                transformOrigin: "0 0",
+                animation: "seaphore-radar-sweep 6s linear infinite",
+              }}
             />
           </g>
 
@@ -470,7 +473,11 @@ function AuthPage() {
                     )}
                     title={cov?.stateDetail}
                   >
-                    {dot ? <span aria-hidden className="mr-1">{dot}</span> : null}
+                    {dot ? (
+                      <span aria-hidden className="mr-1">
+                        {dot}
+                      </span>
+                    ) : null}
                     {value}
                   </div>
                   <div
@@ -756,7 +763,8 @@ function AuthPage() {
           {isDev && !mfa && (
             <div className="mt-3 flex items-center justify-center gap-2 text-[10px] uppercase tracking-[0.2em] text-white/50">
               <UserCog className="h-3 w-3 text-[#10E5C4]" />
-              After sign-in, use the floating Role Switcher (bottom-right) to change roles instantly.
+              After sign-in, use the floating Role Switcher (bottom-right) to change roles
+              instantly.
               <Activity className="h-3 w-3 text-[#10E5C4]" />
             </div>
           )}

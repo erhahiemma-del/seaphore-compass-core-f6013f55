@@ -1,11 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  AGENTS,
-  ALL_AGENT_IDS,
-  runAgents,
-  summariseRun,
-  type AgentSpec,
-} from "@/services/agents";
+import { AGENTS, ALL_AGENT_IDS, runAgents, summariseRun, type AgentSpec } from "@/services/agents";
 import type { z } from "zod";
 
 const INPUT = { entityIds: ["ent_vessel_9837456"], query: "risk snapshot" };

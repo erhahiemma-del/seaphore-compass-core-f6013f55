@@ -1,11 +1,5 @@
 import type { Playbook } from "./types";
-import {
-  findingsMatch,
-  hasFinding,
-  revenueExposure,
-  formatNaira,
-  tier,
-} from "./helpers";
+import { findingsMatch, hasFinding, revenueExposure, formatNaira, tier } from "./helpers";
 
 const STANDARD_TEMPLATE = [
   "Executive Summary",
@@ -43,11 +37,7 @@ export const manifestInvestigationPlaybook: Playbook = {
       "Bill of Lading",
       "Prior manifest for the same vessel or route",
     ],
-    optional: [
-      "Customs declaration",
-      "Consignee registry filing",
-      "HS code historical profile",
-    ],
+    optional: ["Customs declaration", "Consignee registry filing", "HS code historical profile"],
     minimumBeforeReasoning: 2,
   },
   validationRules: [
@@ -63,7 +53,8 @@ export const manifestInvestigationPlaybook: Playbook = {
       description: "HS codes must be present for every line item.",
       severity: "warn",
       onFail: "One or more line items are missing HS codes.",
-      when: (ctx) => hasFinding(ctx, ["hs code", "harmonised code"]) && hasFinding(ctx, ["missing", "absent"]),
+      when: (ctx) =>
+        hasFinding(ctx, ["hs code", "harmonised code"]) && hasFinding(ctx, ["missing", "absent"]),
     },
   ],
   reasoningRules: [
@@ -185,14 +176,10 @@ export const manifestInvestigationPlaybook: Playbook = {
       when: (ctx) => ctx.criticalFindings.length === 0,
       action: "Clear the manifest and log the voyage in institutional memory",
       priority: "monitor",
-      rationale: () =>
-        "No mandatory rule breached; retain the audit trail for future comparisons.",
+      rationale: () => "No mandatory rule breached; retain the audit trail for future comparisons.",
     },
   ],
-  baselineInformationGaps: [
-    "Physical inspection outcome",
-    "Consignee corporate registry filing",
-  ],
+  baselineInformationGaps: ["Physical inspection outcome", "Consignee corporate registry filing"],
   followUps: [
     "Compare with previous voyage",
     "Check consignee ownership network",

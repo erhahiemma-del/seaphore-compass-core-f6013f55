@@ -79,7 +79,9 @@ describe("OpenSanctionsConnector — connect()", () => {
 
   it("classifies a 404 base path as Invalid Endpoint", async () => {
     const c = new OpenSanctionsConnector({
-      fetchImpl: vi.fn(async () => jsonResponse({ detail: "Not Found" }, 404)) as unknown as typeof fetch,
+      fetchImpl: vi.fn(async () =>
+        jsonResponse({ detail: "Not Found" }, 404),
+      ) as unknown as typeof fetch,
     });
     expect(await c.authenticate()).toBe(false);
     const h = await c.healthCheck();
@@ -241,32 +243,21 @@ describe("OpenSanctionsConnector — registration & architecture", () => {
     const mgr = new ConnectorManager({ registry });
     registerEvidenceProviders(mgr);
     expect(registry.get("open-sanctions")).toBeDefined();
-    expect(registry.getByCapability("SANCTIONS").map((c) => c.id)).toContain(
-      "open-sanctions",
-    );
-    expect(registry.getByEntityType("vessel").map((c) => c.id)).toContain(
-      "open-sanctions",
-    );
+    expect(registry.getByCapability("SANCTIONS").map((c) => c.id)).toContain("open-sanctions");
+    expect(registry.getByEntityType("vessel").map((c) => c.id)).toContain("open-sanctions");
   });
 
   it("performs no database writes (no persistence imports)", async () => {
     const src = await import("node:fs").then((fs) =>
-      fs.readFileSync(
-        "src/connectors/implementations/OpenSanctionsConnector.ts",
-        "utf8",
-      ),
+      fs.readFileSync("src/connectors/implementations/OpenSanctionsConnector.ts", "utf8"),
     );
     // Strip comments so documentation of the prohibitions does not
     // trip the guard — only executable code is inspected.
-    const code = src
-      .replace(/\/\*[\s\S]*?\*\//g, "")
-      .replace(/^\s*\/\/.*$/gm, "");
+    const code = src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
     const imports = code.match(/^import .*$/gm)?.join("\n") ?? "";
     expect(imports).not.toMatch(/supabase/i);
     expect(code).not.toMatch(/registerUip\(/);
     expect(code).not.toMatch(/\.from\(["']/);
     expect(code).not.toMatch(/resolveIdentity\(|registerEntity\(/);
-
   });
 });
-

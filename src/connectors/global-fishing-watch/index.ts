@@ -30,10 +30,7 @@ import type {
 import { baseConfidence } from "@/lib/osint/confidence";
 import { OSAE } from "@/services/osae";
 import { gfwSearch, gfwHealth } from "@/lib/gfw.functions";
-import type {
-  GfwEvidencePackage,
-  GfwHealthPayload,
-} from "./types";
+import type { GfwEvidencePackage, GfwHealthPayload } from "./types";
 
 interface CacheEntry<T> {
   value: T;
@@ -84,9 +81,7 @@ export class GlobalFishingWatchConnector implements ConnectorInterface {
       // Officer-safe: surface the failure through OSINT health/log
       // pipes, do not throw into copilot flow.
       if (typeof console !== "undefined") {
-        console.warn(
-          `[global-fishing-watch] ${response.error.code}: ${response.error.message}`,
-        );
+        console.warn(`[global-fishing-watch] ${response.error.code}: ${response.error.message}`);
       }
       this.cache.set(cacheKey, { value: null, expiresAt: Date.now() + CACHE_TTL_MS });
       return null;

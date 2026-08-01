@@ -35,10 +35,7 @@ function useCargoInputs() {
   const { data: coverage, isLoading } = useCoverage();
   const evidence = uip?.rawEvidence ?? [];
   // Reuses capability.revenue-leakage-detection — no duplicated business logic.
-  const findings = useMemo(
-    () => (evidence.length > 0 ? scanForLeakage(evidence) : []),
-    [evidence],
-  );
+  const findings = useMemo(() => (evidence.length > 0 ? scanForLeakage(evidence) : []), [evidence]);
   const coverageByKey = useMemo(() => {
     const map = new Map<string, KpiCoverage>((coverage?.kpis ?? []).map((k) => [k.key, k]));
     return (key: KpiDomainKey) => map.get(key);

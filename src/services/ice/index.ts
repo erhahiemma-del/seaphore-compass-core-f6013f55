@@ -25,6 +25,11 @@ export { buildProvenanceChain, buildQueryProvenance } from "./provenance";
 export type { ProvenanceChain } from "./provenance";
 export { trustFor, AVERAGE_TRUST } from "./trust-registry";
 export {
-  FIELD_ALIASES, FIELD_CATEGORY, FRESHNESS_MAX_HOURS, CRITICAL_FIELDS,
-  fieldQuality, freshnessMaxHrs, classifySeverity,
+  FIELD_ALIASES,
+  FIELD_CATEGORY,
+  FRESHNESS_MAX_HOURS,
+  CRITICAL_FIELDS,
+  fieldQuality,
+  freshnessMaxHrs,
+  classifySeverity,
 } from "./field-config";

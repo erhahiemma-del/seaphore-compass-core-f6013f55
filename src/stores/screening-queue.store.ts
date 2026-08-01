@@ -14,13 +14,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { runSanctionsScreening } from "@/services/capabilities/sanctions";
 import type { EntityKind } from "@/services/ial";
 
-export type ScreeningStatus =
-  | "PENDING"
-  | "RUNNING"
-  | "CLEAR"
-  | "HIT"
-  | "REVIEW"
-  | "ERROR";
+export type ScreeningStatus = "PENDING" | "RUNNING" | "CLEAR" | "HIT" | "REVIEW" | "ERROR";
 
 export type ScreeningEntityKind = EntityKind;
 
@@ -61,9 +55,7 @@ interface ScreeningQueueState {
     e: Partial<Pick<ScreeningEntity, "id">> &
       Omit<ScreeningEntity, "id" | "status" | "addedAt"> & { status?: ScreeningStatus },
   ) => string;
-  enqueueMany: (
-    es: Array<Omit<ScreeningEntity, "id" | "status" | "addedAt">>,
-  ) => string[];
+  enqueueMany: (es: Array<Omit<ScreeningEntity, "id" | "status" | "addedAt">>) => string[];
   remove: (id: string) => void;
   clearCompleted: () => void;
   reset: (id: string) => void;
@@ -83,8 +75,7 @@ interface ScreeningQueueState {
 
 const now = () => new Date().toISOString();
 
-const genId = () =>
-  `scr_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+const genId = () => `scr_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
 function classifyHits(hitCount: number): ScreeningStatus {
   if (hitCount <= 0) return "CLEAR";
@@ -209,9 +200,7 @@ export const useScreeningQueueStore = create<ScreeningQueueState>()(
                 ...e,
                 ...patch,
                 completedAt,
-                history: runRecord
-                  ? [...(e.history ?? []), runRecord]
-                  : e.history,
+                history: runRecord ? [...(e.history ?? []), runRecord] : e.history,
               },
             },
             runningCount: Math.max(0, s.runningCount - (wasRunning ? 1 : 0)),
@@ -262,13 +251,12 @@ export const useScreeningQueueStore = create<ScreeningQueueState>()(
         await get().runOne(id);
       },
 
-
       runAllPending: async (concurrency = 3) => {
         const s = get();
         const targets = s.order
           .map((id) => s.entities[id])
-          .filter((e): e is ScreeningEntity =>
-            !!e && (e.status === "PENDING" || e.status === "ERROR"),
+          .filter(
+            (e): e is ScreeningEntity => !!e && (e.status === "PENDING" || e.status === "ERROR"),
           )
           .map((e) => e.id);
 

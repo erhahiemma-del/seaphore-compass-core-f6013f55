@@ -55,8 +55,7 @@ export interface OverrideResult {
 const engine = new WorkflowEngine({ policy: defaultPolicyEngine });
 
 export async function captureOverride(input: OverrideInput): Promise<OverrideResult> {
-  const client: SupabaseClient =
-    input.supabase ?? (browserSupabase as unknown as SupabaseClient);
+  const client: SupabaseClient = input.supabase ?? (browserSupabase as unknown as SupabaseClient);
   const { data, error } = await client
     .from("briefing_overrides")
     .insert({

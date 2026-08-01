@@ -15,14 +15,14 @@ import {
   GfwAuthError,
   GfwUpstreamError,
 } from "@/lib/server/gfw.server";
-import type {
-  GfwEvidencePackage,
-  GfwHealthPayload,
-} from "@/connectors/global-fishing-watch/types";
+import type { GfwEvidencePackage, GfwHealthPayload } from "@/connectors/global-fishing-watch/types";
 
 export interface GfwSearchResult {
   package: GfwEvidencePackage | null;
-  error?: { code: "GFW_CREDENTIALS_MISSING" | "GFW_AUTH_FAILED" | "GFW_UPSTREAM_ERROR"; message: string };
+  error?: {
+    code: "GFW_CREDENTIALS_MISSING" | "GFW_AUTH_FAILED" | "GFW_UPSTREAM_ERROR";
+    message: string;
+  };
 }
 
 export const gfwSearch = createServerFn({ method: "POST" })

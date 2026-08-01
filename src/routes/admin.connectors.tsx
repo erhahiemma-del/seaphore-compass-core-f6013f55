@@ -30,7 +30,8 @@ export const Route = createFileRoute("/admin/connectors")({
       { property: "og:title", content: "Connector Admin · Seaphore" },
       {
         property: "og:description",
-        content: "Live health, authentication, and evidence-only status for Seaphore's authenticated intelligence connectors.",
+        content:
+          "Live health, authentication, and evidence-only status for Seaphore's authenticated intelligence connectors.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -43,12 +44,24 @@ function stateBadge(state: ConnectorAdminSnapshot["lastHealth"] extends infer H 
 }
 
 const STATE_STYLES: Record<string, { label: string; className: string }> = {
-  healthy: { label: "Healthy", className: "bg-emerald-500/15 text-emerald-500 border-emerald-500/40" },
+  healthy: {
+    label: "Healthy",
+    className: "bg-emerald-500/15 text-emerald-500 border-emerald-500/40",
+  },
   degraded: { label: "Degraded", className: "bg-amber-500/15 text-amber-500 border-amber-500/40" },
-  auth_failed: { label: "Authentication Failed", className: "bg-red-500/15 text-red-500 border-red-500/40" },
-  rate_limited: { label: "Rate Limited", className: "bg-amber-500/15 text-amber-500 border-amber-500/40" },
+  auth_failed: {
+    label: "Authentication Failed",
+    className: "bg-red-500/15 text-red-500 border-red-500/40",
+  },
+  rate_limited: {
+    label: "Rate Limited",
+    className: "bg-amber-500/15 text-amber-500 border-amber-500/40",
+  },
   offline: { label: "Offline", className: "bg-slate-500/15 text-slate-400 border-slate-500/40" },
-  unavailable: { label: "Unavailable", className: "bg-slate-500/15 text-slate-400 border-slate-500/40" },
+  unavailable: {
+    label: "Unavailable",
+    className: "bg-slate-500/15 text-slate-400 border-slate-500/40",
+  },
 };
 
 function ConnectorAdminPage() {
@@ -106,7 +119,9 @@ function ConnectorAdminPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Badge variant="outline">{summary.healthy}/{summary.total} healthy</Badge>
+            <Badge variant="outline">
+              {summary.healthy}/{summary.total} healthy
+            </Badge>
             {summary.failing > 0 && (
               <Badge variant="outline" className="border-red-500/40 text-red-500">
                 {summary.failing} failing
@@ -137,8 +152,11 @@ function ConnectorAdminPage() {
           )}
           {rows.map((row) => {
             const style = row.lastHealth
-              ? STATE_STYLES[row.lastHealth.state] ?? STATE_STYLES.offline
-              : { label: "Unknown", className: "bg-slate-500/15 text-slate-400 border-slate-500/40" };
+              ? (STATE_STYLES[row.lastHealth.state] ?? STATE_STYLES.offline)
+              : {
+                  label: "Unknown",
+                  className: "bg-slate-500/15 text-slate-400 border-slate-500/40",
+                };
             return (
               <Card key={row.id} className="border-border/60">
                 <CardHeader className="flex flex-row items-start justify-between gap-4 pb-2">
@@ -174,9 +192,7 @@ function ConnectorAdminPage() {
                     <div>
                       <dt className="text-muted-foreground">Last successful query</dt>
                       <dd className="font-medium">
-                        {row.lastSuccessAt
-                          ? new Date(row.lastSuccessAt).toLocaleTimeString()
-                          : "—"}
+                        {row.lastSuccessAt ? new Date(row.lastSuccessAt).toLocaleTimeString() : "—"}
                       </dd>
                     </div>
                     <div>

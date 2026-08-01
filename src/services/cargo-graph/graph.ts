@@ -307,9 +307,7 @@ function kindOfId(id: string): CargoGraphNode["kind"] {
 
 /** Scalar, officer-meaningful fields only — never raw provider payloads
  *  and never `rel.*` pointers (those become edges, not attributes). */
-function attributesOf(
-  e: NormalizedEvidence,
-): Readonly<Record<string, string | number | boolean>> {
+function attributesOf(e: NormalizedEvidence): Readonly<Record<string, string | number | boolean>> {
   const out: Record<string, string | number | boolean> = {
     evidenceKind: e.kind,
   };

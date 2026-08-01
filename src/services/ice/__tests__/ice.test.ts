@@ -47,11 +47,18 @@ function ev(
 }
 
 describe("ICE-1 · Source Planner", () => {
-  const available = ["imo-gisis","equasis","marinetraffic","ais","opensanctions","lloyds-list"] as const;
+  const available = [
+    "imo-gisis",
+    "equasis",
+    "marinetraffic",
+    "ais",
+    "opensanctions",
+    "lloyds-list",
+  ] as const;
 
   it("investigation intent selects more connectors than fact lookup", () => {
     const invest = planQuery({ text: "Investigate MV Ocean Melody" }, available);
-    const fact   = planQuery({ text: "What is the ETA?" }, available);
+    const fact = planQuery({ text: "What is the ETA?" }, available);
     expect(invest.selected.length).toBeGreaterThan(fact.selected.length);
   });
 
@@ -74,8 +81,8 @@ describe("ICE-5 · Correlation & Freshness", () => {
 
   it("matrix has one row per (query × entity × field × source)", () => {
     const evs = [
-      ev("imo-gisis",     { vessel_name: "MSC OSCAR", flag_state: "PA" }),
-      ev("equasis",       { vessel_name: "MSC OSCAR", vessel_owner: "OceanLine" }),
+      ev("imo-gisis", { vessel_name: "MSC OSCAR", flag_state: "PA" }),
+      ev("equasis", { vessel_name: "MSC OSCAR", vessel_owner: "OceanLine" }),
     ];
     const cells = buildMatrix(resolveEntities(evs), NOW);
     // 2 fields from imo-gisis + 2 fields from equasis
@@ -88,10 +95,7 @@ describe("ICE-6 · Conflict Detection", () => {
     expect(valuesEqual(7661.61, 7664.6)).toBe(true);
   });
   it("cargo weight 17 % apart IS a conflict, severity HIGH", () => {
-    const evs = [
-      ev("customs",     { cargo_weight: 7661 }),
-      ev("trade-atlas", { cargo_weight: 9000 }),
-    ];
+    const evs = [ev("customs", { cargo_weight: 7661 }), ev("trade-atlas", { cargo_weight: 9000 })];
     const cells = buildMatrix(resolveEntities(evs), NOW);
     const c = detectConflicts(cells);
     expect(c).toHaveLength(1);
@@ -101,7 +105,7 @@ describe("ICE-6 · Conflict Detection", () => {
   it("IMO conflict is CRITICAL", () => {
     const evs = [
       ev("imo-gisis", { imo_number: "9303065" }),
-      ev("equasis",   { imo_number: "9303066" }),
+      ev("equasis", { imo_number: "9303066" }),
     ];
     const c = detectConflicts(buildMatrix(resolveEntities(evs), NOW));
     expect(c[0].severity).toBe("CRITICAL");
@@ -109,10 +113,10 @@ describe("ICE-6 · Conflict Detection", () => {
   });
   it("owner majority/minority split detected", () => {
     const evs = [
-      ev("imo-gisis",     { vessel_owner: "OceanLine" }),
-      ev("equasis",       { vessel_owner: "OceanLine" }),
+      ev("imo-gisis", { vessel_owner: "OceanLine" }),
+      ev("equasis", { vessel_owner: "OceanLine" }),
       ev("opensanctions", { vessel_owner: "OceanLine" }),
-      ev("trade-atlas",   { vessel_owner: "Blue Horizon" }),
+      ev("trade-atlas", { vessel_owner: "Blue Horizon" }),
     ];
     const c = detectConflicts(buildMatrix(resolveEntities(evs), NOW));
     expect(c[0].majoritySources).toHaveLength(3);
@@ -123,10 +127,10 @@ describe("ICE-6 · Conflict Detection", () => {
 describe("ICE-7 · Corroboration", () => {
   it("4-source agreement is VERIFIED with 100 corroboration score", () => {
     const evs = [
-      ev("imo-gisis",     { flag_state: "PA" }),
-      ev("equasis",       { flag_state: "PA" }),
+      ev("imo-gisis", { flag_state: "PA" }),
+      ev("equasis", { flag_state: "PA" }),
       ev("marinetraffic", { flag_state: "PA" }),
-      ev("ais",           { flag_state: "PA" }),
+      ev("ais", { flag_state: "PA" }),
     ];
     const cells = buildMatrix(resolveEntities(evs), NOW);
     const corr = detectCorroborations(cells);
@@ -139,13 +143,19 @@ describe("ICE-7 · Corroboration", () => {
 
 describe("ICE-9 · Freshness decay per field", () => {
   it("ETA record 7hr old → freshness 0 (max 6h)", () => {
-    const cells = buildMatrix(resolveEntities([ev("ais", { eta: "2026-07-24T00:00:00Z" }, 7)]), NOW);
+    const cells = buildMatrix(
+      resolveEntities([ev("ais", { eta: "2026-07-24T00:00:00Z" }, 7)]),
+      NOW,
+    );
     applyFreshnessDecay(cells);
     expect(cells[0].freshnessScore).toBe(0);
     expect(cells[0].tags).toContain("STALE");
   });
   it("Owner 42 days old → freshness 0 STALE", () => {
-    const cells = buildMatrix(resolveEntities([ev("trade-atlas", { vessel_owner: "X" }, 42 * 24)]), NOW);
+    const cells = buildMatrix(
+      resolveEntities([ev("trade-atlas", { vessel_owner: "X" }, 42 * 24)]),
+      NOW,
+    );
     applyFreshnessDecay(cells);
     expect(cells[0].freshnessScore).toBe(0);
     expect(cells[0].tags).toContain("STALE");
@@ -156,9 +166,9 @@ describe("ICE-11 & 12 · Scoring and Fusion end-to-end", () => {
   it("selects VERIFIED value and produces explanation", () => {
     const evs = [
       ev("imo-gisis", { vessel_owner: "OceanLine" }, 2),
-      ev("equasis",   { vessel_owner: "OceanLine" }, 2),
+      ev("equasis", { vessel_owner: "OceanLine" }, 2),
       ev("opensanctions", { vessel_owner: "OceanLine" }, 2),
-      ev("trade-atlas",   { vessel_owner: "Blue Horizon" }, 42 * 24),
+      ev("trade-atlas", { vessel_owner: "Blue Horizon" }, 42 * 24),
     ];
     const cells = buildMatrix(resolveEntities(evs), NOW);
     applyFreshnessDecay(cells);

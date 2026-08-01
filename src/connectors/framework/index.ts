@@ -11,11 +11,7 @@ export {
   APPROVED_LEGACY_API,
   isEvidenceProviderV1,
 } from "./spec";
-export type {
-  EvidenceProviderV1,
-  EvidenceProviderSpecVersion,
-  ProviderValidation,
-} from "./spec";
+export type { EvidenceProviderV1, EvidenceProviderSpecVersion, ProviderValidation } from "./spec";
 export {
   certifyProvider,
   formatCertificationReport,
@@ -29,10 +25,7 @@ export type {
   CertificationReport,
   CheckStatus,
 } from "./certification";
-export {
-  registerCertifiedProvider,
-  ProviderCertificationError,
-} from "./register";
+export { registerCertifiedProvider, ProviderCertificationError } from "./register";
 export type { RegistrarTarget } from "./register";
 export { BaseEvidenceProvider } from "./BaseEvidenceProvider";
 export type { BaseEvidenceProviderOptions } from "./BaseEvidenceProvider";

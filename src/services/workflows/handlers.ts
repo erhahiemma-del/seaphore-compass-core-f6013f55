@@ -58,7 +58,11 @@ export const HANDLERS: Readonly<Record<WorkflowId, Handler<z.ZodTypeAny>>> = Obj
     schema: NotifyCustomsInput,
     maxAttempts: 3,
     async execute(input, adapters) {
-      const r = await adapters.notify({ channel: "customs", subject: input.subject, body: input.body });
+      const r = await adapters.notify({
+        channel: "customs",
+        subject: input.subject,
+        body: input.body,
+      });
       return { messageId: r.messageId };
     },
   },

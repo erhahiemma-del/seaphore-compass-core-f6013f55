@@ -4,11 +4,7 @@
  */
 export { PERMISSIONS, WORKFLOW_PERMISSION, type Permission } from "./permissions";
 export { ROLE_PERMISSIONS, roleHas, type Role } from "./roles";
-export {
-  escalationFor,
-  approvalSatisfies,
-  type ApprovalToken,
-} from "./escalation";
+export { escalationFor, approvalSatisfies, type ApprovalToken } from "./escalation";
 export {
   createMemoryRateLimitStore,
   DEFAULT_LIMIT,
@@ -25,10 +21,7 @@ export {
   type ConflictSubject,
   type ConflictFinding,
 } from "./conflicts";
-export {
-  createMemoryDecisionAuditLog,
-  type DecisionAuditLog,
-} from "./audit";
+export { createMemoryDecisionAuditLog, type DecisionAuditLog } from "./audit";
 export { isAllowed, type Decision, type DecisionOutcome } from "./decision";
 export {
   PolicyEngine,
@@ -36,8 +29,4 @@ export {
   type PolicyEngineDeps,
   type PolicyEvaluationRequest,
 } from "./engine";
-export {
-  requirePolicy,
-  PolicyDeniedError,
-  type PolicyPayload,
-} from "./middleware";
+export { requirePolicy, PolicyDeniedError, type PolicyPayload } from "./middleware";

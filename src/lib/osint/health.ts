@@ -46,18 +46,26 @@ export async function refreshConnectorHealth(db: AnyDb, connectorId: string): Pr
 
   const rows = runs ?? [];
   const total = rows.length;
-  const failed = rows.filter((r: { status: string }) => r.status === "failed" || r.status === "partial").length;
+  const failed = rows.filter(
+    (r: { status: string }) => r.status === "failed" || r.status === "partial",
+  ).length;
   const errorRate = total === 0 ? 0 : (failed / total) * 100;
 
   const latencies = rows
     .map((r: { latency_ms: number | null }) => r.latency_ms ?? 0)
     .filter((n: number) => n > 0);
-  const avgLatency = latencies.length === 0 ? 0 : Math.round(latencies.reduce((a: number, b: number) => a + b, 0) / latencies.length);
+  const avgLatency =
+    latencies.length === 0
+      ? 0
+      : Math.round(latencies.reduce((a: number, b: number) => a + b, 0) / latencies.length);
 
-  const last = rows[0] as { started_at?: string; status?: string; records_ingested?: number } | undefined;
+  const last = rows[0] as
+    | { started_at?: string; status?: string; records_ingested?: number }
+    | undefined;
   const lastSyncAt = last?.started_at ? new Date(last.started_at) : new Date(0);
   const health = computeHealth({
-    pollingIntervalMinutes: (connector as { polling_interval_minutes: number }).polling_interval_minutes,
+    pollingIntervalMinutes: (connector as { polling_interval_minutes: number })
+      .polling_interval_minutes,
     lastSyncAt,
     errorRate7d: errorRate,
   });
@@ -71,7 +79,7 @@ export async function refreshConnectorHealth(db: AnyDb, connectorId: string): Pr
     .from("osint_connectors")
     .update({
       last_sync_at: last?.started_at ?? null,
-      last_sync_status: last?.status === "running" ? null : last?.status ?? null,
+      last_sync_status: last?.status === "running" ? null : (last?.status ?? null),
       records_total: (totalRow as unknown as { count?: number } | null)?.count ?? undefined,
       records_last_run: last?.records_ingested ?? 0,
       error_rate_7d: Number(errorRate.toFixed(2)),

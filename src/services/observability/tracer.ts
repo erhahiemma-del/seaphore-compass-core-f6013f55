@@ -15,13 +15,7 @@ import type { Logger } from "./logger";
 import type { MetricsRegistry } from "./metrics";
 import { officerHash, scrub } from "./pii";
 import type { ObservabilityStore } from "./store";
-import type {
-  ErrorLog,
-  EvidenceUsage,
-  ModelUsage,
-  PipelineStage,
-  QueryLog,
-} from "./types";
+import type { ErrorLog, EvidenceUsage, ModelUsage, PipelineStage, QueryLog } from "./types";
 
 export interface QueryContext {
   readonly officerId: string;
@@ -73,7 +67,12 @@ export function createTracer({ logger, metrics, store }: TracerDeps): Tracer {
       });
       store.queries.push(query);
       metrics.incr("queries_total", 1, { intent: ctx.intent });
-      logger.info("query.received", { traceId: id, officerHash: hash, intent: ctx.intent, workspace: ctx.workspace });
+      logger.info("query.received", {
+        traceId: id,
+        officerHash: hash,
+        intent: ctx.intent,
+        workspace: ctx.workspace,
+      });
 
       const trace: Trace = {
         id,
@@ -89,7 +88,9 @@ export function createTracer({ logger, metrics, store }: TracerDeps): Tracer {
             throw err;
           } finally {
             const durationMs = Date.now() - t0;
-            store.timings.push(Object.freeze({ traceId: id, stage, startedAt: t0, durationMs, ok }));
+            store.timings.push(
+              Object.freeze({ traceId: id, stage, startedAt: t0, durationMs, ok }),
+            );
             metrics.observe("pipeline_stage_ms", durationMs, { stage });
             metrics.incr("pipeline_stage_total", 1, { stage, ok: ok ? "true" : "false" });
             logger.debug("stage.timing", { traceId: id, stage, durationMs, ok });
@@ -98,7 +99,11 @@ export function createTracer({ logger, metrics, store }: TracerDeps): Tracer {
         recordModel(u) {
           const rec: ModelUsage = Object.freeze({ ...u, traceId: id });
           store.models.push(rec);
-          metrics.incr("model_calls_total", 1, { model: u.model, tier: String(u.tier), stage: u.stage });
+          metrics.incr("model_calls_total", 1, {
+            model: u.model,
+            tier: String(u.tier),
+            stage: u.stage,
+          });
           metrics.incr("tokens_prompt_total", u.promptTokens, { model: u.model });
           metrics.incr("tokens_completion_total", u.completionTokens, { model: u.model });
           metrics.incr("cost_credits_total", u.costCredits, { model: u.model });
@@ -125,7 +130,9 @@ export function createTracer({ logger, metrics, store }: TracerDeps): Tracer {
         },
         finish({ ok }) {
           const total = Date.now() - startedAt;
-          store.timings.push(Object.freeze({ traceId: id, stage: "total", startedAt, durationMs: total, ok }));
+          store.timings.push(
+            Object.freeze({ traceId: id, stage: "total", startedAt, durationMs: total, ok }),
+          );
           metrics.observe("pipeline_stage_ms", total, { stage: "total" });
           metrics.incr("queries_completed_total", 1, { ok: ok ? "true" : "false" });
           logger.info("query.completed", { traceId: id, ok, totalMs: total });

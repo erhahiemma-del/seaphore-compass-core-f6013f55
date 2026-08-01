@@ -16,11 +16,14 @@ import {
   type AisMovementEvent,
 } from "@/intelligence/analyzers/AISBehaviourAnalyzer";
 import { OSAE } from "@/services/osae";
-import {
-  buildAisContinuitySection,
-} from "@/lib/copilot/executive-brief/synthesize";
+import { buildAisContinuitySection } from "@/lib/copilot/executive-brief/synthesize";
 
-function evt(iso: string, lat: number, lon: number, extras: Partial<AisMovementEvent> = {}): AisMovementEvent {
+function evt(
+  iso: string,
+  lat: number,
+  lon: number,
+  extras: Partial<AisMovementEvent> = {},
+): AisMovementEvent {
   return { timestamp: iso, latitude: lat, longitude: lon, ...extras };
 }
 
@@ -31,7 +34,11 @@ describe("AIS Voyage-Based Segmentation (Sprint 1D-AIS)", () => {
     const report = AISBehaviourAnalyzer.analyse({
       vesselId: "v-seg",
       events: [
-        evt("2026-01-01T00:00:00Z", 6.4, 3.4, { nearestPort: "Lagos", distanceFromPortNm: 12, weather: "clear" }),
+        evt("2026-01-01T00:00:00Z", 6.4, 3.4, {
+          nearestPort: "Lagos",
+          distanceFromPortNm: 12,
+          weather: "clear",
+        }),
         // 10h dark → disabling near port
         evt("2026-01-01T10:00:00Z", 6.5, 3.5, { nearestPort: "Lagos", distanceFromPortNm: 8 }),
         evt("2026-01-05T00:00:00Z", 4.0, 2.0),
@@ -63,10 +70,7 @@ describe("AIS Voyage-Based Segmentation (Sprint 1D-AIS)", () => {
     // single 3-year disabling event.
     const report = AISBehaviourAnalyzer.analyse({
       vesselId: "v-multiyear",
-      events: [
-        evt("2023-01-01T00:00:00Z", 0, 0),
-        evt("2026-01-01T00:00:00Z", 0, 0),
-      ],
+      events: [evt("2023-01-01T00:00:00Z", 0, 0), evt("2026-01-01T00:00:00Z", 0, 0)],
     });
     expect(report.darkEvents).toHaveLength(1);
     expect(report.darkEvents[0].kind).toBe("coverage-uncertain");
@@ -151,10 +155,7 @@ describe("AIS Voyage-Based Segmentation (Sprint 1D-AIS)", () => {
   it("OSAE does NOT lift priority above 'watch' when only coverage-uncertain spans exist", () => {
     const report = AISBehaviourAnalyzer.analyse({
       vesselId: "v-coverage",
-      events: [
-        evt("2023-01-01T00:00:00Z", 0, 0),
-        evt("2026-01-01T00:00:00Z", 0, 0),
-      ],
+      events: [evt("2023-01-01T00:00:00Z", 0, 0), evt("2026-01-01T00:00:00Z", 0, 0)],
     });
     const a = OSAE.publishAisContinuity(report);
     expect(a.priority).toBe("watch");
@@ -186,7 +187,11 @@ describe("AIS Voyage-Based Segmentation (Sprint 1D-AIS)", () => {
     const report = AISBehaviourAnalyzer.analyse({
       vesselId: "v-legacy",
       events: [
-        evt("2026-07-01T00:00:00Z", 6.4, 3.4, { weather: "clear", nearestPort: "Lagos", distanceFromPortNm: 43 }),
+        evt("2026-07-01T00:00:00Z", 6.4, 3.4, {
+          weather: "clear",
+          nearestPort: "Lagos",
+          distanceFromPortNm: 43,
+        }),
         evt("2026-07-01T09:00:00Z", 6.5, 3.5),
       ],
     });

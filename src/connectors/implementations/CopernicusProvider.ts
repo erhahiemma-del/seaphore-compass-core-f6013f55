@@ -84,10 +84,7 @@ const MAX_SCENES = 20;
 export const COPERNICUS_CACHE_TTL_MS = 60 * 60 * 1_000;
 
 /** Credential env vars — declared in .env.example, read at call time. */
-export const COPERNICUS_CREDENTIAL_ENV = [
-  "COPERNICUS_USERNAME",
-  "COPERNICUS_PASSWORD",
-] as const;
+export const COPERNICUS_CREDENTIAL_ENV = ["COPERNICUS_USERNAME", "COPERNICUS_PASSWORD"] as const;
 
 export const COPERNICUS_METADATA: ProviderMetadata = {
   providerType: "LIVE",
@@ -117,16 +114,12 @@ export type CopernicusAuthState =
   | "PROVIDER_UNREACHABLE";
 
 export const COPERNICUS_AUTH_MESSAGE: Record<CopernicusAuthState, string> = {
-  AUTHENTICATED:
-    "Authenticated with Copernicus Data Space Ecosystem.",
+  AUTHENTICATED: "Authenticated with Copernicus Data Space Ecosystem.",
   CREDENTIALS_MISSING:
     "Credentials Missing — set COPERNICUS_USERNAME and COPERNICUS_PASSWORD to activate satellite imagery.",
-  CREDENTIALS_INVALID:
-    "Credentials Invalid — CDSE rejected the username/password pair.",
-  TOKEN_EXPIRED:
-    "Access Token Expired — automatic refresh will be attempted on the next query.",
-  TOKEN_REFRESH_FAILED:
-    "Token Refresh Failed — CDSE did not issue a new token. Check credentials.",
+  CREDENTIALS_INVALID: "Credentials Invalid — CDSE rejected the username/password pair.",
+  TOKEN_EXPIRED: "Access Token Expired — automatic refresh will be attempted on the next query.",
+  TOKEN_REFRESH_FAILED: "Token Refresh Failed — CDSE did not issue a new token. Check credentials.",
   RATE_LIMITED:
     "Rate Limited — CDSE has throttled this account. Evidence collection will resume when the window resets.",
   PROVIDER_UNREACHABLE:
@@ -241,12 +234,8 @@ export class CopernicusProvider extends BaseEvidenceProvider {
    * capturing at construction gives a null credential in production.
    */
   private resolveCredentials(): { username: string; password: string } | null {
-    const username =
-      this.injectedUsername ??
-      readProviderCredential(COPERNICUS_CREDENTIAL_ENV[0]);
-    const password =
-      this.injectedPassword ??
-      readProviderCredential(COPERNICUS_CREDENTIAL_ENV[1]);
+    const username = this.injectedUsername ?? readProviderCredential(COPERNICUS_CREDENTIAL_ENV[0]);
+    const password = this.injectedPassword ?? readProviderCredential(COPERNICUS_CREDENTIAL_ENV[1]);
     if (!username || !password) return null;
     return { username, password };
   }
@@ -268,10 +257,7 @@ export class CopernicusProvider extends BaseEvidenceProvider {
    * Returns the token on success; sets authState and returns null on failure.
    * Never throws — callers treat null as "acquisition blocked".
    */
-  private async fetchToken(
-    username: string,
-    password: string,
-  ): Promise<ActiveToken | null> {
+  private async fetchToken(username: string, password: string): Promise<ActiveToken | null> {
     const body = new URLSearchParams({
       client_id: "cdse-public",
       grant_type: "password",
@@ -279,16 +265,11 @@ export class CopernicusProvider extends BaseEvidenceProvider {
       password,
     });
     try {
-      const res = await timedFetch(
-        this.fetchImpl,
-        TOKEN_ENDPOINT,
-        TOKEN_TIMEOUT_MS,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: body.toString(),
-        },
-      );
+      const res = await timedFetch(this.fetchImpl, TOKEN_ENDPOINT, TOKEN_TIMEOUT_MS, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: body.toString(),
+      });
       if (res.status === 429) {
         this.setAuthState("RATE_LIMITED");
         return null;
@@ -297,10 +278,7 @@ export class CopernicusProvider extends BaseEvidenceProvider {
       if (res.status === 401 || res.status === 403 || data.error) {
         // Surface the specific CDSE error when available, otherwise classify
         // as CREDENTIALS_INVALID so the officer knows what to fix.
-        const detail =
-          data.error_description ??
-          data.error ??
-          `HTTP ${res.status}`;
+        const detail = data.error_description ?? data.error ?? `HTTP ${res.status}`;
         this.setAuthState("CREDENTIALS_INVALID", detail);
         return null;
       }
@@ -312,10 +290,7 @@ export class CopernicusProvider extends BaseEvidenceProvider {
       const nowS = Math.floor((this.now ?? Date.now)() / 1_000);
       return { value: data.access_token, expiresAt: nowS + expiresInS };
     } catch (err) {
-      this.setAuthState(
-        "PROVIDER_UNREACHABLE",
-        err instanceof Error ? err.message : String(err),
-      );
+      this.setAuthState("PROVIDER_UNREACHABLE", err instanceof Error ? err.message : String(err));
       return null;
     }
   }
@@ -406,9 +381,7 @@ export class CopernicusProvider extends BaseEvidenceProvider {
     };
 
     // Bounding box: "w,s,e,n"
-    const bboxMatch = /^(-?\d+\.?\d*),(-?\d+\.?\d*),(-?\d+\.?\d*),(-?\d+\.?\d*)$/.exec(
-      text.trim(),
-    );
+    const bboxMatch = /^(-?\d+\.?\d*),(-?\d+\.?\d*),(-?\d+\.?\d*),(-?\d+\.?\d*)$/.exec(text.trim());
     if (bboxMatch) {
       body.bbox = bboxMatch.slice(1, 5).map(Number);
     } else {
@@ -442,9 +415,7 @@ export class CopernicusProvider extends BaseEvidenceProvider {
       body.datetime = `${start}/${end}`;
     } else {
       // Default: last 3 days — relevant to maritime operations tempo
-      const since = new Date(
-        ((this.now ?? Date.now)()) - 3 * 86_400_000,
-      );
+      const since = new Date((this.now ?? Date.now)() - 3 * 86_400_000);
       body.datetime = `${since.toISOString()}/..`;
     }
 
@@ -480,20 +451,15 @@ export class CopernicusProvider extends BaseEvidenceProvider {
     }
 
     const searchBody = this.buildSearchBody(query);
-    const res = await timedFetch(
-      this.fetchImpl,
-      STAC_SEARCH,
-      SEARCH_TIMEOUT_MS,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
-        body: JSON.stringify(searchBody),
+    const res = await timedFetch(this.fetchImpl, STAC_SEARCH, SEARCH_TIMEOUT_MS, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
       },
-    );
+      body: JSON.stringify(searchBody),
+    });
 
     if (res.status === 401 || res.status === 403) {
       // Token may have expired between ensureToken() check and the request.
@@ -545,9 +511,7 @@ export class CopernicusProvider extends BaseEvidenceProvider {
 
     // Acquisition time: prefer datetime, fall back to start_datetime
     const acquisitionTime =
-      props.datetime ??
-      props.start_datetime ??
-      new Date((this.now ?? Date.now)()).toISOString();
+      props.datetime ?? props.start_datetime ?? new Date((this.now ?? Date.now)()).toISOString();
 
     // Bounding box centroid for the canonical entity id
     const bbox = feature.bbox ?? [];
@@ -614,9 +578,7 @@ export class CopernicusProvider extends BaseEvidenceProvider {
     // geographic entities in Seaphore's operational domain. The
     // IFE can link satellite evidence to vessel entities via the
     // spatial proximity of their position records.
-    const nativeId = hasCoords
-      ? `${centroidLat.toFixed(4)},${centroidLon.toFixed(4)}`
-      : sceneId;
+    const nativeId = hasCoords ? `${centroidLat.toFixed(4)},${centroidLon.toFixed(4)}` : sceneId;
 
     return normalizeRecord({
       source: this.id,
@@ -649,22 +611,16 @@ export class CopernicusProvider extends BaseEvidenceProvider {
    */
   async healthCheck() {
     try {
-      const res = await timedFetch(
-        this.fetchImpl,
-        STAC_ROOT,
-        CONNECT_TIMEOUT_MS,
-        { headers: { Accept: "application/json" } },
-      );
+      const res = await timedFetch(this.fetchImpl, STAC_ROOT, CONNECT_TIMEOUT_MS, {
+        headers: { Accept: "application/json" },
+      });
       this.available = res.status < 500;
       if (!this.available) {
         this.setAuthState("PROVIDER_UNREACHABLE", `STAC root HTTP ${res.status}`);
       }
     } catch (err) {
       this.available = false;
-      this.setAuthState(
-        "PROVIDER_UNREACHABLE",
-        err instanceof Error ? err.message : String(err),
-      );
+      this.setAuthState("PROVIDER_UNREACHABLE", err instanceof Error ? err.message : String(err));
     }
 
     return super.healthCheck();

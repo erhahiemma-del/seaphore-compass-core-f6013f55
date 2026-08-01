@@ -55,10 +55,7 @@ function normaliseItem(
   const entityId = item.entity_ids?.[0] ?? "unknown";
   const entity: CanonicalEntityRef = { kind: inferEntityKind(entityId), id: entityId };
   const observedAt = item.collected_at ?? retrievedAt;
-  const freshness = Math.max(
-    0,
-    Math.floor((Date.now() - new Date(observedAt).getTime()) / 1000),
-  );
+  const freshness = Math.max(0, Math.floor((Date.now() - new Date(observedAt).getTime()) / 1000));
   return {
     id: item.id,
     source: connectorId,
@@ -107,9 +104,7 @@ export function bridgeToIal(results: ReadonlyArray<RetrievalResult>): IalBridgeO
         connectorId,
         sourceName,
         records: r.evidence.length,
-        grade: pickStrongestGrade(
-          r.evidence.map((e) => e.grade as IalEvidenceGrade),
-        ),
+        grade: pickStrongestGrade(r.evidence.map((e) => e.grade as IalEvidenceGrade)),
         latencyMs: r.latency_ms,
       });
     }

@@ -187,9 +187,16 @@ function KnowledgeGraphRoute() {
                 </p>
               </div>
               <div className="flex flex-col items-end gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-                <span>{snapshot.stats.nodes} nodes · {snapshot.stats.edges} edges</span>
+                <span>
+                  {snapshot.stats.nodes} nodes · {snapshot.stats.edges} edges
+                </span>
                 <span>{snapshot.stats.connectors.length} connectors contributing</span>
-                <Button variant="outline" size="sm" onClick={clear} className="mt-1 h-7 text-[10px]">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clear}
+                  className="mt-1 h-7 text-[10px]"
+                >
                   Reset graph
                 </Button>
               </div>
@@ -213,11 +220,13 @@ function KnowledgeGraphRoute() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
-                {Object.entries(snapshot.stats.byEdgeType).sort().map(([t, n]) => (
-                  <Badge key={t} variant="outline" className="text-[10px]">
-                    {t} · {n}
-                  </Badge>
-                ))}
+                {Object.entries(snapshot.stats.byEdgeType)
+                  .sort()
+                  .map(([t, n]) => (
+                    <Badge key={t} variant="outline" className="text-[10px]">
+                      {t} · {n}
+                    </Badge>
+                  ))}
                 {Object.keys(snapshot.stats.byEdgeType).length === 0 ? (
                   <span className="text-xs text-muted-foreground">No relationships yet.</span>
                 ) : null}

@@ -8,10 +8,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 const ROOT = join(process.cwd(), "src");
-const FORBIDDEN = [
-  "GLOBAL_FISHING_WATCH_API_KEY",
-  "VITE_GLOBAL_FISHING_WATCH",
-];
+const FORBIDDEN = ["GLOBAL_FISHING_WATCH_API_KEY", "VITE_GLOBAL_FISHING_WATCH"];
 
 // Any *.server.ts, *.server.tsx, or *.functions.ts file is server-only.
 function isServerOnly(path: string): boolean {
@@ -39,7 +36,10 @@ describe("Security · authenticated-connector secrets never reach the client bun
       for (const token of FORBIDDEN) {
         if (contents.includes(token)) {
           const line =
-            contents.split("\n").find((l) => l.includes(token))?.trim() ?? "";
+            contents
+              .split("\n")
+              .find((l) => l.includes(token))
+              ?.trim() ?? "";
           leaks.push({ file, token, line });
         }
       }

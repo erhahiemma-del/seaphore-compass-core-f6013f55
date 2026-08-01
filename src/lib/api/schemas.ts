@@ -1,7 +1,11 @@
 import { z } from "zod";
 
 export const IdParamSchema = z.object({
-  id: z.string().min(1).max(128).regex(/^[a-zA-Z0-9_\-:.]+$/, "invalid id"),
+  id: z
+    .string()
+    .min(1)
+    .max(128)
+    .regex(/^[a-zA-Z0-9_\-:.]+$/, "invalid id"),
 });
 export type IdParam = z.infer<typeof IdParamSchema>;
 

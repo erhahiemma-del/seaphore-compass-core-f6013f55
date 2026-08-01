@@ -46,7 +46,10 @@ const INTENT_PATTERNS: ReadonlyArray<{ intent: EntityQuestionIntent; re: RegExp 
   { intent: "related-companies", re: /\b(related|connected|linked)\s+(compan|corporate|firm)/i },
   { intent: "connected-containers", re: /\b(container|containers|box(es)?)\b/i },
   { intent: "manifest-history", re: /\b(manifest|bill of lading|b\/l|bol)\b/i },
-  { intent: "investigation-history", re: /\b(investigation|case|enforcement)\s*(history|record)?\b/i },
+  {
+    intent: "investigation-history",
+    re: /\b(investigation|case|enforcement)\s*(history|record)?\b/i,
+  },
   { intent: "timeline", re: /\b(timeline|history|chronolog|activity)\b/i },
   { intent: "entity-profile", re: /\b(profile|show|summary|who is|what is|dossier)\b/i },
 ];
@@ -115,9 +118,7 @@ function relLines(
 }
 
 function timelineLines(events: ReadonlyArray<EieTimelineEvent>): string[] {
-  return events
-    .slice(-12)
-    .map((e) => `${e.at} · ${e.label} — ${e.description} [${e.grade}]`);
+  return events.slice(-12).map((e) => `${e.at} · ${e.label} — ${e.description} [${e.grade}]`);
 }
 
 export interface AnswerOptions {
@@ -199,7 +200,8 @@ export function answerEntityQuestion(
     }
     case "investigation-history": {
       lines = profile.investigations.map(
-        (i) => `${i.title}${i.status ? ` · ${i.status}` : ""}${i.updatedAt ? ` · ${i.updatedAt}` : ""}`,
+        (i) =>
+          `${i.title}${i.status ? ` · ${i.status}` : ""}${i.updatedAt ? ` · ${i.updatedAt}` : ""}`,
       );
       headline = `Investigation history for ${subject.label}`;
       break;
@@ -222,7 +224,10 @@ export function answerEntityQuestion(
     }
   }
 
-  const gaps = lines.length === 0 ? [`No evidence answers this question for ${subject.label}.`, ...profile.gaps] : profile.gaps;
+  const gaps =
+    lines.length === 0
+      ? [`No evidence answers this question for ${subject.label}.`, ...profile.gaps]
+      : profile.gaps;
 
   return {
     intent,

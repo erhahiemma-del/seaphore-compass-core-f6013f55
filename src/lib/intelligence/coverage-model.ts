@@ -48,13 +48,7 @@ export type ProviderCoverageStatus =
   | "OFFLINE"
   | "NOT_REGISTERED";
 
-export type KpiDomainKey =
-  | "manifest"
-  | "vessel"
-  | "container"
-  | "revenue"
-  | "risk"
-  | "historical";
+export type KpiDomainKey = "manifest" | "vessel" | "container" | "revenue" | "risk" | "historical";
 
 /** The nine trace checks required by the DIAG-02 audit. */
 export interface CoverageChecks {
@@ -429,7 +423,9 @@ function resolveKpi(
     rootCause = "RATE_LIMITED";
     detail = "Every provider serving this KPI is currently rate limited upstream.";
   } else if (ready.length === 0) {
-    const offline = providers.filter((p) => p.status === "OFFLINE" || p.status === "NOT_REGISTERED");
+    const offline = providers.filter(
+      (p) => p.status === "OFFLINE" || p.status === "NOT_REGISTERED",
+    );
     state = "PROVIDER_OFFLINE";
     rootCause = offline.some((p) => p.lastError) ? "API_FAILURE" : "PROVIDER_OFFLINE";
     detail =
@@ -499,7 +495,11 @@ export function buildIntelligenceCoverage(input: CoverageInput): IntelligenceCov
   for (const row of input.catalog) {
     providerStatus.set(
       row.providerId,
-      classifyProviderStatus(row, healthById.get(row.providerId), input.credentials[row.providerId] ?? false),
+      classifyProviderStatus(
+        row,
+        healthById.get(row.providerId),
+        input.credentials[row.providerId] ?? false,
+      ),
     );
   }
 
@@ -525,12 +525,9 @@ export function buildIntelligenceCoverage(input: CoverageInput): IntelligenceCov
     return resolveKpi(decl, input, providers);
   });
 
-  const nameOf = (id: string) =>
-    input.catalog.find((r) => r.providerId === id)?.providerName ?? id;
+  const nameOf = (id: string) => input.catalog.find((r) => r.providerId === id)?.providerName ?? id;
   const idsWith = (statuses: ReadonlyArray<ProviderCoverageStatus>) =>
-    [...providerStatus.entries()]
-      .filter(([, s]) => statuses.includes(s))
-      .map(([id]) => nameOf(id));
+    [...providerStatus.entries()].filter(([, s]) => statuses.includes(s)).map(([id]) => nameOf(id));
 
   const operational = idsWith(["OPERATIONAL"]);
   const partial = idsWith(["PARTIAL", "RATE_LIMITED"]);

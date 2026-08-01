@@ -37,7 +37,9 @@ export const aisBehaviourDetector: Detector = {
         factors.push({
           label: `${gapsOver24} AIS gap${gapsOver24 > 1 ? "s" : ""} ≥ 24h in evidence window`,
           weight: 0.55,
-          evidenceIds: position.filter((r) => Number(r.fields.gapHours ?? 0) >= 24).map((r) => r.id),
+          evidenceIds: position
+            .filter((r) => Number(r.fields.gapHours ?? 0) >= 24)
+            .map((r) => r.id),
         });
       }
       if (gapsOver12 - gapsOver24 > 0) {
@@ -75,24 +77,27 @@ export const aisBehaviourDetector: Detector = {
             {
               label: "Equipment malfunction",
               probability: 0.15,
-              rationale: "AIS transponder faults can produce clustered gaps without adversarial intent.",
+              rationale:
+                "AIS transponder faults can produce clustered gaps without adversarial intent.",
             },
             {
               label: "High-latitude / shadow zone",
               probability: 0.1,
-              rationale: "Certain areas produce structural reception gaps not attributable to the vessel.",
+              rationale:
+                "Certain areas produce structural reception gaps not attributable to the vessel.",
             },
           ],
-          baseline: snap && snap.n >= 3
-            ? {
-                metric: "aisGapHours",
-                mean: snap.mean,
-                stddev: snap.stddev,
-                n: snap.n,
-                observed: longest,
-                zScore: snap.stddev > 0 ? (longest - snap.mean) / snap.stddev : 0,
-              }
-            : undefined,
+          baseline:
+            snap && snap.n >= 3
+              ? {
+                  metric: "aisGapHours",
+                  mean: snap.mean,
+                  stddev: snap.stddev,
+                  n: snap.n,
+                  observed: longest,
+                  zScore: snap.stddev > 0 ? (longest - snap.mean) / snap.stddev : 0,
+                }
+              : undefined,
           now: ctx.now,
           revision: ctx.revision,
           salt: `${gapsOver12}:${gapsOver24}:${longest.toFixed(1)}`,

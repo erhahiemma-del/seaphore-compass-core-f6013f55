@@ -60,14 +60,8 @@ function clientOf(req: { supabase?: SupabaseClient }): SupabaseClient {
   return req.supabase ?? (browserSupabase as unknown as SupabaseClient);
 }
 
-async function fetchOfficerRole(
-  client: SupabaseClient,
-  officer_id: string,
-): Promise<Role | null> {
-  const { data } = await client
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", officer_id);
+async function fetchOfficerRole(client: SupabaseClient, officer_id: string): Promise<Role | null> {
+  const { data } = await client.from("user_roles").select("role").eq("user_id", officer_id);
   const rolesRaw = (data ?? []).map((r: { role: string }) => r.role);
   const order: Role[] = ["administrator", "director", "officer", "analyst"];
   for (const r of order) if (rolesRaw.includes(r)) return r;
@@ -76,7 +70,11 @@ async function fetchOfficerRole(
 
 export async function evaluatePolicy(req: PolicyRequest): Promise<PolicyDecision> {
   if (!PERMISSIONS.includes(req.permission)) {
-    return { allow: false, reasons: [`Unknown permission: ${req.permission}`], requiresEscalation: false };
+    return {
+      allow: false,
+      reasons: [`Unknown permission: ${req.permission}`],
+      requiresEscalation: false,
+    };
   }
 
   const client = clientOf(req);

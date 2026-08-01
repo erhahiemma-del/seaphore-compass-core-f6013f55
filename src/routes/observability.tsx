@@ -14,7 +14,10 @@ export const Route = createFileRoute("/observability")({
   head: () => ({
     meta: [
       { title: "Observability · Seaphore Ops" },
-      { name: "description", content: "Real-time pipeline metrics, model usage, feedback, and alerts." },
+      {
+        name: "description",
+        content: "Real-time pipeline metrics, model usage, feedback, and alerts.",
+      },
     ],
   }),
   component: ObservabilityDashboard,
@@ -27,7 +30,8 @@ function ObservabilityDashboard() {
     refetchInterval: 2000,
   });
 
-  if (!q.data) return <div className="p-6 text-sm text-muted-foreground">Loading pipeline metrics…</div>;
+  if (!q.data)
+    return <div className="p-6 text-sm text-muted-foreground">Loading pipeline metrics…</div>;
   const { snapshot, alerts, recentErrors, recentFeedback, recentQueries } = q.data;
   const totalQueries = snapshot.counters["queries_total"] ?? 0;
   const completed = snapshot.counters['queries_completed_total{ok="true"}'] ?? 0;
@@ -49,12 +53,17 @@ function ObservabilityDashboard() {
       </header>
 
       {alerts.length > 0 && (
-        <section aria-label="Firing alerts" className="rounded-md border border-destructive/40 bg-destructive/5 p-4">
+        <section
+          aria-label="Firing alerts"
+          className="rounded-md border border-destructive/40 bg-destructive/5 p-4"
+        >
           <h2 className="text-sm font-semibold text-destructive">Firing alerts</h2>
           <ul className="mt-2 space-y-1 text-sm">
             {alerts.map((a) => (
               <li key={a.rule}>
-                <span className="rounded bg-destructive/20 px-1.5 py-0.5 text-xs font-mono">{a.severity}</span>{" "}
+                <span className="rounded bg-destructive/20 px-1.5 py-0.5 text-xs font-mono">
+                  {a.severity}
+                </span>{" "}
                 <strong>{a.rule}</strong> — {a.description}
               </li>
             ))}
@@ -112,7 +121,9 @@ function ObservabilityDashboard() {
             {(["agree", "disagree", "modify", "dismiss"] as const).map((o) => (
               <li key={o} className="flex justify-between border-b py-1 last:border-b-0">
                 <span className="capitalize">{o}</span>
-                <span className="font-mono">{snapshot.counters[`feedback_total{outcome="${o}"}`] ?? 0}</span>
+                <span className="font-mono">
+                  {snapshot.counters[`feedback_total{outcome="${o}"}`] ?? 0}
+                </span>
               </li>
             ))}
           </ul>
@@ -129,9 +140,8 @@ function ObservabilityDashboard() {
                   <span className="font-mono">{v}</span>
                 </li>
               ))}
-            {Object.keys(snapshot.counters).filter((k) => k.startsWith("model_calls_total{")).length === 0 && (
-              <li className="text-muted-foreground">No model calls yet.</li>
-            )}
+            {Object.keys(snapshot.counters).filter((k) => k.startsWith("model_calls_total{"))
+              .length === 0 && <li className="text-muted-foreground">No model calls yet.</li>}
           </ul>
         </Panel>
       </section>
@@ -141,7 +151,9 @@ function ObservabilityDashboard() {
           <ul className="space-y-1 text-xs">
             {recentQueries.map((q) => (
               <li key={q.id} className="truncate">
-                <span className="font-mono text-muted-foreground">{new Date(q.at).toLocaleTimeString()}</span>{" "}
+                <span className="font-mono text-muted-foreground">
+                  {new Date(q.at).toLocaleTimeString()}
+                </span>{" "}
                 <span className="font-mono">{q.officerHash}</span>{" "}
                 <em className="text-primary">{q.intent}</em> — {q.queryText}
               </li>
@@ -154,11 +166,16 @@ function ObservabilityDashboard() {
           <ul className="space-y-1 text-xs">
             {recentErrors.map((e, i) => (
               <li key={i}>
-                <span className="font-mono text-muted-foreground">{new Date(e.at).toLocaleTimeString()}</span>{" "}
-                <span className="rounded bg-destructive/10 px-1 font-mono">{e.stage}</span> {e.message}
+                <span className="font-mono text-muted-foreground">
+                  {new Date(e.at).toLocaleTimeString()}
+                </span>{" "}
+                <span className="rounded bg-destructive/10 px-1 font-mono">{e.stage}</span>{" "}
+                {e.message}
               </li>
             ))}
-            {recentErrors.length === 0 && <li className="text-muted-foreground">No errors — nice.</li>}
+            {recentErrors.length === 0 && (
+              <li className="text-muted-foreground">No errors — nice.</li>
+            )}
           </ul>
         </Panel>
       </section>
@@ -168,13 +185,18 @@ function ObservabilityDashboard() {
           <ul className="space-y-1 text-xs">
             {recentFeedback.map((f, i) => (
               <li key={i}>
-                <span className="font-mono text-muted-foreground">{new Date(f.at).toLocaleTimeString()}</span>{" "}
+                <span className="font-mono text-muted-foreground">
+                  {new Date(f.at).toLocaleTimeString()}
+                </span>{" "}
                 <span className="font-mono">{f.officerHash}</span>{" "}
-                <span className="capitalize">{f.outcome}</span> · trace <span className="font-mono">{f.traceId}</span>
+                <span className="capitalize">{f.outcome}</span> · trace{" "}
+                <span className="font-mono">{f.traceId}</span>
                 {f.note && <> — {f.note}</>}
               </li>
             ))}
-            {recentFeedback.length === 0 && <li className="text-muted-foreground">No feedback yet.</li>}
+            {recentFeedback.length === 0 && (
+              <li className="text-muted-foreground">No feedback yet.</li>
+            )}
           </ul>
         </Panel>
       </section>
@@ -194,7 +216,9 @@ function Kpi({ label, value }: { label: string; value: number | string }) {
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-md border p-4">
-      <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">{title}</h3>
+      <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+        {title}
+      </h3>
       {children}
     </div>
   );

@@ -16,12 +16,7 @@
  */
 import { Minus, Sparkles, X } from "lucide-react";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CopilotWorkspace } from "@/components/copilot/CopilotWorkspace";
 import { cn } from "@/lib/utils";

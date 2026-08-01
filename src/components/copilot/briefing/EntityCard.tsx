@@ -85,9 +85,7 @@ export function EntityCard({ entity, onOpen }: Props) {
         </div>
       )}
 
-      {entity.summary && (
-        <p className="text-xs text-muted-foreground">{entity.summary}</p>
-      )}
+      {entity.summary && <p className="text-xs text-muted-foreground">{entity.summary}</p>}
     </Wrapper>
   );
 }

@@ -178,7 +178,10 @@ function categoryToStatus(cat: WorkspaceEvidence["category"]): EvidenceStatus {
  * Adapt an AIS continuity report from AISBehaviourAnalyzer.
  * Emits one row per dark event plus a summary row for the whole window.
  */
-export function fromAisContinuityReport(report: AisContinuityReport, subject?: string): IntelligenceEvidenceItem[] {
+export function fromAisContinuityReport(
+  report: AisContinuityReport,
+  subject?: string,
+): IntelligenceEvidenceItem[] {
   const items: IntelligenceEvidenceItem[] = [];
 
   items.push({
@@ -206,12 +209,17 @@ export function fromAisContinuityReport(report: AisContinuityReport, subject?: s
 }
 
 /** Adapt a single dark-event evidence into a row. */
-export function fromDarkEvent(dark: AisDarkEvidence, vesselId: string, subject?: string): IntelligenceEvidenceItem {
+export function fromDarkEvent(
+  dark: AisDarkEvidence,
+  vesselId: string,
+  subject?: string,
+): IntelligenceEvidenceItem {
   return {
     id: `ais.dark.${vesselId}.${dark.startAt}`,
     source: "Global Fishing Watch · AIS Behaviour Analyzer",
     timestamp: dark.endAt,
-    confidence: dark.confidence >= 0.8 ? "VERIFIED" : dark.confidence >= 0.6 ? "OBSERVED" : "INFERRED",
+    confidence:
+      dark.confidence >= 0.8 ? "VERIFIED" : dark.confidence >= 0.6 ? "OBSERVED" : "INFERRED",
     confidenceScore: dark.confidence,
     evidenceType: "ais-continuity",
     status: "verified",
@@ -244,17 +252,20 @@ export function fromOsaeAssessment(a: OsaeAssessment, subject?: string): Intelli
 }
 
 /** Adapt a GFW identity payload (already sanitized upstream). */
-export function fromGfwIdentity(id: {
-  vesselId: string;
-  name?: string;
-  mmsi?: string;
-  imo?: string;
-  flag?: string;
-  callSign?: string;
-  matchFields?: string;
-  evidenceUrl?: string;
-  collectedAt?: string;
-}, subject?: string): IntelligenceEvidenceItem {
+export function fromGfwIdentity(
+  id: {
+    vesselId: string;
+    name?: string;
+    mmsi?: string;
+    imo?: string;
+    flag?: string;
+    callSign?: string;
+    matchFields?: string;
+    evidenceUrl?: string;
+    collectedAt?: string;
+  },
+  subject?: string,
+): IntelligenceEvidenceItem {
   const strongMatch = id.matchFields && id.matchFields !== "NO_MATCH";
   return {
     id: `gfw.identity.${id.vesselId}`,
@@ -270,9 +281,10 @@ export function fromGfwIdentity(id: {
     subject: subject ?? id.name,
     producer: "IAL",
     connector: "gfw",
-    entities: (subject ?? id.name)
-      ? [{ type: "vessel", name: (subject ?? id.name)!, id: id.mmsi ?? id.imo ?? id.vesselId }]
-      : undefined,
+    entities:
+      (subject ?? id.name)
+        ? [{ type: "vessel", name: (subject ?? id.name)!, id: id.mmsi ?? id.imo ?? id.vesselId }]
+        : undefined,
   };
 }
 
@@ -301,7 +313,9 @@ export function fromGfwGapEvent(e: {
     subject: e.vessel.name ?? undefined,
     producer: "IAL",
     connector: "gfw",
-    entities: e.vessel.name ? [{ type: "vessel", name: e.vessel.name, id: e.vessel.ssvid }] : undefined,
+    entities: e.vessel.name
+      ? [{ type: "vessel", name: e.vessel.name, id: e.vessel.ssvid }]
+      : undefined,
   };
 }
 
@@ -324,9 +338,7 @@ export function fromWorkspaceEvidence(
     producer: "WORKSPACE",
     connector: "workspace",
     investigationId,
-    entities: w.entityName
-      ? [{ type: "vessel", name: w.entityName, id: w.entityId }]
-      : undefined,
+    entities: w.entityName ? [{ type: "vessel", name: w.entityName, id: w.entityId }] : undefined,
   };
 }
 
@@ -378,7 +390,6 @@ export function fromNormalizedEvidence(
   };
 }
 
-
 const OKL_KIND_LABEL: Record<OklPatternKind, string> = {
   REPEAT_OFFENDER: "Repeat offender",
   SUSPICIOUS_ROUTING: "Suspicious routing",
@@ -425,7 +436,6 @@ export function fromOklPattern(
   const entityRef = pattern.entities[0];
   const inferredSubject = subject ?? entityRef?.label;
 
-
   return {
     id: `okl.${pattern.id}`,
     source: `Operational Knowledge Layer · ${OKL_KIND_LABEL[pattern.kind]}`,
@@ -462,7 +472,6 @@ export function fromOklPattern(
     },
   };
 }
-
 
 export interface EvidenceFilters {
   types: Set<EvidenceType>;

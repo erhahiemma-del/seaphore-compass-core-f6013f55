@@ -65,15 +65,10 @@ const ATMOSPHERIC_BODY = {
 };
 
 /** Routes marine vs forecast endpoints to the right fixture. */
-function openMeteoFetch(
-  marine: unknown = MARINE_BODY,
-  atmospheric: unknown = ATMOSPHERIC_BODY,
-) {
+function openMeteoFetch(marine: unknown = MARINE_BODY, atmospheric: unknown = ATMOSPHERIC_BODY) {
   return vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
-    return url.includes("marine-api")
-      ? jsonResponse(marine)
-      : jsonResponse(atmospheric);
+    return url.includes("marine-api") ? jsonResponse(marine) : jsonResponse(atmospheric);
   }) as unknown as typeof fetch;
 }
 
@@ -151,7 +146,15 @@ describe("EnvironmentalIntelligenceProvider — valid coordinates", () => {
     const p = makeProvider(openMeteoFetch());
     const record = (await p.acquire(LAGOS)).records[0];
     const serialized = JSON.stringify(record).toUpperCase();
-    for (const verdict of ["CALM", "ROUGH", "SAFE", "UNSAFE", "LOW RISK", "HIGH RISK", "SEVERITY"]) {
+    for (const verdict of [
+      "CALM",
+      "ROUGH",
+      "SAFE",
+      "UNSAFE",
+      "LOW RISK",
+      "HIGH RISK",
+      "SEVERITY",
+    ]) {
       expect(serialized).not.toContain(verdict);
     }
     // The condition marker is deliberately non-judgemental.
@@ -230,9 +233,9 @@ describe("EnvironmentalIntelligenceProvider — cache", () => {
     clockRef.ms = NOW + ENVIRONMENTAL_CACHE_TTL_MS + 1;
     await p.acquire(LAGOS);
 
-    expect(
-      (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls.length,
-    ).toBeGreaterThan(before);
+    expect((fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(
+      before,
+    );
   });
 
   it("bypasses the cache on forceRefresh", async () => {
@@ -241,9 +244,9 @@ describe("EnvironmentalIntelligenceProvider — cache", () => {
     await p.acquire(LAGOS);
     const before = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls.length;
     await p.acquire({ ...LAGOS, forceRefresh: true });
-    expect(
-      (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls.length,
-    ).toBeGreaterThan(before);
+    expect((fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(
+      before,
+    );
   });
 });
 
@@ -275,9 +278,7 @@ describe("EnvironmentalIntelligenceProvider — evidence validation", () => {
   it("scores acquisition confidence on completeness and temporal fit", () => {
     expect(acquisitionConfidence([1, 2, 3, 4, 5, 6], NOW, NOW)).toBe(1);
     expect(acquisitionConfidence([1, null, null, null, null, null], NOW, NOW)).toBe(0.17);
-    expect(
-      acquisitionConfidence([1, 2, 3, 4, 5, 6], NOW + 6 * 3600_000, NOW),
-    ).toBe(0.75);
+    expect(acquisitionConfidence([1, 2, 3, 4, 5, 6], NOW + 6 * 3600_000, NOW)).toBe(0.75);
   });
 });
 
@@ -292,7 +293,9 @@ describe("EnvironmentalIntelligenceProvider — empty response", () => {
   });
 
   it("reports a non-200 upstream as a failed result, never a throw", async () => {
-    const fetchImpl = vi.fn(async () => jsonResponse({ error: true }, 503)) as unknown as typeof fetch;
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse({ error: true }, 503),
+    ) as unknown as typeof fetch;
     const p = makeProvider(fetchImpl);
     const result = await p.acquire(LAGOS);
     expect(result.ok).toBe(false);
@@ -459,10 +462,7 @@ describe("EnvironmentalIntelligenceProvider — framework integration", () => {
 
 describe("EnvironmentalIntelligenceProvider — architecture freeze", () => {
   const source = readFileSync(
-    resolve(
-      process.cwd(),
-      "src/connectors/implementations/EnvironmentalIntelligenceProvider.ts",
-    ),
+    resolve(process.cwd(), "src/connectors/implementations/EnvironmentalIntelligenceProvider.ts"),
     "utf8",
   );
 

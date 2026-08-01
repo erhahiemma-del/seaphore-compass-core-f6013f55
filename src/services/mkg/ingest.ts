@@ -56,9 +56,7 @@ function kindFromId(id: string, fallback: MkgNodeKind): MkgNodeKind {
   return (prefix && KIND_FROM_ID_PREFIX[prefix]) || fallback;
 }
 
-function provenanceFrom(
-  record: NormalizedEvidence,
-): MkgProvenance {
+function provenanceFrom(record: NormalizedEvidence): MkgProvenance {
   return {
     connectorId: record.source,
     sourceName: record.sourceName,
@@ -112,10 +110,7 @@ function upsertReferenceNode(
 
 // Edge minting rules per evidence.kind ---------------------------------
 
-function mintEdgesForRecord(
-  graph: MaritimeKnowledgeGraph,
-  record: NormalizedEvidence,
-): number {
+function mintEdgesForRecord(graph: MaritimeKnowledgeGraph, record: NormalizedEvidence): number {
   const p = provenanceFrom(record);
   const from = record.entity.id;
   let edges = 0;
@@ -146,26 +141,42 @@ function mintEdgesForRecord(
       const ownerId = asString(f.ownerEntityId) ?? asString(f.ownerId);
       const ownerName = asString(f.ownerName) ?? asString(f.owner) ?? ownerId ?? "Unknown owner";
       if (ownerId) {
-        link(ownerId, kindFromId(ownerId, "company"), ownerName, "OWNS",
-          `${ownerName} recorded as beneficial owner of ${record.entity.label ?? from}`);
+        link(
+          ownerId,
+          kindFromId(ownerId, "company"),
+          ownerName,
+          "OWNS",
+          `${ownerName} recorded as beneficial owner of ${record.entity.label ?? from}`,
+        );
       }
       const operatorId = asString(f.operatorEntityId) ?? asString(f.operatorId);
       const operatorName = asString(f.operatorName) ?? asString(f.operator) ?? operatorId;
       if (operatorId && operatorName) {
-        link(operatorId, kindFromId(operatorId, "company"), operatorName, "OPERATES",
-          `${operatorName} recorded as commercial operator`);
+        link(
+          operatorId,
+          kindFromId(operatorId, "company"),
+          operatorName,
+          "OPERATES",
+          `${operatorName} recorded as commercial operator`,
+        );
       }
       const managerId = asString(f.managerEntityId) ?? asString(f.managerId);
       const managerName = asString(f.managerName) ?? asString(f.manager) ?? managerId;
       if (managerId && managerName) {
-        link(managerId, kindFromId(managerId, "company"), managerName, "MANAGES",
-          `${managerName} recorded as ship manager`);
+        link(
+          managerId,
+          kindFromId(managerId, "company"),
+          managerName,
+          "MANAGES",
+          `${managerName} recorded as ship manager`,
+        );
       }
       const flag = asString(f.flag) ?? asString(f.flagState);
       if (flag) {
         const flagId = `country:iso:${flag.toUpperCase()}`;
-        link(flagId, "port", flag.toUpperCase(), "FLAGGED_BY",
-          `Registered under flag ${flag}`, { iso: flag.toUpperCase() });
+        link(flagId, "port", flag.toUpperCase(), "FLAGGED_BY", `Registered under flag ${flag}`, {
+          iso: flag.toUpperCase(),
+        });
       }
       break;
     }
@@ -173,28 +184,40 @@ function mintEdgesForRecord(
       const flag = asString(f.flag) ?? asString(f.flagState);
       if (flag) {
         const flagId = `country:iso:${flag.toUpperCase()}`;
-        link(flagId, "port", flag.toUpperCase(), "FLAGGED_BY",
-          `Vessel identity records flag as ${flag}`, { iso: flag.toUpperCase() });
+        link(
+          flagId,
+          "port",
+          flag.toUpperCase(),
+          "FLAGGED_BY",
+          `Vessel identity records flag as ${flag}`,
+          { iso: flag.toUpperCase() },
+        );
       }
       break;
     }
     case "port-call": {
-      const portId = asString(f.portId) ?? asString(f.portUnlocode)
-        ? `port:unlocode:${(asString(f.portUnlocode) ?? asString(f.portId))!.toUpperCase()}`
-        : null;
+      const portId =
+        (asString(f.portId) ?? asString(f.portUnlocode))
+          ? `port:unlocode:${(asString(f.portUnlocode) ?? asString(f.portId))!.toUpperCase()}`
+          : null;
       const portName = asString(f.portName) ?? asString(f.port) ?? portId ?? "Unknown port";
       if (portId) {
-        link(portId, "port", portName, "CALLS_AT",
-          `Port call at ${portName}`,
-          { unlocode: portId.split(":").pop() ?? "" });
+        link(portId, "port", portName, "CALLS_AT", `Port call at ${portName}`, {
+          unlocode: portId.split(":").pop() ?? "",
+        });
       }
       break;
     }
     case "voyage": {
       const voyageId = asString(f.voyageId) ?? `voyage:hash:${record.hash.slice(0, 12)}`;
       const voyageLabel = asString(f.voyageLabel) ?? asString(f.voyageNumber) ?? voyageId;
-      link(voyageId, "voyage", voyageLabel, "PERFORMED_VOYAGE",
-        `Vessel performed voyage ${voyageLabel}`);
+      link(
+        voyageId,
+        "voyage",
+        voyageLabel,
+        "PERFORMED_VOYAGE",
+        `Vessel performed voyage ${voyageLabel}`,
+      );
       const fromPort = asString(f.fromPort) ?? asString(f.originPort);
       const toPort = asString(f.toPort) ?? asString(f.destinationPort);
       if (fromPort) {
@@ -226,8 +249,9 @@ function mintEdgesForRecord(
     case "cargo": {
       const cargoId = asString(f.cargoId) ?? `cargo:hash:${record.hash.slice(0, 12)}`;
       const cargoLabel = asString(f.cargoName) ?? asString(f.commodity) ?? cargoId;
-      link(cargoId, "cargo", cargoLabel, "CARRIED", `Vessel carried ${cargoLabel}`,
-        { tonnage: asNumber(f.tonnage) ?? 0 });
+      link(cargoId, "cargo", cargoLabel, "CARRIED", `Vessel carried ${cargoLabel}`, {
+        tonnage: asNumber(f.tonnage) ?? 0,
+      });
       const manifestId = asString(f.manifestId);
       if (manifestId) {
         const id = manifestId.startsWith("manifest:") ? manifestId : `manifest:${manifestId}`;
@@ -243,26 +267,35 @@ function mintEdgesForRecord(
       }
       const consigneeId = asString(f.consigneeEntityId);
       if (consigneeId) {
-        link(consigneeId, kindFromId(consigneeId, "company"),
-          asString(f.consigneeName) ?? consigneeId, "CONSIGNED_TO",
-          `Cargo consigned to ${asString(f.consigneeName) ?? consigneeId}`);
+        link(
+          consigneeId,
+          kindFromId(consigneeId, "company"),
+          asString(f.consigneeName) ?? consigneeId,
+          "CONSIGNED_TO",
+          `Cargo consigned to ${asString(f.consigneeName) ?? consigneeId}`,
+        );
       }
       break;
     }
     case "sanctions": {
       const listName = asString(f.list) ?? asString(f.programme) ?? "Sanctions list";
       const listId = `sanction:${listName.replace(/\s+/g, "-").toLowerCase()}`;
-      link(listId, "sanction", listName, "SANCTIONED_BY",
-        `Subject listed on ${listName}`, {
-          match: asString(f.match) ?? "listed",
-        });
+      link(listId, "sanction", listName, "SANCTIONED_BY", `Subject listed on ${listName}`, {
+        match: asString(f.match) ?? "listed",
+      });
       break;
     }
     case "compliance": {
       const kind = asString(f.type) ?? "inspection";
       const inspId = `inspection:${record.hash.slice(0, 12)}`;
-      link(inspId, "inspection", asString(f.title) ?? kind, "SUBJECT_OF_INSPECTION",
-        `Subject of ${kind}`, {});
+      link(
+        inspId,
+        "inspection",
+        asString(f.title) ?? kind,
+        "SUBJECT_OF_INSPECTION",
+        `Subject of ${kind}`,
+        {},
+      );
       break;
     }
     case "position":
@@ -322,17 +355,12 @@ export function ingestUnifiedPackage(
   for (const cluster of uip.identity) {
     const ref = canonicalRefById.get(cluster.canonicalId);
     const label = ref?.label ?? cluster.label ?? cluster.canonicalId;
-    const kind: MkgNodeKind =
-      ref?.kind ?? kindFromId(cluster.canonicalId, "vessel");
-    const canonicalProv: MkgProvenance[] = (evidenceByEntity.get(cluster.canonicalId) ?? [])
-      .map(provenanceFrom);
+    const kind: MkgNodeKind = ref?.kind ?? kindFromId(cluster.canonicalId, "vessel");
+    const canonicalProv: MkgProvenance[] = (evidenceByEntity.get(cluster.canonicalId) ?? []).map(
+      provenanceFrom,
+    );
     if (canonicalProv.length === 0) {
-      canonicalProv.push(syntheticProvenance(
-        cluster.canonicalId,
-        [],
-        "REPORTED",
-        uip.createdAt,
-      ));
+      canonicalProv.push(syntheticProvenance(cluster.canonicalId, [], "REPORTED", uip.createdAt));
     }
     // Detect contradictions touching this entity in the fused package.
     const hasContradictions = uip.fused.contradictions.some(
@@ -386,7 +414,9 @@ export function ingestUnifiedPackage(
       id: rec.entity.id,
       kind: rec.entity.kind as MkgNodeKind,
       label: rec.entity.label ?? rec.entity.id,
-      provenance: provs.length ? provs : [syntheticProvenance(uip.id, [], "REPORTED", uip.createdAt)],
+      provenance: provs.length
+        ? provs
+        : [syntheticProvenance(uip.id, [], "REPORTED", uip.createdAt)],
       hasContradictions: uip.fused.contradictions.some((c) => c.entity.id === rec.entity.id),
     });
     touchedNodes.add(rec.entity.id);

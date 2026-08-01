@@ -34,7 +34,9 @@ import { useCargoCentreProjection } from "@/features/cargo-workspace/use-cargo-p
 
 const REVENUE_CENTRE = cargoCentreBySlug("revenue")!;
 
-function useRevenueKpis(projection: ReturnType<typeof useCargoCentreProjection>["projection"]): KpiSpec[] {
+function useRevenueKpis(
+  projection: ReturnType<typeof useCargoCentreProjection>["projection"],
+): KpiSpec[] {
   return useMemo(() => {
     if (!projection.data) return [];
     return projection.data.kpis.map((k) => ({
@@ -122,11 +124,7 @@ export function RevenueCentre() {
             <Section>
               <PanelStateNotice
                 state={projection.state}
-                detail={
-                  isLoading
-                    ? "Loading revenue intelligence…"
-                    : projection.stateDetail
-                }
+                detail={isLoading ? "Loading revenue intelligence…" : projection.stateDetail}
                 href={REVENUE_CENTRE.capabilityHref}
                 hrefLabel="Inspect revenue leakage capability"
               />
@@ -144,10 +142,7 @@ export function RevenueCentre() {
               {/* KPI summary cards from the revenue projection */}
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 {projection.data!.kpis.map((k) => (
-                  <div
-                    key={k.key}
-                    className="rounded-lg border border-line/60 bg-surface/60 p-2.5"
-                  >
+                  <div key={k.key} className="rounded-lg border border-line/60 bg-surface/60 p-2.5">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-slate">
                         {k.label}
@@ -182,9 +177,7 @@ export function RevenueCentre() {
                       key: "count",
                       label: "Evidence",
                       align: "right",
-                      render: (r) => (
-                        <span className="font-semibold">{r.evidenceCount}</span>
-                      ),
+                      render: (r) => <span className="font-semibold">{r.evidenceCount}</span>,
                     },
                     {
                       key: "conf",
@@ -227,8 +220,8 @@ export function RevenueCentre() {
                   <Row label="Capability" value={REVENUE_CENTRE.capabilityId} />
                 </dl>
                 <p className="mt-2 text-[11px] text-slate">
-                  Officer approval is required before any enforcement action.
-                  System recommends; officer decides.
+                  Officer approval is required before any enforcement action. System recommends;
+                  officer decides.
                 </p>
               </Section>
             </>
@@ -271,7 +264,9 @@ function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-2 border-b border-line/40 py-1 last:border-b-0">
       <dt className="text-slate">{label}</dt>
-      <dd className="font-mono max-w-[60%] truncate text-right text-[11px] text-foreground/85">{value}</dd>
+      <dd className="font-mono max-w-[60%] truncate text-right text-[11px] text-foreground/85">
+        {value}
+      </dd>
     </div>
   );
 }

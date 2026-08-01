@@ -93,7 +93,13 @@ const EQUASIS_SEED: EquasisRaw[] = [
     manager: "Atlantic Ship Management Ltd",
     classificationSociety: "Lloyd's Register",
     pscInspections: [
-      { port: "Rotterdam", authority: "Paris MoU", date: "2025-11-12", deficiencies: 3, detained: false },
+      {
+        port: "Rotterdam",
+        authority: "Paris MoU",
+        date: "2025-11-12",
+        deficiencies: 3,
+        detained: false,
+      },
     ],
     detentions: [],
     safetyRecords: [{ code: "ISM-OK", description: "ISM Code compliant", year: 2025 }],
@@ -109,11 +115,15 @@ const EQUASIS_SEED: EquasisRaw[] = [
     manager: "Delta Ship Management",
     classificationSociety: "Bureau Veritas",
     pscInspections: [
-      { port: "Algeciras", authority: "Paris MoU", date: "2026-02-04", deficiencies: 9, detained: true },
+      {
+        port: "Algeciras",
+        authority: "Paris MoU",
+        date: "2026-02-04",
+        deficiencies: 9,
+        detained: true,
+      },
     ],
-    detentions: [
-      { port: "Algeciras", date: "2026-02-04", reason: "MARPOL Annex I deficiencies" },
-    ],
+    detentions: [{ port: "Algeciras", date: "2026-02-04", reason: "MARPOL Annex I deficiencies" }],
     safetyRecords: [{ code: "MARPOL", description: "Oil record book deficiency", year: 2026 }],
   },
 ];
@@ -156,9 +166,7 @@ export class EquasisConnector implements ConnectorInterface {
     }
     const creds = this.readCredentials();
     if (!creds) {
-      throw new AuthError(
-        "Equasis credentials missing — set EQUASIS_EMAIL and EQUASIS_PASSWORD",
-      );
+      throw new AuthError("Equasis credentials missing — set EQUASIS_EMAIL and EQUASIS_PASSWORD");
     }
     let response: Response;
     try {
@@ -169,9 +177,9 @@ export class EquasisConnector implements ConnectorInterface {
           "User-Agent": "Seaphore-OSINT/1.0",
         },
         body: new URLSearchParams({
-          "j_email": creds.email,
-          "j_password": creds.password,
-          "submit": "Login",
+          j_email: creds.email,
+          j_password: creds.password,
+          submit: "Login",
         }).toString(),
         redirect: "manual",
       });
