@@ -66,7 +66,7 @@ function makeCluster(): IdentityCluster {
       reasons: [],
     },
     evidenceIds: ["ev_001"],
-  };
+  } as unknown as IdentityCluster;
 }
 
 function makeUip(
