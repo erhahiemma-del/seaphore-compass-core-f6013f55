@@ -439,7 +439,7 @@ describe("INT-01B · IntelligenceObjectRegistry", () => {
     } as never);
     const obj = reg.get(VESSEL_ID);
     expect(obj?.objectKind).toBe("vessel");
-    expect((obj?.attributes as never).imoNumber).toBe("9438291");
+    expect((obj?.attributes as Record<string, unknown>).imoNumber).toBe("9438291");
   });
 
   it("grade-wins: higher grade overwrites a populated field", () => {
@@ -472,7 +472,7 @@ describe("INT-01B · IntelligenceObjectRegistry", () => {
       attributes: { imoNumber: "9438291", vesselType: "Crude Oil Tanker" },
     } as never);
     const obj = reg.get(VESSEL_ID);
-    expect((obj?.attributes as never).vesselType).toBe("Crude Oil Tanker");
+    expect((obj?.attributes as Record<string, unknown>).vesselType).toBe("Crude Oil Tanker");
     expect(obj?.revision).toBe(2);
   });
 
@@ -505,7 +505,7 @@ describe("INT-01B · IntelligenceObjectRegistry", () => {
       revision: 1,
       attributes: { imoNumber: null }, // null — must not overwrite
     } as never);
-    expect((reg.get(VESSEL_ID)?.attributes as never).imoNumber).toBe("9438291");
+    expect((reg.get(VESSEL_ID)?.attributes as Record<string, unknown>).imoNumber).toBe("9438291");
   });
 
   it("getByKind returns typed objects for a specific kind", () => {
@@ -583,9 +583,9 @@ describe("INT-01B · MicContainer integration", () => {
     expect(mic.intelligenceObjects.size).toBeGreaterThan(0);
     const obj = mic.intelligenceObjects.get(VESSEL_ID);
     expect(obj?.objectKind).toBe("vessel");
-    expect((obj?.attributes as never).imoNumber).toBe("9438291");
-    expect((obj?.attributes as never).flag).toBe("NG");
-    expect((obj?.attributes as never).vesselType).toBe("Tanker");
+    expect((obj?.attributes as Record<string, unknown>).imoNumber).toBe("9438291");
+    expect((obj?.attributes as Record<string, unknown>).flag).toBe("NG");
+    expect((obj?.attributes as Record<string, unknown>).vesselType).toBe("Tanker");
   });
 
   it("stats() includes intelligenceObjects count and byKind breakdown", () => {

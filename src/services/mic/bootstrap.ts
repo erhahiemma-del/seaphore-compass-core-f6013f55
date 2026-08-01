@@ -37,7 +37,7 @@ import { globalMicSink } from "./telemetry-registry";
 /** Defensive shape for possibly-malformed UIP inputs. */
 interface UipLike {
   id?: string;
-  rawEvidence?: unknown[];
+  rawEvidence?: ReadonlyArray<unknown>;
   fused?: { stats?: { canonicalEntities?: number; contradictions?: number } };
 }
 
