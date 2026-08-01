@@ -75,7 +75,7 @@ export function DataTable<T>({
   compact = false,
 }: {
   columns: Column<T>[];
-  rows: T[];
+  rows: readonly T[];
   rowKey: (row: T, i: number) => string;
   onRowClick?: (row: T) => void;
   emptyLabel?: string;

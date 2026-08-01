@@ -162,7 +162,7 @@ export function RevenueCentre() {
                     {
                       key: "entity",
                       label: "Entity",
-                      render: (r: (typeof projection.data.leads)[number]) => (
+                      render: (r: NonNullable<typeof projection.data>["leads"][number]) => (
                         <span className="font-semibold text-foreground">{r.label}</span>
                       ),
                     },

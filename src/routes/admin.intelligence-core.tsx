@@ -42,12 +42,20 @@ function Chip({ label }: { label: string }) {
   );
 }
 
-function KV({ k, v, mono }: { k: string; v: string | number | null | boolean; mono?: boolean }) {
+function KV({
+  k,
+  v,
+  mono,
+}: {
+  k: string;
+  v: React.ReactNode;
+  mono?: boolean;
+}) {
   return (
     <div className="flex items-center justify-between gap-3 py-1.5 border-b border-border last:border-b-0">
       <dt className="text-xs text-muted-foreground">{k}</dt>
       <dd className={`text-xs font-medium text-foreground ${mono ? "font-mono" : ""}`}>
-        {v === null || v === undefined ? "—" : String(v)}
+        {v === null || v === undefined ? "—" : v}
       </dd>
     </div>
   );
