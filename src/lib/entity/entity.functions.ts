@@ -120,7 +120,11 @@ export const searchEntitiesFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
     z
-      .object({ kind: z.string().optional(), query: z.string().optional(), limit: z.number().optional() })
+      .object({
+        kind: z.string().optional(),
+        query: z.string().optional(),
+        limit: z.number().optional(),
+      })
       .parse(data ?? {}),
   )
   .handler(async ({ data }) => {

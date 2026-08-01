@@ -25,6 +25,7 @@ import { useParams, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { GraphView } from "@/components/mkg/GraphView";
+import type { MkgEdge, MkgNode } from "@/services/mkg/types";
 import { ProvenancePanel } from "@/components/ipef/ProvenancePanel";
 import {
   getEntityFn,
@@ -45,6 +46,7 @@ type Tab =
   | "graph"
   | "copilot";
 type EntityData = Awaited<ReturnType<typeof getEntityFn>>;
+type EntityFound = Extract<EntityData, { found: true }>;
 type GraphData = Awaited<ReturnType<typeof getEntityRelationshipsFn>>;
 type TimelineData = Awaited<ReturnType<typeof getEntityTimelineFn>>;
 
@@ -119,8 +121,8 @@ function EmptyNote({ text, hint }: { text: string; hint?: string }) {
 
 // ── Summary tab ───────────────────────────────────────────────────────
 
-function SummaryTab({ data }: { data: EntityData & { found: true } }) {
-  const { entity, risk } = data as any;
+function SummaryTab({ data }: { data: EntityFound }) {
+  const { entity, risk } = data;
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <div className="rounded-lg border border-border bg-card p-4 space-y-1">
@@ -204,7 +206,7 @@ function SummaryTab({ data }: { data: EntityData & { found: true } }) {
             {/* EIE UI pattern: risk driver list (ARCH-01 §5) */}
             {(risk.indicators ?? []).length > 0 && (
               <div className="space-y-1">
-                {risk.indicators.map((ind: any) => (
+                {risk.indicators.map((ind) => (
                   <div key={ind.kind} className="flex items-center justify-between text-xs">
                     <span className="text-foreground">{ind.label}</span>
                     <div className="flex items-center gap-2">
@@ -225,7 +227,7 @@ function SummaryTab({ data }: { data: EntityData & { found: true } }) {
             Confidence decomposition
           </h3>
           <dl className="space-y-1.5">
-            {(entity.confidenceComponents as any[]).map((c) => (
+            {entity.confidenceComponents.map((c) => (
               <div key={c.factor} className="flex items-center justify-between text-xs">
                 <dt className="text-muted-foreground">{c.factor}</dt>
                 <dd className="font-mono text-foreground">
@@ -318,8 +320,8 @@ function RelationshipsTab({ graphData, entityId }: { graphData: GraphData; entit
         style={{ height: 380 }}
       >
         <GraphView
-          nodes={graphData.nodes as any}
-          edges={graphData.edges as any}
+          nodes={graphData.nodes as unknown as MkgNode[]}
+          edges={graphData.edges as unknown as MkgEdge[]}
           focusNodeId={entityId}
           selectedNodeId={selected}
           onSelectNode={setSelected}
@@ -338,7 +340,7 @@ function RelationshipsTab({ graphData, entityId }: { graphData: GraphData; entit
             </span>
           </div>
           <div className="divide-y divide-border">
-            {graphData.edges.map((edge: any) => (
+            {graphData.edges.map((edge) => (
               <div key={edge.id} className="flex items-center justify-between px-4 py-2.5 gap-3">
                 <div className="flex items-center gap-2 min-w-0">
                   <Link
@@ -376,8 +378,8 @@ function RelationshipsTab({ graphData, entityId }: { graphData: GraphData; entit
 
 // ── Evidence tab ──────────────────────────────────────────────────────
 
-function EvidenceTab({ data }: { data: EntityData & { found: true } }) {
-  const evidenceSummary = (data as any).evidenceSummary;
+function EvidenceTab({ data }: { data: EntityFound }) {
+  const evidenceSummary = data.evidenceSummary;
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -416,7 +418,7 @@ function EvidenceTab({ data }: { data: EntityData & { found: true } }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {evidenceSummary.records.map((ev: any) => (
+              {evidenceSummary.records.map((ev) => (
                 <tr key={ev.evidenceId} className="hover:bg-muted/20">
                   <td className="px-3 py-2 font-medium">{ev.sourceName}</td>
                   <td className="px-3 py-2">
@@ -538,15 +540,15 @@ export function EntityProfile() {
     setError(null);
     try {
       const [ed, gd, td, ipef] = await Promise.all([
-        fetchEntity({ data: { id } } as any),
-        fetchGraph({ data: { id, depth: 2 } } as any),
-        fetchTimeline({ data: { id } } as any),
+        fetchEntity({ data: { id } }),
+        fetchGraph({ data: { id, depth: 2 } }),
+        fetchTimeline({ data: { id } }),
         fetchIpef({}).catch(() => null),
       ]);
       setEntityData(ed);
       setGraphData(gd);
       setTimelineData(td);
-      if ((ipef as any)?.record) setIpefRecord((ipef as any).record as IpefRecord);
+      if (ipef?.record) setIpefRecord(ipef.record as unknown as IpefRecord);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load entity");
     } finally {
@@ -559,7 +561,7 @@ export function EntityProfile() {
   }, [load]);
 
   const entityFound = entityData?.found;
-  const entityLabel = entityFound ? ((entityData as any).entity?.label ?? id) : id;
+  const entityLabel = entityData && entityData.found ? (entityData.entity?.label ?? id) : id;
 
   const TABS: Array<{ id: Tab; label: string; count?: number; stub?: boolean }> = [
     { id: "summary", label: "Summary" },
@@ -568,7 +570,7 @@ export function EntityProfile() {
     {
       id: "evidence",
       label: "Evidence",
-      count: entityFound ? (entityData as any).evidenceSummary?.total : undefined,
+      count: entityData && entityData.found ? entityData.evidenceSummary?.total : undefined,
     },
     { id: "provenance", label: "Provenance" },
     { id: "graph", label: "Knowledge Graph", stub: true },
@@ -583,8 +585,8 @@ export function EntityProfile() {
             <h1 className="text-lg font-semibold text-foreground">{entityLabel}</h1>
             <p className="text-xs text-muted-foreground font-mono">{id}</p>
           </div>
-          {entityFound && (entityData as any).entity?.confidence && (
-            <Chip label={(entityData as any).entity.confidence} />
+          {entityData?.found && entityData.entity?.confidence && (
+            <Chip label={entityData.entity.confidence} />
           )}
         </div>
 
@@ -626,12 +628,12 @@ export function EntityProfile() {
 
         {!loading && !error && entityData?.found && (
           <>
-            {tab === "summary" && <SummaryTab data={entityData as any} />}
+            {tab === "summary" && <SummaryTab data={entityData} />}
             {tab === "timeline" && timelineData && <TimelineTab timelineData={timelineData} />}
             {tab === "relationships" && graphData && (
               <RelationshipsTab graphData={graphData} entityId={id} />
             )}
-            {tab === "evidence" && <EvidenceTab data={entityData as any} />}
+            {tab === "evidence" && <EvidenceTab data={entityData} />}
             {tab === "provenance" && (
               <div className="space-y-2">
                 <p className="text-xs text-muted-foreground">
