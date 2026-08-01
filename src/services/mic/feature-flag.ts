@@ -34,8 +34,7 @@ function resolveFromEnv(): boolean {
   }
   // 2. Browser / Vite build
   try {
-    // @ts-ignore — import.meta.env is Vite-specific
-    const viteVal = (import.meta as any)?.env?.VITE_MIC_ENABLED;
+    const viteVal = import.meta.env?.VITE_MIC_ENABLED as string | undefined;
     if (viteVal !== undefined) {
       return String(viteVal).toLowerCase() !== "false" && String(viteVal) !== "0";
     }
@@ -96,8 +95,7 @@ export function getMicFlagState(): MicFlagState {
     };
   }
   try {
-    // @ts-ignore
-    const viteVal = (import.meta as any)?.env?.VITE_MIC_ENABLED;
+    const viteVal = import.meta.env?.VITE_MIC_ENABLED as string | undefined;
     if (viteVal !== undefined) {
       const raw = String(viteVal);
       return {

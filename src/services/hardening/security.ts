@@ -33,7 +33,18 @@ export function escapeHtml(input: string): string {
 
 /** Strip control characters (except \n and \t). */
 export function stripControls(input: string): string {
-  return input.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "");
+  let out = "";
+  for (const ch of input) {
+    const code = ch.codePointAt(0)!;
+    const isControl =
+      (code >= 0x00 && code <= 0x08) ||
+      code === 0x0b ||
+      code === 0x0c ||
+      (code >= 0x0e && code <= 0x1f) ||
+      code === 0x7f;
+    if (!isControl) out += ch;
+  }
+  return out;
 }
 
 // -------- SQL-injection tripwire --------
