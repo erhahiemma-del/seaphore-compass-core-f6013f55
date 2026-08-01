@@ -89,7 +89,7 @@ function makeUip(evidenceCount = 3): UnifiedIntelligencePackage {
     freshestSeconds: 120,
     hasContradictions: false,
     rawEvidence: [],
-  } as UnifiedIntelligencePackage;
+  } as unknown as UnifiedIntelligencePackage;
 }
 
 function makeMicResult(outcome: "success" | "degraded" | "failed" = "success"): MicBootstrapResult {
