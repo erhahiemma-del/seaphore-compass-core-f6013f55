@@ -348,6 +348,8 @@ const KIND_TO_EVIDENCE_TYPE: Record<NormalizedEvidence["kind"], EvidenceType> = 
   voyage: "movement",
   ownership: "ownership",
   cargo: "other",
+  inspection: "assessment",
+  incident: "other",
   sanctions: "sanctions",
   compliance: "assessment",
   "port-call": "movement",

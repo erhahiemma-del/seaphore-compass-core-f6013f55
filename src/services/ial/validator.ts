@@ -20,6 +20,8 @@ const REQUIRED_FIELDS: Record<NormalizedEvidence["kind"], ReadonlyArray<string>>
   sanctions: ["listName"],
   compliance: ["status"],
   "port-call": ["port"],
+  inspection: ["result"],
+  incident: ["description"],
   weather: ["condition"],
   other: [],
 };

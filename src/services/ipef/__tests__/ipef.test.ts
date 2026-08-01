@@ -134,7 +134,7 @@ function makeBriefing(): Briefing {
     id: "brief_001",
     officer_id: "officer_001",
     query: "Tell me about vessel 9438291",
-    mode: "vessel",
+    mode: "lookup",
     classification: {
       typeBadge: "INTELLIGENCE REPORT",
       matrix: {
