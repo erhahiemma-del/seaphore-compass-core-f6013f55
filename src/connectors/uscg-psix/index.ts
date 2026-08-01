@@ -87,7 +87,7 @@ function parsePsixHtml(html: string, imo: string): PsixRaw | null {
     const dateMatch = stripped.match(
       /Inspection Date[:\s]+(\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{2,4})/i,
     );
-    const portMatch = stripped.match(/Port[:\s]+([A-Za-z ,.\-]{3,60})/);
+    const portMatch = stripped.match(/Port[:\s]+([A-Za-z ,.-]{3,60})/);
     const typeMatch = stripped.match(/Inspection Type[:\s]+([A-Za-z ]{3,60})/);
     const defMatch = stripped.match(/Deficienc(?:y|ies)[:\s]+(\d+)/i);
     const detMatch = /Detention[:\s]+(Yes|Y|True)/i.test(stripped);
