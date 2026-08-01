@@ -193,11 +193,13 @@ export function buildIpefRecord(input: IpefBuildInput): IpefRecord {
 
   // ── OIE ────────────────────────────────────────────────────────────
   const gapSection = input.briefing.sections.find((s) => s.kind === "intelligence_gaps");
-  const gapList: string[] = (gapSection?.payload as any)?.list ?? [];
+  const gapList: string[] = (gapSection?.payload as { list?: string[] } | undefined)?.list ?? [];
   const counterSection = input.briefing.sections.find((s) => s.kind === "counter_hypotheses");
-  const hypotheses: string[] = (counterSection?.payload as any)?.list ?? [];
+  const hypotheses: string[] =
+    (counterSection?.payload as { list?: string[] } | undefined)?.list ?? [];
   const actionSection = input.briefing.sections.find((s) => s.kind === "officer_actions");
-  const actionCount = (actionSection?.payload as any)?.actions?.length ?? 0;
+  const actionCount =
+    (actionSection?.payload as { actions?: unknown[] } | undefined)?.actions?.length ?? 0;
 
   contributors.push({
     contributorId: "oie",
@@ -301,7 +303,8 @@ export function buildIpefRecord(input: IpefBuildInput): IpefRecord {
   // ── Recommendation provenance ───────────────────────────────────────
   const recommendationProvenance: IpefRecommendationProvenance[] = [];
   const criticalSection = input.briefing.sections.find((s) => s.kind === "critical_findings");
-  const findings = (criticalSection?.payload as any)?.findings ?? [];
+  const findings =
+    (criticalSection?.payload as { findings?: IpefCriticalFinding[] } | undefined)?.findings ?? [];
 
   for (const finding of findings.slice(0, 5)) {
     // top 5

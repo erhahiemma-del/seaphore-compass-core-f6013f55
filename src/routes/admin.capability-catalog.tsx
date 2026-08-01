@@ -141,7 +141,7 @@ function CapabilityCatalogPage() {
           { label: "Providers", value: summary.totalProviders },
           { label: "Providers live", value: summary.operationalProviders, tone: "emerald" },
         ].map(({ label, value, tone }) => (
-          <StatCard key={label} label={label} value={String(value)} tone={tone as any} />
+          <StatCard key={label} label={label} value={String(value)} tone={tone} />
         ))}
       </div>
 

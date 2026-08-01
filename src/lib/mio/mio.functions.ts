@@ -26,7 +26,7 @@ export const getMioRegistrySnapshotFn = createServerFn({ method: "GET" })
         reasoningLogs: stats.reasoningLogs,
         intelligenceObjects: stats.intelligenceObjects,
         intelligenceObjectsByKind: stats.intelligenceObjectsByKind ?? {},
-        resolutionMerges: (stats as any).resolutionMergesTotal ?? 0,
+        resolutionMerges: (stats as { resolutionMergesTotal?: number }).resolutionMergesTotal ?? 0,
       },
       graph: {
         nodes: stats.mkgNodes,
