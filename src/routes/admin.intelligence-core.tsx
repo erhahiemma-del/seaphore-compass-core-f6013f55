@@ -5,6 +5,7 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
 import {
   getMicHealthFn,
@@ -48,7 +49,7 @@ function KV({
   mono,
 }: {
   k: string;
-  v: React.ReactNode;
+  v: ReactNode;
   mono?: boolean;
 }) {
   return (
