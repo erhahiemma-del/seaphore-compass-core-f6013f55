@@ -143,6 +143,7 @@ export const getMioRiskDistributionFn = createServerFn({ method: "GET" })
       byElevated: allRisk.filter((r) => r.band === "elevated").length,
       byLow: allRisk.filter((r) => r.band === "low").length,
       topRisk: allRisk
+        .slice()
         .sort((a, b) => b.score - a.score)
         .slice(0, 10)
         .map((r) => ({
