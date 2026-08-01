@@ -48,14 +48,34 @@ describe("MaritimeKnowledgeGraph — core", () => {
   it("upsertNode merges aliases and provenance without duplicating", () => {
     const g = new MaritimeKnowledgeGraph();
     g.upsertNode({
-      id: "vessel:imo:9438291", kind: "vessel", label: "DONGWON NO.16",
+      id: "vessel:imo:9438291",
+      kind: "vessel",
+      label: "DONGWON NO.16",
       aliases: ["vessel:mmsi:440825000"],
-      provenance: [{ connectorId: "gfw", sourceName: "GFW", evidenceId: "e1", observedAt: "2026-06-01T00:00:00.000Z", grade: "CORROBORATED" }],
+      provenance: [
+        {
+          connectorId: "gfw",
+          sourceName: "GFW",
+          evidenceId: "e1",
+          observedAt: "2026-06-01T00:00:00.000Z",
+          grade: "CORROBORATED",
+        },
+      ],
     });
     g.upsertNode({
-      id: "vessel:imo:9438291", kind: "vessel", label: "DONGWON NO.16",
+      id: "vessel:imo:9438291",
+      kind: "vessel",
+      label: "DONGWON NO.16",
       aliases: ["vessel:mmsi:440825000", "vessel:name:DONGWON"],
-      provenance: [{ connectorId: "equasis", sourceName: "Equasis", evidenceId: "e2", observedAt: "2026-06-15T00:00:00.000Z", grade: "VERIFIED" }],
+      provenance: [
+        {
+          connectorId: "equasis",
+          sourceName: "Equasis",
+          evidenceId: "e2",
+          observedAt: "2026-06-15T00:00:00.000Z",
+          grade: "VERIFIED",
+        },
+      ],
     });
     const node = g.getNode("vessel:imo:9438291")!;
     expect(node.aliases.length).toBe(2);
@@ -66,21 +86,65 @@ describe("MaritimeKnowledgeGraph — core", () => {
   it("upsertEdge strengthens weight when a second connector corroborates", () => {
     const g = new MaritimeKnowledgeGraph();
     const nodeInputs = [
-      { id: "vessel:imo:1", label: "V", provenance: [{ connectorId: "gfw", sourceName: "GFW", evidenceId: "n1", observedAt: "t", grade: "CORROBORATED" as const }] },
-      { id: "company:cac:2", label: "C", provenance: [{ connectorId: "gfw", sourceName: "GFW", evidenceId: "n2", observedAt: "t", grade: "REPORTED" as const }] },
+      {
+        id: "vessel:imo:1",
+        label: "V",
+        provenance: [
+          {
+            connectorId: "gfw",
+            sourceName: "GFW",
+            evidenceId: "n1",
+            observedAt: "t",
+            grade: "CORROBORATED" as const,
+          },
+        ],
+      },
+      {
+        id: "company:cac:2",
+        label: "C",
+        provenance: [
+          {
+            connectorId: "gfw",
+            sourceName: "GFW",
+            evidenceId: "n2",
+            observedAt: "t",
+            grade: "REPORTED" as const,
+          },
+        ],
+      },
     ];
     g.upsertNode({ ...nodeInputs[0], kind: "vessel" });
     g.upsertNode({ ...nodeInputs[1], kind: "company" });
     const e1 = g.upsertEdge({
-      type: "OWNS", fromId: "company:cac:2", toId: "vessel:imo:1",
+      type: "OWNS",
+      fromId: "company:cac:2",
+      toId: "vessel:imo:1",
       explanation: "owner",
-      provenance: [{ connectorId: "gfw", sourceName: "GFW", evidenceId: "ownx", observedAt: "2026-06-01T00:00:00.000Z", grade: "REPORTED" }],
+      provenance: [
+        {
+          connectorId: "gfw",
+          sourceName: "GFW",
+          evidenceId: "ownx",
+          observedAt: "2026-06-01T00:00:00.000Z",
+          grade: "REPORTED",
+        },
+      ],
     });
     const w1 = e1.weight;
     const e2 = g.upsertEdge({
-      type: "OWNS", fromId: "company:cac:2", toId: "vessel:imo:1",
+      type: "OWNS",
+      fromId: "company:cac:2",
+      toId: "vessel:imo:1",
       explanation: "owner",
-      provenance: [{ connectorId: "equasis", sourceName: "Equasis", evidenceId: "owny", observedAt: "2026-06-02T00:00:00.000Z", grade: "VERIFIED" }],
+      provenance: [
+        {
+          connectorId: "equasis",
+          sourceName: "Equasis",
+          evidenceId: "owny",
+          observedAt: "2026-06-02T00:00:00.000Z",
+          grade: "VERIFIED",
+        },
+      ],
     });
     expect(e2.weight).toBeGreaterThan(w1);
     expect(e2.sources).toContain("gfw");
@@ -93,9 +157,19 @@ describe("MaritimeKnowledgeGraph — core", () => {
     const g = new MaritimeKnowledgeGraph();
     expect(() =>
       g.upsertEdge({
-        type: "OWNS", fromId: "a", toId: "b",
+        type: "OWNS",
+        fromId: "a",
+        toId: "b",
         explanation: "x",
-        provenance: [{ connectorId: "gfw", sourceName: "GFW", evidenceId: "e", observedAt: "t", grade: "REPORTED" }],
+        provenance: [
+          {
+            connectorId: "gfw",
+            sourceName: "GFW",
+            evidenceId: "e",
+            observedAt: "t",
+            grade: "REPORTED",
+          },
+        ],
       }),
     ).toThrow(/unknown node/);
   });
@@ -104,20 +178,48 @@ describe("MaritimeKnowledgeGraph — core", () => {
 describe("MKG — traversal", () => {
   function buildChain() {
     const g = new MaritimeKnowledgeGraph();
-    const P = (id: string) => [{
-      connectorId: "gfw" as const, sourceName: "GFW",
-      evidenceId: `ev-${id}`, observedAt: "2026-06-01T00:00:00.000Z",
-      grade: "CORROBORATED" as const,
-    }];
+    const P = (id: string) => [
+      {
+        connectorId: "gfw" as const,
+        sourceName: "GFW",
+        evidenceId: `ev-${id}`,
+        observedAt: "2026-06-01T00:00:00.000Z",
+        grade: "CORROBORATED" as const,
+      },
+    ];
     g.upsertNode({ id: "vessel:v1", kind: "vessel", label: "V1", provenance: P("v1") });
     g.upsertNode({ id: "company:c1", kind: "company", label: "Owner Co", provenance: P("c1") });
     g.upsertNode({ id: "person:d1", kind: "person", label: "Director D", provenance: P("d1") });
     g.upsertNode({ id: "port:p1", kind: "port", label: "Port A", provenance: P("p1") });
     g.upsertNode({ id: "cargo:x1", kind: "cargo", label: "Cargo X", provenance: P("x1") });
-    g.upsertEdge({ type: "OWNS", fromId: "company:c1", toId: "vessel:v1", explanation: "", provenance: P("e1") });
-    g.upsertEdge({ type: "DIRECTOR_OF", fromId: "person:d1", toId: "company:c1", explanation: "", provenance: P("e2") });
-    g.upsertEdge({ type: "CALLS_AT", fromId: "vessel:v1", toId: "port:p1", explanation: "", provenance: P("e3") });
-    g.upsertEdge({ type: "CARRIED", fromId: "vessel:v1", toId: "cargo:x1", explanation: "", provenance: P("e4") });
+    g.upsertEdge({
+      type: "OWNS",
+      fromId: "company:c1",
+      toId: "vessel:v1",
+      explanation: "",
+      provenance: P("e1"),
+    });
+    g.upsertEdge({
+      type: "DIRECTOR_OF",
+      fromId: "person:d1",
+      toId: "company:c1",
+      explanation: "",
+      provenance: P("e2"),
+    });
+    g.upsertEdge({
+      type: "CALLS_AT",
+      fromId: "vessel:v1",
+      toId: "port:p1",
+      explanation: "",
+      provenance: P("e3"),
+    });
+    g.upsertEdge({
+      type: "CARRIED",
+      fromId: "vessel:v1",
+      toId: "cargo:x1",
+      explanation: "",
+      provenance: P("e4"),
+    });
     return g;
   }
 
@@ -144,13 +246,17 @@ describe("MKG — ingestion from Unified Intelligence Package", () => {
   function buildPackage(): { uip: UnifiedIntelligencePackage; ev: NormalizedEvidence[] } {
     const ev: NormalizedEvidence[] = [
       evidence({
-        id: "ev-gfw-1", source: "gfw", sourceName: "GFW",
+        id: "ev-gfw-1",
+        source: "gfw",
+        sourceName: "GFW",
         entity: { kind: "vessel", id: "vessel:mmsi:440825000", label: "DONGWON NO.16" },
         kind: "identity",
         fields: { mmsi: "440825000", flag: "KOR" },
       }),
       evidence({
-        id: "ev-eq-1", source: "equasis", sourceName: "Equasis",
+        id: "ev-eq-1",
+        source: "equasis",
+        sourceName: "Equasis",
         entity: { kind: "vessel", id: "vessel:imo:9438291", label: "DONGWON NO.16" },
         kind: "ownership",
         grade: "VERIFIED",
@@ -163,13 +269,17 @@ describe("MKG — ingestion from Unified Intelligence Package", () => {
         },
       }),
       evidence({
-        id: "ev-eq-2", source: "equasis", sourceName: "Equasis",
+        id: "ev-eq-2",
+        source: "equasis",
+        sourceName: "Equasis",
         entity: { kind: "vessel", id: "vessel:imo:9438291", label: "DONGWON NO.16" },
         kind: "port-call",
         fields: { portUnlocode: "NGLOS", portName: "Lagos" },
       }),
       evidence({
-        id: "ev-sanc-1", source: "opensanctions", sourceName: "OpenSanctions",
+        id: "ev-sanc-1",
+        source: "opensanctions",
+        sourceName: "OpenSanctions",
         entity: { kind: "company", id: "company:cac:RC-100", label: "Dongwon Industries" },
         kind: "sanctions",
         grade: "VERIFIED",
@@ -187,22 +297,41 @@ describe("MKG — ingestion from Unified Intelligence Package", () => {
         canonical: [
           {
             entity: { kind: "vessel", id: "vessel:imo:9438291", label: "DONGWON NO.16" },
-            fields: [], confidence: "HIGH", grade: "VERIFIED", sources: ["gfw", "equasis"],
+            fields: [],
+            confidence: "HIGH",
+            grade: "VERIFIED",
+            sources: ["gfw", "equasis"],
             explanation: "",
           },
           {
             entity: { kind: "company", id: "company:cac:RC-100", label: "Dongwon Industries" },
-            fields: [], confidence: "HIGH", grade: "VERIFIED", sources: ["equasis", "opensanctions"],
+            fields: [],
+            confidence: "HIGH",
+            grade: "VERIFIED",
+            sources: ["equasis", "opensanctions"],
             explanation: "",
           },
         ],
         contradictions: [],
         sources: [],
-        report: { contradictions: [], evidenceStrength: "HIGH", missing: [], unknowns: [], summary: "" },
+        report: {
+          contradictions: [],
+          evidenceStrength: "HIGH",
+          missing: [],
+          unknowns: [],
+          summary: "",
+        },
         missing: [],
         confidence: "HIGH",
         grade: "VERIFIED",
-        stats: { inputRecords: 4, canonicalEntities: 2, contradictions: 0, sourcesQueried: 3, sourcesResponded: 3, averageFreshnessSeconds: 1 },
+        stats: {
+          inputRecords: 4,
+          canonicalEntities: 2,
+          contradictions: 0,
+          sourcesQueried: 3,
+          sourcesResponded: 3,
+          averageFreshnessSeconds: 1,
+        },
       },
       identity: [
         {
@@ -210,7 +339,15 @@ describe("MKG — ingestion from Unified Intelligence Package", () => {
           entityKind: "vessel",
           label: "DONGWON NO.16",
           aliasIds: ["vessel:mmsi:440825000"],
-          signals: { imo: "9438291", mmsi: "440825000", callSign: null, name: "DONGWON NO.16", aliases: [], historicalNames: [], flag: "KOR" },
+          signals: {
+            imo: "9438291",
+            mmsi: "440825000",
+            callSign: null,
+            name: "DONGWON NO.16",
+            aliases: [],
+            historicalNames: [],
+            flag: "KOR",
+          },
           confidence: { score: 0.95, recommendation: "AUTO_SELECT", topSignal: "imo" } as never,
           evidenceIds: ["ev-gfw-1", "ev-eq-1"],
         },
@@ -219,7 +356,15 @@ describe("MKG — ingestion from Unified Intelligence Package", () => {
           entityKind: "company",
           label: "Dongwon Industries",
           aliasIds: [],
-          signals: { imo: null, mmsi: null, callSign: null, name: "Dongwon Industries", aliases: [], historicalNames: [], flag: null },
+          signals: {
+            imo: null,
+            mmsi: null,
+            callSign: null,
+            name: "Dongwon Industries",
+            aliases: [],
+            historicalNames: [],
+            flag: null,
+          },
           confidence: { score: 0.9, recommendation: "AUTO_SELECT", topSignal: "name" } as never,
           evidenceIds: ["ev-eq-1", "ev-sanc-1"],
         },
@@ -228,7 +373,12 @@ describe("MKG — ingestion from Unified Intelligence Package", () => {
       provenance: [
         { connectorId: "gfw", sourceName: "GFW", records: 1, agreementScore: 1 },
         { connectorId: "equasis", sourceName: "Equasis", records: 2, agreementScore: 1 },
-        { connectorId: "opensanctions", sourceName: "OpenSanctions", records: 1, agreementScore: 1 },
+        {
+          connectorId: "opensanctions",
+          sourceName: "OpenSanctions",
+          records: 1,
+          agreementScore: 1,
+        },
       ],
       freshestSeconds: 1,
       hasContradictions: false,
@@ -301,8 +451,11 @@ describe("MKG — ingestion from Unified Intelligence Package", () => {
         contradictions: [
           {
             entity: { kind: "vessel", id: "vessel:imo:9438291", label: "DONGWON NO.16" },
-            field: "flag", severity: "warn",
-            values: [], resolution: "unresolved", explanation: "test",
+            field: "flag",
+            severity: "warn",
+            values: [],
+            resolution: "unresolved",
+            explanation: "test",
           } as never,
         ],
       },

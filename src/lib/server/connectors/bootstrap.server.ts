@@ -5,10 +5,7 @@
  * The client is not involved — it reads a projected snapshot via
  * `createServerFn` wrappers in `src/lib/connectors.functions.ts`.
  */
-import {
-  registerAuthenticatedConnector,
-  type HealthReport,
-} from "./registry.server";
+import { registerAuthenticatedConnector, type HealthReport } from "./registry.server";
 import { runGfwHealthCheck, validateGfwCredentials } from "@/lib/server/gfw.server";
 
 let bootstrapped = false;

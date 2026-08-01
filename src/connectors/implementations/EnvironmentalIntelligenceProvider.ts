@@ -245,11 +245,7 @@ export class OpenMeteoMarineAdapter implements EnvironmentalSourceAdapter {
 
     const waveHeight = numberAt(marine, marinePick?.index, "wave_height");
     const waveDirection = degrees(numberAt(marine, marinePick?.index, "wave_direction"));
-    const seaSurfaceTemperature = numberAt(
-      marine,
-      marinePick?.index,
-      "sea_surface_temperature",
-    );
+    const seaSurfaceTemperature = numberAt(marine, marinePick?.index, "sea_surface_temperature");
 
     // Open-Meteo reports wind in km/h by default → convert to knots
     // (Seaphore-canonical unit). Unit conversion is normalization, not
@@ -363,7 +359,6 @@ export class EnvironmentalIntelligenceProvider implements Connector, EvidencePro
   validate(records: ReadonlyArray<NormalizedEvidence>): ProviderValidation {
     return validateRecords(records);
   }
-
 
   /** One capability only. Every environmental source feeds it. */
   readonly capabilities: ReadonlyArray<ConnectorCapability> = ["ENVIRONMENTAL_INTELLIGENCE"];
@@ -539,10 +534,13 @@ export class EnvironmentalIntelligenceProvider implements Connector, EvidencePro
     const observation = raw as EnvironmentalObservation | null;
     if (!observation || typeof observation !== "object") return null;
     if (!observation.location || !observation.observationTime) return null;
-    return this.toEvidence(observation, requestFromQuery(query) ?? {
-      latitude: observation.location.latitude,
-      longitude: observation.location.longitude,
-    });
+    return this.toEvidence(
+      observation,
+      requestFromQuery(query) ?? {
+        latitude: observation.location.latitude,
+        longitude: observation.location.longitude,
+      },
+    );
   }
 
   async healthCheck(): Promise<ConnectorHealth> {
@@ -574,8 +572,7 @@ export class EnvironmentalIntelligenceProvider implements Connector, EvidencePro
     request: EnvironmentalRequest,
   ): NormalizedEvidence {
     const { latitude, longitude } = observation.location;
-    const nativeId =
-      request.portCode?.trim() || `${round(latitude, 4)},${round(longitude, 4)}`;
+    const nativeId = request.portCode?.trim() || `${round(latitude, 4)},${round(longitude, 4)}`;
 
     const fields: Record<string, EvidenceFieldValue> = {
       condition: "OBSERVED",
@@ -620,9 +617,7 @@ export class EnvironmentalIntelligenceProvider implements Connector, EvidencePro
   }
 
   private cacheKey(request: EnvironmentalRequest): string {
-    const hour = Math.floor(
-      resolveTargetTime(request, this.now()) / (60 * 60 * 1000),
-    );
+    const hour = Math.floor(resolveTargetTime(request, this.now()) / (60 * 60 * 1000));
     return [
       "environmental",
       round(request.latitude, 3),
@@ -708,9 +703,7 @@ function parseCoordinates(
 }
 
 function resolveTargetTime(request: EnvironmentalRequest, nowMs: number): number {
-  const explicit = request.investigationTime
-    ? Date.parse(request.investigationTime)
-    : NaN;
+  const explicit = request.investigationTime ? Date.parse(request.investigationTime) : NaN;
   if (Number.isFinite(explicit)) return explicit;
   const from = request.timeRange ? Date.parse(request.timeRange.from) : NaN;
   if (Number.isFinite(from)) return from;
@@ -741,10 +734,9 @@ function pickHour(
 /** Open-Meteo returns `2026-07-26T12:00` in the requested timezone (UTC). */
 function parseOpenMeteoTime(value: string): number {
   if (!value) return NaN;
-  const iso = /(?:Z|[+-]\d{2}:?\d{2})$/.test(value) ? value : `${value}:00Z`.replace(
-    /:00:00Z$/,
-    ":00Z",
-  );
+  const iso = /(?:Z|[+-]\d{2}:?\d{2})$/.test(value)
+    ? value
+    : `${value}:00Z`.replace(/:00:00Z$/, ":00Z");
   return Date.parse(iso);
 }
 

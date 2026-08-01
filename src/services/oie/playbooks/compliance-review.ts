@@ -99,16 +99,14 @@ export const complianceReviewPlaybook: Playbook = {
       when: (ctx) => hasFinding(ctx, ["expired", "lapsed"]),
       action: "Hold clearance until the expired certificate is reissued",
       priority: "critical",
-      rationale: () =>
-        "SOP does not permit operations under an expired mandatory certificate.",
+      rationale: () => "SOP does not permit operations under an expired mandatory certificate.",
     },
     {
       id: "compliance.rec.resolve_breach",
       when: (ctx) => hasFinding(ctx, ["breach", "detention", "deficiency"]),
       action: "Require resolution plan for each open breach before next port call",
       priority: "high",
-      rationale: () =>
-        "Open breaches must be resolved to restore compliance posture.",
+      rationale: () => "Open breaches must be resolved to restore compliance posture.",
     },
     {
       id: "compliance.rec.monitor",
@@ -118,10 +116,7 @@ export const complianceReviewPlaybook: Playbook = {
       rationale: () => "No SOP rule breached; keep the snapshot for the audit trail.",
     },
   ],
-  baselineInformationGaps: [
-    "Latest PSC boarding report",
-    "Peer vessel compliance benchmark",
-  ],
+  baselineInformationGaps: ["Latest PSC boarding report", "Peer vessel compliance benchmark"],
   followUps: [
     "Show unresolved breaches",
     "Review certification expiry",

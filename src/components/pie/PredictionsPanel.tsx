@@ -55,9 +55,14 @@ export function PredictionsPanel({ entityId }: { entityId?: string }) {
 }
 
 function PredictionCard({ prediction: p }: { prediction: Prediction }) {
-  const Icon = p.category === "revenue-anomaly" || p.category === "cargo-anomaly"
-    ? (p.baseline?.zScore ?? 0) < 0 ? TrendingDown : TrendingUp
-    : p.alert ? AlertTriangle : Radar;
+  const Icon =
+    p.category === "revenue-anomaly" || p.category === "cargo-anomaly"
+      ? (p.baseline?.zScore ?? 0) < 0
+        ? TrendingDown
+        : TrendingUp
+      : p.alert
+        ? AlertTriangle
+        : Radar;
 
   return (
     <Card className={`border ${severityStyle[p.severity]}`}>
@@ -68,10 +73,20 @@ function PredictionCard({ prediction: p }: { prediction: Prediction }) {
             {p.headline}
           </CardTitle>
           <div className="flex flex-wrap items-center gap-1.5">
-            <Badge variant="outline" className="text-[10px] uppercase">{p.category.replace(/-/g, " ")}</Badge>
-            <Badge variant="outline" className="text-[10px] uppercase">{p.horizon}</Badge>
-            <Badge variant="outline" className="text-[10px] uppercase">OC-001 · {p.confidence}</Badge>
-            {p.alert && <Badge variant="destructive" className="text-[10px] uppercase">ALERT</Badge>}
+            <Badge variant="outline" className="text-[10px] uppercase">
+              {p.category.replace(/-/g, " ")}
+            </Badge>
+            <Badge variant="outline" className="text-[10px] uppercase">
+              {p.horizon}
+            </Badge>
+            <Badge variant="outline" className="text-[10px] uppercase">
+              OC-001 · {p.confidence}
+            </Badge>
+            {p.alert && (
+              <Badge variant="destructive" className="text-[10px] uppercase">
+                ALERT
+              </Badge>
+            )}
           </div>
         </div>
         <p className="text-xs text-muted-foreground mt-1">
@@ -82,7 +97,9 @@ function PredictionCard({ prediction: p }: { prediction: Prediction }) {
         <div>
           <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-muted-foreground mb-1">
             <span>Model probability</span>
-            <span className="font-semibold text-foreground">{Math.round(p.probability * 100)}%</span>
+            <span className="font-semibold text-foreground">
+              {Math.round(p.probability * 100)}%
+            </span>
           </div>
           <Progress value={Math.round(p.probability * 100)} className="h-1.5" />
         </div>
@@ -96,7 +113,10 @@ function PredictionCard({ prediction: p }: { prediction: Prediction }) {
             </h4>
             <ul className="space-y-1">
               {p.factors.map((f, i) => (
-                <li key={i} className="text-xs flex justify-between gap-2 border-l-2 border-muted pl-2">
+                <li
+                  key={i}
+                  className="text-xs flex justify-between gap-2 border-l-2 border-muted pl-2"
+                >
                   <span>{f.label}</span>
                   <span className="text-muted-foreground shrink-0">
                     {f.weight >= 0 ? "+" : ""}
@@ -110,8 +130,9 @@ function PredictionCard({ prediction: p }: { prediction: Prediction }) {
 
         {p.baseline && (
           <div className="text-xs text-muted-foreground border-t pt-2">
-            Baseline · {p.baseline.metric}: mean {p.baseline.mean.toFixed(1)} ± {p.baseline.stddev.toFixed(1)}
-            {" "}(n={p.baseline.n}) · observed {p.baseline.observed.toFixed(1)} · z={p.baseline.zScore.toFixed(2)}
+            Baseline · {p.baseline.metric}: mean {p.baseline.mean.toFixed(1)} ±{" "}
+            {p.baseline.stddev.toFixed(1)} (n={p.baseline.n}) · observed{" "}
+            {p.baseline.observed.toFixed(1)} · z={p.baseline.zScore.toFixed(2)}
           </div>
         )}
 
@@ -124,7 +145,9 @@ function PredictionCard({ prediction: p }: { prediction: Prediction }) {
               {p.alternatives.map((a, i) => (
                 <li key={i} className="text-xs">
                   <span className="font-medium">{a.label}</span>{" "}
-                  <span className="text-muted-foreground">({Math.round(a.probability * 100)}%)</span>
+                  <span className="text-muted-foreground">
+                    ({Math.round(a.probability * 100)}%)
+                  </span>
                   <div className="text-muted-foreground">{a.rationale}</div>
                 </li>
               ))}
@@ -140,7 +163,9 @@ function PredictionCard({ prediction: p }: { prediction: Prediction }) {
             <ul className="space-y-0.5">
               {p.citations.slice(0, 6).map((c) => (
                 <li key={c.evidenceId} className="text-[11px] text-muted-foreground flex gap-2">
-                  <Badge variant="outline" className="text-[9px]">{c.grade}</Badge>
+                  <Badge variant="outline" className="text-[9px]">
+                    {c.grade}
+                  </Badge>
                   <span className="truncate">
                     {c.sourceName} · {new Date(c.observedAt).toLocaleString()}
                   </span>

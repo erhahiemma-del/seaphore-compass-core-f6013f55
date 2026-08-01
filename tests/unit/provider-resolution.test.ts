@@ -19,11 +19,7 @@ import type {
 
 const CAP: ConnectorCapability = "SANCTIONS";
 
-function makeProvider(
-  id: string,
-  provider: Connector["provider"],
-  calls?: string[],
-): Connector {
+function makeProvider(id: string, provider: Connector["provider"], calls?: string[]): Connector {
   return {
     id: id as ConnectorId,
     displayName: id,
@@ -89,7 +85,9 @@ describe("Provider Resolver — one capability, one provider", () => {
   it("production resolves the live provider", () => {
     const r = resolveProvider(CAP, [live(), sim()], { environment: "production" });
     expect(r.provider?.id).toBe("sanctions-live");
-    expect(r.rejected.some((x) => x.id === "sanctions-sim" && x.reason === "environment-mismatch")).toBe(true);
+    expect(
+      r.rejected.some((x) => x.id === "sanctions-sim" && x.reason === "environment-mismatch"),
+    ).toBe(true);
   });
 
   it("ignores disabled providers", () => {

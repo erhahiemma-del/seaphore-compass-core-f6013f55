@@ -56,10 +56,7 @@ import {
   type IntelligenceEvidenceItem,
   type OklExplainability,
 } from "@/lib/evidence/intelligence-evidence";
-import {
-  buildRelationshipGraph,
-  type EntityNode,
-} from "@/lib/evidence/relationships";
+import { buildRelationshipGraph, type EntityNode } from "@/lib/evidence/relationships";
 import { detectConflicts, type EvidenceConflict } from "@/lib/evidence/conflicts";
 import { computeConfidenceBreakdown } from "@/lib/evidence/confidence-breakdown";
 
@@ -170,10 +167,7 @@ export function IntelligenceEvidenceExplorer({
     onFiltersChange?.(filters);
   }, [filters, onFiltersChange]);
 
-  const allSources = useMemo(
-    () => Array.from(new Set(items.map((i) => i.source))).sort(),
-    [items],
-  );
+  const allSources = useMemo(() => Array.from(new Set(items.map((i) => i.source))).sort(), [items]);
   const allConnectors = useMemo(
     () =>
       Array.from(
@@ -315,11 +309,7 @@ export function IntelligenceEvidenceExplorer({
         />
       )}
       {mode === "source" && (
-        <SourceView
-          items={filtered}
-          conflictIds={conflictEvidenceIds}
-          onInspect={onInspect}
-        />
+        <SourceView items={filtered} conflictIds={conflictEvidenceIds} onInspect={onInspect} />
       )}
     </div>
   );
@@ -380,18 +370,14 @@ function FilterPanel({
   allSources: string[];
   allConnectors: string[];
   allInvestigations: string[];
-  onToggle: <T,>(field: keyof EvidenceFilters, value: T) => void;
+  onToggle: <T>(field: keyof EvidenceFilters, value: T) => void;
   onChange: (patch: Partial<EvidenceFilters>) => void;
 }) {
   return (
     <div className="flex flex-col gap-2 rounded-md border border-border/60 bg-muted/30 p-3">
       <FilterRow label="Type" icon>
         {(Object.keys(TYPE_LABEL) as EvidenceType[]).map((t) => (
-          <FilterChip
-            key={t}
-            active={filters.types.has(t)}
-            onClick={() => onToggle("types", t)}
-          >
+          <FilterChip key={t} active={filters.types.has(t)} onClick={() => onToggle("types", t)}>
             {TYPE_LABEL[t]}
           </FilterChip>
         ))}
@@ -677,12 +663,7 @@ function EvidenceList({
 
             <div className="flex shrink-0 items-center gap-1">
               {isSafeSourceUrl(item.sourceUrl) && (
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 gap-1 px-2 text-[11px]"
-                >
+                <Button asChild variant="ghost" size="sm" className="h-7 gap-1 px-2 text-[11px]">
                   <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="h-3 w-3" />
                     Source
@@ -781,7 +762,10 @@ function RelationshipGraphView({
   return (
     <div className="rounded-md border border-border/60 bg-background p-3">
       <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-        <span>Nodes represent entities from every evidence source. Edges connect entities that appear in the same evidence item — every edge is traceable.</span>
+        <span>
+          Nodes represent entities from every evidence source. Edges connect entities that appear in
+          the same evidence item — every edge is traceable.
+        </span>
       </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_240px]">
         <div className="overflow-hidden rounded border border-border/50 bg-muted/20">
@@ -826,12 +810,7 @@ function RelationshipGraphView({
                     stroke={active ? ENTITY_COLOR[n.type] : "hsl(var(--background))"}
                     strokeWidth={active ? 3 : 2}
                   />
-                  <text
-                    y={r + 12}
-                    textAnchor="middle"
-                    className="fill-foreground"
-                    fontSize={10}
-                  >
+                  <text y={r + 12} textAnchor="middle" className="fill-foreground" fontSize={10}>
                     {n.name.length > 22 ? `${n.name.slice(0, 20)}…` : n.name}
                   </text>
                 </g>
@@ -853,10 +832,7 @@ function RelationshipGraphView({
                     active ? "bg-primary/10 text-primary" : "hover:bg-muted",
                   )}
                 >
-                  <Icon
-                    className="h-3.5 w-3.5 shrink-0"
-                    style={{ color: ENTITY_COLOR[n.type] }}
-                  />
+                  <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: ENTITY_COLOR[n.type] }} />
                   <span className="min-w-0 flex-1 truncate">{n.name}</span>
                   <Badge variant="secondary" className="text-[9px]">
                     {n.evidenceCount}
@@ -1002,10 +978,7 @@ function SourceView({
             <div className="mt-1 flex flex-wrap items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground">
               {CONFIDENCES.map((c) =>
                 chipCounts[c] > 0 ? (
-                  <span
-                    key={c}
-                    className="rounded border border-border/60 px-1 py-0.5"
-                  >
+                  <span key={c} className="rounded border border-border/60 px-1 py-0.5">
                     {c} · {chipCounts[c]}
                   </span>
                 ) : null,
@@ -1158,12 +1131,7 @@ function OklExplainabilityPanel({
                 </div>
               ))}
             </div>
-            <p
-              className={cn(
-                "mt-1 text-[11px]",
-                OKL_TIER_TONE[e.confidencePyramid.tier],
-              )}
-            >
+            <p className={cn("mt-1 text-[11px]", OKL_TIER_TONE[e.confidencePyramid.tier])}>
               Tier {e.confidencePyramid.tier} · {e.confidencePyramid.explanation}
             </p>
           </section>

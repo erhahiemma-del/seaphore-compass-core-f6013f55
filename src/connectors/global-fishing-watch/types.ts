@@ -7,9 +7,7 @@ import type {
   AisContinuityReport,
   AisMovementEvent,
 } from "@/intelligence/analyzers/AISBehaviourAnalyzer";
-import type {
-  IdentityConfidenceResult,
-} from "@/intelligence/matching/identity-confidence";
+import type { IdentityConfidenceResult } from "@/intelligence/matching/identity-confidence";
 
 export interface GfwVesselIdentity {
   vesselId: string;
@@ -75,4 +73,3 @@ export interface GfwHealthPayload {
   latencyMs: number;
   message?: string;
 }
-

@@ -16,7 +16,11 @@ import { mockDb } from "@/lib/api/mock-dataset";
 function req(url: string, init?: RequestInit) {
   return new Request(url, {
     ...init,
-    headers: { authorization: "Bearer test", "content-type": "application/json", ...(init?.headers ?? {}) },
+    headers: {
+      authorization: "Bearer test",
+      "content-type": "application/json",
+      ...(init?.headers ?? {}),
+    },
   });
 }
 
@@ -41,7 +45,10 @@ describe("intelligence API handlers", () => {
       handler: async () => ({ data: {} }),
     });
     const res = await handler({
-      request: req("http://x/api/copilot/query", { method: "POST", body: JSON.stringify({ query: "x" }) }),
+      request: req("http://x/api/copilot/query", {
+        method: "POST",
+        body: JSON.stringify({ query: "x" }),
+      }),
       params: {},
     });
     expect(res.status).toBe(400);
@@ -60,7 +67,10 @@ describe("intelligence API handlers", () => {
       params: {},
     });
     expect(res.status).toBe(200);
-    const json = (await res.json()) as { data: { executiveAssessment: { grade: string } }; requestId: string };
+    const json = (await res.json()) as {
+      data: { executiveAssessment: { grade: string } };
+      requestId: string;
+    };
     expect(json.requestId).toBeTruthy();
     expect(json.data.executiveAssessment.grade).toBe("verified");
   });

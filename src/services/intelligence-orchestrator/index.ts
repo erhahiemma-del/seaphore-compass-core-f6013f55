@@ -76,9 +76,7 @@ export const intelligenceOrchestrator = {
    * sourced them. Used by MIBC to build Investigation-Based Briefs
    * where each workspace maps 1:1 to a source_uip_id.
    */
-  getUIPsForWorkspaces(
-    workspaces: ReadonlyArray<InvestigationWorkspace>,
-  ): UipBatchResult {
+  getUIPsForWorkspaces(workspaces: ReadonlyArray<InvestigationWorkspace>): UipBatchResult {
     const state = useUipStore.getState().byId;
     const resolved: UipLookupResult[] = [];
     const missing: string[] = [];

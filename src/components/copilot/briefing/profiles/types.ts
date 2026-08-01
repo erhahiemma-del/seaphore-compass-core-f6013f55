@@ -25,9 +25,9 @@ export type MissionBriefingType =
 
 /** Section slots the renderer knows how to draw. */
 export type BriefingSlot =
-  | "header"          // Officer Decision Header (Executive Assessment, Recommendation, Confidence, Completeness, Progress, Screening)
-  | "kpis"            // Mission-specific KPI banner
-  | "gaps"            // Recommended Intelligence Collection
+  | "header" // Officer Decision Header (Executive Assessment, Recommendation, Confidence, Completeness, Progress, Screening)
+  | "kpis" // Mission-specific KPI banner
+  | "gaps" // Recommended Intelligence Collection
   | "criticalFindings"
   | "evidence"
   | "entities"
@@ -39,7 +39,7 @@ export type BriefingSlot =
   | "officerActions"
   | "override"
   | "followUpCommands" // Mission-specific commands
-  | "sources"          // Technical metadata (should always be last)
+  | "sources" // Technical metadata (should always be last)
   | "nextQuestions";
 
 export interface KPI {

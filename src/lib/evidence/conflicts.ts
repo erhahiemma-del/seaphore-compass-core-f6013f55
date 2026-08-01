@@ -6,14 +6,12 @@
  * every conflict cites the underlying evidence ids so investigators can
  * inspect the raw statements. Golden Rule: conflicts are surfaced, not hidden.
  */
-import type { IntelligenceEvidenceItem, EvidenceEntityRef } from "@/lib/evidence/intelligence-evidence";
+import type {
+  IntelligenceEvidenceItem,
+  EvidenceEntityRef,
+} from "@/lib/evidence/intelligence-evidence";
 
-export type ConflictDimension =
-  | "identity"
-  | "sanctions"
-  | "ownership"
-  | "movement"
-  | "assessment";
+export type ConflictDimension = "identity" | "sanctions" | "ownership" | "movement" | "assessment";
 
 export interface EvidenceConflict {
   id: string;
@@ -104,10 +102,7 @@ function dimensionFor(it: IntelligenceEvidenceItem): ConflictDimension | undefin
   }
 }
 
-function describeConflict(
-  dim: ConflictDimension,
-  group: IntelligenceEvidenceItem[],
-): string {
+function describeConflict(dim: ConflictDimension, group: IntelligenceEvidenceItem[]): string {
   const sources = Array.from(new Set(group.map((g) => g.source))).slice(0, 3);
   const suffix = sources.length ? ` (${sources.join(" · ")})` : "";
   switch (dim) {

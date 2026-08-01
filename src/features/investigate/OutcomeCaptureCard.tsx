@@ -51,7 +51,10 @@ const EFFECTIVENESS: RecommendationEffectiveness[] = [
 ];
 
 function pretty(v: string): string {
-  return v.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+  return v
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 interface Props {
@@ -153,7 +156,10 @@ export function OutcomeCaptureCard({ w }: Props) {
             Investigation Outcome & Lessons
           </CardTitle>
           {existing ? (
-            <Badge variant="outline" className="border-emerald-500/50 text-emerald-700 dark:text-emerald-300">
+            <Badge
+              variant="outline"
+              className="border-emerald-500/50 text-emerald-700 dark:text-emerald-300"
+            >
               Recorded {new Date(existing.recordedAt).toLocaleDateString()}
             </Badge>
           ) : (
@@ -161,20 +167,26 @@ export function OutcomeCaptureCard({ w }: Props) {
           )}
         </div>
         <p className="text-[11px] text-muted-foreground">
-          Every closed investigation records its outcome so the Operational
-          Intelligence Engine can learn which recommendations worked. Evidence
-          first. Officer decides.
+          Every closed investigation records its outcome so the Operational Intelligence Engine can
+          learn which recommendations worked. Evidence first. Officer decides.
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
             <Label className="text-[11px]">Resolution status</Label>
-            <Select value={resolutionStatus} onValueChange={(v) => setResolutionStatus(v as ResolutionStatus)}>
-              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+            <Select
+              value={resolutionStatus}
+              onValueChange={(v) => setResolutionStatus(v as ResolutionStatus)}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 {RESOLUTION.map((r) => (
-                  <SelectItem key={r} value={r} className="text-xs">{pretty(r)}</SelectItem>
+                  <SelectItem key={r} value={r} className="text-xs">
+                    {pretty(r)}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -182,10 +194,14 @@ export function OutcomeCaptureCard({ w }: Props) {
           <div className="space-y-1">
             <Label className="text-[11px]">Success rating</Label>
             <Select value={success} onValueChange={(v) => setSuccess(v as SuccessRating)}>
-              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 {SUCCESS.map((r) => (
-                  <SelectItem key={r} value={r} className="text-xs">{pretty(r)}</SelectItem>
+                  <SelectItem key={r} value={r} className="text-xs">
+                    {pretty(r)}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -235,7 +251,12 @@ export function OutcomeCaptureCard({ w }: Props) {
         <div className="space-y-2 rounded-md border p-2">
           <div className="flex items-center justify-between">
             <Label className="text-[11px] font-semibold">Recommendation effectiveness</Label>
-            <Button size="sm" variant="ghost" className="h-6 gap-1 px-2 text-xs" onClick={addRating}>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 gap-1 px-2 text-xs"
+              onClick={addRating}
+            >
               <Plus className="h-3 w-3" /> Add
             </Button>
           </div>
@@ -254,16 +275,27 @@ export function OutcomeCaptureCard({ w }: Props) {
               />
               <Select
                 value={r.effectiveness}
-                onValueChange={(v) => updateRating(i, { effectiveness: v as RecommendationEffectiveness })}
+                onValueChange={(v) =>
+                  updateRating(i, { effectiveness: v as RecommendationEffectiveness })
+                }
               >
-                <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-7 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {EFFECTIVENESS.map((x) => (
-                    <SelectItem key={x} value={x} className="text-xs">{pretty(x)}</SelectItem>
+                    <SelectItem key={x} value={x} className="text-xs">
+                      {pretty(x)}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => removeRating(i)}>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 w-7 p-0"
+                onClick={() => removeRating(i)}
+              >
                 <Trash2 className="h-3 w-3" />
               </Button>
             </div>
@@ -291,7 +323,12 @@ export function OutcomeCaptureCard({ w }: Props) {
                 value={k.value}
                 onChange={(e) => updateKpi(i, { value: e.target.value })}
               />
-              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => removeKpi(i)}>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 w-7 p-0"
+                onClick={() => removeKpi(i)}
+              >
                 <Trash2 className="h-3 w-3" />
               </Button>
             </div>

@@ -55,7 +55,6 @@ import type { KpiCoverage } from "@/lib/intelligence/coverage-model";
 import { useCargoWorkspaceProjections } from "@/features/cargo-workspace/use-cargo-projection";
 import { CargoCentreStateChip } from "@/features/cargo-workspace/CargoCentreView";
 
-
 /** One shared coverage read for every Mission Control surface. */
 function useCoverage() {
   return useQuery({
@@ -85,7 +84,6 @@ const KPI_HANDOFF_OVERRIDE: Record<string, string> = {
   "revenue-intelligence": "/revenue-leakage",
   "risk-intelligence": "/national-risk",
 };
-
 
 const RIBBON_ICONS: Record<string, LucideIcon> = {
   "manifest-intelligence": FileText,
@@ -118,7 +116,6 @@ export function MissionControl() {
 
         <CargoWorkspaceStrip />
 
-
         <div className="grid gap-4 lg:grid-cols-[1fr_1.3fr]">
           <TodaysPrioritiesPanel />
           <RecentBriefingsPanel />
@@ -145,70 +142,69 @@ function Ribbon() {
         />
       ) : null}
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-      {RIBBON_KPIS.map((kpi) => {
-        const Icon = RIBBON_ICONS[kpi.key] ?? Activity;
-        const cov = kpiByKey.get(kpi.metricKey);
-        if (cov) {
-          return (
-            <KpiCoverageCard
-              key={kpi.key}
-              kpi={cov}
-              icon={Icon}
-              onOpen={() =>
-                handoff({
-                  target: KPI_HANDOFF_OVERRIDE[kpi.key] ?? kpi.handoff,
+        {RIBBON_KPIS.map((kpi) => {
+          const Icon = RIBBON_ICONS[kpi.key] ?? Activity;
+          const cov = kpiByKey.get(kpi.metricKey);
+          if (cov) {
+            return (
+              <KpiCoverageCard
+                key={kpi.key}
+                kpi={cov}
+                icon={Icon}
+                onOpen={() =>
+                  handoff({
+                    target: KPI_HANDOFF_OVERRIDE[kpi.key] ?? kpi.handoff,
 
+                    context: { fromStage: "Monitor", fromRoute: "/" },
+                  })
+                }
+              />
+            );
+          }
+          return (
+            <button
+              key={kpi.key}
+              type="button"
+              onClick={() =>
+                handoff({
+                  target: kpi.handoff,
                   context: { fromStage: "Monitor", fromRoute: "/" },
                 })
               }
-            />
+              className="group flex flex-col rounded-lg border border-line bg-surface p-3 text-left shadow-card motion-fast hover:border-[color:var(--color-teal)] hover:shadow-pop"
+              title={kpi.hint}
+            >
+              <div className="flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[color:var(--color-teal)]/10 text-[color:var(--color-teal)]">
+                  <Icon className="h-4 w-4" />
+                </span>
+                <span className="type-label text-slate">{kpi.title}</span>
+              </div>
+              <div className="mt-2 type-mono text-[22px] font-bold text-foreground tabular-nums">
+                Checking coverage…
+              </div>
+              <div className="mt-0.5 text-[11px] font-semibold text-slate">{kpi.descriptor}</div>
+              <div className="mt-2">
+                <ConfidenceChip tier={kpi.confidence} size={9} />
+              </div>
+            </button>
           );
-        }
-        return (
-          <button
-            key={kpi.key}
-            type="button"
-            onClick={() =>
-              handoff({
-                target: kpi.handoff,
-                context: { fromStage: "Monitor", fromRoute: "/" },
-              })
-            }
-            className="group flex flex-col rounded-lg border border-line bg-surface p-3 text-left shadow-card motion-fast hover:border-[color:var(--color-teal)] hover:shadow-pop"
-            title={kpi.hint}
-          >
-            <div className="flex items-center gap-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[color:var(--color-teal)]/10 text-[color:var(--color-teal)]">
-                <Icon className="h-4 w-4" />
-              </span>
-              <span className="type-label text-slate">{kpi.title}</span>
-            </div>
-            <div className="mt-2 type-mono text-[22px] font-bold text-foreground tabular-nums">
-              Checking coverage…
-            </div>
-            <div className="mt-0.5 text-[11px] font-semibold text-slate">{kpi.descriptor}</div>
-            <div className="mt-2">
-              <ConfidenceChip tier={kpi.confidence} size={9} />
-            </div>
-          </button>
-        );
-      })}
+        })}
 
-      <Link
-        to="/detect"
-        className="group flex flex-col items-start justify-between rounded-lg border border-dashed border-[color:var(--color-teal)]/60 bg-[color:var(--color-teal)]/5 p-3 motion-fast hover:bg-[color:var(--color-teal)]/10"
-      >
-        <span className="type-label text-[color:var(--color-teal)]">Intelligence Feed</span>
-        <span className="mt-2 type-h1 text-foreground">View full feed</span>
-        <span className="type-small text-slate">Continuous signals across every centre</span>
-        <span className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--color-teal)]">
-          Open Detect <ArrowRight className="h-3.5 w-3.5" />
-        </span>
-      </Link>
+        <Link
+          to="/detect"
+          className="group flex flex-col items-start justify-between rounded-lg border border-dashed border-[color:var(--color-teal)]/60 bg-[color:var(--color-teal)]/5 p-3 motion-fast hover:bg-[color:var(--color-teal)]/10"
+        >
+          <span className="type-label text-[color:var(--color-teal)]">Intelligence Feed</span>
+          <span className="mt-2 type-h1 text-foreground">View full feed</span>
+          <span className="type-small text-slate">Continuous signals across every centre</span>
+          <span className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--color-teal)]">
+            Open Detect <ArrowRight className="h-3.5 w-3.5" />
+          </span>
+        </Link>
       </div>
     </div>
   );
-
 }
 
 /* ---------------- Live Map Panel ---------------- */
@@ -384,10 +380,14 @@ function CargoWorkspaceStrip() {
 
 /* ---------------- Revenue Assurance ---------------- */
 
-
 function fmtMoney(n: number, currency: string): string {
   const abs = Math.abs(n);
-  const unit = abs >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : abs >= 1_000 ? `${(n / 1_000).toFixed(1)}K` : `${n}`;
+  const unit =
+    abs >= 1_000_000
+      ? `${(n / 1_000_000).toFixed(1)}M`
+      : abs >= 1_000
+        ? `${(n / 1_000).toFixed(1)}K`
+        : `${n}`;
   return `${unit} ${currency}`;
 }
 
@@ -429,7 +429,11 @@ function RevenueAssurancePanel() {
         <>
           <div className="grid grid-cols-3 gap-2">
             <MicroStat label="Findings" value={`${data.findings}`} tier={data.confidence} />
-            <MicroStat label="High / Critical" value={`${data.criticalOrHigh}`} tier={data.confidence} />
+            <MicroStat
+              label="High / Critical"
+              value={`${data.criticalOrHigh}`}
+              tier={data.confidence}
+            />
             <MicroStat label="Officer approved" value={`${data.approved}`} tier="verified" />
           </div>
 

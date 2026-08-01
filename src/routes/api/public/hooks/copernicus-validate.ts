@@ -46,17 +46,18 @@ export const copernicusValidateFn = createServerFn({ method: "GET" })
     const steps: ValidationStep[] = [];
     const t0 = Date.now();
 
-    const usernamePresent = !!(process.env.COPERNICUS_USERNAME?.trim());
-    const passwordPresent = !!(process.env.COPERNICUS_PASSWORD?.trim());
+    const usernamePresent = !!process.env.COPERNICUS_USERNAME?.trim();
+    const passwordPresent = !!process.env.COPERNICUS_PASSWORD?.trim();
 
     // Step 1: Credential presence
     steps.push({
       step: 1,
       name: "Runtime secret access",
       pass: usernamePresent && passwordPresent,
-      detail: usernamePresent && passwordPresent
-        ? "COPERNICUS_USERNAME and COPERNICUS_PASSWORD present in process.env"
-        : `Missing: ${[!usernamePresent && "COPERNICUS_USERNAME", !passwordPresent && "COPERNICUS_PASSWORD"].filter(Boolean).join(", ")}`,
+      detail:
+        usernamePresent && passwordPresent
+          ? "COPERNICUS_USERNAME and COPERNICUS_PASSWORD present in process.env"
+          : `Missing: ${[!usernamePresent && "COPERNICUS_USERNAME", !passwordPresent && "COPERNICUS_PASSWORD"].filter(Boolean).join(", ")}`,
     });
 
     if (!usernamePresent || !passwordPresent) {
@@ -65,7 +66,12 @@ export const copernicusValidateFn = createServerFn({ method: "GET" })
 
     // Step 2: Provider instantiation
     const provider = new CopernicusProvider({ cache: new EvidenceCache() });
-    steps.push({ step: 2, name: "Provider instantiation", pass: true, detail: `id=${provider.id}, displayName=${provider.displayName}` });
+    steps.push({
+      step: 2,
+      name: "Provider instantiation",
+      pass: true,
+      detail: `id=${provider.id}, displayName=${provider.displayName}`,
+    });
 
     // Step 3: Authentication (token acquisition)
     const t3 = Date.now();
@@ -81,7 +87,10 @@ export const copernicusValidateFn = createServerFn({ method: "GET" })
     });
 
     if (!authed) {
-      const verdict = provider.authenticationState === "PROVIDER_UNREACHABLE" ? "NETWORK_ISSUE" : "CREDENTIAL_ISSUE";
+      const verdict =
+        provider.authenticationState === "PROVIDER_UNREACHABLE"
+          ? "NETWORK_ISSUE"
+          : "CREDENTIAL_ISSUE";
       return buildReport(steps, verdict, usernamePresent, passwordPresent);
     }
 
@@ -103,7 +112,9 @@ export const copernicusValidateFn = createServerFn({ method: "GET" })
       step: 5,
       name: "Token refresh path",
       pass: refreshed,
-      detail: refreshed ? "Re-authentication succeeded (refresh path verified)" : "Re-authentication failed",
+      detail: refreshed
+        ? "Re-authentication succeeded (refresh path verified)"
+        : "Re-authentication failed",
       latencyMs: Date.now() - t5,
     });
 
@@ -162,14 +173,19 @@ export const copernicusValidateFn = createServerFn({ method: "GET" })
       name: "Evidence normalisation",
       pass: normalised,
       detail: normalised
-        ? `source=${firstRecord!.source}, grade=${firstRecord!.grade}, kind=${firstRecord!.kind}, entity.kind=${firstRecord!.entity.kind}, fields=${Object.keys(firstRecord!.fields).filter(k => firstRecord!.fields[k] !== null).join(", ")}`
+        ? `source=${firstRecord!.source}, grade=${firstRecord!.grade}, kind=${firstRecord!.kind}, entity.kind=${firstRecord!.entity.kind}, fields=${Object.keys(
+            firstRecord!.fields,
+          )
+            .filter((k) => firstRecord!.fields[k] !== null)
+            .join(", ")}`
         : "No records to normalise — upstream search returned empty",
     });
 
     // Step 10: Validation — no blocking issues
-    const allValidated = allRecords.length > 0
-      ? provider.validate(allRecords).issues.filter(i => i.severity === "error").length === 0
-      : true;
+    const allValidated =
+      allRecords.length > 0
+        ? provider.validate(allRecords).issues.filter((i) => i.severity === "error").length === 0
+        : true;
     steps.push({
       step: 10,
       name: "Evidence validation — no blocking errors",
@@ -180,35 +196,43 @@ export const copernicusValidateFn = createServerFn({ method: "GET" })
     });
 
     // Step 11: Canonical UIP population check (shape)
-    const uipCompatible = allRecords.every(r =>
-      r.id && r.source === "copernicus-cdse" && r.grade && r.entity && r.kind && r.hash
+    const uipCompatible = allRecords.every(
+      (r) => r.id && r.source === "copernicus-cdse" && r.grade && r.entity && r.kind && r.hash,
     );
     steps.push({
       step: 11,
       name: "Canonical UIP shape compatibility",
       pass: allRecords.length === 0 || uipCompatible,
-      detail: allRecords.length === 0
-        ? "No records acquired — shape check skipped"
-        : `${allRecords.length} record(s) carry all required NormalizedEvidence fields (id, source, grade, entity, kind, hash)`,
+      detail:
+        allRecords.length === 0
+          ? "No records acquired — shape check skipped"
+          : `${allRecords.length} record(s) carry all required NormalizedEvidence fields (id, source, grade, entity, kind, hash)`,
     });
 
     // Step 12: MIBC compatibility (grade check — CORROBORATED flows through IFE to MIBC)
-    const grades = [...new Set(allRecords.map(r => r.grade))];
+    const grades = [...new Set(allRecords.map((r) => r.grade))];
     steps.push({
       step: 12,
       name: "MIBC / IFE compatibility — grade check",
-      pass: allRecords.length === 0 || grades.every(g => ["VERIFIED","CORROBORATED","OBSERVED","REPORTED","INFERRED","UNKNOWN"].includes(g)),
-      detail: allRecords.length === 0
-        ? "No records — check skipped"
-        : `Grades in evidence: ${grades.join(", ")} — all valid IFE grades`,
+      pass:
+        allRecords.length === 0 ||
+        grades.every((g) =>
+          ["VERIFIED", "CORROBORATED", "OBSERVED", "REPORTED", "INFERRED", "UNKNOWN"].includes(g),
+        ),
+      detail:
+        allRecords.length === 0
+          ? "No records — check skipped"
+          : `Grades in evidence: ${grades.join(", ")} — all valid IFE grades`,
     });
 
-    const passed = steps.filter(s => s.pass).length;
-    const failed = steps.filter(s => !s.pass).length;
+    const passed = steps.filter((s) => s.pass).length;
+    const failed = steps.filter((s) => !s.pass).length;
     const verdict: ValidationReport["verdict"] =
-      failed === 0 ? "OPERATIONAL" :
-      steps.find(s => s.step <= 3 && !s.pass) ? "CREDENTIAL_ISSUE" :
-      "PARTIAL";
+      failed === 0
+        ? "OPERATIONAL"
+        : steps.find((s) => s.step <= 3 && !s.pass)
+          ? "CREDENTIAL_ISSUE"
+          : "PARTIAL";
 
     return buildReport(steps, verdict, usernamePresent, passwordPresent);
 
@@ -218,8 +242,8 @@ export const copernicusValidateFn = createServerFn({ method: "GET" })
       usernamePresent: boolean,
       passwordPresent: boolean,
     ): ValidationReport {
-      const passed = steps.filter(s => s.pass).length;
-      const failed = steps.filter(s => !s.pass).length;
+      const passed = steps.filter((s) => s.pass).length;
+      const failed = steps.filter((s) => !s.pass).length;
       return {
         timestamp: new Date().toISOString(),
         environment: "Lovable Cloud Runtime",

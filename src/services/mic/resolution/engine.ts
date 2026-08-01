@@ -11,7 +11,12 @@
  */
 import type { IntelligenceObject, IntelligenceObjectKind } from "../entities/types";
 import type { IntelligenceObjectRegistry } from "../entities/registry";
-import type { ResolutionDecision, ResolutionSignal, EntityResolutionResult, ResolutionMethod } from "./types";
+import type {
+  ResolutionDecision,
+  ResolutionSignal,
+  EntityResolutionResult,
+  ResolutionMethod,
+} from "./types";
 
 // ─── Name normalisation ───────────────────────────────────────────────
 
@@ -51,32 +56,32 @@ function getStr(attrs: Fields, ...keys: string[]): string | null {
 
 function vesselImo(obj: IntelligenceObject): string | null {
   if (obj.objectKind !== "vessel") return null;
-  return getStr(obj.attributes as Fields, "imoNumber", "imo");
+  return getStr(obj.attributes as unknown as Fields, "imoNumber", "imo");
 }
 
 function vesselMmsi(obj: IntelligenceObject): string | null {
   if (obj.objectKind !== "vessel") return null;
-  return getStr(obj.attributes as Fields, "mmsi");
+  return getStr(obj.attributes as unknown as Fields, "mmsi");
 }
 
 function containerNum(obj: IntelligenceObject): string | null {
   if (obj.objectKind !== "container") return null;
-  return getStr(obj.attributes as Fields, "containerNumber");
+  return getStr(obj.attributes as unknown as Fields, "containerNumber");
 }
 
 function bolRef(obj: IntelligenceObject): string | null {
   if (obj.objectKind !== "bill-of-lading") return null;
-  return getStr(obj.attributes as Fields, "bolNumber", "documentNumber");
+  return getStr(obj.attributes as unknown as Fields, "bolNumber", "documentNumber");
 }
 
 function companyReg(obj: IntelligenceObject): string | null {
   if (obj.objectKind !== "company") return null;
-  return getStr(obj.attributes as Fields, "registrationNumber", "cacNumber");
+  return getStr(obj.attributes as unknown as Fields, "registrationNumber", "cacNumber");
 }
 
 function companyLei(obj: IntelligenceObject): string | null {
   if (obj.objectKind !== "company") return null;
-  return getStr(obj.attributes as Fields, "leiCode", "lei");
+  return getStr(obj.attributes as unknown as Fields, "leiCode", "lei");
 }
 
 function entityLabel(obj: IntelligenceObject): string {
@@ -87,11 +92,16 @@ function entityLabel(obj: IntelligenceObject): string {
 
 function extractsForKind(kind: IntelligenceObjectKind) {
   switch (kind) {
-    case "vessel":          return [vesselImo, vesselMmsi] as const;
-    case "container":       return [containerNum] as const;
-    case "bill-of-lading":  return [bolRef] as const;
-    case "company":         return [companyReg, companyLei] as const;
-    default:                return [] as const;
+    case "vessel":
+      return [vesselImo, vesselMmsi] as const;
+    case "container":
+      return [containerNum] as const;
+    case "bill-of-lading":
+      return [bolRef] as const;
+    case "company":
+      return [companyReg, companyLei] as const;
+    default:
+      return [] as const;
   }
 }
 
@@ -99,14 +109,20 @@ function extractsForKind(kind: IntelligenceObjectKind) {
 
 export function resolveEntities(
   registry: IntelligenceObjectRegistry,
-  kinds: ReadonlyArray<IntelligenceObjectKind> = ["vessel", "company", "container", "bill-of-lading", "person"],
+  kinds: ReadonlyArray<IntelligenceObjectKind> = [
+    "vessel",
+    "company",
+    "container",
+    "bill-of-lading",
+    "person",
+  ],
 ): EntityResolutionResult {
   const t0 = Date.now();
   const decisions: ResolutionDecision[] = [];
-  const mergedIds = new Set<string>();  // ids already absorbed — skip in outer loop
+  const mergedIds = new Set<string>(); // ids already absorbed — skip in outer loop
 
   for (const kind of kinds) {
-    const objects = registry.getByKind(kind as any);
+    const objects = registry.getByKind(kind as IntelligenceObject["objectKind"]);
     if (objects.length < 2) continue;
 
     // Build identifier index: value → objectId[]
@@ -118,11 +134,11 @@ export function resolveEntities(
       // Exact identifier signals
       const extractors = extractsForKind(kind);
       for (const extractor of extractors) {
-        const val = (extractor as any)(obj);
+        const val = (extractor as (o: IntelligenceObject) => string | null)(obj);
         if (!val) continue;
         // Key format: `${kind}:${extractorName}:${value}`
         // We derive the field name from the extractor function name.
-        const fieldName = (extractor as any).name ?? "id";
+        const fieldName = (extractor as { name?: string }).name ?? "id";
         const key = `${kind}:${fieldName}:${val}`;
         const existing = identifierIndex.get(key) ?? [];
         existing.push(obj.objectId);
@@ -148,31 +164,31 @@ export function resolveEntities(
         const method = inferMethod(kind, key);
         const signal: ResolutionSignal = {
           method,
-          field:   fieldName,
-          valueA:  value,
-          valueB:  value,
-          score:   1.0,
+          field: fieldName,
+          valueA: value,
+          valueB: value,
+          score: 1.0,
         };
 
         const decision: ResolutionDecision = {
           canonicalId,
           mergedId,
-          signals:    [signal],
+          signals: [signal],
           confidence: 1.0,
           method,
-          decidedAt:  new Date().toISOString(),
-          explanation:`${canonical.label} and ${duplicate.label} share identical ${method.replace(/-/g, " ")} "${value}"`,
+          decidedAt: new Date().toISOString(),
+          explanation: `${canonical.label} and ${duplicate.label} share identical ${method.replace(/-/g, " ")} "${value}"`,
         };
 
         // Merge duplicate into canonical in the registry
         registry.upsert({
           ...canonical,
-          aliases:      dedupeStr([...canonical.aliases, mergedId, ...duplicate.aliases]),
-          citations:    dedupeCit([...canonical.citations, ...duplicate.citations]),
+          aliases: dedupeStr([...canonical.aliases, mergedId, ...duplicate.aliases]),
+          citations: dedupeCit([...canonical.citations, ...duplicate.citations]),
           sourceUipIds: dedupeStr([...canonical.sourceUipIds, ...duplicate.sourceUipIds]),
-          firstSeenAt:  earlier(canonical.firstSeenAt, duplicate.firstSeenAt),
-          lastSeenAt:   later(canonical.lastSeenAt, duplicate.lastSeenAt),
-          revision:     canonical.revision + 1,
+          firstSeenAt: earlier(canonical.firstSeenAt, duplicate.firstSeenAt),
+          lastSeenAt: later(canonical.lastSeenAt, duplicate.lastSeenAt),
+          revision: canonical.revision + 1,
         });
 
         decisions.push(decision);
@@ -182,7 +198,9 @@ export function resolveEntities(
 
     // Name similarity pass for persons and companies (no hard identifier)
     if (kind === "person" || kind === "company") {
-      const fresh = registry.getByKind(kind as any).filter((o: any) => !mergedIds.has(o.objectId));
+      const fresh = registry
+        .getByKind(kind as IntelligenceObject["objectKind"])
+        .filter((o: IntelligenceObject) => !mergedIds.has(o.objectId));
       for (let i = 0; i < fresh.length - 1; i++) {
         const a = fresh[i];
         for (let j = i + 1; j < fresh.length; j++) {
@@ -193,28 +211,28 @@ export function resolveEntities(
 
           const signal: ResolutionSignal = {
             method: "name-similarity",
-            field:  "label",
+            field: "label",
             valueA: entityLabel(a),
             valueB: entityLabel(b),
-            score:  sim,
+            score: sim,
           };
           const decision: ResolutionDecision = {
             canonicalId: a.objectId,
-            mergedId:    b.objectId,
-            signals:     [signal],
-            confidence:  sim,
-            method:      "name-similarity",
-            decidedAt:   new Date().toISOString(),
+            mergedId: b.objectId,
+            signals: [signal],
+            confidence: sim,
+            method: "name-similarity",
+            decidedAt: new Date().toISOString(),
             explanation: `Name similarity ${(sim * 100).toFixed(0)}%: "${entityLabel(a)}" ≈ "${entityLabel(b)}"`,
           };
           registry.upsert({
             ...a,
-            aliases:      dedupeStr([...a.aliases, b.objectId, ...b.aliases]),
-            citations:    dedupeCit([...a.citations, ...b.citations]),
+            aliases: dedupeStr([...a.aliases, b.objectId, ...b.aliases]),
+            citations: dedupeCit([...a.citations, ...b.citations]),
             sourceUipIds: dedupeStr([...a.sourceUipIds, ...b.sourceUipIds]),
-            firstSeenAt:  earlier(a.firstSeenAt, b.firstSeenAt),
-            lastSeenAt:   later(a.lastSeenAt, b.lastSeenAt),
-            revision:     a.revision + 1,
+            firstSeenAt: earlier(a.firstSeenAt, b.firstSeenAt),
+            lastSeenAt: later(a.lastSeenAt, b.lastSeenAt),
+            revision: a.revision + 1,
           });
           decisions.push(decision);
           mergedIds.add(b.objectId);
@@ -235,12 +253,14 @@ export function resolveEntities(
 
 function inferMethod(kind: string, key: string): ResolutionMethod {
   const field = key.split(":")[1] ?? "";
-  if (field === "vesselImo"   || field.includes("imo"))               return "imo-match";
-  if (field === "vesselMmsi"  || field.includes("mmsi"))              return "mmsi-match";
-  if (field === "containerNum"|| field.includes("container"))         return "container-number-match";
-  if (field === "bolRef"      || field.includes("bol") || field.includes("documentNumber")) return "bill-of-lading-match";
-  if (field === "companyReg"  || field.includes("registration") || field.includes("cac")) return "company-registration-match";
-  if (field === "companyLei"  || field.includes("lei"))               return "lei-match";
+  if (field === "vesselImo" || field.includes("imo")) return "imo-match";
+  if (field === "vesselMmsi" || field.includes("mmsi")) return "mmsi-match";
+  if (field === "containerNum" || field.includes("container")) return "container-number-match";
+  if (field === "bolRef" || field.includes("bol") || field.includes("documentNumber"))
+    return "bill-of-lading-match";
+  if (field === "companyReg" || field.includes("registration") || field.includes("cac"))
+    return "company-registration-match";
+  if (field === "companyLei" || field.includes("lei")) return "lei-match";
   return "name-similarity";
 }
 
@@ -250,12 +270,20 @@ function dedupeStr(arr: string[]): string[] {
 
 function dedupeCit<T extends { evidenceId: string }>(arr: T[]): T[] {
   const seen = new Set<string>();
-  return arr.filter((c) => { if (seen.has(c.evidenceId)) return false; seen.add(c.evidenceId); return true; });
+  return arr.filter((c) => {
+    if (seen.has(c.evidenceId)) return false;
+    seen.add(c.evidenceId);
+    return true;
+  });
 }
 
 function earlier(a: string | null, b: string | null): string | null {
-  if (!a) return b; if (!b) return a; return a < b ? a : b;
+  if (!a) return b;
+  if (!b) return a;
+  return a < b ? a : b;
 }
 function later(a: string | null, b: string | null): string | null {
-  if (!a) return b; if (!b) return a; return a > b ? a : b;
+  if (!a) return b;
+  if (!b) return a;
+  return a > b ? a : b;
 }

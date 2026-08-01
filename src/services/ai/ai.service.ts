@@ -60,7 +60,8 @@ class GeminiCopilotService implements AiService {
       text: answer,
       confidence: confMap[raw?.confidence ?? ""] ?? "INFERRED",
       citations: raw?.citations ?? [],
-      unknowns: raw?.unknowns ?? (answer ? [] : ["The AI service returned no text; treat as UNCONFIRMED."]),
+      unknowns:
+        raw?.unknowns ?? (answer ? [] : ["The AI service returned no text; treat as UNCONFIRMED."]),
     };
   }
 }

@@ -19,9 +19,7 @@ export function useCopilotShortcuts() {
       const target = e.target as HTMLElement | null;
       const isEditable =
         target &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.isContentEditable);
+        (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
       const cmdK = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k";
       if (cmdK && !isEditable) {
         e.preventDefault();

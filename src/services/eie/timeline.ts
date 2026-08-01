@@ -18,6 +18,8 @@ const KIND_LABEL: Record<NormalizedEvidence["kind"], string> = {
   sanctions: "Sanctions screening",
   compliance: "Compliance record",
   "port-call": "Port call",
+  inspection: "Inspection record",
+  incident: "Incident reported",
   weather: "Environmental observation",
   other: "Observation",
 };

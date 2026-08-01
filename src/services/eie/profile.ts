@@ -143,12 +143,14 @@ export function buildEntityProfile(
   );
 
   const gaps: string[] = [];
-  if (entity.timeline.length === 0) gaps.push("No timeline events — no dated evidence for this entity.");
+  if (entity.timeline.length === 0)
+    gaps.push("No timeline events — no dated evidence for this entity.");
   if (related.length === 0) gaps.push("No relationships — no record names a counterparty.");
   if (!related.some((r) => r.relationship.type === "owns")) {
     gaps.push("Ownership not evidenced — no source names a registered owner.");
   }
-  if (risk.drivers.length === 0) gaps.push("No sanctions or compliance screening evidence present.");
+  if (risk.drivers.length === 0)
+    gaps.push("No sanctions or compliance screening evidence present.");
   if ((opts.investigations ?? []).length === 0) {
     gaps.push("No investigation references this entity yet.");
   }
@@ -171,9 +173,6 @@ export function buildEntityProfile(
 
 /** Overall grade of a profile — the weakest link in the reconstruction. */
 export function profileGrade(profile: EieEntityProfile): EvidenceGrade {
-  const grades = [
-    profile.entity.grade,
-    ...profile.related.map((r) => r.relationship.grade),
-  ];
+  const grades = [profile.entity.grade, ...profile.related.map((r) => r.relationship.grade)];
   return grades.length > 1 ? weakestGrade(grades) : strongestGrade(grades);
 }

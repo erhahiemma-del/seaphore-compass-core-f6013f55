@@ -56,7 +56,8 @@ export class WorkflowEngine {
     this.policy = deps.policy ?? defaultPolicyEngine;
     this.adapters = deps.adapters ?? createMockAdapters();
     this.now = deps.now ?? (() => new Date());
-    this.newId = deps.newId ?? (() => `wf_${Date.now().toString(36)}_${(this.counter++).toString(36)}`);
+    this.newId =
+      deps.newId ?? (() => `wf_${Date.now().toString(36)}_${(this.counter++).toString(36)}`);
     this.backoff = deps.retryBackoffMs ?? 0;
   }
 
@@ -79,7 +80,8 @@ export class WorkflowEngine {
   async retry(runId: string): Promise<WorkflowRecord> {
     const existing = this.store.get(runId);
     if (!existing) throw new Error(`Workflow ${runId} not found`);
-    if (existing.status !== "failed") throw new Error(`Only failed workflows can be retried (got ${existing.status})`);
+    if (existing.status !== "failed")
+      throw new Error(`Only failed workflows can be retried (got ${existing.status})`);
     if (existing.attempts >= existing.maxAttempts) {
       throw new Error(`Workflow ${runId} exhausted its retry budget (${existing.maxAttempts})`);
     }
@@ -179,10 +181,21 @@ export class WorkflowEngine {
     const parsed = handler.schema.safeParse(record.input);
     const attemptForValidation = record.attempts + 1;
     if (!parsed.success) {
-      const running = this.transition(record, "running", attemptForValidation, `Attempt ${attemptForValidation} started.`);
-      return this.transition(running, "failed", attemptForValidation, `Input validation failed: ${parsed.error.message}`, {
-        error: parsed.error.message,
-      });
+      const running = this.transition(
+        record,
+        "running",
+        attemptForValidation,
+        `Attempt ${attemptForValidation} started.`,
+      );
+      return this.transition(
+        running,
+        "failed",
+        attemptForValidation,
+        `Input validation failed: ${parsed.error.message}`,
+        {
+          error: parsed.error.message,
+        },
+      );
     }
 
     const attempt = record.attempts + 1;
@@ -190,14 +203,27 @@ export class WorkflowEngine {
 
     try {
       const result = await handler.execute(parsed.data, this.adapters);
-      return this.transition(record, "completed", attempt, `Attempt ${attempt} completed.`, { result });
+      return this.transition(record, "completed", attempt, `Attempt ${attempt} completed.`, {
+        result,
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      const failed = this.transition(record, "failed", attempt, `Attempt ${attempt} failed: ${message}`, { error: message });
+      const failed = this.transition(
+        record,
+        "failed",
+        attempt,
+        `Attempt ${attempt} failed: ${message}`,
+        { error: message },
+      );
       // Auto-retry until the budget is exhausted.
       if (attempt < failed.maxAttempts) {
         if (this.backoff > 0) await new Promise((r) => setTimeout(r, this.backoff));
-        this.transition(failed, "retrying", attempt, `Auto-retry ${attempt + 1}/${failed.maxAttempts}.`);
+        this.transition(
+          failed,
+          "retrying",
+          attempt,
+          `Auto-retry ${attempt + 1}/${failed.maxAttempts}.`,
+        );
         return this.execute(runId);
       }
       return failed;

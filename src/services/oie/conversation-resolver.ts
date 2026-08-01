@@ -113,13 +113,13 @@ export function isBareSkillPick(raw: string): string | null {
   if (q.split(/\s+/).length > 4) return null;
   const map: Record<string, string> = {
     manifest: "review manifest for",
-    "cargo": "inspect cargo for",
-    "ownership": "review ownership for",
+    cargo: "inspect cargo for",
+    ownership: "review ownership for",
     "who owns": "who owns",
-    "compliance": "compliance review for",
-    "voyage": "compare voyage history for",
+    compliance: "compliance review for",
+    voyage: "compare voyage history for",
     "voyage history": "compare voyage history for",
-    "revenue": "revenue assessment for",
+    revenue: "revenue assessment for",
     "revenue assessment": "revenue assessment for",
     "full assessment": "executive briefing for",
     "full intelligence assessment": "executive briefing for",

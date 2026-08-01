@@ -26,8 +26,20 @@
 import type { UnifiedIntelligencePackage } from "@/services/ife/unified";
 import { mic } from "./container";
 import type { MicProcessResult } from "./types";
-import type { MicExecutionTelemetry, MicExecutionOutcome, MicPipelineStage, MicStageTiming } from "./telemetry/types";
+import type {
+  MicExecutionTelemetry,
+  MicExecutionOutcome,
+  MicPipelineStage,
+  MicStageTiming,
+} from "./telemetry/types";
 import { globalMicSink } from "./telemetry-registry";
+
+/** Defensive shape for possibly-malformed UIP inputs. */
+interface UipLike {
+  id?: string;
+  rawEvidence?: ReadonlyArray<unknown>;
+  fused?: { stats?: { canonicalEntities?: number; contradictions?: number } };
+}
 
 export interface MicBootstrapResult {
   readonly executionId: string;
@@ -65,8 +77,8 @@ export function processMicBootstrap(
 
   try {
     // ── Pre-flight: validate the UIP is populated ────────────────────
-    const rawEvidence = (uip as any)?.rawEvidence;
-    const canonicalEntities = (uip as any)?.fused?.stats?.canonicalEntities;
+    const rawEvidence = (uip as UipLike | null | undefined)?.rawEvidence;
+    const canonicalEntities = (uip as UipLike | null | undefined)?.fused?.stats?.canonicalEntities;
     if (!rawEvidence || rawEvidence.length === 0) {
       warnings.push("UIP has no rawEvidence — MIC will process an empty package");
     }
@@ -83,38 +95,43 @@ export function processMicBootstrap(
     // Exact per-stage timings require instrumenting the container itself
     // (deferred to INT-01G when async chunking is introduced).
     const ev = result.stats.evidenceRegistered;
-    const approxIngestMs    = Math.round(processDuration * 0.20);
-    const approxEntityMs    = Math.round(processDuration * 0.15);
-    const approxRelMs       = Math.round(processDuration * 0.10);
-    const approxEvidenceMs  = Math.round(processDuration * 0.10);
-    const approxConfMs      = Math.round(processDuration * 0.15);
-    const approxTimelineMs  = Math.round(processDuration * 0.15);
-    const approxRiskMs      = Math.round(processDuration * 0.15);
+    const approxIngestMs = Math.round(processDuration * 0.2);
+    const approxEntityMs = Math.round(processDuration * 0.15);
+    const approxRelMs = Math.round(processDuration * 0.1);
+    const approxEvidenceMs = Math.round(processDuration * 0.1);
+    const approxConfMs = Math.round(processDuration * 0.15);
+    const approxTimelineMs = Math.round(processDuration * 0.15);
+    const approxRiskMs = Math.round(processDuration * 0.15);
 
     const stages: Array<[MicPipelineStage, number]> = [
-      ["mkg-ingest",               approxIngestMs],
-      ["entity-registration",      approxEntityMs],
-      ["relationship-registration",approxRelMs],
-      ["evidence-registration",    approxEvidenceMs],
-      ["confidence-computation",   approxConfMs],
-      ["timeline-extraction",      approxTimelineMs],
-      ["risk-computation",         approxRiskMs],
+      ["mkg-ingest", approxIngestMs],
+      ["entity-registration", approxEntityMs],
+      ["relationship-registration", approxRelMs],
+      ["evidence-registration", approxEvidenceMs],
+      ["confidence-computation", approxConfMs],
+      ["timeline-extraction", approxTimelineMs],
+      ["risk-computation", approxRiskMs],
     ];
     let cursor = t_process;
     for (const [stage, dur] of stages) {
       stageTimings.push({ stage, startedAt: cursor, durationMs: dur });
       cursor += dur;
     }
-    stageTimings.push({ stage: "graph-registry", startedAt: cursor, durationMs: processDuration - stages.reduce((s, [,d]) => s + d, 0) });
+    stageTimings.push({
+      stage: "graph-registry",
+      startedAt: cursor,
+      durationMs: processDuration - stages.reduce((s, [, d]) => s + d, 0),
+    });
 
     // ── Post-process warnings ─────────────────────────────────────────
     if (result.stats.entitiesRegistered === 0) {
       warnings.push("MIC registered 0 entities — check if UIP identity clusters are populated");
     }
     if (result.stats.processingMs > 200) {
-      warnings.push(`MIC processing time ${result.stats.processingMs}ms exceeds 200ms threshold — consider async chunking`);
+      warnings.push(
+        `MIC processing time ${result.stats.processingMs}ms exceeds 200ms threshold — consider async chunking`,
+      );
     }
-
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     errors.push(msg);
@@ -132,10 +149,12 @@ export function processMicBootstrap(
   try {
     if (typeof process !== "undefined" && process.memoryUsage) {
       const mem = process.memoryUsage();
-      heapUsedBytes  = mem.heapUsed;
+      heapUsedBytes = mem.heapUsed;
       heapTotalBytes = mem.heapTotal;
     }
-  } catch { /* browser environment — skip */ }
+  } catch {
+    /* browser environment — skip */
+  }
 
   const stats = mic.stats();
   const graphSnapshot = result?.graphSnapshot;
@@ -143,30 +162,30 @@ export function processMicBootstrap(
   const telemetry: MicExecutionTelemetry = {
     executionId,
     correlationId,
-    timestamp:               new Date(startedAt).toISOString(),
-    pipelineVersion:         "INT-01A.1",
+    timestamp: new Date(startedAt).toISOString(),
+    pipelineVersion: "INT-01A.1",
     totalDurationMs,
     stageTimings,
-    entitiesRegistered:      result?.stats.entitiesRegistered      ?? 0,
+    entitiesRegistered: result?.stats.entitiesRegistered ?? 0,
     relationshipsRegistered: result?.stats.relationshipsRegistered ?? 0,
-    evidenceRegistered:      result?.stats.evidenceRegistered      ?? 0,
-    timelineEvents:          result?.stats.timelineEvents          ?? 0,
-    riskProfilesComputed:    result?.stats.riskProfilesComputed    ?? 0,
-    reasoningRecords:        stats.reasoningLogs,
-    graphNodes:              graphSnapshot?.nodes.length           ?? stats.mkgNodes,
-    graphEdges:              graphSnapshot?.edges.length           ?? stats.mkgEdges,
+    evidenceRegistered: result?.stats.evidenceRegistered ?? 0,
+    timelineEvents: result?.stats.timelineEvents ?? 0,
+    riskProfilesComputed: result?.stats.riskProfilesComputed ?? 0,
+    reasoningRecords: stats.reasoningLogs,
+    graphNodes: graphSnapshot?.nodes.length ?? stats.mkgNodes,
+    graphEdges: graphSnapshot?.edges.length ?? stats.mkgEdges,
     heapUsedBytes,
     heapTotalBytes,
     outcome,
     warnings,
     errors,
-    retryCount:              0,  // retry logic deferred to INT-01G async pipeline
+    retryCount: 0, // retry logic deferred to INT-01G async pipeline
     attributes: {
-      uip_id:            (uip as any)?.id            ?? "unknown",
-      uip_entities:      (uip as any)?.fused?.stats?.canonicalEntities ?? 0,
-      uip_evidence:      (uip as any)?.rawEvidence?.length             ?? 0,
-      uip_contradictions:(uip as any)?.fused?.stats?.contradictions    ?? 0,
-      mic_version:       "INT-01A.1",
+      uip_id: (uip as UipLike | null | undefined)?.id ?? "unknown",
+      uip_entities: (uip as UipLike | null | undefined)?.fused?.stats?.canonicalEntities ?? 0,
+      uip_evidence: (uip as UipLike | null | undefined)?.rawEvidence?.length ?? 0,
+      uip_contradictions: (uip as UipLike | null | undefined)?.fused?.stats?.contradictions ?? 0,
+      mic_version: "INT-01A.1",
     },
   };
 

@@ -7,20 +7,36 @@ import { resolveEntities } from "../resolution/engine";
 
 function makeVessel(id: string, imoNumber: string | null, label = "MV TEST") {
   return {
-    objectId: id, objectKind: "vessel" as const, label,
-    aliases: [], confidence: "HIGH" as const, grade: "CORROBORATED" as const,
-    citations: [], sourceUipIds: [], firstSeenAt: null, lastSeenAt: null, revision: 1,
+    objectId: id,
+    objectKind: "vessel" as const,
+    label,
+    aliases: [],
+    confidence: "HIGH" as const,
+    grade: "CORROBORATED" as const,
+    citations: [],
+    sourceUipIds: [],
+    firstSeenAt: null,
+    lastSeenAt: null,
+    revision: 1,
     attributes: { imoNumber },
-  } as any;
+  } as never;
 }
 
 function makeCompany(id: string, regNum: string | null, label: string) {
   return {
-    objectId: id, objectKind: "company" as const, label,
-    aliases: [], confidence: "HIGH" as const, grade: "CORROBORATED" as const,
-    citations: [], sourceUipIds: [], firstSeenAt: null, lastSeenAt: null, revision: 1,
+    objectId: id,
+    objectKind: "company" as const,
+    label,
+    aliases: [],
+    confidence: "HIGH" as const,
+    grade: "CORROBORATED" as const,
+    citations: [],
+    sourceUipIds: [],
+    firstSeenAt: null,
+    lastSeenAt: null,
+    revision: 1,
     attributes: { registrationNumber: regNum },
-  } as any;
+  } as never;
 }
 
 describe("Entity Resolution · IMO match", () => {
@@ -48,7 +64,7 @@ describe("Entity Resolution · IMO match", () => {
     reg.upsert(makeVessel("vessel:b", null, "MV ALPHA"));
     const result = resolveEntities(reg, ["vessel"]);
     // null IMO does not trigger IMO-match; name similarity would for identical names
-    expect(result.decisions.every(d => d.method !== "imo-match")).toBe(true);
+    expect(result.decisions.every((d) => d.method !== "imo-match")).toBe(true);
   });
 });
 
@@ -68,7 +84,7 @@ describe("Entity Resolution · Name similarity", () => {
     reg.upsert(makeCompany("company:a", null, "Mediterranean Shipping Company SA"));
     reg.upsert(makeCompany("company:b", null, "Mediterranean Shipping Company"));
     const result = resolveEntities(reg, ["company"]);
-    const nameDec = result.decisions.find(d => d.method === "name-similarity");
+    const nameDec = result.decisions.find((d) => d.method === "name-similarity");
     if (result.mergesPerformed > 0) {
       expect(nameDec?.confidence).toBeGreaterThanOrEqual(0.85);
     }
@@ -79,7 +95,7 @@ describe("Entity Resolution · Name similarity", () => {
     reg.upsert(makeCompany("company:a", null, "Apex Shipping"));
     reg.upsert(makeCompany("company:b", null, "Delta Marine Services"));
     const result = resolveEntities(reg, ["company"]);
-    const nameDec = result.decisions.find(d => d.method === "name-similarity");
+    const nameDec = result.decisions.find((d) => d.method === "name-similarity");
     // If merge happened, confidence must be high; but likely no merge
     if (nameDec) {
       expect(nameDec.confidence).toBeGreaterThanOrEqual(0.85);
@@ -97,7 +113,7 @@ describe("Entity Resolution · Duplicate guard", () => {
     // All three share the same IMO — two merges possible
     expect(result.mergesPerformed).toBeGreaterThan(0);
     // merged ids should be unique (no double-count)
-    const mergedIds = result.decisions.map(d => d.mergedId);
+    const mergedIds = result.decisions.map((d) => d.mergedId);
     expect(mergedIds.length).toBe(new Set(mergedIds).size);
   });
 });

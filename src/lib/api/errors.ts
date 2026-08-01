@@ -15,18 +15,15 @@ export class ApiError extends Error {
 }
 
 export const Errors = {
-  unauthorized: (msg = "Missing or invalid credentials") =>
-    new ApiError(401, "UNAUTHORIZED", msg),
-  forbidden: (msg = "Insufficient permissions") =>
-    new ApiError(403, "FORBIDDEN", msg),
+  unauthorized: (msg = "Missing or invalid credentials") => new ApiError(401, "UNAUTHORIZED", msg),
+  forbidden: (msg = "Insufficient permissions") => new ApiError(403, "FORBIDDEN", msg),
   notFound: (resource: string, id: string) =>
     new ApiError(404, "NOT_FOUND", `${resource} '${id}' not found`),
   validation: (details: unknown) =>
     new ApiError(400, "VALIDATION_ERROR", "Request failed validation", details),
   rateLimited: (retryAfter: number) =>
     new ApiError(429, "RATE_LIMITED", "Too many requests", { retryAfter }),
-  internal: (msg = "Internal server error") =>
-    new ApiError(500, "INTERNAL_ERROR", msg),
+  internal: (msg = "Internal server error") => new ApiError(500, "INTERNAL_ERROR", msg),
 };
 
 export function errorResponse(err: unknown, requestId: string): Response {

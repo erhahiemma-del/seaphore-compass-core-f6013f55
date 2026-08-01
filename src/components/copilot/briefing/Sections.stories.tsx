@@ -26,8 +26,20 @@ export const Findings: StoryObj = {
   render: () => (
     <CriticalFindings
       findings={[
-        { id: "1", priority: "immediate", title: "Immediate action needed", grade: "VERIFIED", source: "OFAC" },
-        { id: "2", priority: "today", title: "Review by end of day", grade: "CORROBORATED", source: "Broker chat" },
+        {
+          id: "1",
+          priority: "immediate",
+          title: "Immediate action needed",
+          grade: "VERIFIED",
+          source: "OFAC",
+        },
+        {
+          id: "2",
+          priority: "today",
+          title: "Review by end of day",
+          grade: "CORROBORATED",
+          source: "Broker chat",
+        },
       ]}
     />
   ),
@@ -51,9 +63,7 @@ export const Counters: StoryObj = {
 
 export const Gaps: StoryObj = {
   render: () => (
-    <IntelligenceGaps
-      gaps={["Passport confirmation", "Beneficial-ownership percentage"]}
-    />
+    <IntelligenceGaps gaps={["Passport confirmation", "Beneficial-ownership percentage"]} />
   ),
 };
 
@@ -69,33 +79,37 @@ export const Required: StoryObj = {
   ),
 };
 
+function OfficerActionsStory() {
+  const [accepted, setAccepted] = useState<string[]>([]);
+  return (
+    <OfficerActions
+      actions={[
+        { id: "a", label: "Flag for enhanced due diligence" },
+        { id: "b", label: "Trigger secondary review" },
+      ]}
+      enabled={true}
+      accepted={accepted}
+      onToggle={(id, checked) =>
+        setAccepted((p) => (checked ? [...p, id] : p.filter((x) => x !== id)))
+      }
+    />
+  );
+}
+
 export const Actions: StoryObj = {
-  render: () => {
-    const [accepted, setAccepted] = useState<string[]>([]);
-    return (
-      <OfficerActions
-        actions={[
-          { id: "a", label: "Flag for enhanced due diligence" },
-          { id: "b", label: "Trigger secondary review" },
-        ]}
-        enabled={true}
-        accepted={accepted}
-        onToggle={(id, checked) =>
-          setAccepted((p) => (checked ? [...p, id] : p.filter((x) => x !== id)))
-        }
-      />
-    );
-  },
+  render: () => <OfficerActionsStory />,
 };
 
+function HumanOverrideBarStory() {
+  const [v, setV] = useState<OverrideDecision | null>(null);
+  const [j, setJ] = useState("");
+  return (
+    <HumanOverrideBar value={v} onChange={setV} justification={j} onJustificationChange={setJ} />
+  );
+}
+
 export const Override: StoryObj = {
-  render: () => {
-    const [v, setV] = useState<OverrideDecision | null>(null);
-    const [j, setJ] = useState("");
-    return (
-      <HumanOverrideBar value={v} onChange={setV} justification={j} onJustificationChange={setJ} />
-    );
-  },
+  render: () => <HumanOverrideBarStory />,
 };
 
 export const Sources: StoryObj = {

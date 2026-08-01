@@ -7,10 +7,7 @@
  */
 import { describe, expect, it, beforeEach } from "vitest";
 import { planMission, useMissionStore } from "@/services/mission";
-import {
-  useInvestigationWorkflowStore,
-  canAdvance,
-} from "@/services/investigations-workflow";
+import { useInvestigationWorkflowStore, canAdvance } from "@/services/investigations-workflow";
 import { scanForLeakage, useRevenueLeakageStore } from "@/services/revenue-leakage";
 import { scoreEntity } from "@/services/nmrse";
 import type { NormalizedEvidence } from "@/services/ial/types";

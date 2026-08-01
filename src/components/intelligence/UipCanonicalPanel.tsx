@@ -175,7 +175,9 @@ export function UipCanonicalPanel({ uip }: Props) {
                     <span className="truncate text-muted-foreground">{p.sourceName}</span>
                   </div>
                   <div className="flex shrink-0 items-center gap-3 text-[10.5px] text-muted-foreground">
-                    <span>{p.records} record{p.records === 1 ? "" : "s"}</span>
+                    <span>
+                      {p.records} record{p.records === 1 ? "" : "s"}
+                    </span>
                     <span>agreement {(p.agreementScore * 100).toFixed(0)}%</span>
                     {src && <span>weight {(src.weight ?? 0).toFixed(2)}</span>}
                     <Link
@@ -294,9 +296,7 @@ function Block({
       <header className="mb-2 flex items-center gap-2">
         <span className="text-primary">{icon}</span>
         <h3 className="text-[12px] font-semibold">{title}</h3>
-        {subtitle && (
-          <span className="text-[10.5px] text-muted-foreground">· {subtitle}</span>
-        )}
+        {subtitle && <span className="text-[10.5px] text-muted-foreground">· {subtitle}</span>}
       </header>
       {children}
     </section>

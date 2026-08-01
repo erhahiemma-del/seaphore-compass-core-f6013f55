@@ -25,6 +25,7 @@ import { useParams, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { GraphView } from "@/components/mkg/GraphView";
+import type { MkgEdge, MkgNode } from "@/services/mkg/types";
 import { ProvenancePanel } from "@/components/ipef/ProvenancePanel";
 import {
   getEntityFn,
@@ -36,9 +37,87 @@ import type { IpefRecord } from "@/services/ipef/types";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
-type Tab = "summary" | "timeline" | "relationships" | "evidence" | "provenance" | "graph" | "copilot";
-type EntityData   = Awaited<ReturnType<typeof getEntityFn>>;
-type GraphData    = Awaited<ReturnType<typeof getEntityRelationshipsFn>>;
+type Tab =
+  | "summary"
+  | "timeline"
+  | "relationships"
+  | "evidence"
+  | "provenance"
+  | "graph"
+  | "copilot";
+interface EntityRiskIndicator {
+  kind: string;
+  label: string;
+  points: number;
+  rationale: string;
+  confidence: string;
+}
+
+interface EntityRisk {
+  score: number;
+  band: string;
+  confidence: string;
+  indicators: EntityRiskIndicator[];
+  narrative: string;
+  computedAt: string;
+}
+
+interface EntityConfidenceComponent {
+  factor: string;
+  contribution: number;
+  explanation: string;
+}
+
+interface EntityEvidenceRecord {
+  evidenceId: string;
+  connectorId: string;
+  sourceName: string;
+  grade: string;
+  kind: string;
+  observedAt: string;
+}
+
+interface EntityIdentity {
+  canonicalId: string;
+  label: string;
+  kind: string;
+  aliases: string[];
+  confidence: string;
+  confidenceScore: number;
+  confidenceComponents: EntityConfidenceComponent[];
+  grade: string;
+  citations: unknown[];
+  sourceUipIds: string[];
+  firstSeenAt: string | null;
+  lastSeenAt: string | null;
+  revision: number;
+  attributes: Record<string, unknown>;
+}
+
+/** Shape returned by `getEntityFn` when the entity exists in the MIC. */
+interface EntityFound {
+  found: true;
+  id: string;
+  entity: EntityIdentity;
+  risk: EntityRisk | null;
+  evidenceSummary: {
+    total: number;
+    byConnector: Record<string, number>;
+    byGrade: Record<string, number>;
+    byKind: Record<string, number>;
+    records: EntityEvidenceRecord[];
+  };
+  timestamp: string;
+}
+
+interface EntityNotFound {
+  found: false;
+  id: string;
+  timestamp: string;
+}
+
+type EntityData = EntityFound | EntityNotFound;
+type GraphData = Awaited<ReturnType<typeof getEntityRelationshipsFn>>;
 type TimelineData = Awaited<ReturnType<typeof getEntityTimelineFn>>;
 
 // ── EIE UI pattern: Copilot quick-fire questions (harvested, stub wiring) ──
@@ -55,28 +134,34 @@ const COPILOT_QUESTIONS = [
 
 const BAND_COLOR: Record<string, string> = {
   critical: "text-red-700 bg-red-50 border-red-300",
-  high:     "text-orange-700 bg-orange-50 border-orange-300",
+  high: "text-orange-700 bg-orange-50 border-orange-300",
   elevated: "text-amber-700 bg-amber-50 border-amber-300",
-  low:      "text-emerald-700 bg-emerald-50 border-emerald-300",
+  low: "text-emerald-700 bg-emerald-50 border-emerald-300",
 };
 const GRADE_COLOR: Record<string, string> = {
-  VERIFIED:     "text-emerald-700 bg-emerald-50 border-emerald-300",
+  VERIFIED: "text-emerald-700 bg-emerald-50 border-emerald-300",
   CORROBORATED: "text-teal-700 bg-teal-50 border-teal-300",
-  OBSERVED:     "text-sky-700 bg-sky-50 border-sky-300",
-  REPORTED:     "text-amber-700 bg-amber-50 border-amber-300",
-  INFERRED:     "text-slate-700 bg-slate-50 border-slate-300",
-  UNKNOWN:      "text-slate-500 bg-slate-50 border-slate-200",
+  OBSERVED: "text-sky-700 bg-sky-50 border-sky-300",
+  REPORTED: "text-amber-700 bg-amber-50 border-amber-300",
+  INFERRED: "text-slate-700 bg-slate-50 border-slate-300",
+  UNKNOWN: "text-slate-500 bg-slate-50 border-slate-200",
 };
 const SIG_DOT: Record<string, string> = {
-  critical: "bg-red-500", high: "bg-orange-500",
-  medium:   "bg-amber-400", low: "bg-slate-300",
+  critical: "bg-red-500",
+  high: "bg-orange-500",
+  medium: "bg-amber-400",
+  low: "bg-slate-300",
 };
 
 function Chip({ label }: { label: string }) {
-  const cls = BAND_COLOR[label?.toLowerCase()] ?? GRADE_COLOR[label?.toUpperCase()] ??
+  const cls =
+    BAND_COLOR[label?.toLowerCase()] ??
+    GRADE_COLOR[label?.toUpperCase()] ??
     "text-slate-600 bg-slate-50 border-slate-300";
   return (
-    <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${cls}`}>
+    <span
+      className={`inline-flex items-center rounded border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${cls}`}
+    >
       {label}
     </span>
   );
@@ -99,30 +184,33 @@ function EmptyNote({ text, hint }: { text: string; hint?: string }) {
   return (
     <div className="rounded-lg border border-dashed border-border p-6 text-center">
       <p className="text-sm font-medium text-foreground">{text}</p>
-      {hint && (
-        <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
-      )}
+      {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
 }
 
 // ── Summary tab ───────────────────────────────────────────────────────
 
-function SummaryTab({ data }: { data: EntityData & { found: true } }) {
-  const { entity, risk } = data as any;
+function SummaryTab({ data }: { data: EntityFound }) {
+  const { entity, risk } = data;
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <div className="rounded-lg border border-border bg-card p-4 space-y-1">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Identity</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+          Identity
+        </h3>
         <dl>
-          <KV k="Canonical ID" v={<span className="font-mono text-[11px]">{entity.canonicalId}</span>} />
-          <KV k="Kind"        v={<Chip label={String(entity.kind)} />} />
-          <KV k="Grade"       v={<Chip label={String(entity.grade)} />} />
-          <KV k="Confidence"  v={<Chip label={String(entity.confidence)} />} />
-          <KV k="Score"       v={`${((entity.confidenceScore ?? 0) * 100).toFixed(0)}%`} />
-          <KV k="First seen"  v={entity.firstSeenAt?.slice(0, 10) ?? "—"} />
-          <KV k="Last seen"   v={entity.lastSeenAt?.slice(0, 10) ?? "—"} />
-          <KV k="Revision"    v={entity.revision} />
+          <KV
+            k="Canonical ID"
+            v={<span className="font-mono text-[11px]">{entity.canonicalId}</span>}
+          />
+          <KV k="Kind" v={<Chip label={String(entity.kind)} />} />
+          <KV k="Grade" v={<Chip label={String(entity.grade)} />} />
+          <KV k="Confidence" v={<Chip label={String(entity.confidence)} />} />
+          <KV k="Score" v={`${((entity.confidenceScore ?? 0) * 100).toFixed(0)}%`} />
+          <KV k="First seen" v={entity.firstSeenAt?.slice(0, 10) ?? "—"} />
+          <KV k="Last seen" v={entity.lastSeenAt?.slice(0, 10) ?? "—"} />
+          <KV k="Revision" v={entity.revision} />
         </dl>
       </div>
 
@@ -139,8 +227,13 @@ function SummaryTab({ data }: { data: EntityData & { found: true } }) {
           <ul className="space-y-1">
             {(entity.aliases as string[]).map((alias) => (
               <li key={alias}>
-                <Link to="/entity/$id" params={{ id: alias }}
-                  className="font-mono text-[11px] text-teal-600 hover:underline">{alias}</Link>
+                <Link
+                  to="/entity/$id"
+                  params={{ id: alias }}
+                  className="font-mono text-[11px] text-teal-600 hover:underline"
+                >
+                  {alias}
+                </Link>
               </li>
             ))}
           </ul>
@@ -149,7 +242,9 @@ function SummaryTab({ data }: { data: EntityData & { found: true } }) {
 
       {Object.keys(entity.attributes ?? {}).length > 0 && (
         <div className="rounded-lg border border-border bg-card p-4 lg:col-span-2">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Attributes</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+            Attributes
+          </h3>
           <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-8">
             {Object.entries(entity.attributes as Record<string, unknown>)
               .filter(([, v]) => v !== null && v !== undefined && v !== "")
@@ -161,7 +256,9 @@ function SummaryTab({ data }: { data: EntityData & { found: true } }) {
       )}
 
       <div className="rounded-lg border border-border bg-card p-4 lg:col-span-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Risk Summary</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+          Risk Summary
+        </h3>
         {!risk ? (
           <EmptyNote
             text="No risk profile computed yet"
@@ -179,7 +276,7 @@ function SummaryTab({ data }: { data: EntityData & { found: true } }) {
             {/* EIE UI pattern: risk driver list (ARCH-01 §5) */}
             {(risk.indicators ?? []).length > 0 && (
               <div className="space-y-1">
-                {risk.indicators.map((ind: any) => (
+                {risk.indicators.map((ind) => (
                   <div key={ind.kind} className="flex items-center justify-between text-xs">
                     <span className="text-foreground">{ind.label}</span>
                     <div className="flex items-center gap-2">
@@ -200,7 +297,7 @@ function SummaryTab({ data }: { data: EntityData & { found: true } }) {
             Confidence decomposition
           </h3>
           <dl className="space-y-1.5">
-            {(entity.confidenceComponents as any[]).map((c) => (
+            {entity.confidenceComponents.map((c) => (
               <div key={c.factor} className="flex items-center justify-between text-xs">
                 <dt className="text-muted-foreground">{c.factor}</dt>
                 <dd className="font-mono text-foreground">
@@ -223,7 +320,7 @@ function TimelineTab({ timelineData }: { timelineData: TimelineData }) {
       <p className="text-xs text-muted-foreground mb-4">
         {timelineData.total} event{timelineData.total !== 1 ? "s" : ""}
         {timelineData.firstEvent && <> · from {timelineData.firstEvent.slice(0, 10)}</>}
-        {timelineData.lastEvent  && <> to {timelineData.lastEvent.slice(0, 10)}</>}
+        {timelineData.lastEvent && <> to {timelineData.lastEvent.slice(0, 10)}</>}
       </p>
       {timelineData.events.length === 0 ? (
         /* EIE UI pattern: stated absence (ARCH-01 §5) */
@@ -236,7 +333,9 @@ function TimelineTab({ timelineData }: { timelineData: TimelineData }) {
           {timelineData.events.map((ev, i) => (
             <div key={ev.id} className="flex items-start gap-3">
               <div className="flex flex-col items-center pt-1.5 shrink-0">
-                <div className={`h-2.5 w-2.5 rounded-full border-2 border-white ${SIG_DOT[ev.significance] ?? "bg-slate-300"}`} />
+                <div
+                  className={`h-2.5 w-2.5 rounded-full border-2 border-white ${SIG_DOT[ev.significance] ?? "bg-slate-300"}`}
+                />
                 {i < timelineData.events.length - 1 && (
                   <div className="w-px flex-1 bg-border mt-1" style={{ minHeight: 24 }} />
                 )}
@@ -255,8 +354,14 @@ function TimelineTab({ timelineData }: { timelineData: TimelineData }) {
                 {(ev.relatedEntityIds ?? []).length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1">
                     {ev.relatedEntityIds.map((rid: string) => (
-                      <Link key={rid} to="/entity/$id" params={{ id: rid }}
-                        className="text-[10px] text-teal-600 hover:underline font-mono">{rid}</Link>
+                      <Link
+                        key={rid}
+                        to="/entity/$id"
+                        params={{ id: rid }}
+                        className="text-[10px] text-teal-600 hover:underline font-mono"
+                      >
+                        {rid}
+                      </Link>
                     ))}
                   </div>
                 )}
@@ -276,14 +381,17 @@ function RelationshipsTab({ graphData, entityId }: { graphData: GraphData; entit
   return (
     <div className="space-y-4">
       <p className="text-xs text-muted-foreground">
-        {graphData.nodes.length} node{graphData.nodes.length !== 1 ? "s" : ""} ·
-        {" "}{graphData.edges.length} edge{graphData.edges.length !== 1 ? "s" : ""} ·
-        {" "}up to {graphData.depth} hops
+        {graphData.nodes.length} node{graphData.nodes.length !== 1 ? "s" : ""} ·{" "}
+        {graphData.edges.length} edge{graphData.edges.length !== 1 ? "s" : ""} · up to{" "}
+        {graphData.depth} hops
       </p>
-      <div className="rounded-lg border border-border bg-card overflow-hidden" style={{ height: 380 }}>
+      <div
+        className="rounded-lg border border-border bg-card overflow-hidden"
+        style={{ height: 380 }}
+      >
         <GraphView
-          nodes={graphData.nodes as any}
-          edges={graphData.edges as any}
+          nodes={graphData.nodes as unknown as MkgNode[]}
+          edges={graphData.edges as unknown as MkgEdge[]}
           focusNodeId={entityId}
           selectedNodeId={selected}
           onSelectNode={setSelected}
@@ -302,18 +410,24 @@ function RelationshipsTab({ graphData, entityId }: { graphData: GraphData; entit
             </span>
           </div>
           <div className="divide-y divide-border">
-            {graphData.edges.map((edge: any) => (
+            {graphData.edges.map((edge) => (
               <div key={edge.id} className="flex items-center justify-between px-4 py-2.5 gap-3">
                 <div className="flex items-center gap-2 min-w-0">
-                  <Link to="/entity/$id" params={{ id: edge.fromId }}
-                    className="text-xs font-mono text-teal-600 hover:underline truncate">
+                  <Link
+                    to="/entity/$id"
+                    params={{ id: edge.fromId }}
+                    className="text-xs font-mono text-teal-600 hover:underline truncate"
+                  >
                     {edge.fromId}
                   </Link>
                   <span className="text-[10px] font-bold text-muted-foreground shrink-0">
                     → {edge.type} →
                   </span>
-                  <Link to="/entity/$id" params={{ id: edge.toId }}
-                    className="text-xs font-mono text-teal-600 hover:underline truncate">
+                  <Link
+                    to="/entity/$id"
+                    params={{ id: edge.toId }}
+                    className="text-xs font-mono text-teal-600 hover:underline truncate"
+                  >
                     {edge.toId}
                   </Link>
                 </div>
@@ -334,21 +448,27 @@ function RelationshipsTab({ graphData, entityId }: { graphData: GraphData; entit
 
 // ── Evidence tab ──────────────────────────────────────────────────────
 
-function EvidenceTab({ data }: { data: EntityData & { found: true } }) {
-  const evidenceSummary = (data as any).evidenceSummary;
+function EvidenceTab({ data }: { data: EntityFound }) {
+  const evidenceSummary = data.evidenceSummary;
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-lg border border-border bg-card p-3">
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Total evidence</div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
+            Total evidence
+          </div>
           <div className="text-2xl font-semibold mt-1">{evidenceSummary?.total ?? 0}</div>
         </div>
-        {Object.entries((evidenceSummary?.byGrade ?? {}) as Record<string, number>).map(([grade, count]) => (
-          <div key={grade} className="rounded-lg border border-border bg-card p-3">
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{grade}</div>
-            <div className="text-2xl font-semibold mt-1">{count}</div>
-          </div>
-        ))}
+        {Object.entries((evidenceSummary?.byGrade ?? {}) as Record<string, number>).map(
+          ([grade, count]) => (
+            <div key={grade} className="rounded-lg border border-border bg-card p-3">
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                {grade}
+              </div>
+              <div className="text-2xl font-semibold mt-1">{count}</div>
+            </div>
+          ),
+        )}
       </div>
       {(evidenceSummary?.records ?? []).length === 0 ? (
         <EmptyNote
@@ -361,15 +481,19 @@ function EvidenceTab({ data }: { data: EntityData & { found: true } }) {
             <thead className="bg-muted/50">
               <tr>
                 {["Source", "Grade", "Kind", "Observed"].map((h) => (
-                  <th key={h} className="px-3 py-2 text-left font-medium text-muted-foreground">{h}</th>
+                  <th key={h} className="px-3 py-2 text-left font-medium text-muted-foreground">
+                    {h}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {evidenceSummary.records.map((ev: any) => (
+              {evidenceSummary.records.map((ev) => (
                 <tr key={ev.evidenceId} className="hover:bg-muted/20">
                   <td className="px-3 py-2 font-medium">{ev.sourceName}</td>
-                  <td className="px-3 py-2"><Chip label={ev.grade} /></td>
+                  <td className="px-3 py-2">
+                    <Chip label={ev.grade} />
+                  </td>
                   <td className="px-3 py-2 text-muted-foreground">{ev.kind}</td>
                   <td className="px-3 py-2 font-mono text-muted-foreground">
                     {ev.observedAt?.slice(0, 10)}
@@ -425,14 +549,12 @@ function CopilotTabStub({ entityId, entityLabel }: { entityId: string; entityLab
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
-        <p className="text-xs font-medium text-amber-800">
-          INT-01I — Entity Copilot Q&A
-        </p>
+        <p className="text-xs font-medium text-amber-800">INT-01I — Entity Copilot Q&A</p>
         <p className="text-xs text-amber-700 mt-1">
           These buttons will dispatch entity-scoped Copilot queries through the MIC Copilot facade
-          (src/services/mic/copilot/) when INT-01I is complete. The intent classification,
-          answer generation, and stated-gap reporting from the EIE copilot.ts will be ported
-          to consume MicContainer registries.
+          (src/services/mic/copilot/) when INT-01I is complete. The intent classification, answer
+          generation, and stated-gap reporting from the EIE copilot.ts will be ported to consume
+          MicContainer registries.
         </p>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -456,13 +578,10 @@ function CopilotTabStub({ entityId, entityLabel }: { entityId: string; entityLab
             "{selected} — {entityLabel}"
           </p>
           <p className="text-xs text-muted-foreground">
-            This question will be answered by the MIC Copilot facade in INT-01I.
-            No evidence answers this question for this entity yet — this is a stated gap,
-            not an empty result.
+            This question will be answered by the MIC Copilot facade in INT-01I. No evidence answers
+            this question for this entity yet — this is a stated gap, not an empty result.
           </p>
-          <p className="text-xs text-muted-foreground mt-2 font-mono">
-            Entity: {entityId}
-          </p>
+          <p className="text-xs text-muted-foreground mt-2 font-mono">Entity: {entityId}</p>
         </div>
       )}
     </div>
@@ -474,31 +593,32 @@ function CopilotTabStub({ entityId, entityLabel }: { entityId: string; entityLab
 export function EntityProfile() {
   const { id } = useParams({ from: "/entity/$id" });
   const [tab, setTab] = useState<Tab>("summary");
-  const [entityData,   setEntityData]   = useState<EntityData | null>(null);
-  const [graphData,    setGraphData]    = useState<GraphData | null>(null);
+  const [entityData, setEntityData] = useState<EntityData | null>(null);
+  const [graphData, setGraphData] = useState<GraphData | null>(null);
   const [timelineData, setTimelineData] = useState<TimelineData | null>(null);
-  const [ipefRecord,   setIpefRecord]   = useState<IpefRecord | null>(null);
+  const [ipefRecord, setIpefRecord] = useState<IpefRecord | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchEntity   = useServerFn(getEntityFn);
-  const fetchGraph    = useServerFn(getEntityRelationshipsFn);
+  const fetchEntity = useServerFn(getEntityFn);
+  const fetchGraph = useServerFn(getEntityRelationshipsFn);
   const fetchTimeline = useServerFn(getEntityTimelineFn);
-  const fetchIpef     = useServerFn(getMioIpefProvenanceFn);
+  const fetchIpef = useServerFn(getMioIpefProvenanceFn);
 
   const load = useCallback(async () => {
-    setLoading(true); setError(null);
+    setLoading(true);
+    setError(null);
     try {
       const [ed, gd, td, ipef] = await Promise.all([
-        fetchEntity({ data: { id } } as any),
-        fetchGraph({ data: { id, depth: 2 } } as any),
-        fetchTimeline({ data: { id } } as any),
+        fetchEntity({ data: { id } }) as Promise<EntityData>,
+        fetchGraph({ data: { id, depth: 2 } }),
+        fetchTimeline({ data: { id } }),
         fetchIpef({}).catch(() => null),
       ]);
       setEntityData(ed);
       setGraphData(gd);
       setTimelineData(td);
-      if ((ipef as any)?.record) setIpefRecord((ipef as any).record as IpefRecord);
+      if (ipef?.record) setIpefRecord(ipef.record as unknown as IpefRecord);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load entity");
     } finally {
@@ -506,19 +626,25 @@ export function EntityProfile() {
     }
   }, [id, fetchEntity, fetchGraph, fetchTimeline, fetchIpef]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const entityFound = entityData?.found;
-  const entityLabel = entityFound ? (entityData as any).entity?.label ?? id : id;
+  const entityLabel = entityData && entityData.found ? (entityData.entity?.label ?? id) : id;
 
   const TABS: Array<{ id: Tab; label: string; count?: number; stub?: boolean }> = [
-    { id: "summary",       label: "Summary" },
-    { id: "timeline",      label: "Timeline",       count: timelineData?.total },
-    { id: "relationships", label: "Relationships",   count: graphData?.edges.length },
-    { id: "evidence",      label: "Evidence",        count: entityFound ? (entityData as any).evidenceSummary?.total : undefined },
-    { id: "provenance",    label: "Provenance" },
-    { id: "graph",         label: "Knowledge Graph", stub: true },
-    { id: "copilot",       label: "Copilot",         stub: true },
+    { id: "summary", label: "Summary" },
+    { id: "timeline", label: "Timeline", count: timelineData?.total },
+    { id: "relationships", label: "Relationships", count: graphData?.edges.length },
+    {
+      id: "evidence",
+      label: "Evidence",
+      count: entityData && entityData.found ? entityData.evidenceSummary?.total : undefined,
+    },
+    { id: "provenance", label: "Provenance" },
+    { id: "graph", label: "Knowledge Graph", stub: true },
+    { id: "copilot", label: "Copilot", stub: true },
   ];
 
   return (
@@ -529,8 +655,8 @@ export function EntityProfile() {
             <h1 className="text-lg font-semibold text-foreground">{entityLabel}</h1>
             <p className="text-xs text-muted-foreground font-mono">{id}</p>
           </div>
-          {entityFound && (entityData as any).entity?.confidence && (
-            <Chip label={(entityData as any).entity.confidence} />
+          {entityData?.found && entityData.entity?.confidence && (
+            <Chip label={entityData.entity.confidence} />
           )}
         </div>
 
@@ -551,9 +677,7 @@ export function EntityProfile() {
                   {t.count}
                 </span>
               )}
-              {t.stub && (
-                <span className="ml-1 text-[9px] text-amber-600 font-bold">STUB</span>
-              )}
+              {t.stub && <span className="ml-1 text-[9px] text-amber-600 font-bold">STUB</span>}
             </button>
           ))}
         </div>
@@ -561,9 +685,7 @@ export function EntityProfile() {
         {loading && (
           <div className="py-16 text-center text-sm text-muted-foreground">Loading entity…</div>
         )}
-        {error && (
-          <div className="py-8 text-center text-sm text-red-600">{error}</div>
-        )}
+        {error && <div className="py-8 text-center text-sm text-red-600">{error}</div>}
 
         {!loading && !error && entityData && !entityData.found && (
           <div className="py-16 text-center">
@@ -576,33 +698,30 @@ export function EntityProfile() {
 
         {!loading && !error && entityData?.found && (
           <>
-            {tab === "summary"       && <SummaryTab data={entityData as any} />}
-            {tab === "timeline"      && timelineData && (
-              <TimelineTab timelineData={timelineData} />
-            )}
+            {tab === "summary" && <SummaryTab data={entityData} />}
+            {tab === "timeline" && timelineData && <TimelineTab timelineData={timelineData} />}
             {tab === "relationships" && graphData && (
               <RelationshipsTab graphData={graphData} entityId={id} />
             )}
-            {tab === "evidence"      && <EvidenceTab data={entityData as any} />}
-            {tab === "provenance"    && (
+            {tab === "evidence" && <EvidenceTab data={entityData} />}
+            {tab === "provenance" && (
               <div className="space-y-2">
                 <p className="text-xs text-muted-foreground">
-                  Intelligence provenance — pipeline trace, contributors, confidence
-                  decomposition, lineage. Powered by IPEF (INT-01A.3).
+                  Intelligence provenance — pipeline trace, contributors, confidence decomposition,
+                  lineage. Powered by IPEF (INT-01A.3).
                 </p>
-                {ipefRecord
-                  ? <ProvenancePanel ipef={ipefRecord} />
-                  : <EmptyNote
-                      text="No provenance record yet."
-                      hint="Send a Copilot query to populate the IPEF provenance record."
-                    />
-                }
+                {ipefRecord ? (
+                  <ProvenancePanel ipef={ipefRecord} />
+                ) : (
+                  <EmptyNote
+                    text="No provenance record yet."
+                    hint="Send a Copilot query to populate the IPEF provenance record."
+                  />
+                )}
               </div>
             )}
-            {tab === "graph"   && <GraphTabStub entityId={id} />}
-            {tab === "copilot" && (
-              <CopilotTabStub entityId={id} entityLabel={entityLabel} />
-            )}
+            {tab === "graph" && <GraphTabStub entityId={id} />}
+            {tab === "copilot" && <CopilotTabStub entityId={id} entityLabel={entityLabel} />}
           </>
         )}
       </div>

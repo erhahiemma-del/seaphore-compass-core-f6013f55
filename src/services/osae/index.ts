@@ -77,8 +77,7 @@ function priorityForEvent(
         "Coverage-uncertain span — cannot be attributed to a single disabling event without additional evidence.",
     };
   }
-  const near =
-    typeof ev.distanceFromPortNm === "number" && ev.distanceFromPortNm <= 25;
+  const near = typeof ev.distanceFromPortNm === "number" && ev.distanceFromPortNm <= 25;
   if (ev.durationHours >= 24 || (near && ev.durationHours >= 6)) {
     return {
       priority: "urgent",
@@ -185,7 +184,15 @@ export const OSAE = {
    * re-invoking the analyzer or reading raw connectors.
    */
   assessmentsForUip(
-    uip: { readonly osae: ReadonlyArray<{ readonly entityId: string; readonly assessment: OsaeAssessment }> } | null | undefined,
+    uip:
+      | {
+          readonly osae: ReadonlyArray<{
+            readonly entityId: string;
+            readonly assessment: OsaeAssessment;
+          }>;
+        }
+      | null
+      | undefined,
   ): ReadonlyArray<{ entityId: string; assessment: OsaeAssessment }> {
     if (!uip) return [];
     return uip.osae.map((o) => ({ entityId: o.entityId, assessment: o.assessment }));

@@ -7,8 +7,8 @@
  */
 
 export interface BucketConfig {
-  capacity: number;             // max tokens
-  refillPerSec: number;         // tokens added per second
+  capacity: number; // max tokens
+  refillPerSec: number; // tokens added per second
 }
 
 export interface RateDecision {
@@ -18,7 +18,10 @@ export interface RateDecision {
   key: string;
 }
 
-interface Bucket { tokens: number; updatedAt: number }
+interface Bucket {
+  tokens: number;
+  updatedAt: number;
+}
 
 export interface RateLimiter {
   take(key: string, cost?: number): RateDecision;
@@ -39,7 +42,10 @@ export function createRateLimiter(cfg: BucketConfig, now: () => number = Date.no
     take(key, cost = 1) {
       const t = now();
       let b = buckets.get(key);
-      if (!b) { b = { tokens: cfg.capacity, updatedAt: t }; buckets.set(key, b); }
+      if (!b) {
+        b = { tokens: cfg.capacity, updatedAt: t };
+        buckets.set(key, b);
+      }
       refill(b, t);
       if (b.tokens >= cost) {
         b.tokens -= cost;
@@ -49,11 +55,17 @@ export function createRateLimiter(cfg: BucketConfig, now: () => number = Date.no
       const retryAfterMs = Math.ceil((missing / cfg.refillPerSec) * 1000);
       return { allowed: false, remaining: Math.floor(b.tokens), retryAfterMs, key };
     },
-    reset(key) { if (key) buckets.delete(key); else buckets.clear(); },
+    reset(key) {
+      if (key) buckets.delete(key);
+      else buckets.clear();
+    },
     snapshot() {
       const t = now();
       const out: Record<string, number> = {};
-      for (const [k, b] of buckets) { refill(b, t); out[k] = Math.floor(b.tokens); }
+      for (const [k, b] of buckets) {
+        refill(b, t);
+        out[k] = Math.floor(b.tokens);
+      }
       return out;
     },
   };
@@ -61,7 +73,7 @@ export function createRateLimiter(cfg: BucketConfig, now: () => number = Date.no
 
 /** Common presets. Tune from ops without redeploy by swapping the config. */
 export const RATE_PRESETS = {
-  officerDefault: { capacity: 120, refillPerSec: 2 } satisfies BucketConfig,   // 120 req burst, 2 rps sustained
-  copilotQuery: { capacity: 30, refillPerSec: 0.5 } satisfies BucketConfig,    // 30 burst, 30/min sustained
-  externalApi: { capacity: 60, refillPerSec: 1 } satisfies BucketConfig,       // upstream quota guard
+  officerDefault: { capacity: 120, refillPerSec: 2 } satisfies BucketConfig, // 120 req burst, 2 rps sustained
+  copilotQuery: { capacity: 30, refillPerSec: 0.5 } satisfies BucketConfig, // 30 burst, 30/min sustained
+  externalApi: { capacity: 60, refillPerSec: 1 } satisfies BucketConfig, // upstream quota guard
 } as const;

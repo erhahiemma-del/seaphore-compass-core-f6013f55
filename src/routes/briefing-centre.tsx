@@ -5,7 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useWorkspaceStore } from "@/stores/workspace.store";
 import { useMissionStore } from "@/services/mission";
@@ -63,9 +69,7 @@ function BriefingCentre() {
   const { session } = useAuth();
   const officerId = session?.user?.id;
   const officerName =
-    session?.user?.user_metadata?.full_name ??
-    session?.user?.email ??
-    "Officer on duty";
+    session?.user?.user_metadata?.full_name ?? session?.user?.email ?? "Officer on duty";
   const investigations = useWorkspaceStore((s) => Object.values(s.investigations));
   // Subscribe so the Live-UIP selector re-renders as new UIPs register.
   const uipOrder = useUipStore((s) => s.order);
@@ -222,7 +226,6 @@ function BriefingCentre() {
     queueMicrotask(generate);
   };
 
-
   const download = async (format: ExportFormat) => {
     if (!report) return;
     setBusy(format);
@@ -266,11 +269,13 @@ function BriefingCentre() {
               <div className="font-medium">Source contract</div>
               <p className="text-muted-foreground">
                 MIBC consumes intelligence <em>exclusively</em> through
-                <code className="mx-1 rounded bg-muted px-1">intelligenceOrchestrator.getUIP(...)</code>
-                and <code className="mx-1 rounded bg-muted px-1">getUIPBatch(...)</code>. Every risk,
-                revenue, entity, and confidence number matches what the Evidence Explorer,
-                Predictions, Revenue Leakage, and Operational Knowledge surfaces show — because
-                they all read the same Canonical UIP.
+                <code className="mx-1 rounded bg-muted px-1">
+                  intelligenceOrchestrator.getUIP(...)
+                </code>
+                and <code className="mx-1 rounded bg-muted px-1">getUIPBatch(...)</code>. Every
+                risk, revenue, entity, and confidence number matches what the Evidence Explorer,
+                Predictions, Revenue Leakage, and Operational Knowledge surfaces show — because they
+                all read the same Canonical UIP.
               </p>
             </div>
           </CardContent>
@@ -326,16 +331,13 @@ function BriefingCentre() {
                 </div>
               </>
             ) : (
-              <span className="text-muted-foreground">
-                No investigation workspace selected
-              </span>
+              <span className="text-muted-foreground">No investigation workspace selected</span>
             )}
             <div className="ml-auto text-[11px] text-muted-foreground">
               MIBC engine {MIBC_ENGINE_VERSION}
             </div>
           </CardContent>
         </Card>
-
 
         {/* Natural language */}
         <Card>
@@ -400,7 +402,9 @@ function BriefingCentre() {
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">Report type</label>
                   <Select value={reportType} onValueChange={(v) => setReportType(v as ReportType)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       {REPORT_TYPES.map((t) => (
                         <SelectItem key={t} value={t}>
@@ -413,7 +417,9 @@ function BriefingCentre() {
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">Period</label>
                   <Select value={period} onValueChange={(v) => setPeriod(v as ReportPeriod)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       {REPORT_PERIODS.map((p) => (
                         <SelectItem key={p} value={p}>
@@ -441,7 +447,8 @@ function BriefingCentre() {
                     <SelectContent>
                       {registeredUips.map((u) => (
                         <SelectItem key={u.id} value={u.id}>
-                          {u.id} · {u.fused.canonical.length} entities · {u.rawEvidence.length} evidence
+                          {u.id} · {u.fused.canonical.length} entities · {u.rawEvidence.length}{" "}
+                          evidence
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -452,7 +459,8 @@ function BriefingCentre() {
                     </p>
                   ) : !liveUipId ? (
                     <p className="mt-1 text-[11px] text-amber-600">
-                      No active UIP — pick a snapshot before generating. MIBC never assumes the latest.
+                      No active UIP — pick a snapshot before generating. MIBC never assumes the
+                      latest.
                     </p>
                   ) : null}
                 </div>
@@ -470,7 +478,10 @@ function BriefingCentre() {
                       investigations.map((w) => {
                         const on = selected.length === 0 || selected.includes(w.id);
                         return (
-                          <label key={w.id} className="flex cursor-pointer items-center gap-2 text-xs">
+                          <label
+                            key={w.id}
+                            className="flex cursor-pointer items-center gap-2 text-xs"
+                          >
                             <input
                               type="checkbox"
                               checked={on}
@@ -479,7 +490,9 @@ function BriefingCentre() {
                                   setSelected(
                                     e.target.checked
                                       ? investigations.map((x) => x.id)
-                                      : investigations.filter((x) => x.id !== w.id).map((x) => x.id),
+                                      : investigations
+                                          .filter((x) => x.id !== w.id)
+                                          .map((x) => x.id),
                                   );
                                 } else {
                                   setSelected((prev) =>
@@ -512,11 +525,8 @@ function BriefingCentre() {
             </CardContent>
           </Card>
 
-          <SchedulesPanel
-            workspaceIds={selected.length === 0 ? [] : selected}
-          />
+          <SchedulesPanel workspaceIds={selected.length === 0 ? [] : selected} />
         </div>
-
 
         <JobHistoryPanel />
 
@@ -548,7 +558,8 @@ function BriefingCentre() {
                     disabled={busy !== null}
                     onClick={() =>
                       toast.info("Email delivery is queued", {
-                        description: "MIBC email dispatcher runs from Investigation Workspace payloads.",
+                        description:
+                          "MIBC email dispatcher runs from Investigation Workspace payloads.",
                       })
                     }
                   >
@@ -574,7 +585,6 @@ function BriefingCentre() {
                   </Badge>
                 )}
               </div>
-
             </CardHeader>
             <CardContent>
               <Tabs defaultValue={report.sections[0]?.id}>
@@ -634,7 +644,8 @@ function BriefingCentre() {
         )}
 
         <p className="text-center text-xs text-muted-foreground">
-          Evidence first. Explainable always. Officer decides. — {report?.provenanceLine ?? "Reports read only from Investigation Workspaces."}
+          Evidence first. Explainable always. Officer decides. —{" "}
+          {report?.provenanceLine ?? "Reports read only from Investigation Workspaces."}
         </p>
       </div>
     </AppShell>

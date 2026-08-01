@@ -26,9 +26,7 @@ const SUPPORTING: Record<string, string[]> = {
 
 export function planSkills(interpreted: InterpretedQuery): OperationalPlan {
   const primary: OperationalSkill =
-    skillForIntent(interpreted.intent) ??
-    findSkill("executive_briefing") ??
-    SKILLS[0];
+    skillForIntent(interpreted.intent) ?? findSkill("executive_briefing") ?? SKILLS[0];
 
   const supportingIds = SUPPORTING[primary.id] ?? [];
   const supportingSkills = supportingIds

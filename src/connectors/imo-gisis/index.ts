@@ -28,7 +28,6 @@ import type {
   SeaphoreRecord,
 } from "@/lib/osint/types";
 
-
 async function runSharedIngestionPipeline(
   connector: ConnectorInterface,
   records: SeaphoreRecord[],
@@ -129,8 +128,7 @@ export class ImoGisisConnector implements ConnectorInterface {
   // ── SECTION 2: AUTH ──────────────────────────────────────────────
   private buildHeaders(): Record<string, string> {
     return {
-      Accept:
-        "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       "User-Agent": "Seaphore-OSINT/1.0 (+https://seaphore.ai)",
     };
   }

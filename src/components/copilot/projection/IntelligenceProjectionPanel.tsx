@@ -152,9 +152,7 @@ function CardShell({
         <h3 className="text-[11px] font-semibold uppercase tracking-wider text-foreground">
           {title}
         </h3>
-        {hint ? (
-          <span className="ml-auto text-[10px] text-muted-foreground">{hint}</span>
-        ) : null}
+        {hint ? <span className="ml-auto text-[10px] text-muted-foreground">{hint}</span> : null}
       </header>
       {children}
     </div>
@@ -247,11 +245,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ProactiveDiscoveriesCard({
-  nudges,
-}: {
-  nudges: NonNullable<IbeResult["ibe"]>["nudges"];
-}) {
+function ProactiveDiscoveriesCard({ nudges }: { nudges: NonNullable<IbeResult["ibe"]>["nudges"] }) {
   const critical = nudges.filter((n) => n.priority === "critical");
   const high = nudges.filter((n) => n.priority === "high");
   const monitor = nudges.filter((n) => n.priority === "monitor");
@@ -321,12 +315,16 @@ function ReasoningSummaryCard({
     <CardShell
       icon={<Brain className="h-3.5 w-3.5" />}
       title="Reasoning summary"
-      hint={contract ? `${contract.checks.filter((c) => c.satisfied).length}/9 contract` : undefined}
+      hint={
+        contract ? `${contract.checks.filter((c) => c.satisfied).length}/9 contract` : undefined
+      }
     >
       <div className="space-y-2 text-xs">
         <ReasoningLine
           label="Considered"
-          items={considered.length ? considered.slice(0, 4) : ["Mission context and prior findings"]}
+          items={
+            considered.length ? considered.slice(0, 4) : ["Mission context and prior findings"]
+          }
         />
         <ReasoningLine
           label="Uncertainties"
@@ -454,16 +452,10 @@ function WorkingHypothesesCard({
             </div>
             <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
               <span>{h.domain}</span>
-              <span className="text-emerald-700">
-                +{h.supporting.length} supporting
-              </span>
-              <span className="text-destructive/80">
-                −{h.contradicting.length} contradicting
-              </span>
+              <span className="text-emerald-700">+{h.supporting.length} supporting</span>
+              <span className="text-destructive/80">−{h.contradicting.length} contradicting</span>
               {h.nextEvidenceNeeded.length ? (
-                <span className="text-muted-foreground">
-                  needs · {h.nextEvidenceNeeded[0]}
-                </span>
+                <span className="text-muted-foreground">needs · {h.nextEvidenceNeeded[0]}</span>
               ) : null}
             </div>
           </li>
@@ -507,10 +499,7 @@ function LiveInvestigationTimelineCard({
       out.push({
         ts: c.ts,
         kind: c.role === "officer" ? "decision" : "recommendation",
-        label:
-          c.role === "officer"
-            ? `Officer prompt`
-            : "Copilot briefing delivered",
+        label: c.role === "officer" ? `Officer prompt` : "Copilot briefing delivered",
         detail:
           typeof (c as unknown as { text?: string }).text === "string"
             ? (c as unknown as { text?: string }).text!.slice(0, 90)

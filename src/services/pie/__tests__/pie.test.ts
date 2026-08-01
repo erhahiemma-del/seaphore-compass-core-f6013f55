@@ -83,7 +83,9 @@ describe("PIE", () => {
     );
     pie.ingest({ evidence: base });
     const spike = pie.ingest({
-      evidence: [ev({ id: "spike", kind: "cargo", grade: "CORROBORATED", fields: { tonnage: 500 } })],
+      evidence: [
+        ev({ id: "spike", kind: "cargo", grade: "CORROBORATED", fields: { tonnage: 500 } }),
+      ],
     });
     const anomaly = spike.predictions.find((p) => p.category === "cargo-anomaly");
     expect(anomaly).toBeDefined();
@@ -93,8 +95,18 @@ describe("PIE", () => {
   it("predictions have stable ids across cycles for the same evidence", () => {
     const pie = new PredictiveIntelligenceEngine();
     const evidence = [
-      ev({ id: "o1", kind: "ownership", grade: "VERIFIED", fields: { ownerName: "Alpha Ltd", flag: "PA" } }),
-      ev({ id: "o2", kind: "ownership", grade: "VERIFIED", fields: { ownerName: "Beta Ltd", flag: "LR" } }),
+      ev({
+        id: "o1",
+        kind: "ownership",
+        grade: "VERIFIED",
+        fields: { ownerName: "Alpha Ltd", flag: "PA" },
+      }),
+      ev({
+        id: "o2",
+        kind: "ownership",
+        grade: "VERIFIED",
+        fields: { ownerName: "Beta Ltd", flag: "LR" },
+      }),
     ];
     const a = pie.ingest({ evidence }).predictions.find((p) => p.category === "ownership-churn");
     const b = pie.ingest({ evidence }).predictions.find((p) => p.category === "ownership-churn");

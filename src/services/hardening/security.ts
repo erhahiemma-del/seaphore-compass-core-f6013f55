@@ -19,14 +19,32 @@ export const SafeSlug = z.string().regex(/^[a-z0-9][a-z0-9-]{0,63}$/i);
 export const SafeIMO = z.string().regex(/^IMO\d{7}$/);
 
 // -------- XSS-safe text (HR-3: never trust upstream content) --------
-const HTML_ESCAPE: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;", "/": "&#x2F;" };
+const HTML_ESCAPE: Record<string, string> = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+  "/": "&#x2F;",
+};
 export function escapeHtml(input: string): string {
   return input.replace(/[&<>"'/]/g, (c) => HTML_ESCAPE[c] ?? c);
 }
 
 /** Strip control characters (except \n and \t). */
 export function stripControls(input: string): string {
-  return input.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "");
+  let out = "";
+  for (const ch of input) {
+    const code = ch.codePointAt(0)!;
+    const isControl =
+      (code >= 0x00 && code <= 0x08) ||
+      code === 0x0b ||
+      code === 0x0c ||
+      (code >= 0x0e && code <= 0x1f) ||
+      code === 0x7f;
+    if (!isControl) out += ch;
+  }
+  return out;
 }
 
 // -------- SQL-injection tripwire --------
@@ -61,7 +79,11 @@ export function timingSafeEqual(a: string, b: string): boolean {
 // -------- URL allow-listing (SSRF guard for outbound fetches) --------
 export function assertAllowedUrl(url: string, allowedHosts: readonly string[]): URL {
   let u: URL;
-  try { u = new URL(url); } catch { throw new Error("invalid url"); }
+  try {
+    u = new URL(url);
+  } catch {
+    throw new Error("invalid url");
+  }
   if (u.protocol !== "https:") throw new Error("https required");
   if (!allowedHosts.includes(u.hostname)) throw new Error(`host not allowed: ${u.hostname}`);
   return u;

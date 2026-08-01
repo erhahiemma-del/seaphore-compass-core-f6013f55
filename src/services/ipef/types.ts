@@ -34,7 +34,7 @@ export type IpefContributorId =
   | "canonical-uip"
   | "oie"
   | "copilot"
-  | string;  // future engines register their own id
+  | string; // future engines register their own id
 
 export type IpefStageStatus = "success" | "degraded" | "failed" | "skipped" | "not-run";
 
@@ -43,9 +43,9 @@ export type IpefStageStatus = "success" | "degraded" | "failed" | "skipped" | "n
  * Only runtime facts — never invented or estimated values.
  */
 export interface IpefFact {
-  readonly label: string;   // human-readable: "Evidence Records Collected"
+  readonly label: string; // human-readable: "Evidence Records Collected"
   readonly value: string | number | boolean;
-  readonly unit?: string;   // "records" | "ms" | "MB" | "%"
+  readonly unit?: string; // "records" | "ms" | "MB" | "%"
 }
 
 /**
@@ -55,9 +55,9 @@ export interface IpefFact {
 export interface IpefContributorRecord {
   readonly contributorId: IpefContributorId;
   readonly displayName: string;
-  readonly executionId: string;    // contributor's own execution id
-  readonly correlationId: string;  // ties all contributors in one pipeline run
-  readonly startedAt: string;      // ISO 8601
+  readonly executionId: string; // contributor's own execution id
+  readonly correlationId: string; // ties all contributors in one pipeline run
+  readonly startedAt: string; // ISO 8601
   readonly durationMs: number;
   readonly status: IpefStageStatus;
   /** Measurable output facts — what this stage actually produced. */
@@ -100,22 +100,22 @@ export interface IpefPipelineStage {
 // ─────────────────────────────────────────────────────────────────────
 
 export interface IpefConfidenceFactor {
-  readonly factor: string;         // "Provider authority" | "Evidence freshness" | etc.
-  readonly contribution: number;   // 0..1 numeric contribution to the composite
-  readonly weight: number;         // fixed weight in the model
-  readonly explanation: string;    // plain English
+  readonly factor: string; // "Provider authority" | "Evidence freshness" | etc.
+  readonly contribution: number; // 0..1 numeric contribution to the composite
+  readonly weight: number; // fixed weight in the model
+  readonly explanation: string; // plain English
 }
 
 export interface IpefConfidenceDecomposition {
   readonly entityId: string;
   readonly entityLabel: string;
-  readonly compositeScore: number;      // 0..1
+  readonly compositeScore: number; // 0..1
   readonly tier: "LOW" | "MEDIUM" | "HIGH" | "VERY_HIGH";
   readonly factors: ReadonlyArray<IpefConfidenceFactor>;
   readonly supportingEvidenceIds: ReadonlyArray<string>;
   readonly conflictingEvidenceIds: ReadonlyArray<string>;
   readonly intelligenceGaps: ReadonlyArray<string>;
-  readonly reasoning: string;          // one paragraph plain English
+  readonly reasoning: string; // one paragraph plain English
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -141,16 +141,16 @@ export interface IpefLineageNode {
   readonly id: string;
   readonly kind: IpefLineageNodeKind;
   readonly label: string;
-  readonly detail: string;        // one sentence description
+  readonly detail: string; // one sentence description
   readonly contributorId: IpefContributorId;
-  readonly timestamp: string;     // ISO 8601
-  readonly children: ReadonlyArray<string>;  // ids of child nodes
+  readonly timestamp: string; // ISO 8601
+  readonly children: ReadonlyArray<string>; // ids of child nodes
 }
 
 export interface IpefRecommendationProvenance {
   readonly recommendationText: string;
   readonly chain: ReadonlyArray<IpefLineageNode>;
-  readonly rootNodes: ReadonlyArray<string>;  // top-level recommendation node ids
+  readonly rootNodes: ReadonlyArray<string>; // top-level recommendation node ids
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -165,7 +165,7 @@ export interface IpefRecommendationProvenance {
 export interface IpefRecord {
   /** Shared correlation id — matches source_uip_id from the briefing. */
   readonly correlationId: string;
-  readonly createdAt: string;  // ISO 8601
+  readonly createdAt: string; // ISO 8601
 
   /** One record per contributor, in pipeline stage order. */
   readonly contributors: ReadonlyArray<IpefContributorRecord>;

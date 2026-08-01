@@ -76,11 +76,10 @@ function OperationalKnowledgeRoute() {
             <span className="font-semibold text-slate-900">
               OKL never touches raw connector data.
             </span>{" "}
-            It consumes only the fused Unified Intelligence Package and the
-            Maritime Knowledge Graph. Every pattern below cites the evidence,
-            names the connectors, surfaces contradictions and alternative
-            explanations, and gates enforcement recommendations behind explicit
-            officer approval.
+            It consumes only the fused Unified Intelligence Package and the Maritime Knowledge
+            Graph. Every pattern below cites the evidence, names the connectors, surfaces
+            contradictions and alternative explanations, and gates enforcement recommendations
+            behind explicit officer approval.
           </p>
         </div>
         {!uip || !pkg ? (
@@ -89,9 +88,8 @@ function OperationalKnowledgeRoute() {
               <Radar className="h-6 w-6 text-muted-foreground" />
               <div className="text-sm font-medium">No Unified Intelligence Package loaded</div>
               <div className="max-w-md text-xs text-muted-foreground">
-                OKL only operates on live fused intelligence. Generate a briefing
-                from the Copilot and this surface will populate with detected
-                operational patterns for that UIP.
+                OKL only operates on live fused intelligence. Generate a briefing from the Copilot
+                and this surface will populate with detected operational patterns for that UIP.
               </div>
               <Link
                 to="/copilot"
@@ -106,8 +104,8 @@ function OperationalKnowledgeRoute() {
             <div className="mb-3 flex items-center gap-2 text-[11px] text-muted-foreground">
               <span className="rounded bg-slate-100 px-2 py-0.5 font-mono">{uip.id}</span>
               <span>
-                {uip.fused.stats.canonicalEntities} entities · {uip.rawEvidence.length}{" "}
-                evidence records · {uip.provenance.length} connectors
+                {uip.fused.stats.canonicalEntities} entities · {uip.rawEvidence.length} evidence
+                records · {uip.provenance.length} connectors
               </span>
             </div>
             <OperationalInsights package={pkg} />

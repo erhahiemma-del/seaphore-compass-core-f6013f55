@@ -80,7 +80,9 @@ export function KpiCoverageCard({
         <div
           className={cn(
             "mt-2 tabular-nums",
-            isNumber ? "type-mono text-[22px] font-bold text-foreground" : cn("text-[14px] font-bold", tone),
+            isNumber
+              ? "type-mono text-[22px] font-bold text-foreground"
+              : cn("text-[14px] font-bold", tone),
           )}
         >
           <span aria-hidden className="mr-1">
@@ -93,9 +95,7 @@ export function KpiCoverageCard({
         </div>
         <div className="mt-2 flex items-center gap-2">
           {isNumber ? <ConfidenceChip tier={kpi.confidence as never} size={9} /> : null}
-          <span className="text-[10px] font-semibold text-slate">
-            Coverage {kpi.coveragePct}%
-          </span>
+          <span className="text-[10px] font-semibold text-slate">Coverage {kpi.coveragePct}%</span>
         </div>
       </button>
 
@@ -115,17 +115,16 @@ export function KpiCoverageCard({
           <Row label="Evidence count" value={`${kpi.evidenceCount}`} />
           <Row label="Coverage" value={`${kpi.coveragePct}%`} />
           <Row label="Confidence" value={kpi.confidence} />
-          <Row
-            label="Projection"
-            value={`${kpi.projectionStatus} · ${kpi.projectionContractId}`}
-          />
+          <Row label="Projection" value={`${kpi.projectionStatus} · ${kpi.projectionContractId}`} />
           <Row label="Dashboard" value={`${kpi.dashboardStatus} · ${kpi.dashboardField}`} />
 
           <div className="space-y-1">
             {COVERAGE_CHECK_ORDER.map((key) => (
               <div key={key} className="flex items-center justify-between gap-2">
                 <span>{COVERAGE_CHECK_LABELS[key]}</span>
-                <span className={kpi.checks[key] ? "text-[color:var(--color-teal)]" : "text-red-600"}>
+                <span
+                  className={kpi.checks[key] ? "text-[color:var(--color-teal)]" : "text-red-600"}
+                >
                   {kpi.checks[key] ? "✓" : "✗"}
                 </span>
               </div>

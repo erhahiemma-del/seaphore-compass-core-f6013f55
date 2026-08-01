@@ -7,11 +7,7 @@
  * invented.
  */
 import { describe, expect, it } from "vitest";
-import {
-  buildCargoDossier,
-  extractSubjectTerm,
-  routeCargoQuery,
-} from "@/services/copilot/cargo";
+import { buildCargoDossier, extractSubjectTerm, routeCargoQuery } from "@/services/copilot/cargo";
 import { cargoGraphFromEvidence } from "@/services/cargo-graph";
 import type { NormalizedEvidence } from "@/services/ial/types";
 

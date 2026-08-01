@@ -135,7 +135,10 @@ export function adaptBriefing(
     intelligenceGaps: gaps?.payload.list,
     decisionImpact: impact?.payload,
     decisionRequired: required?.payload,
-    officerActions: actions?.payload.actions.map((a: { id: string; label: string }) => ({ id: a.id, label: a.label })),
+    officerActions: actions?.payload.actions.map((a: { id: string; label: string }) => ({
+      id: a.id,
+      label: a.label,
+    })),
     evidenceSources: sources
       ? {
           queried: sources.payload.queried,

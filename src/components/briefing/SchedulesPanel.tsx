@@ -37,11 +37,7 @@ import {
   type ReportPeriod,
 } from "@/services/mibc";
 
-export function SchedulesPanel({
-  workspaceIds,
-}: {
-  workspaceIds: string[];
-}) {
+export function SchedulesPanel({ workspaceIds }: { workspaceIds: string[] }) {
   const qc = useQueryClient();
   const list = useServerFn(listReportSchedules);
   const create = useServerFn(createReportSchedule);
@@ -68,14 +64,12 @@ export function SchedulesPanel({
       toast.success("Schedule created");
       qc.invalidateQueries({ queryKey: ["mibc", "schedules"] });
     },
-    onError: (e: unknown) =>
-      toast.error("Failed to create schedule", { description: String(e) }),
+    onError: (e: unknown) => toast.error("Failed to create schedule", { description: String(e) }),
   });
 
   const toggleMutation = useMutation({
     mutationFn: (v: { id: string; active: boolean }) => toggle({ data: v }),
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["mibc", "schedules"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["mibc", "schedules"] }),
   });
 
   const deleteMutation = useMutation({
@@ -87,12 +81,7 @@ export function SchedulesPanel({
   });
 
   const runNowMutation = useMutation({
-    mutationFn: (s: {
-      id: string;
-      report_type: string;
-      period: string;
-      workspace_ids: string[];
-    }) =>
+    mutationFn: (s: { id: string; report_type: string; period: string; workspace_ids: string[] }) =>
       enqueue({
         data: {
           reportType: s.report_type as ReportType,
@@ -124,26 +113,38 @@ export function SchedulesPanel({
             onChange={(e) => setName(e.target.value)}
           />
           <Select value={reportType} onValueChange={(v) => setReportType(v as ReportType)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               {REPORT_TYPES.map((t) => (
-                <SelectItem key={t} value={t}>{REPORT_TYPE_LABEL[t]}</SelectItem>
+                <SelectItem key={t} value={t}>
+                  {REPORT_TYPE_LABEL[t]}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={period} onValueChange={(v) => setPeriod(v as ReportPeriod)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               {REPORT_PERIODS.map((p) => (
-                <SelectItem key={p} value={p}>{REPORT_PERIOD_LABEL[p]}</SelectItem>
+                <SelectItem key={p} value={p}>
+                  {REPORT_PERIOD_LABEL[p]}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={cadence} onValueChange={(v) => setCadence(v as RecurringCadence)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               {RECURRING_CADENCES.map((c) => (
-                <SelectItem key={c} value={c}>{CADENCE_LABEL[c]}</SelectItem>
+                <SelectItem key={c} value={c}>
+                  {CADENCE_LABEL[c]}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -161,8 +162,8 @@ export function SchedulesPanel({
             <p className="text-xs text-muted-foreground">Loading schedules…</p>
           ) : schedules.length === 0 ? (
             <p className="text-xs text-muted-foreground">
-              No schedules yet. Configure one above — it will run on the cadence
-              even if this tab is closed (a worker resumes it on the next visit).
+              No schedules yet. Configure one above — it will run on the cadence even if this tab is
+              closed (a worker resumes it on the next visit).
             </p>
           ) : (
             schedules.map((s) => (
@@ -183,8 +184,7 @@ export function SchedulesPanel({
                   <p className="mt-0.5 text-muted-foreground">
                     {REPORT_TYPE_LABEL[s.report_type as ReportType]} ·{" "}
                     {REPORT_PERIOD_LABEL[s.period as ReportPeriod]} · next{" "}
-                    {formatRelative(s.next_run_at)} · last{" "}
-                    {formatRelative(s.last_run_at)}
+                    {formatRelative(s.next_run_at)} · last {formatRelative(s.last_run_at)}
                   </p>
                 </div>
                 <div className="flex gap-1">
@@ -199,9 +199,7 @@ export function SchedulesPanel({
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() =>
-                      toggleMutation.mutate({ id: s.id, active: !s.active })
-                    }
+                    onClick={() => toggleMutation.mutate({ id: s.id, active: !s.active })}
                     title={s.active ? "Pause" : "Resume"}
                   >
                     <Power className="h-3.5 w-3.5" />

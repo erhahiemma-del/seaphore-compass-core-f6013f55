@@ -23,12 +23,20 @@ import type {
 } from "./types";
 import { PIPELINE_STAGE_ORDER } from "./types";
 
+/** Shape of a `critical_findings` briefing-section entry consumed for lineage. */
+interface IpefCriticalFinding {
+  title?: string;
+  priority?: string;
+  grade?: string;
+  source?: string;
+}
+
 export interface IpefBuildInput {
-  readonly correlationId: string;  // == source_uip_id / uipId
+  readonly correlationId: string; // == source_uip_id / uipId
   readonly uip: UnifiedIntelligencePackage;
   readonly micBootstrapResult: MicBootstrapResult | null;
   readonly briefing: Briefing;
-  readonly orchestrationStartedAt: number;  // Date.now() at start of orchestrate()
+  readonly orchestrationStartedAt: number; // Date.now() at start of orchestrate()
   readonly evidenceCollectionMs: number;
   readonly sourcesQueried: number;
   readonly sourcesResponded: number;
@@ -42,9 +50,13 @@ function fact(label: string, value: string | number | boolean, unit?: string): I
 
 function worstStatus(statuses: IpefStageStatus[]): IpefStageStatus {
   const rank: Record<IpefStageStatus, number> = {
-    failed: 4, degraded: 3, skipped: 2, "not-run": 1, success: 0,
+    failed: 4,
+    degraded: 3,
+    skipped: 2,
+    "not-run": 1,
+    success: 0,
   };
-  const worst = statuses.reduce((a, b) => rank[a] >= rank[b] ? a : b, "success");
+  const worst = statuses.reduce((a, b) => (rank[a] >= rank[b] ? a : b), "success");
   return worst;
 }
 
@@ -54,8 +66,12 @@ export function buildIpefRecord(input: IpefBuildInput): IpefRecord {
   const contributors: IpefContributorRecord[] = [];
 
   // ── Evidence Providers ─────────────────────────────────────────────
-  const providerStatus: IpefStageStatus = input.sourcesResponded === 0 ? "failed"
-    : input.sourcesResponded < input.sourcesQueried ? "degraded" : "success";
+  const providerStatus: IpefStageStatus =
+    input.sourcesResponded === 0
+      ? "failed"
+      : input.sourcesResponded < input.sourcesQueried
+        ? "degraded"
+        : "success";
   contributors.push({
     contributorId: "evidence-providers",
     displayName: "Evidence Providers",
@@ -65,13 +81,15 @@ export function buildIpefRecord(input: IpefBuildInput): IpefRecord {
     durationMs: input.evidenceCollectionMs,
     status: providerStatus,
     facts: [
-      fact("Providers Queried",      input.sourcesQueried,      "providers"),
-      fact("Providers Responded",    input.sourcesResponded,    "providers"),
+      fact("Providers Queried", input.sourcesQueried, "providers"),
+      fact("Providers Responded", input.sourcesResponded, "providers"),
       fact("Providers Corroborated", input.sourcesCorroborated, "providers"),
-      fact("Evidence Records Collected", input.evidenceCount,   "records"),
+      fact("Evidence Records Collected", input.evidenceCount, "records"),
     ],
-    warnings: input.sourcesResponded < input.sourcesQueried
-      ? [`${input.sourcesQueried - input.sourcesResponded} provider(s) did not respond`] : [],
+    warnings:
+      input.sourcesResponded < input.sourcesQueried
+        ? [`${input.sourcesQueried - input.sourcesResponded} provider(s) did not respond`]
+        : [],
     errors: [],
   });
 
@@ -85,10 +103,11 @@ export function buildIpefRecord(input: IpefBuildInput): IpefRecord {
     durationMs: input.evidenceCollectionMs,
     status: "success",
     facts: [
-      fact("Evidence Records Normalised", input.evidenceCount,      "records"),
-      fact("Source Attributions Built",   input.sourcesResponded,   "sources"),
+      fact("Evidence Records Normalised", input.evidenceCount, "records"),
+      fact("Source Attributions Built", input.sourcesResponded, "sources"),
     ],
-    warnings: [], errors: [],
+    warnings: [],
+    errors: [],
   });
 
   // ── IFE ────────────────────────────────────────────────────────────
@@ -99,29 +118,35 @@ export function buildIpefRecord(input: IpefBuildInput): IpefRecord {
     executionId: `ife_${correlationId}`,
     correlationId,
     startedAt: new Date(input.orchestrationStartedAt + input.evidenceCollectionMs).toISOString(),
-    durationMs: 0,  // IFE runs synchronously inside buildUnifiedIntelligencePackage
+    durationMs: 0, // IFE runs synchronously inside buildUnifiedIntelligencePackage
     status: "success",
     facts: [
-      fact("Canonical UIP Generated",    "yes"),
-      fact("Input Records",              ifeStats.inputRecords,       "records"),
-      fact("Canonical Entities",         ifeStats.canonicalEntities,  "entities"),
-      fact("Contradictions Surfaced",    ifeStats.contradictions,     "contradictions"),
-      fact("Sources Queried",            ifeStats.sourcesQueried,     "sources"),
-      fact("Sources Responded",          ifeStats.sourcesResponded,   "sources"),
-      fact("Avg Evidence Freshness",     Math.round(ifeStats.averageFreshnessSeconds / 60), "minutes"),
-      fact("Identity Clusters Formed",   input.uip.identity.length,  "clusters"),
-      fact("Has Contradictions",         input.uip.hasContradictions),
+      fact("Canonical UIP Generated", "yes"),
+      fact("Input Records", ifeStats.inputRecords, "records"),
+      fact("Canonical Entities", ifeStats.canonicalEntities, "entities"),
+      fact("Contradictions Surfaced", ifeStats.contradictions, "contradictions"),
+      fact("Sources Queried", ifeStats.sourcesQueried, "sources"),
+      fact("Sources Responded", ifeStats.sourcesResponded, "sources"),
+      fact("Avg Evidence Freshness", Math.round(ifeStats.averageFreshnessSeconds / 60), "minutes"),
+      fact("Identity Clusters Formed", input.uip.identity.length, "clusters"),
+      fact("Has Contradictions", input.uip.hasContradictions),
     ],
     warnings: input.uip.hasContradictions
-      ? ["Contradictions detected — IFE surfaced conflicting field values"] : [],
+      ? ["Contradictions detected — IFE surfaced conflicting field values"]
+      : [],
     errors: [],
   });
 
   // ── MIC ────────────────────────────────────────────────────────────
   const micResult = input.micBootstrapResult;
-  const micStatus: IpefStageStatus = micResult === null ? "skipped"
-    : micResult.outcome === "failed" ? "failed"
-    : micResult.outcome === "degraded" ? "degraded" : "success";
+  const micStatus: IpefStageStatus =
+    micResult === null
+      ? "skipped"
+      : micResult.outcome === "failed"
+        ? "failed"
+        : micResult.outcome === "degraded"
+          ? "degraded"
+          : "success";
   const micStats = micResult?.telemetry;
 
   contributors.push({
@@ -132,20 +157,26 @@ export function buildIpefRecord(input: IpefBuildInput): IpefRecord {
     startedAt: micStats?.timestamp ?? now,
     durationMs: micStats?.totalDurationMs ?? 0,
     status: micStatus,
-    facts: micStats ? [
-      fact("Entities Registered",          micStats.entitiesRegistered,      "entities"),
-      fact("Relationships Registered",     micStats.relationshipsRegistered, "relationships"),
-      fact("Evidence Records Registered",  micStats.evidenceRegistered,      "records"),
-      fact("Timeline Events Generated",    micStats.timelineEvents,          "events"),
-      fact("Risk Profiles Computed",       micStats.riskProfilesComputed,    "profiles"),
-      fact("Reasoning Records Generated",  micStats.reasoningRecords,        "records"),
-      fact("Graph Nodes Added",            micStats.graphNodes,              "nodes"),
-      fact("Graph Edges Added",            micStats.graphEdges,              "edges"),
-      fact("Heap Memory",                  micStats.heapUsedBytes !== null
-        ? `${+(micStats.heapUsedBytes / 1_048_576).toFixed(1)} MB` : "unknown"),
-    ] : [fact("Status", "MIC was skipped (MIC_ENABLED=false or disabled)")],
+    facts: micStats
+      ? [
+          fact("Entities Registered", micStats.entitiesRegistered, "entities"),
+          fact("Relationships Registered", micStats.relationshipsRegistered, "relationships"),
+          fact("Evidence Records Registered", micStats.evidenceRegistered, "records"),
+          fact("Timeline Events Generated", micStats.timelineEvents, "events"),
+          fact("Risk Profiles Computed", micStats.riskProfilesComputed, "profiles"),
+          fact("Reasoning Records Generated", micStats.reasoningRecords, "records"),
+          fact("Graph Nodes Added", micStats.graphNodes, "nodes"),
+          fact("Graph Edges Added", micStats.graphEdges, "edges"),
+          fact(
+            "Heap Memory",
+            micStats.heapUsedBytes !== null
+              ? `${+(micStats.heapUsedBytes / 1_048_576).toFixed(1)} MB`
+              : "unknown",
+          ),
+        ]
+      : [fact("Status", "MIC was skipped (MIC_ENABLED=false or disabled)")],
     warnings: micStats?.warnings.slice() ?? [],
-    errors:   micStats?.errors.slice() ?? [],
+    errors: micStats?.errors.slice() ?? [],
   });
 
   // ── Canonical UIP ──────────────────────────────────────────────────
@@ -158,22 +189,25 @@ export function buildIpefRecord(input: IpefBuildInput): IpefRecord {
     durationMs: 0,
     status: "success",
     facts: [
-      fact("UIP ID",                correlationId),
-      fact("Evidence Package Grade",input.uip.fused.grade),
-      fact("Package Confidence",    input.uip.fused.confidence),
-      fact("Freshest Evidence",     `${Math.round(input.uip.freshestSeconds / 60)} minutes ago`),
+      fact("UIP ID", correlationId),
+      fact("Evidence Package Grade", input.uip.fused.grade),
+      fact("Package Confidence", input.uip.fused.confidence),
+      fact("Freshest Evidence", `${Math.round(input.uip.freshestSeconds / 60)} minutes ago`),
       fact("Registered in Session", "yes"),
     ],
-    warnings: [], errors: [],
+    warnings: [],
+    errors: [],
   });
 
   // ── OIE ────────────────────────────────────────────────────────────
   const gapSection = input.briefing.sections.find((s) => s.kind === "intelligence_gaps");
-  const gapList: string[] = (gapSection?.payload as any)?.list ?? [];
+  const gapList: string[] = (gapSection?.payload as { list?: string[] } | undefined)?.list ?? [];
   const counterSection = input.briefing.sections.find((s) => s.kind === "counter_hypotheses");
-  const hypotheses: string[] = (counterSection?.payload as any)?.list ?? [];
+  const hypotheses: string[] =
+    (counterSection?.payload as { list?: string[] } | undefined)?.list ?? [];
   const actionSection = input.briefing.sections.find((s) => s.kind === "officer_actions");
-  const actionCount = (actionSection?.payload as any)?.actions?.length ?? 0;
+  const actionCount =
+    (actionSection?.payload as { actions?: unknown[] } | undefined)?.actions?.length ?? 0;
 
   contributors.push({
     contributorId: "oie",
@@ -184,17 +218,18 @@ export function buildIpefRecord(input: IpefBuildInput): IpefRecord {
     durationMs: input.briefing.latency_ms,
     status: "success",
     facts: [
-      fact("Briefing Mode",                  input.briefing.mode),
-      fact("Classification",                 input.briefing.classification.typeBadge),
-      fact("Intelligence Status",            input.briefing.intelligence_status),
-      fact("Confidence Score",               `${Math.round(input.briefing.confidence_matrix.composite * 100)}%`),
-      fact("Evidence Quality",               input.briefing.classification.evidenceStrength),
-      fact("Counter-Hypotheses Generated",   hypotheses.length,  "hypotheses"),
-      fact("Intelligence Gaps Identified",   gapList.length,     "gaps"),
-      fact("Officer Actions Generated",      actionCount,         "actions"),
-      fact("Sections Produced",              input.briefing.sections.length, "sections"),
+      fact("Briefing Mode", input.briefing.mode),
+      fact("Classification", input.briefing.classification.typeBadge),
+      fact("Intelligence Status", input.briefing.intelligence_status),
+      fact("Confidence Score", `${Math.round(input.briefing.confidence_matrix.composite * 100)}%`),
+      fact("Evidence Quality", input.briefing.classification.evidenceStrength),
+      fact("Counter-Hypotheses Generated", hypotheses.length, "hypotheses"),
+      fact("Intelligence Gaps Identified", gapList.length, "gaps"),
+      fact("Officer Actions Generated", actionCount, "actions"),
+      fact("Sections Produced", input.briefing.sections.length, "sections"),
     ],
-    warnings: [], errors: [],
+    warnings: [],
+    errors: [],
   });
 
   // ── Copilot ────────────────────────────────────────────────────────
@@ -209,11 +244,12 @@ export function buildIpefRecord(input: IpefBuildInput): IpefRecord {
     durationMs: 0,
     status: "success",
     facts: [
-      fact("Executive Briefing Generated",      hasExecBrief ? "yes" : "no"),
-      fact("Model Used",                        input.briefing.model_used),
-      fact("Total Latency",                     input.briefing.latency_ms, "ms"),
+      fact("Executive Briefing Generated", hasExecBrief ? "yes" : "no"),
+      fact("Model Used", input.briefing.model_used),
+      fact("Total Latency", input.briefing.latency_ms, "ms"),
     ],
-    warnings: [], errors: [],
+    warnings: [],
+    errors: [],
   });
 
   // ── Pipeline trace (ordered) ────────────────────────────────────────
@@ -245,23 +281,28 @@ export function buildIpefRecord(input: IpefBuildInput): IpefRecord {
     if (evidenceForEntity.length === 0) gaps.push("No evidence records available");
     if (!evidenceForEntity.some((e) => e.grade === "VERIFIED" || e.grade === "CORROBORATED"))
       gaps.push("No VERIFIED or CORROBORATED evidence — all evidence is REPORTED or lower");
-    if (evidenceForEntity.length === 1) gaps.push("Single-source entity — cross-source corroboration missing");
+    if (evidenceForEntity.length === 1)
+      gaps.push("Single-source entity — cross-source corroboration missing");
 
     const reasoning = buildConfidenceReasoning(entity.label, confEntry, evidenceForEntity.length);
 
     confidenceDecompositions.push({
-      entityId:    entity.canonicalId,
+      entityId: entity.canonicalId,
       entityLabel: entity.label,
       compositeScore: confEntry.score,
       tier: confEntry.tier as IpefConfidenceDecomposition["tier"],
       factors: confEntry.components.map((c) => ({
-        factor:       c.factor,
+        factor: c.factor,
         contribution: c.contribution,
-        weight:       c.contribution,  // stored as weighted contribution
-        explanation:  c.explanation,
+        weight: c.contribution, // stored as weighted contribution
+        explanation: c.explanation,
       })),
-      supportingEvidenceIds:  evidenceForEntity.filter((e) => ["VERIFIED","CORROBORATED"].includes(e.grade)).map((e) => e.evidenceId),
-      conflictingEvidenceIds: input.uip.fused.contradictions.filter((c) => c.entity.id === entity.canonicalId).flatMap((c) => c.values.filter((v) => !v.accepted).map((v) => v.evidenceId)),
+      supportingEvidenceIds: evidenceForEntity
+        .filter((e) => ["VERIFIED", "CORROBORATED"].includes(e.grade))
+        .map((e) => e.evidenceId),
+      conflictingEvidenceIds: input.uip.fused.contradictions
+        .filter((c) => c.entity.id === entity.canonicalId)
+        .flatMap((c) => c.values.filter((v) => !v.accepted).map((v) => v.evidenceId)),
       intelligenceGaps: gaps,
       reasoning,
     });
@@ -270,9 +311,11 @@ export function buildIpefRecord(input: IpefBuildInput): IpefRecord {
   // ── Recommendation provenance ───────────────────────────────────────
   const recommendationProvenance: IpefRecommendationProvenance[] = [];
   const criticalSection = input.briefing.sections.find((s) => s.kind === "critical_findings");
-  const findings = (criticalSection?.payload as any)?.findings ?? [];
+  const findings =
+    (criticalSection?.payload as { findings?: IpefCriticalFinding[] } | undefined)?.findings ?? [];
 
-  for (const finding of findings.slice(0, 5)) {  // top 5
+  for (const finding of findings.slice(0, 5)) {
+    // top 5
     const nodes: IpefLineageNode[] = [];
     const recNodeId = `rec_${finding.title?.replace(/\s+/g, "_").slice(0, 20)}`;
     const oieNodeId = `oie_${recNodeId}`;
@@ -324,10 +367,7 @@ export function buildIpefRecord(input: IpefBuildInput): IpefRecord {
   }
 
   // ── Intelligence gaps (union across all contributors) ────────────────
-  const allGaps = [
-    ...gapList,
-    ...confidenceDecompositions.flatMap((c) => c.intelligenceGaps),
-  ];
+  const allGaps = [...gapList, ...confidenceDecompositions.flatMap((c) => c.intelligenceGaps)];
   const uniqueGaps = Array.from(new Set(allGaps));
 
   const totalDurationMs = input.briefing.latency_ms;
@@ -350,11 +390,17 @@ export function buildIpefRecord(input: IpefBuildInput): IpefRecord {
 
 function buildConfidenceReasoning(
   label: string,
-  confEntry: { score: number; tier: string; components: ReadonlyArray<{ factor: string; contribution: number; explanation: string }> },
+  confEntry: {
+    score: number;
+    tier: string;
+    components: ReadonlyArray<{ factor: string; contribution: number; explanation: string }>;
+  },
   evidenceCount: number,
 ): string {
   const pct = Math.round(confEntry.score * 100);
   const topFactor = [...confEntry.components].sort((a, b) => b.contribution - a.contribution)[0];
-  const topDesc = topFactor ? `The dominant factor is ${topFactor.factor.toLowerCase()} (${topFactor.explanation}).` : "";
+  const topDesc = topFactor
+    ? `The dominant factor is ${topFactor.factor.toLowerCase()} (${topFactor.explanation}).`
+    : "";
   return `${label} carries a ${confEntry.tier} confidence score of ${pct}% derived from ${evidenceCount} evidence record(s) across ${confEntry.components.length} weighted factors. ${topDesc}`;
 }

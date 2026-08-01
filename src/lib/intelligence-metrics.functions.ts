@@ -71,10 +71,7 @@ export const getIntelligenceMetrics = createServerFn({ method: "GET" }).handler(
         .select("observed_at")
         .order("observed_at", { ascending: true })
         .limit(1),
-      supabaseAdmin
-        .from("signals")
-        .select("metadata")
-        .in("domain", ["revenue", "manifest"]),
+      supabaseAdmin.from("signals").select("metadata").in("domain", ["revenue", "manifest"]),
     ]);
 
     // Risk: average score across observed risk rows.

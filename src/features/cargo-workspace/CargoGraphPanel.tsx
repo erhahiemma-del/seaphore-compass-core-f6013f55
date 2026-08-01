@@ -12,10 +12,7 @@ import { Network, Share2 } from "lucide-react";
 
 import { PanelCard } from "@/components/panel-card";
 import { useCargoGraph } from "./use-cargo-graph";
-import {
-  CARGO_ROLE_LABEL,
-  type CargoInvestigationContext,
-} from "@/services/cargo-graph";
+import { CARGO_ROLE_LABEL, type CargoInvestigationContext } from "@/services/cargo-graph";
 
 const TABS = [
   { key: "chain", label: "Cargo chain" },

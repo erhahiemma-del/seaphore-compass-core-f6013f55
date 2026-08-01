@@ -154,9 +154,7 @@ describe("Capability: SANCTIONS", () => {
 
     expect(result.providers.length).toBe(1);
     const sources = new Set(
-      result.package.verified
-        .filter((r) => r.kind === "sanctions")
-        .map((r) => r.source),
+      result.package.verified.filter((r) => r.kind === "sanctions").map((r) => r.source),
     );
     // Hybrid execution is eliminated: a single provider contributed.
     expect(sources.size).toBeLessThanOrEqual(1);

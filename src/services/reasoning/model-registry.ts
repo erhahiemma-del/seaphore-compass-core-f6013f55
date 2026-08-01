@@ -20,10 +20,7 @@ export function selectTier(registry: ModelRegistry, tier: ModelTier): ModelClien
 }
 
 /** Fallback order: tier1 → tier2 → tier3 → whichever is defined. */
-export function fallbackChain(
-  registry: ModelRegistry,
-  startAt: ModelTier,
-): readonly ModelClient[] {
+export function fallbackChain(registry: ModelRegistry, startAt: ModelTier): readonly ModelClient[] {
   const order: ModelTier[] = ["tier1", "tier2", "tier3"];
   const startIdx = order.indexOf(startAt);
   const rotated = [...order.slice(startIdx), ...order.slice(0, startIdx)];

@@ -17,10 +17,7 @@ export interface RateLimitOptions {
   max: number;
 }
 
-export function enforceRateLimit(
-  key: string,
-  { windowMs, max }: RateLimitOptions,
-): void {
+export function enforceRateLimit(key: string, { windowMs, max }: RateLimitOptions): void {
   const now = Date.now();
   const bucket = buckets.get(key);
   if (!bucket || bucket.resetAt <= now) {

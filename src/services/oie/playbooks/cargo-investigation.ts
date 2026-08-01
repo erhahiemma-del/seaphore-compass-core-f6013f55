@@ -36,7 +36,8 @@ export const cargoInvestigationPlaybook: Playbook = {
       description: "Hazmat items must carry UN class and packing group.",
       severity: "block",
       onFail: "Hazmat declaration is missing UN class or packing group.",
-      when: (ctx) => hasFinding(ctx, ["hazmat", "dangerous goods"]) && hasFinding(ctx, ["missing", "absent"]),
+      when: (ctx) =>
+        hasFinding(ctx, ["hazmat", "dangerous goods"]) && hasFinding(ctx, ["missing", "absent"]),
     },
   ],
   reasoningRules: [
@@ -124,14 +125,10 @@ export const cargoInvestigationPlaybook: Playbook = {
       when: (ctx) => ctx.criticalFindings.length === 0,
       action: "Log the cargo profile to the operator's baseline",
       priority: "monitor",
-      rationale: () =>
-        "No SOP rule breached; keep the profile for future comparisons.",
+      rationale: () => "No SOP rule breached; keep the profile for future comparisons.",
     },
   ],
-  baselineInformationGaps: [
-    "Physical inspection outcome",
-    "Hazmat stowage confirmation",
-  ],
+  baselineInformationGaps: ["Physical inspection outcome", "Hazmat stowage confirmation"],
   followUps: [
     "Cross-check container declarations",
     "Compare with previous cargo profile",

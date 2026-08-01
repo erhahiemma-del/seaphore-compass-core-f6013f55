@@ -31,15 +31,15 @@ export function buildProvenanceChain(
   const ev = evidence.find((e) => e.id === cell.evidenceId);
   return {
     canonicalId: cell.canonicalId,
-    fieldName:   cell.fieldName,
-    fieldValue:  cell.normalizedValue,
-    sourceId:    cell.sourceId,
-    sourceName:  SOURCE_LABEL[cell.sourceId] ?? cell.sourceId,
-    sourceUrl:   cell.sourceUrl,
+    fieldName: cell.fieldName,
+    fieldValue: cell.normalizedValue,
+    sourceId: cell.sourceId,
+    sourceName: SOURCE_LABEL[cell.sourceId] ?? cell.sourceId,
+    sourceUrl: cell.sourceUrl,
     retrievedAt: cell.retrievedAt,
-    rawHash:     cell.rawHash,
+    rawHash: cell.rawHash,
     providerRecordId: ev?.providerRecordId,
-    excerpt:     ev?.excerpt,
+    excerpt: ev?.excerpt,
     chainIntegrity: !!ev && ev.hash === cell.rawHash,
   };
 }

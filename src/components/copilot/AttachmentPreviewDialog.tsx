@@ -16,11 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  formatBytes,
-  storageRef,
-  type AttachmentItem,
-} from "@/hooks/use-officer-attachments";
+import { formatBytes, storageRef, type AttachmentItem } from "@/hooks/use-officer-attachments";
 
 interface Props {
   attachment: AttachmentItem | null;
@@ -43,10 +39,7 @@ export function AttachmentPreviewDialog({ attachment, onOpenChange }: Props) {
 
   return (
     <Dialog open={Boolean(a)} onOpenChange={onOpenChange}>
-      <DialogContent
-        data-testid="attachment-preview-dialog"
-        className="max-w-2xl"
-      >
+      <DialogContent data-testid="attachment-preview-dialog" className="max-w-2xl">
         {a ? (
           <>
             <DialogHeader>
@@ -59,8 +52,8 @@ export function AttachmentPreviewDialog({ attachment, onOpenChange }: Props) {
                 <span className="truncate">{a.name}</span>
               </DialogTitle>
               <DialogDescription>
-                Confirm what you are submitting. This document travels with the
-                investigation as officer-supplied evidence.
+                Confirm what you are submitting. This document travels with the investigation as
+                officer-supplied evidence.
               </DialogDescription>
             </DialogHeader>
 
@@ -83,8 +76,8 @@ export function AttachmentPreviewDialog({ attachment, onOpenChange }: Props) {
                 <div className="flex flex-col items-center gap-2 px-6 text-center">
                   <ImageIcon className="h-6 w-6 text-muted-foreground" />
                   <p className="text-[12px] text-muted-foreground">
-                    No inline preview for this file type. The metadata below is
-                    exactly what will be submitted.
+                    No inline preview for this file type. The metadata below is exactly what will be
+                    submitted.
                   </p>
                 </div>
               )}

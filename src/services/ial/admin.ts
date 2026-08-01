@@ -61,9 +61,7 @@ export function ialCacheStats(): IalCacheStats {
   return { ...s, hitRate: total === 0 ? 0 : Math.round((s.hits / total) * 100) / 100 };
 }
 
-export async function forceRefreshConnector(
-  connectorId: ConnectorId,
-): Promise<RefreshOutcome> {
+export async function forceRefreshConnector(connectorId: ConnectorId): Promise<RefreshOutcome> {
   const outcome = await getIntelligenceAcquisitionManager().refreshConnector(connectorId);
   await recordAudit("ial.connector.refresh", {
     connector_id: connectorId,
@@ -117,4 +115,3 @@ async function recordAudit(action: string, metadata: Record<string, unknown>): P
     // action on the log write.
   }
 }
-

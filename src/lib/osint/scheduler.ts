@@ -185,10 +185,7 @@ export async function runDueConnectors(db: AnyDb): Promise<RunOutcome[]> {
  * Ensure a DB row exists for every registered connector implementation.
  * Called on server startup so newly-added connectors auto-register.
  */
-export async function syncRegistryToDb(
-  db: AnyDb,
-  connectors: ConnectorInterface[],
-): Promise<void> {
+export async function syncRegistryToDb(db: AnyDb, connectors: ConnectorInterface[]): Promise<void> {
   if (connectors.length === 0) return;
   const rows = connectors.map((c) => ({
     name: c.name,

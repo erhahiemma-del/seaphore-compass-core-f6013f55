@@ -29,15 +29,15 @@ export type MicPipelineStage =
 
 export interface MicStageTiming {
   readonly stage: MicPipelineStage;
-  readonly startedAt: number;   // Date.now()
+  readonly startedAt: number; // Date.now()
   readonly durationMs: number;
 }
 
 export interface MicExecutionTelemetry {
   // Correlation
-  readonly executionId: string;          // mic_exec_<timestamp>_<random>
+  readonly executionId: string; // mic_exec_<timestamp>_<random>
   readonly correlationId: string | null; // caller-supplied (UIP id or request id)
-  readonly timestamp: string;            // ISO 8601
+  readonly timestamp: string; // ISO 8601
   readonly pipelineVersion: "INT-01A.1";
 
   // Timing

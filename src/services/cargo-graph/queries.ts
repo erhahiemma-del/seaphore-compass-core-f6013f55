@@ -47,15 +47,9 @@ export interface CargoGraphQuery {
     toId: string,
     opts?: CargoTraversalOptions,
   ): ReadonlyArray<CargoPath>;
-  relatedEntities(
-    id: string,
-    opts?: CargoTraversalOptions,
-  ): ReadonlyArray<CargoRelatedEntity>;
+  relatedEntities(id: string, opts?: CargoTraversalOptions): ReadonlyArray<CargoRelatedEntity>;
   timeline(id: string, opts?: CargoTraversalOptions): ReadonlyArray<CargoTimelineEvent>;
-  investigationContext(
-    id: string,
-    opts?: CargoTraversalOptions,
-  ): CargoInvestigationContext;
+  investigationContext(id: string, opts?: CargoTraversalOptions): CargoInvestigationContext;
 }
 
 export function createCargoGraphQuery(graph: CargoKnowledgeGraph): CargoGraphQuery {
@@ -196,7 +190,9 @@ export function createCargoGraphQuery(graph: CargoKnowledgeGraph): CargoGraphQue
         });
       }
       return Array.from(best.values())
-        .sort((a, b) => (a.hops !== b.hops ? a.hops - b.hops : a.node.label.localeCompare(b.node.label)))
+        .sort((a, b) =>
+          a.hops !== b.hops ? a.hops - b.hops : a.node.label.localeCompare(b.node.label),
+        )
         .slice(0, limit);
     },
 
@@ -238,7 +234,9 @@ export function createCargoGraphQuery(graph: CargoKnowledgeGraph): CargoGraphQue
         });
       }
       return events
-        .sort((a, b) => (a.at === b.at ? a.nodeId.localeCompare(b.nodeId) : a.at.localeCompare(b.at)))
+        .sort((a, b) =>
+          a.at === b.at ? a.nodeId.localeCompare(b.nodeId) : a.at.localeCompare(b.at),
+        )
         .slice(0, opts.maxResults ?? 100);
     },
 

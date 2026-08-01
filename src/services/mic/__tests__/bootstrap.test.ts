@@ -34,27 +34,87 @@ function ev(overrides: Partial<NormalizedEvidence> = {}): NormalizedEvidence {
 
 function makeCluster(): IdentityCluster {
   return {
-    canonicalId: VESSEL_ID, entityKind: "vessel", label: "MV TEST",
+    canonicalId: VESSEL_ID,
+    entityKind: "vessel",
+    label: "MV TEST",
     aliasIds: ["vessel:mmsi:440825000"],
-    signals: { imo: "9438291", mmsi: "440825000", callSign: null, name: "MV TEST", aliases: [], historicalNames: [], flag: null },
-    confidence: { score: 88, tier: "VERIFIED", band: "auto-select", signals: [], ambiguous: false, topCandidate: { id: VESSEL_ID, score: 88, tier: "VERIFIED", band: "auto-select", signals: [], reasons: [], ambiguous: false }, allCandidates: [], reasons: [] },
+    signals: {
+      imo: "9438291",
+      mmsi: "440825000",
+      callSign: null,
+      name: "MV TEST",
+      aliases: [],
+      historicalNames: [],
+      flag: null,
+    },
+    confidence: {
+      score: 88,
+      tier: "VERIFIED",
+      band: "auto-select",
+      signals: [],
+      ambiguous: false,
+      topCandidate: {
+        id: VESSEL_ID,
+        score: 88,
+        tier: "VERIFIED",
+        band: "auto-select",
+        signals: [],
+        reasons: [],
+        ambiguous: false,
+      },
+      allCandidates: [],
+      reasons: [],
+    },
     evidenceIds: ["ev_001"],
-  };
+  } as unknown as IdentityCluster;
 }
 
-function makeUip(evidence: NormalizedEvidence[], id = `uip_${Date.now()}`): UnifiedIntelligencePackage {
+function makeUip(
+  evidence: NormalizedEvidence[],
+  id = `uip_${Date.now()}`,
+): UnifiedIntelligencePackage {
   return {
-    id, createdAt: "2026-07-01T00:00:00Z",
+    id,
+    createdAt: "2026-07-01T00:00:00Z",
     fused: {
-      id: "fep", createdAt: "2026-07-01T00:00:00Z", sourcePackageId: "pkg",
-      canonical: evidence.map(e => ({ entity: e.entity, fields: [], confidence: "HIGH" as const, grade: e.grade, sources: [e.source], explanation: "" })),
-      contradictions: [], sources: [],
-      report: { contradictions: [], evidenceStrength: "HIGH" as const, missing: [], unknowns: [], summary: "" },
-      missing: [], confidence: "HIGH" as const, grade: "CORROBORATED" as const,
-      stats: { inputRecords: evidence.length, canonicalEntities: 1, contradictions: 0, sourcesQueried: 1, sourcesResponded: 1, averageFreshnessSeconds: 3600 },
+      id: "fep",
+      createdAt: "2026-07-01T00:00:00Z",
+      sourcePackageId: "pkg",
+      canonical: evidence.map((e) => ({
+        entity: e.entity,
+        fields: [],
+        confidence: "HIGH" as const,
+        grade: e.grade,
+        sources: [e.source],
+        explanation: "",
+      })),
+      contradictions: [],
+      sources: [],
+      report: {
+        contradictions: [],
+        evidenceStrength: "HIGH" as const,
+        missing: [],
+        unknowns: [],
+        summary: "",
+      },
+      missing: [],
+      confidence: "HIGH" as const,
+      grade: "CORROBORATED" as const,
+      stats: {
+        inputRecords: evidence.length,
+        canonicalEntities: 1,
+        contradictions: 0,
+        sourcesQueried: 1,
+        sourcesResponded: 1,
+        averageFreshnessSeconds: 3600,
+      },
     },
     identity: [makeCluster()],
-    osae: [], provenance: [], freshestSeconds: 3600, hasContradictions: false, rawEvidence: evidence,
+    osae: [],
+    provenance: [],
+    freshestSeconds: 3600,
+    hasContradictions: false,
+    rawEvidence: evidence,
   };
 }
 
@@ -110,8 +170,8 @@ describe("INT-01A.1 · Bootstrap — core behaviour", () => {
   });
 
   it("does NOT throw even when passed a malformed UIP", () => {
-    expect(() => processMicBootstrap({} as any, null)).not.toThrow();
-    const result = processMicBootstrap({} as any, null);
+    expect(() => processMicBootstrap({} as never, null)).not.toThrow();
+    const result = processMicBootstrap({} as never, null);
     expect(result.outcome).toBe("failed");
     expect(result.telemetry.errors.length).toBeGreaterThan(0);
   });
@@ -121,18 +181,18 @@ describe("INT-01A.1 · Bootstrap — core behaviour", () => {
 
 describe("INT-01A.1 · Failure isolation", () => {
   it("outcome is 'failed' when process() throws, result is null", () => {
-    const result = processMicBootstrap(null as any, null);
+    const result = processMicBootstrap(null as never, null);
     expect(result.outcome).toBe("failed");
     expect(result.result).toBeNull();
   });
 
   it("errors array is populated on failure", () => {
-    const result = processMicBootstrap(undefined as any, null);
+    const result = processMicBootstrap(undefined as never, null);
     expect(result.telemetry.errors.length).toBeGreaterThan(0);
   });
 
   it("executionId is always returned — even on failure", () => {
-    const result = processMicBootstrap(null as any, null);
+    const result = processMicBootstrap(null as never, null);
     expect(result.executionId).toMatch(/^mic_exec_/);
   });
 
@@ -140,7 +200,7 @@ describe("INT-01A.1 · Failure isolation", () => {
     const capture = new CapturingSink();
     // The globalMicSink is process-wide — we can't intercept it without DI.
     // Instead verify the returned telemetry object is structurally complete.
-    const result = processMicBootstrap(null as any, null);
+    const result = processMicBootstrap(null as never, null);
     expect(result.telemetry.outcome).toBe("failed");
     expect(result.telemetry.timestamp).toMatch(/^\d{4}-/);
   });
@@ -151,12 +211,29 @@ describe("INT-01A.1 · Failure isolation", () => {
 describe("INT-01A.1 · Telemetry sinks", () => {
   it("CapturingSink accumulates executions", () => {
     const sink = new CapturingSink(10);
-    const t = { executionId: "e1", correlationId: null, timestamp: "2026-07-01T00:00:00Z",
-      pipelineVersion: "INT-01A.1" as const, totalDurationMs: 5, stageTimings: [],
-      entitiesRegistered: 1, relationshipsRegistered: 0, evidenceRegistered: 1,
-      timelineEvents: 0, riskProfilesComputed: 0, reasoningRecords: 0,
-      graphNodes: 1, graphEdges: 0, heapUsedBytes: null, heapTotalBytes: null,
-      outcome: "success" as const, warnings: [], errors: [], retryCount: 0, attributes: {} };
+    const t = {
+      executionId: "e1",
+      correlationId: null,
+      timestamp: "2026-07-01T00:00:00Z",
+      pipelineVersion: "INT-01A.1" as const,
+      totalDurationMs: 5,
+      stageTimings: [],
+      entitiesRegistered: 1,
+      relationshipsRegistered: 0,
+      evidenceRegistered: 1,
+      timelineEvents: 0,
+      riskProfilesComputed: 0,
+      reasoningRecords: 0,
+      graphNodes: 1,
+      graphEdges: 0,
+      heapUsedBytes: null,
+      heapTotalBytes: null,
+      outcome: "success" as const,
+      warnings: [],
+      errors: [],
+      retryCount: 0,
+      attributes: {},
+    };
     sink.emit(t);
     sink.emit({ ...t, executionId: "e2" });
     expect(sink.executions).toHaveLength(2);
@@ -166,12 +243,29 @@ describe("INT-01A.1 · Telemetry sinks", () => {
   it("CapturingSink rolls window when maxCapture is exceeded", () => {
     const sink = new CapturingSink(3);
     for (let i = 0; i < 5; i++) {
-      sink.emit({ executionId: `e${i}`, correlationId: null, timestamp: "2026-07-01T00:00:00Z",
-        pipelineVersion: "INT-01A.1" as const, totalDurationMs: 1, stageTimings: [],
-        entitiesRegistered: 0, relationshipsRegistered: 0, evidenceRegistered: 0,
-        timelineEvents: 0, riskProfilesComputed: 0, reasoningRecords: 0,
-        graphNodes: 0, graphEdges: 0, heapUsedBytes: null, heapTotalBytes: null,
-        outcome: "success" as const, warnings: [], errors: [], retryCount: 0, attributes: {} });
+      sink.emit({
+        executionId: `e${i}`,
+        correlationId: null,
+        timestamp: "2026-07-01T00:00:00Z",
+        pipelineVersion: "INT-01A.1" as const,
+        totalDurationMs: 1,
+        stageTimings: [],
+        entitiesRegistered: 0,
+        relationshipsRegistered: 0,
+        evidenceRegistered: 0,
+        timelineEvents: 0,
+        riskProfilesComputed: 0,
+        reasoningRecords: 0,
+        graphNodes: 0,
+        graphEdges: 0,
+        heapUsedBytes: null,
+        heapTotalBytes: null,
+        outcome: "success" as const,
+        warnings: [],
+        errors: [],
+        retryCount: 0,
+        attributes: {},
+      });
     }
     expect(sink.executions).toHaveLength(3);
     expect(sink.executions[0].executionId).toBe("e2");
@@ -179,14 +273,41 @@ describe("INT-01A.1 · Telemetry sinks", () => {
 
   it("CapturingSink.summary() returns accurate totals", () => {
     const sink = new CapturingSink();
-    const base = { correlationId: null, timestamp: "2026-07-01T00:00:00Z",
-      pipelineVersion: "INT-01A.1" as const, stageTimings: [], entitiesRegistered: 2,
-      relationshipsRegistered: 0, evidenceRegistered: 3, timelineEvents: 1, riskProfilesComputed: 1,
-      reasoningRecords: 0, graphNodes: 2, graphEdges: 0, heapUsedBytes: null, heapTotalBytes: null,
-      warnings: [], errors: [], retryCount: 0, attributes: {} };
+    const base = {
+      correlationId: null,
+      timestamp: "2026-07-01T00:00:00Z",
+      pipelineVersion: "INT-01A.1" as const,
+      stageTimings: [],
+      entitiesRegistered: 2,
+      relationshipsRegistered: 0,
+      evidenceRegistered: 3,
+      timelineEvents: 1,
+      riskProfilesComputed: 1,
+      reasoningRecords: 0,
+      graphNodes: 2,
+      graphEdges: 0,
+      heapUsedBytes: null,
+      heapTotalBytes: null,
+      warnings: [],
+      errors: [],
+      retryCount: 0,
+      attributes: {},
+    };
     sink.emit({ ...base, executionId: "a", totalDurationMs: 10, outcome: "success" as const });
-    sink.emit({ ...base, executionId: "b", totalDurationMs: 20, outcome: "degraded" as const, warnings: ["w1"] });
-    sink.emit({ ...base, executionId: "c", totalDurationMs: 30, outcome: "failed" as const, errors: ["e1"] });
+    sink.emit({
+      ...base,
+      executionId: "b",
+      totalDurationMs: 20,
+      outcome: "degraded" as const,
+      warnings: ["w1"],
+    });
+    sink.emit({
+      ...base,
+      executionId: "c",
+      totalDurationMs: 30,
+      outcome: "failed" as const,
+      errors: ["e1"],
+    });
     const s = sink.summary()!;
     expect(s.totalExecutions).toBe(3);
     expect(s.successCount).toBe(1);
@@ -201,22 +322,43 @@ describe("INT-01A.1 · Telemetry sinks", () => {
     const a = new CapturingSink();
     const b = new CapturingSink();
     const composite = new CompositeSink(a, b);
-    const t = { executionId: "x", correlationId: null, timestamp: "2026-07-01T00:00:00Z",
-      pipelineVersion: "INT-01A.1" as const, totalDurationMs: 1, stageTimings: [],
-      entitiesRegistered: 0, relationshipsRegistered: 0, evidenceRegistered: 0,
-      timelineEvents: 0, riskProfilesComputed: 0, reasoningRecords: 0,
-      graphNodes: 0, graphEdges: 0, heapUsedBytes: null, heapTotalBytes: null,
-      outcome: "success" as const, warnings: [], errors: [], retryCount: 0, attributes: {} };
+    const t = {
+      executionId: "x",
+      correlationId: null,
+      timestamp: "2026-07-01T00:00:00Z",
+      pipelineVersion: "INT-01A.1" as const,
+      totalDurationMs: 1,
+      stageTimings: [],
+      entitiesRegistered: 0,
+      relationshipsRegistered: 0,
+      evidenceRegistered: 0,
+      timelineEvents: 0,
+      riskProfilesComputed: 0,
+      reasoningRecords: 0,
+      graphNodes: 0,
+      graphEdges: 0,
+      heapUsedBytes: null,
+      heapTotalBytes: null,
+      outcome: "success" as const,
+      warnings: [],
+      errors: [],
+      retryCount: 0,
+      attributes: {},
+    };
     composite.emit(t);
     expect(a.executions).toHaveLength(1);
     expect(b.executions).toHaveLength(1);
   });
 
   it("CompositeSink does not throw if one sink throws", () => {
-    const bad = { emit: () => { throw new Error("sink failure"); } };
+    const bad = {
+      emit: () => {
+        throw new Error("sink failure");
+      },
+    };
     const good = new CapturingSink();
     const composite = new CompositeSink(bad, good);
-    expect(() => composite.emit({} as any)).not.toThrow();
+    expect(() => composite.emit({} as never)).not.toThrow();
     // good sink still received the emission despite bad sink throwing
     expect(good.executions).toHaveLength(1);
   });

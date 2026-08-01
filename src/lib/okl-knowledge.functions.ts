@@ -156,10 +156,14 @@ export const queryOklKnowledge = createServerFn({ method: "POST" })
 
     const clauses: string[] = [];
     if (data.entityIds.length > 0) {
-      clauses.push(`entity_id.in.(${data.entityIds.map((s) => `"${s.replace(/"/g, "")}"`).join(",")})`);
+      clauses.push(
+        `entity_id.in.(${data.entityIds.map((s) => `"${s.replace(/"/g, "")}"`).join(",")})`,
+      );
     }
     if (data.entityLabels.length > 0) {
-      clauses.push(`entity_label.in.(${data.entityLabels.map((s) => `"${s.replace(/"/g, "")}"`).join(",")})`);
+      clauses.push(
+        `entity_label.in.(${data.entityLabels.map((s) => `"${s.replace(/"/g, "")}"`).join(",")})`,
+      );
     }
     q = q.or(clauses.join(","));
     if (data.excludeInvestigationId) {
@@ -173,7 +177,14 @@ export const queryOklKnowledge = createServerFn({ method: "POST" })
     // Related investigations — group by investigation_id.
     const invMap = new Map<
       string,
-      { investigationId: string; sourceUipIds: Set<string>; briefingIds: Set<string>; entityIds: Set<string>; recordCount: number; lastSeen: string }
+      {
+        investigationId: string;
+        sourceUipIds: Set<string>;
+        briefingIds: Set<string>;
+        entityIds: Set<string>;
+        recordCount: number;
+        lastSeen: string;
+      }
     >();
     for (const r of records) {
       const cur = invMap.get(r.investigation_id) ?? {
@@ -206,7 +217,14 @@ export const queryOklKnowledge = createServerFn({ method: "POST" })
     // Known patterns — group by pattern_kind.
     const patternMap = new Map<
       string,
-      { kind: string; count: number; investigations: Set<string>; sampleLabel?: string; lastSeen: string; maxConfidence: number }
+      {
+        kind: string;
+        count: number;
+        investigations: Set<string>;
+        sampleLabel?: string;
+        lastSeen: string;
+        maxConfidence: number;
+      }
     >();
     for (const r of records) {
       if (r.kind !== "PATTERN" || !r.pattern_kind) continue;
@@ -256,7 +274,14 @@ export const queryOklKnowledge = createServerFn({ method: "POST" })
     // Recurring risks — group by risk_level + entity.
     const riskMap = new Map<
       string,
-      { riskLevel: string; entityLabel: string; entityId: string | null; count: number; investigations: Set<string>; lastSeen: string }
+      {
+        riskLevel: string;
+        entityLabel: string;
+        entityId: string | null;
+        count: number;
+        investigations: Set<string>;
+        lastSeen: string;
+      }
     >();
     for (const r of records) {
       if (r.kind !== "RISK" || !r.risk_level) continue;

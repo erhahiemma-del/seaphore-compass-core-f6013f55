@@ -49,8 +49,8 @@ describe("TemplateConnector", () => {
   it("healthCheck() returns a HealthStatus object", async () => {
     // Stub global fetch so the test does not hit the network.
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = vi.fn(async () =>
-      new Response(null, { status: 200 }),
+    globalThis.fetch = vi.fn(
+      async () => new Response(null, { status: 200 }),
     ) as unknown as typeof fetch;
     // Env var required by buildHeaders (auth is api_key by default).
     process.env.TEMPLATE_SOURCE_API_KEY = "test";

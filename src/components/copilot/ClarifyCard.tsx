@@ -58,4 +58,3 @@ export function ClarifyCard({ clarification, onPick }: ClarifyCardProps) {
     </div>
   );
 }
-

@@ -34,12 +34,13 @@ function resolveFromEnv(): boolean {
   }
   // 2. Browser / Vite build
   try {
-    // @ts-ignore — import.meta.env is Vite-specific
-    const viteVal = (import.meta as any)?.env?.VITE_MIC_ENABLED;
+    const viteVal = import.meta.env?.VITE_MIC_ENABLED as string | undefined;
     if (viteVal !== undefined) {
       return String(viteVal).toLowerCase() !== "false" && String(viteVal) !== "0";
     }
-  } catch { /* not in a Vite context */ }
+  } catch {
+    /* not in a Vite context */
+  }
   // 3. Default: enabled
   return true;
 }
@@ -79,19 +80,32 @@ export interface MicFlagState {
 
 export function getMicFlagState(): MicFlagState {
   if (_runtimeOverride !== null) {
-    return { enabled: _runtimeOverride, source: "runtime-override", rawValue: String(_runtimeOverride) };
+    return {
+      enabled: _runtimeOverride,
+      source: "runtime-override",
+      rawValue: String(_runtimeOverride),
+    };
   }
   if (typeof process !== "undefined" && process.env?.["MIC_ENABLED"] !== undefined) {
     const raw = process.env["MIC_ENABLED"]!;
-    return { enabled: raw.toLowerCase() !== "false" && raw !== "0", source: "process.env", rawValue: raw };
+    return {
+      enabled: raw.toLowerCase() !== "false" && raw !== "0",
+      source: "process.env",
+      rawValue: raw,
+    };
   }
   try {
-    // @ts-ignore
-    const viteVal = (import.meta as any)?.env?.VITE_MIC_ENABLED;
+    const viteVal = import.meta.env?.VITE_MIC_ENABLED as string | undefined;
     if (viteVal !== undefined) {
       const raw = String(viteVal);
-      return { enabled: raw.toLowerCase() !== "false" && raw !== "0", source: "import.meta.env", rawValue: raw };
+      return {
+        enabled: raw.toLowerCase() !== "false" && raw !== "0",
+        source: "import.meta.env",
+        rawValue: raw,
+      };
     }
-  } catch { /* */ }
+  } catch {
+    /* */
+  }
   return { enabled: true, source: "default", rawValue: null };
 }

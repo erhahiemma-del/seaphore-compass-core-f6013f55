@@ -19,7 +19,11 @@ export interface RelationshipAssertion {
 }
 
 function slug(v: string): string {
-  return v.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return v
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 function text(v: unknown): string | null {

@@ -14,7 +14,12 @@ import {
   WORKFLOW_PERMISSION,
   type ApprovalToken,
 } from "@/services/policy";
-import { WORKFLOW_IDS, WorkflowEngine, type OfficerContext, type WorkflowId } from "@/services/workflows";
+import {
+  WORKFLOW_IDS,
+  WorkflowEngine,
+  type OfficerContext,
+  type WorkflowId,
+} from "@/services/workflows";
 
 const OFFICERS: Record<string, OfficerContext> = {
   admin: { officerId: "u_admin", officerName: "Admin", role: "administrator" },
@@ -25,11 +30,16 @@ const OFFICERS: Record<string, OfficerContext> = {
 
 function inputFor(w: WorkflowId): Record<string, unknown> {
   switch (w) {
-    case "open_investigation": return { title: "Test case", vesselId: "IMO0001" };
-    case "notify_customs": return { subject: "S", body: "B" };
-    case "request_manifest": return { vesselId: "IMO0001", ref: "MAN-1" };
-    case "assign_officer": return { caseId: "CASE-1", officerId: "u_off" };
-    case "freeze_clearance": return { vesselId: "IMO0001", reason: "Reasonable cause" };
+    case "open_investigation":
+      return { title: "Test case", vesselId: "IMO0001" };
+    case "notify_customs":
+      return { subject: "S", body: "B" };
+    case "request_manifest":
+      return { vesselId: "IMO0001", ref: "MAN-1" };
+    case "assign_officer":
+      return { caseId: "CASE-1", officerId: "u_off" };
+    case "freeze_clearance":
+      return { vesselId: "IMO0001", reason: "Reasonable cause" };
   }
 }
 
@@ -45,7 +55,8 @@ describe("Sprint 10 · RBAC matrix — every role × every workflow", () => {
           expect(d.allowed).toBe(false);
         } else {
           // Officers hit escalation for assign/freeze; otherwise allow.
-          const needsApproval = role === "officer" && (w === "assign_officer" || w === "freeze_clearance");
+          const needsApproval =
+            role === "officer" && (w === "assign_officer" || w === "freeze_clearance");
           expect(d.outcome).toBe(needsApproval ? "escalate" : "allow");
         }
       });
@@ -125,9 +136,17 @@ describe("Sprint 10 · rate limiting", () => {
   it("probe() does not consume the budget", () => {
     const engine = new PolicyEngine();
     for (let i = 0; i < 100; i++) {
-      engine.probe({ workflow: "freeze_clearance", officer: OFFICERS.director, input: inputFor("freeze_clearance") });
+      engine.probe({
+        workflow: "freeze_clearance",
+        officer: OFFICERS.director,
+        input: inputFor("freeze_clearance"),
+      });
     }
-    const d = engine.evaluate({ workflow: "freeze_clearance", officer: OFFICERS.director, input: inputFor("freeze_clearance") });
+    const d = engine.evaluate({
+      workflow: "freeze_clearance",
+      officer: OFFICERS.director,
+      input: inputFor("freeze_clearance"),
+    });
     expect(d.outcome).toBe("allow");
   });
 
@@ -139,12 +158,30 @@ describe("Sprint 10 · rate limiting", () => {
     });
     const limit = HOURLY_LIMITS.freeze_clearance!;
     for (let i = 0; i < limit; i++) {
-      expect(engine.evaluate({ workflow: "freeze_clearance", officer: OFFICERS.director, input: inputFor("freeze_clearance") }).outcome).toBe("allow");
+      expect(
+        engine.evaluate({
+          workflow: "freeze_clearance",
+          officer: OFFICERS.director,
+          input: inputFor("freeze_clearance"),
+        }).outcome,
+      ).toBe("allow");
       t += 1000;
     }
-    expect(engine.evaluate({ workflow: "freeze_clearance", officer: OFFICERS.director, input: inputFor("freeze_clearance") }).outcome).toBe("rate_limited");
+    expect(
+      engine.evaluate({
+        workflow: "freeze_clearance",
+        officer: OFFICERS.director,
+        input: inputFor("freeze_clearance"),
+      }).outcome,
+    ).toBe("rate_limited");
     t += 60 * 60 * 1000 + 1;
-    expect(engine.evaluate({ workflow: "freeze_clearance", officer: OFFICERS.director, input: inputFor("freeze_clearance") }).outcome).toBe("allow");
+    expect(
+      engine.evaluate({
+        workflow: "freeze_clearance",
+        officer: OFFICERS.director,
+        input: inputFor("freeze_clearance"),
+      }).outcome,
+    ).toBe("allow");
   });
 });
 
@@ -180,9 +217,21 @@ describe("Sprint 10 · conflict detection", () => {
 describe("Sprint 10 · audit trail (immutable)", () => {
   it("records every decision, including denials and escalations", () => {
     const engine = new PolicyEngine();
-    engine.evaluate({ workflow: "freeze_clearance", officer: OFFICERS.analyst, input: inputFor("freeze_clearance") });
-    engine.evaluate({ workflow: "freeze_clearance", officer: OFFICERS.officer, input: inputFor("freeze_clearance") });
-    engine.evaluate({ workflow: "freeze_clearance", officer: OFFICERS.director, input: inputFor("freeze_clearance") });
+    engine.evaluate({
+      workflow: "freeze_clearance",
+      officer: OFFICERS.analyst,
+      input: inputFor("freeze_clearance"),
+    });
+    engine.evaluate({
+      workflow: "freeze_clearance",
+      officer: OFFICERS.officer,
+      input: inputFor("freeze_clearance"),
+    });
+    engine.evaluate({
+      workflow: "freeze_clearance",
+      officer: OFFICERS.director,
+      input: inputFor("freeze_clearance"),
+    });
 
     const audit = engine.audit.all();
     expect(audit.map((d) => d.outcome)).toEqual(["deny_permission", "escalate", "allow"]);

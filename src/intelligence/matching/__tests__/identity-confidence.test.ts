@@ -56,9 +56,7 @@ describe("Identity Resolution Engine (Sprint 1C.1)", () => {
     expect(sel.confidence?.score).toBeGreaterThanOrEqual(90);
     expect(sel.confidence?.tier).toBe("VERIFIED");
     expect(sel.requiresConfirmation).toBe(false);
-    expect(
-      sel.confidence?.signals.find((s) => s.kind === "imo")?.contribution,
-    ).toBeGreaterThan(0);
+    expect(sel.confidence?.signals.find((s) => s.kind === "imo")?.contribution).toBeGreaterThan(0);
   });
 
   it("exact MMSI search auto-selects the correct vessel", () => {
@@ -67,9 +65,7 @@ describe("Identity Resolution Engine (Sprint 1C.1)", () => {
     });
     expect(sel.selected?.id).toBe("gfw:dongwon-16");
     expect(sel.confidence?.tier).toBe("VERIFIED");
-    expect(
-      sel.confidence?.signals.find((s) => s.kind === "mmsi")?.contribution,
-    ).toBeGreaterThan(0);
+    expect(sel.confidence?.signals.find((s) => s.kind === "mmsi")?.contribution).toBeGreaterThan(0);
   });
 
   it("exact vessel name search selects the matching candidate", () => {

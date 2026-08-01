@@ -47,7 +47,12 @@ export function createObservability(opts: ObservabilityOptions = {}): Observabil
   const feedback = createFeedbackRecorder(store, metrics, logger);
   const alerts = createAlertEngine(opts.alertRules ?? defaultRules());
   return {
-    logger, metrics, store, tracer, feedback, alerts,
+    logger,
+    metrics,
+    store,
+    tracer,
+    feedback,
+    alerts,
     snapshot: () => metrics.snapshot(),
     reset() {
       metrics.reset();

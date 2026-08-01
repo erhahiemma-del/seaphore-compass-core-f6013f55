@@ -45,10 +45,7 @@ export function CargoDossierPanel({
 
       <div className="space-y-2">
         {dossier.sections.map((s) => (
-          <section
-            key={s.id}
-            className="rounded-lg border border-border/60 bg-[#FAFBFC] px-3 py-2"
-          >
+          <section key={s.id} className="rounded-lg border border-border/60 bg-[#FAFBFC] px-3 py-2">
             <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
               <h4 className="text-[12px] font-semibold text-foreground">{s.title}</h4>
               <span className="text-[10.5px] uppercase tracking-wider text-muted-foreground">
@@ -93,7 +90,10 @@ export function CargoDossierPanel({
                 </summary>
                 <ul className="mt-1 space-y-0.5">
                   {s.citations.slice(0, 12).map((c) => (
-                    <li key={`${s.id}-${c.evidenceId}`} className="text-[11px] text-muted-foreground">
+                    <li
+                      key={`${s.id}-${c.evidenceId}`}
+                      className="text-[11px] text-muted-foreground"
+                    >
                       {c.source} · {c.evidenceId} · {c.observedAt.slice(0, 16).replace("T", " ")} ·{" "}
                       {c.grade}
                     </li>

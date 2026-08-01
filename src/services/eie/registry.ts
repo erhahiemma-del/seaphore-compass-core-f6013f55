@@ -254,12 +254,15 @@ export class EntityRegistry {
       .filter((r): r is EieRelationship => Boolean(r));
   }
 
-  neighbours(entityId: string): ReadonlyArray<{ relationship: EieRelationship; entity: EieEntity }> {
+  neighbours(
+    entityId: string,
+  ): ReadonlyArray<{ relationship: EieRelationship; entity: EieEntity }> {
     const entity = this.get(entityId);
     if (!entity) return [];
     const out: { relationship: EieRelationship; entity: EieEntity }[] = [];
     for (const relationship of this.relationshipsFor(entity.id)) {
-      const otherId = relationship.sourceId === entity.id ? relationship.targetId : relationship.sourceId;
+      const otherId =
+        relationship.sourceId === entity.id ? relationship.targetId : relationship.sourceId;
       const other = this.entityMap.get(otherId);
       if (other) out.push({ relationship, entity: other });
     }
@@ -294,9 +297,7 @@ export class EntityRegistry {
       else if (label.includes(q)) score = 70;
       else if (e.id.toLowerCase().includes(q)) score = 60;
       else if (e.aliases.some((a) => a.value.toLowerCase().includes(q))) score = 50;
-      else if (
-        Object.values(e.attributes).some((v) => String(v).toLowerCase().includes(q))
-      )
+      else if (Object.values(e.attributes).some((v) => String(v).toLowerCase().includes(q)))
         score = 30;
       if (score > 0) scored.push({ entity: e, score });
     }
@@ -315,9 +316,7 @@ export class EntityRegistry {
 }
 
 /** Build a registry from an evidence stream in one call. */
-export function buildEntityRegistry(
-  evidence: ReadonlyArray<NormalizedEvidence>,
-): EntityRegistry {
+export function buildEntityRegistry(evidence: ReadonlyArray<NormalizedEvidence>): EntityRegistry {
   const registry = new EntityRegistry();
   registry.ingest(evidence);
   return registry;

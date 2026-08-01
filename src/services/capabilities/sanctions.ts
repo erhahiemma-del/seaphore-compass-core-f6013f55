@@ -22,12 +22,7 @@ import {
   canonicalEntityId,
   getIntelligenceAcquisitionManager,
 } from "@/services/ial";
-import type {
-  AcquisitionQuery,
-  ConnectorId,
-  EntityKind,
-  EvidencePackage,
-} from "@/services/ial";
+import type { AcquisitionQuery, ConnectorId, EntityKind, EvidencePackage } from "@/services/ial";
 import type { ConnectorManager } from "@/services/ial";
 
 /**
@@ -60,7 +55,6 @@ export interface SanctionsScreeningRequest {
    */
   readonly connectorHints?: ReadonlyArray<ConnectorId>;
 }
-
 
 export interface SanctionsScreeningResult {
   readonly capability: "SANCTIONS";
@@ -131,9 +125,7 @@ export async function runSanctionsScreening(
       : (["__no-active-provider__"] as ReadonlyArray<ConnectorId>),
   };
 
-  const pkg = req.manager
-    ? await mgr.acquire(query)
-    : await acquireEvidence(query);
+  const pkg = req.manager ? await mgr.acquire(query) : await acquireEvidence(query);
   return {
     capability: "SANCTIONS",
     providers,

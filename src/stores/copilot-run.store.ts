@@ -37,8 +37,7 @@ export const useCopilotRunStore = create<CopilotRunState>()(
   persist(
     (set, get) => ({
       pending: null,
-      begin: (query, startedAt) =>
-        set({ pending: { query, startedAt, stage: "classifying" } }),
+      begin: (query, startedAt) => set({ pending: { query, startedAt, stage: "classifying" } }),
       setStage: (stage) => {
         const p = get().pending;
         if (!p) return;

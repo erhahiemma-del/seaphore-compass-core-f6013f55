@@ -51,10 +51,7 @@ function completenessScore(item: IntelligenceEvidenceItem): number {
   return Math.min(1, s);
 }
 
-function agreementScore(
-  item: IntelligenceEvidenceItem,
-  all: IntelligenceEvidenceItem[],
-): number {
+function agreementScore(item: IntelligenceEvidenceItem, all: IntelligenceEvidenceItem[]): number {
   const subject = item.subject?.toLowerCase();
   if (!subject) return 0.4;
   const cohort = all.filter(
@@ -67,7 +64,8 @@ function agreementScore(
   if (cohort.length === 0) return 0.4; // no corroboration = neutral
   const connectors = new Set(cohort.map((c) => c.connector).filter(Boolean));
   const agreeing = cohort.filter(
-    (c) => c.confidence === item.confidence && c.status !== "conflicting" && c.status !== "rejected",
+    (c) =>
+      c.confidence === item.confidence && c.status !== "conflicting" && c.status !== "rejected",
   );
   const distinct = Math.min(1, connectors.size / 3); // 3+ connectors = full spread
   const agree = agreeing.length / cohort.length;

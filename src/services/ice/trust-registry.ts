@@ -11,17 +11,17 @@ import type { FieldCategory } from "./types";
 type TrustMap = Readonly<Record<string, Readonly<Record<string, number>>>>;
 
 const TRUST: TrustMap = {
-  "imo-gisis":     { IDENTITY: 100, OWNERSHIP: 100, COMPLIANCE: 90 },
-  "equasis":       { IDENTITY: 95,  OWNERSHIP: 90,  COMPLIANCE: 85 },
-  "marinetraffic": { IDENTITY: 80,  POSITION: 95,   VOYAGE: 90 },
-  "ais":           { POSITION: 90,  VOYAGE: 85 },
-  "opensanctions": { SANCTIONS: 95, OWNERSHIP: 70 },
-  "customs":       { CARGO: 95,     VOYAGE: 80 },
-  "nimasa":        { COMPLIANCE: 95, IDENTITY: 80 },
-  "noaa":          { WEATHER: 95 },
-  "gfw":           { POSITION: 80 },
-  "trade-atlas":   { CARGO: 80,     OWNERSHIP: 60 },
-  "lloyds-list":   { COMPLIANCE: 88, OWNERSHIP: 75 },
+  "imo-gisis": { IDENTITY: 100, OWNERSHIP: 100, COMPLIANCE: 90 },
+  equasis: { IDENTITY: 95, OWNERSHIP: 90, COMPLIANCE: 85 },
+  marinetraffic: { IDENTITY: 80, POSITION: 95, VOYAGE: 90 },
+  ais: { POSITION: 90, VOYAGE: 85 },
+  opensanctions: { SANCTIONS: 95, OWNERSHIP: 70 },
+  customs: { CARGO: 95, VOYAGE: 80 },
+  nimasa: { COMPLIANCE: 95, IDENTITY: 80 },
+  noaa: { WEATHER: 95 },
+  gfw: { POSITION: 80 },
+  "trade-atlas": { CARGO: 80, OWNERSHIP: 60 },
+  "lloyds-list": { COMPLIANCE: 88, OWNERSHIP: 75 },
 };
 
 /** Average of all known trust scores. Unknown sources default here. */

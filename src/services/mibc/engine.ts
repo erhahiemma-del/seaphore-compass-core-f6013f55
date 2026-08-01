@@ -33,13 +33,7 @@ import type { MissionPlan } from "@/services/mission";
 import type { UnifiedIntelligencePackage } from "@/services/ife/unified";
 import { analyzeOperationalKnowledge } from "@/services/okl";
 import type { ConfidencePyramid } from "@/services/okl/types";
-import type {
-  ReportPackage,
-  ReportSection,
-  ReportChart,
-  ReportType,
-  ReportPeriod,
-} from "./types";
+import type { ReportPackage, ReportSection, ReportChart, ReportType, ReportPeriod } from "./types";
 import { REPORT_TYPE_LABEL, REPORT_PERIOD_LABEL, MIBC_ENGINE_VERSION } from "./types";
 
 /**
@@ -100,7 +94,6 @@ export interface BuildReportInput {
   /** Mission label for Executive Summary. */
   mission?: string;
 }
-
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -169,21 +162,39 @@ export function buildReport(input: BuildReportInput): ReportPackage {
 
   // ── Aggregate across all sourced investigations ────────────────────
   const evidence = workspaces.flatMap((w) =>
-    filterInPeriod(w.evidence, since).map((e) => ({ ...e, workspaceId: w.id, workspaceTitle: w.title })),
+    filterInPeriod(w.evidence, since).map((e) => ({
+      ...e,
+      workspaceId: w.id,
+      workspaceTitle: w.title,
+    })),
   );
   const hypotheses = workspaces.flatMap((w) =>
     filterInPeriod(w.hypotheses, since).map((h) => ({ ...h, workspaceId: w.id })),
   );
   const tasks = workspaces.flatMap((w) =>
-    filterInPeriod(w.tasks, since).map((t) => ({ ...t, workspaceId: w.id, workspaceTitle: w.title })),
+    filterInPeriod(w.tasks, since).map((t) => ({
+      ...t,
+      workspaceId: w.id,
+      workspaceTitle: w.title,
+    })),
   );
   const decisions = workspaces.flatMap((w) =>
-    filterInPeriod(w.decisions, since).map((d) => ({ ...d, workspaceId: w.id, workspaceTitle: w.title })),
+    filterInPeriod(w.decisions, since).map((d) => ({
+      ...d,
+      workspaceId: w.id,
+      workspaceTitle: w.title,
+    })),
   );
   const timeline = workspaces.flatMap((w) =>
-    filterInPeriod(w.timeline, since).map((e) => ({ ...e, workspaceId: w.id, workspaceTitle: w.title })),
+    filterInPeriod(w.timeline, since).map((e) => ({
+      ...e,
+      workspaceId: w.id,
+      workspaceTitle: w.title,
+    })),
   );
-  const entities = workspaces.flatMap((w) => w.entities.map((ent) => ({ ...ent, workspaceId: w.id })));
+  const entities = workspaces.flatMap((w) =>
+    w.entities.map((ent) => ({ ...ent, workspaceId: w.id })),
+  );
 
   const evidenceGroups = new Map<string, number>();
   for (const e of evidence) evidenceGroups.set(e.source, (evidenceGroups.get(e.source) ?? 0) + 1);
@@ -222,30 +233,27 @@ export function buildReport(input: BuildReportInput): ReportPackage {
     ]),
   ).slice(0, 8);
   const mission =
-    input.mission ??
-    (workspaces.find((w) => w.missionType)?.missionType || undefined);
+    input.mission ?? (workspaces.find((w) => w.missionType)?.missionType || undefined);
 
   // Overall Risk / Operational Status derived from workspace priorities.
   const priorityRank = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 } as const;
   const highestPriority =
     workspaces
       .map((w) => w.priority as keyof typeof priorityRank)
-      .sort((a, b) => (priorityRank[b] ?? 0) - (priorityRank[a] ?? 0))[0] ??
-    "MEDIUM";
-  const operationalStatus =
-    workspaces.some((w) => w.stage === "DECISION" || w.stage === "REPORT")
-      ? "Decision pending"
-      : workspaces.some((w) => w.stage === "ANALYSIS" || w.stage === "EVIDENCE")
-        ? "Active investigation"
-        : workspaces.length > 0
-          ? "Intake"
-          : uipRefsEarly.length > 0
-            ? "Live intelligence"
-            : "No active investigations";
+      .sort((a, b) => (priorityRank[b] ?? 0) - (priorityRank[a] ?? 0))[0] ?? "MEDIUM";
+  const operationalStatus = workspaces.some((w) => w.stage === "DECISION" || w.stage === "REPORT")
+    ? "Decision pending"
+    : workspaces.some((w) => w.stage === "ANALYSIS" || w.stage === "EVIDENCE")
+      ? "Active investigation"
+      : workspaces.length > 0
+        ? "Intake"
+        : uipRefsEarly.length > 0
+          ? "Live intelligence"
+          : "No active investigations";
   const recommendedCoA =
     workspaces.find((w) => w.recommendation)?.recommendation?.label ??
-    (uipRefsEarly[0]?.uip.osae[0]?.assessment?.summary ??
-      "Officer to review Canonical UIP and register a decision.");
+    uipRefsEarly[0]?.uip.osae[0]?.assessment?.summary ??
+    "Officer to review Canonical UIP and register a decision.";
 
   // ── Sections ───────────────────────────────────────────────────────
   const sections: ReportSection[] = [];
@@ -297,9 +305,7 @@ export function buildReport(input: BuildReportInput): ReportPackage {
   const watchlistHits = uipRefsEarly.reduce(
     (n, r) =>
       n +
-      r.uip.fused.canonical.filter(
-        (c) => (c.grade ?? "").toUpperCase() === "SANCTIONED",
-      ).length,
+      r.uip.fused.canonical.filter((c) => (c.grade ?? "").toUpperCase() === "SANCTIONED").length,
     0,
   );
   const complianceStatus =
@@ -327,8 +333,6 @@ export function buildReport(input: BuildReportInput): ReportPackage {
     ],
     confidence: avgConfidence,
   });
-
-
 
   sections.push({
     id: "operational-overview",
@@ -489,11 +493,15 @@ export function buildReport(input: BuildReportInput): ReportPackage {
       explainRows.length === 0
         ? "No recommendation carries a supporting evidence trace yet. Officers must not release recommendations without an explicit evidence and reasoning trace."
         : "Every recommendation below carries the evidence, confidence, sources, and reasoning chain used by the Copilot pipeline. No black-box recommendations.",
-    columns: ["Recommendation", "Confidence", "Evidence Used", "Supporting Sources", "Reasoning Chain"],
+    columns: [
+      "Recommendation",
+      "Confidence",
+      "Evidence Used",
+      "Supporting Sources",
+      "Reasoning Chain",
+    ],
     rows: explainRows,
   });
-
-
 
   // ── Human Decisions ────────────────────────────────────────────────
   sections.push({
@@ -511,9 +519,7 @@ export function buildReport(input: BuildReportInput): ReportPackage {
 
   // ── Mission Progress ───────────────────────────────────────────────
   const workspaceIds = new Set(workspaces.map((w) => w.id));
-  const linkedMissionIds = new Set(
-    workspaces.flatMap((w) => w.missionPlanIds ?? []),
-  );
+  const linkedMissionIds = new Set(workspaces.flatMap((w) => w.missionPlanIds ?? []));
   const missions = (input.missionPlans ?? []).filter((m) => linkedMissionIds.has(m.id));
   sections.push({
     id: "mission-progress",
@@ -532,13 +538,14 @@ export function buildReport(input: BuildReportInput): ReportPackage {
           })),
     bullets:
       missions.length === 0
-        ? ["No missions linked to sourced investigations. Missions are only created from approved decisions, recommendations, or OKL patterns."]
+        ? [
+            "No missions linked to sourced investigations. Missions are only created from approved decisions, recommendations, or OKL patterns.",
+          ]
         : undefined,
     references: [...linkedMissionIds],
   });
   // Preserve workspaceIds usage (silences unused-var when downstream code changes).
   void workspaceIds;
-
 
   // ── Canonical UIP projections (Sprint 2.2) ─────────────────────────
   // Everything below in this block is derived exclusively from the UIP
@@ -640,9 +647,7 @@ export function buildReport(input: BuildReportInput): ReportPackage {
     const pattern = max("pattern");
     const recommendation = max("recommendation");
     // Tier is the tier reported alongside the strongest recommendation.
-    const strongest = pyramids
-      .slice()
-      .sort((a, b) => b.recommendation - a.recommendation)[0];
+    const strongest = pyramids.slice().sort((a, b) => b.recommendation - a.recommendation)[0];
     return {
       identity,
       evidence,
@@ -668,9 +673,7 @@ export function buildReport(input: BuildReportInput): ReportPackage {
           uipList.reduce(
             (s, u) =>
               s +
-              (u.fused.stats.sourcesResponded /
-                Math.max(u.fused.stats.sourcesQueried, 1)) *
-                100,
+              (u.fused.stats.sourcesResponded / Math.max(u.fused.stats.sourcesQueried, 1)) * 100,
             0,
           ) / uipList.length,
         ),
@@ -790,7 +793,10 @@ export function buildReport(input: BuildReportInput): ReportPackage {
   });
 
   // Per-kind entity breakdown from the Canonical UIP knowledge graph.
-  const kindBuckets = new Map<string, Array<{ label: string; uipId: string; confidence: number }>>();
+  const kindBuckets = new Map<
+    string,
+    Array<{ label: string; uipId: string; confidence: number }>
+  >();
   for (const u of uipList) {
     for (const c of u.fused.canonical) {
       const kind = String(c.entity.kind ?? "entity").toLowerCase();
@@ -823,8 +829,6 @@ export function buildReport(input: BuildReportInput): ReportPackage {
     rows: kindRows,
     references: uipIdsFromSnapshots,
   });
-
-
 
   sections.push({
     id: "confidence",
@@ -882,7 +886,9 @@ export function buildReport(input: BuildReportInput): ReportPackage {
       id: "chart-uip-provenance",
       title: "Canonical UIP evidence by connector",
       kind: "bar",
-      data: provenanceRows.slice(0, 8).map((r) => ({ label: String(r.Source), value: Number(r.Records) })),
+      data: provenanceRows
+        .slice(0, 8)
+        .map((r) => ({ label: String(r.Source), value: Number(r.Records) })),
       evidenceRefs: uipIdsFromSnapshots,
     });
   }
@@ -891,9 +897,7 @@ export function buildReport(input: BuildReportInput): ReportPackage {
   // Every report carries an explicit origin plus the full lineage of
   // Canonical UIP ids and Mission Plan ids so the operational-runtime
   // chain (UIP → OSAE → Investigation → Mission → MIBC) is auditable.
-  const workspaceUipIds = workspaces
-    .map((w) => w.sourceUipId)
-    .filter((x): x is string => !!x);
+  const workspaceUipIds = workspaces.map((w) => w.sourceUipId).filter((x): x is string => !!x);
   const sourceUipIds = Array.from(new Set([...workspaceUipIds, ...uipIdsFromSnapshots]));
   const origin: ReportPackage["origin"] =
     input.origin ??

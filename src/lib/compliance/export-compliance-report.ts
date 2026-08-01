@@ -102,17 +102,29 @@ interface Cursor {
   headerMeta: HeaderMeta;
 }
 
-function setColor(pdf: jsPDF, kind: "text" | "draw" | "fill", rgb: readonly [number, number, number]) {
+function setColor(
+  pdf: jsPDF,
+  kind: "text" | "draw" | "fill",
+  rgb: readonly [number, number, number],
+) {
   const [r, g, b] = rgb;
   if (kind === "text") pdf.setTextColor(r, g, b);
   else if (kind === "draw") pdf.setDrawColor(r, g, b);
   else pdf.setFillColor(r, g, b);
 }
 
-function pageW(pdf: jsPDF) { return pdf.internal.pageSize.getWidth(); }
-function pageH(pdf: jsPDF) { return pdf.internal.pageSize.getHeight(); }
-function usableWidth(pdf: jsPDF) { return pageW(pdf) - MARGIN_X * 2; }
-function usableHeight(pdf: jsPDF) { return pageH(pdf) - MARGIN_TOP - MARGIN_BOTTOM; }
+function pageW(pdf: jsPDF) {
+  return pdf.internal.pageSize.getWidth();
+}
+function pageH(pdf: jsPDF) {
+  return pdf.internal.pageSize.getHeight();
+}
+function usableWidth(pdf: jsPDF) {
+  return pageW(pdf) - MARGIN_X * 2;
+}
+function usableHeight(pdf: jsPDF) {
+  return pageH(pdf) - MARGIN_TOP - MARGIN_BOTTOM;
+}
 
 interface HeaderMeta {
   workspaceId?: string;
@@ -249,28 +261,42 @@ function statusChip(pdf: jsPDF, x: number, y: number, status: ScreeningStatus): 
 
 function priorityBanner(status: ScreeningStatus): string {
   switch (status) {
-    case "HIT": return "ELEVATED — sanctions matches confirmed. Immediate officer review required.";
-    case "REVIEW": return "AMBER — partial matches require officer adjudication.";
-    case "CLEAR": return "STABLE — no sanctions matches across screened entities.";
-    case "ERROR": return "DEGRADED — one or more screenings failed; re-run before decisions.";
-    default: return "";
+    case "HIT":
+      return "ELEVATED — sanctions matches confirmed. Immediate officer review required.";
+    case "REVIEW":
+      return "AMBER — partial matches require officer adjudication.";
+    case "CLEAR":
+      return "STABLE — no sanctions matches across screened entities.";
+    case "ERROR":
+      return "DEGRADED — one or more screenings failed; re-run before decisions.";
+    default:
+      return "";
   }
 }
 
 function computePosture(rows: ScreeningEntity[]) {
   const counts: Record<ScreeningStatus, number> = {
-    PENDING: 0, RUNNING: 0, CLEAR: 0, HIT: 0, REVIEW: 0, ERROR: 0,
+    PENDING: 0,
+    RUNNING: 0,
+    CLEAR: 0,
+    HIT: 0,
+    REVIEW: 0,
+    ERROR: 0,
   };
   for (const r of rows) counts[r.status] += 1;
   const total = rows.length;
   const completed = counts.CLEAR + counts.HIT + counts.REVIEW;
   const outstanding = counts.PENDING + counts.RUNNING;
   const worst: ScreeningStatus =
-    counts.HIT > 0 ? "HIT"
-    : counts.REVIEW > 0 ? "REVIEW"
-    : counts.ERROR > 0 ? "ERROR"
-    : outstanding > 0 && completed === 0 ? "PENDING"
-    : "CLEAR";
+    counts.HIT > 0
+      ? "HIT"
+      : counts.REVIEW > 0
+        ? "REVIEW"
+        : counts.ERROR > 0
+          ? "ERROR"
+          : outstanding > 0 && completed === 0
+            ? "PENDING"
+            : "CLEAR";
   return { counts, total, completed, outstanding, worst };
 }
 
@@ -284,8 +310,7 @@ function measureRow(pdf: jsPDF, r: ScreeningEntity, index: number, s: LayoutScal
   h += s.rowHeadSize + 3;
   // meta line (only when any meta present)
   const hasMeta =
-    !!r.kind || !!r.imo || !!r.origin ||
-    typeof r.hitCount === "number" || !!r.providers?.length;
+    !!r.kind || !!r.imo || !!r.origin || typeof r.hitCount === "number" || !!r.providers?.length;
   if (hasMeta) h += s.rowMetaSize + 3;
   // queued/completed line
   h += s.rowMetaSize + 3;
@@ -330,7 +355,11 @@ function safeFilename() {
 
 function fmtDate(iso?: string) {
   if (!iso) return "—";
-  try { return new Date(iso).toUTCString(); } catch { return iso; }
+  try {
+    return new Date(iso).toUTCString();
+  } catch {
+    return iso;
+  }
 }
 
 export interface ComplianceReportInput {
@@ -349,9 +378,11 @@ export interface ComplianceReportInput {
  * Build the PDF without triggering a download. Useful for tests / QA.
  * Returns the underlying jsPDF instance so callers can .output(...) it.
  */
-export function buildComplianceReportPdf(
-  input: ComplianceReportInput,
-): { pdf: jsPDF; filename: string; layout: LayoutScale["key"] } {
+export function buildComplianceReportPdf(input: ComplianceReportInput): {
+  pdf: jsPDF;
+  filename: string;
+  layout: LayoutScale["key"];
+} {
   const { rows, officer, context, workspaceId, generatedAt } = input;
   const pdf = new jsPDF({ unit: "pt", format: "a4" });
   const headerMeta: HeaderMeta = {
@@ -390,7 +421,8 @@ export function buildComplianceReportPdf(
   writeKV(pdf, cursor, "Requires review", String(posture.counts.REVIEW));
   writeKV(pdf, cursor, "Clear", String(posture.counts.CLEAR));
   writeKV(pdf, cursor, "Outstanding", String(posture.outstanding));
-  if (posture.counts.ERROR > 0) writeKV(pdf, cursor, "Failed screenings", String(posture.counts.ERROR));
+  if (posture.counts.ERROR > 0)
+    writeKV(pdf, cursor, "Failed screenings", String(posture.counts.ERROR));
   if (officer) writeKV(pdf, cursor, "Officer of record", officer);
   if (context) writeKV(pdf, cursor, "Context", context);
   cursor.y += 4;
@@ -423,14 +455,26 @@ export function buildComplianceReportPdf(
           : posture.outstanding > 0
             ? "Complete outstanding screenings before this report is considered final."
             : "No further action required. Archive this report in the case file for auditability.";
-  writeParagraph(pdf, cursor, action, LAYOUT_DEFAULT.paragraphSize, LAYOUT_DEFAULT.paragraphLineGap);
+  writeParagraph(
+    pdf,
+    cursor,
+    action,
+    LAYOUT_DEFAULT.paragraphSize,
+    LAYOUT_DEFAULT.paragraphLineGap,
+  );
   cursor.y += LAYOUT_DEFAULT.sectionGap;
 
   // Evidence summary — per-entity, atomic blocks
   writeSectionTitle(pdf, cursor, "Evidence Summary");
   cursor.inEvidence = true;
   if (rows.length === 0) {
-    writeParagraph(pdf, cursor, "No entities were queued for screening at report time.", scale.paragraphSize, scale.paragraphLineGap);
+    writeParagraph(
+      pdf,
+      cursor,
+      "No entities were queued for screening at report time.",
+      scale.paragraphSize,
+      scale.paragraphLineGap,
+    );
   } else {
     rows.forEach((r, i) => {
       const rowH = measureRow(pdf, r, i, scale);
@@ -458,7 +502,8 @@ export function buildComplianceReportPdf(
       if (r.kind) meta.push(r.kind.toUpperCase());
       if (r.imo) meta.push(`IMO ${r.imo}`);
       if (r.origin) meta.push(`origin ${r.origin}`);
-      if (typeof r.hitCount === "number") meta.push(`${r.hitCount} finding${r.hitCount === 1 ? "" : "s"}`);
+      if (typeof r.hitCount === "number")
+        meta.push(`${r.hitCount} finding${r.hitCount === 1 ? "" : "s"}`);
       if (r.providers?.length) meta.push(`providers: ${r.providers.join(", ")}`);
       if (meta.length) {
         pdf.text(meta.join("  ·  "), MARGIN_X, cursor.y);
@@ -478,7 +523,13 @@ export function buildComplianceReportPdf(
       }
       if (r.error) {
         setColor(pdf, "text", COLORS.danger);
-        writeParagraph(pdf, cursor, `Error: ${r.error}`, scale.rowErrorSize, scale.paragraphLineGap);
+        writeParagraph(
+          pdf,
+          cursor,
+          `Error: ${r.error}`,
+          scale.rowErrorSize,
+          scale.paragraphLineGap,
+        );
       }
 
       // Divider + trailing gap

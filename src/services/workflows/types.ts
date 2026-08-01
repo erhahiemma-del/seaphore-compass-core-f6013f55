@@ -17,13 +17,7 @@ export const WORKFLOW_IDS = [
 ] as const;
 export type WorkflowId = (typeof WORKFLOW_IDS)[number];
 
-export type WorkflowStatus =
-  | "pending"
-  | "running"
-  | "completed"
-  | "failed"
-  | "retrying"
-  | "denied";
+export type WorkflowStatus = "pending" | "running" | "completed" | "failed" | "retrying" | "denied";
 
 export interface OfficerContext {
   readonly officerId: string;

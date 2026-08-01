@@ -48,8 +48,12 @@ describe("OfacSanctionsConnector", () => {
   it("mapToGraph() emits APPLIES_TO (vessel + entity) and ISSUED_BY edges", () => {
     const record = connector.normalize(VALID_FIXTURE);
     const edges = connector.mapToGraph(record);
-    const vesselEdge = edges.find((e) => e.relationship === "SANCTION_APPLIES_TO" && e.toEntityType === "VESSEL");
-    const entityEdge = edges.find((e) => e.relationship === "SANCTION_APPLIES_TO" && e.toEntityType === "OWNER");
+    const vesselEdge = edges.find(
+      (e) => e.relationship === "SANCTION_APPLIES_TO" && e.toEntityType === "VESSEL",
+    );
+    const entityEdge = edges.find(
+      (e) => e.relationship === "SANCTION_APPLIES_TO" && e.toEntityType === "OWNER",
+    );
     const issuer = edges.find((e) => e.relationship === "SANCTION_ISSUED_BY");
     expect(vesselEdge?.toEntityId).toBe("9116412");
     expect(entityEdge?.toEntityId).toBe("GRACE 1");
@@ -71,7 +75,9 @@ describe("OfacSanctionsConnector", () => {
 
   it("healthCheck() reports healthy on 200", async () => {
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = vi.fn(async () => new Response("", { status: 200 })) as unknown as typeof fetch;
+    globalThis.fetch = vi.fn(
+      async () => new Response("", { status: 200 }),
+    ) as unknown as typeof fetch;
     try {
       const health = await connector.healthCheck();
       expect(health.status).toBe("healthy");

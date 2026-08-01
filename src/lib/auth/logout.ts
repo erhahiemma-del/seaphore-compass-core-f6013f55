@@ -5,7 +5,7 @@
  *   1. cancel in-flight queries — stops 401 storms after signOut
  *   2. clear cached protected data — prevents Back-button restore
  *   3. supabase.auth.signOut() — clears session tokens (localStorage + cookies)
- *   4. router.navigate({ to: "/auth", replace: true }) — REPLACE so back nav
+ *   4. router.navigate({ to: "/auth", replace: true, search: { redirect: undefined } }) — REPLACE so back nav
  *      cannot land back on a protected route
  *
  * Security: this only clears client state. RLS + server-side
@@ -32,5 +32,5 @@ export async function performLogout(opts: {
   // the visitor as authenticated the moment we land on /auth.
   useDevModeStore.getState().clearBypass();
   await supabase.auth.signOut();
-  opts.router.navigate({ to: "/auth", replace: true });
+  opts.router.navigate({ to: "/auth", replace: true, search: {} as { redirect: string } });
 }

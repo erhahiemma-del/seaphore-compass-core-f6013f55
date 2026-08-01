@@ -18,7 +18,9 @@ export const complianceRecurrenceDetector: Detector = {
       const findings = records.filter((r) => r.kind === "compliance");
       if (findings.length === 0) continue;
 
-      const detentions = findings.filter((r) => r.fields.outcome === "detention" || r.fields.detained === true);
+      const detentions = findings.filter(
+        (r) => r.fields.outcome === "detention" || r.fields.detained === true,
+      );
       const deficiencies = findings.reduce(
         (n, r) => n + (Number(r.fields.deficiencies ?? 0) || 0),
         0,

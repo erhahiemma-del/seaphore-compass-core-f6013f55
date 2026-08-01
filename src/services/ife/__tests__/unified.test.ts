@@ -38,10 +38,18 @@ function ev(o: {
 describe("resolveIdentities (cross-connector merge)", () => {
   it("merges records that share an IMO but use different entity id schemes", () => {
     const records = [
-      ev({ source: "gfw", entityId: "vessel:mmsi:440825000", label: "DONGWON NO.16",
-           fields: { name: "DONGWON NO.16", imo: "9438291", mmsi: "440825000" } }),
-      ev({ source: "equasis", entityId: "vessel:imo:9438291", label: "Dongwon 16",
-           fields: { name: "Dongwon 16", imo: "9438291", flag: "KR" } }),
+      ev({
+        source: "gfw",
+        entityId: "vessel:mmsi:440825000",
+        label: "DONGWON NO.16",
+        fields: { name: "DONGWON NO.16", imo: "9438291", mmsi: "440825000" },
+      }),
+      ev({
+        source: "equasis",
+        entityId: "vessel:imo:9438291",
+        label: "Dongwon 16",
+        fields: { name: "Dongwon 16", imo: "9438291", flag: "KR" },
+      }),
     ];
     const { records: out, clusters } = resolveIdentities(records);
     expect(clusters).toHaveLength(1);
@@ -53,10 +61,18 @@ describe("resolveIdentities (cross-connector merge)", () => {
 
   it("does NOT merge vessels with conflicting IMOs even if names look similar", () => {
     const records = [
-      ev({ source: "gfw", entityId: "vessel:imo:1111111", label: "Ocean Pearl",
-           fields: { name: "Ocean Pearl", imo: "1111111" } }),
-      ev({ source: "equasis", entityId: "vessel:imo:2222222", label: "Ocean Pearl",
-           fields: { name: "Ocean Pearl", imo: "2222222" } }),
+      ev({
+        source: "gfw",
+        entityId: "vessel:imo:1111111",
+        label: "Ocean Pearl",
+        fields: { name: "Ocean Pearl", imo: "1111111" },
+      }),
+      ev({
+        source: "equasis",
+        entityId: "vessel:imo:2222222",
+        label: "Ocean Pearl",
+        fields: { name: "Ocean Pearl", imo: "2222222" },
+      }),
     ];
     const { clusters } = resolveIdentities(records);
     expect(clusters).toHaveLength(2);
@@ -64,10 +80,18 @@ describe("resolveIdentities (cross-connector merge)", () => {
 
   it("merges on fuzzy name when no conflicting strong identifier exists", () => {
     const records = [
-      ev({ source: "gfw", entityId: "vessel:name:mv-ocean-pearl", label: "MV Ocean Pearl",
-           fields: { name: "MV Ocean Pearl" } }),
-      ev({ source: "opensanctions", entityId: "vessel:name:ocean-pearl", label: "Ocean Pearl",
-           fields: { name: "Ocean Pearl" } }),
+      ev({
+        source: "gfw",
+        entityId: "vessel:name:mv-ocean-pearl",
+        label: "MV Ocean Pearl",
+        fields: { name: "MV Ocean Pearl" },
+      }),
+      ev({
+        source: "opensanctions",
+        entityId: "vessel:name:ocean-pearl",
+        label: "Ocean Pearl",
+        fields: { name: "Ocean Pearl" },
+      }),
     ];
     const { clusters } = resolveIdentities(records);
     expect(clusters).toHaveLength(1);
@@ -75,8 +99,12 @@ describe("resolveIdentities (cross-connector merge)", () => {
 
   it("leaves non-mergeable kinds (ports) untouched", () => {
     const records = [
-      ev({ source: "customs", entityId: "port:unlocode:NGLOS", entityKind: "port",
-           fields: { unlocode: "NGLOS" } }),
+      ev({
+        source: "customs",
+        entityId: "port:unlocode:NGLOS",
+        entityKind: "port",
+        fields: { unlocode: "NGLOS" },
+      }),
     ];
     const { records: out, clusters } = resolveIdentities(records);
     expect(clusters).toHaveLength(1);
@@ -87,12 +115,21 @@ describe("resolveIdentities (cross-connector merge)", () => {
 describe("buildUnifiedIntelligencePackage", () => {
   it("produces one canonical record per entity across multiple connectors", () => {
     const records = [
-      ev({ source: "gfw", entityId: "vessel:mmsi:440825000",
-           fields: { name: "DONGWON NO.16", imo: "9438291", mmsi: "440825000" } }),
-      ev({ source: "equasis", entityId: "vessel:imo:9438291",
-           fields: { name: "Dongwon 16", imo: "9438291", flag: "KR" } }),
-      ev({ source: "opensanctions", entityId: "vessel:imo:9438291",
-           fields: { name: "DONGWON NO.16", sanctioned: false } }),
+      ev({
+        source: "gfw",
+        entityId: "vessel:mmsi:440825000",
+        fields: { name: "DONGWON NO.16", imo: "9438291", mmsi: "440825000" },
+      }),
+      ev({
+        source: "equasis",
+        entityId: "vessel:imo:9438291",
+        fields: { name: "Dongwon 16", imo: "9438291", flag: "KR" },
+      }),
+      ev({
+        source: "opensanctions",
+        entityId: "vessel:imo:9438291",
+        fields: { name: "DONGWON NO.16", sanctioned: false },
+      }),
     ];
     const pkg = buildUnifiedIntelligencePackage({ input: { records } });
     expect(pkg.fused.canonical).toHaveLength(1);
@@ -104,10 +141,18 @@ describe("buildUnifiedIntelligencePackage", () => {
 
   it("surfaces conflicting values instead of silently overwriting", () => {
     const records = [
-      ev({ source: "gfw", entityId: "vessel:imo:9438291", grade: "OBSERVED",
-           fields: { name: "DONGWON NO.16", flag: "KR" } }),
-      ev({ source: "equasis", entityId: "vessel:imo:9438291", grade: "VERIFIED",
-           fields: { name: "DONGWON NO.16", flag: "PA" } }),
+      ev({
+        source: "gfw",
+        entityId: "vessel:imo:9438291",
+        grade: "OBSERVED",
+        fields: { name: "DONGWON NO.16", flag: "KR" },
+      }),
+      ev({
+        source: "equasis",
+        entityId: "vessel:imo:9438291",
+        grade: "VERIFIED",
+        fields: { name: "DONGWON NO.16", flag: "PA" },
+      }),
     ];
     const pkg = buildUnifiedIntelligencePackage({ input: { records } });
     expect(pkg.hasContradictions).toBe(true);
@@ -118,10 +163,16 @@ describe("buildUnifiedIntelligencePackage", () => {
 
   it("attaches OSAE assessment to the resolved canonical entity id", () => {
     const records = [
-      ev({ source: "gfw", entityId: "vessel:mmsi:440825000",
-           fields: { name: "DONGWON NO.16", imo: "9438291", mmsi: "440825000" } }),
-      ev({ source: "equasis", entityId: "vessel:imo:9438291",
-           fields: { name: "Dongwon 16", imo: "9438291" } }),
+      ev({
+        source: "gfw",
+        entityId: "vessel:mmsi:440825000",
+        fields: { name: "DONGWON NO.16", imo: "9438291", mmsi: "440825000" },
+      }),
+      ev({
+        source: "equasis",
+        entityId: "vessel:imo:9438291",
+        fields: { name: "Dongwon 16", imo: "9438291" },
+      }),
     ];
     const assessment: OsaeAssessment = {
       vesselId: "vessel:mmsi:440825000", // connector produced with MMSI

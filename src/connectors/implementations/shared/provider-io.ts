@@ -66,7 +66,6 @@ export function readFirstProviderCredential(
   return null;
 }
 
-
 /** fetch() with a hard timeout. Rejects on timeout, network error, abort. */
 export async function timedFetch(
   fetchImpl: typeof fetch,

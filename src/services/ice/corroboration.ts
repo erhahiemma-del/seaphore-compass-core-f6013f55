@@ -24,9 +24,8 @@ export function detectCorroborations(cells: MatrixCell[]): CorroborationRow[] {
     const winner = buckets.sort((a, b) => b.cells.length - a.cells.length)[0];
     if (winner.cells.length < 2) continue;
 
-    const level: CorroborationLevel = winner.cells.length >= 4
-      ? "VERIFIED" : winner.cells.length === 3
-      ? "STRONG" : "PARTIAL";
+    const level: CorroborationLevel =
+      winner.cells.length >= 4 ? "VERIFIED" : winner.cells.length === 3 ? "STRONG" : "PARTIAL";
 
     const weightedConfidence = Number(
       (winner.cells.reduce((s, c) => s + c.trustScore, 0) / winner.cells.length).toFixed(2),
@@ -34,7 +33,7 @@ export function detectCorroborations(cells: MatrixCell[]): CorroborationRow[] {
 
     out.push({
       canonicalId: winner.cells[0].canonicalId,
-      fieldName:   winner.cells[0].fieldName,
+      fieldName: winner.cells[0].fieldName,
       agreedValue: winner.value,
       agreeingSources: winner.cells.map((c) => c.sourceId),
       agreementCount: winner.cells.length,

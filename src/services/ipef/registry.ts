@@ -20,7 +20,7 @@ class IpefRegistry {
 
   register(record: IpefRecord): void {
     if (this._records.length >= this._maxCapture) {
-      this._records.shift();  // rolling window
+      this._records.shift(); // rolling window
     }
     this._records.push(record);
   }
@@ -32,7 +32,12 @@ class IpefRegistry {
 
   /** Find by correlationId (== source_uip_id). */
   getByCorrelationId(correlationId: string): IpefRecord | null {
-    return this._records.findLast((r) => r.correlationId === correlationId) ?? null;
+    return (
+      this._records
+        .slice()
+        .reverse()
+        .find((r) => r.correlationId === correlationId) ?? null
+    );
   }
 
   get latest(): IpefRecord | null {
@@ -53,13 +58,13 @@ class IpefRegistry {
     const all = this._records;
     const durations = all.map((r) => r.totalDurationMs);
     return {
-      totalExecutions:    all.length,
-      successCount:       all.filter((r) => r.overallStatus === "success").length,
-      degradedCount:      all.filter((r) => r.overallStatus === "degraded").length,
-      failedCount:        all.filter((r) => r.overallStatus === "failed").length,
-      avgDurationMs:      Math.round(durations.reduce((s, d) => s + d, 0) / all.length),
-      totalGaps:          all.reduce((s, r) => s + r.intelligenceGaps.length, 0),
-      lastExecutedAt:     all[all.length - 1]?.createdAt ?? null,
+      totalExecutions: all.length,
+      successCount: all.filter((r) => r.overallStatus === "success").length,
+      degradedCount: all.filter((r) => r.overallStatus === "degraded").length,
+      failedCount: all.filter((r) => r.overallStatus === "failed").length,
+      avgDurationMs: Math.round(durations.reduce((s, d) => s + d, 0) / all.length),
+      totalGaps: all.reduce((s, r) => s + r.intelligenceGaps.length, 0),
+      lastExecutedAt: all[all.length - 1]?.createdAt ?? null,
     };
   }
 }

@@ -27,16 +27,16 @@ export interface ResolutionSignal {
   readonly field: string;
   readonly valueA: string;
   readonly valueB: string;
-  readonly score: number;  // 0..1 — 1 = certain match
+  readonly score: number; // 0..1 — 1 = certain match
 }
 
 export interface ResolutionDecision {
-  readonly canonicalId: string;         // the entity that survives
-  readonly mergedId: string;            // the entity that was absorbed
+  readonly canonicalId: string; // the entity that survives
+  readonly mergedId: string; // the entity that was absorbed
   readonly signals: ReadonlyArray<ResolutionSignal>;
-  readonly confidence: number;          // 0..1 composite
-  readonly method: ResolutionMethod;    // primary method that triggered merge
-  readonly decidedAt: string;           // ISO 8601
+  readonly confidence: number; // 0..1 composite
+  readonly method: ResolutionMethod; // primary method that triggered merge
+  readonly decidedAt: string; // ISO 8601
   readonly explanation: string;
 }
 

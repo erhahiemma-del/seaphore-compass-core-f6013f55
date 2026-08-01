@@ -55,7 +55,12 @@ export function AppShell({ children, title, subtitle, mode = "light" }: AppShell
   if (isEmbedded) {
     return (
       <MapProviderRoot provider={mapProvider}>
-        <div className={cn("min-h-screen w-full bg-background text-foreground", mode === "dark" && "dark")}>
+        <div
+          className={cn(
+            "min-h-screen w-full bg-background text-foreground",
+            mode === "dark" && "dark",
+          )}
+        >
           <main className="flex-1">{children}</main>
         </div>
       </MapProviderRoot>
@@ -83,7 +88,6 @@ export function AppShell({ children, title, subtitle, mode = "light" }: AppShell
     </MapProviderRoot>
   );
 }
-
 
 function AppFooter() {
   return (

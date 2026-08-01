@@ -22,12 +22,7 @@
  * every turn satisfied all nine steps.
  */
 import type { HumanResponse, OIEResult } from "@/services/oie/types";
-import type {
-  IbeContext,
-  IbeHypothesis,
-  IbeThought,
-  ProactiveNudge,
-} from "./types";
+import type { IbeContext, IbeHypothesis, IbeThought, ProactiveNudge } from "./types";
 
 export type ResponseContractStep =
   | "intent"
@@ -115,10 +110,7 @@ export function enforceResponseContract(input: {
   }
 
   // Step 4 — Identify what remains unknown.
-  const gaps = new Set<string>([
-    ...(hr.informationStillNeeded ?? []),
-    ...thought.missing,
-  ]);
+  const gaps = new Set<string>([...(hr.informationStillNeeded ?? []), ...thought.missing]);
   if (gaps.size === 0 && thought.shouldCollectMore) {
     gaps.add("additional corroborating evidence");
     repaired.push("unknown");
@@ -157,9 +149,7 @@ export function enforceResponseContract(input: {
   }
 
   // Step 8 — Recommend the next operational action.
-  const nextActions = new Set<string>([
-    ...(hr.suggestedNextQuestions ?? []),
-  ]);
+  const nextActions = new Set<string>([...(hr.suggestedNextQuestions ?? [])]);
   if (nextActions.size === 0) {
     if (thought.missing[0]) nextActions.add(`Pull ${thought.missing[0]}`);
     if (hypotheses[0]) nextActions.add(`Test the ${hypotheses[0].domain} hypothesis`);
@@ -170,12 +160,11 @@ export function enforceResponseContract(input: {
 
   // Step 9 — Advance the investigation. Reject transactional closers.
   if (isTransactionalCloser(closer)) {
-    closer =
-      thought.missing[0]
-        ? `I would move on ${thought.missing[0]} next — that is the fastest way to advance this investigation.`
-        : hypotheses[0]?.nextEvidenceNeeded[0]
-          ? `Next I would pull ${hypotheses[0].nextEvidenceNeeded[0]} to press the ${hypotheses[0].domain} line further.`
-          : "Say the word and I'll advance the investigation on the strongest open lead.";
+    closer = thought.missing[0]
+      ? `I would move on ${thought.missing[0]} next — that is the fastest way to advance this investigation.`
+      : hypotheses[0]?.nextEvidenceNeeded[0]
+        ? `Next I would pull ${hypotheses[0].nextEvidenceNeeded[0]} to press the ${hypotheses[0].domain} line further.`
+        : "Say the word and I'll advance the investigation on the strongest open lead.";
     repaired.push("advance");
   }
 

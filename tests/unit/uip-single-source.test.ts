@@ -51,11 +51,7 @@ describe("UIP · single source of truth", () => {
   });
 
   it("production routes and features do not import demo-data fixtures", () => {
-    const forbidden = [
-      "@/lib/api/mock-dataset",
-      "src/lib/api/mock-dataset",
-      "@/mocks/api-dataset",
-    ];
+    const forbidden = ["@/lib/api/mock-dataset", "src/lib/api/mock-dataset", "@/mocks/api-dataset"];
     const roots = ["src/routes", "src/features"];
     const offenders: string[] = [];
     for (const root of roots) {

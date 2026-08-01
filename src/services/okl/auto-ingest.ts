@@ -13,11 +13,12 @@
  * from the Unified Intelligence Package.
  */
 
-import type {
-  OperationalKnowledgePackage,
-  OperationalPattern,
-} from "./types";
-import { useWorkspaceStore, type InvestigationWorkspace, type WorkspacePriority } from "@/stores/workspace.store";
+import type { OperationalKnowledgePackage, OperationalPattern } from "./types";
+import {
+  useWorkspaceStore,
+  type InvestigationWorkspace,
+  type WorkspacePriority,
+} from "@/stores/workspace.store";
 
 export interface OklAutoIngestResult {
   readonly ingestedAt: string;
@@ -33,7 +34,9 @@ export interface OklAutoIngestResult {
   }>;
 }
 
-function urgencyToPriority(u: OperationalPattern["recommendations"][number]["urgency"]): WorkspacePriority {
+function urgencyToPriority(
+  u: OperationalPattern["recommendations"][number]["urgency"],
+): WorkspacePriority {
   if (u === "IMMEDIATE") return "CRITICAL";
   if (u === "PRIORITY") return "HIGH";
   return "MEDIUM";
@@ -67,14 +70,8 @@ export function autoIngestOklIntoInvestigations(
   pkg: OperationalKnowledgePackage,
 ): OklAutoIngestResult {
   const state = useWorkspaceStore.getState();
-  const {
-    investigations,
-    linkOklPattern,
-    addEvidence,
-    addTask,
-    addTimelineEvent,
-    advanceStage,
-  } = state;
+  const { investigations, linkOklPattern, addEvidence, addTask, addTimelineEvent, advanceStage } =
+    state;
 
   const result: OklAutoIngestResult = {
     ingestedAt: new Date().toISOString(),
@@ -126,9 +123,7 @@ export function autoIngestOklIntoInvestigations(
       // Officer-approval-gated recommendations become tasks (dedup by title).
       for (const rec of pattern.recommendations) {
         const before3 = useWorkspaceStore.getState().investigations[inv.id];
-        const dup = before3?.tasks.some(
-          (t) => t.title === rec.label && t.status !== "COMPLETED",
-        );
+        const dup = before3?.tasks.some((t) => t.title === rec.label && t.status !== "COMPLETED");
         if (dup) continue;
         addTask(inv.id, {
           title: rec.label,

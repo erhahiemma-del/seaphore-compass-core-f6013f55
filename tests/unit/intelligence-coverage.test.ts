@@ -94,9 +94,7 @@ describe("DIAG-02 · Intelligence Coverage model", () => {
   });
 
   it("classifies credential-less providers as awaiting credentials", () => {
-    const historical = buildIntelligenceCoverage(input()).kpis.find(
-      (k) => k.key === "historical",
-    )!;
+    const historical = buildIntelligenceCoverage(input()).kpis.find((k) => k.key === "historical")!;
     expect(historical.state).toBe("AWAITING_CREDENTIALS");
     expect(historical.rootCause).toBe("CREDENTIALS_MISSING");
     expect(historical.display).toBe("Waiting for Credentials");
@@ -156,11 +154,7 @@ describe("DIAG-02 · Intelligence Coverage model", () => {
   });
 
   it("flags rate limiting from quota exhaustion", () => {
-    const status = classifyProviderStatus(
-      catalog[0],
-      { ...health[0], quotaRemaining: 0 },
-      true,
-    );
+    const status = classifyProviderStatus(catalog[0], { ...health[0], quotaRemaining: 0 }, true);
     expect(status).toBe("RATE_LIMITED");
   });
 

@@ -145,9 +145,7 @@ export function EvidenceProvenancePanel({ uip, maxCitations = 8 }: Props) {
           </span>
         </div>
         {citations.length === 0 ? (
-          <p className="text-[11.5px] italic text-slate-500">
-            No evidence rows in this package.
-          </p>
+          <p className="text-[11.5px] italic text-slate-500">No evidence rows in this package.</p>
         ) : (
           <ol className="space-y-1.5 text-[11.5px]">
             {citations.map((n, i) => (

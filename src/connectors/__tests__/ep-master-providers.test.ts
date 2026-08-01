@@ -271,9 +271,10 @@ describe("EP-MASTER · Evidence Provider Catalog", () => {
 
   it("reports every provider as certified against spec v1.0", () => {
     for (const row of catalog) {
-      expect(row.certification, `${row.providerName}: ${row.certificationFailures.join("; ")}`).toBe(
-        "CERTIFIED",
-      );
+      expect(
+        row.certification,
+        `${row.providerName}: ${row.certificationFailures.join("; ")}`,
+      ).toBe("CERTIFIED");
       expect(row.specVersion).toBe("1.0");
       expect(row.capabilities.length).toBeGreaterThan(0);
       expect(row.dataSources.length).toBeGreaterThan(0);

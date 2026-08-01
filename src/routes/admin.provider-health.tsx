@@ -48,30 +48,31 @@ export const Route = createFileRoute("/admin/provider-health")({
   }),
 });
 
-const STATE_STYLES: Record<
-  ProviderHealthSnapshot["state"],
-  { label: string; className: string }
-> = {
-  healthy: {
-    label: "Healthy",
-    className: "border-emerald-500/40 bg-emerald-500/15 text-emerald-500",
-  },
-  degraded: { label: "Degraded", className: "border-amber-500/40 bg-amber-500/15 text-amber-500" },
-  unauthenticated: {
-    label: "Unauthenticated",
-    className: "border-amber-500/40 bg-amber-500/15 text-amber-500",
-  },
-  "credentials-missing": {
-    label: "Credentials Missing",
-    className: "border-amber-500/40 bg-amber-500/15 text-amber-500",
-  },
-  "credentials-invalid": {
-    label: "Credentials Invalid",
-    className: "border-orange-500/40 bg-orange-500/15 text-orange-500",
-  },
+const STATE_STYLES: Record<ProviderHealthSnapshot["state"], { label: string; className: string }> =
+  {
+    healthy: {
+      label: "Healthy",
+      className: "border-emerald-500/40 bg-emerald-500/15 text-emerald-500",
+    },
+    degraded: {
+      label: "Degraded",
+      className: "border-amber-500/40 bg-amber-500/15 text-amber-500",
+    },
+    unauthenticated: {
+      label: "Unauthenticated",
+      className: "border-amber-500/40 bg-amber-500/15 text-amber-500",
+    },
+    "credentials-missing": {
+      label: "Credentials Missing",
+      className: "border-amber-500/40 bg-amber-500/15 text-amber-500",
+    },
+    "credentials-invalid": {
+      label: "Credentials Invalid",
+      className: "border-orange-500/40 bg-orange-500/15 text-orange-500",
+    },
 
-  offline: { label: "Offline", className: "border-red-500/40 bg-red-500/15 text-red-500" },
-};
+    offline: { label: "Offline", className: "border-red-500/40 bg-red-500/15 text-red-500" },
+  };
 
 /** Probe cadence options. The officer chooses the schedule. */
 const INTERVALS = [
@@ -184,158 +185,157 @@ function ProviderHealthPage() {
       subtitle="Certified Evidence Providers · Scheduled healthCheck() probes"
       mode="dark"
     >
-    <div className="mx-auto w-full max-w-6xl space-y-6 px-6 py-8">
+      <div className="mx-auto w-full max-w-6xl space-y-6 px-6 py-8">
+        <header className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Provider Health</h1>
+            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+              Scheduled <code className="text-xs">healthCheck()</code> probes against every
+              certified Evidence Provider. Errors are shown verbatim — never summarised away.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Select value={intervalSeconds} onValueChange={setIntervalSeconds}>
+              <SelectTrigger className="w-[168px]" aria-label="Probe schedule">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {INTERVALS.map((i) => (
+                  <SelectItem key={i.value} value={i.value}>
+                    {i.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button variant="secondary" size="sm" disabled={loading} onClick={() => void refresh()}>
+              {loading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="mr-2 h-4 w-4" />
+              )}
+              Probe now
+            </Button>
+          </div>
+        </header>
 
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Provider Health</h1>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Scheduled <code className="text-xs">healthCheck()</code> probes against every certified
-            Evidence Provider. Errors are shown verbatim — never summarised away.
+        <section className="grid gap-3 sm:grid-cols-4">
+          <SummaryTile label="Providers" value={summary.total} />
+          <SummaryTile label="Healthy" value={summary.healthy} />
+          <SummaryTile label="Needs attention" value={summary.attention} />
+          <SummaryTile label="Offline" value={summary.failing} />
+        </section>
+
+        {lastCheckedAt && (
+          <p className="text-xs text-muted-foreground">
+            Last completed sweep {relativeTime(lastCheckedAt, now)} ·{" "}
+            {new Date(lastCheckedAt).toLocaleString()}
           </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <Select value={intervalSeconds} onValueChange={setIntervalSeconds}>
-            <SelectTrigger className="w-[168px]" aria-label="Probe schedule">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {INTERVALS.map((i) => (
-                <SelectItem key={i.value} value={i.value}>
-                  {i.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button variant="secondary" size="sm" disabled={loading} onClick={() => void refresh()}>
-            {loading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="mr-2 h-4 w-4" />
-            )}
-            Probe now
-          </Button>
-        </div>
-      </header>
+        )}
 
-      <section className="grid gap-3 sm:grid-cols-4">
-        <SummaryTile label="Providers" value={summary.total} />
-        <SummaryTile label="Healthy" value={summary.healthy} />
-        <SummaryTile label="Needs attention" value={summary.attention} />
-        <SummaryTile label="Offline" value={summary.failing} />
-      </section>
-
-      {lastCheckedAt && (
-        <p className="text-xs text-muted-foreground">
-          Last completed sweep {relativeTime(lastCheckedAt, now)} ·{" "}
-          {new Date(lastCheckedAt).toLocaleString()}
-        </p>
-      )}
-
-      {error && (
-        <Card className="border-red-500/40">
-          <CardContent className="flex items-start gap-3 py-4 text-sm">
-            <AlertTriangle className="mt-0.5 h-4 w-4 text-red-500" />
-            <div>
-              <p className="font-medium text-red-500">Probe sweep failed</p>
-              <p className="mt-1 break-words text-muted-foreground">{error}</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="space-y-3">
-        {rows.length === 0 && !loading && (
-          <Card>
-            <CardContent className="py-8 text-center text-sm text-muted-foreground">
-              No certified Evidence Providers are registered.
+        {error && (
+          <Card className="border-red-500/40">
+            <CardContent className="flex items-start gap-3 py-4 text-sm">
+              <AlertTriangle className="mt-0.5 h-4 w-4 text-red-500" />
+              <div>
+                <p className="font-medium text-red-500">Probe sweep failed</p>
+                <p className="mt-1 break-words text-muted-foreground">{error}</p>
+              </div>
             </CardContent>
           </Card>
         )}
 
-        {rows.map((row) => {
-          const style = STATE_STYLES[row.state];
-          return (
-            <Card key={row.id}>
-              <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 pb-3">
-                <div className="min-w-0">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    {row.displayName}
-                    <Badge variant="outline" className={style.className}>
-                      {style.label}
-                    </Badge>
-                  </CardTitle>
-                  <p className="mt-1 truncate text-xs text-muted-foreground">
-                    {row.id} · {row.providerType} · {row.environment}
-                    {row.specVersion ? ` · spec v${row.specVersion}` : ""}
-                    {row.enabled ? "" : " · disabled"}
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={probingId === row.id}
-                  onClick={() => void reprobe(row.id)}
-                >
-                  {probingId === row.id ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                  )}
-                  Re-probe
-                </Button>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <dl className="grid gap-3 sm:grid-cols-4">
-                  <Metric label="Last check">
-                    <span title={new Date(row.checkedAt).toLocaleString()}>
-                      {relativeTime(row.checkedAt, now)}
-                    </span>
-                  </Metric>
-                  <Metric label="Probe latency">{row.probeLatencyMs} ms</Metric>
-                  <Metric label="Reported p50">{row.reportedLatencyMsP50} ms</Metric>
-                  <Metric label="Failure rate">
-                    {Math.round(row.failureRate * 100)}%
-                  </Metric>
-                </dl>
-
-                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  {row.capabilities.length > 0 ? (
-                    row.capabilities.map((c) => (
-                      <Badge key={c} variant="outline" className="font-normal">
-                        {c}
-                      </Badge>
-                    ))
-                  ) : (
-                    <span>No capabilities declared</span>
-                  )}
-                  {row.quotaRemaining !== null && <span>Quota remaining {row.quotaRemaining}</span>}
-                  <span>
-                    Last success{" "}
-                    {row.lastSuccessAt
-                      ? new Date(row.lastSuccessAt).toLocaleString()
-                      : "not recorded"}
-                  </span>
-                </div>
-
-                {row.lastError && (
-                  <div className="rounded-md border border-red-500/30 bg-red-500/5 p-3">
-                    <p className="text-xs font-medium text-red-500">
-                      {row.probeFailed ? "healthCheck() threw" : "Provider-reported error"}
-                    </p>
-                    <pre className="mt-1 whitespace-pre-wrap break-words text-xs text-muted-foreground">
-                      {row.lastError}
-                    </pre>
-                  </div>
-                )}
+        <div className="space-y-3">
+          {rows.length === 0 && !loading && (
+            <Card>
+              <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                No certified Evidence Providers are registered.
               </CardContent>
             </Card>
-          );
-        })}
-      </div>
+          )}
 
-      <EvidenceProviderCatalogSection />
-    </div>
+          {rows.map((row) => {
+            const style = STATE_STYLES[row.state];
+            return (
+              <Card key={row.id}>
+                <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 pb-3">
+                  <div className="min-w-0">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      {row.displayName}
+                      <Badge variant="outline" className={style.className}>
+                        {style.label}
+                      </Badge>
+                    </CardTitle>
+                    <p className="mt-1 truncate text-xs text-muted-foreground">
+                      {row.id} · {row.providerType} · {row.environment}
+                      {row.specVersion ? ` · spec v${row.specVersion}` : ""}
+                      {row.enabled ? "" : " · disabled"}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={probingId === row.id}
+                    onClick={() => void reprobe(row.id)}
+                  >
+                    {probingId === row.id ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                    )}
+                    Re-probe
+                  </Button>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                  <dl className="grid gap-3 sm:grid-cols-4">
+                    <Metric label="Last check">
+                      <span title={new Date(row.checkedAt).toLocaleString()}>
+                        {relativeTime(row.checkedAt, now)}
+                      </span>
+                    </Metric>
+                    <Metric label="Probe latency">{row.probeLatencyMs} ms</Metric>
+                    <Metric label="Reported p50">{row.reportedLatencyMsP50} ms</Metric>
+                    <Metric label="Failure rate">{Math.round(row.failureRate * 100)}%</Metric>
+                  </dl>
+
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    {row.capabilities.length > 0 ? (
+                      row.capabilities.map((c) => (
+                        <Badge key={c} variant="outline" className="font-normal">
+                          {c}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span>No capabilities declared</span>
+                    )}
+                    {row.quotaRemaining !== null && (
+                      <span>Quota remaining {row.quotaRemaining}</span>
+                    )}
+                    <span>
+                      Last success{" "}
+                      {row.lastSuccessAt
+                        ? new Date(row.lastSuccessAt).toLocaleString()
+                        : "not recorded"}
+                    </span>
+                  </div>
+
+                  {row.lastError && (
+                    <div className="rounded-md border border-red-500/30 bg-red-500/5 p-3">
+                      <p className="text-xs font-medium text-red-500">
+                        {row.probeFailed ? "healthCheck() threw" : "Provider-reported error"}
+                      </p>
+                      <pre className="mt-1 whitespace-pre-wrap break-words text-xs text-muted-foreground">
+                        {row.lastError}
+                      </pre>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
+        <EvidenceProviderCatalogSection />
+      </div>
     </AppShell>
   );
 }
@@ -426,8 +426,6 @@ function EvidenceProviderCatalogSection() {
     </section>
   );
 }
-
-
 
 function SummaryTile({ label, value }: { label: string; value: number }) {
   return (

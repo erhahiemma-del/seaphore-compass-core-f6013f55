@@ -31,9 +31,7 @@ export function EvidenceCard({ evidence, onOpen }: Props) {
         )}
       </div>
       <p className="text-sm font-medium leading-snug text-foreground">{evidence.title}</p>
-      {evidence.summary && (
-        <p className="text-xs text-muted-foreground">{evidence.summary}</p>
-      )}
+      {evidence.summary && <p className="text-xs text-muted-foreground">{evidence.summary}</p>}
       <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground">
         <span className="flex items-center gap-1">
           <FileText className="h-3 w-3" aria-hidden />

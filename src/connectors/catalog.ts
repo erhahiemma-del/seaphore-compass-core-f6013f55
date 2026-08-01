@@ -21,7 +21,10 @@ import { certifyProvider } from "./framework/certification";
 import type { Connector, ConnectorCapability } from "@/services/ial/connectors/base";
 import { environmentalIntelligenceProvider } from "./implementations/EnvironmentalIntelligenceProvider";
 import { openSanctionsConnector } from "./implementations/OpenSanctionsConnector";
-import { openCorporatesProvider, OPENCORPORATES_CACHE_TTL_MS } from "./implementations/OpenCorporatesProvider";
+import {
+  openCorporatesProvider,
+  OPENCORPORATES_CACHE_TTL_MS,
+} from "./implementations/OpenCorporatesProvider";
 import { equasisProvider, EQUASIS_CACHE_TTL_MS } from "./implementations/EquasisProvider";
 import { imoGisisProvider, IMO_GISIS_CACHE_TTL_MS } from "./implementations/ImoGisisProvider";
 import { ncsCustomsProvider, NCS_CUSTOMS_CACHE_TTL_MS } from "./implementations/NcsCustomsProvider";
@@ -34,10 +37,7 @@ import {
   unSecurityCouncilProvider,
   UNSC_CACHE_TTL_MS,
 } from "./implementations/UnSecurityCouncilProvider";
-import {
-  copernicusProvider,
-  COPERNICUS_CACHE_TTL_MS,
-} from "./implementations/CopernicusProvider";
+import { copernicusProvider, COPERNICUS_CACHE_TTL_MS } from "./implementations/CopernicusProvider";
 
 /** Descriptive, human-authored half of a catalog row. */
 interface CatalogDeclaration {

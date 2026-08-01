@@ -64,10 +64,26 @@ function positionTimeline(records: NormalizedEvidence[]) {
 describe("AIS timeline: chronological ordering", () => {
   it("orders records newest → oldest even when supplied out of order", () => {
     const records = [
-      makeAis({ source: "ais", fields: { position: "6.1N,3.1E" }, observedAt: "2026-07-20T02:00:00Z" }),
-      makeAis({ source: "ais", fields: { position: "6.4N,3.4E" }, observedAt: "2026-07-20T10:00:00Z" }),
-      makeAis({ source: "ais", fields: { position: "6.2N,3.2E" }, observedAt: "2026-07-20T06:00:00Z" }),
-      makeAis({ source: "ais", fields: { position: "6.0N,3.0E" }, observedAt: "2026-07-19T22:00:00Z" }),
+      makeAis({
+        source: "ais",
+        fields: { position: "6.1N,3.1E" },
+        observedAt: "2026-07-20T02:00:00Z",
+      }),
+      makeAis({
+        source: "ais",
+        fields: { position: "6.4N,3.4E" },
+        observedAt: "2026-07-20T10:00:00Z",
+      }),
+      makeAis({
+        source: "ais",
+        fields: { position: "6.2N,3.2E" },
+        observedAt: "2026-07-20T06:00:00Z",
+      }),
+      makeAis({
+        source: "ais",
+        fields: { position: "6.0N,3.0E" },
+        observedAt: "2026-07-19T22:00:00Z",
+      }),
     ];
     const { timeline } = positionTimeline(records);
 
@@ -85,9 +101,21 @@ describe("AIS timeline: chronological ordering", () => {
     // Same winning position observed three times — should progress
     // latest → previous → historical, newest first.
     const records = [
-      makeAis({ source: "ais", fields: { position: "6.4N,3.4E" }, observedAt: "2026-07-20T08:00:00Z" }),
-      makeAis({ source: "ais", fields: { position: "6.4N,3.4E" }, observedAt: "2026-07-20T06:00:00Z" }),
-      makeAis({ source: "ais", fields: { position: "6.4N,3.4E" }, observedAt: "2026-07-20T04:00:00Z" }),
+      makeAis({
+        source: "ais",
+        fields: { position: "6.4N,3.4E" },
+        observedAt: "2026-07-20T08:00:00Z",
+      }),
+      makeAis({
+        source: "ais",
+        fields: { position: "6.4N,3.4E" },
+        observedAt: "2026-07-20T06:00:00Z",
+      }),
+      makeAis({
+        source: "ais",
+        fields: { position: "6.4N,3.4E" },
+        observedAt: "2026-07-20T04:00:00Z",
+      }),
     ];
     const { timeline } = positionTimeline(records);
     const winning = timeline.filter((t) => t.status !== "superseded");

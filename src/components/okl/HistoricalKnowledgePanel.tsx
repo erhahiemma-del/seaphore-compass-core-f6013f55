@@ -127,9 +127,7 @@ export function HistoricalKnowledgePanel({ workspace }: Props) {
           <CardTitle className="text-sm">Historical Knowledge (OKL)</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-xs text-muted-foreground">
-            OKL unavailable: {error}
-          </p>
+          <p className="text-xs text-muted-foreground">OKL unavailable: {error}</p>
         </CardContent>
       </Card>
     );
@@ -171,9 +169,7 @@ export function HistoricalKnowledgePanel({ workspace }: Props) {
                       key={r.investigationId}
                       className="text-xs flex items-center justify-between border-b border-border/40 pb-1"
                     >
-                      <span className="font-mono truncate max-w-[60%]">
-                        {r.investigationId}
-                      </span>
+                      <span className="font-mono truncate max-w-[60%]">{r.investigationId}</span>
                       <span className="text-muted-foreground">
                         {r.recordCount} records · uip {r.sourceUipIds[0]?.slice(0, 8)}
                       </span>
@@ -190,10 +186,7 @@ export function HistoricalKnowledgePanel({ workspace }: Props) {
             >
               <ul className="space-y-1">
                 {data!.knownPatterns.map((p) => (
-                  <li
-                    key={p.patternKind}
-                    className="text-xs flex items-center justify-between"
-                  >
+                  <li key={p.patternKind} className="text-xs flex items-center justify-between">
                     <span>{p.sampleLabel ?? p.patternKind}</span>
                     <Badge variant="secondary" className="text-[10px]">
                       {p.count}× / {p.investigationCount} inv.
@@ -211,19 +204,13 @@ export function HistoricalKnowledgePanel({ workspace }: Props) {
               <ScrollArea className="max-h-40">
                 <ul className="space-y-1">
                   {data!.historicalDecisions.map((d) => (
-                    <li
-                      key={d.recordId}
-                      className="text-xs border-b border-border/40 pb-1"
-                    >
+                    <li key={d.recordId} className="text-xs border-b border-border/40 pb-1">
                       <div className="font-medium">{d.label}</div>
                       {d.detail && (
-                        <div className="text-muted-foreground line-clamp-2">
-                          {d.detail}
-                        </div>
+                        <div className="text-muted-foreground line-clamp-2">{d.detail}</div>
                       )}
                       <div className="text-[10px] text-muted-foreground font-mono mt-0.5">
-                        inv {d.investigationId.slice(0, 8)} · uip{" "}
-                        {d.sourceUipId.slice(0, 8)}
+                        inv {d.investigationId.slice(0, 8)} · uip {d.sourceUipId.slice(0, 8)}
                       </div>
                     </li>
                   ))}
@@ -261,8 +248,8 @@ export function HistoricalKnowledgePanel({ workspace }: Props) {
           </>
         )}
         <p className="text-[10px] text-muted-foreground pt-2 border-t border-border/40">
-          Evidence first. Every row above traces to a `source_uip_id` in the OKL
-          store. No connector calls were made to build this panel.
+          Evidence first. Every row above traces to a `source_uip_id` in the OKL store. No connector
+          calls were made to build this panel.
         </p>
       </CardContent>
     </Card>

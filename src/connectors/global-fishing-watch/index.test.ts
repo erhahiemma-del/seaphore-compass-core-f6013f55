@@ -82,7 +82,14 @@ describe("GlobalFishingWatchConnector (client proxy)", () => {
   it("caches Evidence Packages by query — no duplicate server calls", async () => {
     mockedSearch.mockResolvedValue({
       package: {
-        vessel: { vesselId: "v1", imo: "9074729", mmsi: null, callSign: null, flag: "NG", name: "MV Test" },
+        vessel: {
+          vesselId: "v1",
+          imo: "9074729",
+          mmsi: null,
+          callSign: null,
+          flag: "NG",
+          name: "MV Test",
+        },
         lastPosition: null,
         movementHistory: [],
         continuityReport: AISBehaviourAnalyzer.analyse({ vesselId: "v1", events: [] }),
@@ -98,13 +105,27 @@ describe("GlobalFishingWatchConnector (client proxy)", () => {
     const continuityReport = AISBehaviourAnalyzer.analyse({
       vesselId: "v1",
       events: [
-        { timestamp: "2026-01-01T00:00:00Z", latitude: 6.4, longitude: 3.4, weather: "clear", nearestPort: "Lagos", distanceFromPortNm: 43 },
+        {
+          timestamp: "2026-01-01T00:00:00Z",
+          latitude: 6.4,
+          longitude: 3.4,
+          weather: "clear",
+          nearestPort: "Lagos",
+          distanceFromPortNm: 43,
+        },
         { timestamp: "2026-01-01T09:00:00Z", latitude: 6.5, longitude: 3.5 },
       ],
     });
     mockedSearch.mockResolvedValueOnce({
       package: {
-        vessel: { vesselId: "v1", imo: "9074729", mmsi: null, callSign: null, flag: null, name: "MV Test" },
+        vessel: {
+          vesselId: "v1",
+          imo: "9074729",
+          mmsi: null,
+          callSign: null,
+          flag: null,
+          name: "MV Test",
+        },
         lastPosition: null,
         movementHistory: [],
         continuityReport,
@@ -144,11 +165,35 @@ describe("AISBehaviourAnalyzer", () => {
     const report = AISBehaviourAnalyzer.analyse({
       vesselId: "v1",
       events: [
-        { timestamp: "2026-01-01T00:00:00Z", latitude: 6.4, longitude: 3.4, weather: "clear", nearestPort: "Lagos", distanceFromPortNm: 43 },
+        {
+          timestamp: "2026-01-01T00:00:00Z",
+          latitude: 6.4,
+          longitude: 3.4,
+          weather: "clear",
+          nearestPort: "Lagos",
+          distanceFromPortNm: 43,
+        },
         { timestamp: "2026-01-01T09:00:00Z", latitude: 6.5, longitude: 3.5 },
       ],
       historicalDarkEvents: [
-        { type: "AIS_DARK", kind: "disabling", startAt: "2025-12-01T00:00:00Z", endAt: "2025-12-01T08:00:00Z", durationHours: 8, startLocation: null, endLocation: null, weatherContext: "clear", nearestPort: "Lagos", nearestPortEnd: null, distanceFromPortNm: 40, distanceFromCoastNm: null, trafficDensity: "moderate", historicalFrequency: 0, confidence: 0.7, explanation: "prior" },
+        {
+          type: "AIS_DARK",
+          kind: "disabling",
+          startAt: "2025-12-01T00:00:00Z",
+          endAt: "2025-12-01T08:00:00Z",
+          durationHours: 8,
+          startLocation: null,
+          endLocation: null,
+          weatherContext: "clear",
+          nearestPort: "Lagos",
+          nearestPortEnd: null,
+          distanceFromPortNm: 40,
+          distanceFromCoastNm: null,
+          trafficDensity: "moderate",
+          historicalFrequency: 0,
+          confidence: 0.7,
+          explanation: "prior",
+        },
       ],
     });
     expect(report.gapsDetected).toBe(1);

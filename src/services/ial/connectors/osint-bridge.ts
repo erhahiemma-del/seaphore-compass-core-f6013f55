@@ -70,18 +70,40 @@ function toEntityKind(t: OsintEntityType): EntityKind {
 
 function toKind(entity: OsintEntityType, rec: SeaphoreRecord): NormalizedEvidence["kind"] {
   const raw = String(rec.data?.["kind"] ?? "").toLowerCase();
-  if (raw && ["identity","position","voyage","ownership","cargo","sanctions","compliance","port-call","weather","other"].includes(raw)) {
+  if (
+    raw &&
+    [
+      "identity",
+      "position",
+      "voyage",
+      "ownership",
+      "cargo",
+      "sanctions",
+      "compliance",
+      "port-call",
+      "weather",
+      "other",
+    ].includes(raw)
+  ) {
     return raw as NormalizedEvidence["kind"];
   }
   switch (entity) {
-    case "SANCTION": return "sanctions";
-    case "VOYAGE": return "voyage";
-    case "CARGO": return "cargo";
-    case "OWNER": return "ownership";
-    case "WEATHER": return "weather";
-    case "PORT": return "port-call";
-    case "VESSEL": return "identity";
-    default: return "other";
+    case "SANCTION":
+      return "sanctions";
+    case "VOYAGE":
+      return "voyage";
+    case "CARGO":
+      return "cargo";
+    case "OWNER":
+      return "ownership";
+    case "WEATHER":
+      return "weather";
+    case "PORT":
+      return "port-call";
+    case "VESSEL":
+      return "identity";
+    default:
+      return "other";
   }
 }
 
@@ -99,14 +121,22 @@ function entityMatches(query: AcquisitionQuery, ev: NormalizedEvidence): boolean
  *  its declared category. Used by `registry.getByEntityType()`. */
 function entityKindsFor(osint: OsintConnector): ReadonlyArray<EntityKind> {
   switch (osint.category) {
-    case "AIS": return ["vessel"];
-    case "SANCTIONS": return ["vessel", "company", "person"];
-    case "REGISTRY": return ["vessel", "company"];
-    case "WEATHER": return ["port"];
-    case "IMAGERY": return ["vessel", "port"];
-    case "TRADE": return ["cargo", "voyage"];
-    case "COMPLIANCE": return ["vessel", "company"];
-    default: return [];
+    case "AIS":
+      return ["vessel"];
+    case "SANCTIONS":
+      return ["vessel", "company", "person"];
+    case "REGISTRY":
+      return ["vessel", "company"];
+    case "WEATHER":
+      return ["port"];
+    case "IMAGERY":
+      return ["vessel", "port"];
+    case "TRADE":
+      return ["cargo", "voyage"];
+    case "COMPLIANCE":
+      return ["vessel", "company"];
+    default:
+      return [];
   }
 }
 
@@ -152,11 +182,12 @@ export function bridgeOsintConnector(
             },
             kind,
             fields: Object.fromEntries(
-              Object.entries(rec.data ?? {}).filter(([, v]) =>
-                v === null ||
-                typeof v === "string" ||
-                typeof v === "number" ||
-                typeof v === "boolean",
+              Object.entries(rec.data ?? {}).filter(
+                ([, v]) =>
+                  v === null ||
+                  typeof v === "string" ||
+                  typeof v === "number" ||
+                  typeof v === "boolean",
               ),
             ) as Record<string, string | number | boolean | null>,
             observedAt: rec.validFrom || rec.fetchedAt,
@@ -189,7 +220,9 @@ export function bridgeOsintConnector(
     id,
     displayName,
     entityKinds: kinds,
-    async connect() { /* no-op — OSINT connectors are stateless */ },
+    async connect() {
+      /* no-op — OSINT connectors are stateless */
+    },
     async authenticate() {
       try {
         const h = await osint.healthCheck();
@@ -200,9 +233,15 @@ export function bridgeOsintConnector(
         return false;
       }
     },
-    async search(q) { return run(q); },
-    async lookup(q) { return run(q); },
-    normalize() { return null; },
+    async search(q) {
+      return run(q);
+    },
+    async lookup(q) {
+      return run(q);
+    },
+    normalize() {
+      return null;
+    },
     async healthCheck(): Promise<ConnectorHealth> {
       const started = performance.now();
       try {

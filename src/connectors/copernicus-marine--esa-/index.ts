@@ -33,7 +33,7 @@ interface AnchorageZone {
 }
 
 const ANCHORAGES: AnchorageZone[] = [
-  { name: "Apapa anchorage", bbox: [3.30, 6.40, 3.45, 6.50] },
+  { name: "Apapa anchorage", bbox: [3.3, 6.4, 3.45, 6.5] },
   { name: "Tin Can Island approach", bbox: [3.32, 6.42, 3.42, 6.48] },
   { name: "Onne port zone", bbox: [7.15, 4.65, 7.25, 4.75] },
 ];
@@ -131,7 +131,8 @@ export class CopernicusMarineConnector implements ConnectorInterface {
           const lon = (bbox[0] + bbox[2]) / 2;
           const lat = (bbox[1] + bbox[3]) / 2;
           const props = (feat.properties ?? {}) as Record<string, unknown>;
-          const sat = (props["platform"] as string) ?? (props["constellation"] as string) ?? "Sentinel-1";
+          const sat =
+            (props["platform"] as string) ?? (props["constellation"] as string) ?? "Sentinel-1";
           const dt = (props["datetime"] as string) ?? new Date().toISOString();
           results.push({
             sourceRef: feat.id,
@@ -222,7 +223,11 @@ export class CopernicusMarineConnector implements ConnectorInterface {
     if (!connectorId) throw new Error(`Connector ${this.name} is not registered`);
     const { data: run } = await supabaseAdmin
       .from("osint_sync_runs")
-      .insert({ connector_id: connectorId, started_at: new Date().toISOString(), status: "running" })
+      .insert({
+        connector_id: connectorId,
+        started_at: new Date().toISOString(),
+        status: "running",
+      })
       .select("id")
       .single();
     const runId = (run as { id: string } | null)?.id ?? "";

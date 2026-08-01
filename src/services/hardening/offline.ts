@@ -28,15 +28,17 @@ export interface ModeSnapshot {
 
 const BANNERS: Record<OperatingMode, string> = {
   online: "All intelligence sources online.",
-  degraded: "Degraded mode — some external sources unavailable. Cached intelligence in use; confidence chips reflect staleness.",
-  offline: "Offline mode — external sources unreachable. Read-only cached intelligence. Officer decisions remain authoritative.",
+  degraded:
+    "Degraded mode — some external sources unavailable. Cached intelligence in use; confidence chips reflect staleness.",
+  offline:
+    "Offline mode — external sources unreachable. Read-only cached intelligence. Officer decisions remain authoritative.",
 };
 
 export interface ModeManager {
   report(health: SourceHealth): void;
   snapshot(): ModeSnapshot;
   subscribe(fn: (s: ModeSnapshot) => void): () => void;
-  set(mode: OperatingMode): void;   // ops override
+  set(mode: OperatingMode): void; // ops override
 }
 
 export function createModeManager(now: () => number = Date.now): ModeManager {
@@ -50,7 +52,8 @@ export function createModeManager(now: () => number = Date.now): ModeManager {
     const list = [...sources.values()];
     const critFail = list.filter((s) => s.critical && !s.ok);
     const anyFail = list.filter((s) => !s.ok);
-    if (critFail.length === list.filter((s) => s.critical).length && critFail.length > 0) return "offline";
+    if (critFail.length === list.filter((s) => s.critical).length && critFail.length > 0)
+      return "offline";
     if (anyFail.length > 0) return "degraded";
     return "online";
   };
@@ -60,14 +63,18 @@ export function createModeManager(now: () => number = Date.now): ModeManager {
     const degraded: string[] = [];
     for (const s of sources.values()) if (!s.ok) degraded.push(s.id);
     return {
-      mode, at: now(),
+      mode,
+      at: now(),
       sources: [...sources.values()],
       banner: BANNERS[mode],
       degradedCapabilities: degraded,
     };
   };
 
-  const notify = () => { const s = snap(); for (const fn of subs) fn(s); };
+  const notify = () => {
+    const s = snap();
+    for (const fn of subs) fn(s);
+  };
 
   return {
     report(h) {
@@ -76,7 +83,15 @@ export function createModeManager(now: () => number = Date.now): ModeManager {
       if (!prev || prev.ok !== h.ok) notify();
     },
     snapshot: snap,
-    subscribe(fn) { subs.add(fn); return () => { subs.delete(fn); }; },
-    set(mode) { override = mode; notify(); },
+    subscribe(fn) {
+      subs.add(fn);
+      return () => {
+        subs.delete(fn);
+      };
+    },
+    set(mode) {
+      override = mode;
+      notify();
+    },
   };
 }

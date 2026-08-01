@@ -41,11 +41,7 @@ export type OsintHealthStatus = "healthy" | "degraded" | "down";
 export type OsintSyncStatus = "success" | "partial" | "failed";
 
 /** Provenance grade — drives baseline confidence scoring. */
-export type OsintProvenance =
-  | "government"
-  | "commercial_verified"
-  | "aggregated"
-  | "scraped";
+export type OsintProvenance = "government" | "commercial_verified" | "aggregated" | "scraped";
 
 /** Untyped inbound payload from an external OSINT source. */
 export type RawRecord = Record<string, unknown> & {

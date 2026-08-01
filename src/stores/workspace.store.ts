@@ -144,11 +144,7 @@ export type ResolutionStatus =
   | "UNRESOLVED"
   | "ESCALATED"
   | "REFERRED";
-export type SuccessRating =
-  | "SUCCESS"
-  | "PARTIAL_SUCCESS"
-  | "FAILURE"
-  | "INCONCLUSIVE";
+export type SuccessRating = "SUCCESS" | "PARTIAL_SUCCESS" | "FAILURE" | "INCONCLUSIVE";
 export type RecommendationEffectiveness =
   | "EFFECTIVE"
   | "PARTIALLY_EFFECTIVE"
@@ -207,7 +203,6 @@ export interface NotebookEntry {
   versions: NotebookVersion[]; // append-only history
 }
 
-
 export interface InvestigationWorkspace {
   id: string;
   title: string;
@@ -243,7 +238,6 @@ export interface InvestigationWorkspace {
   // Investigation Notebook.
   notebook?: NotebookEntry[];
 
-
   // MIW extensions (Sprint 1H — Maritime Investigation Workspace).
   stage?: InvestigationStage;
   caseType?: InvestigationCaseType;
@@ -254,14 +248,26 @@ export interface InvestigationWorkspace {
   assignees?: string[];
   dueAt?: string;
   estimatedRevenueImpactUsd?: number;
-  stageHistory?: Array<{ at: string; from: InvestigationStage | null; to: InvestigationStage; officer?: string; note?: string }>;
+  stageHistory?: Array<{
+    at: string;
+    from: InvestigationStage | null;
+    to: InvestigationStage;
+    officer?: string;
+    note?: string;
+  }>;
 
   // Operational Command integration — linked artifacts owned by other services.
   missionPlanIds?: string[];
   oklPatternIds?: string[];
 
   // Copilot conversation transcript pointer (Copilot store owns rendering).
-  conversationTurns: Array<{ id: string; at: string; role: "officer" | "copilot"; text: string; briefingId?: string }>;
+  conversationTurns: Array<{
+    id: string;
+    at: string;
+    role: "officer" | "copilot";
+    text: string;
+    briefingId?: string;
+  }>;
 
   // Investigation Outcome & Learning Loop (Sprint 2.6).
   outcome?: WorkspaceOutcome;
@@ -290,24 +296,49 @@ interface WorkspaceState {
   updateOverview: (id: string, patch: Partial<InvestigationWorkspace>) => void;
   advanceStage: (id: string, to: InvestigationStage, note?: string) => void;
 
-  addEvidence: (id: string, ev: Omit<WorkspaceEvidence, "id" | "collectedAt"> & Partial<Pick<WorkspaceEvidence, "id" | "collectedAt">>) => void;
+  addEvidence: (
+    id: string,
+    ev: Omit<WorkspaceEvidence, "id" | "collectedAt"> &
+      Partial<Pick<WorkspaceEvidence, "id" | "collectedAt">>,
+  ) => void;
   moveEvidence: (id: string, evidenceId: string, category: EvidenceCategory) => void;
 
   addHypothesis: (id: string, statement: string) => string;
-  updateHypothesis: (id: string, hypId: string, patch: Partial<WorkspaceHypothesis> & { note?: string }) => void;
+  updateHypothesis: (
+    id: string,
+    hypId: string,
+    patch: Partial<WorkspaceHypothesis> & { note?: string },
+  ) => void;
 
-  addTask: (id: string, task: Omit<WorkspaceTask, "id" | "createdAt" | "status"> & Partial<Pick<WorkspaceTask, "status">>) => string;
+  addTask: (
+    id: string,
+    task: Omit<WorkspaceTask, "id" | "createdAt" | "status"> &
+      Partial<Pick<WorkspaceTask, "status">>,
+  ) => string;
   updateTask: (id: string, taskId: string, patch: Partial<WorkspaceTask>) => void;
 
-  addDecision: (id: string, dec: Omit<WorkspaceDecision, "id" | "at"> & Partial<Pick<WorkspaceDecision, "at">>) => void;
+  addDecision: (
+    id: string,
+    dec: Omit<WorkspaceDecision, "id" | "at"> & Partial<Pick<WorkspaceDecision, "at">>,
+  ) => void;
 
-  addTimelineEvent: (id: string, ev: Omit<TimelineEvent, "id" | "at"> & Partial<Pick<TimelineEvent, "at">>) => void;
+  addTimelineEvent: (
+    id: string,
+    ev: Omit<TimelineEvent, "id" | "at"> & Partial<Pick<TimelineEvent, "at">>,
+  ) => void;
 
-  upsertEntity: (id: string, ent: Omit<WorkspaceEntity, "evidenceIds" | "relatedTo"> & Partial<Pick<WorkspaceEntity, "evidenceIds" | "relatedTo">>) => void;
+  upsertEntity: (
+    id: string,
+    ent: Omit<WorkspaceEntity, "evidenceIds" | "relatedTo"> &
+      Partial<Pick<WorkspaceEntity, "evidenceIds" | "relatedTo">>,
+  ) => void;
 
   setRecommendation: (id: string, rec: WorkspaceRecommendation | undefined) => void;
 
-  appendConversation: (id: string, turn: { role: "officer" | "copilot"; text: string; briefingId?: string }) => void;
+  appendConversation: (
+    id: string,
+    turn: { role: "officer" | "copilot"; text: string; briefingId?: string },
+  ) => void;
 
   addNotebookEntry: (
     id: string,
@@ -317,7 +348,9 @@ interface WorkspaceState {
   updateNotebookEntry: (
     id: string,
     entryId: string,
-    patch: Partial<Pick<NotebookEntry, "title" | "body" | "supportingEvidence" | "refId">> & { officer?: string },
+    patch: Partial<Pick<NotebookEntry, "title" | "body" | "supportingEvidence" | "refId">> & {
+      officer?: string;
+    },
   ) => void;
   removeNotebookEntry: (id: string, entryId: string) => void;
 
@@ -337,7 +370,8 @@ interface WorkspaceState {
   exportInvestigation: (id: string) => InvestigationWorkspace | null;
 }
 
-const uid = (p = "id") => `${p}_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
+const uid = (p = "id") =>
+  `${p}_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
 const now = () => new Date().toISOString();
 
 function recalc(w: InvestigationWorkspace): InvestigationWorkspace {
@@ -361,8 +395,7 @@ function recalc(w: InvestigationWorkspace): InvestigationWorkspace {
   const avgGrade =
     w.evidence
       .filter((e) => e.category === "COLLECTED")
-      .reduce((s, e) => s + (gradeScore[e.grade ?? "UNKNOWN"] ?? 0.3), 0) /
-    Math.max(collected, 1);
+      .reduce((s, e) => s + (gradeScore[e.grade ?? "UNKNOWN"] ?? 0.3), 0) / Math.max(collected, 1);
   const confidencePct = Math.round((avgGrade * 100 + evidenceCompleteness) / 2);
   const tier: ConfidenceTier =
     confidencePct >= 70 ? "HIGH" : confidencePct >= 40 ? "MEDIUM" : "LOW";
@@ -421,7 +454,13 @@ export const useWorkspaceStore = create<WorkspaceState>()(
             { id: uid("dec"), at: t, title: "Investigation opened", detail: title, officer },
           ],
           timeline: [
-            { id: uid("tl"), at: t, kind: "decision", label: "Investigation opened", detail: title },
+            {
+              id: uid("tl"),
+              at: t,
+              kind: "decision",
+              label: "Investigation opened",
+              detail: title,
+            },
           ],
           entities: [],
           conversationTurns: [],
@@ -434,9 +473,18 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           assignees: assignees ?? [officer],
           dueAt,
           estimatedRevenueImpactUsd,
-          stageHistory: [{ at: t, from: null, to: "INTAKE", officer, note: sourceUipId ? `Investigation opened · UIP ${sourceUipId}` : "Investigation opened" }],
+          stageHistory: [
+            {
+              at: t,
+              from: null,
+              to: "INTAKE",
+              officer,
+              note: sourceUipId
+                ? `Investigation opened · UIP ${sourceUipId}`
+                : "Investigation opened",
+            },
+          ],
           notebook: [],
-
         };
         set((s) => ({ investigations: { ...s.investigations, [id]: wsp }, activeId: id }));
         return id;
@@ -466,7 +514,14 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           return {
             investigations: {
               ...s.investigations,
-              [id]: { ...w, stage: to, status, stageHistory, timeline: [...w.timeline, tl], updatedAt: t },
+              [id]: {
+                ...w,
+                stage: to,
+                status,
+                stageHistory,
+                timeline: [...w.timeline, tl],
+                updatedAt: t,
+              },
             },
           };
         }),
@@ -501,7 +556,11 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           return {
             investigations: {
               ...s.investigations,
-              [id]: recalc({ ...w, evidence: [...w.evidence, item], timeline: [...w.timeline, timeline] }),
+              [id]: recalc({
+                ...w,
+                evidence: [...w.evidence, item],
+                timeline: [...w.timeline, timeline],
+              }),
             },
           };
         }),
@@ -531,11 +590,21 @@ export const useWorkspaceStore = create<WorkspaceState>()(
             createdAt: t,
             updatedAt: t,
           };
-          const tl: TimelineEvent = { id: uid("tl"), at: t, kind: "hypothesis", label: `Hypothesis: ${statement}`, refId: hypId };
+          const tl: TimelineEvent = {
+            id: uid("tl"),
+            at: t,
+            kind: "hypothesis",
+            label: `Hypothesis: ${statement}`,
+            refId: hypId,
+          };
           return {
             investigations: {
               ...s.investigations,
-              [id]: recalc({ ...w, hypotheses: [...w.hypotheses, h], timeline: [...w.timeline, tl] }),
+              [id]: recalc({
+                ...w,
+                hypotheses: [...w.hypotheses, h],
+                timeline: [...w.timeline, tl],
+              }),
             },
           };
         });
@@ -552,7 +621,10 @@ export const useWorkspaceStore = create<WorkspaceState>()(
             const nextStatus = patch.status ?? h.status;
             const history =
               patch.status && patch.status !== h.status
-                ? [...h.history, { at: t, note: patch.note ?? `Status → ${patch.status}`, status: patch.status }]
+                ? [
+                    ...h.history,
+                    { at: t, note: patch.note ?? `Status → ${patch.status}`, status: patch.status },
+                  ]
                 : h.history;
             return { ...h, ...patch, status: nextStatus, history, updatedAt: t };
           });
@@ -572,7 +644,13 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           };
           // dedupe by title
           if (w.tasks.some((x) => x.title === t.title && x.status !== "COMPLETED")) return s;
-          const tl: TimelineEvent = { id: uid("tl"), at: t.createdAt, kind: "task", label: `Task: ${t.title}`, refId: taskId };
+          const tl: TimelineEvent = {
+            id: uid("tl"),
+            at: t.createdAt,
+            kind: "task",
+            label: `Task: ${t.title}`,
+            refId: taskId,
+          };
           return {
             investigations: {
               ...s.investigations,
@@ -593,7 +671,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
                   ...t,
                   ...patch,
                   completedAt:
-                    patch.status === "COMPLETED" ? patch.completedAt ?? now() : t.completedAt,
+                    patch.status === "COMPLETED" ? (patch.completedAt ?? now()) : t.completedAt,
                 }
               : t,
           );
@@ -605,7 +683,14 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           const w = s.investigations[id];
           if (!w) return s;
           const d: WorkspaceDecision = { id: uid("dec"), at: dec.at ?? now(), ...dec };
-          const tl: TimelineEvent = { id: uid("tl"), at: d.at, kind: "decision", label: d.title, detail: d.detail, refId: d.id };
+          const tl: TimelineEvent = {
+            id: uid("tl"),
+            at: d.at,
+            kind: "decision",
+            label: d.title,
+            detail: d.detail,
+            refId: d.id,
+          };
           return {
             investigations: {
               ...s.investigations,
@@ -619,7 +704,12 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           const w = s.investigations[id];
           if (!w) return s;
           const t: TimelineEvent = { id: uid("tl"), at: ev.at ?? now(), ...ev };
-          return { investigations: { ...s.investigations, [id]: { ...w, timeline: [...w.timeline, t], updatedAt: now() } } };
+          return {
+            investigations: {
+              ...s.investigations,
+              [id]: { ...w, timeline: [...w.timeline, t], updatedAt: now() },
+            },
+          };
         }),
 
       upsertEntity: (id, ent) =>
@@ -631,8 +721,12 @@ export const useWorkspaceStore = create<WorkspaceState>()(
             ? {
                 ...existing,
                 ...ent,
-                evidenceIds: Array.from(new Set([...(existing.evidenceIds ?? []), ...(ent.evidenceIds ?? [])])),
-                relatedTo: Array.from(new Set([...(existing.relatedTo ?? []), ...(ent.relatedTo ?? [])])),
+                evidenceIds: Array.from(
+                  new Set([...(existing.evidenceIds ?? []), ...(ent.evidenceIds ?? [])]),
+                ),
+                relatedTo: Array.from(
+                  new Set([...(existing.relatedTo ?? []), ...(ent.relatedTo ?? [])]),
+                ),
               }
             : {
                 evidenceIds: [],
@@ -642,14 +736,21 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           const entities = existing
             ? w.entities.map((e) => (e.id === existing.id ? merged : e))
             : [...w.entities, merged];
-          return { investigations: { ...s.investigations, [id]: { ...w, entities, updatedAt: now() } } };
+          return {
+            investigations: { ...s.investigations, [id]: { ...w, entities, updatedAt: now() } },
+          };
         }),
 
       setRecommendation: (id, rec) =>
         set((s) => {
           const w = s.investigations[id];
           if (!w) return s;
-          return { investigations: { ...s.investigations, [id]: { ...w, recommendation: rec, updatedAt: now() } } };
+          return {
+            investigations: {
+              ...s.investigations,
+              [id]: { ...w, recommendation: rec, updatedAt: now() },
+            },
+          };
         }),
 
       appendConversation: (id, turn) =>
@@ -663,9 +764,20 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           };
           const tl: TimelineEvent | null =
             turn.role === "officer"
-              ? { id: uid("tl"), at: t.at, kind: "question", label: `Officer: ${turn.text}`.slice(0, 140) }
+              ? {
+                  id: uid("tl"),
+                  at: t.at,
+                  kind: "question",
+                  label: `Officer: ${turn.text}`.slice(0, 140),
+                }
               : turn.briefingId
-                ? { id: uid("tl"), at: t.at, kind: "briefing", label: "Briefing generated", refId: turn.briefingId }
+                ? {
+                    id: uid("tl"),
+                    at: t.at,
+                    kind: "briefing",
+                    label: "Briefing generated",
+                    refId: turn.briefingId,
+                  }
                 : null;
           return {
             investigations: {
@@ -712,7 +824,12 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           return {
             investigations: {
               ...s.investigations,
-              [id]: { ...w, notebook: [...(w.notebook ?? []), e], timeline: [...w.timeline, tl], updatedAt: t },
+              [id]: {
+                ...w,
+                notebook: [...(w.notebook ?? []), e],
+                timeline: [...w.timeline, tl],
+                updatedAt: t,
+              },
             },
           };
         });
@@ -732,7 +849,9 @@ export const useWorkspaceStore = create<WorkspaceState>()(
               : e.versions;
             return { ...e, ...patch, versions, updatedAt: t };
           });
-          return { investigations: { ...s.investigations, [id]: { ...w, notebook, updatedAt: t } } };
+          return {
+            investigations: { ...s.investigations, [id]: { ...w, notebook, updatedAt: t } },
+          };
         }),
 
       removeNotebookEntry: (id, entryId) =>
@@ -742,7 +861,11 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           return {
             investigations: {
               ...s.investigations,
-              [id]: { ...w, notebook: (w.notebook ?? []).filter((e) => e.id !== entryId), updatedAt: now() },
+              [id]: {
+                ...w,
+                notebook: (w.notebook ?? []).filter((e) => e.id !== entryId),
+                updatedAt: now(),
+              },
             },
           };
         }),
@@ -755,13 +878,22 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           if (existing.includes(missionId)) return s;
           const t = now();
           const tl: TimelineEvent = {
-            id: uid("tl"), at: t, kind: "decision",
-            label: `Mission linked: ${missionId}`, detail: note, refId: missionId,
+            id: uid("tl"),
+            at: t,
+            kind: "decision",
+            label: `Mission linked: ${missionId}`,
+            detail: note,
+            refId: missionId,
           };
           return {
             investigations: {
               ...s.investigations,
-              [id]: { ...w, missionPlanIds: [...existing, missionId], timeline: [...w.timeline, tl], updatedAt: t },
+              [id]: {
+                ...w,
+                missionPlanIds: [...existing, missionId],
+                timeline: [...w.timeline, tl],
+                updatedAt: t,
+              },
             },
           };
         }),
@@ -774,13 +906,22 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           if (existing.includes(patternId)) return s;
           const t = now();
           const tl: TimelineEvent = {
-            id: uid("tl"), at: t, kind: "recommendation",
-            label: `OKL pattern linked: ${patternId}`, detail: note, refId: patternId,
+            id: uid("tl"),
+            at: t,
+            kind: "recommendation",
+            label: `OKL pattern linked: ${patternId}`,
+            detail: note,
+            refId: patternId,
           };
           return {
             investigations: {
               ...s.investigations,
-              [id]: { ...w, oklPatternIds: [...existing, patternId], timeline: [...w.timeline, tl], updatedAt: t },
+              [id]: {
+                ...w,
+                oklPatternIds: [...existing, patternId],
+                timeline: [...w.timeline, tl],
+                updatedAt: t,
+              },
             },
           };
         }),
@@ -849,16 +990,17 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           delete rest.outcome;
           return { investigations: { ...s.investigations, [id]: { ...rest, updatedAt: now() } } };
         }),
-
     }),
     {
       name: "seaphore.iiw.v1",
-      storage: createJSONStorage(() => (typeof window !== "undefined" ? window.localStorage : (undefined as unknown as Storage))),
+      storage: createJSONStorage(() =>
+        typeof window !== "undefined" ? window.localStorage : (undefined as unknown as Storage),
+      ),
       partialize: (s) => ({ activeId: s.activeId, investigations: s.investigations }),
     },
   ),
 );
 
 export function useActiveInvestigation(): InvestigationWorkspace | null {
-  return useWorkspaceStore((s) => (s.activeId ? s.investigations[s.activeId] ?? null : null));
+  return useWorkspaceStore((s) => (s.activeId ? (s.investigations[s.activeId] ?? null) : null));
 }

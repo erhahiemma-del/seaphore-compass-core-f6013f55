@@ -4,10 +4,7 @@
  */
 import type { PlaybookContext, PlaybookFinding } from "./types";
 
-export function findingsMatch(
-  ctx: PlaybookContext,
-  needles: string[],
-): PlaybookFinding[] {
+export function findingsMatch(ctx: PlaybookContext, needles: string[]): PlaybookFinding[] {
   const lowered = needles.map((n) => n.toLowerCase());
   return ctx.criticalFindings.filter((f) => {
     const hay = `${f?.title ?? ""} ${f?.source ?? ""}`.toLowerCase();
@@ -20,9 +17,7 @@ export function hasFinding(ctx: PlaybookContext, needles: string[]): boolean {
 }
 
 export function hasCriticalFinding(ctx: PlaybookContext): boolean {
-  return ctx.criticalFindings.some(
-    (f) => f?.priority === "critical" || f?.priority === "high",
-  );
+  return ctx.criticalFindings.some((f) => f?.priority === "critical" || f?.priority === "high");
 }
 
 export function corroborationCount(ctx: PlaybookContext): number {

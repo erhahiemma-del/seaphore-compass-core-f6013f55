@@ -20,18 +20,27 @@ import type { Intent, IceQueryInput, QueryPlan, RiskTier } from "./types";
 import { classifyIntent } from "./intent";
 
 const ALL_SOURCES: ReadonlyArray<ConnectorId> = [
-  "imo-gisis","equasis","marinetraffic","ais","opensanctions",
-  "customs","nimasa","noaa","gfw","trade-atlas","lloyds-list",
+  "imo-gisis",
+  "equasis",
+  "marinetraffic",
+  "ais",
+  "opensanctions",
+  "customs",
+  "nimasa",
+  "noaa",
+  "gfw",
+  "trade-atlas",
+  "lloyds-list",
 ];
 
 const INTENT_SOURCES: Readonly<Record<Intent, ConnectorId[]>> = {
-  FACT_LOOKUP:      ["imo-gisis","equasis"],
-  INVESTIGATION:    [...ALL_SOURCES],
-  OWNERSHIP_TRACE:  ["imo-gisis","equasis","opensanctions","trade-atlas","lloyds-list"],
-  SANCTIONS_SCREEN: ["opensanctions","equasis","lloyds-list"],
-  VOYAGE_ANALYSIS:  ["ais","marinetraffic","customs","noaa"],
-  COMPLIANCE_CHECK: ["equasis","nimasa","lloyds-list","imo-gisis"],
-  OTHER:            ["imo-gisis","equasis","marinetraffic"],
+  FACT_LOOKUP: ["imo-gisis", "equasis"],
+  INVESTIGATION: [...ALL_SOURCES],
+  OWNERSHIP_TRACE: ["imo-gisis", "equasis", "opensanctions", "trade-atlas", "lloyds-list"],
+  SANCTIONS_SCREEN: ["opensanctions", "equasis", "lloyds-list"],
+  VOYAGE_ANALYSIS: ["ais", "marinetraffic", "customs", "noaa"],
+  COMPLIANCE_CHECK: ["equasis", "nimasa", "lloyds-list", "imo-gisis"],
+  OTHER: ["imo-gisis", "equasis", "marinetraffic"],
 };
 
 export function planQuery(

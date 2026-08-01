@@ -12,7 +12,10 @@
 export type BreakerState = "closed" | "open" | "half_open";
 
 export class CircuitOpenError extends Error {
-  constructor(readonly name: string, readonly retryAtMs: number) {
+  constructor(
+    readonly name: string,
+    readonly retryAtMs: number,
+  ) {
     super(`Circuit '${name}' is open until ${new Date(retryAtMs).toISOString()}`);
     this.name = "CircuitOpenError";
   }
@@ -20,9 +23,9 @@ export class CircuitOpenError extends Error {
 
 export interface BreakerOptions {
   name: string;
-  failureThreshold?: number;    // default 5 (Sprint 12 AC)
-  resetMs?: number;             // default 30_000
-  maxResetMs?: number;          // default 5 * 60_000
+  failureThreshold?: number; // default 5 (Sprint 12 AC)
+  resetMs?: number; // default 30_000
+  maxResetMs?: number; // default 5 * 60_000
   now?: () => number;
   isFailure?: (err: unknown) => boolean;
   onStateChange?: (name: string, from: BreakerState, to: BreakerState) => void;
@@ -78,12 +81,27 @@ export function createBreaker(opts: BreakerOptions): CircuitBreaker {
   return {
     name: opts.name,
     state: () => state,
-    stats: () => ({ name: opts.name, state, failures, successes, openedAt, nextProbeAt, lastError }),
+    stats: () => ({
+      name: opts.name,
+      state,
+      failures,
+      successes,
+      openedAt,
+      nextProbeAt,
+      lastError,
+    }),
     reset() {
-      state = "closed"; failures = 0; openedAt = undefined; nextProbeAt = undefined;
-      currentReset = baseReset; lastError = undefined;
+      state = "closed";
+      failures = 0;
+      openedAt = undefined;
+      nextProbeAt = undefined;
+      currentReset = baseReset;
+      lastError = undefined;
     },
-    forceOpen() { currentReset = baseReset; open(); },
+    forceOpen() {
+      currentReset = baseReset;
+      open();
+    },
     async fire<T>(op: () => Promise<T>): Promise<T> {
       if (state === "open") {
         if (nextProbeAt !== undefined && now() >= nextProbeAt) transition("half_open");
@@ -93,7 +111,9 @@ export function createBreaker(opts: BreakerOptions): CircuitBreaker {
         const result = await op();
         successes++;
         if (state === "half_open" || failures > 0) {
-          failures = 0; currentReset = baseReset; transition("closed");
+          failures = 0;
+          currentReset = baseReset;
+          transition("closed");
         }
         return result;
       } catch (err) {
@@ -116,9 +136,18 @@ export function createBreaker(opts: BreakerOptions): CircuitBreaker {
 export function createBreakerRegistry() {
   const map = new Map<string, CircuitBreaker>();
   return {
-    register(b: CircuitBreaker) { map.set(b.name, b); return b; },
-    get(name: string) { return map.get(name); },
-    list(): BreakerStats[] { return [...map.values()].map((b) => b.stats()); },
-    resetAll() { for (const b of map.values()) b.reset(); },
+    register(b: CircuitBreaker) {
+      map.set(b.name, b);
+      return b;
+    },
+    get(name: string) {
+      return map.get(name);
+    },
+    list(): BreakerStats[] {
+      return [...map.values()].map((b) => b.stats());
+    },
+    resetAll() {
+      for (const b of map.values()) b.reset();
+    },
   };
 }

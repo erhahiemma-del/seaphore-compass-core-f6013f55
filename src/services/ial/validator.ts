@@ -20,13 +20,15 @@ const REQUIRED_FIELDS: Record<NormalizedEvidence["kind"], ReadonlyArray<string>>
   sanctions: ["listName"],
   compliance: ["status"],
   "port-call": ["port"],
+  inspection: ["result"],
+  incident: ["description"],
   weather: ["condition"],
   other: [],
 };
 
-export function validateRecords(
-  records: ReadonlyArray<NormalizedEvidence>,
-): { issues: ValidationIssue[] } {
+export function validateRecords(records: ReadonlyArray<NormalizedEvidence>): {
+  issues: ValidationIssue[];
+} {
   const issues: ValidationIssue[] = [];
   const seenHashes = new Map<string, string>();
 

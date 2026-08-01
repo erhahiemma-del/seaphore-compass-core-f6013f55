@@ -23,13 +23,7 @@ import { gradeToTier, type PanelConfidence } from "./dashboard-projection";
 
 /* ───────────────────────────── vocabulary ───────────────────────────── */
 
-export type CargoCentreId =
-  | "manifest"
-  | "container"
-  | "cargo"
-  | "trade"
-  | "revenue"
-  | "cargo-risk";
+export type CargoCentreId = "manifest" | "container" | "cargo" | "trade" | "revenue" | "cargo-risk";
 
 /**
  * Officer-facing state vocabulary for the Cargo workspace. Same machine
@@ -314,7 +308,8 @@ function evidenceRows(
     .slice(0, 10)
     .map((e) => ({
       id: e.id,
-      title: fieldOf(e, ["billOfLading", "manifestId", "containerNumber", "commodity", "name"]) ??
+      title:
+        fieldOf(e, ["billOfLading", "manifestId", "containerNumber", "commodity", "name"]) ??
         `${e.kind} record`,
       source: e.sourceName,
       grade: e.grade,
@@ -343,20 +338,71 @@ function kpisFor(
         return declared !== undefined && actual !== undefined && Math.abs(actual - declared) > 0;
       }).length;
       return [
-        { key: "manifests", label: "Manifest records", value: count(cargo.length), hint: "Cargo declarations in the Canonical UIP", confidence: tier },
-        { key: "voyages", label: "Voyage records", value: count(evidence.filter((e) => e.kind === "voyage").length), hint: "Voyages carrying declared cargo", confidence: tier },
-        { key: "portcalls", label: "Port calls", value: count(evidence.filter((e) => e.kind === "port-call").length), hint: "Observed port calls for attribution", confidence: tier },
-        { key: "mismatch", label: "Declared vs actual mismatches", value: count(mismatches), hint: "Tonnage discrepancies detected in evidence", confidence: mismatches > 0 ? tier : "inferred" },
+        {
+          key: "manifests",
+          label: "Manifest records",
+          value: count(cargo.length),
+          hint: "Cargo declarations in the Canonical UIP",
+          confidence: tier,
+        },
+        {
+          key: "voyages",
+          label: "Voyage records",
+          value: count(evidence.filter((e) => e.kind === "voyage").length),
+          hint: "Voyages carrying declared cargo",
+          confidence: tier,
+        },
+        {
+          key: "portcalls",
+          label: "Port calls",
+          value: count(evidence.filter((e) => e.kind === "port-call").length),
+          hint: "Observed port calls for attribution",
+          confidence: tier,
+        },
+        {
+          key: "mismatch",
+          label: "Declared vs actual mismatches",
+          value: count(mismatches),
+          hint: "Tonnage discrepancies detected in evidence",
+          confidence: mismatches > 0 ? tier : "inferred",
+        },
       ];
     }
     case "container": {
       const containers = distinct(cargo.map((e) => fieldOf(e, ["containerNumber", "containerNo"])));
       const gates = evidence.filter((e) => e.kind === "port-call").length;
       return [
-        { key: "containers", label: "Containers tracked", value: count(containers), hint: "Distinct container numbers in evidence", confidence: tier },
-        { key: "movements", label: "Movement events", value: count(gates), hint: "Port-call events attributable to containers", confidence: tier },
-        { key: "records", label: "Container records", value: count(cargo.length), hint: "Cargo evidence rows carrying container data", confidence: tier },
-        { key: "unlinked", label: "Records without container ID", value: count(cargo.length - cargo.filter((e) => fieldOf(e, ["containerNumber", "containerNo"])).length), hint: "Cargo evidence that cannot be attributed to a box", confidence: tier },
+        {
+          key: "containers",
+          label: "Containers tracked",
+          value: count(containers),
+          hint: "Distinct container numbers in evidence",
+          confidence: tier,
+        },
+        {
+          key: "movements",
+          label: "Movement events",
+          value: count(gates),
+          hint: "Port-call events attributable to containers",
+          confidence: tier,
+        },
+        {
+          key: "records",
+          label: "Container records",
+          value: count(cargo.length),
+          hint: "Cargo evidence rows carrying container data",
+          confidence: tier,
+        },
+        {
+          key: "unlinked",
+          label: "Records without container ID",
+          value: count(
+            cargo.length -
+              cargo.filter((e) => fieldOf(e, ["containerNumber", "containerNo"])).length,
+          ),
+          hint: "Cargo evidence that cannot be attributed to a box",
+          confidence: tier,
+        },
       ];
     }
     case "cargo": {
@@ -364,10 +410,34 @@ function kpisFor(
       const commodities = distinct(cargo.map((e) => fieldOf(e, ["commodity", "description"])));
       const dangerous = cargo.filter((e) => e.fields["dangerousGoods"] === true).length;
       return [
-        { key: "items", label: "Cargo items", value: count(cargo.length), hint: "Cargo evidence rows in the Canonical UIP", confidence: tier },
-        { key: "hs", label: "Distinct HS codes", value: count(hs), hint: "HS codes observed across cargo evidence", confidence: tier },
-        { key: "commodities", label: "Commodities", value: count(commodities), hint: "Distinct declared commodities", confidence: tier },
-        { key: "dg", label: "Dangerous goods flags", value: count(dangerous), hint: "Cargo evidence flagged as dangerous goods", confidence: tier },
+        {
+          key: "items",
+          label: "Cargo items",
+          value: count(cargo.length),
+          hint: "Cargo evidence rows in the Canonical UIP",
+          confidence: tier,
+        },
+        {
+          key: "hs",
+          label: "Distinct HS codes",
+          value: count(hs),
+          hint: "HS codes observed across cargo evidence",
+          confidence: tier,
+        },
+        {
+          key: "commodities",
+          label: "Commodities",
+          value: count(commodities),
+          hint: "Distinct declared commodities",
+          confidence: tier,
+        },
+        {
+          key: "dg",
+          label: "Dangerous goods flags",
+          value: count(dangerous),
+          hint: "Cargo evidence flagged as dangerous goods",
+          confidence: tier,
+        },
       ];
     }
     case "trade": {
@@ -381,20 +451,70 @@ function kpisFor(
         }),
       );
       return [
-        { key: "shippers", label: "Shippers", value: count(shippers), hint: "Distinct shippers named in cargo evidence", confidence: tier },
-        { key: "consignees", label: "Consignees", value: count(consignees), hint: "Distinct consignees named in cargo evidence", confidence: tier },
-        { key: "lanes", label: "Trade lanes", value: count(lanes), hint: "Origin → destination pairs observed", confidence: tier },
-        { key: "ownership", label: "Ownership links", value: count(evidence.filter((e) => e.kind === "ownership").length), hint: "Ownership evidence connected to trade parties", confidence: tier },
+        {
+          key: "shippers",
+          label: "Shippers",
+          value: count(shippers),
+          hint: "Distinct shippers named in cargo evidence",
+          confidence: tier,
+        },
+        {
+          key: "consignees",
+          label: "Consignees",
+          value: count(consignees),
+          hint: "Distinct consignees named in cargo evidence",
+          confidence: tier,
+        },
+        {
+          key: "lanes",
+          label: "Trade lanes",
+          value: count(lanes),
+          hint: "Origin → destination pairs observed",
+          confidence: tier,
+        },
+        {
+          key: "ownership",
+          label: "Ownership links",
+          value: count(evidence.filter((e) => e.kind === "ownership").length),
+          hint: "Ownership evidence connected to trade parties",
+          confidence: tier,
+        },
       ];
     }
     case "revenue": {
       const currency = findings[0]?.magnitudeCurrency ?? "USD";
       const total = findings.reduce((s, f) => s + f.magnitude, 0);
       return [
-        { key: "findings", label: "Leakage findings", value: count(findings.length), hint: "Produced by capability.revenue-leakage-detection", confidence: tier },
-        { key: "exposure", label: "Estimated exposure", value: fmtMoney(total, currency), hint: "Sum of finding magnitudes — an estimate, not an assessment", confidence: tier },
-        { key: "priority", label: "High / critical", value: count(findings.filter((f) => f.priority === "critical" || f.priority === "high").length), hint: "Findings the system ranks highest", confidence: tier },
-        { key: "approved", label: "Officer approved", value: count(findings.filter((f) => f.humanApproved).length), hint: "Enforcement requires officer approval", confidence: "verified" },
+        {
+          key: "findings",
+          label: "Leakage findings",
+          value: count(findings.length),
+          hint: "Produced by capability.revenue-leakage-detection",
+          confidence: tier,
+        },
+        {
+          key: "exposure",
+          label: "Estimated exposure",
+          value: fmtMoney(total, currency),
+          hint: "Sum of finding magnitudes — an estimate, not an assessment",
+          confidence: tier,
+        },
+        {
+          key: "priority",
+          label: "High / critical",
+          value: count(
+            findings.filter((f) => f.priority === "critical" || f.priority === "high").length,
+          ),
+          hint: "Findings the system ranks highest",
+          confidence: tier,
+        },
+        {
+          key: "approved",
+          label: "Officer approved",
+          value: count(findings.filter((f) => f.humanApproved).length),
+          hint: "Enforcement requires officer approval",
+          confidence: "verified",
+        },
       ];
     }
     case "cargo-risk":
@@ -405,10 +525,34 @@ function kpisFor(
         (e) => e.fields["sanctioned"] === true || e.fields["watchlisted"] === true,
       ).length;
       return [
-        { key: "screened", label: "Screened records", value: count(sanctions + compliance), hint: "Sanctions and compliance evidence in the UIP", confidence: tier },
-        { key: "hits", label: "Screening hits", value: count(flagged), hint: "Evidence explicitly flagged by a screening provider", confidence: tier },
-        { key: "compliance", label: "Compliance records", value: count(compliance), hint: "Compliance evidence attached to cargo chains", confidence: tier },
-        { key: "chains", label: "Cargo chains screened", value: count(distinct(evidence.map((e) => e.entity.id))), hint: "Distinct entities carrying screened cargo evidence", confidence: tier },
+        {
+          key: "screened",
+          label: "Screened records",
+          value: count(sanctions + compliance),
+          hint: "Sanctions and compliance evidence in the UIP",
+          confidence: tier,
+        },
+        {
+          key: "hits",
+          label: "Screening hits",
+          value: count(flagged),
+          hint: "Evidence explicitly flagged by a screening provider",
+          confidence: tier,
+        },
+        {
+          key: "compliance",
+          label: "Compliance records",
+          value: count(compliance),
+          hint: "Compliance evidence attached to cargo chains",
+          confidence: tier,
+        },
+        {
+          key: "chains",
+          label: "Cargo chains screened",
+          value: count(distinct(evidence.map((e) => e.entity.id))),
+          hint: "Distinct entities carrying screened cargo evidence",
+          confidence: tier,
+        },
       ];
     }
   }

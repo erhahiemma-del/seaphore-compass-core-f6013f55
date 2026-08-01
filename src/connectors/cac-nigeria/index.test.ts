@@ -54,7 +54,9 @@ describe("CacNigeriaConnector", () => {
 
   it("healthCheck() reports healthy on 200", async () => {
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = vi.fn(async () => new Response("ok", { status: 200 })) as unknown as typeof fetch;
+    globalThis.fetch = vi.fn(
+      async () => new Response("ok", { status: 200 }),
+    ) as unknown as typeof fetch;
     try {
       const health = await connector.healthCheck();
       expect(health.status).toBe("healthy");

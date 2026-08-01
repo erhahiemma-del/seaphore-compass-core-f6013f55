@@ -73,17 +73,21 @@ async function main() {
   for (const name of OSINT_NAMES) {
     if (!registeredIds.has(name)) missing.push(name);
   }
-  console.log(missing.length === 0
-    ? `✅ All ${OSINT_NAMES.size} production connectors reachable through the canonical registry.`
-    : `❌ Missing from canonical registry: ${missing.join(", ")}`);
+  console.log(
+    missing.length === 0
+      ? `✅ All ${OSINT_NAMES.size} production connectors reachable through the canonical registry.`
+      : `❌ Missing from canonical registry: ${missing.join(", ")}`,
+  );
 
   console.log(`\n=== 4/5. Mode Enforcement ===`);
   const simIds = new Set(["ais", "equasis", "imo-gisis", "marinetraffic", "opensanctions"]);
   const simsRegistered = registered.filter((c) => simIds.has(c.id));
   if (mode === "production") {
-    console.log(simsRegistered.length === 0
-      ? `✅ VITE_IAL_MODE=production → 0 simulators registered.`
-      : `❌ VITE_IAL_MODE=production but simulators registered: ${simsRegistered.map((c) => c.id).join(", ")}`);
+    console.log(
+      simsRegistered.length === 0
+        ? `✅ VITE_IAL_MODE=production → 0 simulators registered.`
+        : `❌ VITE_IAL_MODE=production but simulators registered: ${simsRegistered.map((c) => c.id).join(", ")}`,
+    );
   }
 
   // Simulation mode check.
@@ -93,9 +97,14 @@ async function main() {
   await simMgr.warmup();
   const simList = simMgr.listConnectors();
   const onlySims = simList.every((c) => simIds.has(c.id));
-  console.log(onlySims
-    ? `✅ VITE_IAL_MODE=simulation → only simulators registered (${simList.length}).`
-    : `❌ VITE_IAL_MODE=simulation includes non-simulators: ${simList.filter((c) => !simIds.has(c.id)).map((c) => c.id).join(", ")}`);
+  console.log(
+    onlySims
+      ? `✅ VITE_IAL_MODE=simulation → only simulators registered (${simList.length}).`
+      : `❌ VITE_IAL_MODE=simulation includes non-simulators: ${simList
+          .filter((c) => !simIds.has(c.id))
+          .map((c) => c.id)
+          .join(", ")}`,
+  );
 
   // Restore production for path trace + health.
   __setDefaultManager(null);

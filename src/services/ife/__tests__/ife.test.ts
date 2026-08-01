@@ -44,7 +44,11 @@ describe("IFE: agreement", () => {
     const records = [
       make({ source: "ais", fields: { flag: "PA", name: "MV Ocean Pearl" } }),
       make({ source: "marinetraffic", fields: { flag: "PA", name: "MV Ocean Pearl" } }),
-      make({ source: "equasis", fields: { flag: "PA", name: "MV Ocean Pearl" }, grade: "VERIFIED" }),
+      make({
+        source: "equasis",
+        fields: { flag: "PA", name: "MV Ocean Pearl" },
+        grade: "VERIFIED",
+      }),
     ];
     const fused = fuseEvidence({ records });
     expect(fused.canonical).toHaveLength(1);
@@ -147,8 +151,16 @@ describe("IFE: canonical record", () => {
 describe("IFE: timeline", () => {
   it("marks latest / previous / superseded on the field timeline", () => {
     const records = [
-      make({ source: "ais", fields: { position: "6.4N,3.4E" }, observedAt: "2026-07-20T08:00:00Z" }),
-      make({ source: "ais", fields: { position: "6.4N,3.4E" }, observedAt: "2026-07-20T06:00:00Z" }),
+      make({
+        source: "ais",
+        fields: { position: "6.4N,3.4E" },
+        observedAt: "2026-07-20T08:00:00Z",
+      }),
+      make({
+        source: "ais",
+        fields: { position: "6.4N,3.4E" },
+        observedAt: "2026-07-20T06:00:00Z",
+      }),
       make({
         source: "marinetraffic",
         fields: { position: "6.3N,3.5E" },

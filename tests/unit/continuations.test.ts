@@ -24,9 +24,7 @@ describe("continuationsFor", () => {
   });
 
   it("adds intent-specific follow-ups", () => {
-    expect(continuationsFor("Blue Harbour Ltd shipping company", 8)).toContain(
-      "beneficial owners",
-    );
+    expect(continuationsFor("Blue Harbour Ltd shipping company", 8)).toContain("beneficial owners");
   });
 });
 

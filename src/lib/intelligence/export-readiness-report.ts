@@ -164,7 +164,8 @@ export function rollUpProviders(report: IntelligenceCoverageReport): ProviderRol
   }
 
   return Array.from(byId.values()).sort(
-    (a, b) => severity[a.status] - severity[b.status] || a.providerName.localeCompare(b.providerName),
+    (a, b) =>
+      severity[a.status] - severity[b.status] || a.providerName.localeCompare(b.providerName),
   );
 }
 
@@ -482,7 +483,10 @@ export function buildReadinessReportPdf(report: IntelligenceCoverageReport): jsP
     [
       ["Operational", r.operational.length ? r.operational.join(", ") : "None"],
       ["Partial", r.partial.length ? r.partial.join(", ") : "None"],
-      ["Awaiting configuration", r.awaitingConfiguration.length ? r.awaitingConfiguration.join(", ") : "None"],
+      [
+        "Awaiting configuration",
+        r.awaitingConfiguration.length ? r.awaitingConfiguration.join(", ") : "None",
+      ],
       ["Offline", r.offline.length ? r.offline.join(", ") : "None"],
     ],
     [0.3, 0.7],
@@ -551,15 +555,21 @@ export function buildReadinessReportPdf(report: IntelligenceCoverageReport): jsP
   /* ── 6. Operational vs pending ── */
 
   sectionHeading("6. Operational vs Pending Providers");
-  text(
-    `${operational.length} operational · ${pending.length} pending`,
-    { bold: true, size: 9.5, color: COLORS.navy },
-  );
+  text(`${operational.length} operational · ${pending.length} pending`, {
+    bold: true,
+    size: 9.5,
+    color: COLORS.navy,
+  });
   cur.y += 2;
   table(
     ["Disposition", "Provider", "Serves", "Blocking detail"],
     [
-      ...operational.map((p) => ["Operational", p.providerName, p.serves.join(", ") || "No KPI mapping", "—"]),
+      ...operational.map((p) => [
+        "Operational",
+        p.providerName,
+        p.serves.join(", ") || "No KPI mapping",
+        "—",
+      ]),
       ...pending.map((p) => [
         `Pending — ${PROVIDER_STATUS_LABEL[p.status]}`,
         p.providerName,

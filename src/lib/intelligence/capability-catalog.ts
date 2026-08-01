@@ -113,12 +113,42 @@ export const CAPABILITY_CATALOG: ReadonlyArray<CapabilityEntry> = [
     canonicalEntities: ["vessel", "company", "person", "port"],
     evidenceProviders: [
       { id: "equasis", name: "Equasis", sprint: "EP-03", credentialStatus: "AWAITING_CREDENTIALS" },
-      { id: "imo-gisis", name: "IMO GISIS", sprint: "EP-04", credentialStatus: "AWAITING_CREDENTIALS" },
-      { id: "global-fishing-watch", name: "Global Fishing Watch", sprint: "EP-06", credentialStatus: "AWAITING_CREDENTIALS" },
-      { id: "ofac", name: "US Treasury OFAC (SDN)", sprint: "EP-07", credentialStatus: "OPERATIONAL" },
-      { id: "un-security-council", name: "UN Security Council", sprint: "EP-08", credentialStatus: "OPERATIONAL" },
-      { id: "open-sanctions", name: "OpenSanctions", sprint: "EP-01", credentialStatus: "AWAITING_CREDENTIALS" },
-      { id: "copernicus-cdse", name: "Copernicus CDSE", sprint: "EP-COPERNICUS-01", credentialStatus: "AWAITING_CREDENTIALS" },
+      {
+        id: "imo-gisis",
+        name: "IMO GISIS",
+        sprint: "EP-04",
+        credentialStatus: "AWAITING_CREDENTIALS",
+      },
+      {
+        id: "global-fishing-watch",
+        name: "Global Fishing Watch",
+        sprint: "EP-06",
+        credentialStatus: "AWAITING_CREDENTIALS",
+      },
+      {
+        id: "ofac",
+        name: "US Treasury OFAC (SDN)",
+        sprint: "EP-07",
+        credentialStatus: "OPERATIONAL",
+      },
+      {
+        id: "un-security-council",
+        name: "UN Security Council",
+        sprint: "EP-08",
+        credentialStatus: "OPERATIONAL",
+      },
+      {
+        id: "open-sanctions",
+        name: "OpenSanctions",
+        sprint: "EP-01",
+        credentialStatus: "AWAITING_CREDENTIALS",
+      },
+      {
+        id: "copernicus-cdse",
+        name: "Copernicus CDSE",
+        sprint: "EP-COPERNICUS-01",
+        credentialStatus: "AWAITING_CREDENTIALS",
+      },
     ],
     uipProjections: [
       "ial.equasis-evidence-provider",
@@ -186,7 +216,12 @@ export const CAPABILITY_CATALOG: ReadonlyArray<CapabilityEntry> = [
     owner: "Cargo Intelligence Capability (CAP-02, EP-CARGO-01)",
     canonicalEntities: ["cargo", "vessel", "company", "port"],
     evidenceProviders: [
-      { id: "ncs-customs", name: "NCS Customs (NICIS II)", sprint: "EP-CARGO-01", credentialStatus: "AWAITING_CREDENTIALS" },
+      {
+        id: "ncs-customs",
+        name: "NCS Customs (NICIS II)",
+        sprint: "EP-CARGO-01",
+        credentialStatus: "AWAITING_CREDENTIALS",
+      },
     ],
     uipProjections: [
       "cargo.workspace.manifest",
@@ -228,9 +263,21 @@ export const CAPABILITY_CATALOG: ReadonlyArray<CapabilityEntry> = [
     kpis: [
       { label: "Manifest records", source: "NCS / Canonical UIP cargo evidence", unit: "count" },
       { label: "Distinct HS codes", source: "cargo evidence fields.hsCode", unit: "count" },
-      { label: "Dangerous goods flags", source: "cargo evidence fields.dangerousGoods", unit: "count" },
-      { label: "Declared vs actual mismatches", source: "tonnage discrepancy detector", unit: "count" },
-      { label: "Containers tracked", source: "distinct containerNumber in evidence", unit: "count" },
+      {
+        label: "Dangerous goods flags",
+        source: "cargo evidence fields.dangerousGoods",
+        unit: "count",
+      },
+      {
+        label: "Declared vs actual mismatches",
+        source: "tonnage discrepancy detector",
+        unit: "count",
+      },
+      {
+        label: "Containers tracked",
+        source: "distinct containerNumber in evidence",
+        unit: "count",
+      },
     ],
     dependencies: ["cap.vessel-intelligence"],
     blockers: [
@@ -260,7 +307,12 @@ export const CAPABILITY_CATALOG: ReadonlyArray<CapabilityEntry> = [
     owner: "Revenue Leakage Detection Engine (Sprint 1G)",
     canonicalEntities: ["cargo", "company", "vessel", "port"],
     evidenceProviders: [
-      { id: "ncs-customs", name: "NCS Customs (NICIS II)", sprint: "EP-CARGO-01", credentialStatus: "AWAITING_CREDENTIALS" },
+      {
+        id: "ncs-customs",
+        name: "NCS Customs (NICIS II)",
+        sprint: "EP-CARGO-01",
+        credentialStatus: "AWAITING_CREDENTIALS",
+      },
     ],
     uipProjections: [
       "capability.revenue-leakage-detection",
@@ -287,8 +339,16 @@ export const CAPABILITY_CATALOG: ReadonlyArray<CapabilityEntry> = [
     kpis: [
       { label: "Leakage findings", source: "scanForLeakage(uip.rawEvidence)", unit: "count" },
       { label: "Estimated exposure", source: "findings.reduce(s + magnitude)", unit: "NGN" },
-      { label: "High/critical findings", source: "findings.filter(priority=critical|high)", unit: "count" },
-      { label: "Officer-approved actions", source: "findings.filter(humanApproved)", unit: "count" },
+      {
+        label: "High/critical findings",
+        source: "findings.filter(priority=critical|high)",
+        unit: "count",
+      },
+      {
+        label: "Officer-approved actions",
+        source: "findings.filter(humanApproved)",
+        unit: "count",
+      },
     ],
     dependencies: ["cap.cargo-intelligence"],
     blockers: [
@@ -315,11 +375,31 @@ export const CAPABILITY_CATALOG: ReadonlyArray<CapabilityEntry> = [
     owner: "Operational Knowledge Layer (OKL) / OSAE / PIE",
     canonicalEntities: ["vessel", "company", "cargo", "port"],
     evidenceProviders: [
-      { id: "open-sanctions", name: "OpenSanctions", sprint: "EP-01", credentialStatus: "AWAITING_CREDENTIALS" },
+      {
+        id: "open-sanctions",
+        name: "OpenSanctions",
+        sprint: "EP-01",
+        credentialStatus: "AWAITING_CREDENTIALS",
+      },
       { id: "ofac", name: "US Treasury OFAC", sprint: "EP-07", credentialStatus: "OPERATIONAL" },
-      { id: "un-security-council", name: "UN Security Council", sprint: "EP-08", credentialStatus: "OPERATIONAL" },
-      { id: "global-fishing-watch", name: "Global Fishing Watch", sprint: "EP-06", credentialStatus: "AWAITING_CREDENTIALS" },
-      { id: "copernicus-cdse", name: "Copernicus CDSE", sprint: "EP-COPERNICUS-01", credentialStatus: "AWAITING_CREDENTIALS" },
+      {
+        id: "un-security-council",
+        name: "UN Security Council",
+        sprint: "EP-08",
+        credentialStatus: "OPERATIONAL",
+      },
+      {
+        id: "global-fishing-watch",
+        name: "Global Fishing Watch",
+        sprint: "EP-06",
+        credentialStatus: "AWAITING_CREDENTIALS",
+      },
+      {
+        id: "copernicus-cdse",
+        name: "Copernicus CDSE",
+        sprint: "EP-COPERNICUS-01",
+        credentialStatus: "AWAITING_CREDENTIALS",
+      },
     ],
     uipProjections: [
       "capability.osae-assessment",
@@ -380,9 +460,24 @@ export const CAPABILITY_CATALOG: ReadonlyArray<CapabilityEntry> = [
     owner: "Compliance Engine (Sprint COMP-01, planned)",
     canonicalEntities: ["vessel", "company", "port"],
     evidenceProviders: [
-      { id: "equasis", name: "Equasis (ISM, class, PSC)", sprint: "EP-03", credentialStatus: "AWAITING_CREDENTIALS" },
-      { id: "imo-gisis", name: "IMO GISIS (certificates)", sprint: "EP-04", credentialStatus: "AWAITING_CREDENTIALS" },
-      { id: "open-sanctions", name: "OpenSanctions (sanctions programme)", sprint: "EP-01", credentialStatus: "AWAITING_CREDENTIALS" },
+      {
+        id: "equasis",
+        name: "Equasis (ISM, class, PSC)",
+        sprint: "EP-03",
+        credentialStatus: "AWAITING_CREDENTIALS",
+      },
+      {
+        id: "imo-gisis",
+        name: "IMO GISIS (certificates)",
+        sprint: "EP-04",
+        credentialStatus: "AWAITING_CREDENTIALS",
+      },
+      {
+        id: "open-sanctions",
+        name: "OpenSanctions (sanctions programme)",
+        sprint: "EP-01",
+        credentialStatus: "AWAITING_CREDENTIALS",
+      },
       { id: "ofac", name: "OFAC (US sanctions)", sprint: "EP-07", credentialStatus: "OPERATIONAL" },
     ],
     uipProjections: [
@@ -397,17 +492,23 @@ export const CAPABILITY_CATALOG: ReadonlyArray<CapabilityEntry> = [
       "Sanctions programme compliance assessment",
       "PSC detention history analysis",
     ],
-    dashboardSurfaces: [
-      { label: "Compliance Intelligence Centre", route: "/compliance" },
-    ],
+    dashboardSurfaces: [{ label: "Compliance Intelligence Centre", route: "/compliance" }],
     copilotFeatures: [
       "Compliance review playbook trigger",
       "Certificate expiry explanation",
       "Sanctions programme attribution",
     ],
     kpis: [
-      { label: "Vessels with expired certificates", source: "Equasis / IMO GISIS evidence", unit: "count" },
-      { label: "Active sanctions screenings", source: "OpenSanctions / OFAC / UNSC", unit: "count" },
+      {
+        label: "Vessels with expired certificates",
+        source: "Equasis / IMO GISIS evidence",
+        unit: "count",
+      },
+      {
+        label: "Active sanctions screenings",
+        source: "OpenSanctions / OFAC / UNSC",
+        unit: "count",
+      },
       { label: "Compliance exceptions", source: "Compliance playbook output", unit: "count" },
     ],
     dependencies: ["cap.vessel-intelligence"],
@@ -437,9 +538,24 @@ export const CAPABILITY_CATALOG: ReadonlyArray<CapabilityEntry> = [
     owner: "Port Operations Intelligence (Sprint PORT-01, in design)",
     canonicalEntities: ["port", "vessel", "cargo"],
     evidenceProviders: [
-      { id: "global-fishing-watch", name: "GFW (port visits)", sprint: "EP-06", credentialStatus: "AWAITING_CREDENTIALS" },
-      { id: "copernicus-cdse", name: "Copernicus CDSE (SAR anchorage)", sprint: "EP-COPERNICUS-01", credentialStatus: "AWAITING_CREDENTIALS" },
-      { id: "environmental-intelligence", name: "Environmental Intelligence", sprint: "EP-05", credentialStatus: "OPERATIONAL" },
+      {
+        id: "global-fishing-watch",
+        name: "GFW (port visits)",
+        sprint: "EP-06",
+        credentialStatus: "AWAITING_CREDENTIALS",
+      },
+      {
+        id: "copernicus-cdse",
+        name: "Copernicus CDSE (SAR anchorage)",
+        sprint: "EP-COPERNICUS-01",
+        credentialStatus: "AWAITING_CREDENTIALS",
+      },
+      {
+        id: "environmental-intelligence",
+        name: "Environmental Intelligence",
+        sprint: "EP-05",
+        credentialStatus: "OPERATIONAL",
+      },
     ],
     uipProjections: [
       "ial.copernicus-cdse-evidence-provider",
@@ -493,8 +609,18 @@ export const CAPABILITY_CATALOG: ReadonlyArray<CapabilityEntry> = [
     owner: "Environmental Intelligence Provider (Sprint EP-05)",
     canonicalEntities: ["port", "vessel"],
     evidenceProviders: [
-      { id: "environmental-intelligence", name: "Environmental Intelligence (Open-Meteo)", sprint: "EP-05", credentialStatus: "OPERATIONAL" },
-      { id: "copernicus-cdse", name: "Copernicus CDSE (satellite)", sprint: "EP-COPERNICUS-01", credentialStatus: "AWAITING_CREDENTIALS" },
+      {
+        id: "environmental-intelligence",
+        name: "Environmental Intelligence (Open-Meteo)",
+        sprint: "EP-05",
+        credentialStatus: "OPERATIONAL",
+      },
+      {
+        id: "copernicus-cdse",
+        name: "Copernicus CDSE (satellite)",
+        sprint: "EP-COPERNICUS-01",
+        credentialStatus: "AWAITING_CREDENTIALS",
+      },
     ],
     uipProjections: [
       "ial.environmental-intelligence-provider",
@@ -516,7 +642,11 @@ export const CAPABILITY_CATALOG: ReadonlyArray<CapabilityEntry> = [
       "SAR imagery metadata for anchorage zone analysis (Copernicus)",
     ],
     kpis: [
-      { label: "Environmental observations acquired", source: "Open-Meteo Marine API (keyless)", unit: "count/hour" },
+      {
+        label: "Environmental observations acquired",
+        source: "Open-Meteo Marine API (keyless)",
+        unit: "count/hour",
+      },
       { label: "Satellite scenes indexed", source: "Copernicus CDSE STAC", unit: "count/day" },
       { label: "Cache hit rate", source: "EvidenceCache TTL=1h", unit: "%" },
     ],
@@ -544,10 +674,30 @@ export const CAPABILITY_CATALOG: ReadonlyArray<CapabilityEntry> = [
     owner: "OIE / OKL / MIBC Pipeline",
     canonicalEntities: ["vessel", "company", "cargo", "port", "voyage"],
     evidenceProviders: [
-      { id: "open-sanctions", name: "OpenSanctions (primary SANCTIONS)", sprint: "EP-01", credentialStatus: "AWAITING_CREDENTIALS" },
-      { id: "ofac", name: "OFAC (corroborating)", sprint: "EP-07", credentialStatus: "OPERATIONAL" },
-      { id: "un-security-council", name: "UNSC (corroborating)", sprint: "EP-08", credentialStatus: "OPERATIONAL" },
-      { id: "environmental-intelligence", name: "Environmental Intelligence", sprint: "EP-05", credentialStatus: "OPERATIONAL" },
+      {
+        id: "open-sanctions",
+        name: "OpenSanctions (primary SANCTIONS)",
+        sprint: "EP-01",
+        credentialStatus: "AWAITING_CREDENTIALS",
+      },
+      {
+        id: "ofac",
+        name: "OFAC (corroborating)",
+        sprint: "EP-07",
+        credentialStatus: "OPERATIONAL",
+      },
+      {
+        id: "un-security-council",
+        name: "UNSC (corroborating)",
+        sprint: "EP-08",
+        credentialStatus: "OPERATIONAL",
+      },
+      {
+        id: "environmental-intelligence",
+        name: "Environmental Intelligence",
+        sprint: "EP-05",
+        credentialStatus: "OPERATIONAL",
+      },
     ],
     uipProjections: [
       "oie.eight-section-brief",
@@ -594,7 +744,11 @@ export const CAPABILITY_CATALOG: ReadonlyArray<CapabilityEntry> = [
       { label: "OIE queries processed", source: "runOIEFn server function", unit: "count" },
       { label: "Briefings generated", source: "MIBC engine", unit: "count" },
       { label: "Confidence composite (mean)", source: "IFE packageConfidence", unit: "0–1" },
-      { label: "Playbooks triggered", source: "OIE planner skill selection", unit: "count/session" },
+      {
+        label: "Playbooks triggered",
+        source: "OIE planner skill selection",
+        unit: "count/session",
+      },
       { label: "Reports exported", source: "MIBC exportReport() / job-drainer", unit: "count" },
     ],
     dependencies: [
@@ -622,13 +776,12 @@ export interface DependencyEdge {
   readonly kind: "requires" | "enhances";
 }
 
-export const DEPENDENCY_MATRIX: ReadonlyArray<DependencyEdge> = CAPABILITY_CATALOG.flatMap(
-  (cap) =>
-    cap.dependencies.map((dep) => ({
-      from: cap.id,
-      to: dep,
-      kind: "requires" as const,
-    })),
+export const DEPENDENCY_MATRIX: ReadonlyArray<DependencyEdge> = CAPABILITY_CATALOG.flatMap((cap) =>
+  cap.dependencies.map((dep) => ({
+    from: cap.id,
+    to: dep,
+    kind: "requires" as const,
+  })),
 );
 
 // ─────────────────────────────────────────────────────────────────────
@@ -653,9 +806,7 @@ export function catalogSummary() {
   const designing = CAPABILITY_CATALOG.filter((c) => c.status === "DESIGNING").length;
   const planned = CAPABILITY_CATALOG.filter((c) => c.status === "PLANNED").length;
   const avgMaturity =
-    Math.round(
-      (CAPABILITY_CATALOG.reduce((s, c) => s + c.maturity, 0) / total) * 10,
-    ) / 10;
+    Math.round((CAPABILITY_CATALOG.reduce((s, c) => s + c.maturity, 0) / total) * 10) / 10;
   const totalBlockers = CAPABILITY_CATALOG.reduce((s, c) => s + c.blockers.length, 0);
   const totalProviders = new Set(
     CAPABILITY_CATALOG.flatMap((c) => c.evidenceProviders.map((p) => p.id)),

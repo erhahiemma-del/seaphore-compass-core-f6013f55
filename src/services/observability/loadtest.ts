@@ -12,7 +12,7 @@ import type { PipelineStage } from "./types";
 export interface LoadTestOptions {
   readonly totalQueries: number;
   readonly concurrency: number;
-  readonly failureRate?: number;             // 0..1, default 0
+  readonly failureRate?: number; // 0..1, default 0
   readonly stageDelays?: Partial<Record<PipelineStage, [number, number]>>; // [minMs, maxMs]
 }
 
@@ -32,7 +32,9 @@ export interface LoadTestReport {
 function rand([min, max]: [number, number]): number {
   return Math.floor(min + Math.random() * (max - min));
 }
-function sleep(ms: number): Promise<void> { return new Promise((r) => setTimeout(r, ms)); }
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
 
 export async function runLoadTest(
   tracer: Tracer,
@@ -52,7 +54,8 @@ export async function runLoadTest(
   const failureRate = opts.failureRate ?? 0;
 
   const started = Date.now();
-  let completed = 0, errors = 0;
+  let completed = 0,
+    errors = 0;
   const inFlight: Promise<void>[] = [];
 
   async function one(i: number): Promise<void> {
@@ -63,7 +66,13 @@ export async function runLoadTest(
     });
     let ok = true;
     try {
-      for (const stage of ["classification", "retrieval", "fusion", "reasoning", "rendering"] as PipelineStage[]) {
+      for (const stage of [
+        "classification",
+        "retrieval",
+        "fusion",
+        "reasoning",
+        "rendering",
+      ] as PipelineStage[]) {
         await trace.stage(stage, async () => {
           await sleep(rand(stageDelays[stage]));
           if (stage === "reasoning" && Math.random() < failureRate) {
@@ -71,11 +80,19 @@ export async function runLoadTest(
           }
         });
       }
-      trace.recordModel({ stage: "reasoning", model: "google/gemini-2.5-flash", tier: 1, promptTokens: 512, completionTokens: 128, costCredits: 0.4 });
+      trace.recordModel({
+        stage: "reasoning",
+        model: "google/gemini-2.5-flash",
+        tier: 1,
+        promptTokens: 512,
+        completionTokens: 128,
+        costCredits: 0.4,
+      });
       trace.recordEvidence({ evidenceId: `ev_${i}`, grade: "SIGINT_VERIFIED", weight: 0.92 });
       completed++;
     } catch {
-      ok = false; errors++;
+      ok = false;
+      errors++;
     } finally {
       trace.finish({ ok });
     }
@@ -98,7 +115,10 @@ export async function runLoadTest(
 
   return {
     totalQueries: opts.totalQueries,
-    completed, errors, wallMs, snapshot,
+    completed,
+    errors,
+    wallMs,
+    snapshot,
     budget: { totalP95Ms, targetTotalP95Ms, passed: totalP95Ms <= targetTotalP95Ms },
   };
 }

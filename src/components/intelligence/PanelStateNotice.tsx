@@ -32,7 +32,12 @@ export function PanelStateNotice({
   const meta = KPI_STATE_META[state];
   return (
     <div className="rounded-md border border-dashed border-line bg-surface-2 p-3">
-      <div className={cn("flex items-center gap-1.5 type-label", TONE_CLASS[meta.tone] ?? "text-slate")}>
+      <div
+        className={cn(
+          "flex items-center gap-1.5 type-label",
+          TONE_CLASS[meta.tone] ?? "text-slate",
+        )}
+      >
         <span aria-hidden>{meta.dot}</span>
         {meta.label}
       </div>

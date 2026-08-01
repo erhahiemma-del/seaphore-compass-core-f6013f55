@@ -142,7 +142,9 @@ export function isValidContainerNumber(value: string): boolean {
   const letterValue = (ch: string): number => {
     const n = ch.charCodeAt(0) - 55; // A = 10
     // 11, 22, 33 are skipped in ISO 6346.
-    return n + Math.floor((n - 10) / 10) + (n >= 11 ? 0 : 0) === 0 ? n : n + Math.floor((n - 10) / 10);
+    return n + Math.floor((n - 10) / 10) + (n >= 11 ? 0 : 0) === 0
+      ? n
+      : n + Math.floor((n - 10) / 10);
   };
   let sum = 0;
   for (let i = 0; i < 10; i += 1) {
@@ -165,7 +167,12 @@ export function normaliseHsCode(value: string | undefined | null): string | null
 const cargoId = (suffix: string): string => `cargo:${suffix}`;
 const companyId = (rc: string | undefined, name: string | undefined): string | null => {
   if (rc) return `company:cac:${rc.trim().toUpperCase()}`;
-  if (name) return `company:${name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 64)}`;
+  if (name)
+    return `company:${name
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .slice(0, 64)}`;
   return null;
 };
 
@@ -201,9 +208,7 @@ export class NcsCustomsProvider extends BaseEvidenceProvider {
     this.fetchImpl = opts.fetchImpl ?? ((...args) => fetch(...args));
     this.token = opts.credential ?? readFirstProviderCredential(TOKEN_ENV)?.value ?? null;
     this.baseUrl =
-      opts.baseUrl ??
-      BASE_URL_ENV.map((n) => readProviderCredential(n)).find((v) => !!v) ??
-      null;
+      opts.baseUrl ?? BASE_URL_ENV.map((n) => readProviderCredential(n)).find((v) => !!v) ?? null;
   }
 
   protected cacheKey(query: AcquisitionQuery): string {
@@ -274,10 +279,7 @@ export class NcsCustomsProvider extends BaseEvidenceProvider {
    * manifest, bill of lading, containers, cargo items and — only when the
    * authority actually assessed duty — a revenue assessment.
    */
-  private expand(
-    declaration: NcsDeclaration,
-    query: AcquisitionQuery,
-  ): NormalizedEvidence[] {
+  private expand(declaration: NcsDeclaration, query: AcquisitionQuery): NormalizedEvidence[] {
     const out: NormalizedEvidence[] = [];
     const head = this.normalize(declaration, query);
     if (!head) return out;
@@ -552,7 +554,8 @@ export class NcsCustomsProvider extends BaseEvidenceProvider {
         issues.push({
           evidenceId: r.id,
           code: "missing-required",
-          message: "Dutiable cargo item carries no HS code — duty cannot be assessed from this line.",
+          message:
+            "Dutiable cargo item carries no HS code — duty cannot be assessed from this line.",
           severity: "warn",
         });
       }
@@ -587,7 +590,10 @@ export class NcsCustomsProvider extends BaseEvidenceProvider {
       }
 
       const revenueField = f["duty.assessed"] ?? f["duty.paid"] ?? f["value.declared"];
-      if (revenueField != null && (r.grade === "REPORTED" || r.grade === "INFERRED" || r.grade === "UNKNOWN")) {
+      if (
+        revenueField != null &&
+        (r.grade === "REPORTED" || r.grade === "INFERRED" || r.grade === "UNKNOWN")
+      ) {
         issues.push({
           evidenceId: r.id,
           code: "low-source-confidence",
@@ -604,7 +610,9 @@ export class NcsCustomsProvider extends BaseEvidenceProvider {
 function portRef(value: string | undefined): string | null {
   if (!value) return null;
   const t = value.trim();
-  return /^[A-Za-z]{5}$/.test(t) ? `port:unlocode:${t.toUpperCase()}` : `port:name:${t.toLowerCase()}`;
+  return /^[A-Za-z]{5}$/.test(t)
+    ? `port:unlocode:${t.toUpperCase()}`
+    : `port:name:${t.toLowerCase()}`;
 }
 
 export const ncsCustomsProvider = new NcsCustomsProvider();

@@ -184,10 +184,7 @@ function InvestigationsDashboard() {
     const avgCompleteness = active.length
       ? Math.round(active.reduce((s, i) => s + i.evidenceCompleteness, 0) / active.length)
       : 0;
-    const revenueAtRisk = active.reduce(
-      (s, i) => s + (i.estimatedRevenueImpactUsd ?? 0),
-      0,
-    );
+    const revenueAtRisk = active.reduce((s, i) => s + (i.estimatedRevenueImpactUsd ?? 0), 0);
     const officers = new Set<string>();
     for (const i of all) {
       officers.add(i.officer);
@@ -324,8 +321,7 @@ function InvestigationsDashboard() {
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-semibold">
             <span className="inline-flex items-center gap-2">
-              <Compass className="h-4 w-4 text-[color:var(--color-teal)]" /> Lifecycle
-              distribution
+              <Compass className="h-4 w-4 text-[color:var(--color-teal)]" /> Lifecycle distribution
             </span>
           </CardTitle>
         </CardHeader>
@@ -371,7 +367,10 @@ function InvestigationsDashboard() {
                 onChange={(e) => setQ(e.target.value)}
                 className="h-8 w-56"
               />
-              <Select value={stageFilter} onValueChange={(v) => setStageFilter(v as "ALL" | InvestigationStage)}>
+              <Select
+                value={stageFilter}
+                onValueChange={(v) => setStageFilter(v as "ALL" | InvestigationStage)}
+              >
                 <SelectTrigger className="h-8 w-36">
                   <SelectValue placeholder="Stage" />
                 </SelectTrigger>
@@ -473,7 +472,9 @@ function InvestigationsDashboard() {
                         </TableCell>
                         <TableCell className="text-xs">{i.evidenceCompleteness}%</TableCell>
                         <TableCell className="text-xs">{i.officer}</TableCell>
-                        <TableCell className="text-xs">{usd(i.estimatedRevenueImpactUsd)}</TableCell>
+                        <TableCell className="text-xs">
+                          {usd(i.estimatedRevenueImpactUsd)}
+                        </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
                           {relative(i.updatedAt)}
                         </TableCell>

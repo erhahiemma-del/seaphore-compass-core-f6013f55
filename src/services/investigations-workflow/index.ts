@@ -96,7 +96,10 @@ interface WorkflowState {
   cases: ReadonlyArray<InvestigationCase>;
   open(input: OpenCaseInput): InvestigationCase;
   linkEvidence(caseId: string, link: Omit<CaseEvidenceLink, "linkedAt">): void;
-  addFinding(caseId: string, f: Omit<CaseFinding, "id" | "createdAt" | "officerApproved">): CaseFinding | undefined;
+  addFinding(
+    caseId: string,
+    f: Omit<CaseFinding, "id" | "createdAt" | "officerApproved">,
+  ): CaseFinding | undefined;
   approveFinding(caseId: string, findingId: string, officer: string): void;
   advance(caseId: string, to: CaseStage, actor: string, note?: string): boolean;
   close(caseId: string, actor: string, note: string): void;
@@ -107,7 +110,11 @@ function append(c: InvestigationCase, entry: AuditTrailEntry): InvestigationCase
   return { ...c, auditTrail: [...c.auditTrail, entry] };
 }
 
-function upd(cases: ReadonlyArray<InvestigationCase>, id: string, fn: (c: InvestigationCase) => InvestigationCase) {
+function upd(
+  cases: ReadonlyArray<InvestigationCase>,
+  id: string,
+  fn: (c: InvestigationCase) => InvestigationCase,
+) {
   return cases.map((c) => (c.id === id ? fn(c) : c));
 }
 
@@ -158,11 +165,14 @@ export const useInvestigationWorkflowStore = create<WorkflowState>((set, get) =>
     };
     set((s) => ({
       cases: upd(s.cases, caseId, (c) =>
-        append({ ...c, findings: [...c.findings, finding] }, {
-          atISO: iso,
-          actor: f.createdBy,
-          action: `finding-added:${finding.id}`,
-        }),
+        append(
+          { ...c, findings: [...c.findings, finding] },
+          {
+            atISO: iso,
+            actor: f.createdBy,
+            action: `finding-added:${finding.id}`,
+          },
+        ),
       ),
     }));
     return finding;
@@ -175,7 +185,9 @@ export const useInvestigationWorkflowStore = create<WorkflowState>((set, get) =>
           {
             ...c,
             findings: c.findings.map((f) =>
-              f.id === findingId ? { ...f, officerApproved: true, approvedBy: officer, approvedAt: iso } : f,
+              f.id === findingId
+                ? { ...f, officerApproved: true, approvedBy: officer, approvedAt: iso }
+                : f,
             ),
           },
           { atISO: iso, actor: officer, action: `finding-approved:${findingId}` },
@@ -189,7 +201,10 @@ export const useInvestigationWorkflowStore = create<WorkflowState>((set, get) =>
     const iso = new Date().toISOString();
     set((s) => ({
       cases: upd(s.cases, caseId, (c) =>
-        append({ ...c, stage: to }, { atISO: iso, actor, action: `stage:${cur.stage}->${to}`, note }),
+        append(
+          { ...c, stage: to },
+          { atISO: iso, actor, action: `stage:${cur.stage}->${to}`, note },
+        ),
       ),
     }));
     return true;

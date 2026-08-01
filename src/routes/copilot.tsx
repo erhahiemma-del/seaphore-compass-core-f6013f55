@@ -53,17 +53,10 @@ class CancelledRun extends Error {
 import { AdaptiveBriefing } from "@/components/copilot/briefing";
 import { CargoDossierPanel } from "@/components/copilot/cargo/CargoDossierPanel";
 import { buildCargoDossier, type CargoDossier } from "@/services/copilot/cargo";
-import type {
-  AdaptiveBriefingData,
-  OverrideSubmission,
-} from "@/components/copilot/briefing";
+import type { AdaptiveBriefingData, OverrideSubmission } from "@/components/copilot/briefing";
 import { StreamingStages } from "@/components/copilot/StreamingStages";
 import { InvestigationLanding } from "@/components/copilot/InvestigationLanding";
-import {
-  describeAttachments,
-  type OfficerAttachment,
-} from "@/hooks/use-officer-attachments";
-
+import { describeAttachments, type OfficerAttachment } from "@/hooks/use-officer-attachments";
 
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { Button } from "@/components/ui/button";
@@ -108,8 +101,6 @@ import {
   recordOfficerTurn,
 } from "@/services/workspace/derive";
 
-
-
 export const Route = createFileRoute("/copilot")({
   head: () => ({
     meta: [
@@ -135,20 +126,49 @@ interface Investigation {
 }
 
 const PINNED: Investigation[] = [
-  { id: "inv-ocean-pearl", title: "MV Ocean Pearl", subtitle: "High risk investigation", when: "10:45", pinned: true },
-  { id: "inv-revenue-lagos", title: "Revenue leakage — Lagos", subtitle: "Analysis", when: "09:32", pinned: true },
+  {
+    id: "inv-ocean-pearl",
+    title: "MV Ocean Pearl",
+    subtitle: "High risk investigation",
+    when: "10:45",
+    pinned: true,
+  },
+  {
+    id: "inv-revenue-lagos",
+    title: "Revenue leakage — Lagos",
+    subtitle: "Analysis",
+    when: "09:32",
+    pinned: true,
+  },
 ];
 
 const RECENT: Investigation[] = [
-  { id: "inv-ais-niger", title: "AIS blackout — MT Niger Runner", subtitle: "Detect", when: "18:11" },
-  { id: "inv-tin-can", title: "Duplicate manifests — Tin Can", subtitle: "Investigate", when: "17:48" },
-  { id: "inv-blue-horizon", title: "Sanctions screening — Blue Horizon", subtitle: "Compliance", when: "17:02" },
+  {
+    id: "inv-ais-niger",
+    title: "AIS blackout — MT Niger Runner",
+    subtitle: "Detect",
+    when: "18:11",
+  },
+  {
+    id: "inv-tin-can",
+    title: "Duplicate manifests — Tin Can",
+    subtitle: "Investigate",
+    when: "17:48",
+  },
+  {
+    id: "inv-blue-horizon",
+    title: "Sanctions screening — Blue Horizon",
+    subtitle: "Compliance",
+    when: "17:02",
+  },
   { id: "inv-apapa", title: "Port congestion — Apapa", subtitle: "Ports", when: "16:40" },
-  { id: "inv-imo-942", title: "Unusual voyage pattern — IMO 942…", subtitle: "Vessel", when: "15:22" },
+  {
+    id: "inv-imo-942",
+    title: "Unusual voyage pattern — IMO 942…",
+    subtitle: "Vessel",
+    when: "15:22",
+  },
 ];
-
-
-
 
 interface OrchestrationModule {
   key: string;
@@ -189,7 +209,7 @@ function CopilotOpsPage() {
   const session = useCopilotSession();
   const activeMissionId = useMissionContextStore((s) => s.activeId);
   const activeMission = useMissionContextStore((s) =>
-    s.activeId ? s.missions[s.activeId] ?? null : null,
+    s.activeId ? (s.missions[s.activeId] ?? null) : null,
   );
 
   const [text, setText] = useState("");
@@ -214,11 +234,12 @@ function CopilotOpsPage() {
   const [followUps, setFollowUps] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [activeInvestigation, setActiveInvestigation] = useState<string>("inv-ocean-pearl");
-  const [panelTab, setPanelTab] = useState<"context" | "evidence" | "timeline" | "notes">("context");
+  const [panelTab, setPanelTab] = useState<"context" | "evidence" | "timeline" | "notes">(
+    "context",
+  );
   const [splitModule, setSplitModule] = useState<OrchestrationModule | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const workspaceScrollRef = useRef<HTMLDivElement | null>(null);
-
 
   useEffect(() => {
     const t = window.setTimeout(() => inputRef.current?.focus(), 40);
@@ -234,19 +255,21 @@ function CopilotOpsPage() {
       stageSyncReady.current = true;
       return;
     }
-    if (stage === "classifying" || stage === "retrieving" || stage === "reasoning" || stage === "rendering") {
+    if (
+      stage === "classifying" ||
+      stage === "retrieving" ||
+      stage === "reasoning" ||
+      stage === "rendering"
+    ) {
       useCopilotRunStore.getState().setStage(stage);
     } else {
       useCopilotRunStore.getState().clear();
     }
   }, [stage]);
 
-
-
   // Monotonic run token. Cancelling bumps it, so any results still in flight
   // from the abandoned run are discarded instead of overwriting the screen.
   const runIdRef = useRef(0);
-
 
   const mutation = useMutation({
     mutationFn: async (q: string) => {
@@ -297,14 +320,11 @@ function CopilotOpsPage() {
         | null
         | undefined;
       if (uipFromResult && uipFromResult.id) {
-        (
-          await import("@/stores/uip.store")
-        ).useUipStore.getState().register(uipFromResult);
+        (await import("@/stores/uip.store")).useUipStore.getState().register(uipFromResult);
         setUipId(uipFromResult.id);
       } else {
         setUipId(null);
       }
-
 
       const normalisedResult: import("@/services/oie").OIEResult = (() => {
         if ((rawResult as { briefing?: unknown }).briefing) {
@@ -442,7 +462,9 @@ function CopilotOpsPage() {
       try {
         const humanResp =
           (result as { humanResponse?: import("@/services/oie/types").HumanResponse })
-            .humanResponse ?? result.ibe?.humanResponse ?? null;
+            .humanResponse ??
+          result.ibe?.humanResponse ??
+          null;
         setIbeProjection({
           ibe: result.ibe ?? null,
           humanResponse: humanResp,
@@ -454,7 +476,7 @@ function CopilotOpsPage() {
       }
       const plan = (result as { plan?: { followUps?: string[] } }).plan;
       const ibeQuestions = result.ibe?.humanResponse?.suggestedNextQuestions;
-      setFollowUps(ibeQuestions?.length ? ibeQuestions : plan?.followUps ?? []);
+      setFollowUps(ibeQuestions?.length ? ibeQuestions : (plan?.followUps ?? []));
       if (abandoned()) throw new CancelledRun();
       setStage("ready");
       session.appendCopilot(`Briefing: ${q}`, adapted.id);
@@ -563,8 +585,6 @@ function CopilotOpsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-
-
   async function handleOverride(submission: OverrideSubmission) {
     if (!briefing) return;
     try {
@@ -590,7 +610,10 @@ function CopilotOpsPage() {
   }
 
   const isStreaming =
-    stage === "classifying" || stage === "retrieving" || stage === "reasoning" || stage === "rendering";
+    stage === "classifying" ||
+    stage === "retrieving" ||
+    stage === "reasoning" ||
+    stage === "rendering";
 
   /**
    * Sprint UX-02 — the workspace has two modes. Empty state = the
@@ -624,9 +647,6 @@ function CopilotOpsPage() {
     return () => window.clearTimeout(t);
   }, [mutation.isPending, investigationMode]);
 
-
-
-
   return (
     <AppShell title="NIMASA Copilot" subtitle="Intelligence Orchestration Workspace">
       <div className="flex min-h-[calc(100vh-8rem)] flex-col bg-[#F7F8FA]">
@@ -642,7 +662,10 @@ function CopilotOpsPage() {
           {ORCHESTRATION_MODULES.map((m) => {
             const active = splitModule?.key === m.key;
             return (
-              <div key={m.key} className="flex items-center overflow-hidden rounded-md border border-border/70">
+              <div
+                key={m.key}
+                className="flex items-center overflow-hidden rounded-md border border-border/70"
+              >
                 <Link
                   to={m.route}
                   className="flex items-center gap-1.5 bg-background px-2 py-1 text-[11.5px] font-medium text-foreground hover:bg-accent"
@@ -719,9 +742,6 @@ function CopilotOpsPage() {
                   ))}
                 </ul>
 
-
-
-
                 <button
                   type="button"
                   onClick={() => {
@@ -763,7 +783,6 @@ function CopilotOpsPage() {
                           {briefing?.query ? "Intelligence briefing" : "Awaiting Investigation"}
                         </span>
                       </span>
-
                     </div>
                   </div>
                 </div>
@@ -810,7 +829,6 @@ function CopilotOpsPage() {
               <div
                 ref={workspaceScrollRef}
                 data-testid="copilot-workspace-scroll"
-
                 className={cn(
                   "min-h-0 flex-1 overflow-auto overscroll-contain scroll-smooth",
                   investigationMode ? "p-4" : "flex p-0",
@@ -828,8 +846,6 @@ function CopilotOpsPage() {
                     />
                   </div>
                 ) : null}
-
-
 
                 {isStreaming ? (
                   <div className="animate-in fade-in slide-in-from-top-2 rounded-lg border border-border/60 bg-[#FAFBFC] p-4 duration-300">
@@ -858,7 +874,10 @@ function CopilotOpsPage() {
                 ) : null}
 
                 {briefing ? (
-                  <div key={briefing.id} className="animate-in fade-in slide-in-from-bottom-3 duration-300">
+                  <div
+                    key={briefing.id}
+                    className="animate-in fade-in slide-in-from-bottom-3 duration-300"
+                  >
                     <IntelligenceProjectionPanel
                       ibe={ibeProjection?.ibe ?? null}
                       humanResponse={ibeProjection?.humanResponse ?? null}
@@ -902,7 +921,6 @@ function CopilotOpsPage() {
                     </details>
                   </div>
                 ) : null}
-
 
                 {briefing && followUps.length > 0 ? (
                   <div className="mt-3 rounded-lg border border-border/60 bg-[#FAFBFC] p-3">
@@ -974,7 +992,6 @@ function CopilotOpsPage() {
                   </p>
                 </form>
               ) : null}
-
             </div>
           </section>
 
@@ -1048,7 +1065,6 @@ function CopilotOpsPage() {
                     disabled={mutation.isPending}
                   />
                 </div>
-
               </div>
             )}
           </aside>
@@ -1111,10 +1127,7 @@ function ExecutiveBriefingView({
       {uip && <EvidenceProvenancePanel uip={uip} />}
     </>
   );
-
 }
-
-
 
 function stageIndex(s: Stage): number {
   if (s === "classifying") return 0;
@@ -1154,7 +1167,10 @@ function KpiRibbon() {
         icon: ClipboardCheck,
         color: "#F59E0B",
         label: "Pending Validation",
-        value: metrics?.container?.value != null ? Math.min(999, Math.round(metrics.container.value / 4)) : "—",
+        value:
+          metrics?.container?.value != null
+            ? Math.min(999, Math.round(metrics.container.value / 4))
+            : "—",
         delta: "+6",
       },
       {
@@ -1168,7 +1184,10 @@ function KpiRibbon() {
         icon: Gauge,
         color: "#10B981",
         label: "Confidence Score",
-        value: metrics?.risk?.value != null ? `${Math.max(60, 100 - Math.round(metrics.risk.value))}%` : "82%",
+        value:
+          metrics?.risk?.value != null
+            ? `${Math.max(60, 100 - Math.round(metrics.risk.value))}%`
+            : "82%",
         delta: "+1.4%",
       },
       {
@@ -1202,7 +1221,9 @@ function KpiRibbon() {
           </div>
           <div className="mt-2 flex items-end justify-between">
             <div className="text-[22px] font-bold leading-none text-foreground">{t.value}</div>
-            <div className="text-[11px] font-semibold text-[color:var(--color-teal)]">{t.delta}</div>
+            <div className="text-[11px] font-semibold text-[color:var(--color-teal)]">
+              {t.delta}
+            </div>
           </div>
         </div>
       ))}
@@ -1267,7 +1288,9 @@ function InvestigationRow({
         )}
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
-            <span className="truncate text-[12.5px] font-semibold text-foreground">{inv.title}</span>
+            <span className="truncate text-[12.5px] font-semibold text-foreground">
+              {inv.title}
+            </span>
             <span className="shrink-0 text-[10.5px] text-muted-foreground">{inv.when}</span>
           </div>
           <div className="truncate text-[11px] text-muted-foreground">{inv.subtitle}</div>
@@ -1276,9 +1299,6 @@ function InvestigationRow({
     </li>
   );
 }
-
-
-
 
 /* ---------- Right panel widgets ---------- */
 
@@ -1332,7 +1352,11 @@ function RiskOverview() {
         <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-4 border-[#DC2626]/20">
           <div
             className="absolute inset-0 rounded-full border-4 border-transparent"
-            style={{ borderTopColor: "#DC2626", borderRightColor: "#DC2626", transform: "rotate(45deg)" }}
+            style={{
+              borderTopColor: "#DC2626",
+              borderRightColor: "#DC2626",
+              transform: "rotate(45deg)",
+            }}
           />
           <div className="text-center">
             <div className="text-lg font-bold leading-none text-[#DC2626]">78</div>
@@ -1434,7 +1458,6 @@ function CopilotCommandsPanel({
               onClick={() => {
                 const res = routeCommand(cmd, ctx, onRun);
                 if (!res.ok) {
-                  // eslint-disable-next-line no-console
                   console.info("[CopilotCommand] blocked:", res.message);
                 }
               }}
@@ -1455,4 +1478,3 @@ function CopilotCommandsPanel({
     </section>
   );
 }
-

@@ -51,7 +51,9 @@ function ScoreChip({ score, tier }: { score: number; tier: IdentityConfidenceTie
 }
 
 function SignalBreakdown({ confidence }: { confidence: IdentityConfidenceResult }) {
-  const positives = confidence.signals.filter((s) => s.contribution > 0 || s.kind === "provider-match-fields" || s.weight === 0);
+  const positives = confidence.signals.filter(
+    (s) => s.contribution > 0 || s.kind === "provider-match-fields" || s.weight === 0,
+  );
   return (
     <ul className="mt-2 flex flex-col gap-1">
       {positives.map((s, i) => (
@@ -96,19 +98,42 @@ function CandidateRow({
           onClick={() => setOpen((o) => !o)}
           className="flex flex-1 items-center gap-2 text-left"
         >
-          {open ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
+          {open ? (
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+          ) : (
+            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+          )}
           <ShipIcon className="h-4 w-4 text-primary/80" />
           <span className="text-sm font-medium">{v.name ?? "(unnamed vessel)"}</span>
-          {isTop && <Badge variant="secondary" className="ml-1 text-[10px]">Top match</Badge>}
+          {isTop && (
+            <Badge variant="secondary" className="ml-1 text-[10px]">
+              Top match
+            </Badge>
+          )}
         </button>
         <ScoreChip score={candidate.confidence.score} tier={candidate.confidence.tier} />
       </div>
 
       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
-        {v.imo && <span className="inline-flex items-center gap-1"><Hash className="h-3 w-3" />IMO {v.imo}</span>}
-        {v.mmsi && <span className="inline-flex items-center gap-1"><Radio className="h-3 w-3" />MMSI {v.mmsi}</span>}
+        {v.imo && (
+          <span className="inline-flex items-center gap-1">
+            <Hash className="h-3 w-3" />
+            IMO {v.imo}
+          </span>
+        )}
+        {v.mmsi && (
+          <span className="inline-flex items-center gap-1">
+            <Radio className="h-3 w-3" />
+            MMSI {v.mmsi}
+          </span>
+        )}
         {v.callSign && <span>Call sign {v.callSign}</span>}
-        {v.flag && <span className="inline-flex items-center gap-1"><Flag className="h-3 w-3" />{v.flag}</span>}
+        {v.flag && (
+          <span className="inline-flex items-center gap-1">
+            <Flag className="h-3 w-3" />
+            {v.flag}
+          </span>
+        )}
         {v.providerMatchFields && (
           <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px]">
             provider: {v.providerMatchFields}
@@ -120,7 +145,7 @@ function CandidateRow({
         <div className="mt-2 border-t border-border/60 pt-2">
           <p className="text-[11px] font-medium text-muted-foreground">Why this score</p>
           <SignalBreakdown confidence={candidate.confidence} />
-          {(v.aliases?.length || v.historicalNames?.length) ? (
+          {v.aliases?.length || v.historicalNames?.length ? (
             <p className="mt-2 text-[11px] text-muted-foreground">
               {v.aliases?.length ? <>Aliases: {v.aliases.join(", ")}. </> : null}
               {v.historicalNames?.length ? <>Prior names: {v.historicalNames.join(", ")}.</> : null}
@@ -192,7 +217,12 @@ export function VesselIdentityConfirm({
 
       <ul className="flex flex-col gap-2">
         {candidates.map((c, i) => (
-          <CandidateRow key={c.vessel.vesselId} candidate={c} isTop={i === 0} onSelect={onConfirm} />
+          <CandidateRow
+            key={c.vessel.vesselId}
+            candidate={c}
+            isTop={i === 0}
+            onSelect={onConfirm}
+          />
         ))}
       </ul>
 

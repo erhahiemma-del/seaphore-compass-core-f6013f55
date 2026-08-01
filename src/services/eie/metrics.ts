@@ -24,7 +24,8 @@ export function computeEieMetrics(registry: EntityRegistry): EieMetrics {
 
   const resolutionByRule: Record<string, number> = {};
   for (const c of clusters) {
-    resolutionByRule[c.rule] = (resolutionByRule[c.rule] ?? 0) + Math.max(0, c.memberIds.length - 1);
+    resolutionByRule[c.rule] =
+      (resolutionByRule[c.rule] ?? 0) + Math.max(0, c.memberIds.length - 1);
   }
   const duplicatesResolved = Object.values(resolutionByRule).reduce((a, b) => a + b, 0);
 

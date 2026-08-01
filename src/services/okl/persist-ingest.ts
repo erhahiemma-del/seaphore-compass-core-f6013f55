@@ -179,8 +179,7 @@ export async function persistInvestigationToOkl(
           ? "MEDIUM"
           : "HIGH";
     const accepted =
-      rating.effectiveness === "EFFECTIVE" ||
-      rating.effectiveness === "PARTIALLY_EFFECTIVE";
+      rating.effectiveness === "EFFECTIVE" || rating.effectiveness === "PARTIALLY_EFFECTIVE";
     const payload = {
       recommendationId: rating.recommendationId ?? null,
       effectiveness: rating.effectiveness,
@@ -227,7 +226,6 @@ export async function persistInvestigationToOkl(
     });
   }
 
-
   // RECOMMENDATIONS ---------------------------------------------------
   if (ws.recommendation) {
     records.push({
@@ -239,9 +237,6 @@ export async function persistInvestigationToOkl(
       },
     });
   }
-
-
-
 
   const snapshot = {
     workspace: {

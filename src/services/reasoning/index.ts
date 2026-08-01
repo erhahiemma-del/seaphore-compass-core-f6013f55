@@ -6,10 +6,7 @@
  * over free web content. "Evidence first. Explainable always. Officer decides."
  */
 export * from "./types";
-export {
-  SYSTEM_PROMPT,
-  SYSTEM_PROMPT_FINGERPRINT,
-} from "./system-prompt";
+export { SYSTEM_PROMPT, SYSTEM_PROMPT_FINGERPRINT } from "./system-prompt";
 export { workspaceOverlay } from "./workspace-prompts";
 export {
   propagate,

@@ -21,17 +21,21 @@ describe("identity-confidence", () => {
       { query: "MV Ocean Pearl" },
     );
     const bad = scoreIdentityCandidate(
-      { id: "b", name: "HG FII IBI 1SO 3", providerMatchFields: "NO_MATCH", imo: "1234567", mmsi: "574182861", flag: "VNM" },
+      {
+        id: "b",
+        name: "HG FII IBI 1SO 3",
+        providerMatchFields: "NO_MATCH",
+        imo: "1234567",
+        mmsi: "574182861",
+        flag: "VNM",
+      },
       { query: "MV Ocean Pearl" },
     );
     expect(good.score).toBeGreaterThan(bad.score);
   });
 
   it("requires officer confirmation when top score is below threshold", () => {
-    const sel = selectIdentity(
-      [{ id: "x", name: "SOME OTHER SHIP" }],
-      { query: "MV Nightingale" },
-    );
+    const sel = selectIdentity([{ id: "x", name: "SOME OTHER SHIP" }], { query: "MV Nightingale" });
     expect(sel.requiresConfirmation).toBe(true);
     expect(sel.ambiguityReason).toBe("below-threshold");
   });
@@ -51,7 +55,13 @@ describe("identity-confidence", () => {
   it("auto-selects a clear winner", () => {
     const sel = selectIdentity(
       [
-        { id: "a", name: "OCEAN PEARL", mmsi: "503138740", flag: "AUS", providerMatchFields: "SEVERAL_FIELDS" },
+        {
+          id: "a",
+          name: "OCEAN PEARL",
+          mmsi: "503138740",
+          flag: "AUS",
+          providerMatchFields: "SEVERAL_FIELDS",
+        },
         { id: "b", name: "COASTAL DRIFTER", providerMatchFields: "NO_MATCH" },
       ],
       { query: "OCEAN PEARL" },

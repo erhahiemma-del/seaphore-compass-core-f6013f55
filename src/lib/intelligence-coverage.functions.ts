@@ -7,9 +7,8 @@ import type { IntelligenceCoverageReport } from "@/lib/intelligence/coverage-mod
 
 export const getIntelligenceCoverage = createServerFn({ method: "GET" }).handler(
   async (): Promise<IntelligenceCoverageReport> => {
-    const { getIntelligenceCoverageReport } = await import(
-      "@/lib/server/intelligence/coverage.server"
-    );
+    const { getIntelligenceCoverageReport } =
+      await import("@/lib/server/intelligence/coverage.server");
     return getIntelligenceCoverageReport();
   },
 );

@@ -74,9 +74,7 @@ const SEED: CacRaw[] = [
     type: "LIMITED LIABILITY COMPANY",
     dateOfIncorporation: "2018-03-04",
     address: "Berth 7, Tin Can Island Port, Lagos",
-    directors: [
-      { name: "IBRAHIM, Musa", role: "Managing Director", nationality: "Nigerian" },
-    ],
+    directors: [{ name: "IBRAHIM, Musa", role: "Managing Director", nationality: "Nigerian" }],
     linkedVesselImos: ["9151147"],
   },
   {
@@ -87,26 +85,33 @@ const SEED: CacRaw[] = [
     type: "LIMITED LIABILITY COMPANY",
     dateOfIncorporation: "2022-01-19",
     address: "FOT Complex, Onne, Rivers State",
-    directors: [
-      { name: "OKON, Grace", role: "Director", nationality: "Nigerian" },
-    ],
+    directors: [{ name: "OKON, Grace", role: "Director", nationality: "Nigerian" }],
     linkedVesselImos: ["9354923"],
   },
 ];
 
 function parseCacHtml(html: string, query: string): CacRaw | null {
   try {
-    const stripped = html.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ");
+    const stripped = html
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .replace(/\s+/g, " ");
     const rcMatch = stripped.match(/RC\s*(?:Number|No\.?)?[:\s]*([0-9]{4,10})/i);
     const nameMatch =
-      stripped.match(/Company Name[:\s]+([A-Z0-9 &.,'\-]{3,120}?)(?:\s{2,}|RC|Status|Type|Incorporation)/i) ??
-      stripped.match(new RegExp(`(${query.split(/\s+/).slice(0, 2).join("\\s+")}[A-Z0-9 &.,'\\-]{0,80})`, "i"));
+      stripped.match(
+        /Company Name[:\s]+([A-Z0-9 &.,'-]{3,120}?)(?:\s{2,}|RC|Status|Type|Incorporation)/i,
+      ) ??
+      stripped.match(
+        new RegExp(`(${query.split(/\s+/).slice(0, 2).join("\\s+")}[A-Z0-9 &.,'\\-]{0,80})`, "i"),
+      );
     const statusMatch = stripped.match(/Status[:\s]+([A-Z ]{3,20})/i);
     const typeMatch = stripped.match(/(?:Company\s+)?Type[:\s]+([A-Z ]{3,40})/i);
     const incMatch = stripped.match(
       /(?:Date of Incorporation|Registration Date)[:\s]+(\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{2,4})/i,
     );
-    const addrMatch = stripped.match(/(?:Registered )?Address[:\s]+([A-Za-z0-9 ,.\-]{5,200}?)(?:\s{2,}|Directors|Status)/i);
+    const addrMatch = stripped.match(
+      /(?:Registered )?Address[:\s]+([A-Za-z0-9 ,.-]{5,200}?)(?:\s{2,}|Directors|Status)/i,
+    );
     if (!rcMatch) return null;
     const rc = rcMatch[1];
     return {
@@ -228,7 +233,11 @@ export class CacNigeriaConnector implements ConnectorInterface {
     if (!connectorId) throw new Error(`Connector ${this.name} is not registered`);
     const { data: run } = await supabaseAdmin
       .from("osint_sync_runs")
-      .insert({ connector_id: connectorId, started_at: new Date().toISOString(), status: "running" })
+      .insert({
+        connector_id: connectorId,
+        started_at: new Date().toISOString(),
+        status: "running",
+      })
       .select("id")
       .single();
     const runId = (run as { id: string } | null)?.id ?? "";

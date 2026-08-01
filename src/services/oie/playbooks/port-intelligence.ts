@@ -29,11 +29,7 @@ export const portIntelligencePlaybook: Playbook = {
     "Compare with 7-day / 30-day baselines",
   ],
   requiredEvidence: {
-    mandatory: [
-      "Current port vessel roster",
-      "Congestion / dwell metrics",
-      "Open incident record",
-    ],
+    mandatory: ["Current port vessel roster", "Congestion / dwell metrics", "Open incident record"],
     optional: ["Baseline throughput history", "Weather advisory"],
     minimumBeforeReasoning: 2,
   },
@@ -114,8 +110,7 @@ export const portIntelligencePlaybook: Playbook = {
       when: (ctx) => hasFinding(ctx, ["high risk", "sanction", "watchlist"]),
       action: "Apply enhanced monitoring on high-risk vessels in the roster",
       priority: "critical",
-      rationale: () =>
-        "High-risk arrival present; SOP mandates enhanced monitoring.",
+      rationale: () => "High-risk arrival present; SOP mandates enhanced monitoring.",
     },
     {
       id: "port.rec.congestion",

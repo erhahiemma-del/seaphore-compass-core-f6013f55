@@ -38,11 +38,12 @@ export async function exportReportDocx(report: ReportPackage): Promise<Blob> {
   );
 
   for (const s of report.sections) {
-    children.push(new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun(s.title)] }));
+    children.push(
+      new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun(s.title)] }),
+    );
     if (s.body) children.push(new Paragraph(s.body));
     if (s.bullets?.length) {
-      for (const b of s.bullets)
-        children.push(new Paragraph({ text: b, bullet: { level: 0 } }));
+      for (const b of s.bullets) children.push(new Paragraph({ text: b, bullet: { level: 0 } }));
     }
     if (s.columns && s.rows?.length) {
       const cols = s.columns;

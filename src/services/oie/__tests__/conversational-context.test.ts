@@ -178,9 +178,7 @@ describe("UX-001 · sticky conversational context", () => {
       query: {
         query: "Who owns it?",
         officer_id: "00000000-0000-0000-0000-000000000000",
-        mission: missionWith([
-          { role: "officer", text: "Tell me about MV Ocean Pearl" },
-        ]),
+        mission: missionWith([{ role: "officer", text: "Tell me about MV Ocean Pearl" }]),
       },
     });
     assertBriefing(r);
@@ -211,9 +209,7 @@ describe("UX-001 · sticky conversational context", () => {
       query: {
         query: "Show manifest",
         officer_id: "00000000-0000-0000-0000-000000000000",
-        mission: missionWith([
-          { role: "officer", text: "Tell me about MV Ocean Pearl" },
-        ]),
+        mission: missionWith([{ role: "officer", text: "Tell me about MV Ocean Pearl" }]),
       },
     });
     expect(r.kind).toBe("briefing");

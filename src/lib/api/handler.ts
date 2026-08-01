@@ -17,7 +17,11 @@ interface HandlerCtx<TBody, TParams> {
   request: Request;
 }
 
-interface HandlerConfig<TBodySchema extends ZodTypeAny | undefined, TParamsSchema extends ZodTypeAny | undefined, TResp> {
+interface HandlerConfig<
+  TBodySchema extends ZodTypeAny | undefined,
+  TParamsSchema extends ZodTypeAny | undefined,
+  TResp,
+> {
   bodySchema?: TBodySchema;
   paramsSchema?: TParamsSchema;
   handler: (
@@ -44,14 +48,20 @@ export function apiHandler<
   return async ({ request, params }: { request: Request; params: Record<string, string> }) => {
     const requestId = crypto.randomUUID();
     const started = Date.now();
-    const log = logger.child({ requestId, path: new URL(request.url).pathname, method: request.method });
+    const log = logger.child({
+      requestId,
+      path: new URL(request.url).pathname,
+      method: request.method,
+    });
     log.info("request.received");
 
     try {
       const auth = await requireAuth(request);
       enforceRateLimit(auth.userId, DEFAULT_POLICY);
 
-      const parsedParams = (config.paramsSchema ? safeParse(config.paramsSchema, params) : params) as TParams;
+      const parsedParams = (
+        config.paramsSchema ? safeParse(config.paramsSchema, params) : params
+      ) as TParams;
       let parsedBody = undefined as unknown as TBody;
       if (config.bodySchema) {
         const raw = request.headers.get("content-type")?.includes("application/json")
@@ -82,7 +92,11 @@ export function apiHandler<
     } catch (err) {
       const status = err instanceof ApiError ? err.status : 500;
       log.warn(
-        { status, durationMs: Date.now() - started, error: err instanceof Error ? err.message : String(err) },
+        {
+          status,
+          durationMs: Date.now() - started,
+          error: err instanceof Error ? err.message : String(err),
+        },
         "request.failed",
       );
       const res = errorResponse(err, requestId);

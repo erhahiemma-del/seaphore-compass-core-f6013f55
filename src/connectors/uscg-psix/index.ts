@@ -83,14 +83,18 @@ const SEED: PsixRaw[] = [
 function parsePsixHtml(html: string, imo: string): PsixRaw | null {
   try {
     const stripped = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
-    const nameMatch = stripped.match(/Vessel Name[:\s]+([A-Z0-9 .\-']{3,60})/i);
-    const dateMatch = stripped.match(/Inspection Date[:\s]+(\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{2,4})/i);
-    const portMatch = stripped.match(/Port[:\s]+([A-Za-z ,.\-]{3,60})/);
+    const nameMatch = stripped.match(/Vessel Name[:\s]+([A-Z0-9 .'-]{3,60})/i);
+    const dateMatch = stripped.match(
+      /Inspection Date[:\s]+(\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{2,4})/i,
+    );
+    const portMatch = stripped.match(/Port[:\s]+([A-Za-z ,.-]{3,60})/);
     const typeMatch = stripped.match(/Inspection Type[:\s]+([A-Za-z ]{3,60})/);
     const defMatch = stripped.match(/Deficienc(?:y|ies)[:\s]+(\d+)/i);
     const detMatch = /Detention[:\s]+(Yes|Y|True)/i.test(stripped);
-    const relMatch = stripped.match(/Release Date[:\s]+(\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{2,4})/i);
-    const insMatch = stripped.match(/Inspector[:\s]+([A-Za-z0-9 ,.\-]{3,80})/);
+    const relMatch = stripped.match(
+      /Release Date[:\s]+(\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{2,4})/i,
+    );
+    const insMatch = stripped.match(/Inspector[:\s]+([A-Za-z0-9 ,.-]{3,80})/);
     if (!nameMatch && !dateMatch) return null;
     return {
       sourceRef: `PSIX-${imo}-${(dateMatch?.[1] ?? new Date().toISOString().slice(0, 10)).replace(/\D/g, "")}`,
@@ -213,7 +217,11 @@ export class UscgPsixConnector implements ConnectorInterface {
     if (!connectorId) throw new Error(`Connector ${this.name} is not registered`);
     const { data: run } = await supabaseAdmin
       .from("osint_sync_runs")
-      .insert({ connector_id: connectorId, started_at: new Date().toISOString(), status: "running" })
+      .insert({
+        connector_id: connectorId,
+        started_at: new Date().toISOString(),
+        status: "running",
+      })
       .select("id")
       .single();
     const runId = (run as { id: string } | null)?.id ?? "";

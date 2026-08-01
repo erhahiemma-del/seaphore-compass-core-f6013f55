@@ -17,22 +17,14 @@ export const Route = createFileRoute("/api/public/hooks/mibc-tick")({
     handlers: {
       POST: async () => {
         try {
-          const { supabaseAdmin } = await import(
-            "@/integrations/supabase/client.server"
-          );
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           const { data, error } = await supabaseAdmin.rpc("mibc_dispatch_tick");
           if (error) {
-            return Response.json(
-              { ok: false, error: error.message },
-              { status: 500 },
-            );
+            return Response.json({ ok: false, error: error.message }, { status: 500 });
           }
           return Response.json({ ok: true, result: data });
         } catch (err) {
-          return Response.json(
-            { ok: false, error: (err as Error).message },
-            { status: 500 },
-          );
+          return Response.json({ ok: false, error: (err as Error).message }, { status: 500 });
         }
       },
       GET: async () =>

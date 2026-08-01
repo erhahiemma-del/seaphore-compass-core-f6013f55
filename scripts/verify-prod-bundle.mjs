@@ -51,7 +51,9 @@ try {
 }
 
 if (failed) {
-  console.error("\nProduction bundle leaked dev-only symbols. Ensure DEV_AUTH_ENABLED guards are intact.");
+  console.error(
+    "\nProduction bundle leaked dev-only symbols. Ensure DEV_AUTH_ENABLED guards are intact.",
+  );
   process.exit(1);
 }
 console.log(`OK — no dev-only symbols leaked into ${DIST}.`);

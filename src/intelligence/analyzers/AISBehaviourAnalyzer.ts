@@ -133,9 +133,7 @@ function haversineNm(a: AisGeoPoint, b: AisGeoPoint): number {
   const dLon = toRad(b.longitude - a.longitude);
   const la1 = toRad(a.latitude);
   const la2 = toRad(b.latitude);
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(la1) * Math.cos(la2) * Math.sin(dLon / 2) ** 2;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(la1) * Math.cos(la2) * Math.sin(dLon / 2) ** 2;
   return 2 * R_KM * Math.asin(Math.min(1, Math.sqrt(h))) * KM_TO_NM;
 }
 
@@ -176,9 +174,7 @@ function narrate(gap: {
 }
 
 function detectPatterns(events: AisDarkEvidence[]): AisPattern[] {
-  const disabling = events
-    .map((e, i) => ({ e, i }))
-    .filter((x) => x.e.kind === "disabling");
+  const disabling = events.map((e, i) => ({ e, i })).filter((x) => x.e.kind === "disabling");
   const patterns: AisPattern[] = [];
 
   // 1) Repeated disabling — ≥3 total OR ≥2 within any 30-day window.
@@ -189,9 +185,7 @@ function detectPatterns(events: AisDarkEvidence[]): AisPattern[] {
     let cluster: typeof sorted = [];
     for (let i = 0; i < sorted.length; i += 1) {
       const cur = sorted[i];
-      cluster = cluster.filter(
-        (c) => hoursBetween(c.e.startAt, cur.e.startAt) <= 24 * 30,
-      );
+      cluster = cluster.filter((c) => hoursBetween(c.e.startAt, cur.e.startAt) <= 24 * 30);
       cluster.push(cur);
     }
     if (disabling.length >= 3 || cluster.length >= 2) {
@@ -291,10 +285,8 @@ export const AISBehaviourAnalyzer = {
       const weather = prev.weather ?? cur.weather ?? "unknown";
       const nearestPort = prev.nearestPort ?? null;
       const nearestPortEnd = cur.nearestPort ?? null;
-      const distanceFromPortNm =
-        prev.distanceFromPortNm ?? cur.distanceFromPortNm ?? null;
-      const distanceFromCoastNm =
-        prev.distanceFromCoastNm ?? cur.distanceFromCoastNm ?? null;
+      const distanceFromPortNm = prev.distanceFromPortNm ?? cur.distanceFromPortNm ?? null;
+      const distanceFromCoastNm = prev.distanceFromCoastNm ?? cur.distanceFromCoastNm ?? null;
       const trafficDensity = prev.trafficDensity ?? cur.trafficDensity ?? "unknown";
       const historicalFrequency = (input.historicalDarkEvents ?? []).length;
       const kind: AisInterruptionKind =
@@ -350,8 +342,7 @@ export const AISBehaviourAnalyzer = {
     return {
       vesselId: input.vesselId,
       windowStart: events[0]?.timestamp ?? new Date().toISOString(),
-      windowEnd:
-        events[events.length - 1]?.timestamp ?? new Date().toISOString(),
+      windowEnd: events[events.length - 1]?.timestamp ?? new Date().toISOString(),
       totalEvents: events.length,
       gapsDetected: dark.length,
       darkEvents: dark,

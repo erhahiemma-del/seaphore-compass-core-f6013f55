@@ -10,10 +10,7 @@ import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  useInvestigationWorkflowStore,
-  type CaseStage,
-} from "@/services/investigations-workflow";
+import { useInvestigationWorkflowStore, type CaseStage } from "@/services/investigations-workflow";
 import { ClipboardList } from "lucide-react";
 
 export const Route = createFileRoute("/investigations-workflow")({
@@ -28,8 +25,7 @@ export const Route = createFileRoute("/investigations-workflow")({
       { property: "og:title", content: "Investigation Workflows · Seaphore" },
       {
         property: "og:description",
-        content:
-          "Evidence-backed investigation stages with officer approval and full audit trail.",
+        content: "Evidence-backed investigation stages with officer approval and full audit trail.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -77,7 +73,10 @@ function InvestigationWorkflowRoute() {
   }, [cases.length, open, linkEvidence, addFinding, reset]);
 
   return (
-    <AppShell title="Investigation Workflows" subtitle="Evidence-backed cases · immutable audit trail">
+    <AppShell
+      title="Investigation Workflows"
+      subtitle="Evidence-backed cases · immutable audit trail"
+    >
       <div className="space-y-4">
         <Card>
           <CardHeader className="pb-2">
@@ -140,7 +139,11 @@ function InvestigationWorkflowRoute() {
                       {f.officerApproved ? (
                         <Badge className="text-[10px]">Approved</Badge>
                       ) : (
-                        <Button size="sm" variant="outline" onClick={() => approveFinding(c.id, f.id, OFFICER)}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => approveFinding(c.id, f.id, OFFICER)}
+                        >
                           Approve
                         </Button>
                       )}
@@ -163,7 +166,10 @@ function InvestigationWorkflowRoute() {
 
               <div className="flex gap-2 pt-2">
                 {NEXT[c.stage] && (
-                  <Button size="sm" onClick={() => advance(c.id, NEXT[c.stage] as CaseStage, OFFICER)}>
+                  <Button
+                    size="sm"
+                    onClick={() => advance(c.id, NEXT[c.stage] as CaseStage, OFFICER)}
+                  >
                     Advance → {NEXT[c.stage]}
                   </Button>
                 )}

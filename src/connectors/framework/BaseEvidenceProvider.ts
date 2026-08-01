@@ -135,10 +135,7 @@ export abstract class BaseEvidenceProvider implements EvidenceProviderV1 {
 
   // ── Platform internals (never re-implemented by providers) ──────────
 
-  protected succeed(
-    records: ReadonlyArray<NormalizedEvidence>,
-    started: number,
-  ): ConnectorResult {
+  protected succeed(records: ReadonlyArray<NormalizedEvidence>, started: number): ConnectorResult {
     const latencyMs = Math.max(0, Math.round(this.now() - started));
     this.calls += 1;
     this.lastSuccessAt = new Date(this.now()).toISOString();

@@ -13,9 +13,7 @@ export interface ResolvedEntities {
   readonly evidenceByEntity: ReadonlyMap<string, ReadonlyArray<NormalizedEvidence>>;
 }
 
-export function resolveEntities(
-  records: ReadonlyArray<NormalizedEvidence>,
-): ResolvedEntities {
+export function resolveEntities(records: ReadonlyArray<NormalizedEvidence>): ResolvedEntities {
   const grouped = new Map<string, NormalizedEvidence[]>();
   const labels = new Map<string, string>();
   const kinds = new Map<string, CanonicalEntityRef["kind"]>();

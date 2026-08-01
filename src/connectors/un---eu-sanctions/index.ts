@@ -213,7 +213,9 @@ export class UnEuSanctionsConnector implements ConnectorInterface {
       const third = extractTag(chunk, "THIRD_NAME") ?? "";
       const entityName =
         kind === "ENTITY"
-          ? extractTag(chunk, "FIRST_NAME") ?? extractTag(chunk, "NAME_ORIGINAL_SCRIPT") ?? "Unknown"
+          ? (extractTag(chunk, "FIRST_NAME") ??
+            extractTag(chunk, "NAME_ORIGINAL_SCRIPT") ??
+            "Unknown")
           : [first, second, third].filter(Boolean).join(" ").trim() || "Unknown";
       out.push({
         sourceRef: `un-${ref}`,
@@ -239,7 +241,8 @@ export class UnEuSanctionsConnector implements ConnectorInterface {
       const logicalId = extractTag(chunk, "logicalId") ?? "";
       const ref = logicalId || (chunk.match(/logicalId="([^"]+)"/)?.[1] ?? "");
       if (!ref) continue;
-      const nameAlias = extractTag(chunk, "wholeName") ?? extractTag(chunk, "nameAlias") ?? "Unknown";
+      const nameAlias =
+        extractTag(chunk, "wholeName") ?? extractTag(chunk, "nameAlias") ?? "Unknown";
       const subject = extractTag(chunk, "subjectType") ?? "Entity";
       out.push({
         sourceRef: `eu-${ref}`,

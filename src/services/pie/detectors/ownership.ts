@@ -22,10 +22,9 @@ export const ownershipChurnDetector: Detector = {
       const distinctOwners = new Set(
         owners.map((r) => String(r.fields.ownerName ?? r.fields.owner ?? "")).filter(Boolean),
       );
-      const distinctFlags = new Set(
-        owners.map((r) => String(r.fields.flag ?? "")).filter(Boolean),
-      );
-      const changeCount = Math.max(distinctOwners.size - 1, 0) + Math.max(distinctFlags.size - 1, 0);
+      const distinctFlags = new Set(owners.map((r) => String(r.fields.flag ?? "")).filter(Boolean));
+      const changeCount =
+        Math.max(distinctOwners.size - 1, 0) + Math.max(distinctFlags.size - 1, 0);
       if (changeCount === 0) continue;
 
       ctx.baselines.observe(`ownership.changes.${entityId}`, changeCount);

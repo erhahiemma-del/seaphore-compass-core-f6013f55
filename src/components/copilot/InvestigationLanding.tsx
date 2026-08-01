@@ -47,9 +47,6 @@ import { appendContinuation } from "@/lib/copilot/continuations";
 import { useIdleContinuations } from "@/hooks/use-idle-continuations";
 import { cn } from "@/lib/utils";
 
-
-
-
 const TYPING_EXAMPLES = [
   "Investigate MV Ocean Pearl",
   "Find ownership history",
@@ -94,7 +91,6 @@ const PROMPT_CHIPS: PromptChip[] = [
   { key: "port", label: "Port", icon: Anchor, starter: "Show activity at port " },
 ];
 
-
 export interface InvestigationLandingProps {
   subject: string;
   value: string;
@@ -124,10 +120,7 @@ export function InvestigationLanding({
   // Rotating guidance — fades every 4s while the box is empty.
   useEffect(() => {
     if (value.trim()) return;
-    const t = window.setInterval(
-      () => setGuidanceIndex((i) => (i + 1) % GUIDANCE.length),
-      4000,
-    );
+    const t = window.setInterval(() => setGuidanceIndex((i) => (i + 1) % GUIDANCE.length), 4000);
     return () => window.clearInterval(t);
   }, [value]);
 
@@ -149,7 +142,10 @@ export function InvestigationLanding({
   }, [ref, pending]);
 
   const matches = value.trim()
-    ? TYPING_EXAMPLES.filter((e) => e.toLowerCase().includes(value.trim().toLowerCase())).slice(0, 3)
+    ? TYPING_EXAMPLES.filter((e) => e.toLowerCase().includes(value.trim().toLowerCase())).slice(
+        0,
+        3,
+      )
     : [];
 
   // --- Voice dictation -------------------------------------------------
@@ -193,12 +189,10 @@ export function InvestigationLanding({
     paused: !showTypewriter,
   });
 
-
   function toggleDictation() {
     if (dictation.state === "idle") baselineRef.current = valueRef.current;
     dictation.toggle();
   }
-
 
   function insert(prompt: string) {
     onChange(prompt);
@@ -266,7 +260,6 @@ export function InvestigationLanding({
   const [previewId, setPreviewId] = useState<string | null>(null);
   const previewItem = files.items.find((a) => a.id === previewId) ?? null;
 
-
   function submit() {
     if (!canSubmit) return;
     onSubmit(value, files.attachments);
@@ -291,9 +284,7 @@ export function InvestigationLanding({
     if (!carriesFiles(e)) return;
     e.preventDefault();
     dragDepth.current += 1;
-    setDragCount(
-      Array.from(e.dataTransfer?.items ?? []).filter((i) => i.kind === "file").length,
-    );
+    setDragCount(Array.from(e.dataTransfer?.items ?? []).filter((i) => i.kind === "file").length);
     if (!dropDisabled) setDragging(true);
   }
 
@@ -345,11 +336,6 @@ export function InvestigationLanding({
     }
   }
 
-
-
-
-
-
   return (
     <div
       data-testid="investigation-landing"
@@ -373,13 +359,11 @@ export function InvestigationLanding({
             {dragCount > 1 ? `Drop ${dragCount} files to attach` : "Drop to attach"}
           </p>
           <p className="text-[12px] text-muted-foreground">
-            Multiple manifests and documents can be dropped at once — each is
-            uploaded as officer-supplied evidence.
+            Multiple manifests and documents can be dropped at once — each is uploaded as
+            officer-supplied evidence.
           </p>
         </div>
       )}
-
-
 
       <div className="w-full max-w-2xl">
         <div className="flex flex-col items-center text-center">
@@ -403,7 +387,6 @@ export function InvestigationLanding({
             e.preventDefault();
             submit();
           }}
-
           className="mt-5"
         >
           {/* Detected intent — a courtesy echo, dismissible, never a filter. */}
@@ -440,51 +423,50 @@ export function InvestigationLanding({
           >
             <CopilotCue idle={idle} />
             <div className="relative flex-1">
-            <textarea
-              ref={ref}
-              value={value}
-              rows={2}
-              disabled={pending}
-              onChange={(e) => handleChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  submit();
-                  return;
+              <textarea
+                ref={ref}
+                value={value}
+                rows={2}
+                disabled={pending}
+                onChange={(e) => handleChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    submit();
+                    return;
+                  }
+                  // Tab accepts the first ghost continuation, Cursor-style; with
+                  // no suggestions showing, Tab keeps its normal focus behaviour.
+                  if (e.key === "Tab" && !e.shiftKey && continuations.length > 0) {
+                    e.preventDefault();
+                    acceptContinuation(continuations[0]);
+                  }
+                }}
+                placeholder={
+                  recording
+                    ? "Listening — speak your investigation..."
+                    : transcribing
+                      ? "Transcribing..."
+                      : showTypewriter
+                        ? ""
+                        : `Investigate ${subject}...`
                 }
-                // Tab accepts the first ghost continuation, Cursor-style; with
-                // no suggestions showing, Tab keeps its normal focus behaviour.
-                if (e.key === "Tab" && !e.shiftKey && continuations.length > 0) {
-                  e.preventDefault();
-                  acceptContinuation(continuations[0]);
-                }
-              }}
-
-              placeholder={
-                recording
-                  ? "Listening — speak your investigation..."
-                  : transcribing
-                    ? "Transcribing..."
-                    : showTypewriter
-                      ? ""
-                      : `Investigate ${subject}...`
-              }
-              aria-label="Investigation query"
-              className="max-h-44 min-h-[48px] w-full resize-none bg-transparent text-[14px] leading-6 outline-none placeholder:text-muted-foreground disabled:opacity-60"
-            />
-            {/* Typewriter placeholder. Purely decorative and aria-hidden — the
+                aria-label="Investigation query"
+                className="max-h-44 min-h-[48px] w-full resize-none bg-transparent text-[14px] leading-6 outline-none placeholder:text-muted-foreground disabled:opacity-60"
+              />
+              {/* Typewriter placeholder. Purely decorative and aria-hidden — the
                 textarea keeps its own accessible label, and screen readers get
                 the static prompt rather than a shifting string. */}
-            {showTypewriter ? (
-              <span
-                aria-hidden
-                data-testid="typewriter-placeholder"
-                className="pointer-events-none absolute left-0 top-0 select-none text-[14px] leading-6 text-muted-foreground"
-              >
-                {typedPlaceholder}
-                <span className="caret-blink ml-[1px] inline-block h-[1.05em] w-[2px] translate-y-[3px] bg-[color:var(--color-teal)]" />
-              </span>
-            ) : null}
+              {showTypewriter ? (
+                <span
+                  aria-hidden
+                  data-testid="typewriter-placeholder"
+                  className="pointer-events-none absolute left-0 top-0 select-none text-[14px] leading-6 text-muted-foreground"
+                >
+                  {typedPlaceholder}
+                  <span className="caret-blink ml-[1px] inline-block h-[1.05em] w-[2px] translate-y-[3px] bg-[color:var(--color-teal)]" />
+                </span>
+              ) : null}
             </div>
             <div className="flex items-center gap-1 pb-0.5">
               <button
@@ -527,10 +509,7 @@ export function InvestigationLanding({
                   <MicOff className="h-4 w-4" />
                 ) : (
                   <Mic
-                    className={cn(
-                      "h-4 w-4",
-                      recording ? "animate-pulse" : idle && "mic-breathe",
-                    )}
+                    className={cn("h-4 w-4", recording ? "animate-pulse" : idle && "mic-breathe")}
                   />
                 )}
                 {recording ? (
@@ -541,7 +520,6 @@ export function InvestigationLanding({
                   />
                 ) : null}
               </button>
-
 
               <input
                 ref={fileInputRef}
@@ -610,8 +588,6 @@ export function InvestigationLanding({
             </div>
           ) : null}
 
-
-
           {files.items.length > 0 ? (
             <div data-testid="attachment-list" className="mt-2 flex flex-wrap gap-1.5 px-1">
               {files.items.map((a) => (
@@ -671,7 +647,6 @@ export function InvestigationLanding({
                       : a.status === "ERROR"
                         ? "Upload failed"
                         : `${a.kind === "MANIFEST" ? "Manifest" : "Document"} · ${formatBytes(a.size)}`}
-
                   </span>
                   {a.status === "ERROR" ? (
                     <button
@@ -712,8 +687,7 @@ export function InvestigationLanding({
               ))}
               <span className="self-center text-[10px] uppercase tracking-wider text-muted-foreground/70">
                 {files.items.length} attached
-                {files.items.filter((a) => a.status === "UPLOADED").length !==
-                files.items.length
+                {files.items.filter((a) => a.status === "UPLOADED").length !== files.items.length
                   ? ` · ${files.items.filter((a) => a.status === "UPLOADED").length} uploaded`
                   : ""}{" "}
                 — officer-supplied evidence, click a file to preview
@@ -728,19 +702,13 @@ export function InvestigationLanding({
             }}
           />
 
-
-
-
-
           {/* Ghost continuations — faint, inline, dismissible by typing. */}
           {continuations.length > 0 ? (
             <div
               data-testid="continuation-row"
               className="animate-in fade-in slide-in-from-top-1 mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 px-1 duration-300 motion-reduce:animate-none"
             >
-              <span className="text-[11px] text-muted-foreground/60">
-                Continue with...
-              </span>
+              <span className="text-[11px] text-muted-foreground/60">Continue with...</span>
               {continuations.map((c, i) => (
                 <button
                   key={c}
@@ -785,7 +753,6 @@ export function InvestigationLanding({
                   {GUIDANCE[guidanceIndex]}
                 </span>
               )}
-
             </div>
             <p className="shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground/70">
               Shift + Enter = New Line
@@ -825,7 +792,6 @@ export function InvestigationLanding({
             ))}
           </div>
         </div>
-
       </div>
     </div>
   );

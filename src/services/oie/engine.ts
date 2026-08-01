@@ -62,7 +62,7 @@ const nullProviderCall: ProviderCall = async () => ({
 
 function logStageFailure(stage: string, err: unknown, ctx?: Record<string, unknown>) {
   // Developer-console only — officer never sees these details.
-  // eslint-disable-next-line no-console
+
   console.error(`[OIE] ${stage} failed`, err, ctx ?? {});
 }
 
@@ -114,8 +114,7 @@ function buildDegradedBriefing(
       kind: "executive",
       title: "Executive Assessment",
       payload: {
-        text:
-          "Our intelligence collection stack could not corroborate this request from the connected sources. We are presenting a structured briefing based on the officer's query only.",
+        text: "Our intelligence collection stack could not corroborate this request from the connected sources. We are presenting a structured briefing based on the officer's query only.",
       },
     },
     {
@@ -182,16 +181,13 @@ function normaliseBriefing(b: Briefing | null | undefined, fallback: Briefing): 
     id: b.id ?? fallback.id,
     query: b.query ?? fallback.query,
     mode: b.mode ?? fallback.mode,
-    sections: Array.isArray(b.sections)
-      ? b.sections.filter((s) => s && typeof s === "object")
-      : [],
+    sections: Array.isArray(b.sections) ? b.sections.filter((s) => s && typeof s === "object") : [],
     classification,
     confidence_matrix: matrix,
     intelligence_status: b.intelligence_status ?? fallback.intelligence_status,
     sources_queried: typeof b.sources_queried === "number" ? b.sources_queried : 0,
     sources_responded: typeof b.sources_responded === "number" ? b.sources_responded : 0,
-    sources_corroborated:
-      typeof b.sources_corroborated === "number" ? b.sources_corroborated : 0,
+    sources_corroborated: typeof b.sources_corroborated === "number" ? b.sources_corroborated : 0,
     latency_ms: typeof b.latency_ms === "number" ? b.latency_ms : 0,
     model_used: b.model_used ?? fallback.model_used,
   };
@@ -325,16 +321,12 @@ export async function runOIE(
   const q: OfficerQuery = req?.query ?? ({} as OfficerQuery);
   const providerId: ReasoningProviderId =
     (req?.providerId as ReasoningProviderId) ?? DEFAULT_PROVIDER_ID;
-  const providerMeta = safeSync(
-    "providerMeta",
-    () => getProviderMeta(providerId),
-    {
-      id: providerId,
-      label: String(providerId),
-      available: false,
-      gatewayModel: undefined,
-    } as ReturnType<typeof getProviderMeta>,
-  );
+  const providerMeta = safeSync("providerMeta", () => getProviderMeta(providerId), {
+    id: providerId,
+    label: String(providerId),
+    available: false,
+    gatewayModel: undefined,
+  } as ReturnType<typeof getProviderMeta>);
 
   try {
     if (!q || typeof q.query !== "string" || q.query.trim().length === 0) {
@@ -416,35 +408,27 @@ export async function runOIE(
     if (safeSync("needsClarification", () => needsClarification(interpreted), false)) {
       return {
         kind: "clarify",
-        clarification: safeSync(
-          "buildClarification",
-          () => buildClarification(interpreted),
-          {
-            question: "What line of enquiry should we open?",
-            options: SKILLS.slice(0, 6).map((s) => ({
-              id: s.id,
-              label: s.label,
-              hint: s.description,
-            })),
-          },
-        ),
+        clarification: safeSync("buildClarification", () => buildClarification(interpreted), {
+          question: "What line of enquiry should we open?",
+          options: SKILLS.slice(0, 6).map((s) => ({
+            id: s.id,
+            label: s.label,
+            hint: s.description,
+          })),
+        }),
         interpreted,
         latencyMs: Date.now() - started,
       };
     }
 
     // Stage 6 — Planner.
-    const plan = safeSync(
-      "planSkills",
-      () => planSkills(interpreted),
-      {
-        interpreted,
-        primarySkill: SKILLS.find((s) => s.id === "executive_briefing") ?? SKILLS[0],
-        supportingSkills: [],
-        capabilities: [],
-        followUps: [],
-      } as OperationalPlan,
-    );
+    const plan = safeSync("planSkills", () => planSkills(interpreted), {
+      interpreted,
+      primarySkill: SKILLS.find((s) => s.id === "executive_briefing") ?? SKILLS[0],
+      supportingSkills: [],
+      capabilities: [],
+      followUps: [],
+    } as OperationalPlan);
 
     // Stage 7 — Evidence Collector (orchestrator). Never crash the pipeline.
     const fallbackBriefing = buildDegradedBriefing(
@@ -471,7 +455,11 @@ export async function runOIE(
       if (!alreadyMentioned) {
         anchoredQuery = `${anchoredQuery} (regarding ${stickyAnchor.value})`;
       }
-      if (stickyAnchor.type === "vessel" || stickyAnchor.type === "imo" || stickyAnchor.type === "mmsi") {
+      if (
+        stickyAnchor.type === "vessel" ||
+        stickyAnchor.type === "imo" ||
+        stickyAnchor.type === "mmsi"
+      ) {
         if (!q.context?.vessel) anchorContext.vessel = stickyAnchor.value;
       } else if (stickyAnchor.type === "port") {
         if (!q.context?.port) anchorContext.port = stickyAnchor.value;
@@ -572,7 +560,6 @@ export async function runOIE(
       () => patchBriefingWithHumanResponse(briefing, humanResponse, plan),
       briefing,
     );
-
 
     return {
       kind: "briefing",
