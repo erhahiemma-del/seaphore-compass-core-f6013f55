@@ -88,7 +88,7 @@ export function DetectPage() {
       },
     });
 
-  if (authState === "out") return <Navigate to="/auth" />;
+  if (authState === "out") return <Navigate to="/auth" search={{ redirect: undefined }} />;
 
   return (
     <AppShell title="Detect" subtitle="Intelligence Feed" mode="light">

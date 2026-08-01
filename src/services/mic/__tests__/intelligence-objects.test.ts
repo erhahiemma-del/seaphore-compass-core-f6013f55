@@ -85,7 +85,7 @@ function makeCluster(overrides: Partial<IdentityCluster> = {}): IdentityCluster 
     },
     evidenceIds: ["ev_001"],
     ...overrides,
-  };
+  } as unknown as IdentityCluster;
 }
 
 function makeUip(evidence: NormalizedEvidence[], id = "uip_test"): UnifiedIntelligencePackage {
