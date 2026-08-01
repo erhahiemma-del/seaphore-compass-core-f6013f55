@@ -341,7 +341,7 @@ export function extractInspectionAttributes(ev: NormalizedEvidence): Partial<Ins
     if (type)
       out.inspectionType = (
         ["PSC", "flag", "class", "internal", "ISM"].includes(type as string) ? type : null
-      ) as VesselAttributes["status"];
+      ) as InspectionAttributes["inspectionType"];
     const auth = str(fields.authority ?? fields.pscAuthority);
     if (auth) out.authority = auth;
     const date = str(fields.inspectionDate ?? fields.date);
