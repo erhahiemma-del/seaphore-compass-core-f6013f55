@@ -79,33 +79,37 @@ export const Required: StoryObj = {
   ),
 };
 
+function OfficerActionsStory() {
+  const [accepted, setAccepted] = useState<string[]>([]);
+  return (
+    <OfficerActions
+      actions={[
+        { id: "a", label: "Flag for enhanced due diligence" },
+        { id: "b", label: "Trigger secondary review" },
+      ]}
+      enabled={true}
+      accepted={accepted}
+      onToggle={(id, checked) =>
+        setAccepted((p) => (checked ? [...p, id] : p.filter((x) => x !== id)))
+      }
+    />
+  );
+}
+
 export const Actions: StoryObj = {
-  render: () => {
-    const [accepted, setAccepted] = useState<string[]>([]);
-    return (
-      <OfficerActions
-        actions={[
-          { id: "a", label: "Flag for enhanced due diligence" },
-          { id: "b", label: "Trigger secondary review" },
-        ]}
-        enabled={true}
-        accepted={accepted}
-        onToggle={(id, checked) =>
-          setAccepted((p) => (checked ? [...p, id] : p.filter((x) => x !== id)))
-        }
-      />
-    );
-  },
+  render: () => <OfficerActionsStory />,
 };
 
+function HumanOverrideBarStory() {
+  const [v, setV] = useState<OverrideDecision | null>(null);
+  const [j, setJ] = useState("");
+  return (
+    <HumanOverrideBar value={v} onChange={setV} justification={j} onJustificationChange={setJ} />
+  );
+}
+
 export const Override: StoryObj = {
-  render: () => {
-    const [v, setV] = useState<OverrideDecision | null>(null);
-    const [j, setJ] = useState("");
-    return (
-      <HumanOverrideBar value={v} onChange={setV} justification={j} onJustificationChange={setJ} />
-    );
-  },
+  render: () => <HumanOverrideBarStory />,
 };
 
 export const Sources: StoryObj = {
