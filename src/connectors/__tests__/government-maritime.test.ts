@@ -62,7 +62,7 @@ describe("Government Maritime Evidence Provider", () => {
   it("acquires canonical cargo evidence through a configured adapter", async () => {
     const fetchImpl = (async (url: string) => {
       if (String(url).includes("/declarations")) {
-        return new Response(JSON.stringify({ data: [{ ...declaration.raw, status: "RELEASED", importer_name: "Delta Trading Ltd", declaration_date: declaration.occurredAt, bill_of_lading: "BL-9001" }] }), { status: 200 });
+        return new Response(JSON.stringify({ data: [{ sad_number: "C-1001", status: "RELEASED", importer_name: "Delta Trading Ltd", declaration_date: declaration.occurredAt, bill_of_lading: "BL-9001" }] }), { status: 200 });
       }
       return new Response("[]", { status: 200 });
     }) as unknown as typeof fetch;
