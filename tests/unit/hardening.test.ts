@@ -5,13 +5,21 @@
  */
 import { describe, it, expect, vi } from "vitest";
 import {
-  createCache, createMemoryStore,
-  retry, NonRetryableError,
-  createBreaker, CircuitOpenError, createBreakerRegistry,
+  createCache,
+  createMemoryStore,
+  retry,
+  NonRetryableError,
+  createBreaker,
+  CircuitOpenError,
+  createBreakerRegistry,
   createRateLimiter,
   createModeManager,
-  escapeHtml, looksLikeSqlInjection, assertSafeIdent, timingSafeEqual,
-  assertAllowedUrl, withSecurityHeaders,
+  escapeHtml,
+  looksLikeSqlInjection,
+  assertSafeIdent,
+  timingSafeEqual,
+  assertAllowedUrl,
+  withSecurityHeaders,
 } from "@/services/hardening";
 
 describe("Sprint 12 · cache", () => {
@@ -28,7 +36,9 @@ describe("Sprint 12 · cache", () => {
   it("evicts LRU beyond capacity", () => {
     const s = createMemoryStore<number>(2);
     const c = createCache(s, { ttlMs: 60_000 });
-    c.set("a", 1); c.set("b", 2); c.set("c", 3);
+    c.set("a", 1);
+    c.set("b", 2);
+    c.set("c", 3);
     expect(c.get("a")).toBeUndefined();
     expect(c.get("b")).toBe(2);
     expect(c.get("c")).toBe(3);
@@ -44,7 +54,9 @@ describe("Sprint 12 · cache", () => {
 
   it("invalidates by prefix", () => {
     const c = createCache(createMemoryStore(), { ttlMs: 1000, namespace: "ns" });
-    c.set("vessel:1", 1); c.set("vessel:2", 2); c.set("port:1", 3);
+    c.set("vessel:1", 1);
+    c.set("vessel:2", 2);
+    c.set("port:1", 3);
     expect(c.invalidatePrefix("vessel:")).toBe(2);
     expect(c.get("port:1")).toBe(3);
   });
@@ -53,23 +65,42 @@ describe("Sprint 12 · cache", () => {
 describe("Sprint 12 · retry", () => {
   it("retries up to 3 times then succeeds", async () => {
     let n = 0;
-    const result = await retry(async () => { if (++n < 3) throw new Error("boom"); return "ok"; },
-      { sleep: async () => {}, jitter: false });
+    const result = await retry(
+      async () => {
+        if (++n < 3) throw new Error("boom");
+        return "ok";
+      },
+      { sleep: async () => {}, jitter: false },
+    );
     expect(result).toBe("ok");
     expect(n).toBe(3);
   });
 
   it("does not retry NonRetryableError", async () => {
     let n = 0;
-    await expect(retry(async () => { n++; throw new NonRetryableError("nope"); },
-      { sleep: async () => {} })).rejects.toBeInstanceOf(NonRetryableError);
+    await expect(
+      retry(
+        async () => {
+          n++;
+          throw new NonRetryableError("nope");
+        },
+        { sleep: async () => {} },
+      ),
+    ).rejects.toBeInstanceOf(NonRetryableError);
     expect(n).toBe(1);
   });
 
   it("stops after retries budget", async () => {
     let n = 0;
-    await expect(retry(async () => { n++; throw new Error("x"); },
-      { retries: 3, sleep: async () => {}, jitter: false })).rejects.toThrow("x");
+    await expect(
+      retry(
+        async () => {
+          n++;
+          throw new Error("x");
+        },
+        { retries: 3, sleep: async () => {}, jitter: false },
+      ),
+    ).rejects.toThrow("x");
     expect(n).toBe(4); // initial + 3 retries
   });
 });
@@ -79,7 +110,11 @@ describe("Sprint 12 · circuit breaker", () => {
     let t = 0;
     const b = createBreaker({ name: "svc", failureThreshold: 5, resetMs: 1000, now: () => t });
     for (let i = 0; i < 5; i++) {
-      await expect(b.fire(async () => { throw new Error("f"); })).rejects.toThrow("f");
+      await expect(
+        b.fire(async () => {
+          throw new Error("f");
+        }),
+      ).rejects.toThrow("f");
     }
     expect(b.state()).toBe("open");
     await expect(b.fire(async () => "x")).rejects.toBeInstanceOf(CircuitOpenError);
@@ -88,7 +123,12 @@ describe("Sprint 12 · circuit breaker", () => {
   it("half-opens after resetMs and closes on success", async () => {
     let t = 0;
     const b = createBreaker({ name: "svc", failureThreshold: 2, resetMs: 500, now: () => t });
-    for (let i = 0; i < 2; i++) await expect(b.fire(async () => { throw new Error("f"); })).rejects.toBeDefined();
+    for (let i = 0; i < 2; i++)
+      await expect(
+        b.fire(async () => {
+          throw new Error("f");
+        }),
+      ).rejects.toBeDefined();
     t += 600;
     const out = await b.fire(async () => "recovered");
     expect(out).toBe("recovered");
@@ -97,10 +137,24 @@ describe("Sprint 12 · circuit breaker", () => {
 
   it("re-opens with doubled backoff on probe failure", async () => {
     let t = 0;
-    const b = createBreaker({ name: "svc", failureThreshold: 1, resetMs: 100, maxResetMs: 10_000, now: () => t });
-    await expect(b.fire(async () => { throw new Error("f"); })).rejects.toBeDefined();
+    const b = createBreaker({
+      name: "svc",
+      failureThreshold: 1,
+      resetMs: 100,
+      maxResetMs: 10_000,
+      now: () => t,
+    });
+    await expect(
+      b.fire(async () => {
+        throw new Error("f");
+      }),
+    ).rejects.toBeDefined();
     t += 100;
-    await expect(b.fire(async () => { throw new Error("f2"); })).rejects.toBeDefined();
+    await expect(
+      b.fire(async () => {
+        throw new Error("f2");
+      }),
+    ).rejects.toBeDefined();
     // next probe pushed out to at least 200ms
     expect((b.stats().nextProbeAt ?? 0) - t).toBeGreaterThanOrEqual(200);
   });
@@ -109,7 +163,12 @@ describe("Sprint 12 · circuit breaker", () => {
     const reg = createBreakerRegistry();
     reg.register(createBreaker({ name: "a" }));
     reg.register(createBreaker({ name: "b" }));
-    expect(reg.list().map((s) => s.name).sort()).toEqual(["a", "b"]);
+    expect(
+      reg
+        .list()
+        .map((s) => s.name)
+        .sort(),
+    ).toEqual(["a", "b"]);
   });
 });
 
@@ -126,7 +185,8 @@ describe("Sprint 12 · rate limiter", () => {
   it("refills over time", () => {
     let t = 0;
     const rl = createRateLimiter({ capacity: 2, refillPerSec: 10 }, () => t);
-    rl.take("k"); rl.take("k");
+    rl.take("k");
+    rl.take("k");
     expect(rl.take("k").allowed).toBe(false);
     t += 200; // 200ms → +2 tokens
     expect(rl.take("k").allowed).toBe(true);
@@ -169,8 +229,9 @@ describe("Sprint 12 · offline mode", () => {
 
 describe("Sprint 12 · security helpers", () => {
   it("escapes html", () => {
-    expect(escapeHtml('<script>alert("x")</script>'))
-      .toBe("&lt;script&gt;alert(&quot;x&quot;)&lt;&#x2F;script&gt;");
+    expect(escapeHtml('<script>alert("x")</script>')).toBe(
+      "&lt;script&gt;alert(&quot;x&quot;)&lt;&#x2F;script&gt;",
+    );
   });
   it("detects common SQLi shapes", () => {
     expect(looksLikeSqlInjection("' OR 1=1 --")).toBe(true);

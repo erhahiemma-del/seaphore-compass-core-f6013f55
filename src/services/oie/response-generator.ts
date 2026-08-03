@@ -67,9 +67,7 @@ interface DecisionImpactIn {
   cargo: number;
 }
 
-function normaliseCitations(
-  f: CriticalFindingIn,
-): import("./types").EvidenceCitation[] {
+function normaliseCitations(f: CriticalFindingIn): import("./types").EvidenceCitation[] {
   if (f.citations && f.citations.length > 0) {
     return f.citations.map((c) => ({
       id: c.id,
@@ -109,7 +107,8 @@ function fallbackFromBriefing(briefing: Briefing, plan: OperationalPlan): HumanR
   const analytical =
     (pickSection(s, "analytical_assessment")?.payload?.text as string | undefined) ?? "";
   const critical =
-    (pickSection(s, "critical_findings")?.payload?.findings as CriticalFindingIn[] | undefined) ?? [];
+    (pickSection(s, "critical_findings")?.payload?.findings as CriticalFindingIn[] | undefined) ??
+    [];
   const gaps = (pickSection(s, "intelligence_gaps")?.payload?.list as string[] | undefined) ?? [];
   const actions =
     (pickSection(s, "officer_actions")?.payload?.actions as OfficerActionIn[] | undefined) ?? [];
@@ -132,7 +131,10 @@ function fallbackFromBriefing(briefing: Briefing, plan: OperationalPlan): HumanR
   const summary = analytical || executive || situation;
 
   return {
-    executiveSummary: summary.split(/(?<=\.)\s+/).slice(0, 2).join(" "),
+    executiveSummary: summary
+      .split(/(?<=\.)\s+/)
+      .slice(0, 2)
+      .join(" "),
     situationOverview: situation,
     keyFindings: critical.slice(0, 6).map((f) => ({
       priority:
@@ -183,8 +185,7 @@ export function buildHumanResponse(
   const sections = Array.isArray(briefing?.sections) ? briefing.sections : [];
   const underlyingCritical =
     (pickSection(sections, "critical_findings")?.payload?.findings as
-      | CriticalFindingIn[]
-      | undefined) ?? [];
+      CriticalFindingIn[] | undefined) ?? [];
   const citationIndex = new Map<string, import("./types").EvidenceCitation>();
   for (const f of underlyingCritical) {
     for (const c of f?.citations ?? []) {

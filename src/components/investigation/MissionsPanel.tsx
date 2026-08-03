@@ -22,7 +22,13 @@ import {
 } from "@/services/mission/from-investigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 
@@ -73,11 +79,14 @@ export function MissionsPanel({ w }: { w: InvestigationWorkspace }) {
         <div>
           <h3 className="text-sm font-semibold">Mission Planning</h3>
           <p className="text-[11px] text-muted-foreground">
-            Missions may only be created from officer decisions, approved recommendations, or linked OKL patterns.
+            Missions may only be created from officer decisions, approved recommendations, or linked
+            OKL patterns.
           </p>
         </div>
         <Badge variant={eligibility.eligible ? "default" : "secondary"} className="text-[10px]">
-          {eligibility.eligible ? `Eligible · ${eligibility.reason.replace(/_/g, " ")}` : "Not yet eligible"}
+          {eligibility.eligible
+            ? `Eligible · ${eligibility.reason.replace(/_/g, " ")}`
+            : "Not yet eligible"}
         </Badge>
       </header>
 
@@ -107,7 +116,9 @@ export function MissionsPanel({ w }: { w: InvestigationWorkspace }) {
         )}
 
         {linked.length === 0 ? (
-          <p className="text-xs text-muted-foreground">No missions linked to this investigation yet.</p>
+          <p className="text-xs text-muted-foreground">
+            No missions linked to this investigation yet.
+          </p>
         ) : (
           <ul className="space-y-2">
             {linked.map((p) => (
@@ -116,10 +127,14 @@ export function MissionsPanel({ w }: { w: InvestigationWorkspace }) {
                   <div className="min-w-0">
                     <div className="truncate text-sm font-medium">{p.name}</div>
                     <div className="text-[11px] text-muted-foreground">
-                      {p.type} · {p.subjects.length} subject{p.subjects.length === 1 ? "" : "s"} · {p.objectives.length} objectives · {p.tasks.length} tasks
+                      {p.type} · {p.subjects.length} subject{p.subjects.length === 1 ? "" : "s"} ·{" "}
+                      {p.objectives.length} objectives · {p.tasks.length} tasks
                     </div>
                   </div>
-                  <Badge className="text-[10px]" variant={p.status === "approved" ? "default" : "secondary"}>
+                  <Badge
+                    className="text-[10px]"
+                    variant={p.status === "approved" ? "default" : "secondary"}
+                  >
                     {p.status}
                   </Badge>
                 </div>
@@ -132,16 +147,28 @@ export function MissionsPanel({ w }: { w: InvestigationWorkspace }) {
 
                 <div className="mt-2 flex items-center gap-2">
                   {p.status === "draft" && (
-                    <Button size="sm" variant="outline" onClick={() => submitForApproval(p.id, w.officer)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => submitForApproval(p.id, w.officer)}
+                    >
                       Submit for approval
                     </Button>
                   )}
                   {p.status === "pending-approval" && (
-                    <Button size="sm" onClick={() => approve(p.id, w.officer, `Approved from investigation ${w.id}`)}>
+                    <Button
+                      size="sm"
+                      onClick={() =>
+                        approve(p.id, w.officer, `Approved from investigation ${w.id}`)
+                      }
+                    >
                       Officer approve
                     </Button>
                   )}
-                  <Link to="/missions" className="text-[11px] text-primary underline underline-offset-2">
+                  <Link
+                    to="/missions"
+                    className="text-[11px] text-primary underline underline-offset-2"
+                  >
                     Open in Mission Planning →
                   </Link>
                 </div>

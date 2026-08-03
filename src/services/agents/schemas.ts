@@ -63,7 +63,9 @@ export const ComplianceOutputSchema = z.object({
       grade: EvidenceGradeSchema,
     }),
   ),
-  portStateFindings: z.array(z.object({ port: z.string(), finding: z.string(), severity: z.enum(["low", "med", "high"]) })),
+  portStateFindings: z.array(
+    z.object({ port: z.string(), finding: z.string(), severity: z.enum(["low", "med", "high"]) }),
+  ),
   citations: z.array(CitationSchema),
 });
 export type ComplianceOutput = z.infer<typeof ComplianceOutputSchema>;

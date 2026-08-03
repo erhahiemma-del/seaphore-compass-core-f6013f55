@@ -5,8 +5,7 @@ import { hasFinding, tier } from "./helpers";
 export const voyageComparisonPlaybook: Playbook = {
   skillId: "voyage_comparison",
   label: "Voyage Comparison",
-  objective:
-    "Compare the current voyage against prior baselines and surface material deviations.",
+  objective: "Compare the current voyage against prior baselines and surface material deviations.",
   operationalQuestions: [
     "Which ports differ from the prior baseline?",
     "How does cargo differ between voyages?",
@@ -100,16 +99,14 @@ export const voyageComparisonPlaybook: Playbook = {
       when: (ctx) => hasFinding(ctx, ["port sequence", "route change"]),
       action: "Investigate the route change and screen all new port calls",
       priority: "high",
-      rationale: () =>
-        "Route changes must be screened for sanctioned or high-risk ports.",
+      rationale: () => "Route changes must be screened for sanctioned or high-risk ports.",
     },
     {
       id: "voyage.rec.reconcile_cargo",
       when: (ctx) => hasFinding(ctx, ["cargo diff", "manifest change"]),
       action: "Reconcile the cargo diff with the operator",
       priority: "high",
-      rationale: () =>
-        "Cargo changes between voyages require operator explanation.",
+      rationale: () => "Cargo changes between voyages require operator explanation.",
     },
     {
       id: "voyage.rec.monitor",

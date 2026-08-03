@@ -30,18 +30,10 @@ import {
 
 /** Kinds of ambient state a command can require before it runs. */
 export type CommandContextRequirement =
-  | "vessel"
-  | "entity"
-  | "investigation"
-  | "intelligence_package"
-  | "ais_context";
+  "vessel" | "entity" | "investigation" | "intelligence_package" | "ais_context";
 
 export type CommandCategory =
-  | "briefing"
-  | "intelligence"
-  | "operations"
-  | "compliance"
-  | "reporting";
+  "briefing" | "intelligence" | "operations" | "compliance" | "reporting";
 
 export type CommandPermission = "officer" | "analyst" | "director" | "administrator";
 
@@ -88,10 +80,7 @@ export interface CopilotCommand {
 }
 
 /** Resolve `{{placeholder}}` tokens against context. */
-export function resolvePromptTemplate(
-  template: string,
-  ctx: CommandExecutionContext,
-): string {
+export function resolvePromptTemplate(template: string, ctx: CommandExecutionContext): string {
   const fallback = ctx.vessel ?? "the selected vessel";
   return template
     .replaceAll("{{vessel}}", ctx.vessel ?? fallback)
@@ -130,7 +119,8 @@ export function evaluateAvailability(
     if (req === "intelligence_package" && !ctx.hasIntelligencePackage) {
       return {
         available: false,
-        reason: "Generate a briefing first — this command reuses the existing intelligence package.",
+        reason:
+          "Generate a briefing first — this command reuses the existing intelligence package.",
       };
     }
     if (req === "ais_context" && !ctx.hasAisContext) {
@@ -353,10 +343,12 @@ export const COPILOT_COMMANDS: CopilotCommand[] = [
   {
     commandId: "show_vessel_profile",
     displayName: "Vessel Profile",
-    description: "Full 360° intelligence profile for the current vessel — identity, ownership, risk, and timeline.",
+    description:
+      "Full 360° intelligence profile for the current vessel — identity, ownership, risk, and timeline.",
     icon: Ship,
     category: "intelligence",
-    promptTemplate: "Show me the full intelligence profile for {{vessel}}, including ownership, risk assessment, timeline of key events, and all related entities.",
+    promptTemplate:
+      "Show me the full intelligence profile for {{vessel}}, including ownership, risk assessment, timeline of key events, and all related entities.",
     requiredContext: ["vessel"],
     missionType: "vessel_profile",
     permissions: ["officer", "analyst", "director", "administrator"],
@@ -372,7 +364,8 @@ export const COPILOT_COMMANDS: CopilotCommand[] = [
     description: "Every entity connected to this vessel or entity in the intelligence graph.",
     icon: Building2,
     category: "intelligence",
-    promptTemplate: "Show me all entities related to {{entityLabel}} in the intelligence graph — companies, persons, ports, and vessels. Explain each relationship and its supporting evidence.",
+    promptTemplate:
+      "Show me all entities related to {{entityLabel}} in the intelligence graph — companies, persons, ports, and vessels. Explain each relationship and its supporting evidence.",
     requiredContext: [],
     missionType: "entity_relationships",
     permissions: ["officer", "analyst", "director", "administrator"],
@@ -388,7 +381,8 @@ export const COPILOT_COMMANDS: CopilotCommand[] = [
     description: "All investigations linked to the current vessel or entity.",
     icon: FileSearch,
     category: "intelligence",
-    promptTemplate: "What investigations are associated with {{entityLabel}}? Summarise the findings, timeline, and current status of each investigation.",
+    promptTemplate:
+      "What investigations are associated with {{entityLabel}}? Summarise the findings, timeline, and current status of each investigation.",
     requiredContext: [],
     missionType: "investigation_history",
     permissions: ["officer", "analyst", "director", "administrator"],
@@ -404,7 +398,8 @@ export const COPILOT_COMMANDS: CopilotCommand[] = [
     description: "All evidence records for the current entity, grouped by provider and grade.",
     icon: FileText,
     category: "intelligence",
-    promptTemplate: "Show me all evidence records for {{entityLabel}}, grouped by source provider and confidence grade. Identify any contradictions or information gaps.",
+    promptTemplate:
+      "Show me all evidence records for {{entityLabel}}, grouped by source provider and confidence grade. Identify any contradictions or information gaps.",
     requiredContext: [],
     missionType: "evidence_review",
     permissions: ["officer", "analyst", "director", "administrator"],
@@ -417,10 +412,12 @@ export const COPILOT_COMMANDS: CopilotCommand[] = [
   {
     commandId: "show_confidence",
     displayName: "Confidence Breakdown",
-    description: "Explain the confidence score — provider authority, freshness, cross-source agreement, identity certainty.",
+    description:
+      "Explain the confidence score — provider authority, freshness, cross-source agreement, identity certainty.",
     icon: ShieldCheck,
     category: "intelligence",
-    promptTemplate: "Explain the confidence score for {{entityLabel}}. Break down contributing factors: provider authority, evidence freshness, cross-source agreement, and identity certainty. What would improve confidence?",
+    promptTemplate:
+      "Explain the confidence score for {{entityLabel}}. Break down contributing factors: provider authority, evidence freshness, cross-source agreement, and identity certainty. What would improve confidence?",
     requiredContext: [],
     missionType: "confidence_review",
     permissions: ["officer", "analyst", "director", "administrator"],
@@ -433,10 +430,12 @@ export const COPILOT_COMMANDS: CopilotCommand[] = [
   {
     commandId: "show_relationship_graph",
     displayName: "Relationship Graph",
-    description: "Full relationship graph — ownership chains, operational links, sanctions proximity.",
+    description:
+      "Full relationship graph — ownership chains, operational links, sanctions proximity.",
     icon: MapPin,
     category: "intelligence",
-    promptTemplate: "Generate a relationship graph for {{entityLabel}}. Show ownership structure, operational relationships, shared directors, sanctions proximity, and flag-state connections. Highlight any high-risk links.",
+    promptTemplate:
+      "Generate a relationship graph for {{entityLabel}}. Show ownership structure, operational relationships, shared directors, sanctions proximity, and flag-state connections. Highlight any high-risk links.",
     requiredContext: [],
     missionType: "relationship_graph",
     permissions: ["officer", "analyst", "director", "administrator"],

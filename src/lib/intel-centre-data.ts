@@ -496,12 +496,7 @@ export const portByCode = (c: string) => PORTS.find((p) => p.code === c);
 // ─────────────────────────────────────────────────────────────────────────
 
 export type CargoType =
-  | "Raw Materials"
-  | "Consumer Goods"
-  | "Machinery"
-  | "Chemicals"
-  | "Fuel & Energy"
-  | "Others";
+  "Raw Materials" | "Consumer Goods" | "Machinery" | "Chemicals" | "Fuel & Energy" | "Others";
 
 export interface CargoItem {
   containerNo: string;

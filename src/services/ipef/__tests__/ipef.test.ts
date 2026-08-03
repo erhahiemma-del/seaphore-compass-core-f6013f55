@@ -21,29 +21,71 @@ function makeUip(evidenceCount = 3): UnifiedIntelligencePackage {
     id: "uip_test_001",
     createdAt: "2026-07-30T00:00:00Z",
     fused: {
-      id: "fep_001", createdAt: "2026-07-30T00:00:00Z", sourcePackageId: "pkg",
+      id: "fep_001",
+      createdAt: "2026-07-30T00:00:00Z",
+      sourcePackageId: "pkg",
       canonical: [],
       contradictions: [],
       sources: [],
-      report: { contradictions: [], evidenceStrength: "HIGH", missing: [], unknowns: [], summary: "" },
+      report: {
+        contradictions: [],
+        evidenceStrength: "HIGH",
+        missing: [],
+        unknowns: [],
+        summary: "",
+      },
       missing: [],
       confidence: "HIGH",
       grade: "CORROBORATED",
       stats: {
-        inputRecords: evidenceCount, canonicalEntities: 2, contradictions: 0,
-        sourcesQueried: 3, sourcesResponded: 3, averageFreshnessSeconds: 1800,
+        inputRecords: evidenceCount,
+        canonicalEntities: 2,
+        contradictions: 0,
+        sourcesQueried: 3,
+        sourcesResponded: 3,
+        averageFreshnessSeconds: 1800,
       },
     },
     identity: [
       {
-        canonicalId: "vessel:imo:9438291", entityKind: "vessel", label: "MV TEST",
-        aliasIds: [], signals: { imo: "9438291", mmsi: null, callSign: null, name: "MV TEST", aliases: [], historicalNames: [], flag: null },
-        confidence: { score: 88, tier: "VERIFIED", band: "auto-select", signals: [], ambiguous: false, topCandidate: { id: "vessel:imo:9438291", score: 88, tier: "VERIFIED", band: "auto-select", signals: [], reasons: [], ambiguous: false }, allCandidates: [], reasons: [] },
+        canonicalId: "vessel:imo:9438291",
+        entityKind: "vessel",
+        label: "MV TEST",
+        aliasIds: [],
+        signals: {
+          imo: "9438291",
+          mmsi: null,
+          callSign: null,
+          name: "MV TEST",
+          aliases: [],
+          historicalNames: [],
+          flag: null,
+        },
+        confidence: {
+          score: 88,
+          tier: "VERIFIED",
+          band: "auto-select",
+          signals: [],
+          ambiguous: false,
+          topCandidate: {
+            id: "vessel:imo:9438291",
+            score: 88,
+            tier: "VERIFIED",
+            band: "auto-select",
+            signals: [],
+            reasons: [],
+            ambiguous: false,
+          },
+          allCandidates: [],
+          reasons: [],
+        },
         evidenceIds: ["ev_001"],
       },
     ],
     osae: [],
-    provenance: [{ connectorId: "gfw", sourceName: "GFW", records: evidenceCount, agreementScore: 0.8 }],
+    provenance: [
+      { connectorId: "gfw", sourceName: "GFW", records: evidenceCount, agreementScore: 0.8 },
+    ],
     freshestSeconds: 120,
     hasContradictions: false,
     rawEvidence: [],
@@ -76,7 +118,13 @@ function makeMicResult(outcome: "success" | "degraded" | "failed" = "success"): 
       warnings: outcome === "degraded" ? ["Processing time exceeded 200ms"] : [],
       errors: outcome === "failed" ? ["Container threw during process()"] : [],
       retryCount: 0,
-      attributes: { mic_version: "INT-01A.1", uip_id: "uip_test_001", uip_entities: 2, uip_evidence: 3, uip_contradictions: 0 },
+      attributes: {
+        mic_version: "INT-01A.1",
+        uip_id: "uip_test_001",
+        uip_entities: 2,
+        uip_evidence: 3,
+        uip_contradictions: 0,
+      },
     },
   };
 }
@@ -87,19 +135,75 @@ function makeBriefing(): Briefing {
     officer_id: "officer_001",
     query: "Tell me about vessel 9438291",
     mode: "vessel",
-    classification: { typeBadge: "INTELLIGENCE REPORT", matrix: { evidenceQuality: 0.8, coverage: 0.7, freshness: 0.9, corroboration: 0.75, consistency: 0.85, composite: 0.8, tier: "high" }, evidenceStrength: "strong" },
+    classification: {
+      typeBadge: "INTELLIGENCE REPORT",
+      matrix: {
+        evidenceQuality: 0.8,
+        coverage: 0.7,
+        freshness: 0.9,
+        corroboration: 0.75,
+        consistency: 0.85,
+        composite: 0.8,
+        tier: "high",
+      },
+      evidenceStrength: "strong",
+    },
     sections: [
-      { kind: "executive", title: "Executive Summary", payload: { text: "MV TEST is a vessel of interest." } },
-      { kind: "critical_findings", title: "Findings", payload: { findings: [{ priority: "HIGH", title: "Vessel flagged in OFAC SDN list", grade: "VERIFIED", source: "open-sanctions" }] } },
-      { kind: "intelligence_gaps", title: "Gaps", payload: { list: ["Historical ownership records unavailable", "Insurance details not confirmed"] } },
-      { kind: "counter_hypotheses", title: "Counter-hypotheses", payload: { list: ["Vessel may be under new legitimate ownership", "Flag change may be administrative"] } },
-      { kind: "officer_actions", title: "Actions", payload: { actions: [{ id: "a1", label: "Issue vessel boarding order" }] } },
+      {
+        kind: "executive",
+        title: "Executive Summary",
+        payload: { text: "MV TEST is a vessel of interest." },
+      },
+      {
+        kind: "critical_findings",
+        title: "Findings",
+        payload: {
+          findings: [
+            {
+              priority: "HIGH",
+              title: "Vessel flagged in OFAC SDN list",
+              grade: "VERIFIED",
+              source: "open-sanctions",
+            },
+          ],
+        },
+      },
+      {
+        kind: "intelligence_gaps",
+        title: "Gaps",
+        payload: {
+          list: ["Historical ownership records unavailable", "Insurance details not confirmed"],
+        },
+      },
+      {
+        kind: "counter_hypotheses",
+        title: "Counter-hypotheses",
+        payload: {
+          list: [
+            "Vessel may be under new legitimate ownership",
+            "Flag change may be administrative",
+          ],
+        },
+      },
+      {
+        kind: "officer_actions",
+        title: "Actions",
+        payload: { actions: [{ id: "a1", label: "Issue vessel boarding order" }] },
+      },
     ],
     intelligence_status: "partial",
     sources_queried: 3,
     sources_responded: 3,
     sources_corroborated: 2,
-    confidence_matrix: { evidenceQuality: 0.8, coverage: 0.7, freshness: 0.9, corroboration: 0.75, consistency: 0.85, composite: 0.8, tier: "high" },
+    confidence_matrix: {
+      evidenceQuality: 0.8,
+      coverage: 0.7,
+      freshness: 0.9,
+      corroboration: 0.75,
+      consistency: 0.85,
+      composite: 0.8,
+      tier: "high",
+    },
     latency_ms: 1200,
     model_used: "lovable-ai:gemini",
     source_uip_id: "uip_test_001",
@@ -108,16 +212,16 @@ function makeBriefing(): Briefing {
 
 function makeInput(overrides: Partial<IpefBuildInput> = {}): IpefBuildInput {
   return {
-    correlationId:         "uip_test_001",
-    uip:                   makeUip(),
-    micBootstrapResult:    makeMicResult(),
-    briefing:              makeBriefing(),
-    orchestrationStartedAt:Date.now() - 2000,
-    evidenceCollectionMs:  800,
-    sourcesQueried:        3,
-    sourcesResponded:      3,
-    sourcesCorroborated:   2,
-    evidenceCount:         8,
+    correlationId: "uip_test_001",
+    uip: makeUip(),
+    micBootstrapResult: makeMicResult(),
+    briefing: makeBriefing(),
+    orchestrationStartedAt: Date.now() - 2000,
+    evidenceCollectionMs: 800,
+    sourcesQueried: 3,
+    sourcesResponded: 3,
+    sourcesCorroborated: 2,
+    evidenceCount: 8,
     ...overrides,
   };
 }
@@ -182,7 +286,7 @@ describe("IPEF · Builder — structural", () => {
   it("every pipeline stage has a status", () => {
     const r = buildIpefRecord(makeInput());
     for (const stage of r.pipelineTrace) {
-      expect(["success","degraded","failed","skipped","not-run"]).toContain(stage.status);
+      expect(["success", "degraded", "failed", "skipped", "not-run"]).toContain(stage.status);
     }
   });
 
@@ -217,7 +321,9 @@ describe("IPEF · Builder — structural", () => {
 
 describe("IPEF · Builder — contributor facts", () => {
   it("evidence-providers contributor reflects sourcesQueried and evidenceCount", () => {
-    const r = buildIpefRecord(makeInput({ sourcesQueried: 5, sourcesResponded: 4, evidenceCount: 22 }));
+    const r = buildIpefRecord(
+      makeInput({ sourcesQueried: 5, sourcesResponded: 4, evidenceCount: 22 }),
+    );
     const ep = r.contributors.find((c) => c.contributorId === "evidence-providers")!;
     const queried = ep.facts.find((f) => f.label === "Providers Queried")!;
     const ev = ep.facts.find((f) => f.label === "Evidence Records Collected")!;
@@ -236,14 +342,14 @@ describe("IPEF · Builder — contributor facts", () => {
     const r = buildIpefRecord(makeInput());
     const ife = r.contributors.find((c) => c.contributorId === "ife")!;
     const canonical = ife.facts.find((f) => f.label === "Canonical Entities")!;
-    expect(canonical.value).toBe(2);  // from makeUip() fused.stats
+    expect(canonical.value).toBe(2); // from makeUip() fused.stats
   });
 
   it("MIC contributor carries entity + evidence + graph counts when MIC ran", () => {
     const r = buildIpefRecord(makeInput());
     const mic = r.contributors.find((c) => c.contributorId === "mic")!;
     const entities = mic.facts.find((f) => f.label === "Entities Registered")!;
-    const nodes    = mic.facts.find((f) => f.label === "Graph Nodes Added")!;
+    const nodes = mic.facts.find((f) => f.label === "Graph Nodes Added")!;
     expect(entities.value).toBe(3);
     expect(nodes.value).toBe(4);
   });
@@ -265,7 +371,7 @@ describe("IPEF · Builder — contributor facts", () => {
     const r = buildIpefRecord(makeInput());
     const oie = r.contributors.find((c) => c.contributorId === "oie")!;
     const gaps = oie.facts.find((f) => f.label === "Intelligence Gaps Identified")!;
-    expect(gaps.value).toBe(2);  // makeBriefing() has 2 gaps
+    expect(gaps.value).toBe(2); // makeBriefing() has 2 gaps
   });
 
   it("Copilot contributor always has status=success", () => {

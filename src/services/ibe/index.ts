@@ -16,11 +16,7 @@
  *        AdaptiveBriefing renderer surfaces the officer-facing copy
  *        without any UI change.
  */
-import type {
-  Briefing,
-  BriefingSection,
-  SectionKind,
-} from "@/services/orchestration";
+import type { Briefing, BriefingSection, SectionKind } from "@/services/orchestration";
 import type { HumanResponse, OIEResult } from "@/services/oie/types";
 import type { MissionContext } from "@/stores/mission-context.store";
 import { useMissionContextStore } from "@/stores/mission-context.store";
@@ -33,22 +29,14 @@ import { scanForNudges } from "./proactive";
 import { deriveHypotheses, readMissionHypotheses } from "./hypotheses";
 import { initiativeCloser, initiativeQuestions } from "./initiative";
 import { enforceResponseContract, type ResponseContract } from "./response-contract";
-import type {
-  IbeContext,
-  IbeHypothesis,
-  IbeResult,
-  IbeThought,
-  ProactiveNudge,
-} from "./types";
+import type { IbeContext, IbeHypothesis, IbeResult, IbeThought, ProactiveNudge } from "./types";
 
+export type { IbeContext, IbeHypothesis, IbeResult, IbeThought, ProactiveNudge } from "./types";
 export type {
-  IbeContext,
-  IbeHypothesis,
-  IbeResult,
-  IbeThought,
-  ProactiveNudge,
-} from "./types";
-export type { ResponseContract, ResponseContractCheck, ResponseContractStep } from "./response-contract";
+  ResponseContract,
+  ResponseContractCheck,
+  ResponseContractStep,
+} from "./response-contract";
 
 interface EnhanceInput {
   query: string;
@@ -130,12 +118,7 @@ function patchBriefingSections(briefing: Briefing, hr: HumanResponse, closer: st
       priority: f.priority,
       title: f.text,
       grade: (f.citations?.[0]?.grade ?? "OBSERVED") as
-        | "VERIFIED"
-        | "CORROBORATED"
-        | "OBSERVED"
-        | "REPORTED"
-        | "INFERRED"
-        | "UNKNOWN",
+        "VERIFIED" | "CORROBORATED" | "OBSERVED" | "REPORTED" | "INFERRED" | "UNKNOWN",
       source: f.citations?.[0]?.source ?? "Copilot behavioural layer",
       id: `${briefing.id}-ibe-kf-${i}`,
       citations: (f.citations ?? []).map((c) => ({

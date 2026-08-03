@@ -117,11 +117,7 @@ function levenshtein(a: string, b: string): number {
   for (let i = 1; i <= a.length; i++) {
     const row = [i];
     for (let j = 1; j <= b.length; j++) {
-      row[j] = Math.min(
-        prev[j] + 1,
-        row[j - 1] + 1,
-        prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
-      );
+      row[j] = Math.min(prev[j] + 1, row[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
     }
     prev = row;
   }
@@ -169,7 +165,8 @@ export function extractIdentityKeys(
   if (segs[1] === "bol" || segs[1] === "bill-of-lading") {
     push("bill-of-lading", segs[segs.length - 1]);
   }
-  if (segs[0] === "company" && segs.length >= 3) push("company-registration", segs.slice(2).join(":"));
+  if (segs[0] === "company" && segs.length >= 3)
+    push("company-registration", segs.slice(2).join(":"));
 
   push("imo", str(f.imo ?? f.imoNumber));
   push("mmsi", str(f.mmsi));
@@ -199,9 +196,7 @@ export interface ResolutionResult {
  * Resolve every canonical id observed in `records` into a merged identity.
  * Deterministic: the same evidence always produces the same clusters.
  */
-export function resolveDuplicates(
-  records: ReadonlyArray<NormalizedEvidence>,
-): ResolutionResult {
+export function resolveDuplicates(records: ReadonlyArray<NormalizedEvidence>): ResolutionResult {
   const facts = new Map<string, IdFacts>();
   for (const r of records) {
     const id = r.entity.id;

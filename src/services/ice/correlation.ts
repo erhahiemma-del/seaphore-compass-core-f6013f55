@@ -75,9 +75,7 @@ function cellFromEvidence(
 }
 
 /** Utility: group matrix by (canonicalId, fieldName). */
-export function groupByField(
-  cells: ReadonlyArray<MatrixCell>,
-): Map<string, MatrixCell[]> {
+export function groupByField(cells: ReadonlyArray<MatrixCell>): Map<string, MatrixCell[]> {
   const g = new Map<string, MatrixCell[]>();
   for (const c of cells) {
     const key = `${c.canonicalId}::${c.fieldName}`;

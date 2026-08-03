@@ -79,7 +79,9 @@ export function cargoGraphFacade(query: CargoGraphQuery): CargoGraphFacade {
         focusId,
         lines: [
           `${paths.length} evidenced relationship path${paths.length === 1 ? "" : "s"} within ${maxDepth} hops of ${focusId}.`,
-          ...paths.slice(0, 12).map((p) => `${p.narrative} (${p.hops} hop${p.hops === 1 ? "" : "s"}, ${p.grade})`),
+          ...paths
+            .slice(0, 12)
+            .map((p) => `${p.narrative} (${p.hops} hop${p.hops === 1 ? "" : "s"}, ${p.grade})`),
         ],
         citations,
         data: paths,
@@ -97,7 +99,10 @@ export function cargoGraphFacade(query: CargoGraphQuery): CargoGraphFacade {
           `${related.length} related entit${related.length === 1 ? "y" : "ies"} discovered from ${focusId}.`,
           ...related
             .slice(0, 15)
-            .map((r) => `${CARGO_ROLE_LABEL[r.node.role]} · ${r.node.label} — ${r.reason} (${r.grade})`),
+            .map(
+              (r) =>
+                `${CARGO_ROLE_LABEL[r.node.role]} · ${r.node.label} — ${r.reason} (${r.grade})`,
+            ),
         ],
         citations: Array.from(
           new Set(
@@ -124,7 +129,10 @@ export function cargoGraphFacade(query: CargoGraphQuery): CargoGraphFacade {
             .filter((s) => !s.missing)
             .map(
               (s) =>
-                `${CARGO_ROLE_LABEL[s.role]}: ${s.nodes.map((n) => n.label).slice(0, 5).join(", ")}`,
+                `${CARGO_ROLE_LABEL[s.role]}: ${s.nodes
+                  .map((n) => n.label)
+                  .slice(0, 5)
+                  .join(", ")}`,
             ),
         ],
         citations: Array.from(
@@ -155,7 +163,9 @@ export function cargoGraphFacade(query: CargoGraphQuery): CargoGraphFacade {
         ],
         citations: Array.from(
           new Set(
-            events.flatMap((e) => e.evidenceIds.map((id) => `${e.sources.join(", ")} · ${id} · ${e.at} · ${e.grade}`)),
+            events.flatMap((e) =>
+              e.evidenceIds.map((id) => `${e.sources.join(", ")} · ${id} · ${e.at} · ${e.grade}`),
+            ),
           ),
         ).sort(),
         data: events,

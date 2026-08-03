@@ -52,10 +52,9 @@ export async function quickLoginAs(role: DevRoleKey): Promise<QuickLoginResult> 
       stage: "signin",
       message: error.message,
       cause: error,
-      fix:
-        error.message.toLowerCase().includes("invalid")
-          ? "Dev accounts may not be seeded yet. Re-run the seed migration or verify the DEV_SEED_PASSWORD matches the migration."
-          : "Check Supabase reachability and that email auth is enabled.",
+      fix: error.message.toLowerCase().includes("invalid")
+        ? "Dev accounts may not be seeded yet. Re-run the seed migration or verify the DEV_SEED_PASSWORD matches the migration."
+        : "Check Supabase reachability and that email auth is enabled.",
     };
   }
   if (!data.session) {

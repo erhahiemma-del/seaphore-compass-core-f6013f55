@@ -5,8 +5,7 @@ import { hasCriticalFinding, hasFinding, tier } from "./helpers";
 export const executiveBriefingPlaybook: Playbook = {
   skillId: "executive_briefing",
   label: "Executive Intelligence Briefing",
-  objective:
-    "Deliver a concise, decision-oriented briefing suitable for leadership sign-off.",
+  objective: "Deliver a concise, decision-oriented briefing suitable for leadership sign-off.",
   operationalQuestions: [
     "What is the single most material risk right now?",
     "What decision does the officer need to make today?",
@@ -100,8 +99,7 @@ export const executiveBriefingPlaybook: Playbook = {
       when: (ctx) => hasCriticalFinding(ctx),
       action: "Present to Director for immediate decision",
       priority: "critical",
-      rationale: () =>
-        "A material finding requires a documented officer decision.",
+      rationale: () => "A material finding requires a documented officer decision.",
     },
     {
       id: "briefing.rec.deep_dive",

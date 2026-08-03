@@ -9,14 +9,7 @@
 import { useNavigate } from "@tanstack/react-router";
 
 export type EntityType =
-  | "imo"
-  | "vessel"
-  | "company"
-  | "manifest"
-  | "container"
-  | "bol"
-  | "voyage"
-  | "port";
+  "imo" | "vessel" | "company" | "manifest" | "container" | "bol" | "voyage" | "port";
 
 /** Chip / detected-type → canonical destination route. */
 export const TYPE_ROUTE: Record<EntityType, string> = {

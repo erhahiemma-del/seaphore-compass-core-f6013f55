@@ -145,10 +145,7 @@ export function EntitiesRequiringScreening({
 
   return (
     <section
-      className={cn(
-        "rounded-lg border border-line/60 bg-surface-1",
-        className,
-      )}
+      className={cn("rounded-lg border border-line/60 bg-surface-1", className)}
       aria-live="polite"
     >
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-line/50 px-3 py-2">
@@ -158,7 +155,9 @@ export function EntitiesRequiringScreening({
           </h3>
           <p className="mt-0.5 text-[10.5px] text-muted-foreground">
             {stats.outstanding} outstanding · {stats.completed} completed
-            {stats.counts.HIT > 0 ? ` · ${stats.counts.HIT} hit${stats.counts.HIT === 1 ? "" : "s"}` : ""}
+            {stats.counts.HIT > 0
+              ? ` · ${stats.counts.HIT} hit${stats.counts.HIT === 1 ? "" : "s"}`
+              : ""}
             {stats.counts.REVIEW > 0 ? ` · ${stats.counts.REVIEW} review` : ""}
           </p>
         </div>
@@ -169,9 +168,7 @@ export function EntitiesRequiringScreening({
             disabled={stats.outstanding === 0}
             className={cn(
               "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium",
-              stats.outstanding === 0
-                ? "cursor-not-allowed opacity-50"
-                : "hover:bg-accent",
+              stats.outstanding === 0 ? "cursor-not-allowed opacity-50" : "hover:bg-accent",
             )}
           >
             <Play className="h-3 w-3" />
@@ -266,22 +263,25 @@ export function EntitiesRequiringScreening({
                     {e.imo ? <span>IMO {e.imo}</span> : null}
                     {e.origin ? <span>· {e.origin}</span> : null}
                     {e.startedAt && running ? <span>· started {timeAgo(e.startedAt)}</span> : null}
-                    {e.completedAt && done ? <span>· completed {timeAgo(e.completedAt)}</span> : null}
+                    {e.completedAt && done ? (
+                      <span>· completed {timeAgo(e.completedAt)}</span>
+                    ) : null}
                     {typeof e.hitCount === "number" ? (
-                      <span>· {e.hitCount} finding{e.hitCount === 1 ? "" : "s"}</span>
+                      <span>
+                        · {e.hitCount} finding{e.hitCount === 1 ? "" : "s"}
+                      </span>
                     ) : null}
                     {e.history && e.history.length > 1 ? (
                       <span title={priorRunsTitle(e.history)}>
-                        · {e.history.length - 1} prior run{e.history.length - 1 === 1 ? "" : "s"} preserved
+                        · {e.history.length - 1} prior run{e.history.length - 1 === 1 ? "" : "s"}{" "}
+                        preserved
                       </span>
                     ) : null}
                   </div>
                   {e.summary ? (
                     <div className="mt-1 text-[11px] text-muted-foreground">{e.summary}</div>
                   ) : null}
-                  {e.error ? (
-                    <div className="mt-1 text-[11px] text-red-500">{e.error}</div>
-                  ) : null}
+                  {e.error ? <div className="mt-1 text-[11px] text-red-500">{e.error}</div> : null}
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
                   {e.status === "PENDING" ? (
@@ -335,11 +335,7 @@ export function EntitiesRequiringScreening({
   );
 }
 
-function ProgressStrip({
-  stats,
-}: {
-  stats: ReturnType<typeof selectScreeningStats>;
-}) {
+function ProgressStrip({ stats }: { stats: ReturnType<typeof selectScreeningStats> }) {
   const total = Math.max(1, stats.total);
   const seg = (n: number) => `${(n / total) * 100}%`;
   return (
@@ -363,9 +359,7 @@ function timeAgo(iso: string): string {
   return `${h}h ago`;
 }
 
-function priorRunsTitle(
-  history: NonNullable<ScreeningEntity["history"]>,
-): string {
+function priorRunsTitle(history: NonNullable<ScreeningEntity["history"]>): string {
   // Exclude the latest run (shown at top of the row) — this tooltip surfaces
   // the archived prior attempts so officers can see what changed on retry.
   const prior = history.slice(0, -1);
@@ -374,9 +368,7 @@ function priorRunsTitle(
     .map((r, i) => {
       const when = new Date(r.runAt).toLocaleString();
       const detail =
-        r.status === "ERROR"
-          ? r.error ?? "failed"
-          : r.summary ?? `${r.hitCount ?? 0} findings`;
+        r.status === "ERROR" ? (r.error ?? "failed") : (r.summary ?? `${r.hitCount ?? 0} findings`);
       return `#${i + 1} ${when} — ${r.status}: ${detail}`;
     })
     .join("\n");

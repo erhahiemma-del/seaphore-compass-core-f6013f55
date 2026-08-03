@@ -9,12 +9,51 @@
 import { createServerFn } from "@tanstack/react-start";
 import { observability } from "@/services/observability";
 
-interface ErrorDto { traceId: string; at: string; stage: string; message: string; stack?: string; context: Record<string, string> }
-interface FeedbackDto { traceId: string; at: string; officerHash: string; outcome: string; note?: string }
-interface QueryDto { id: string; at: string; officerHash: string; intent: string; queryText: string; workspace?: string }
-interface AlertDto { at: string; rule: string; severity: string; description: string; snapshotAt: string }
-interface HistDto { count: number; min: number; max: number; mean: number; p50: number; p90: number; p95: number; p99: number }
-interface SnapshotDto { counters: Record<string, number>; gauges: Record<string, number>; histograms: Record<string, HistDto> }
+interface ErrorDto {
+  traceId: string;
+  at: string;
+  stage: string;
+  message: string;
+  stack?: string;
+  context: Record<string, string>;
+}
+interface FeedbackDto {
+  traceId: string;
+  at: string;
+  officerHash: string;
+  outcome: string;
+  note?: string;
+}
+interface QueryDto {
+  id: string;
+  at: string;
+  officerHash: string;
+  intent: string;
+  queryText: string;
+  workspace?: string;
+}
+interface AlertDto {
+  at: string;
+  rule: string;
+  severity: string;
+  description: string;
+  snapshotAt: string;
+}
+interface HistDto {
+  count: number;
+  min: number;
+  max: number;
+  mean: number;
+  p50: number;
+  p90: number;
+  p95: number;
+  p99: number;
+}
+interface SnapshotDto {
+  counters: Record<string, number>;
+  gauges: Record<string, number>;
+  histograms: Record<string, HistDto>;
+}
 interface DashboardDto {
   at: string;
   snapshot: SnapshotDto;
@@ -33,19 +72,52 @@ export const getObservabilitySnapshot = createServerFn({ method: "GET" }).handle
       snapshot: {
         counters: { ...snapshot.counters },
         gauges: { ...snapshot.gauges },
-        histograms: Object.fromEntries(Object.entries(snapshot.histograms).map(([k, v]) => [k, { ...v }])),
+        histograms: Object.fromEntries(
+          Object.entries(snapshot.histograms).map(([k, v]) => [k, { ...v }]),
+        ),
       },
-      alerts: alerts.map((a) => ({ at: a.at, rule: a.rule, severity: a.severity, description: a.description, snapshotAt: a.snapshotAt })),
-      recentErrors: observability.store.errors.all().slice(-20).reverse().map((e) => ({
-        traceId: e.traceId, at: e.at, stage: e.stage, message: e.message, stack: e.stack,
-        context: Object.fromEntries(Object.entries(e.context).map(([k, v]) => [k, String(v)])),
+      alerts: alerts.map((a) => ({
+        at: a.at,
+        rule: a.rule,
+        severity: a.severity,
+        description: a.description,
+        snapshotAt: a.snapshotAt,
       })),
-      recentFeedback: observability.store.feedback.all().slice(-20).reverse().map((f) => ({
-        traceId: f.traceId, at: f.at, officerHash: f.officerHash, outcome: f.outcome, note: f.note,
-      })),
-      recentQueries: observability.store.queries.all().slice(-20).reverse().map((q) => ({
-        id: q.id, at: q.at, officerHash: q.officerHash, intent: q.intent, queryText: q.queryText, workspace: q.workspace,
-      })),
+      recentErrors: observability.store.errors
+        .all()
+        .slice(-20)
+        .reverse()
+        .map((e) => ({
+          traceId: e.traceId,
+          at: e.at,
+          stage: e.stage,
+          message: e.message,
+          stack: e.stack,
+          context: Object.fromEntries(Object.entries(e.context).map(([k, v]) => [k, String(v)])),
+        })),
+      recentFeedback: observability.store.feedback
+        .all()
+        .slice(-20)
+        .reverse()
+        .map((f) => ({
+          traceId: f.traceId,
+          at: f.at,
+          officerHash: f.officerHash,
+          outcome: f.outcome,
+          note: f.note,
+        })),
+      recentQueries: observability.store.queries
+        .all()
+        .slice(-20)
+        .reverse()
+        .map((q) => ({
+          id: q.id,
+          at: q.at,
+          officerHash: q.officerHash,
+          intent: q.intent,
+          queryText: q.queryText,
+          workspace: q.workspace,
+        })),
     };
   },
 );

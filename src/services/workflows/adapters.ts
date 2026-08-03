@@ -44,12 +44,20 @@ export function createMockAdapters(failure: Partial<Record<string, AdapterFailur
     /** Document requester: request a manifest from customs. */
     async requestDocument(input: { docType: string; ref: string }) {
       maybeFail("requestDocument");
-      return { requestId: `DOC-${Date.now().toString(36)}`, docType: input.docType, ref: input.ref };
+      return {
+        requestId: `DOC-${Date.now().toString(36)}`,
+        docType: input.docType,
+        ref: input.ref,
+      };
     },
     /** Assignment service: assign an officer to a case. */
     async assign(input: { caseId: string; officerId: string }) {
       maybeFail("assign");
-      return { caseId: input.caseId, assigneeId: input.officerId, assignedAt: new Date().toISOString() };
+      return {
+        caseId: input.caseId,
+        assigneeId: input.officerId,
+        assignedAt: new Date().toISOString(),
+      };
     },
     /** Port control: place a hold on a vessel's clearance. */
     async freezeClearance(input: { vesselId: string; reason: string }) {

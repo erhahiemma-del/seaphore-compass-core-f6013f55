@@ -120,10 +120,7 @@ export function authorityWeight(p: SourceProfile): number {
  * — anything older contributes zero freshness weight but the record is
  * still eligible (the IFE surfaces it as `historical` on the timeline).
  */
-export function sourceWeight(
-  connectorId: ConnectorId,
-  freshnessSeconds: number,
-): number {
+export function sourceWeight(connectorId: ConnectorId, freshnessSeconds: number): number {
   const p = profileFor(connectorId);
   const authority = authorityWeight(p);
   const latency = clamp01(1 - p.latencyMsP50 / 5000);

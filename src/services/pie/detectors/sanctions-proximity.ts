@@ -19,7 +19,9 @@ export const sanctionsProximityDetector: Detector = {
       const sanctions = records.filter((r) => r.kind === "sanctions");
       if (sanctions.length === 0) continue;
 
-      const direct = sanctions.filter((r) => r.fields.status === "listed" || r.fields.match === "direct");
+      const direct = sanctions.filter(
+        (r) => r.fields.status === "listed" || r.fields.match === "direct",
+      );
       const proximity = sanctions.filter(
         (r) => r.fields.status === "indirect" || r.fields.match === "associate" || r.fields.hops,
       );
@@ -35,9 +37,7 @@ export const sanctionsProximityDetector: Detector = {
         });
       }
       if (proximity.length > 0) {
-        const hops = proximity
-          .map((r) => Number(r.fields.hops ?? 2))
-          .filter(Number.isFinite);
+        const hops = proximity.map((r) => Number(r.fields.hops ?? 2)).filter(Number.isFinite);
         const minHops = hops.length > 0 ? Math.min(...hops) : 2;
         factors.push({
           label: `${proximity.length} indirect / n-hop sanctions association (nearest: ${minHops} hop${minHops > 1 ? "s" : ""})`,
@@ -50,7 +50,10 @@ export const sanctionsProximityDetector: Detector = {
         buildPrediction({
           category: CATEGORY,
           subject: sanctions[0].entity,
-          headline: direct.length > 0 ? "Direct sanctions exposure — action likely" : "Sanctions proximity elevated",
+          headline:
+            direct.length > 0
+              ? "Direct sanctions exposure — action likely"
+              : "Sanctions proximity elevated",
           explanation: `Sanctions evidence indicates ${direct.length} direct listing(s) and ${proximity.length} proximity association(s). Model expects further enforcement engagement within the immediate horizon.`,
           factors,
           evidence: sanctions,
@@ -58,7 +61,8 @@ export const sanctionsProximityDetector: Detector = {
             {
               label: "Name / entity collision",
               probability: 0.1,
-              rationale: "Some hits may reflect similarly-named entities not identical to the subject.",
+              rationale:
+                "Some hits may reflect similarly-named entities not identical to the subject.",
             },
           ],
           now: ctx.now,

@@ -50,10 +50,7 @@ export const GFW_CREDENTIAL_ENV = ["GFW_API_TOKEN"] as const;
 
 /** Officer-facing authentication states — never a generic error string. */
 export type GfwAuthState =
-  | "AUTHENTICATED"
-  | "CREDENTIALS_MISSING"
-  | "CREDENTIALS_INVALID"
-  | "PROVIDER_UNREACHABLE";
+  "AUTHENTICATED" | "CREDENTIALS_MISSING" | "CREDENTIALS_INVALID" | "PROVIDER_UNREACHABLE";
 
 export const GFW_AUTH_MESSAGE: Record<GfwAuthState, string> = {
   AUTHENTICATED: "Authenticated with Global Fishing Watch.",
@@ -61,7 +58,6 @@ export const GFW_AUTH_MESSAGE: Record<GfwAuthState, string> = {
   CREDENTIALS_INVALID: `Credentials Invalid — Global Fishing Watch rejected ${GFW_CREDENTIAL_ENV[0]}.`,
   PROVIDER_UNREACHABLE: "Provider Unreachable — Global Fishing Watch did not answer the probe.",
 };
-
 
 const API_BASE = "https://gateway.api.globalfishingwatch.org/v3";
 const TIMEOUT_MS = 8_000;
@@ -93,11 +89,7 @@ export class GlobalFishingWatchProvider extends BaseEvidenceProvider {
   readonly displayName = "Global Fishing Watch";
   readonly provider: ProviderMetadata = GFW_METADATA;
   readonly projectionContractId = "ial.global-fishing-watch-evidence-provider";
-  readonly capabilities: ReadonlyArray<ConnectorCapability> = [
-    "POSITION",
-    "PORT_CALL",
-    "IDENTITY",
-  ];
+  readonly capabilities: ReadonlyArray<ConnectorCapability> = ["POSITION", "PORT_CALL", "IDENTITY"];
 
   private readonly fetchImpl: typeof fetch;
   /** Explicit test credential. Production reads env per call, never here. */
@@ -191,10 +183,7 @@ export class GlobalFishingWatchProvider extends BaseEvidenceProvider {
       }
       this.applyAuthState("AUTHENTICATED");
     } catch (err) {
-      this.applyAuthState(
-        "PROVIDER_UNREACHABLE",
-        err instanceof Error ? err.message : String(err),
-      );
+      this.applyAuthState("PROVIDER_UNREACHABLE", err instanceof Error ? err.message : String(err));
     }
   }
 
@@ -216,7 +205,6 @@ export class GlobalFishingWatchProvider extends BaseEvidenceProvider {
       ? { Authorization: `Bearer ${token}`, Accept: "application/json" }
       : { Accept: "application/json" };
   }
-
 
   protected async fetchEvidence(
     query: AcquisitionQuery,
@@ -248,7 +236,9 @@ export class GlobalFishingWatchProvider extends BaseEvidenceProvider {
     if (res.status !== 200) throw new Error(`Global Fishing Watch returned ${res.status}`);
 
     const payload = (await res.json()) as {
-      entries?: Array<{ selfReportedInfo?: GfwVessel[]; combinedSourcesInfo?: unknown } & GfwVessel>;
+      entries?: Array<
+        { selfReportedInfo?: GfwVessel[]; combinedSourcesInfo?: unknown } & GfwVessel
+      >;
     };
     const out: NormalizedEvidence[] = [];
     for (const entry of payload.entries ?? []) {

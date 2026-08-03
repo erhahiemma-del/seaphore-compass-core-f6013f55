@@ -11,12 +11,7 @@
  */
 
 export type EvidenceGrade =
-  | "VERIFIED"
-  | "CORROBORATED"
-  | "OBSERVED"
-  | "REPORTED"
-  | "INFERRED"
-  | "UNKNOWN";
+  "VERIFIED" | "CORROBORATED" | "OBSERVED" | "REPORTED" | "INFERRED" | "UNKNOWN";
 
 export type FindingPriority = "immediate" | "today" | "monitor" | "archive";
 

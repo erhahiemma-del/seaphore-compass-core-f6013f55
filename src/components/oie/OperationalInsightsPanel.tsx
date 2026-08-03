@@ -9,33 +9,30 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { generateOieInsights } from "@/lib/oie-reasoning.functions";
-import type {
-  OieInsight,
-  OieInsightBundle,
-  OieInsightKind,
-} from "@/services/oie-reasoning/types";
+import type { OieInsight, OieInsightBundle, OieInsightKind } from "@/services/oie-reasoning/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { InvestigationWorkspace } from "@/stores/workspace.store";
-import {
-  Brain,
-  GitCompareArrows,
-  History,
-  Layers,
-  Link2,
-  ShieldAlert,
-  Target,
-} from "lucide-react";
+import { Brain, GitCompareArrows, History, Layers, Link2, ShieldAlert, Target } from "lucide-react";
 
 const KIND_META: Record<OieInsightKind, { label: string; icon: React.ReactNode }> = {
-  SIMILAR_INVESTIGATION: { label: "Similar Investigation", icon: <GitCompareArrows className="h-3.5 w-3.5" /> },
+  SIMILAR_INVESTIGATION: {
+    label: "Similar Investigation",
+    icon: <GitCompareArrows className="h-3.5 w-3.5" />,
+  },
   RECURRING_PATTERN: { label: "Recurring Pattern", icon: <Layers className="h-3.5 w-3.5" /> },
   HISTORICAL_OUTCOME: { label: "Historical Outcome", icon: <History className="h-3.5 w-3.5" /> },
   EMERGING_RISK: { label: "Emerging Risk", icon: <ShieldAlert className="h-3.5 w-3.5" /> },
-  RECOMMENDATION_EFFECTIVENESS: { label: "Recommendation Effectiveness", icon: <Target className="h-3.5 w-3.5" /> },
-  CROSS_CASE_RELATIONSHIP: { label: "Cross-Case Relationship", icon: <Link2 className="h-3.5 w-3.5" /> },
+  RECOMMENDATION_EFFECTIVENESS: {
+    label: "Recommendation Effectiveness",
+    icon: <Target className="h-3.5 w-3.5" />,
+  },
+  CROSS_CASE_RELATIONSHIP: {
+    label: "Cross-Case Relationship",
+    icon: <Link2 className="h-3.5 w-3.5" />,
+  },
 };
 
 interface Props {
@@ -148,8 +145,8 @@ export function OperationalInsightsPanel({ workspace }: Props) {
       <CardContent className="space-y-4">
         {isEmpty ? (
           <p className="text-xs text-muted-foreground">
-            No historical knowledge yet supports operational reasoning on this
-            subject. Close a related investigation to seed the OKL.
+            No historical knowledge yet supports operational reasoning on this subject. Close a
+            related investigation to seed the OKL.
           </p>
         ) : (
           Array.from(grouped.entries()).map(([kind, list]) => (
@@ -206,9 +203,9 @@ export function OperationalInsightsPanel({ workspace }: Props) {
           ))
         )}
         <p className="text-[10px] text-muted-foreground pt-2 border-t border-border/40">
-          Reasoning-only layer. Every insight above traces to OKL records
-          stamped with `source_uip_id`, `briefing_id`, and `investigation_id`.
-          No connector calls. System recommends; officer decides.
+          Reasoning-only layer. Every insight above traces to OKL records stamped with
+          `source_uip_id`, `briefing_id`, and `investigation_id`. No connector calls. System
+          recommends; officer decides.
         </p>
       </CardContent>
     </Card>

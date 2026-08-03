@@ -79,7 +79,14 @@ export const revenueAgent: AgentSpec<typeof RevenueOutputSchema> = {
       gap,
       anomalies:
         Math.abs(gap) / customs.declared > 0.1
-          ? [{ id: "anom_gap", label: "Declared/observed gap > 10%", delta: gap, grade: "observed" }]
+          ? [
+              {
+                id: "anom_gap",
+                label: "Declared/observed gap > 10%",
+                delta: gap,
+                grade: "observed",
+              },
+            ]
           : [],
       citations: [
         { source: "customs_db", ref: `cust:${entityId}`, observedAt: nowIso() },
@@ -105,18 +112,16 @@ export const complianceAgent: AgentSpec<typeof ComplianceOutputSchema> = {
         args,
       ),
       query<{ code: string; issuer: string; validUntil: string | null }>("isps_registry", args),
-      query<{ findings: Array<{ port: string; finding: string; severity: "low" | "med" | "high" }> }>(
-        "port_state_db",
-        args,
-      ),
+      query<{
+        findings: Array<{ port: string; finding: string; severity: "low" | "med" | "high" }>;
+      }>("port_state_db", args),
     ]);
     const allCerts = [...certs.certificates, isps];
-    const status: ComplianceOutput["status"] =
-      ps.findings.some((f) => f.severity === "high")
-        ? "breach"
-        : ps.findings.length > 0
-          ? "watch"
-          : "compliant";
+    const status: ComplianceOutput["status"] = ps.findings.some((f) => f.severity === "high")
+      ? "breach"
+      : ps.findings.length > 0
+        ? "watch"
+        : "compliant";
     const out: ComplianceOutput = {
       subjectEntityId: entityId,
       status,
@@ -198,10 +203,9 @@ export const forecastAgent: AgentSpec<typeof ForecastOutputSchema> = {
     const args = { entityId, __signal: ctx.signal };
     const [, patterns] = await Promise.all([
       query<{ priorDwells: number[] }>("historical_db", args),
-      query<{ patterns: Array<{ id: string; label: string; matchScore: number; windowDays: number }> }>(
-        "pattern_engine",
-        args,
-      ),
+      query<{
+        patterns: Array<{ id: string; label: string; matchScore: number; windowDays: number }>;
+      }>("pattern_engine", args),
     ]);
     const out: ForecastOutput = {
       subjectEntityId: entityId,

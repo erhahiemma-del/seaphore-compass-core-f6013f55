@@ -32,7 +32,11 @@ import {
   OpenCorporatesProvider,
   openCorporatesProvider,
 } from "./implementations/OpenCorporatesProvider";
-import { EQUASIS_METADATA, EquasisProvider, equasisProvider } from "./implementations/EquasisProvider";
+import {
+  EQUASIS_METADATA,
+  EquasisProvider,
+  equasisProvider,
+} from "./implementations/EquasisProvider";
 import {
   IMO_GISIS_METADATA,
   ImoGisisProvider,
@@ -136,4 +140,3 @@ export function registerEvidenceProviders(manager: ConnectorManager): void {
     registered.push(provider.id);
   }
 }
-

@@ -93,7 +93,6 @@ import { QUERY_KEYS } from "@/lib/query-keys";
 import { DataSourceMatrixPanel } from "@/components/data-sources/data-source-matrix-panel";
 import { IalAdminPanel } from "@/components/administration/ial-admin-panel";
 
-
 // ---------- Types & constants ----------
 
 type SectionId =
@@ -114,7 +113,6 @@ type SectionId =
   | "capability-catalog"
   | "observatory"
   | "intelligence-core";
-
 
 interface NavItem {
   id: SectionId;
@@ -161,13 +159,7 @@ const ROLE_ICON: Record<Role, ComponentType<SVGProps<SVGSVGElement>>> = {
 
 type PreviewRole = Role;
 
-const PREVIEW_ROLES: PreviewRole[] = [
-  "admin",
-  "director",
-  "officer",
-  "analyst",
-  "external_agency",
-];
+const PREVIEW_ROLES: PreviewRole[] = ["admin", "director", "officer", "analyst", "external_agency"];
 
 const PREVIEW_ROLE_LABEL: Record<PreviewRole, string> = ROLE_LABEL;
 
@@ -400,7 +392,6 @@ function SectionContent({
   return <PlaceholderSection section={section} />;
 }
 
-
 function IntelligenceCoreSection() {
   return (
     <div className="space-y-4">
@@ -410,7 +401,8 @@ function IntelligenceCoreSection() {
           <h2 className="type-h2 text-foreground">Intelligence Core Health</h2>
         </div>
         <p className="type-small text-slate mt-1">
-          Runtime status, feature flag, registry counts, performance metrics, and scaling thresholds.
+          Runtime status, feature flag, registry counts, performance metrics, and scaling
+          thresholds.
         </p>
       </div>
       <div className="rounded-lg border border-dashed border-line bg-surface/50 p-8 text-center">
@@ -435,15 +427,16 @@ function ObservatorySection() {
           <h2 className="type-h2 text-foreground">Maritime Intelligence Observatory</h2>
         </div>
         <p className="type-small text-slate mt-1">
-          Live operational visibility into every intelligence service. Pipeline health, registry state,
-          execution history, risk distribution, and connector status.
+          Live operational visibility into every intelligence service. Pipeline health, registry
+          state, execution history, risk distribution, and connector status.
         </p>
       </div>
       <div className="rounded-lg border border-dashed border-line bg-surface/50 p-8 text-center">
         <Telescope className="mx-auto h-8 w-8 text-slate mb-3" />
         <p className="type-body text-foreground">Maritime Intelligence Observatory</p>
         <p className="type-small text-slate mt-1 mb-4">
-          Full observability platform — pipeline monitor, registry explorer, execution history, risk monitor.
+          Full observability platform — pipeline monitor, registry explorer, execution history, risk
+          monitor.
         </p>
         <a
           href="/admin/mio"
@@ -465,8 +458,8 @@ function CapabilityCatalogSection() {
           <h2 className="type-h2 text-foreground">Intelligence Capability Catalog</h2>
         </div>
         <p className="type-small text-slate mt-1">
-          Single source of truth for all Seaphore intelligence domains. Open the dedicated
-          catalog view for the full interactive governance surface.
+          Single source of truth for all Seaphore intelligence domains. Open the dedicated catalog
+          view for the full interactive governance surface.
         </p>
       </div>
       <div className="rounded-lg border border-dashed border-line bg-surface/50 p-8 text-center">
@@ -619,7 +612,6 @@ function KPIRow({ role }: { role: PreviewRole }) {
     },
     staleTime: 60_000,
   });
-
 
   const kpis = useMemo(
     () => [

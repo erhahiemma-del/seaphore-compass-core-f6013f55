@@ -26,8 +26,7 @@ import type {
 } from "@/lib/osint/types";
 import { NetworkError } from "@/lib/osint/errors";
 
-const ENDPOINT =
-  "https://www.treasury.gov/ofac/downloads/sanctions/1.0/sdn_advanced.json";
+const ENDPOINT = "https://www.treasury.gov/ofac/downloads/sanctions/1.0/sdn_advanced.json";
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const MARITIME_PROGRAMS = new Set([
   "IRAN",
@@ -123,7 +122,11 @@ async function runSharedIngestionPipeline(
         .select("id, entity_id, tags")
         .eq("entity_type", "VESSEL")
         .in("entity_id", Array.from(imos));
-      for (const v of (vessels ?? []) as Array<{ id: string; entity_id: string; tags: string[] | null }>) {
+      for (const v of (vessels ?? []) as Array<{
+        id: string;
+        entity_id: string;
+        tags: string[] | null;
+      }>) {
         const nextTags = Array.from(new Set([...(v.tags ?? []), "SANCTION_MATCH"]));
         await supabaseAdmin.from("osint_records").update({ tags: nextTags }).eq("id", v.id);
       }
@@ -184,17 +187,23 @@ export class OfacSanctionsConnector implements ConnectorInterface {
       const uid = String(row.uid ?? row.id ?? "");
       if (!uid) continue;
       const programs = Array.isArray(row.programs) ? (row.programs as string[]) : [];
-      const idList = Array.isArray(row.idList) ? (row.idList as Array<Record<string, unknown>>) : [];
+      const idList = Array.isArray(row.idList)
+        ? (row.idList as Array<Record<string, unknown>>)
+        : [];
       const imoNumbers = idList
-        .filter((i) => String(i.idType ?? "").toUpperCase().includes("IMO"))
+        .filter((i) =>
+          String(i.idType ?? "")
+            .toUpperCase()
+            .includes("IMO"),
+        )
         .map((i) => String(i.idNumber ?? "").replace(/\D/g, ""))
         .filter(Boolean);
       const vesselInfo = (row.vesselInfo as Record<string, unknown> | undefined) ?? {};
       const flags = Array.isArray(vesselInfo.vesselFlag)
         ? (vesselInfo.vesselFlag as string[])
         : vesselInfo.vesselFlag
-        ? [String(vesselInfo.vesselFlag)]
-        : [];
+          ? [String(vesselInfo.vesselFlag)]
+          : [];
       out.push({
         sourceRef: `ofac-${uid}`,
         uid,
@@ -202,7 +211,9 @@ export class OfacSanctionsConnector implements ConnectorInterface {
         sdnType: String(row.sdnType ?? "Entity"),
         programs,
         aliases: Array.isArray(row.akaList)
-          ? (row.akaList as Array<Record<string, unknown>>).map((a) => String(a.lastName ?? a.firstName ?? ""))
+          ? (row.akaList as Array<Record<string, unknown>>).map((a) =>
+              String(a.lastName ?? a.firstName ?? ""),
+            )
           : [],
         addresses: Array.isArray(row.addressList)
           ? (row.addressList as Array<Record<string, unknown>>).map((a) => ({
@@ -214,7 +225,8 @@ export class OfacSanctionsConnector implements ConnectorInterface {
         imoNumbers,
         vesselFlags: flags,
         callSigns: vesselInfo.callSign ? [String(vesselInfo.callSign)] : [],
-        listDate: (row.publishInformation as { publishDate?: string } | undefined)?.publishDate ?? null,
+        listDate:
+          (row.publishInformation as { publishDate?: string } | undefined)?.publishDate ?? null,
         remarks: (row.remarks as string) ?? null,
       });
     }
@@ -344,7 +356,8 @@ export class OfacSanctionsConnector implements ConnectorInterface {
       });
       const latencyMs = Date.now() - started;
       if (response.ok) return { status: "healthy", latencyMs };
-      if (response.status >= 500) return { status: "down", latencyMs, message: `HTTP ${response.status}` };
+      if (response.status >= 500)
+        return { status: "down", latencyMs, message: `HTTP ${response.status}` };
       return { status: "degraded", latencyMs, message: `HTTP ${response.status}` };
     } catch (err) {
       const latencyMs = Date.now() - started;

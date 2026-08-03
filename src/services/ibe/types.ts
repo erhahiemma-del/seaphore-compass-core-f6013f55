@@ -23,12 +23,7 @@ import type { MissionContext } from "@/stores/mission-context.store";
 
 /** How the Copilot speaks to the current officer. */
 export type OfficerPersona =
-  | "executive"
-  | "operational"
-  | "analyst"
-  | "investigator"
-  | "trainer"
-  | "briefing";
+  "executive" | "operational" | "analyst" | "investigator" | "trainer" | "briefing";
 
 /** Where the investigation currently sits in its lifecycle. */
 export type InvestigationStage =
@@ -45,14 +40,7 @@ export interface IbeHypothesis {
   id: string;
   statement: string;
   domain:
-    | "sanctions"
-    | "ownership"
-    | "revenue"
-    | "ais"
-    | "compliance"
-    | "cargo"
-    | "identity"
-    | "other";
+    "sanctions" | "ownership" | "revenue" | "ais" | "compliance" | "cargo" | "identity" | "other";
   supporting: string[];
   contradicting: string[];
   /** Free-form confidence in officer language (never a percentage). */

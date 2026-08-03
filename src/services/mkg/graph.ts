@@ -249,9 +249,7 @@ export class MaritimeKnowledgeGraph {
       edgePath: string[];
       grades: EvidenceGrade[];
     }
-    const queue: Frame[] = [
-      { nodeId: startId, nodePath: [startId], edgePath: [], grades: [] },
-    ];
+    const queue: Frame[] = [{ nodeId: startId, nodePath: [startId], edgePath: [], grades: [] }];
     const seen = new Set<string>([startId]);
 
     while (queue.length && paths.length < maxPaths) {
@@ -266,9 +264,9 @@ export class MaritimeKnowledgeGraph {
       }
       if (frame.edgePath.length >= maxDepth) continue;
 
-      const nbrs = this.neighbors(frame.nodeId).slice().sort(
-        (a, b) => a.edge.id.localeCompare(b.edge.id),
-      );
+      const nbrs = this.neighbors(frame.nodeId)
+        .slice()
+        .sort((a, b) => a.edge.id.localeCompare(b.edge.id));
       for (const { edge, neighbor } of nbrs) {
         if (opts.edgeTypes && !opts.edgeTypes.includes(edge.type)) continue;
         if (opts.kinds && !opts.kinds.includes(neighbor.kind)) continue;
@@ -315,9 +313,9 @@ export class MaritimeKnowledgeGraph {
       }
       if (edgePath.length >= maxDepth) return;
 
-      const nbrs = this.neighbors(nodeId).slice().sort(
-        (a, b) => a.edge.id.localeCompare(b.edge.id),
-      );
+      const nbrs = this.neighbors(nodeId)
+        .slice()
+        .sort((a, b) => a.edge.id.localeCompare(b.edge.id));
       for (const { edge, neighbor } of nbrs) {
         if (visited.has(neighbor.id)) continue;
         if (opts.edgeTypes && !opts.edgeTypes.includes(edge.type)) continue;
@@ -374,9 +372,7 @@ export class MaritimeKnowledgeGraph {
   }
 }
 
-function dedupeProvenance(
-  entries: ReadonlyArray<MkgProvenance>,
-): ReadonlyArray<MkgProvenance> {
+function dedupeProvenance(entries: ReadonlyArray<MkgProvenance>): ReadonlyArray<MkgProvenance> {
   const seen = new Set<string>();
   const out: MkgProvenance[] = [];
   for (const e of entries) {

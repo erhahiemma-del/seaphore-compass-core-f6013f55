@@ -79,10 +79,7 @@ export function DetectPage() {
         signalId: s.id,
         entityId: s.entityId,
         confidence: s.confidence.toUpperCase() as
-          | "VERIFIED"
-          | "OBSERVED"
-          | "INFERRED"
-          | "UNCONFIRMED",
+          "VERIFIED" | "OBSERVED" | "INFERRED" | "UNCONFIRMED",
         fromStage: "Detect",
         fromRoute: "/detect",
       },

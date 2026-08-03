@@ -91,9 +91,10 @@ export function deriveHypotheses(
       supporting: Array.from(new Set([...(prev?.supporting ?? []), ...supporting])).slice(0, 6),
       contradicting: prev?.contradicting ?? [],
       confidence: confidenceFromBadge(badge),
-      nextEvidenceNeeded: Array.from(
-        new Set([...(prev?.nextEvidenceNeeded ?? []), ...gaps]),
-      ).slice(0, 4),
+      nextEvidenceNeeded: Array.from(new Set([...(prev?.nextEvidenceNeeded ?? []), ...gaps])).slice(
+        0,
+        4,
+      ),
       createdAt: prev?.createdAt ?? now,
       updatedAt: now,
     };

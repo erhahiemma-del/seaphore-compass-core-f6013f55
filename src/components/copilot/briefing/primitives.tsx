@@ -75,9 +75,7 @@ export function Collapsible({
   const reduced = useReducedMotion();
   const panelId = useId();
   const containerCls =
-    tone === "muted"
-      ? "rounded-md border bg-muted/30 p-3"
-      : "rounded-md border bg-background p-3";
+    tone === "muted" ? "rounded-md border bg-muted/30 p-3" : "rounded-md border bg-background p-3";
 
   return (
     <div className={containerCls}>

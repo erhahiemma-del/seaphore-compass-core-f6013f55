@@ -35,7 +35,6 @@ export type ConnectorCapability =
    *  behind which every environmental source is an adapter. */
   | "ENVIRONMENTAL_INTELLIGENCE";
 
-
 export interface Connector {
   readonly id: ConnectorId;
   readonly displayName: string;

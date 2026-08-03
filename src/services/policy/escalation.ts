@@ -27,12 +27,23 @@ interface Rule {
 }
 
 const ESCALATION_RULES: ReadonlyArray<Rule> = Object.freeze([
-  { workflow: "freeze_clearance", requiresApprovalFor: ["officer"], approverRoles: ["director", "administrator"] },
-  { workflow: "assign_officer", requiresApprovalFor: ["officer"], approverRoles: ["director", "administrator"] },
+  {
+    workflow: "freeze_clearance",
+    requiresApprovalFor: ["officer"],
+    approverRoles: ["director", "administrator"],
+  },
+  {
+    workflow: "assign_officer",
+    requiresApprovalFor: ["officer"],
+    approverRoles: ["director", "administrator"],
+  },
 ]);
 
 export function escalationFor(workflow: WorkflowId, role: Role): Rule | null {
-  return ESCALATION_RULES.find((r) => r.workflow === workflow && r.requiresApprovalFor.includes(role)) ?? null;
+  return (
+    ESCALATION_RULES.find((r) => r.workflow === workflow && r.requiresApprovalFor.includes(role)) ??
+    null
+  );
 }
 
 export function approvalSatisfies(rule: Rule, token: ApprovalToken | undefined): boolean {

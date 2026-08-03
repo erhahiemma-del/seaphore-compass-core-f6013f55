@@ -52,10 +52,18 @@ export function createMemoryStore<V>(maxEntries = 5_000): CacheStore<V> {
         map.delete(oldest);
       }
     },
-    delete(key) { map.delete(key); },
-    clear() { map.clear(); },
-    size() { return map.size; },
-    keys() { return [...map.keys()]; },
+    delete(key) {
+      map.delete(key);
+    },
+    clear() {
+      map.clear();
+    },
+    size() {
+      return map.size;
+    },
+    keys() {
+      return [...map.keys()];
+    },
   };
 }
 
@@ -81,13 +89,19 @@ export function createCache(
 ): Cache {
   const now = opts.now ?? Date.now;
   const ns = opts.namespace ? `${opts.namespace}:` : "";
-  let hits = 0, misses = 0, evictions = 0, expirations = 0;
+  let hits = 0,
+    misses = 0,
+    evictions = 0,
+    expirations = 0;
   const k = (key: string) => ns + key;
 
   return {
     get<V>(key: string): V | undefined {
       const entry = store.get(k(key));
-      if (!entry) { misses++; return undefined; }
+      if (!entry) {
+        misses++;
+        return undefined;
+      }
       if (entry.expiresAt <= now()) {
         store.delete(k(key));
         expirations++;
@@ -108,11 +122,17 @@ export function createCache(
       const full = k(prefix);
       let n = 0;
       for (const key of store.keys()) {
-        if (key.startsWith(full)) { store.delete(key); n++; evictions++; }
+        if (key.startsWith(full)) {
+          store.delete(key);
+          n++;
+          evictions++;
+        }
       }
       return n;
     },
-    clear() { store.clear(); },
+    clear() {
+      store.clear();
+    },
     stats() {
       return { hits, misses, evictions, expirations, size: store.size() };
     },

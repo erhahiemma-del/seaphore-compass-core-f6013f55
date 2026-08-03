@@ -8,20 +8,11 @@
  * The OIE never receives duplicates — for each field there is exactly one
  * accepted value plus a timeline of what came before / was superseded.
  */
-import type {
-  CanonicalEntityRef,
-  EvidenceGrade,
-  NormalizedEvidence,
-} from "@/services/ial/types";
+import type { CanonicalEntityRef, EvidenceGrade, NormalizedEvidence } from "@/services/ial/types";
 import { detectDisagreements } from "./conflict-detector";
 import { fuseField, toCandidate } from "./fusion-rules";
 import { buildFieldTimeline } from "./timeline";
-import type {
-  Contradiction,
-  FusedEntityRecord,
-  FusedFieldValue,
-  FusionConfidence,
-} from "./types";
+import type { Contradiction, FusedEntityRecord, FusedFieldValue, FusionConfidence } from "./types";
 
 const GRADE_RANK: Record<EvidenceGrade, number> = {
   VERIFIED: 5,
@@ -102,9 +93,10 @@ export function buildCanonicalRecord(
             })),
           ),
         ],
-        resolution: outcome.resolution === "sole-source" || outcome.resolution === "unanimous"
-          ? "unresolved"
-          : outcome.resolution,
+        resolution:
+          outcome.resolution === "sole-source" || outcome.resolution === "unanimous"
+            ? "unresolved"
+            : outcome.resolution,
         explanation: outcome.explanation,
       });
     }
@@ -153,10 +145,7 @@ function buildRecordExplanation(
 ): string {
   const highCount = fields.filter((f) => f.confidence === "HIGH").length;
   const lowCount = fields.filter((f) => f.confidence === "LOW").length;
-  const parts = [
-    `${fields.length} fused field(s)`,
-    `${highCount} HIGH / ${lowCount} LOW`,
-  ];
+  const parts = [`${fields.length} fused field(s)`, `${highCount} HIGH / ${lowCount} LOW`];
   if (contradictionCount > 0) parts.push(`${contradictionCount} contradiction(s) preserved`);
   return parts.join(" · ");
 }

@@ -112,8 +112,8 @@ export function IceExplainabilityPanel() {
 
       {!pkg && !error && (
         <div className="rounded-lg border border-dashed border-line/60 bg-surface/30 px-6 py-10 text-center text-[12px] text-slate">
-          Run correlation to generate an explainable ICE package from all registered sources.
-          Every finding is traceable to the underlying matrix.
+          Run correlation to generate an explainable ICE package from all registered sources. Every
+          finding is traceable to the underlying matrix.
         </div>
       )}
 
@@ -169,10 +169,7 @@ function SummaryStrip({ pkg }: { pkg: IntelligencePackage }) {
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8">
       {tiles.map((t) => (
-        <div
-          key={t.label}
-          className="rounded-md border border-line/60 bg-surface/50 px-3 py-2"
-        >
+        <div key={t.label} className="rounded-md border border-line/60 bg-surface/50 px-3 py-2">
           <div className={cn("text-[15px] font-semibold text-foreground", t.tone)}>{t.value}</div>
           <div className="text-[10.5px] uppercase tracking-[0.06em] text-slate">{t.label}</div>
         </div>
@@ -193,7 +190,10 @@ function CorrelationMatrixSection({ matrix }: { matrix: ReadonlyArray<MatrixCell
   }, [matrix]);
 
   return (
-    <Section title="Correlation Matrix" subtitle="Field × Source × Value with per-cell evidence score.">
+    <Section
+      title="Correlation Matrix"
+      subtitle="Field × Source × Value with per-cell evidence score."
+    >
       {fields.length === 0 ? (
         <Empty>No matrix cells produced.</Empty>
       ) : (
@@ -317,10 +317,7 @@ function ConflictsSection({ conflicts }: { conflicts: ReadonlyArray<ConflictRow>
 /* -------------------- Evidence Strength -------------------- */
 
 function EvidenceStrengthSection({ fused }: { fused: ReadonlyArray<FusedField> }) {
-  const rows = useMemo(
-    () => [...fused].sort((a, b) => a.confidence - b.confidence),
-    [fused],
-  );
+  const rows = useMemo(() => [...fused].sort((a, b) => a.confidence - b.confidence), [fused]);
   return (
     <Section
       title="Evidence Strength"
@@ -333,11 +330,7 @@ function EvidenceStrengthSection({ fused }: { fused: ReadonlyArray<FusedField> }
           {rows.map((f) => {
             const pct = Math.round(f.confidence * 100);
             const bar =
-              pct >= 75
-                ? "bg-emerald-400/70"
-                : pct >= 50
-                  ? "bg-amber-400/70"
-                  : "bg-rose-400/70";
+              pct >= 75 ? "bg-emerald-400/70" : pct >= 50 ? "bg-amber-400/70" : "bg-rose-400/70";
             return (
               <li
                 key={`${f.canonicalId}-${f.fieldName}`}

@@ -18,10 +18,7 @@ import { exportReportDocx } from "./exporters/docx";
 import { exportReportXlsx } from "./exporters/xlsx";
 import { exportReportPptx } from "./exporters/pptx";
 
-export async function exportReport(
-  report: ReportPackage,
-  format: ExportFormat,
-): Promise<Blob> {
+export async function exportReport(report: ReportPackage, format: ExportFormat): Promise<Blob> {
   switch (format) {
     case "PDF":
       return exportReportPdf(report);

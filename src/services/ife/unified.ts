@@ -67,9 +67,9 @@ export function buildUnifiedIntelligencePackage({
   osaeAssessments = [],
 }: BuildUnifiedInput): UnifiedIntelligencePackage {
   const rawRecords = "records" in input ? input.records : input.verified;
-  const missing = ("missing" in input && input.missing) ? [...input.missing] : [];
-  const conflicting = ("conflicting" in input && input.conflicting) ? input.conflicting : undefined;
-  const sources = ("sources" in input && input.sources) ? input.sources : undefined;
+  const missing = "missing" in input && input.missing ? [...input.missing] : [];
+  const conflicting = "conflicting" in input && input.conflicting ? input.conflicting : undefined;
+  const sources = "sources" in input && input.sources ? input.sources : undefined;
 
   // 1. Resolve identities across connectors.
   const { records: resolved, clusters } = resolveIdentities(rawRecords);
@@ -103,9 +103,10 @@ export function buildUnifiedIntelligencePackage({
     agreementScore: s.agreementScore,
   }));
 
-  const freshestSeconds = rawRecords.length === 0
-    ? 0
-    : Math.min(...rawRecords.map((r) => r.freshnessSeconds).filter(Number.isFinite));
+  const freshestSeconds =
+    rawRecords.length === 0
+      ? 0
+      : Math.min(...rawRecords.map((r) => r.freshnessSeconds).filter(Number.isFinite));
 
   return {
     id: `uip_${fused.id}`,

@@ -11,15 +11,16 @@
  * from new evidence do not overwrite populated fields from earlier evidence.
  */
 import type { EvidenceGrade } from "@/services/ial/types";
-import type {
-  IntelligenceObject,
-  IntelligenceObjectKind,
-  IntelligenceObjectBase,
-} from "./types";
+import type { IntelligenceObject, IntelligenceObjectKind, IntelligenceObjectBase } from "./types";
 import type { MicCitation, MicConfidenceTier } from "../types";
 
 const GRADE_RANK: Record<EvidenceGrade, number> = {
-  VERIFIED: 5, CORROBORATED: 4, OBSERVED: 3, REPORTED: 2, INFERRED: 1, UNKNOWN: 0,
+  VERIFIED: 5,
+  CORROBORATED: 4,
+  OBSERVED: 3,
+  REPORTED: 2,
+  INFERRED: 1,
+  UNKNOWN: 0,
 };
 
 function mergeAttributes<T extends Record<string, unknown>>(
@@ -33,7 +34,7 @@ function mergeAttributes<T extends Record<string, unknown>>(
   const result = { ...existing };
   for (const key of Object.keys(incoming) as Array<keyof T>) {
     const inVal = incoming[key];
-    if (inVal === null || inVal === undefined) continue;  // null incoming never overwrites
+    if (inVal === null || inVal === undefined) continue; // null incoming never overwrites
     const exVal = existing[key];
     if (exVal === null || exVal === undefined) {
       // Populate empty field from any evidence
@@ -65,17 +66,17 @@ export class IntelligenceObjectRegistry {
       merged = obj;
     } else {
       const base: IntelligenceObjectBase = {
-        objectId:     obj.objectId,
-        objectKind:   obj.objectKind,
-        label:        obj.label || existing.label,
-        aliases:      dedupe([...existing.aliases, ...obj.aliases]),
-        confidence:   betterTier(existing.confidence, obj.confidence),
-        grade:        betterGrade(existing.grade, obj.grade),
-        citations:    dedupe([...existing.citations, ...obj.citations], (c) => c.evidenceId),
+        objectId: obj.objectId,
+        objectKind: obj.objectKind,
+        label: obj.label || existing.label,
+        aliases: dedupe([...existing.aliases, ...obj.aliases]),
+        confidence: betterTier(existing.confidence, obj.confidence),
+        grade: betterGrade(existing.grade, obj.grade),
+        citations: dedupe([...existing.citations, ...obj.citations], (c) => c.evidenceId),
         sourceUipIds: dedupe([...existing.sourceUipIds, ...obj.sourceUipIds]),
-        firstSeenAt:  earlier(existing.firstSeenAt, obj.firstSeenAt),
-        lastSeenAt:   later(existing.lastSeenAt, obj.lastSeenAt),
-        revision:     existing.revision + 1,
+        firstSeenAt: earlier(existing.firstSeenAt, obj.firstSeenAt),
+        lastSeenAt: later(existing.lastSeenAt, obj.lastSeenAt),
+        revision: existing.revision + 1,
       };
       // Merge attributes — type-safe via the discriminated union
       merged = {
@@ -112,17 +113,19 @@ export class IntelligenceObjectRegistry {
     if (!ids) return [];
     return Array.from(ids)
       .map((id) => this.store.get(id))
-      .filter((o): o is Extract<IntelligenceObject, { objectKind: K }> =>
-        o?.objectKind === kind,
-      );
+      .filter((o): o is Extract<IntelligenceObject, { objectKind: K }> => o?.objectKind === kind);
   }
 
   getAll(): ReadonlyArray<IntelligenceObject> {
     return Array.from(this.store.values());
   }
 
-  get size(): number { return this.store.size; }
-  get totalRevisions(): number { return this._totalRevisions; }
+  get size(): number {
+    return this.store.size;
+  }
+  get totalRevisions(): number {
+    return this._totalRevisions;
+  }
 
   stats(): Record<IntelligenceObjectKind, number> {
     const result = {} as Record<IntelligenceObjectKind, number>;
@@ -142,7 +145,12 @@ export class IntelligenceObjectRegistry {
 function dedupe<T>(arr: T[], key?: (t: T) => unknown): T[] {
   if (!key) return Array.from(new Set(arr));
   const seen = new Set<unknown>();
-  return arr.filter((item) => { const k = key(item); if (seen.has(k)) return false; seen.add(k); return true; });
+  return arr.filter((item) => {
+    const k = key(item);
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
 }
 
 function betterGrade(a: EvidenceGrade, b: EvidenceGrade): EvidenceGrade {

@@ -64,13 +64,7 @@ const ENTITY_META = {
 
 type EntityKind = "Vessels" | "Companies" | "Persons" | "Ports" | "Cargo" | "Manifests";
 type RelKind =
-  | "Owns"
-  | "Operates"
-  | "Chartered By"
-  | "Visited"
-  | "Shipped"
-  | "Associated With"
-  | "All Types";
+  "Owns" | "Operates" | "Chartered By" | "Visited" | "Shipped" | "Associated With" | "All Types";
 
 const ENTITY_TYPE_COUNTS: Array<{ key: EntityKind; count: number }> = [
   { key: "Vessels", count: 11 },

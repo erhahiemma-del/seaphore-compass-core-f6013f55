@@ -10,7 +10,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { formatDistanceToNow } from "date-fns";
-import { AlertTriangle, PlayCircle, PowerOff, RefreshCw, RotateCw, ShieldAlert } from "lucide-react";
+import {
+  AlertTriangle,
+  PlayCircle,
+  PowerOff,
+  RefreshCw,
+  RotateCw,
+  ShieldAlert,
+} from "lucide-react";
 
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { supabase } from "@/integrations/supabase/client";
@@ -97,12 +104,24 @@ function OsintDashboard() {
       if (devBypass) {
         const { data, error } = await supabase
           .from("osint_sync_runs")
-          .select("id, connector_id, started_at, completed_at, records_fetched, records_ingested, status, latency_ms, osint_connectors(name)")
+          .select(
+            "id, connector_id, started_at, completed_at, records_fetched, records_ingested, status, latency_ms, osint_connectors(name)",
+          )
           .order("started_at", { ascending: false })
           .limit(20);
         if (error) throw new Error(error.message);
         return (data ?? []).map((r) => {
-          const row = r as unknown as { id: string; connector_id: string; started_at: string; completed_at: string | null; records_fetched: number; records_ingested: number; status: string; latency_ms: number | null; osint_connectors?: { name?: string } | null };
+          const row = r as unknown as {
+            id: string;
+            connector_id: string;
+            started_at: string;
+            completed_at: string | null;
+            records_fetched: number;
+            records_ingested: number;
+            status: string;
+            latency_ms: number | null;
+            osint_connectors?: { name?: string } | null;
+          };
           return { ...row, connector_name: row.osint_connectors?.name ?? "—" };
         }) as unknown as Awaited<ReturnType<typeof listOsintSyncRuns>>;
       }
@@ -116,13 +135,25 @@ function OsintDashboard() {
       if (devBypass) {
         const { data, error } = await supabase
           .from("osint_dead_letters")
-          .select("id, connector_id, source_ref, error_message, attempts, last_attempt_at, resolved, created_at, osint_connectors(name)")
+          .select(
+            "id, connector_id, source_ref, error_message, attempts, last_attempt_at, resolved, created_at, osint_connectors(name)",
+          )
           .eq("resolved", false)
           .order("created_at", { ascending: false })
           .limit(50);
         if (error) throw new Error(error.message);
         return (data ?? []).map((r) => {
-          const row = r as unknown as { id: string; connector_id: string; source_ref: string | null; error_message: string; attempts: number; last_attempt_at: string; resolved: boolean; created_at: string; osint_connectors?: { name?: string } | null };
+          const row = r as unknown as {
+            id: string;
+            connector_id: string;
+            source_ref: string | null;
+            error_message: string;
+            attempts: number;
+            last_attempt_at: string;
+            resolved: boolean;
+            created_at: string;
+            osint_connectors?: { name?: string } | null;
+          };
           return { ...row, connector_name: row.osint_connectors?.name ?? null };
         }) as unknown as Awaited<ReturnType<typeof listOsintDeadLetters>>;
       }
@@ -131,28 +162,19 @@ function OsintDashboard() {
     staleTime: 10_000,
   });
 
-
   // Realtime — refresh whenever the engine writes.
   useEffect(() => {
     const channel = supabase
       .channel("osint-admin")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "osint_connectors" },
-        () => qc.invalidateQueries({ queryKey: ["osint", "connectors"] }),
+      .on("postgres_changes", { event: "*", schema: "public", table: "osint_connectors" }, () =>
+        qc.invalidateQueries({ queryKey: ["osint", "connectors"] }),
       )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "osint_sync_runs" },
-        () => {
-          qc.invalidateQueries({ queryKey: ["osint", "runs"] });
-          qc.invalidateQueries({ queryKey: ["osint", "connectors"] });
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "osint_dead_letters" },
-        () => qc.invalidateQueries({ queryKey: ["osint", "dlq"] }),
+      .on("postgres_changes", { event: "*", schema: "public", table: "osint_sync_runs" }, () => {
+        qc.invalidateQueries({ queryKey: ["osint", "runs"] });
+        qc.invalidateQueries({ queryKey: ["osint", "connectors"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "osint_dead_letters" }, () =>
+        qc.invalidateQueries({ queryKey: ["osint", "dlq"] }),
       )
       .subscribe();
     return () => {
@@ -197,8 +219,8 @@ function ConnectorTable({
         <div>
           <h2 className="type-h3 text-foreground">Registered Connectors</h2>
           <p className="type-small text-slate">
-            One row per connector in the registry. Adding a new source is a two-step change: implement
-            ConnectorInterface and register it — no engine changes required.
+            One row per connector in the registry. Adding a new source is a two-step change:
+            implement ConnectorInterface and register it — no engine changes required.
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={onRefresh}>
@@ -302,7 +324,8 @@ function ConnectorTable({
 
 function StatusBadge({ active, lastStatus }: { active: boolean; lastStatus: string | null }) {
   if (!active) return <Badge className="bg-slate/20 text-slate">⚪ Disabled</Badge>;
-  if (lastStatus === "failed") return <Badge className="bg-red-500/20 text-red-400">🔴 Error</Badge>;
+  if (lastStatus === "failed")
+    return <Badge className="bg-red-500/20 text-red-400">🔴 Error</Badge>;
   if (lastStatus === "partial")
     return <Badge className="bg-amber-500/20 text-amber-400">🟡 Partial</Badge>;
   if (lastStatus === "success")
@@ -362,7 +385,9 @@ function SyncRunsPanel({
               rows.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell>{r.connector_name}</TableCell>
-                  <TableCell>{formatDistanceToNow(new Date(r.started_at), { addSuffix: true })}</TableCell>
+                  <TableCell>
+                    {formatDistanceToNow(new Date(r.started_at), { addSuffix: true })}
+                  </TableCell>
                   <TableCell>
                     <RunStatusBadge status={r.status} />
                   </TableCell>
@@ -380,12 +405,13 @@ function SyncRunsPanel({
 }
 
 function RunStatusBadge({ status }: { status: string }) {
-  const cls = {
-    success: "bg-emerald-500/20 text-emerald-400",
-    partial: "bg-amber-500/20 text-amber-400",
-    failed: "bg-red-500/20 text-red-400",
-    running: "bg-blue-500/20 text-blue-400",
-  }[status] ?? "bg-slate/20 text-slate";
+  const cls =
+    {
+      success: "bg-emerald-500/20 text-emerald-400",
+      partial: "bg-amber-500/20 text-amber-400",
+      failed: "bg-red-500/20 text-red-400",
+      running: "bg-blue-500/20 text-blue-400",
+    }[status] ?? "bg-slate/20 text-slate";
   return <Badge className={cls}>{status}</Badge>;
 }
 
@@ -447,7 +473,9 @@ function DeadLetterPanel({
                     {r.error_message}
                   </TableCell>
                   <TableCell>{r.attempts}</TableCell>
-                  <TableCell>{formatDistanceToNow(new Date(r.created_at), { addSuffix: true })}</TableCell>
+                  <TableCell>
+                    {formatDistanceToNow(new Date(r.created_at), { addSuffix: true })}
+                  </TableCell>
                   <TableCell className="text-right">
                     <Button
                       size="sm"

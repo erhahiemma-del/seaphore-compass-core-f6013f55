@@ -124,9 +124,7 @@ export function scoreEntity(
   // PIE — average probability of alerting predictions.
   const alerting = (inputs.predictions ?? []).filter((p) => p.alert);
   const pieRaw =
-    alerting.length === 0
-      ? 0
-      : alerting.reduce((s, p) => s + p.probability, 0) / alerting.length;
+    alerting.length === 0 ? 0 : alerting.reduce((s, p) => s + p.probability, 0) / alerting.length;
   components.push({
     key: "pie-predictions",
     label: "Predictive Intelligence",
@@ -190,7 +188,8 @@ export function scoreEntity(
 
   // Graph connectivity — share of high-risk neighbors.
   const gc = inputs.graphConnectivity;
-  const gcRaw = gc && gc.totalNeighbors > 0 ? Math.min(1, gc.highRiskNeighbors / gc.totalNeighbors) : 0;
+  const gcRaw =
+    gc && gc.totalNeighbors > 0 ? Math.min(1, gc.highRiskNeighbors / gc.totalNeighbors) : 0;
   components.push({
     key: "graph-connectivity",
     label: "Graph Connectivity (MKG)",
@@ -238,8 +237,16 @@ export function scoreEntity(
 
 interface NmrseState {
   scores: ReadonlyArray<NationalRiskScore>;
-  score(entity: { id: string; label: string; kind: ScoredEntityKind }, inputs: NmrseInputs): NationalRiskScore;
-  scoreMany(items: ReadonlyArray<{ entity: { id: string; label: string; kind: ScoredEntityKind }; inputs: NmrseInputs }>): NationalRiskScore[];
+  score(
+    entity: { id: string; label: string; kind: ScoredEntityKind },
+    inputs: NmrseInputs,
+  ): NationalRiskScore;
+  scoreMany(
+    items: ReadonlyArray<{
+      entity: { id: string; label: string; kind: ScoredEntityKind };
+      inputs: NmrseInputs;
+    }>,
+  ): NationalRiskScore[];
   find(entityId: string): NationalRiskScore | undefined;
   reset(): void;
 }

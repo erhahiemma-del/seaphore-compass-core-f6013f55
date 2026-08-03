@@ -59,7 +59,12 @@ const ev = (over: Partial<NormalizedEvidence> = {}): NormalizedEvidence =>
     grade: "OBSERVED",
     entity: { kind: "cargo", id: "cargo:bl:BL-1", label: "BL-1" },
     kind: "cargo",
-    fields: { containerNumber: "MSCU7811203", hsCode: "8517.12", declaredTonnage: 10, actualTonnage: 14 },
+    fields: {
+      containerNumber: "MSCU7811203",
+      hsCode: "8517.12",
+      declaredTonnage: 10,
+      actualTonnage: 14,
+    },
     observedAt: "2026-07-20T10:00:00.000Z",
     retrievedAt: "2026-07-20T10:05:00.000Z",
     freshnessSeconds: 300,

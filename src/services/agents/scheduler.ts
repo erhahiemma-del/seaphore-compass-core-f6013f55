@@ -78,7 +78,10 @@ async function runOne<TSchema extends z.ZodTypeAny>(
 
   const forwardAbort = () => controller.abort();
   ctx.parentSignal?.addEventListener("abort", forwardAbort, { once: true });
-  const timeoutHandle = setTimeout(() => controller.abort(new DOMException("Timeout", "TimeoutError")), ctx.timeoutMs);
+  const timeoutHandle = setTimeout(
+    () => controller.abort(new DOMException("Timeout", "TimeoutError")),
+    ctx.timeoutMs,
+  );
 
   const base = {
     agent: spec.id,
@@ -101,13 +104,26 @@ async function runOne<TSchema extends z.ZodTypeAny>(
         data: raw as z.infer<TSchema>,
         partial: true,
         latencyMs: Date.now() - startedAt,
-        error: { code: "SCHEMA_VALIDATION", message: parsed.error.issues[0]?.message ?? "invalid output" },
+        error: {
+          code: "SCHEMA_VALIDATION",
+          message: parsed.error.issues[0]?.message ?? "invalid output",
+        },
       };
     }
-    return { ...base, status: "ok", data: parsed.data, partial: false, latencyMs: Date.now() - startedAt };
+    return {
+      ...base,
+      status: "ok",
+      data: parsed.data,
+      partial: false,
+      latencyMs: Date.now() - startedAt,
+    };
   } catch (err) {
-    const isAbort = err instanceof DOMException && (err.name === "AbortError" || err.name === "TimeoutError");
-    const isTimeout = isAbort && controller.signal.reason instanceof DOMException && controller.signal.reason.name === "TimeoutError";
+    const isAbort =
+      err instanceof DOMException && (err.name === "AbortError" || err.name === "TimeoutError");
+    const isTimeout =
+      isAbort &&
+      controller.signal.reason instanceof DOMException &&
+      controller.signal.reason.name === "TimeoutError";
     return {
       ...base,
       status: isTimeout ? "timeout" : isAbort ? "partial" : "error",

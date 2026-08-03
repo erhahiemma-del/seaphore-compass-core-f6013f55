@@ -7,9 +7,7 @@
  * connectors exist, the browser calls `listAuthenticatedConnectorsFn`.
  */
 import { createServerFn } from "@tanstack/react-start";
-import {
-  bootstrapAuthenticatedConnectors,
-} from "@/lib/server/connectors/bootstrap.server";
+import { bootstrapAuthenticatedConnectors } from "@/lib/server/connectors/bootstrap.server";
 import {
   listConnectorSnapshots,
   probeConnector,

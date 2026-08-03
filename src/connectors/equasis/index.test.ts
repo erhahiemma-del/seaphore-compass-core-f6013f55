@@ -12,7 +12,13 @@ const VALID_FIXTURE = {
   manager: "Delta Ship Management",
   classificationSociety: "Bureau Veritas",
   pscInspections: [
-    { port: "Algeciras", authority: "Paris MoU", date: "2026-02-04", deficiencies: 9, detained: true },
+    {
+      port: "Algeciras",
+      authority: "Paris MoU",
+      date: "2026-02-04",
+      deficiencies: 9,
+      detained: true,
+    },
   ],
   detentions: [{ port: "Algeciras", date: "2026-02-04", reason: "MARPOL Annex I deficiencies" }],
   safetyRecords: [],
@@ -51,8 +57,12 @@ describe("EquasisConnector", () => {
   it("mapToGraph() emits OWNED_BY, MANAGED_BY, and PSC_DETENTION edges", () => {
     const record = connector.normalize(VALID_FIXTURE);
     const edges = connector.mapToGraph(record);
-    expect(edges.find((e) => e.relationship === "VESSEL_OWNED_BY")?.toEntityId).toBe("Delta Marine Ltd");
-    expect(edges.find((e) => e.relationship === "VESSEL_MANAGED_BY")?.toEntityId).toBe("Delta Ship Management");
+    expect(edges.find((e) => e.relationship === "VESSEL_OWNED_BY")?.toEntityId).toBe(
+      "Delta Marine Ltd",
+    );
+    expect(edges.find((e) => e.relationship === "VESSEL_MANAGED_BY")?.toEntityId).toBe(
+      "Delta Ship Management",
+    );
     expect(edges.find((e) => e.relationship === "VESSEL_UNDER_PSC_DETENTION")).toBeDefined();
   });
 
@@ -72,7 +82,9 @@ describe("EquasisConnector", () => {
 
   it("healthCheck() reports healthy when Equasis returns 200", async () => {
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = vi.fn(async () => new Response("ok", { status: 200 })) as unknown as typeof fetch;
+    globalThis.fetch = vi.fn(
+      async () => new Response("ok", { status: 200 }),
+    ) as unknown as typeof fetch;
     try {
       const health = await connector.healthCheck();
       expect(health.status).toBe("healthy");

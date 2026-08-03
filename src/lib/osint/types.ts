@@ -8,44 +8,21 @@
  */
 
 export type OsintCategory =
-  | "AIS"
-  | "SANCTIONS"
-  | "REGISTRY"
-  | "WEATHER"
-  | "IMAGERY"
-  | "TRADE"
-  | "COMPLIANCE";
+  "AIS" | "SANCTIONS" | "REGISTRY" | "WEATHER" | "IMAGERY" | "TRADE" | "COMPLIANCE";
 
 export type OsintAuthMethod = "none" | "api_key" | "oauth" | "credentials";
 
 export type OsintEntityType =
-  | "VESSEL"
-  | "VOYAGE"
-  | "AGENT"
-  | "CARGO"
-  | "OWNER"
-  | "PORT"
-  | "SANCTION"
-  | "WEATHER"
-  | "ALERT";
+  "VESSEL" | "VOYAGE" | "AGENT" | "CARGO" | "OWNER" | "PORT" | "SANCTION" | "WEATHER" | "ALERT";
 
 export type OsintConfidenceLevel =
-  | "OBSERVED"
-  | "DECLARED"
-  | "INFERRED"
-  | "CORROBORATED"
-  | "VERIFIED"
-  | "AUDITED";
+  "OBSERVED" | "DECLARED" | "INFERRED" | "CORROBORATED" | "VERIFIED" | "AUDITED";
 
 export type OsintHealthStatus = "healthy" | "degraded" | "down";
 export type OsintSyncStatus = "success" | "partial" | "failed";
 
 /** Provenance grade — drives baseline confidence scoring. */
-export type OsintProvenance =
-  | "government"
-  | "commercial_verified"
-  | "aggregated"
-  | "scraped";
+export type OsintProvenance = "government" | "commercial_verified" | "aggregated" | "scraped";
 
 /** Untyped inbound payload from an external OSINT source. */
 export type RawRecord = Record<string, unknown> & {

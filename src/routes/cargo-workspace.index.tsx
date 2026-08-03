@@ -14,7 +14,8 @@ export const Route = createFileRoute("/cargo-workspace/")({
       { property: "og:title", content: "Cargo Intelligence Workspace · Seaphore" },
       {
         property: "og:description",
-        content: "Manifest, container, cargo, trade, revenue and cargo risk intelligence in one workspace.",
+        content:
+          "Manifest, container, cargo, trade, revenue and cargo risk intelligence in one workspace.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

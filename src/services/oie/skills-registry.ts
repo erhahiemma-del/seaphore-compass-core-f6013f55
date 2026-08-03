@@ -72,7 +72,11 @@ export const SKILLS: readonly OperationalSkill[] = Object.freeze([
     id: "vessel_investigation",
     label: "Vessel Investigation",
     domain: "vessel",
-    intents: ["vessel_investigation", "arrival_search", "risk_investigation"] as OperationalIntent[],
+    intents: [
+      "vessel_investigation",
+      "arrival_search",
+      "risk_investigation",
+    ] as OperationalIntent[],
     capabilities: ["PATTERN_DETECTION", "EVIDENCE_SEARCH", "RISK_SCORING"],
     requiredEvidence: [
       "Registry and flag record",
@@ -191,19 +195,13 @@ export const SKILLS: readonly OperationalSkill[] = Object.freeze([
       "arrival_search",
       "entity_dossier",
     ] as OperationalIntent[],
-    capabilities: [
-      "PATTERN_DETECTION",
-      "RISK_SCORING",
-      "RECOMMENDATION_ENGINE",
-      "EVIDENCE_SEARCH",
-    ],
+    capabilities: ["PATTERN_DETECTION", "RISK_SCORING", "RECOMMENDATION_ENGINE", "EVIDENCE_SEARCH"],
     requiredEvidence: [
       "All available intelligence on the subject",
       "Risk indicators across ownership, revenue, and compliance",
       "Historical case similarities",
     ],
-    objective:
-      "Deliver a concise, decision-oriented briefing suitable for leadership sign-off.",
+    objective: "Deliver a concise, decision-oriented briefing suitable for leadership sign-off.",
     responseTemplate: STANDARD_TEMPLATE,
     followUps: [
       "Why is the risk High?",

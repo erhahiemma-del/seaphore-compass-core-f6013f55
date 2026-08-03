@@ -242,9 +242,7 @@ export class OpenSanctionsConnector implements Connector, EvidenceProviderV1 {
   constructor(opts: OpenSanctionsConnectorOptions = {}) {
     this.fetchImpl = opts.fetchImpl ?? ((...args) => fetch(...args));
     this.now = opts.clock ?? Date.now;
-    this.cache =
-      opts.cache ??
-      new EvidenceCache({ defaultTtlMs: CACHE_TTL_MS, clock: this.now });
+    this.cache = opts.cache ?? new EvidenceCache({ defaultTtlMs: CACHE_TTL_MS, clock: this.now });
   }
 
   // ─── connect() ────────────────────────────────────────────────────
@@ -440,9 +438,7 @@ export class OpenSanctionsConnector implements Connector, EvidenceProviderV1 {
     const endDate = firstString(props["endDate"]) ?? null;
     const lastUpdated =
       entity.last_change ?? entity.last_seen ?? new Date(this.now()).toISOString();
-    const confidence = clamp01(
-      typeof entity.score === "number" ? entity.score : 0.75,
-    );
+    const confidence = clamp01(typeof entity.score === "number" ? entity.score : 0.75);
     const evidenceUrl = entity.id
       ? `https://www.opensanctions.org/entities/${entity.id}/`
       : "https://www.opensanctions.org/";

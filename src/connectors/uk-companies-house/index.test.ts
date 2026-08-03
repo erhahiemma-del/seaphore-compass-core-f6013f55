@@ -11,7 +11,9 @@ const VALID = {
   registeredAddress: "79 Pall Mall, London, SW1Y 5EJ",
   officers: [{ name: "SMITH, John", role: "director" }],
   sicCodes: ["50200"],
-  filingHistory: [{ date: "2025-06-30", category: "accounts", description: "Annual accounts filed" }],
+  filingHistory: [
+    { date: "2025-06-30", category: "accounts", description: "Annual accounts filed" },
+  ],
   linkedVesselImos: ["9074729"],
 };
 
@@ -67,7 +69,9 @@ describe("UkCompaniesHouseConnector", () => {
 
   it("healthCheck() reports healthy on 200", async () => {
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = vi.fn(async () => new Response("{}", { status: 200 })) as unknown as typeof fetch;
+    globalThis.fetch = vi.fn(
+      async () => new Response("{}", { status: 200 }),
+    ) as unknown as typeof fetch;
     try {
       const health = await connector.healthCheck();
       expect(health.status).toBe("healthy");

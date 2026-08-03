@@ -11,13 +11,7 @@
  */
 import type { z } from "zod";
 
-export type AgentId =
-  | "ownership"
-  | "revenue"
-  | "compliance"
-  | "manifest"
-  | "evidence"
-  | "forecast";
+export type AgentId = "ownership" | "revenue" | "compliance" | "manifest" | "evidence" | "forecast";
 
 export type DataSourceId =
   | "cac_registry"

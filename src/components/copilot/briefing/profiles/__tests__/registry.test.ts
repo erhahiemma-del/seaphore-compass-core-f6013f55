@@ -5,7 +5,9 @@ import { describe, expect, it } from "vitest";
 import type { AdaptiveBriefing as AdaptiveBriefingData } from "../../types";
 import { BRIEFING_PROFILES, detectMissionType, getProfile } from "../registry";
 
-function briefing(partial: Partial<AdaptiveBriefingData> & { query: string }): AdaptiveBriefingData {
+function briefing(
+  partial: Partial<AdaptiveBriefingData> & { query: string },
+): AdaptiveBriefingData {
   const { query, ...rest } = partial;
   return {
     id: "b1",
@@ -22,43 +24,51 @@ function briefing(partial: Partial<AdaptiveBriefingData> & { query: string }): A
 
 describe("detectMissionType", () => {
   it("classifies sanctions queries", () => {
-    expect(detectMissionType(briefing({ query: "Screen MV Ocean Pearl against OFAC sanctions" })))
-      .toBe("SANCTIONS_SCREENING");
+    expect(
+      detectMissionType(briefing({ query: "Screen MV Ocean Pearl against OFAC sanctions" })),
+    ).toBe("SANCTIONS_SCREENING");
   });
 
   it("classifies revenue queries", () => {
-    expect(detectMissionType(briefing({ query: "Estimate revenue leakage at Apapa port last month" })))
-      .toBe("REVENUE_LEAKAGE");
+    expect(
+      detectMissionType(briefing({ query: "Estimate revenue leakage at Apapa port last month" })),
+    ).toBe("REVENUE_LEAKAGE");
   });
 
   it("classifies AIS queries", () => {
-    expect(detectMissionType(briefing({ query: "Investigate AIS dark period for MV Ocean Pearl" })))
-      .toBe("AIS_INVESTIGATION");
+    expect(
+      detectMissionType(briefing({ query: "Investigate AIS dark period for MV Ocean Pearl" })),
+    ).toBe("AIS_INVESTIGATION");
   });
 
   it("classifies ownership queries", () => {
-    expect(detectMissionType(briefing({ query: "Reveal beneficial ownership of the vessel" })))
-      .toBe("OWNERSHIP_INVESTIGATION");
+    expect(
+      detectMissionType(briefing({ query: "Reveal beneficial ownership of the vessel" })),
+    ).toBe("OWNERSHIP_INVESTIGATION");
   });
 
   it("classifies port congestion queries", () => {
-    expect(detectMissionType(briefing({ query: "Assess port congestion and waiting time at Lagos" })))
-      .toBe("PORT_CONGESTION");
+    expect(
+      detectMissionType(briefing({ query: "Assess port congestion and waiting time at Lagos" })),
+    ).toBe("PORT_CONGESTION");
   });
 
   it("classifies compliance queries", () => {
-    expect(detectMissionType(briefing({ query: "Run compliance review including PSC record" })))
-      .toBe("COMPLIANCE_REVIEW");
+    expect(
+      detectMissionType(briefing({ query: "Run compliance review including PSC record" })),
+    ).toBe("COMPLIANCE_REVIEW");
   });
 
   it("classifies environmental queries", () => {
-    expect(detectMissionType(briefing({ query: "Show weather and sea state near voyage" })))
-      .toBe("ENVIRONMENTAL_RISK");
+    expect(detectMissionType(briefing({ query: "Show weather and sea state near voyage" }))).toBe(
+      "ENVIRONMENTAL_RISK",
+    );
   });
 
   it("classifies vessel risk queries", () => {
-    expect(detectMissionType(briefing({ query: "Aggregate risk drivers and incident history" })))
-      .toBe("VESSEL_RISK");
+    expect(
+      detectMissionType(briefing({ query: "Aggregate risk drivers and incident history" })),
+    ).toBe("VESSEL_RISK");
   });
 
   it("respects explicit missionType hint", () => {
@@ -97,8 +107,9 @@ describe("BriefingProfile", () => {
 
   it("revenue profile emphasises decisionImpact before evidence", () => {
     const p = getProfile("REVENUE_LEAKAGE");
-    expect(p.sectionOrder.indexOf("decisionImpact"))
-      .toBeLessThan(p.sectionOrder.indexOf("evidence"));
+    expect(p.sectionOrder.indexOf("decisionImpact")).toBeLessThan(
+      p.sectionOrder.indexOf("evidence"),
+    );
   });
 
   it("ownership profile leads with entities", () => {
@@ -127,7 +138,13 @@ describe("BriefingProfile", () => {
       briefing({
         query: "Screen MV Ocean Pearl",
         criticalFindings: [
-          { id: "1", priority: "immediate", title: "OFAC sanctions match found", grade: "VERIFIED", source: "OpenSanctions" },
+          {
+            id: "1",
+            priority: "immediate",
+            title: "OFAC sanctions match found",
+            grade: "VERIFIED",
+            source: "OpenSanctions",
+          },
         ],
       }),
     );

@@ -44,7 +44,11 @@ export function createLogger(opts: Options = {}): Logger {
       scheduled = null;
       for (const r of drain) {
         for (const fn of subscribers) {
-          try { fn(r); } catch { /* subscriber isolation */ }
+          try {
+            fn(r);
+          } catch {
+            /* subscriber isolation */
+          }
         }
       }
     });
@@ -70,16 +74,28 @@ export function createLogger(opts: Options = {}): Logger {
     warn: (m, f) => emit("warn", m, f),
     error: (m, f) => emit("error", m, f),
     child(more) {
-      const sub = createLogger({ minLevel: opts.minLevel, bindings: { ...bindings, ...more }, sample });
+      const sub = createLogger({
+        minLevel: opts.minLevel,
+        bindings: { ...bindings, ...more },
+        sample,
+      });
       // Bubble child records through the parent's subscribers.
       sub.subscribe((r) => {
-        for (const fn of subscribers) { try { fn(r); } catch { /* noop */ } }
+        for (const fn of subscribers) {
+          try {
+            fn(r);
+          } catch {
+            /* noop */
+          }
+        }
       });
       return sub;
     },
     subscribe(fn) {
       subscribers.add(fn);
-      return () => { subscribers.delete(fn); };
+      return () => {
+        subscribers.delete(fn);
+      };
     },
     async flush() {
       while (queue.length || scheduled) {

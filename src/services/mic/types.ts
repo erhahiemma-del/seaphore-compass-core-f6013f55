@@ -41,28 +41,28 @@ export type MicConfidenceTier = "LOW" | "MEDIUM" | "HIGH" | "VERY_HIGH";
 export const MIC_CONFIDENCE_THRESHOLDS = {
   VERY_HIGH: 0.85,
   HIGH: 0.65,
-  MEDIUM: 0.40,
-  LOW: 0.00,
+  MEDIUM: 0.4,
+  LOW: 0.0,
 } as const;
 
 export function micTierFromScore(score: number): MicConfidenceTier {
   if (score >= MIC_CONFIDENCE_THRESHOLDS.VERY_HIGH) return "VERY_HIGH";
-  if (score >= MIC_CONFIDENCE_THRESHOLDS.HIGH)      return "HIGH";
-  if (score >= MIC_CONFIDENCE_THRESHOLDS.MEDIUM)    return "MEDIUM";
+  if (score >= MIC_CONFIDENCE_THRESHOLDS.HIGH) return "HIGH";
+  if (score >= MIC_CONFIDENCE_THRESHOLDS.MEDIUM) return "MEDIUM";
   return "LOW";
 }
 
 /** Map an IAL EvidenceGrade to a numeric confidence score. */
 export function micScoreFromGrade(grade: EvidenceGrade): number {
   const GRADE_SCORE: Record<EvidenceGrade, number> = {
-    VERIFIED:     0.95,
-    CORROBORATED: 0.80,
-    OBSERVED:     0.65,
-    REPORTED:     0.45,
-    INFERRED:     0.30,
-    UNKNOWN:      0.10,
+    VERIFIED: 0.95,
+    CORROBORATED: 0.8,
+    OBSERVED: 0.65,
+    REPORTED: 0.45,
+    INFERRED: 0.3,
+    UNKNOWN: 0.1,
   };
-  return GRADE_SCORE[grade] ?? 0.10;
+  return GRADE_SCORE[grade] ?? 0.1;
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -78,7 +78,7 @@ export interface MicCitation {
   readonly connectorId: ConnectorId;
   readonly sourceName: string;
   readonly grade: EvidenceGrade;
-  readonly observedAt: string;        // ISO 8601
+  readonly observedAt: string; // ISO 8601
   /** Human-readable excerpt from the evidence record. */
   readonly excerpt: string;
 }
@@ -125,13 +125,13 @@ export type MicStatementCategory =
 
 export interface MicStatement {
   readonly id: string;
-  readonly text: string;              // plain English, officer-facing
+  readonly text: string; // plain English, officer-facing
   readonly category: MicStatementCategory;
   readonly grade: EvidenceGrade;
   readonly confidence: MicConfidenceTier;
   readonly citations: ReadonlyArray<MicCitation>;
-  readonly nodeIds: ReadonlyArray<string>;   // graph nodes this statement touches
-  readonly edgeIds: ReadonlyArray<string>;   // graph edges this statement touches
+  readonly nodeIds: ReadonlyArray<string>; // graph nodes this statement touches
+  readonly edgeIds: ReadonlyArray<string>; // graph edges this statement touches
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -141,9 +141,9 @@ export interface MicStatement {
 /** Base fields every registry entry carries. */
 interface MicRegistryEntry {
   readonly id: string;
-  readonly registeredAt: string;       // ISO 8601
-  readonly lastUpdatedAt: string;      // ISO 8601
-  readonly revision: number;           // monotonically increasing
+  readonly registeredAt: string; // ISO 8601
+  readonly lastUpdatedAt: string; // ISO 8601
+  readonly revision: number; // monotonically increasing
 }
 
 // Entity Registry
@@ -161,7 +161,7 @@ export interface MicEntityRegistryEntry extends MicRegistryEntry {
 
 // Relationship Registry
 export interface MicRelationshipRegistryEntry extends MicRegistryEntry {
-  readonly edgeId: string;             // MKG edge id
+  readonly edgeId: string; // MKG edge id
   readonly type: MkgEdge["type"];
   readonly fromEntityId: string;
   readonly toEntityId: string;
@@ -173,21 +173,21 @@ export interface MicRelationshipRegistryEntry extends MicRegistryEntry {
 
 // Evidence Registry
 export interface MicEvidenceRegistryEntry extends MicRegistryEntry {
-  readonly evidenceId: string;         // NormalizedEvidence.id
+  readonly evidenceId: string; // NormalizedEvidence.id
   readonly connectorId: ConnectorId;
   readonly sourceName: string;
   readonly grade: EvidenceGrade;
   readonly kind: NormalizedEvidence["kind"];
   readonly entityId: string;
   readonly observedAt: string;
-  readonly uipId: string;              // which UIP this came through
+  readonly uipId: string; // which UIP this came through
 }
 
 // Confidence Registry
 export interface MicConfidenceRegistryEntry extends MicRegistryEntry {
-  readonly subjectId: string;          // entity or relationship id
+  readonly subjectId: string; // entity or relationship id
   readonly subjectKind: "entity" | "relationship" | "statement";
-  readonly score: number;              // 0..1
+  readonly score: number; // 0..1
   readonly tier: MicConfidenceTier;
   readonly components: ReadonlyArray<{
     readonly factor: string;
@@ -198,11 +198,25 @@ export interface MicConfidenceRegistryEntry extends MicRegistryEntry {
 
 // Timeline Registry
 export type MicTimelineEventKind =
-  | "ownership-change" | "flag-change" | "port-visit" | "ais-dark" | "ais-resume"
-  | "satellite-observation" | "sanctions-listing" | "sanctions-removal"
-  | "cargo-movement" | "inspection" | "inspection-fail" | "incident"
-  | "voyage-start" | "voyage-end" | "certificate-issued" | "certificate-expired"
-  | "name-change" | "class-change" | "insurance-change";
+  | "ownership-change"
+  | "flag-change"
+  | "port-visit"
+  | "ais-dark"
+  | "ais-resume"
+  | "satellite-observation"
+  | "sanctions-listing"
+  | "sanctions-removal"
+  | "cargo-movement"
+  | "inspection"
+  | "inspection-fail"
+  | "incident"
+  | "voyage-start"
+  | "voyage-end"
+  | "certificate-issued"
+  | "certificate-expired"
+  | "name-change"
+  | "class-change"
+  | "insurance-change";
 
 export interface MicTimelineEvent extends MicRegistryEntry {
   readonly kind: MicTimelineEventKind;
@@ -218,18 +232,30 @@ export interface MicTimelineEvent extends MicRegistryEntry {
 
 // Risk Registry
 export type MicRiskIndicatorKind =
-  | "ownership-churn" | "ais-dark-activity" | "sanctions-hit" | "sanctions-proximity"
-  | "shared-directors" | "high-risk-jurisdiction" | "cargo-inconsistency"
-  | "insurance-gap" | "satellite-anomaly" | "manifest-discrepancy"
-  | "repeated-inspection-fail" | "flag-of-convenience" | "frequent-flag-change"
-  | "unsafe-behaviour" | "repeated-incident" | "cargo-risk" | "jurisdiction-risk";
+  | "ownership-churn"
+  | "ais-dark-activity"
+  | "sanctions-hit"
+  | "sanctions-proximity"
+  | "shared-directors"
+  | "high-risk-jurisdiction"
+  | "cargo-inconsistency"
+  | "insurance-gap"
+  | "satellite-anomaly"
+  | "manifest-discrepancy"
+  | "repeated-inspection-fail"
+  | "flag-of-convenience"
+  | "frequent-flag-change"
+  | "unsafe-behaviour"
+  | "repeated-incident"
+  | "cargo-risk"
+  | "jurisdiction-risk";
 
 export interface MicRiskIndicator {
   readonly kind: MicRiskIndicatorKind;
   readonly label: string;
-  readonly score: number;              // 0..1 raw contribution
-  readonly weight: number;             // fixed weight
-  readonly points: number;             // score × weight × 100
+  readonly score: number; // 0..1 raw contribution
+  readonly weight: number; // fixed weight
+  readonly points: number; // score × weight × 100
   readonly rationale: string;
   readonly citations: ReadonlyArray<MicCitation>;
   readonly nodeIds: ReadonlyArray<string>;
@@ -249,11 +275,11 @@ export interface MicRiskRegistryEntry extends MicRegistryEntry {
   readonly entityId: string;
   readonly entityLabel: string;
   readonly entityKind: MkgNode["kind"];
-  readonly score: number;              // 0..100
+  readonly score: number; // 0..100
   readonly band: MicRiskBand;
   readonly confidence: MicConfidenceTier;
   readonly indicators: ReadonlyArray<MicRiskIndicator>;
-  readonly narrative: string;          // Copilot-ready plain-English summary
+  readonly narrative: string; // Copilot-ready plain-English summary
   readonly computedAt: string;
 }
 

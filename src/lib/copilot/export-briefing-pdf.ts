@@ -28,7 +28,11 @@ const PRIORITY_LABELS: Record<string, string> = {
   archive: "Archive",
 };
 
-function setColor(pdf: jsPDF, kind: "text" | "draw" | "fill", rgb: readonly [number, number, number]) {
+function setColor(
+  pdf: jsPDF,
+  kind: "text" | "draw" | "fill",
+  rgb: readonly [number, number, number],
+) {
   const [r, g, b] = rgb;
   if (kind === "text") pdf.setTextColor(r, g, b);
   else if (kind === "draw") pdf.setDrawColor(r, g, b);
@@ -74,11 +78,7 @@ function drawFooter(pdf: jsPDF, pageNumber: number) {
   setColor(pdf, "text", COLORS.muted);
   pdf.setFont("helvetica", "italic");
   pdf.setFontSize(8);
-  pdf.text(
-    "Evidence first. Explainable always. Officer decides.",
-    MARGIN_X,
-    pageHeight - 28,
-  );
+  pdf.text("Evidence first. Explainable always. Officer decides.", MARGIN_X, pageHeight - 28);
   pdf.setFont("helvetica", "normal");
   pdf.text(`Page ${pageNumber}`, pageWidth - MARGIN_X, pageHeight - 28, {
     align: "right",
@@ -181,11 +181,12 @@ function writeBullet(pdf: jsPDF, cursor: Cursor, text: string, fontSize = 10) {
 
 function safeFilename(query: string) {
   const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-  const slug = (query || "briefing")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 40) || "briefing";
+  const slug =
+    (query || "briefing")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40) || "briefing";
   return `seaphore-briefing-${slug}-${stamp}.pdf`;
 }
 
@@ -213,12 +214,7 @@ export function exportBriefingToPdf(briefing: AdaptiveBriefing): string {
       if (f.citations?.length) {
         for (const c of f.citations) {
           const excerpt = c.excerpt ? ` — "${c.excerpt}"` : "";
-          writeParagraph(
-            pdf,
-            cursor,
-            `      ↳ ${c.source} · ${c.grade}${excerpt}`,
-            9,
-          );
+          writeParagraph(pdf, cursor, `      ↳ ${c.source} · ${c.grade}${excerpt}`, 9);
         }
       }
     }

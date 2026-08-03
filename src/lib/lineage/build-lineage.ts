@@ -86,9 +86,7 @@ function collectSharedContext(
       });
     }
     // Most recent officer turn provides conversational context.
-    const lastOfficer = [...mission.conversation]
-      .reverse()
-      .find((c) => c.role === "officer");
+    const lastOfficer = [...mission.conversation].reverse().find((c) => c.role === "officer");
     if (lastOfficer) {
       links.push({
         kind: "conversation",

@@ -10,12 +10,7 @@
 import { detectIntentHint } from "./intent-hints";
 
 /** Generic maritime follow-ups that apply to almost any subject. */
-const BASE = [
-  "ownership",
-  "sanctions",
-  "previous inspections",
-  "last known position",
-] as const;
+const BASE = ["ownership", "sanctions", "previous inspections", "last known position"] as const;
 
 /** Intent-specific extras, appended after the base set where relevant. */
 const BY_INTENT: Record<string, readonly string[]> = {

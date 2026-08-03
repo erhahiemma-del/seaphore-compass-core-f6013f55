@@ -26,7 +26,12 @@ function pickString(o: Record<string, unknown> | undefined, k: string): string |
   if (!o || typeof o !== "object") return undefined;
   const v = o[k];
   if (typeof v === "string" && v.length > 0) return v;
-  if (v && typeof v === "object" && "name" in v && typeof (v as { name: unknown }).name === "string") {
+  if (
+    v &&
+    typeof v === "object" &&
+    "name" in v &&
+    typeof (v as { name: unknown }).name === "string"
+  ) {
     return (v as { name: string }).name;
   }
   return undefined;
@@ -44,7 +49,9 @@ function extractConversation(raw: Record<string, unknown> | undefined): MissionC
   return arr
     .filter(
       (t): t is RawConversationEntry =>
-        !!t && typeof t === "object" && typeof t.text === "string" &&
+        !!t &&
+        typeof t === "object" &&
+        typeof t.text === "string" &&
         (t.role === "officer" || t.role === "copilot"),
     )
     .map((t) => {

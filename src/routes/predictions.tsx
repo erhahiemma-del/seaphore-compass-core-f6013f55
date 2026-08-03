@@ -85,7 +85,8 @@ function PredictionsRoute() {
             )}
             {lastCycle && (
               <span className="text-xs">
-                Last cycle: {new Date(lastCycle.finishedAt).toLocaleTimeString()} · {lastCycle.evidenceConsidered} evidence records
+                Last cycle: {new Date(lastCycle.finishedAt).toLocaleTimeString()} ·{" "}
+                {lastCycle.evidenceConsidered} evidence records
               </span>
             )}
           </CardContent>
@@ -96,8 +97,8 @@ function PredictionsRoute() {
               <Radar className="h-6 w-6 text-muted-foreground" />
               <div className="text-sm font-medium">No Unified Intelligence Package loaded</div>
               <div className="max-w-md text-xs text-muted-foreground">
-                PIE only predicts against live fused evidence. Run a briefing
-                from the Copilot to populate this surface.
+                PIE only predicts against live fused evidence. Run a briefing from the Copilot to
+                populate this surface.
               </div>
               <Link
                 to="/copilot"

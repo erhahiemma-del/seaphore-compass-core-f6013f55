@@ -58,14 +58,14 @@ function MissionsRoute() {
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground space-y-2">
             <p>
-              Missions may only be created from an Investigation Workspace with an
-              officer-approved decision, recommendation, or linked OKL pattern. Every
-              recommendation is derived from evidence and requires explicit officer approval
-              before the mission can move to execution.
+              Missions may only be created from an Investigation Workspace with an officer-approved
+              decision, recommendation, or linked OKL pattern. Every recommendation is derived from
+              evidence and requires explicit officer approval before the mission can move to
+              execution.
             </p>
             <p className="text-xs">
-              Every plan on this page traces back to a Canonical UIP → Investigation →
-              Mission chain via <code>sourceUipId</code> / <code>sourceInvestigationId</code>.
+              Every plan on this page traces back to a Canonical UIP → Investigation → Mission chain
+              via <code>sourceUipId</code> / <code>sourceInvestigationId</code>.
             </p>
           </CardContent>
         </Card>
@@ -80,8 +80,8 @@ function MissionsRoute() {
                 </Link>
               </Button>
               <p className="mt-3 text-xs">
-                Bridge a mission from an investigation once an approved decision,
-                recommendation, or OKL pattern link exists.
+                Bridge a mission from an investigation once an approved decision, recommendation, or
+                OKL pattern link exists.
               </p>
             </CardContent>
           </Card>

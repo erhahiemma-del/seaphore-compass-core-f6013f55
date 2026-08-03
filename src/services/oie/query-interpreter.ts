@@ -24,8 +24,14 @@ const VESSEL_NAME_RE =
 const QUOTED_RE = /["“]([^"”]{2,60})["”]/g;
 
 const DOMAIN_PATTERNS: Array<[OperationalDomain, RegExp]> = [
-  ["revenue", /\b(revenue|leakage|underpay(?:ment)?|invoic|tariff|fee|levy|duty|assessment fee|shortfall)/i],
-  ["ownership", /\b(owner(?:ship)?|beneficial|shareholder|UBO|corporate|network|parent company|subsidiary)/i],
+  [
+    "revenue",
+    /\b(revenue|leakage|underpay(?:ment)?|invoic|tariff|fee|levy|duty|assessment fee|shortfall)/i,
+  ],
+  [
+    "ownership",
+    /\b(owner(?:ship)?|beneficial|shareholder|UBO|corporate|network|parent company|subsidiary)/i,
+  ],
   ["manifest", /\b(manifest|bill of lading|BOL|declaration|cargo list|customs form)/i],
   ["cargo", /\b(cargo|container|TEU|goods|commodit|hazmat|dangerous goods)/i],
   ["sanctions", /\b(sanction|OFAC|EU list|UN list|blacklist|blocked|SDN)/i],
@@ -40,27 +46,54 @@ const DOMAIN_PATTERNS: Array<[OperationalDomain, RegExp]> = [
 // verb+object combinations above generic ones.
 const INTENT_PATTERNS: Array<[OperationalIntent, RegExp]> = [
   // Compare / diff
-  ["manifest_comparison", /\b(compare|diff|difference).{0,40}(manifest|voyage|declaration|cargo list)/i],
+  [
+    "manifest_comparison",
+    /\b(compare|diff|difference).{0,40}(manifest|voyage|declaration|cargo list)/i,
+  ],
   ["voyage_comparison", /\b(compare|diff).{0,30}(voyage|trip|passage|leg|previous|last month)/i],
 
   // Arrival / activity search
-  ["arrival_search", /\b(arriv|inbound|expected|due to (?:arrive|dock)|today'?s\s+\w*\s*vessel|today'?s\s+arriv)/i],
+  [
+    "arrival_search",
+    /\b(arriv|inbound|expected|due to (?:arrive|dock)|today'?s\s+\w*\s*vessel|today'?s\s+arriv)/i,
+  ],
 
   // Risk / anomaly
-  ["risk_investigation", /\b(why (?:is|are)|high[- ]?risk|risk score|red flag|flagged|anomal|which ones? (?:are|is)\s+(?:high[- ]?risk|risky|flagged))/i],
+  [
+    "risk_investigation",
+    /\b(why (?:is|are)|high[- ]?risk|risk score|red flag|flagged|anomal|which ones? (?:are|is)\s+(?:high[- ]?risk|risky|flagged))/i,
+  ],
   ["operational_assessment", /\b(explain|why|what is happening|what does this mean|assess this)/i],
 
   // Domain-specific investigations
-  ["revenue_leakage", /\b(revenue leakage|underpay|shortfall|missing (?:revenue|fee|levy)|leakage)/i],
+  [
+    "revenue_leakage",
+    /\b(revenue leakage|underpay|shortfall|missing (?:revenue|fee|levy)|leakage)/i,
+  ],
   ["revenue_investigation", /\b(revenue|tariff|fee|levy)\b.*\b(assess|review|investigat|check)/i],
-  ["ownership_investigation", /\b(who owns|owner(?:ship)?|beneficial|shareholder|corporate ties|network)/i],
-  ["manifest_investigation", /\b(manifest|bill of lading|BOL|declaration).*\b(check|review|inspect|investigat|show|look)/i],
-  ["cargo_investigation", /\b(cargo|container|hazmat|commodit)\b.*\b(check|inspect|review|show|investigat)/i],
+  [
+    "ownership_investigation",
+    /\b(who owns|owner(?:ship)?|beneficial|shareholder|corporate ties|network)/i,
+  ],
+  [
+    "manifest_investigation",
+    /\b(manifest|bill of lading|BOL|declaration).*\b(check|review|inspect|investigat|show|look)/i,
+  ],
+  [
+    "cargo_investigation",
+    /\b(cargo|container|hazmat|commodit)\b.*\b(check|inspect|review|show|investigat)/i,
+  ],
   ["compliance_review", /\b(complian(?:ce|t)?|breach|violation|regulator|NIMASA)/i],
-  ["vessel_investigation", /\b(investigat|dossier|profile|tell me about|look into|deep dive).*\b(vessel|ship|IMO)/i],
+  [
+    "vessel_investigation",
+    /\b(investigat|dossier|profile|tell me about|look into|deep dive).*\b(vessel|ship|IMO)/i,
+  ],
 
   // Executive
-  ["executive_briefing", /\b(executive|director|leadership|board|summary of the day|daily briefing)/i],
+  [
+    "executive_briefing",
+    /\b(executive|director|leadership|board|summary of the day|daily briefing)/i,
+  ],
 
   // Broad show / list
   ["vessel_investigation", /\b(show|list|find|display).*\b(vessel|ship|fleet)/i],
@@ -71,7 +104,10 @@ function detectDomains(q: string): OperationalDomain[] {
   return hits.length > 0 ? Array.from(new Set(hits)) : ["general"];
 }
 
-function detectIntent(q: string, entities: EntityMention[]): {
+function detectIntent(
+  q: string,
+  entities: EntityMention[],
+): {
   intent: OperationalIntent;
   ambiguous: boolean;
 } {

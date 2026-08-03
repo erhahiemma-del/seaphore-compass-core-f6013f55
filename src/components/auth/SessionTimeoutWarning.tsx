@@ -28,11 +28,7 @@ function formatCountdown(ms: number): string {
   return `${m}:${r.toString().padStart(2, "0")}`;
 }
 
-export function SessionTimeoutWarning({
-  open,
-  remainingMs,
-  onExtend,
-}: SessionTimeoutWarningProps) {
+export function SessionTimeoutWarning({ open, remainingMs, onExtend }: SessionTimeoutWarningProps) {
   return (
     <AlertDialog open={open}>
       <AlertDialogContent aria-live="assertive">

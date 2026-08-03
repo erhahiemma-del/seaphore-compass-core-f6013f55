@@ -25,6 +25,4 @@ export const probeSingleProviderHealthFn = createServerFn({ method: "POST" })
     }
     return { id: data.id };
   })
-  .handler(async ({ data }): Promise<ProviderHealthSnapshot | null> =>
-    probeProviderById(data.id),
-  );
+  .handler(async ({ data }): Promise<ProviderHealthSnapshot | null> => probeProviderById(data.id));

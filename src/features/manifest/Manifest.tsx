@@ -30,9 +30,7 @@ import { Section } from "@/components/intel-centre/primitives";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { PanelStateNotice } from "@/components/intelligence/PanelStateNotice";
 
-import {
-  cargoCentreBySlug,
-} from "@/lib/intelligence/cargo-workspace-projection";
+import { cargoCentreBySlug } from "@/lib/intelligence/cargo-workspace-projection";
 import { useCargoCentreProjection } from "@/features/cargo-workspace/use-cargo-projection";
 
 /** The manifest centre definition — resolved from the frozen CARGO_CENTRES registry. */
@@ -42,7 +40,9 @@ const MANIFEST_CENTRE = cargoCentreBySlug("manifest")!;
  * Map a CargoCentreProjection's KPIs onto KpiSpec for the ribbon.
  * When the projection has no data we return a single honest-state tile.
  */
-function useManifestKpis(projection: ReturnType<typeof useCargoCentreProjection>["projection"]): KpiSpec[] {
+function useManifestKpis(
+  projection: ReturnType<typeof useCargoCentreProjection>["projection"],
+): KpiSpec[] {
   return useMemo(() => {
     if (!projection.data) return [];
     return projection.data.kpis.map((k) => ({
@@ -138,11 +138,7 @@ export function ManifestCentre() {
             <Section>
               <PanelStateNotice
                 state={projection.state}
-                detail={
-                  isLoading
-                    ? "Loading intelligence coverage…"
-                    : projection.stateDetail
-                }
+                detail={isLoading ? "Loading intelligence coverage…" : projection.stateDetail}
                 href={MANIFEST_CENTRE.capabilityHref}
                 hrefLabel="Inspect capability"
               />
@@ -248,7 +244,9 @@ function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-2 border-b border-line/40 py-1 last:border-b-0">
       <dt className="text-slate">{label}</dt>
-      <dd className="font-mono max-w-[60%] truncate text-right text-[11px] text-foreground/85">{value}</dd>
+      <dd className="font-mono max-w-[60%] truncate text-right text-[11px] text-foreground/85">
+        {value}
+      </dd>
     </div>
   );
 }

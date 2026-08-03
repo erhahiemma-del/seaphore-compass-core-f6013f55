@@ -5,12 +5,7 @@
  */
 
 export type EvidenceGrade =
-  | "verified"
-  | "corroborated"
-  | "observed"
-  | "reported"
-  | "inferred"
-  | "unconfirmed";
+  "verified" | "corroborated" | "observed" | "reported" | "inferred" | "unconfirmed";
 
 export interface MockEntity {
   id: string;
@@ -170,9 +165,7 @@ const EVIDENCE_AIS: MockEvidence = {
       { actor: "system:hash-verify", action: "VERIFY", timestamp: "2026-07-15T04:12:05Z" },
     ],
   },
-  versionHistory: [
-    { version: 1, timestamp: "2026-07-15T04:12:03Z", summary: "Initial ingest" },
-  ],
+  versionHistory: [{ version: 1, timestamp: "2026-07-15T04:12:03Z", summary: "Initial ingest" }],
   payload: {
     mmsi: "636023456",
     lat: 6.4372,
@@ -223,9 +216,7 @@ export const mockDb = {
     if (!entity) return null;
     return {
       ...entity,
-      relationships: entity.relationshipIds
-        .map((rid) => RELATIONSHIPS[rid])
-        .filter(Boolean),
+      relationships: entity.relationshipIds.map((rid) => RELATIONSHIPS[rid]).filter(Boolean),
       evidence: entity.evidenceIds.map((eid) => EVIDENCE[eid]).filter(Boolean),
     };
   },

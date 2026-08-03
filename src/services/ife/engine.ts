@@ -27,11 +27,9 @@ import type {
 
 export function fuseEvidence(input: FusionInput): FusedEvidencePackage {
   const records = "records" in input ? input.records : input.verified;
-  const missing = ("missing" in input && input.missing) ? input.missing : [];
+  const missing = "missing" in input && input.missing ? input.missing : [];
   const inputSources: ReadonlyArray<SourceAttribution> =
-    "sources" in input && input.sources
-      ? input.sources
-      : deriveSourceAttribution(records);
+    "sources" in input && input.sources ? input.sources : deriveSourceAttribution(records);
 
   const buckets = correlate(records);
 
@@ -47,8 +45,9 @@ export function fuseEvidence(input: FusionInput): FusedEvidencePackage {
 
   const sources: FusedSourceAttribution[] = inputSources.map((s) => {
     const agreementScore = computeAgreementScore(s.connectorId, canonical);
-    const avgFresh =
-      average(records.filter((r) => r.source === s.connectorId).map((r) => r.freshnessSeconds));
+    const avgFresh = average(
+      records.filter((r) => r.source === s.connectorId).map((r) => r.freshnessSeconds),
+    );
     const weight = sourceWeight(s.connectorId, avgFresh);
     return { ...s, agreementScore, weight };
   });

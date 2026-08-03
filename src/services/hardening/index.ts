@@ -20,9 +20,9 @@ import { createRateLimiter, RATE_PRESETS } from "./rate-limit";
 
 /** Long TTLs are dangerous for intelligence — keep them tight. */
 export const CACHE_TTLS = {
-  entity: 60_000,           // 60s: entity lookups
-  evidence: 30_000,         // 30s: evidence queries (stale-safe)
-  reference: 5 * 60_000,    // 5m: ports, regulations, sanctions lists
+  entity: 60_000, // 60s: entity lookups
+  evidence: 30_000, // 30s: evidence queries (stale-safe)
+  reference: 5 * 60_000, // 5m: ports, regulations, sanctions lists
 } as const;
 
 export const hardening = {

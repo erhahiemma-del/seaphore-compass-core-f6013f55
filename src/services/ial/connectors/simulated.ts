@@ -196,9 +196,7 @@ export class SimulatedOpenSanctionsConnector extends SimConnector {
     if (!target) return [];
     const kind: EntityKind = q.entity?.kind ?? inferEntityKind(target);
     const nativeId = q.entity ? q.entity.id : target;
-    const hit = KNOWN_SANCTIONS_HITS.find((h) =>
-      h.matchers.some((m) => m.test(target)),
-    );
+    const hit = KNOWN_SANCTIONS_HITS.find((h) => h.matchers.some((m) => m.test(target)));
 
     if (hit) {
       return [

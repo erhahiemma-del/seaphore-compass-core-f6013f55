@@ -31,4 +31,16 @@ registerConnector(piClubPublicationsConnector);
 // all authenticated work to `src/lib/server/gfw.server.ts`.
 registerConnector(globalFishingWatchConnector);
 
-export { mockAisConnector, imoGisisConnector, equasisConnector, ofacSanctionsConnector, unEuSanctionsConnector, copernicusMarineConnector, uscgPsixConnector, ukCompaniesHouseConnector, cacNigeriaConnector, piClubPublicationsConnector, globalFishingWatchConnector };
+export {
+  mockAisConnector,
+  imoGisisConnector,
+  equasisConnector,
+  ofacSanctionsConnector,
+  unEuSanctionsConnector,
+  copernicusMarineConnector,
+  uscgPsixConnector,
+  ukCompaniesHouseConnector,
+  cacNigeriaConnector,
+  piClubPublicationsConnector,
+  globalFishingWatchConnector,
+};

@@ -4,12 +4,19 @@ import { probeAllConnectors } from "../src/lib/server/connectors/registry.server
 import "../src/lib/server/connectors/bootstrap.server.ts";
 
 const line = (s = "") => console.log(s);
-const h = (t: string) => { line(); line("═".repeat(72)); line(t); line("═".repeat(72)); };
+const h = (t: string) => {
+  line();
+  line("═".repeat(72));
+  line(t);
+  line("═".repeat(72));
+};
 
 h("STEP 1 — Connector Registration (server-driven registry)");
 const snap = await probeAllConnectors();
 for (const c of snap) {
-  line(`  • ${c.id} v${c.version}  entities=[${c.supportedEntities.join(",")}]  health=${c.health.status}  latency=${c.health.latencyMs ?? "—"}ms`);
+  line(
+    `  • ${c.id} v${c.version}  entities=[${c.supportedEntities.join(",")}]  health=${c.health.status}  latency=${c.health.latencyMs ?? "—"}ms`,
+  );
 }
 
 h("STEP 2 — Live API Authentication (server-side gateway)");
@@ -21,7 +28,10 @@ line(`  API key: server-only (never in client bundle) ✓`);
 
 h("STEP 3 — Vessel Search (MV Ocean Pearl)");
 const pkg = await runGfwSearch("MV Ocean Pearl");
-if (!pkg) { line("  no vessel matched"); process.exit(0); }
+if (!pkg) {
+  line("  no vessel matched");
+  process.exit(0);
+}
 line(`  vesselId : ${pkg.vessel.vesselId}`);
 line(`  name     : ${pkg.vessel.name}`);
 line(`  mmsi     : ${pkg.vessel.mmsi ?? "—"}`);
@@ -48,15 +58,22 @@ line(`  evidenceItems   : ${a.evidence.length}`);
 for (const e of a.evidence.slice(0, 3)) line(`    – ${e.source}: ${e.claim}`);
 
 h("STEP 6 — Executive Maritime Intelligence Brief (projected from GFW evidence)");
-const priorityLabel = { critical: "🔴 CRITICAL", high: "🟠 HIGH", watch: "🟡 WATCH", routine: "🟢 ROUTINE" }[a.priority] ?? a.priority;
+const priorityLabel =
+  { critical: "🔴 CRITICAL", high: "🟠 HIGH", watch: "🟡 WATCH", routine: "🟢 ROUTINE" }[
+    a.priority
+  ] ?? a.priority;
 line();
 line(`  § 1. EXECUTIVE SUMMARY`);
-line(`     ${pkg.vessel.name} (${pkg.vessel.flag ?? "unknown flag"}, MMSI ${pkg.vessel.mmsi ?? "—"}) — `);
+line(
+  `     ${pkg.vessel.name} (${pkg.vessel.flag ?? "unknown flag"}, MMSI ${pkg.vessel.mmsi ?? "—"}) — `,
+);
 line(`     OSAE assigns operational priority ${priorityLabel}. ${a.summary}`);
 line();
 line(`  § 2. INTELLIGENCE ASSESSMENT`);
 line(`     Evidence sourced from Global Fishing Watch v3 (public-global-vessel-identity:latest).`);
-line(`     AIS behaviour: ${cr.gapsDetected} gap(s), ${cr.darkEvents.length} dark event(s) over observed window.`);
+line(
+  `     AIS behaviour: ${cr.gapsDetected} gap(s), ${cr.darkEvents.length} dark event(s) over observed window.`,
+);
 line();
 line(`  § 3. KEY FACTS  [confidence chip: derived]`);
 line(`     • Vessel ID  : ${pkg.vessel.vesselId}`);
@@ -65,15 +82,21 @@ line(`     • Flag       : ${pkg.vessel.flag ?? "unknown"}`);
 line(`     • Callsign   : ${pkg.vessel.callSign ?? "unknown"}`);
 line();
 line(`  § 4. RELATIONSHIP INTELLIGENCE`);
-line(`     No related entities surfaced by GFW identity endpoint (encounters/ports require /v3/events).`);
+line(
+  `     No related entities surfaced by GFW identity endpoint (encounters/ports require /v3/events).`,
+);
 line();
 line(`  § 5. TIMELINE INTELLIGENCE`);
 if (pkg.movementHistory.length === 0) line(`     No movement events in observed window.`);
-else pkg.movementHistory.slice(0, 3).forEach(e => line(`     • ${e.startAt} — ${e.type}`));
+else pkg.movementHistory.slice(0, 3).forEach((e) => line(`     • ${e.startAt} — ${e.type}`));
 line();
 line(`  § 6. RISK & COMPLIANCE ANALYSIS`);
-line(`     AIS continuity   : ${cr.gapsDetected === 0 ? "PASS ✓" : `${cr.gapsDetected} gap(s) flagged`}`);
-line(`     Dark events      : ${cr.darkEvents.length === 0 ? "PASS ✓" : `${cr.darkEvents.length} flagged`}`);
+line(
+  `     AIS continuity   : ${cr.gapsDetected === 0 ? "PASS ✓" : `${cr.gapsDetected} gap(s) flagged`}`,
+);
+line(
+  `     Dark events      : ${cr.darkEvents.length === 0 ? "PASS ✓" : `${cr.darkEvents.length} flagged`}`,
+);
 line(`     Flag verified    : ${pkg.vessel.flag ? "PASS ✓" : "MISSING"}`);
 line();
 line(`  § 7. AI INTELLIGENCE INSIGHTS`);

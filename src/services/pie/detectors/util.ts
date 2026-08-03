@@ -24,7 +24,14 @@ export function citation(e: NormalizedEvidence): PredictionEvidenceCitation {
  * its weakest supporting piece of evidence. */
 export function aggregateGrade(evidence: ReadonlyArray<NormalizedEvidence>): EvidenceGrade {
   if (evidence.length === 0) return "UNKNOWN";
-  const order: EvidenceGrade[] = ["VERIFIED", "CORROBORATED", "OBSERVED", "REPORTED", "INFERRED", "UNKNOWN"];
+  const order: EvidenceGrade[] = [
+    "VERIFIED",
+    "CORROBORATED",
+    "OBSERVED",
+    "REPORTED",
+    "INFERRED",
+    "UNKNOWN",
+  ];
   let worst: EvidenceGrade = "VERIFIED";
   for (const e of evidence) {
     if (order.indexOf(e.grade) > order.indexOf(worst)) worst = e.grade;

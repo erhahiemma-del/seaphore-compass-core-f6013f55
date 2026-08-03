@@ -73,7 +73,9 @@ function confidenceReason(b: AdaptiveBriefing): string[] {
     reasons.push(`Only ${responded} of ${queried} evidence sources have completed`);
   }
   if (corroborated > 0 && corroborated < responded) {
-    reasons.push(`${corroborated} finding${corroborated === 1 ? "" : "s"} corroborated across sources`);
+    reasons.push(
+      `${corroborated} finding${corroborated === 1 ? "" : "s"} corroborated across sources`,
+    );
   }
   for (const g of b.intelligenceGaps ?? []) reasons.push(g);
   if (reasons.length === 0) reasons.push("All completed sources agree on the current assessment.");
@@ -104,7 +106,11 @@ interface ProgressItem {
 const INVESTIGATION_TASKS: ProgressItem[] = [
   { key: "vessel", label: "Vessel identity", match: /vessel|imo\s*gisis|equasis|psix/i },
   { key: "registry", label: "Registry / flag", match: /registry|flag|companies house|cac/i },
-  { key: "sanctions", label: "Sanctions screening", match: /sanction|opensanctions|ofac|un\s*sanc|eu\s*sanc/i },
+  {
+    key: "sanctions",
+    label: "Sanctions screening",
+    match: /sanction|opensanctions|ofac|un\s*sanc|eu\s*sanc/i,
+  },
   { key: "ownership", label: "Beneficial ownership", match: /owner|beneficial|corporate/i },
   { key: "ais", label: "AIS history", match: /ais|position|track|spire|datalastic|marinetraffic/i },
   { key: "manifest", label: "Cargo manifest", match: /manifest|cargo|customs|volza/i },
@@ -170,9 +176,10 @@ export function OfficerDecisionHeader({
     profile && profile.confidenceFactors.length > 0
       ? [...baseReasons, ...profile.confidenceFactors.map((f) => `Factor: ${f}`)].slice(0, 6)
       : baseReasons;
-  const completeness = briefing.evidenceSources && briefing.evidenceSources.queried > 0
-    ? briefing.evidenceSources.responded / briefing.evidenceSources.queried
-    : 0;
+  const completeness =
+    briefing.evidenceSources && briefing.evidenceSources.queried > 0
+      ? briefing.evidenceSources.responded / briefing.evidenceSources.queried
+      : 0;
   const tasks = profile?.investigationTasks ?? INVESTIGATION_TASKS;
   const { completed, pending } = computeProgress(briefing, tasks);
   const totalTasks = tasks.length;
@@ -233,10 +240,7 @@ export function OfficerDecisionHeader({
               icon={<Circle className="h-3.5 w-3.5 text-amber-500" />}
               label="Pending"
               value={String(
-                Math.max(
-                  0,
-                  briefing.evidenceSources.queried - briefing.evidenceSources.responded,
-                ),
+                Math.max(0, briefing.evidenceSources.queried - briefing.evidenceSources.responded),
               )}
             />
             <StatCol
@@ -316,22 +320,17 @@ function ProgressBar({ value }: { value: number }) {
       className="flex items-center gap-2"
     >
       <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-        <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${value}%` }} />
+        <div
+          className="h-full rounded-full bg-primary transition-all"
+          style={{ width: `${value}%` }}
+        />
       </div>
       <span className="text-xs font-semibold tabular-nums text-foreground">{value}%</span>
     </div>
   );
 }
 
-function StatCol({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) {
+function StatCol({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="rounded-md border bg-background p-2">
       <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">

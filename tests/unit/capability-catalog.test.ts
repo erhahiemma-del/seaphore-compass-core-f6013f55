@@ -82,7 +82,16 @@ describe("GOV-01 · Capability Catalog — integrity", () => {
 
   it("covers all 8 mandated domains", () => {
     const domains = new Set(CAPABILITY_CATALOG.map((c) => c.domain));
-    for (const d of ["vessel", "cargo", "revenue", "risk", "compliance", "port", "environmental", "operational"]) {
+    for (const d of [
+      "vessel",
+      "cargo",
+      "revenue",
+      "risk",
+      "compliance",
+      "port",
+      "environmental",
+      "operational",
+    ]) {
       expect(domains.has(d as any)).toBe(true);
     }
   });
@@ -127,7 +136,10 @@ describe("GOV-01 · Provider references — grounded in catalog.ts", () => {
     );
 
     for (const id of referencedIds) {
-      expect(catalogIds.has(id), `Provider '${id}' referenced in capability catalog but not in evidence provider catalog`).toBe(true);
+      expect(
+        catalogIds.has(id),
+        `Provider '${id}' referenced in capability catalog but not in evidence provider catalog`,
+      ).toBe(true);
     }
   });
 });
@@ -159,8 +171,12 @@ describe("GOV-01 · Accessor functions", () => {
   it("catalogSummary() totals match actual data", () => {
     const summary = catalogSummary();
     expect(summary.total).toBe(CAPABILITY_CATALOG.length);
-    expect(summary.operational).toBe(CAPABILITY_CATALOG.filter((c) => c.status === "OPERATIONAL").length);
-    expect(summary.designing).toBe(CAPABILITY_CATALOG.filter((c) => c.status === "DESIGNING").length);
+    expect(summary.operational).toBe(
+      CAPABILITY_CATALOG.filter((c) => c.status === "OPERATIONAL").length,
+    );
+    expect(summary.designing).toBe(
+      CAPABILITY_CATALOG.filter((c) => c.status === "DESIGNING").length,
+    );
     expect(summary.planned).toBe(CAPABILITY_CATALOG.filter((c) => c.status === "PLANNED").length);
     expect(summary.avgMaturity).toBeGreaterThan(0);
     expect(summary.avgMaturity).toBeLessThanOrEqual(5);

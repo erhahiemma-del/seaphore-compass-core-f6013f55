@@ -15,7 +15,12 @@
  */
 export * from "./types";
 export { fuseEvidence, isEvidencePackage } from "./engine";
-export { DEFAULT_SOURCE_PROFILE, profileFor, sourceWeight, isOfficialSource } from "./source-ranking";
+export {
+  DEFAULT_SOURCE_PROFILE,
+  profileFor,
+  sourceWeight,
+  isOfficialSource,
+} from "./source-ranking";
 export { correlate } from "./correlator";
 export { detectDisagreements } from "./conflict-detector";
 export { fuseField, toCandidate } from "./fusion-rules";

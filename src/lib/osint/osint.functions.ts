@@ -85,7 +85,9 @@ export const listOsintSyncRuns = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<OsintSyncRunRow[]> => {
     const { data, error } = await context.supabase
       .from("osint_sync_runs")
-      .select("id, connector_id, started_at, completed_at, records_fetched, records_ingested, status, latency_ms, osint_connectors(name)")
+      .select(
+        "id, connector_id, started_at, completed_at, records_fetched, records_ingested, status, latency_ms, osint_connectors(name)",
+      )
       .order("started_at", { ascending: false })
       .limit(20);
     if (error) throw new Error(error.message);
@@ -110,13 +112,17 @@ export const listOsintDeadLetters = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<OsintDeadLetterRow[]> => {
     const { data, error } = await context.supabase
       .from("osint_dead_letters")
-      .select("id, connector_id, source_ref, error_message, attempts, last_attempt_at, resolved, created_at, osint_connectors(name)")
+      .select(
+        "id, connector_id, source_ref, error_message, attempts, last_attempt_at, resolved, created_at, osint_connectors(name)",
+      )
       .eq("resolved", false)
       .order("created_at", { ascending: false })
       .limit(50);
     if (error) throw new Error(error.message);
     return (data ?? []).map((r) => {
-      const row = r as unknown as OsintDeadLetterRow & { osint_connectors?: { name?: string } | null };
+      const row = r as unknown as OsintDeadLetterRow & {
+        osint_connectors?: { name?: string } | null;
+      };
       return {
         id: row.id,
         connector_id: row.connector_id,

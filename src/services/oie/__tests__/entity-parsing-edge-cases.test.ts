@@ -39,7 +39,10 @@ describe("IMO parsing edge cases", () => {
   it("captures IMO with punctuation drift (colon, dash, hash)", () => {
     for (const raw of ["IMO: 9876543", "IMO-9876543", "IMO#9876543"]) {
       const ents = extractEntities(raw);
-      expect(ents.some((e) => e.type === "imo" && e.value === "9876543"), raw).toBe(true);
+      expect(
+        ents.some((e) => e.type === "imo" && e.value === "9876543"),
+        raw,
+      ).toBe(true);
     }
   });
 
@@ -128,9 +131,7 @@ describe("Quoted callsigns and quoted vessel names", () => {
 
 describe("AIS timeline follow-ups keep the sticky anchor", () => {
   const conv = [
-    turn("officer", "Tell me about MV Ocean Pearl", [
-      { type: "vessel", value: "Ocean Pearl" },
-    ]),
+    turn("officer", "Tell me about MV Ocean Pearl", [{ type: "vessel", value: "Ocean Pearl" }]),
     turn("copilot", "Briefing: MV Ocean Pearl"),
   ];
 
@@ -157,10 +158,7 @@ describe("AIS timeline follow-ups keep the sticky anchor", () => {
 
   it("drops the anchor when the AIS follow-up names a different vessel", () => {
     const anchor = findAnchor(conv);
-    const interp = interpretQuery(
-      "Replay AIS timeline for MV Atlantic Trader",
-      { anchor },
-    );
+    const interp = interpretQuery("Replay AIS timeline for MV Atlantic Trader", { anchor });
     expect(interp.anchor).toBeUndefined();
     const values = interp.entities.map((e) => e.value.toLowerCase());
     expect(values.some((v) => v.includes("atlantic trader"))).toBe(true);
@@ -178,8 +176,6 @@ describe("AIS timeline follow-ups keep the sticky anchor", () => {
       anchor,
     });
     expect(interp.anchor).toBeUndefined();
-    expect(interp.entities.some((e) => e.type === "imo" && e.value === "9876543")).toBe(
-      true,
-    );
+    expect(interp.entities.some((e) => e.type === "imo" && e.value === "9876543")).toBe(true);
   });
 });

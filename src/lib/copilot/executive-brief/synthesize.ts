@@ -270,8 +270,7 @@ export function buildConfidencePanel(
   const relationshipConfidence = clamp01(
     ibe?.hypotheses?.length
       ? ibe.hypotheses.filter((h) => h.confidence === "leading" || h.confidence === "credible")
-          .length /
-          Math.max(1, ibe.hypotheses.length)
+          .length / Math.max(1, ibe.hypotheses.length)
       : composite,
   );
   const evidenceQuality = clamp01(
@@ -526,8 +525,16 @@ export function buildTimelineEvents(briefing: AdaptiveBriefingData): TimelineEve
 const RISK_MATCHERS: Array<{ key: string; label: string; re: RegExp }> = [
   { key: "regulatory", label: "Regulatory violations", re: /violat|infring|breach/i },
   { key: "port_charges", label: "Outstanding port charges", re: /outstanding|arrears|unpaid/i },
-  { key: "revenue_leak", label: "Revenue leakage indicators", re: /leakage|underdeclar|shortfall/i },
-  { key: "manifest", label: "Manifest inconsistencies", re: /manifest.*(inconsist|discrep|mismatch)/i },
+  {
+    key: "revenue_leak",
+    label: "Revenue leakage indicators",
+    re: /leakage|underdeclar|shortfall/i,
+  },
+  {
+    key: "manifest",
+    label: "Manifest inconsistencies",
+    re: /manifest.*(inconsist|discrep|mismatch)/i,
+  },
   { key: "ais", label: "AIS anomalies", re: /ais.*(gap|anom|drop|spoof)/i },
   { key: "routing", label: "Suspicious routing", re: /reroute|deviation|suspicious rout/i },
   { key: "flag", label: "Flag state issues", re: /flag.*(concern|issue|blacklist)/i },
@@ -616,7 +623,11 @@ const EVIDENCE_GROUPS: Array<{ key: string; label: string; re: RegExp }> = [
   { key: "customs", label: "Customs Filings", re: /customs|duty|tariff/i },
   { key: "revenue", label: "Revenue Records", re: /revenue|levy|payment/i },
   { key: "inspection", label: "Inspection Reports", re: /inspect|psc|survey|equasis/i },
-  { key: "regulatory", label: "Regulatory Documents", re: /regulator|sanction|ofac|un\b|watchlist/i },
+  {
+    key: "regulatory",
+    label: "Regulatory Documents",
+    re: /regulator|sanction|ofac|un\b|watchlist/i,
+  },
 ];
 
 export function groupEvidenceForDisclosure(briefing: AdaptiveBriefingData): EvidenceGroup[] {
@@ -663,22 +674,16 @@ export function buildIdentityResolutionSection<C extends IdentityCandidate>(
     .slice(0, 4)
     .map((a) => ({
       id: a.candidate.id,
-      label:
-        (a.candidate as unknown as { name?: string | null }).name ?? a.candidate.id,
+      label: (a.candidate as unknown as { name?: string | null }).name ?? a.candidate.id,
       score: a.confidence.score,
       reason: `${a.confidence.tier} at ${a.confidence.score}/100 — ${a.confidence.rationale}`,
     }));
-  const rejectedCandidates: IdentityResolutionRejection[] = selection.rejected.map(
-    (a) => ({
-      id: a.candidate.id,
-      label:
-        (a.candidate as unknown as { name?: string | null }).name ?? a.candidate.id,
-      score: a.confidence.score,
-      reason:
-        a.rejectionReason ??
-        `Excluded from auto-selection at ${a.confidence.score}/100.`,
-    }),
-  );
+  const rejectedCandidates: IdentityResolutionRejection[] = selection.rejected.map((a) => ({
+    id: a.candidate.id,
+    label: (a.candidate as unknown as { name?: string | null }).name ?? a.candidate.id,
+    score: a.confidence.score,
+    reason: a.rejectionReason ?? `Excluded from auto-selection at ${a.confidence.score}/100.`,
+  }));
   return {
     selectedLabel: label ?? c.id,
     selectedId: c.id,

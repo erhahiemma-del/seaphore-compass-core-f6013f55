@@ -101,7 +101,6 @@ export function describeAttachments(attachments: OfficerAttachment[]): string {
   ].join("\n");
 }
 
-
 /** An attachment as the officer sees it: in flight, uploaded, or failed. */
 export interface AttachmentItem extends OfficerAttachment {
   status: "UPLOADING" | "UPLOADED" | "ERROR";
@@ -114,7 +113,6 @@ export interface AttachmentItem extends OfficerAttachment {
    */
   previewUrl?: string;
 }
-
 
 export interface UseOfficerAttachments {
   /** Successfully uploaded attachments only — what the pipeline may cite. */
@@ -270,8 +268,7 @@ export function useOfficerAttachments(options?: {
         sources.current.set(id, file);
         // Visual confirmation only — images and PDFs render inline so the
         // officer can verify the document before it travels with the query.
-        const previewable =
-          file.type.startsWith("image/") || file.type === "application/pdf";
+        const previewable = file.type.startsWith("image/") || file.type === "application/pdf";
         const previewUrl =
           previewable && typeof URL.createObjectURL === "function"
             ? URL.createObjectURL(file)
@@ -294,8 +291,6 @@ export function useOfficerAttachments(options?: {
             previewUrl,
           },
         ]);
-
-
 
         queued.push({ id, file, bucket, path });
       }
@@ -378,4 +373,3 @@ export function useOfficerAttachments(options?: {
 
   return { attachments, items, uploading, add, retry, cancel, remove, clear };
 }
-

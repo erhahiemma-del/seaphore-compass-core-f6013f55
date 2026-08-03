@@ -7,7 +7,7 @@ const VALID = {
   satellite: "Sentinel-1A",
   acquisitionDate: "2026-07-20T05:45:00Z",
   coordinates: [3.375, 6.45] as [number, number],
-  boundingBox: [3.30, 6.40, 3.45, 6.50] as [number, number, number, number],
+  boundingBox: [3.3, 6.4, 3.45, 6.5] as [number, number, number, number],
   vesselDetected: true,
   vesselLength: 200,
   vesselHeading: 90,
@@ -66,7 +66,9 @@ describe("CopernicusMarineConnector", () => {
 
   it("healthCheck() reports healthy on 200", async () => {
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = vi.fn(async () => new Response("{}", { status: 200 })) as unknown as typeof fetch;
+    globalThis.fetch = vi.fn(
+      async () => new Response("{}", { status: 200 }),
+    ) as unknown as typeof fetch;
     try {
       const health = await connector.healthCheck();
       expect(health.status).toBe("healthy");

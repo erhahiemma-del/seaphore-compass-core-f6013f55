@@ -7,14 +7,20 @@
  */
 
 export class NetworkError extends Error {
-  constructor(message: string, public cause?: unknown) {
+  constructor(
+    message: string,
+    public cause?: unknown,
+  ) {
     super(message);
     this.name = "NetworkError";
   }
 }
 
 export class RateLimitError extends Error {
-  constructor(message: string, public retryAfterSeconds?: number) {
+  constructor(
+    message: string,
+    public retryAfterSeconds?: number,
+  ) {
     super(message);
     this.name = "RateLimitError";
   }
@@ -28,7 +34,10 @@ export class AuthError extends Error {
 }
 
 export class ParseError extends Error {
-  constructor(message: string, public cause?: unknown) {
+  constructor(
+    message: string,
+    public cause?: unknown,
+  ) {
     super(message);
     this.name = "ParseError";
   }

@@ -34,7 +34,9 @@ import { useCargoCentreProjection } from "@/features/cargo-workspace/use-cargo-p
 
 const CARGO_CENTRE = cargoCentreBySlug("cargo")!;
 
-function useCargoKpis(projection: ReturnType<typeof useCargoCentreProjection>["projection"]): KpiSpec[] {
+function useCargoKpis(
+  projection: ReturnType<typeof useCargoCentreProjection>["projection"],
+): KpiSpec[] {
   return useMemo(() => {
     if (!projection.data) return [];
     return projection.data.kpis.map((k) => ({
@@ -122,11 +124,7 @@ export function CargoCentre() {
             <Section>
               <PanelStateNotice
                 state={projection.state}
-                detail={
-                  isLoading
-                    ? "Loading cargo intelligence…"
-                    : projection.stateDetail
-                }
+                detail={isLoading ? "Loading cargo intelligence…" : projection.stateDetail}
                 href={CARGO_CENTRE.capabilityHref}
                 hrefLabel="Inspect cargo capability"
               />
@@ -144,10 +142,7 @@ export function CargoCentre() {
               {/* KPI summary cards */}
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 {projection.data!.kpis.map((k) => (
-                  <div
-                    key={k.key}
-                    className="rounded-lg border border-line/60 bg-surface/60 p-2.5"
-                  >
+                  <div key={k.key} className="rounded-lg border border-line/60 bg-surface/60 p-2.5">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-slate">
                         {k.label}
@@ -221,7 +216,10 @@ export function CargoCentre() {
               <Section title="Intelligence Status">
                 <dl className="space-y-1.5 text-[12px]">
                   <Row label="Canonical UIP" value={projection.uipId ?? "—"} />
-                  <Row label="Cargo evidence records" value={String(projection.data!.evidenceCount)} />
+                  <Row
+                    label="Cargo evidence records"
+                    value={String(projection.data!.evidenceCount)}
+                  />
                   <Row label="Confidence" value={projection.data!.confidence} />
                   <Row label="Projection binding" value={CARGO_CENTRE.projectionContractId} />
                 </dl>
@@ -269,7 +267,9 @@ function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-2 border-b border-line/40 py-1 last:border-b-0">
       <dt className="text-slate">{label}</dt>
-      <dd className="font-mono max-w-[60%] truncate text-right text-[11px] text-foreground/85">{value}</dd>
+      <dd className="font-mono max-w-[60%] truncate text-right text-[11px] text-foreground/85">
+        {value}
+      </dd>
     </div>
   );
 }

@@ -7,20 +7,11 @@
  * simply reads a briefing and appends to the active investigation.
  */
 import type { AdaptiveBriefing } from "@/components/copilot/briefing/types";
-import type {
-  InvestigationWorkspace,
-  WorkspacePriority,
-} from "@/stores/workspace.store";
+import type { InvestigationWorkspace, WorkspacePriority } from "@/stores/workspace.store";
 import { useWorkspaceStore } from "@/stores/workspace.store";
-import {
-  storageRef,
-  type OfficerAttachment,
-} from "@/hooks/use-officer-attachments";
+import { storageRef, type OfficerAttachment } from "@/hooks/use-officer-attachments";
 
-import {
-  detectMissionType,
-  getProfile,
-} from "@/components/copilot/briefing/profiles";
+import { detectMissionType, getProfile } from "@/components/copilot/briefing/profiles";
 
 function priorityFromTier(tier: "low" | "medium" | "high"): WorkspacePriority {
   if (tier === "high") return "HIGH";
@@ -200,4 +191,3 @@ export function recordAttachmentEvidence(
 }
 
 export type { InvestigationWorkspace };
-

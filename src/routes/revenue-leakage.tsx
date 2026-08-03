@@ -70,7 +70,10 @@ function RevenueLeakageRoute() {
   const total = findings.reduce((s, f) => s + f.magnitude, 0);
 
   return (
-    <AppShell title="Revenue Leakage" subtitle="Detect. Decide. Act — every finding is evidence-backed">
+    <AppShell
+      title="Revenue Leakage"
+      subtitle="Detect. Decide. Act — every finding is evidence-backed"
+    >
       <div className="space-y-4">
         <Card>
           <CardHeader className="pb-2">
@@ -95,8 +98,8 @@ function RevenueLeakageRoute() {
               <Coins className="h-6 w-6 text-muted-foreground" />
               <div className="text-sm font-medium">No Unified Intelligence Package loaded</div>
               <div className="max-w-md text-xs text-muted-foreground">
-                Revenue Leakage scans only run against live fused evidence. Run
-                a briefing from the Copilot to populate this surface.
+                Revenue Leakage scans only run against live fused evidence. Run a briefing from the
+                Copilot to populate this surface.
               </div>
               <Link
                 to="/copilot"
@@ -156,7 +159,11 @@ function RevenueLeakageRoute() {
                     Approve for enforcement
                   </Button>
                 )}
-                <Button size="sm" variant="ghost" onClick={() => dismiss(f.id, OFFICER, "reviewed")}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => dismiss(f.id, OFFICER, "reviewed")}
+                >
                   Dismiss
                 </Button>
               </div>

@@ -14,7 +14,4 @@ import { CompositeSink, ConsoleSink, CapturingSink } from "./telemetry/sinks";
 export const mioCaptureSink = new CapturingSink(500);
 
 /** Global sink: console output + in-memory capture for the Observatory. */
-export const globalMicSink = new CompositeSink(
-  new ConsoleSink(),
-  mioCaptureSink,
-);
+export const globalMicSink = new CompositeSink(new ConsoleSink(), mioCaptureSink);

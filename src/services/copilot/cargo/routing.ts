@@ -50,11 +50,7 @@ const RULES: ReadonlyArray<IntentRule> = [
   {
     intent: "bills-of-lading",
     weight: 0.9,
-    patterns: [
-      /bill[s]?\s+of\s+lading/i,
-      /\bb\/?l[s]?\b/i,
-      /\bbol[s]?\b/i,
-    ],
+    patterns: [/bill[s]?\s+of\s+lading/i, /\bb\/?l[s]?\b/i, /\bbol[s]?\b/i],
   },
   {
     intent: "related-vessels",
@@ -95,11 +91,45 @@ const CONTAINER_UNIT = /\b([A-Z]{4}\d{7})\b/;
 const IMO_NUMBER = /\bIMO\s*(\d{7})\b/i;
 
 const STOP_WORDS = new Set([
-  "the", "this", "that", "for", "of", "to", "and", "show", "me", "all", "every",
-  "find", "list", "explain", "why", "is", "are", "linked", "related", "please",
-  "investigate", "cargo", "shipment", "container", "containers", "company",
-  "vessel", "vessels", "bill", "bills", "lading", "manifest", "risk", "high",
-  "revenue", "leakage", "customs", "intelligence", "timeline",
+  "the",
+  "this",
+  "that",
+  "for",
+  "of",
+  "to",
+  "and",
+  "show",
+  "me",
+  "all",
+  "every",
+  "find",
+  "list",
+  "explain",
+  "why",
+  "is",
+  "are",
+  "linked",
+  "related",
+  "please",
+  "investigate",
+  "cargo",
+  "shipment",
+  "container",
+  "containers",
+  "company",
+  "vessel",
+  "vessels",
+  "bill",
+  "bills",
+  "lading",
+  "manifest",
+  "risk",
+  "high",
+  "revenue",
+  "leakage",
+  "customs",
+  "intelligence",
+  "timeline",
 ]);
 
 /** Lift the most plausible subject phrase from the query. */
@@ -133,10 +163,7 @@ export interface CargoRoutingOptions {
  * cargo investigation — the caller then falls through to the normal OIE
  * pipeline untouched.
  */
-export function routeCargoQuery(
-  query: string,
-  opts: CargoRoutingOptions = {},
-): CargoRoute | null {
+export function routeCargoQuery(query: string, opts: CargoRoutingOptions = {}): CargoRoute | null {
   const text = query.trim();
   if (text.length === 0) return null;
 

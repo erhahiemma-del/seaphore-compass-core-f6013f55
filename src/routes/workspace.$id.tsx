@@ -49,14 +49,20 @@ import { OperationalInsightsPanel } from "@/components/oie/OperationalInsightsPa
 import { OutcomeCaptureCard } from "@/features/investigate/OutcomeCaptureCard";
 import { useOklAutoPersistOnClose } from "@/services/okl/use-okl-auto-persist";
 
-
 export const Route = createFileRoute("/workspace/$id")({
   head: ({ params }) => ({
     meta: [
       { title: `Investigation ${params.id.slice(-6)} — Seaphore Workspace` },
-      { name: "description", content: "Persistent maritime investigation workspace: evidence, hypotheses, tasks, decisions, timeline and entities." },
+      {
+        name: "description",
+        content:
+          "Persistent maritime investigation workspace: evidence, hypotheses, tasks, decisions, timeline and entities.",
+      },
       { property: "og:title", content: "Seaphore Investigation Workspace" },
-      { property: "og:description", content: "Evidence first. Explainable always. Officer decides." },
+      {
+        property: "og:description",
+        content: "Evidence first. Explainable always. Officer decides.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -69,7 +75,11 @@ export const Route = createFileRoute("/workspace/$id")({
   notFoundComponent: () => (
     <AppShell title="Investigation Workspace">
       <div className="p-10 text-center text-sm text-muted-foreground">
-        Investigation not found. <Link to="/workspace" className="underline">Back to workspaces</Link>.
+        Investigation not found.{" "}
+        <Link to="/workspace" className="underline">
+          Back to workspaces
+        </Link>
+        .
       </div>
     </AppShell>
   ),
@@ -158,11 +168,13 @@ function WorkspaceRoute() {
             <OperationalInsightsPanel workspace={w} />
           </div>
 
-
           {/* Column 3: Recommendation + Decision log + Notebook + Copilot + Timeline */}
           <div className="space-y-4">
             <RecommendationPanel w={w} />
-            {(w.stage === "DECISION" || w.stage === "CLOSED" || w.status === "CLOSED" || w.outcome) ? (
+            {w.stage === "DECISION" ||
+            w.stage === "CLOSED" ||
+            w.status === "CLOSED" ||
+            w.outcome ? (
               <OutcomeCaptureCard w={w} />
             ) : null}
             <NotebookPanel w={w} />
@@ -172,7 +184,6 @@ function WorkspaceRoute() {
             <ConversationPanel w={w} />
           </div>
         </div>
-
 
         <footer className="border-t bg-background/60 px-4 py-2 text-center text-[11px] text-muted-foreground">
           Evidence first. Explainable always. Officer decides.
@@ -224,7 +235,9 @@ function MissionOverviewPanel({ w }: { w: InvestigationWorkspace }) {
         <Field label="Status">
           <select
             value={w.status}
-            onChange={(e) => update(w.id, { status: e.target.value as InvestigationWorkspace["status"] })}
+            onChange={(e) =>
+              update(w.id, { status: e.target.value as InvestigationWorkspace["status"] })
+            }
             className="w-full rounded border bg-background px-1.5 py-0.5 text-xs"
           >
             {["ACTIVE", "MONITORING", "SUSPENDED", "CLOSED"].map((s) => (
@@ -235,7 +248,9 @@ function MissionOverviewPanel({ w }: { w: InvestigationWorkspace }) {
         <Field label="Priority">
           <select
             value={w.priority}
-            onChange={(e) => update(w.id, { priority: e.target.value as InvestigationWorkspace["priority"] })}
+            onChange={(e) =>
+              update(w.id, { priority: e.target.value as InvestigationWorkspace["priority"] })
+            }
             className="w-full rounded border bg-background px-1.5 py-0.5 text-xs"
           >
             {["LOW", "MEDIUM", "HIGH", "CRITICAL"].map((s) => (
@@ -358,16 +373,20 @@ function EvidencePanel({ w }: { w: InvestigationWorkspace }) {
                     {e.grade ? <span>· {e.grade}</span> : null}
                     <span>· {new Date(e.collectedAt).toLocaleTimeString()}</span>
                   </div>
-                  {e.summary ? <div className="mt-1 text-[11px] text-muted-foreground">{e.summary}</div> : null}
+                  {e.summary ? (
+                    <div className="mt-1 text-[11px] text-muted-foreground">{e.summary}</div>
+                  ) : null}
                 </div>
                 <select
                   value={e.category}
                   onChange={(ev) => move(w.id, e.id, ev.target.value as EvidenceCategory)}
                   className="rounded border bg-background px-1 py-0.5 text-[10px]"
                 >
-                  {(["COLLECTED", "PENDING", "CONFLICTING", "REJECTED"] as EvidenceCategory[]).map((c) => (
-                    <option key={c}>{c}</option>
-                  ))}
+                  {(["COLLECTED", "PENDING", "CONFLICTING", "REJECTED"] as EvidenceCategory[]).map(
+                    (c) => (
+                      <option key={c}>{c}</option>
+                    ),
+                  )}
                 </select>
               </div>
             </li>
@@ -408,7 +427,9 @@ function SupportingEvidenceGroups({
       </div>
       {groups.map(([source, citations]) => {
         const isOpen = !!open[source];
-        const grades = Array.from(new Set(citations.map((c) => c.grade).filter(Boolean))) as string[];
+        const grades = Array.from(
+          new Set(citations.map((c) => c.grade).filter(Boolean)),
+        ) as string[];
         return (
           <div key={source} className="rounded border">
             <button
@@ -459,7 +480,9 @@ function SupportingEvidenceGroups({
                       className="rounded border bg-background px-1 py-0.5 text-[10px]"
                       aria-label="Move citation"
                     >
-                      {(["COLLECTED", "PENDING", "CONFLICTING", "REJECTED"] as EvidenceCategory[]).map((k) => (
+                      {(
+                        ["COLLECTED", "PENDING", "CONFLICTING", "REJECTED"] as EvidenceCategory[]
+                      ).map((k) => (
                         <option key={k}>{k}</option>
                       ))}
                     </select>
@@ -517,7 +540,9 @@ function HypothesisPanel({ w }: { w: InvestigationWorkspace }) {
               <div className="mt-1 flex items-center gap-2">
                 <select
                   value={h.status}
-                  onChange={(e) => update(w.id, h.id, { status: e.target.value as HypothesisStatus })}
+                  onChange={(e) =>
+                    update(w.id, h.id, { status: e.target.value as HypothesisStatus })
+                  }
                   className="rounded border bg-background px-1 py-0.5 text-[10px]"
                 >
                   {H_STATUSES.map((s) => (
@@ -541,7 +566,9 @@ function HypothesisPanel({ w }: { w: InvestigationWorkspace }) {
                   <summary>History ({h.history.length})</summary>
                   <ul className="ml-3 mt-1 list-disc">
                     {h.history.slice(-5).map((x, i) => (
-                      <li key={i}>{new Date(x.at).toLocaleString()} — {x.note}</li>
+                      <li key={i}>
+                        {new Date(x.at).toLocaleString()} — {x.note}
+                      </li>
                     ))}
                   </ul>
                 </details>
@@ -665,7 +692,9 @@ function DecisionLogPanel({ w }: { w: InvestigationWorkspace }) {
                   {new Date(d.at).toLocaleTimeString()}
                 </span>
               </div>
-              {d.detail ? <div className="mt-0.5 text-[11px] text-muted-foreground">{d.detail}</div> : null}
+              {d.detail ? (
+                <div className="mt-0.5 text-[11px] text-muted-foreground">{d.detail}</div>
+              ) : null}
             </li>
           ))}
       </ol>
@@ -692,7 +721,9 @@ function TimelinePanel({ w }: { w: InvestigationWorkspace }) {
   const [q, setQ] = useState("");
   const items = [...w.timeline]
     .sort((a, b) => (a.at < b.at ? 1 : -1))
-    .filter((e) => (q ? (e.label + " " + (e.detail ?? "")).toLowerCase().includes(q.toLowerCase()) : true));
+    .filter((e) =>
+      q ? (e.label + " " + (e.detail ?? "")).toLowerCase().includes(q.toLowerCase()) : true,
+    );
   return (
     <Panel
       icon={TimerReset}
@@ -808,7 +839,9 @@ function RecommendationPanel({ w }: { w: InvestigationWorkspace }) {
               set(w.id, {
                 id: `officer_${Date.now()}`,
                 label: s,
-                supportingEvidence: w.evidence.filter((e) => e.category === "COLLECTED").map((e) => e.id),
+                supportingEvidence: w.evidence
+                  .filter((e) => e.category === "COLLECTED")
+                  .map((e) => e.id),
               })
             }
             className="rounded border px-2 py-0.5 text-[11px] hover:bg-accent"
@@ -1007,7 +1040,13 @@ function NotebookPanel({ w }: { w: InvestigationWorkspace }) {
   );
 }
 
-function NotebookEditor({ entry, onSave }: { entry: NotebookEntry; onSave: (body: string) => void }) {
+function NotebookEditor({
+  entry,
+  onSave,
+}: {
+  entry: NotebookEntry;
+  onSave: (body: string) => void;
+}) {
   const [body, setBody] = useState(entry.body);
   const [showHistory, setShowHistory] = useState(false);
   return (
@@ -1026,11 +1065,7 @@ function NotebookEditor({ entry, onSave }: { entry: NotebookEntry; onSave: (body
         >
           {showHistory ? "Hide" : "Show"} version history ({entry.versions.length})
         </button>
-        <Button
-          size="sm"
-          onClick={() => onSave(body)}
-          disabled={body === entry.body}
-        >
+        <Button size="sm" onClick={() => onSave(body)} disabled={body === entry.body}>
           Save version
         </Button>
       </div>
@@ -1089,7 +1124,13 @@ function EmbeddedCopilotPanel({ w }: { w: InvestigationWorkspace }) {
       subtitle="Ask about this case — every answer cites evidence in this workspace"
       icon={MessageSquareText}
       action={
-        <Button size="sm" onClick={() => { setSeed(""); setOpen(true); }}>
+        <Button
+          size="sm"
+          onClick={() => {
+            setSeed("");
+            setOpen(true);
+          }}
+        >
           Ask Copilot
         </Button>
       }
@@ -1098,7 +1139,10 @@ function EmbeddedCopilotPanel({ w }: { w: InvestigationWorkspace }) {
         {suggestions.map((q) => (
           <li key={q}>
             <button
-              onClick={() => { setSeed(q); setOpen(true); }}
+              onClick={() => {
+                setSeed(q);
+                setOpen(true);
+              }}
               className="w-full rounded-md border bg-background px-2.5 py-1.5 text-left text-xs hover:bg-accent"
             >
               {q}
@@ -1107,8 +1151,8 @@ function EmbeddedCopilotPanel({ w }: { w: InvestigationWorkspace }) {
         ))}
       </ul>
       <p className="mt-2 text-[10px] text-muted-foreground">
-        The Copilot answers only from this investigation's evidence, entities, hypotheses,
-        and prior briefings. Every claim references source and confidence.
+        The Copilot answers only from this investigation's evidence, entities, hypotheses, and prior
+        briefings. Every claim references source and confidence.
       </p>
       <AskCopilotDialog
         instance="seaphore"
@@ -1120,4 +1164,3 @@ function EmbeddedCopilotPanel({ w }: { w: InvestigationWorkspace }) {
     </Panel>
   );
 }
-

@@ -16,7 +16,9 @@ import {
 
 describe("Sprint 11 · PII scrubbing & hashing", () => {
   it("scrubs emails, phones, IMOs, long digit runs", () => {
-    const s = scrub("Reach kayode@example.com or +234 803 555 1234, ref IMO 9837456 batch 123456789012");
+    const s = scrub(
+      "Reach kayode@example.com or +234 803 555 1234, ref IMO 9837456 batch 123456789012",
+    );
     expect(s).toContain("[email]");
     expect(s).toContain("[phone]");
     expect(s).toContain("[imo]");
@@ -77,12 +79,19 @@ describe("Sprint 11 · tracer", () => {
     await trace.stage("classification", async () => 1);
     await trace.stage("retrieval", async () => 2);
     await trace.stage("reasoning", async () => 3);
-    trace.recordModel({ stage: "reasoning", model: "google/gemini-2.5-flash", tier: 1, promptTokens: 100, completionTokens: 20, costCredits: 0.1 });
+    trace.recordModel({
+      stage: "reasoning",
+      model: "google/gemini-2.5-flash",
+      tier: 1,
+      promptTokens: 100,
+      completionTokens: 20,
+      costCredits: 0.1,
+    });
     trace.recordEvidence({ evidenceId: "ev1", grade: "SIGINT_VERIFIED", weight: 0.9 });
     trace.finish({ ok: true });
 
     const snap = obs.snapshot();
-    expect(snap.counters["queries_total{intent=\"revenue\"}"]).toBe(1);
+    expect(snap.counters['queries_total{intent="revenue"}']).toBe(1);
     expect(snap.counters['queries_completed_total{ok="true"}']).toBe(1);
     expect(snap.histograms['pipeline_stage_ms{stage="total"}'].count).toBe(1);
     expect(snap.histograms['pipeline_stage_ms{stage="classification"}'].count).toBe(1);
@@ -95,7 +104,9 @@ describe("Sprint 11 · tracer", () => {
     const obs = createObservability();
     const trace = obs.tracer.startQuery({ officerId: "u", intent: "x", queryText: "q" });
     await expect(
-      trace.stage("reasoning", async () => { throw new Error("model down"); }),
+      trace.stage("reasoning", async () => {
+        throw new Error("model down");
+      }),
     ).rejects.toThrow("model down");
     trace.finish({ ok: false });
 
@@ -114,7 +125,12 @@ describe("Sprint 11 · feedback correlation", () => {
   it("associates outcomes with traceIds and updates counters", () => {
     const obs = createObservability();
     obs.feedback.record({ traceId: "trc_1", officerId: "u", outcome: "agree" });
-    obs.feedback.record({ traceId: "trc_1", officerId: "u", outcome: "modify", note: "add IMO 9837456" });
+    obs.feedback.record({
+      traceId: "trc_1",
+      officerId: "u",
+      outcome: "modify",
+      note: "add IMO 9837456",
+    });
     obs.feedback.record({ traceId: "trc_2", officerId: "u2", outcome: "disagree" });
 
     const rows = obs.store.feedback.all();
@@ -130,15 +146,18 @@ describe("Sprint 11 · feedback correlation", () => {
 describe("Sprint 11 · alerts", () => {
   it("fires error_rate_high when threshold crossed", () => {
     const obs = createObservability();
-    for (let i = 0; i < 21; i++) obs.metrics.incr("pipeline_errors_total", 1, { stage: "reasoning" });
+    for (let i = 0; i < 21; i++)
+      obs.metrics.incr("pipeline_errors_total", 1, { stage: "reasoning" });
     const fired = obs.alerts.evaluate(obs.metrics);
     expect(fired.map((f) => f.rule)).toContain("error_rate_high");
   });
 
   it("fires disagree_rate_high when ratio exceeds 30% over ≥10 samples", () => {
     const obs = createObservability();
-    for (let i = 0; i < 6; i++) obs.feedback.record({ traceId: `t${i}`, officerId: "u", outcome: "agree" });
-    for (let i = 0; i < 5; i++) obs.feedback.record({ traceId: `t${i}`, officerId: "u", outcome: "disagree" });
+    for (let i = 0; i < 6; i++)
+      obs.feedback.record({ traceId: `t${i}`, officerId: "u", outcome: "agree" });
+    for (let i = 0; i < 5; i++)
+      obs.feedback.record({ traceId: `t${i}`, officerId: "u", outcome: "disagree" });
     const fired = obs.alerts.evaluate(obs.metrics);
     expect(fired.map((f) => f.rule)).toContain("disagree_rate_high");
   });
@@ -147,7 +166,12 @@ describe("Sprint 11 · alerts", () => {
 describe("Sprint 11 · load test integration", () => {
   it("runs synthetic load and produces a budget-checked report", async () => {
     const obs = createObservability();
-    const report = await runLoadTest(obs.tracer, obs.metrics, { totalQueries: 40, concurrency: 8 }, 3000);
+    const report = await runLoadTest(
+      obs.tracer,
+      obs.metrics,
+      { totalQueries: 40, concurrency: 8 },
+      3000,
+    );
     expect(report.totalQueries).toBe(40);
     expect(report.completed).toBe(40);
     expect(report.errors).toBe(0);
@@ -157,7 +181,11 @@ describe("Sprint 11 · load test integration", () => {
 
   it("captures errors when synthetic failures are injected", async () => {
     const obs = createObservability();
-    const report = await runLoadTest(obs.tracer, obs.metrics, { totalQueries: 20, concurrency: 4, failureRate: 1 });
+    const report = await runLoadTest(obs.tracer, obs.metrics, {
+      totalQueries: 20,
+      concurrency: 4,
+      failureRate: 1,
+    });
     expect(report.errors).toBeGreaterThan(0);
     expect(report.snapshot.counters['pipeline_errors_total{stage="reasoning"}']).toBeGreaterThan(0);
   });

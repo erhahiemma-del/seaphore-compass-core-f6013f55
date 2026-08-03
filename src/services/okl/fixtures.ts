@@ -7,10 +7,7 @@
  * fixture just provides those inputs offline.
  */
 import type { NormalizedEvidence, CanonicalEntityRef } from "@/services/ial/types";
-import type {
-  FusedEntityRecord,
-  FusedEvidencePackage,
-} from "@/services/ife/types";
+import type { FusedEntityRecord, FusedEvidencePackage } from "@/services/ife/types";
 import type { UnifiedIntelligencePackage } from "@/services/ife";
 import type { IdentityCluster } from "@/services/ife";
 import type { OklHistoricalHint, OklInvestigationHint } from "@/services/okl";
@@ -70,11 +67,19 @@ function ev(
 }
 
 const evidence: NormalizedEvidence[] = [
-  ev("ev-gfw-1", "gfw", "Global Fishing Watch", vesselA, "position", {
-    port: "IR-BANDAR",
-    destination: "Bandar Abbas",
-    deviationKm: 480,
-  }, "Route deviation noted through Strait of Hormuz."),
+  ev(
+    "ev-gfw-1",
+    "gfw",
+    "Global Fishing Watch",
+    vesselA,
+    "position",
+    {
+      port: "IR-BANDAR",
+      destination: "Bandar Abbas",
+      deviationKm: 480,
+    },
+    "Route deviation noted through Strait of Hormuz.",
+  ),
   ev("ev-ais-1", "ais", "Terrestrial AIS", vesselA, "voyage", {
     port: "SY-LAT",
     destination: "Latakia",
@@ -127,8 +132,7 @@ function fusedRecord(entity: CanonicalEntityRef): FusedEntityRecord {
     confidence: "HIGH",
     grade: "CORROBORATED",
     sources: ["gfw", "opensanctions", "customs"],
-    explanation:
-      "Cross-connector agreement on core identifiers and status attributes.",
+    explanation: "Cross-connector agreement on core identifiers and status attributes.",
   };
 }
 
@@ -171,12 +175,60 @@ const fused: FusedEvidencePackage = {
     },
   ],
   sources: [
-    { connectorId: "gfw", sourceName: "Global Fishing Watch", grade: "CORROBORATED", agreementScore: 0.85, weight: 1, records: 2, latencyMs: 120 },
-    { connectorId: "ais", sourceName: "Terrestrial AIS", grade: "OBSERVED", agreementScore: 0.7, weight: 0.9, records: 2, latencyMs: 120 },
-    { connectorId: "opensanctions", sourceName: "OpenSanctions", grade: "VERIFIED", agreementScore: 0.95, weight: 1, records: 2, latencyMs: 120 },
-    { connectorId: "customs", sourceName: "Customs Manifest", grade: "REPORTED", agreementScore: 0.6, weight: 0.9, records: 2, latencyMs: 120 },
-    { connectorId: "portauth", sourceName: "Port Authority", grade: "REPORTED", agreementScore: 0.7, weight: 0.9, records: 2, latencyMs: 120 },
-    { connectorId: "cac", sourceName: "CAC Nigeria", grade: "VERIFIED", agreementScore: 0.9, weight: 1, records: 2, latencyMs: 120 },
+    {
+      connectorId: "gfw",
+      sourceName: "Global Fishing Watch",
+      grade: "CORROBORATED",
+      agreementScore: 0.85,
+      weight: 1,
+      records: 2,
+      latencyMs: 120,
+    },
+    {
+      connectorId: "ais",
+      sourceName: "Terrestrial AIS",
+      grade: "OBSERVED",
+      agreementScore: 0.7,
+      weight: 0.9,
+      records: 2,
+      latencyMs: 120,
+    },
+    {
+      connectorId: "opensanctions",
+      sourceName: "OpenSanctions",
+      grade: "VERIFIED",
+      agreementScore: 0.95,
+      weight: 1,
+      records: 2,
+      latencyMs: 120,
+    },
+    {
+      connectorId: "customs",
+      sourceName: "Customs Manifest",
+      grade: "REPORTED",
+      agreementScore: 0.6,
+      weight: 0.9,
+      records: 2,
+      latencyMs: 120,
+    },
+    {
+      connectorId: "portauth",
+      sourceName: "Port Authority",
+      grade: "REPORTED",
+      agreementScore: 0.7,
+      weight: 0.9,
+      records: 2,
+      latencyMs: 120,
+    },
+    {
+      connectorId: "cac",
+      sourceName: "CAC Nigeria",
+      grade: "VERIFIED",
+      agreementScore: 0.9,
+      weight: 1,
+      records: 2,
+      latencyMs: 120,
+    },
   ],
   report: {
     contradictions: [],
@@ -198,7 +250,13 @@ const fused: FusedEvidencePackage = {
 };
 
 const identity: IdentityCluster[] = [
-  { canonicalId: vesselA.id, aliasIds: [vesselA.id, "vessel:mmsi:440123456", "vessel:name:DONGWON16"], score: 92, rationale: "IMO + MMSI + name agreement", resolvedAt: ISO_NOW } as unknown as IdentityCluster,
+  {
+    canonicalId: vesselA.id,
+    aliasIds: [vesselA.id, "vessel:mmsi:440123456", "vessel:name:DONGWON16"],
+    score: 92,
+    rationale: "IMO + MMSI + name agreement",
+    resolvedAt: ISO_NOW,
+  } as unknown as IdentityCluster,
 ];
 
 export const DEMO_UIP: UnifiedIntelligencePackage = {
@@ -221,9 +279,24 @@ export const DEMO_UIP: UnifiedIntelligencePackage = {
 export const DEMO_EVIDENCE = evidence;
 
 export const DEMO_HISTORICAL: OklHistoricalHint[] = [
-  { entityId: vesselA.id, patternKind: "AIS_DARK_PATTERN", count: 3, lastSeen: "2026-05-11T00:00:00Z" },
-  { entityId: vesselA.id, patternKind: "SUSPICIOUS_ROUTING", count: 2, lastSeen: "2026-06-14T00:00:00Z" },
-  { entityId: vesselA.id, patternKind: "COMPLIANCE_VIOLATION", count: 2, lastSeen: "2026-07-01T00:00:00Z" },
+  {
+    entityId: vesselA.id,
+    patternKind: "AIS_DARK_PATTERN",
+    count: 3,
+    lastSeen: "2026-05-11T00:00:00Z",
+  },
+  {
+    entityId: vesselA.id,
+    patternKind: "SUSPICIOUS_ROUTING",
+    count: 2,
+    lastSeen: "2026-06-14T00:00:00Z",
+  },
+  {
+    entityId: vesselA.id,
+    patternKind: "COMPLIANCE_VIOLATION",
+    count: 2,
+    lastSeen: "2026-07-01T00:00:00Z",
+  },
 ];
 
 export const DEMO_INVESTIGATIONS: OklInvestigationHint[] = [

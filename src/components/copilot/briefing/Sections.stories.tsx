@@ -26,8 +26,20 @@ export const Findings: StoryObj = {
   render: () => (
     <CriticalFindings
       findings={[
-        { id: "1", priority: "immediate", title: "Immediate action needed", grade: "VERIFIED", source: "OFAC" },
-        { id: "2", priority: "today", title: "Review by end of day", grade: "CORROBORATED", source: "Broker chat" },
+        {
+          id: "1",
+          priority: "immediate",
+          title: "Immediate action needed",
+          grade: "VERIFIED",
+          source: "OFAC",
+        },
+        {
+          id: "2",
+          priority: "today",
+          title: "Review by end of day",
+          grade: "CORROBORATED",
+          source: "Broker chat",
+        },
       ]}
     />
   ),
@@ -51,9 +63,7 @@ export const Counters: StoryObj = {
 
 export const Gaps: StoryObj = {
   render: () => (
-    <IntelligenceGaps
-      gaps={["Passport confirmation", "Beneficial-ownership percentage"]}
-    />
+    <IntelligenceGaps gaps={["Passport confirmation", "Beneficial-ownership percentage"]} />
   ),
 };
 

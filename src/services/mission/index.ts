@@ -24,13 +24,7 @@ export type MissionType =
   | "escort";
 
 export type MissionStatus =
-  | "draft"
-  | "pending-approval"
-  | "approved"
-  | "executing"
-  | "completed"
-  | "rejected"
-  | "aborted";
+  "draft" | "pending-approval" | "approved" | "executing" | "completed" | "rejected" | "aborted";
 
 export interface MissionSubject {
   readonly kind: "vessel" | "port" | "company" | "person" | "cargo";
@@ -55,7 +49,8 @@ export interface MissionTask {
 }
 
 export interface MissionResource {
-  readonly kind: "patrol-vessel" | "aircraft" | "inspection-team" | "analyst" | "legal" | "port-authority";
+  readonly kind:
+    "patrol-vessel" | "aircraft" | "inspection-team" | "analyst" | "legal" | "port-authority";
   readonly label: string;
   readonly quantity: number;
   readonly rationale: string;
@@ -94,7 +89,12 @@ export interface MissionPlan {
   readonly updatedAt: string;
   readonly approvedBy?: string;
   readonly rejectedReason?: string;
-  readonly auditTrail: ReadonlyArray<{ atISO: string; actor: string; action: string; note?: string }>;
+  readonly auditTrail: ReadonlyArray<{
+    atISO: string;
+    actor: string;
+    action: string;
+    note?: string;
+  }>;
   /** Investigation this mission was bridged from — required for every plan created via the sanctioned bridge. */
   readonly sourceInvestigationId?: string;
   /** Canonical UIP id inherited from the source investigation. Provides the full pipeline trace UIP → Investigation → Mission. */
@@ -115,19 +115,38 @@ const OBJECTIVES_BY_TYPE: Record<MissionType, ReadonlyArray<string>> = {
   surveillance: ["Maintain continuous track", "Detect dark events", "Corroborate identity"],
   interdiction: ["Establish contact", "Board and inspect", "Secure evidence"],
   inspection: ["Verify manifest", "Inspect cargo holds", "Check crew documents"],
-  "compliance-audit": ["Verify PSC record", "Check flag documentation", "Review class certificates"],
+  "compliance-audit": [
+    "Verify PSC record",
+    "Check flag documentation",
+    "Review class certificates",
+  ],
   "revenue-audit": ["Reconcile manifests", "Verify port fees", "Match cargo declarations"],
   "search-and-rescue": ["Localize target", "Establish comms", "Recover persons"],
   escort: ["Rendezvous with subject", "Maintain protective posture", "Handover at destination"],
 };
 
 const RESOURCES_BY_TYPE: Record<MissionType, ReadonlyArray<Omit<MissionResource, "rationale">>> = {
-  surveillance: [{ kind: "aircraft", label: "MPA sortie", quantity: 1 }, { kind: "analyst", label: "AIS analyst", quantity: 1 }],
-  interdiction: [{ kind: "patrol-vessel", label: "OPV", quantity: 1 }, { kind: "inspection-team", label: "Boarding team", quantity: 1 }],
+  surveillance: [
+    { kind: "aircraft", label: "MPA sortie", quantity: 1 },
+    { kind: "analyst", label: "AIS analyst", quantity: 1 },
+  ],
+  interdiction: [
+    { kind: "patrol-vessel", label: "OPV", quantity: 1 },
+    { kind: "inspection-team", label: "Boarding team", quantity: 1 },
+  ],
   inspection: [{ kind: "inspection-team", label: "PSC inspectors", quantity: 1 }],
-  "compliance-audit": [{ kind: "analyst", label: "Compliance analyst", quantity: 1 }, { kind: "legal", label: "Legal advisor", quantity: 1 }],
-  "revenue-audit": [{ kind: "analyst", label: "Revenue analyst", quantity: 1 }, { kind: "port-authority", label: "Port liaison", quantity: 1 }],
-  "search-and-rescue": [{ kind: "patrol-vessel", label: "SAR unit", quantity: 1 }, { kind: "aircraft", label: "SAR helicopter", quantity: 1 }],
+  "compliance-audit": [
+    { kind: "analyst", label: "Compliance analyst", quantity: 1 },
+    { kind: "legal", label: "Legal advisor", quantity: 1 },
+  ],
+  "revenue-audit": [
+    { kind: "analyst", label: "Revenue analyst", quantity: 1 },
+    { kind: "port-authority", label: "Port liaison", quantity: 1 },
+  ],
+  "search-and-rescue": [
+    { kind: "patrol-vessel", label: "SAR unit", quantity: 1 },
+    { kind: "aircraft", label: "SAR helicopter", quantity: 1 },
+  ],
   escort: [{ kind: "patrol-vessel", label: "Escort OPV", quantity: 1 }],
 };
 
@@ -154,10 +173,13 @@ function planTimeline(type: MissionType): MissionTimelineEvent[] {
       { atHour: 24, label: "Report issued", kind: "end" },
     ],
   };
-  return [...base, ...(tail[type] ?? [
-    { atHour: 8, label: "Progress review", kind: "checkpoint" },
-    { atHour: 24, label: "Mission end", kind: "end" },
-  ])];
+  return [
+    ...base,
+    ...(tail[type] ?? [
+      { atHour: 8, label: "Progress review", kind: "checkpoint" },
+      { atHour: 24, label: "Mission end", kind: "end" },
+    ]),
+  ];
 }
 
 function deriveRecommendationsFromPredictions(
@@ -185,7 +207,9 @@ export function planMission(input: PlanMissionInput, opts?: { now?: () => Date }
     id: `obj_${i}`,
     label,
     rationale: `Standard ${input.type} objective; scoped to ${input.subjects.map((s) => s.label).join(", ") || "declared subjects"}.`,
-    citations: (input.predictions ?? []).flatMap((p) => p.citations.map((c) => c.evidenceId)).slice(0, 3),
+    citations: (input.predictions ?? [])
+      .flatMap((p) => p.citations.map((c) => c.evidenceId))
+      .slice(0, 3),
   }));
 
   const tasks: MissionTask[] = objectives.map((o, i) => ({
@@ -257,7 +281,10 @@ export const useMissionStore = create<MissionState>((set) => ({
               ...p,
               status: "pending-approval",
               updatedAt: new Date().toISOString(),
-              auditTrail: [...p.auditTrail, { atISO: new Date().toISOString(), actor, action: "submitted" }],
+              auditTrail: [
+                ...p.auditTrail,
+                { atISO: new Date().toISOString(), actor, action: "submitted" },
+              ],
             }
           : p,
       ),
@@ -287,7 +314,12 @@ export const useMissionStore = create<MissionState>((set) => ({
         ...p,
         recommendations: p.recommendations.map((r) =>
           r.id === recId
-            ? { ...r, humanApproved: true, approvedBy: officer, approvedAt: new Date().toISOString() }
+            ? {
+                ...r,
+                humanApproved: true,
+                approvedBy: officer,
+                approvedAt: new Date().toISOString(),
+              }
             : r,
         ),
         updatedAt: new Date().toISOString(),

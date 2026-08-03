@@ -9,17 +9,17 @@ invent data structures or re-infer confidence.
 Every entity — regardless of type — lives in `public.entities` with the
 same nine universal fields:
 
-| Field          | Column          | Notes                                                    |
-|----------------|-----------------|----------------------------------------------------------|
-| id             | `id`            | UUID. Never changes. Never reused.                       |
-| type           | `type`          | `entity_type` enum (13 values).                          |
-| name           | `name`          | Primary display name. Vessel names guarded by HR-6.      |
-| aliases        | `aliases`       | `text[]` of alternate names/numbers.                     |
-| confidence     | `confidence`    | `confidence_level` enum — the record's own tier.         |
-| relationships  | `relationships` table — typed, directional edges.                          |
-| evidenceIds    | `evidence_ids`  | `uuid[]` referencing `public.evidence`.                  |
-| riskScore      | `risk_score`    | 0–100. Decomposition lives in `risk_scores.inputs`.      |
-| history        | `entity_history` table — immutable per-entity change log.                  |
+| Field         | Column                                                    | Notes                                               |
+| ------------- | --------------------------------------------------------- | --------------------------------------------------- |
+| id            | `id`                                                      | UUID. Never changes. Never reused.                  |
+| type          | `type`                                                    | `entity_type` enum (13 values).                     |
+| name          | `name`                                                    | Primary display name. Vessel names guarded by HR-6. |
+| aliases       | `aliases`                                                 | `text[]` of alternate names/numbers.                |
+| confidence    | `confidence`                                              | `confidence_level` enum — the record's own tier.    |
+| relationships | `relationships` table — typed, directional edges.         |
+| evidenceIds   | `evidence_ids`                                            | `uuid[]` referencing `public.evidence`.             |
+| riskScore     | `risk_score`                                              | 0–100. Decomposition lives in `risk_scores.inputs`. |
+| history       | `entity_history` table — immutable per-entity change log. |
 
 Per-type extensions (`vessels`, `voyages`, `manifests`, `cargo_items`,
 `containers`, `documents`, `ports`, `companies`, `persons`,

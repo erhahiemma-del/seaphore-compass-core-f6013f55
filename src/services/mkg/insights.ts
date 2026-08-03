@@ -49,7 +49,9 @@ export function summariseEntity(
     incidents: bucket("incident"),
     inspections: bucket("inspection"),
     owners: neighbours
-      .filter((n) => n.edge.type === "OWNS" || n.edge.type === "OPERATES" || n.edge.type === "MANAGES")
+      .filter(
+        (n) => n.edge.type === "OWNS" || n.edge.type === "OPERATES" || n.edge.type === "MANAGES",
+      )
       .map((n) => n.neighbor),
     ports: bucket("port"),
     cargoes: bucket("cargo"),
@@ -122,8 +124,13 @@ export function findConflictingIdentities(
       });
       continue;
     }
-    const aliasEdges = graph.neighbors(node.id).filter((n) => n.edge.type === "ALIAS_OF" && n.edge.toId === node.id);
-    if (aliasEdges.length >= 2 && aliasEdges.some((a) => a.edge.grade === "REPORTED" || a.edge.grade === "INFERRED")) {
+    const aliasEdges = graph
+      .neighbors(node.id)
+      .filter((n) => n.edge.type === "ALIAS_OF" && n.edge.toId === node.id);
+    if (
+      aliasEdges.length >= 2 &&
+      aliasEdges.some((a) => a.edge.grade === "REPORTED" || a.edge.grade === "INFERRED")
+    ) {
       out.push({
         node,
         reason: `Multiple id schemes merged with < CORROBORATED confidence (${aliasEdges.length} aliases)`,
@@ -138,10 +145,7 @@ export function findConflictingIdentities(
  * Copilot-friendly traversal answer: a plain-English description of the
  * shortest evidence-backed path between two entities, with citations.
  */
-export function describePath(
-  graph: MaritimeKnowledgeGraph,
-  path: MkgPath,
-): string {
+export function describePath(graph: MaritimeKnowledgeGraph, path: MkgPath): string {
   if (path.nodeIds.length === 0) return "";
   const segments: string[] = [];
   for (let i = 0; i < path.edgeIds.length; i += 1) {
@@ -149,13 +153,13 @@ export function describePath(
     const from = graph.getNode(path.nodeIds[i]);
     const to = graph.getNode(path.nodeIds[i + 1]);
     if (!edge || !from || !to) continue;
-    segments.push(
-      `${from.label} —[${edge.type} · ${edge.grade}]→ ${to.label}`,
-    );
+    segments.push(`${from.label} —[${edge.type} · ${edge.grade}]→ ${to.label}`);
   }
   return segments.join(" ; ");
 }
 
 export function edgeCitations(edge: MkgEdge): ReadonlyArray<string> {
-  return edge.provenance.map((p) => `${p.sourceName} (${p.evidenceId}) · ${p.grade} · ${p.observedAt}`);
+  return edge.provenance.map(
+    (p) => `${p.sourceName} (${p.evidenceId}) · ${p.grade} · ${p.observedAt}`,
+  );
 }

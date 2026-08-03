@@ -74,14 +74,15 @@ function CopernicusValidatePage() {
         <div className="space-y-4">
           <div className={`rounded-lg border p-4 ${VERDICT_STYLE[report.verdict] ?? ""}`}>
             <div className="font-semibold text-lg">
-              Verdict: {report.verdict} — {report.summary.passed}/{report.summary.total} checks passed
+              Verdict: {report.verdict} — {report.summary.passed}/{report.summary.total} checks
+              passed
             </div>
             <div className="text-xs mt-1 opacity-75">
               {report.timestamp} · {report.environment}
             </div>
             <div className="mt-2 text-sm">
-              Credentials: username {report.credentialsPresent.username ? "✓ present" : "✗ missing"} ·
-              password {report.credentialsPresent.password ? "✓ present" : "✗ missing"}
+              Credentials: username {report.credentialsPresent.username ? "✓ present" : "✗ missing"}{" "}
+              · password {report.credentialsPresent.password ? "✓ present" : "✗ missing"}
             </div>
           </div>
 
@@ -100,9 +101,13 @@ function CopernicusValidatePage() {
                 {report.steps.map((s) => (
                   <tr key={s.step} className={s.pass ? "" : "bg-red-50/50"}>
                     <td className="px-3 py-2 font-mono text-muted-foreground">{s.step}</td>
-                    <td className="px-3 py-2 font-medium text-foreground whitespace-nowrap">{s.name}</td>
+                    <td className="px-3 py-2 font-medium text-foreground whitespace-nowrap">
+                      {s.name}
+                    </td>
                     <td className="px-3 py-2">
-                      <span className={`font-semibold ${s.pass ? "text-emerald-600" : "text-red-600"}`}>
+                      <span
+                        className={`font-semibold ${s.pass ? "text-emerald-600" : "text-red-600"}`}
+                      >
                         {s.pass ? "✓ PASS" : "✗ FAIL"}
                       </span>
                     </td>

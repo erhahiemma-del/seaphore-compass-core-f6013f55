@@ -13,7 +13,11 @@
  */
 
 import type {
-  CorroborationRow, FusedField, MatrixCell, ConfidenceLevel, CellStatus,
+  CorroborationRow,
+  FusedField,
+  MatrixCell,
+  ConfidenceLevel,
+  CellStatus,
 } from "./types";
 import { CRITICAL_FIELDS } from "./field-config";
 import { groupByField } from "./correlation";
@@ -35,21 +39,24 @@ export function fuseIntelligence(
     )[0];
     const key = `${winner.canonicalId}::${winner.fieldName}`;
     const corr = corrByKey.get(key);
-    const hasConflict = group.some((c) => c.cellStatus === "CONFLICT_MINORITY" || c.cellStatus === "CONFLICT_MAJORITY");
+    const hasConflict = group.some(
+      (c) => c.cellStatus === "CONFLICT_MINORITY" || c.cellStatus === "CONFLICT_MAJORITY",
+    );
     const status: CellStatus = winner.cellStatus;
 
     const { confidence, level } = confidenceFromStatus(winner, corr, hasConflict);
-    const requiresReview = hasConflict || CRITICAL_FIELDS.includes(winner.fieldName) && status !== "VERIFIED";
+    const requiresReview =
+      hasConflict || (CRITICAL_FIELDS.includes(winner.fieldName) && status !== "VERIFIED");
 
     out.push({
       canonicalId: winner.canonicalId,
-      fieldName:   winner.fieldName,
-      fusedValue:  winner.normalizedValue,
+      fieldName: winner.fieldName,
+      fusedValue: winner.normalizedValue,
       winningSource: winner.sourceId,
       winningEvidenceScore: winner.evidenceScore,
-      confidence:  Number(confidence.toFixed(4)),
+      confidence: Number(confidence.toFixed(4)),
       confidenceLevel: level,
-      cellStatus:  status,
+      cellStatus: status,
       hasConflict,
       hasMissingData: group.length < 2,
       requiresOfficerReview: requiresReview,
@@ -77,5 +84,5 @@ function confidenceFromStatus(
     return { confidence: (winner.evidenceScore * 0.85) / 100, level: "INFERRED" };
   }
   // SINGLE_SOURCE (or MISSING handled by caller)
-  return { confidence: (winner.trustScore * 0.80) / 100, level: "OBSERVED" };
+  return { confidence: (winner.trustScore * 0.8) / 100, level: "OBSERVED" };
 }

@@ -8,7 +8,12 @@ import { TimelineStrip, type TimelineEvent } from "@/components/intelligence/Tim
 afterEach(() => cleanup());
 
 const AIS_EVENTS: TimelineEvent[] = [
-  { id: "e1", at: "2026-07-20T09:15:00Z", label: "AIS ping — Lagos Anchorage", confidence: "observed" },
+  {
+    id: "e1",
+    at: "2026-07-20T09:15:00Z",
+    label: "AIS ping — Lagos Anchorage",
+    confidence: "observed",
+  },
   { id: "e2", at: "2026-07-21T04:00:00Z", label: "Course change — 210°", confidence: "observed" },
   { id: "e3", at: "2026-07-19T22:45:00Z", label: "AIS gap ended", confidence: "inferred" },
   { id: "e4", at: "2026-07-22T11:30:00Z", label: "Port call — Apapa", confidence: "verified" },

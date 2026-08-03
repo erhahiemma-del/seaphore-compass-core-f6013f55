@@ -143,9 +143,7 @@ function GroupedCitations({ citations }: { citations: EvidenceCitation[] }) {
                         key={c.id}
                         className="flex flex-wrap items-baseline gap-x-2 text-[11px] text-foreground"
                       >
-                        <span className="font-mono text-muted-foreground">
-                          #{c.id.slice(0, 8)}
-                        </span>
+                        <span className="font-mono text-muted-foreground">#{c.id.slice(0, 8)}</span>
                         {c.collectedAt && (
                           <span className="text-muted-foreground">
                             · {new Date(c.collectedAt).toUTCString().slice(5, 16)}
@@ -170,10 +168,7 @@ function GroupedCitations({ citations }: { citations: EvidenceCitation[] }) {
           </div>
         ))}
       </div>
-      <EvidenceRecordDialog
-        citation={active}
-        onOpenChange={(open) => !open && setActive(null)}
-      />
+      <EvidenceRecordDialog citation={active} onOpenChange={(open) => !open && setActive(null)} />
     </div>
   );
 }
@@ -244,8 +239,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-
-
 /* ─────────────── Analytical Assessment + Why Chain ─────────────── */
 
 export function AnalyticalAssessment({
@@ -268,8 +261,8 @@ export function AnalyticalAssessment({
             <ol className="list-decimal space-y-1 pl-6 text-xs text-muted-foreground">
               {whyChain.map((c, i) => (
                 <li key={`${c.step}-${i}`}>
-                  <span className="font-medium text-foreground">{c.step}:</span>{" "}
-                  {c.from} <ChevronRight className="inline h-3 w-3" aria-hidden /> {c.to}
+                  <span className="font-medium text-foreground">{c.step}:</span> {c.from}{" "}
+                  <ChevronRight className="inline h-3 w-3" aria-hidden /> {c.to}
                 </li>
               ))}
             </ol>
@@ -445,9 +438,7 @@ export function OfficerActions({
               />
               <div>
                 <label
-                  className={
-                    enabled ? "text-sm text-foreground" : "text-sm text-muted-foreground"
-                  }
+                  className={enabled ? "text-sm text-foreground" : "text-sm text-muted-foreground"}
                 >
                   {a.label}
                 </label>
@@ -480,11 +471,7 @@ export function HumanOverrideBar({
 }) {
   const needsJustification = value === "disagree" || value === "modify" || value === "dismiss";
   return (
-    <div
-      role="group"
-      aria-label="Officer decision"
-      className="rounded-md border bg-muted/40 p-3"
-    >
+    <div role="group" aria-label="Officer decision" className="rounded-md border bg-muted/40 p-3">
       <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         Officer decision
       </p>

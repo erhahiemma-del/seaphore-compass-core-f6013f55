@@ -53,19 +53,19 @@ import type { NormalizedEvidence, EvidenceGrade } from "@/services/ial/types";
 import type { MkgEdge, MkgNode } from "@/services/mkg/types";
 
 export interface MicContainerOptions {
-  readonly clock?: () => string;   // injectable for tests
+  readonly clock?: () => string; // injectable for tests
 }
 
 export class MicContainer {
   // ── Eight registries ────────────────────────────────────────────────
-  readonly entities:      MicEntityRegistry;
+  readonly entities: MicEntityRegistry;
   readonly relationships: MicRelationshipRegistry;
-  readonly evidence:      MicEvidenceRegistry;
-  readonly confidence:    MicConfidenceRegistry;
-  readonly timeline:      MicTimelineRegistry;
-  readonly graph:         MicGraphRegistry;
-  readonly risk:          MicRiskRegistry;
-  readonly reasoning:     MicReasoningRegistry;
+  readonly evidence: MicEvidenceRegistry;
+  readonly confidence: MicConfidenceRegistry;
+  readonly timeline: MicTimelineRegistry;
+  readonly graph: MicGraphRegistry;
+  readonly risk: MicRiskRegistry;
+  readonly reasoning: MicReasoningRegistry;
 
   // ── INT-01B: Typed Intelligence Object registry ──────────────────────
   readonly intelligenceObjects: IntelligenceObjectRegistry;
@@ -79,15 +79,15 @@ export class MicContainer {
 
   constructor(opts: MicContainerOptions = {}) {
     this.clock = opts.clock ?? (() => new Date().toISOString());
-    this.entities      = new MicEntityRegistry();
+    this.entities = new MicEntityRegistry();
     this.relationships = new MicRelationshipRegistry();
-    this.evidence      = new MicEvidenceRegistry();
-    this.confidence    = new MicConfidenceRegistry();
-    this.timeline      = new MicTimelineRegistry();
-    this.graph         = new MicGraphRegistry();
-    this.risk          = new MicRiskRegistry();
-    this.reasoning     = new MicReasoningRegistry();
-    this.mkg                 = new MaritimeKnowledgeGraph();
+    this.evidence = new MicEvidenceRegistry();
+    this.confidence = new MicConfidenceRegistry();
+    this.timeline = new MicTimelineRegistry();
+    this.graph = new MicGraphRegistry();
+    this.risk = new MicRiskRegistry();
+    this.reasoning = new MicReasoningRegistry();
+    this.mkg = new MaritimeKnowledgeGraph();
     this.intelligenceObjects = new IntelligenceObjectRegistry();
   }
 
@@ -166,19 +166,19 @@ export class MicContainer {
     return {
       uip,
       graphSnapshot: snapshot,
-      entities:      entityEntries,
+      entities: entityEntries,
       relationships: relEntries,
-      evidence:      evEntries,
-      confidence:    confEntries,
-      timeline:      timelineEvents,
-      risk:          riskEntries,
+      evidence: evEntries,
+      confidence: confEntries,
+      timeline: timelineEvents,
+      risk: riskEntries,
       stats: {
-        entitiesRegistered:      entityEntries.length,
+        entitiesRegistered: entityEntries.length,
         relationshipsRegistered: relEntries.length,
-        evidenceRegistered:      evEntries.length,
-        timelineEvents:          timelineEvents.length,
-        riskProfilesComputed:    riskEntries.length,
-        processingMs:            Date.now() - t0,
+        evidenceRegistered: evEntries.length,
+        timelineEvents: timelineEvents.length,
+        riskProfilesComputed: riskEntries.length,
+        processingMs: Date.now() - t0,
       },
     };
   }
@@ -195,7 +195,13 @@ export class MicContainer {
     const evByEntity = groupByEntity(uip.rawEvidence);
     return nodes
       .filter((n) => !aliasNodeIds.has(n.id))
-      .filter((n) => n.kind !== "sanction" && n.kind !== "manifest" && n.kind !== "incident" && n.kind !== "inspection")
+      .filter(
+        (n) =>
+          n.kind !== "sanction" &&
+          n.kind !== "manifest" &&
+          n.kind !== "incident" &&
+          n.kind !== "inspection",
+      )
       .map((node) => {
         const nodeEvidence = evByEntity.get(node.id) ?? [];
         const citations: MicCitation[] = nodeEvidence.map(citationFromEvidence);
@@ -203,11 +209,11 @@ export class MicContainer {
         const score = micScoreFromGrade(grade);
 
         return this.entities.register({
-          kind:         node.kind,
-          canonicalId:  node.id,
-          label:        node.label,
-          aliases:      node.aliases.slice(),
-          confidence:   micTierFromScore(score),
+          kind: node.kind,
+          canonicalId: node.id,
+          label: node.label,
+          aliases: node.aliases.slice(),
+          confidence: micTierFromScore(score),
           grade,
           citations,
           sourceUipIds: [uip.id],
@@ -215,31 +221,28 @@ export class MicContainer {
       });
   }
 
-  private registerRelationships(
-    edges: ReadonlyArray<MkgEdge>,
-    uipId: string,
-  ) {
+  private registerRelationships(edges: ReadonlyArray<MkgEdge>, uipId: string) {
     return edges
-      .filter((e) => e.type !== "ALIAS_OF")   // ALIAS_OF is identity bookkeeping, not intelligence
+      .filter((e) => e.type !== "ALIAS_OF") // ALIAS_OF is identity bookkeeping, not intelligence
       .map((edge) => {
         const citations: MicCitation[] = edge.provenance.map((p) => ({
-          evidenceId:  p.evidenceId,
+          evidenceId: p.evidenceId,
           connectorId: p.connectorId,
-          sourceName:  p.sourceName,
-          grade:       p.grade,
-          observedAt:  p.observedAt,
-          excerpt:     `${edge.type} relationship (${p.sourceName})`,
+          sourceName: p.sourceName,
+          grade: p.grade,
+          observedAt: p.observedAt,
+          excerpt: `${edge.type} relationship (${p.sourceName})`,
         }));
 
         return this.relationships.register({
-          edgeId:         edge.id,
-          type:           edge.type,
-          fromEntityId:   edge.fromId,
-          toEntityId:     edge.toId,
-          confidence:     micTierFromScore(edge.weight),
-          grade:          edge.grade,
+          edgeId: edge.id,
+          type: edge.type,
+          fromEntityId: edge.fromId,
+          toEntityId: edge.toId,
+          confidence: micTierFromScore(edge.weight),
+          grade: edge.grade,
           citations,
-          explanation:    edge.explanation,
+          explanation: edge.explanation,
         });
       });
   }
@@ -247,22 +250,19 @@ export class MicContainer {
   private registerEvidence(uip: UnifiedIntelligencePackage) {
     return uip.rawEvidence.map((ev) =>
       this.evidence.register({
-        evidenceId:   ev.id,
-        connectorId:  ev.source,
-        sourceName:   ev.sourceName,
-        grade:        ev.grade,
-        kind:         ev.kind,
-        entityId:     ev.entity.id,
-        observedAt:   ev.observedAt,
-        uipId:        uip.id,
+        evidenceId: ev.id,
+        connectorId: ev.source,
+        sourceName: ev.sourceName,
+        grade: ev.grade,
+        kind: ev.kind,
+        entityId: ev.entity.id,
+        observedAt: ev.observedAt,
+        uipId: uip.id,
       }),
     );
   }
 
-  private computeConfidence(
-    nodes: ReadonlyArray<MkgNode>,
-    uip: UnifiedIntelligencePackage,
-  ) {
+  private computeConfidence(nodes: ReadonlyArray<MkgNode>, uip: UnifiedIntelligencePackage) {
     const evByEntity = groupByEntity(uip.rawEvidence);
     return nodes
       .filter((n) => !["sanction", "manifest", "incident", "inspection"].includes(n.kind))
@@ -272,10 +272,9 @@ export class MicContainer {
         const authorityScore = micScoreFromGrade(grade);
 
         // Freshness: 0..1 — evidence within 24h scores 1.0, degrades to 0.3 at 30d
-        const freshestAgeHours = nodeEv.length > 0
-          ? Math.min(...nodeEv.map((e) => hoursAgo(e.observedAt)))
-          : 9999;
-        const freshnessScore = Math.max(0.3, 1 - (freshestAgeHours / (30 * 24)));
+        const freshestAgeHours =
+          nodeEv.length > 0 ? Math.min(...nodeEv.map((e) => hoursAgo(e.observedAt))) : 9999;
+        const freshnessScore = Math.max(0.3, 1 - freshestAgeHours / (30 * 24));
 
         // Cross-source agreement: unique connectors / 3 (capped at 1)
         const connectors = new Set(nodeEv.map((e) => e.source));
@@ -283,26 +282,51 @@ export class MicContainer {
 
         // Identity certainty from cluster
         const cluster = uip.identity.find((c) => c.canonicalId === node.id);
-        const identityScore = cluster ? micScoreFromGrade(cluster.confidence.tier === "VERIFIED" ? "VERIFIED" : cluster.confidence.tier === "OBSERVED" ? "OBSERVED" : "REPORTED") : 0.5;
+        const identityScore = cluster
+          ? micScoreFromGrade(
+              cluster.confidence.tier === "VERIFIED"
+                ? "VERIFIED"
+                : cluster.confidence.tier === "OBSERVED"
+                  ? "OBSERVED"
+                  : "REPORTED",
+            )
+          : 0.5;
 
         // Composite (weighted average)
-        const score = (
-          authorityScore  * 0.35 +
-          freshnessScore  * 0.25 +
-          agreementScore  * 0.25 +
-          identityScore   * 0.15
-        );
+        const score =
+          authorityScore * 0.35 +
+          freshnessScore * 0.25 +
+          agreementScore * 0.25 +
+          identityScore * 0.15;
 
         return this.confidence.register({
-          subjectId:   node.id,
+          subjectId: node.id,
           subjectKind: "entity",
           score,
-          tier:        micTierFromScore(score),
+          tier: micTierFromScore(score),
           components: [
-            { factor: "Provider authority",     contribution: authorityScore * 0.35,  explanation: `Best grade: ${grade}` },
-            { factor: "Evidence freshness",     contribution: freshnessScore * 0.25,  explanation: `Freshest evidence: ${Math.round(freshestAgeHours)}h ago` },
-            { factor: "Cross-source agreement", contribution: agreementScore * 0.25,  explanation: `${connectors.size} connector(s) cited` },
-            { factor: "Identity certainty",     contribution: identityScore  * 0.15,  explanation: cluster ? `Cluster confidence: ${cluster.confidence.tier}` : "No cluster" },
+            {
+              factor: "Provider authority",
+              contribution: authorityScore * 0.35,
+              explanation: `Best grade: ${grade}`,
+            },
+            {
+              factor: "Evidence freshness",
+              contribution: freshnessScore * 0.25,
+              explanation: `Freshest evidence: ${Math.round(freshestAgeHours)}h ago`,
+            },
+            {
+              factor: "Cross-source agreement",
+              contribution: agreementScore * 0.25,
+              explanation: `${connectors.size} connector(s) cited`,
+            },
+            {
+              factor: "Identity certainty",
+              contribution: identityScore * 0.15,
+              explanation: cluster
+                ? `Cluster confidence: ${cluster.confidence.tier}`
+                : "No cluster",
+            },
           ],
         });
       });
@@ -318,13 +342,13 @@ export class MicContainer {
       events.push(
         this.timeline.register({
           kind,
-          label:            timelineLabelFromEvidence(ev),
-          description:      ev.excerpt ?? `${ev.kind} event (${ev.sourceName})`,
-          entityId:         ev.entity.id,
+          label: timelineLabelFromEvidence(ev),
+          description: ev.excerpt ?? `${ev.kind} event (${ev.sourceName})`,
+          entityId: ev.entity.id,
           relatedEntityIds: relatedEntityIdsFromEvidence(ev),
-          occurredAt:       ev.observedAt,
-          citations:        [citation],
-          grade:            ev.grade,
+          occurredAt: ev.observedAt,
+          citations: [citation],
+          grade: ev.grade,
           significance,
         }),
       );
@@ -351,15 +375,15 @@ export class MicContainer {
         const narrative = buildRiskNarrative(node, indicators, band, tier);
 
         return this.risk.register({
-          entityId:    node.id,
+          entityId: node.id,
           entityLabel: node.label,
-          entityKind:  node.kind,
+          entityKind: node.kind,
           score,
           band,
-          confidence:  tier,
+          confidence: tier,
           indicators,
           narrative,
-          computedAt:  this.clock(),
+          computedAt: this.clock(),
         });
       });
   }
@@ -377,7 +401,10 @@ export class MicContainer {
     let best: string | null = null;
     let bestCount = 0;
     for (const [id, count] of counts) {
-      if (count > bestCount) { best = id; bestCount = count; }
+      if (count > bestCount) {
+        best = id;
+        bestCount = count;
+      }
     }
     return best;
   }
@@ -418,7 +445,7 @@ export class MicContainer {
         sessionId,
         query: `entity:${canonical}`,
         primaryEntityId: canonical,
-        statements: [],    // populated by Copilot layer (INT-01I)
+        statements: [], // populated by Copilot layer (INT-01I)
         confidence: conf?.tier ?? "LOW",
         grade: entity?.grade ?? "UNKNOWN",
         uipId,
@@ -431,17 +458,17 @@ export class MicContainer {
     const snap = this.mkg.toSnapshot();
     const ioStats = this.intelligenceObjects.stats();
     return {
-      entities:           this.entities.size,
-      relationships:      this.relationships.size,
-      evidence:           this.evidence.size,
-      confidence:         this.confidence.size,
-      timelineEvents:     this.timeline.size,
-      graphs:             this.graph.size,
-      riskProfiles:       this.risk.size,
-      reasoningLogs:      this.reasoning.size,
-      mkgNodes:           snap.nodes.length,
-      mkgEdges:           snap.edges.length,
-      intelligenceObjects:this.intelligenceObjects.size,
+      entities: this.entities.size,
+      relationships: this.relationships.size,
+      evidence: this.evidence.size,
+      confidence: this.confidence.size,
+      timelineEvents: this.timeline.size,
+      graphs: this.graph.size,
+      riskProfiles: this.risk.size,
+      reasoningLogs: this.reasoning.size,
+      mkgNodes: snap.nodes.length,
+      mkgEdges: snap.edges.length,
+      intelligenceObjects: this.intelligenceObjects.size,
       intelligenceObjectsByKind: ioStats,
       resolutionMergesTotal: this._resolutionLog.reduce((s, r) => s + r.mergesPerformed, 0),
       resolutionRuns: this._resolutionLog.length,
@@ -453,7 +480,9 @@ export class MicContainer {
 //  PRIVATE PURE FUNCTIONS
 // ─────────────────────────────────────────────────────────────────────
 
-function groupByEntity(records: ReadonlyArray<NormalizedEvidence>): Map<string, NormalizedEvidence[]> {
+function groupByEntity(
+  records: ReadonlyArray<NormalizedEvidence>,
+): Map<string, NormalizedEvidence[]> {
   const m = new Map<string, NormalizedEvidence[]>();
   for (const r of records) {
     const list = m.get(r.entity.id) ?? [];
@@ -464,9 +493,21 @@ function groupByEntity(records: ReadonlyArray<NormalizedEvidence>): Map<string, 
 }
 
 const GRADE_RANK: Record<EvidenceGrade, number> = {
-  VERIFIED: 5, CORROBORATED: 4, OBSERVED: 3, REPORTED: 2, INFERRED: 1, UNKNOWN: 0,
+  VERIFIED: 5,
+  CORROBORATED: 4,
+  OBSERVED: 3,
+  REPORTED: 2,
+  INFERRED: 1,
+  UNKNOWN: 0,
 };
-const GRADE_BY_RANK: EvidenceGrade[] = ["UNKNOWN","INFERRED","REPORTED","OBSERVED","CORROBORATED","VERIFIED"];
+const GRADE_BY_RANK: EvidenceGrade[] = [
+  "UNKNOWN",
+  "INFERRED",
+  "REPORTED",
+  "OBSERVED",
+  "CORROBORATED",
+  "VERIFIED",
+];
 
 function bestGrade(grades: ReadonlyArray<EvidenceGrade>): EvidenceGrade {
   if (!grades.length) return "UNKNOWN";
@@ -486,15 +527,22 @@ function significanceFromGrade(grade: EvidenceGrade): MicTimelineEvent["signific
 
 function timelineKindFromEvidence(ev: NormalizedEvidence): MicTimelineEvent["kind"] | null {
   const kind = ev.kind;
-  if (kind === "position")    return "port-visit";
-  if (kind === "port-call")   return "port-visit";
-  if (kind === "voyage")      return "voyage-start";
-  if (kind === "sanctions")   return ev.fields.status === "delisted" ? "sanctions-removal" : "sanctions-listing";
-  if (kind === "inspection")  return ev.fields.result === "fail" ? "inspection-fail" : "inspection";
-  if (kind === "incident")    return "incident";
-  if (kind === "other" && String(ev.fields.platform ?? "").toUpperCase().startsWith("SENTINEL")) return "satellite-observation";
-  if (kind === "identity" && ev.fields.flag)       return "flag-change";
-  if (kind === "identity" && ev.fields.owner)      return "ownership-change";
+  if (kind === "position") return "port-visit";
+  if (kind === "port-call") return "port-visit";
+  if (kind === "voyage") return "voyage-start";
+  if (kind === "sanctions")
+    return ev.fields.status === "delisted" ? "sanctions-removal" : "sanctions-listing";
+  if (kind === "inspection") return ev.fields.result === "fail" ? "inspection-fail" : "inspection";
+  if (kind === "incident") return "incident";
+  if (
+    kind === "other" &&
+    String(ev.fields.platform ?? "")
+      .toUpperCase()
+      .startsWith("SENTINEL")
+  )
+    return "satellite-observation";
+  if (kind === "identity" && ev.fields.flag) return "flag-change";
+  if (kind === "identity" && ev.fields.owner) return "ownership-change";
   return null;
 }
 
@@ -510,8 +558,14 @@ function timelineLabelFromEvidence(ev: NormalizedEvidence): string {
       ? `Sanctions removed — ${name}`
       : `Sanctions listing — ${name}`;
   }
-  if (k === "inspection") return `Inspection — ${ev.fields.result === "fail" ? "FAILED" : "passed"}`;
-  if (k === "other" && String(ev.fields.platform ?? "").toUpperCase().startsWith("SENTINEL")) {
+  if (k === "inspection")
+    return `Inspection — ${ev.fields.result === "fail" ? "FAILED" : "passed"}`;
+  if (
+    k === "other" &&
+    String(ev.fields.platform ?? "")
+      .toUpperCase()
+      .startsWith("SENTINEL")
+  ) {
     return `Satellite observation — ${ev.fields.platform ?? "Copernicus"}`;
   }
   if (k === "identity" && ev.fields.flag) return `Flag: ${ev.fields.flag}`;
@@ -522,7 +576,7 @@ function timelineLabelFromEvidence(ev: NormalizedEvidence): string {
 function relatedEntityIdsFromEvidence(ev: NormalizedEvidence): string[] {
   const ids: string[] = [];
   if (ev.fields.ownerId && typeof ev.fields.ownerId === "string") ids.push(ev.fields.ownerId);
-  if (ev.fields.portId  && typeof ev.fields.portId  === "string") ids.push(ev.fields.portId);
+  if (ev.fields.portId && typeof ev.fields.portId === "string") ids.push(ev.fields.portId);
   return ids;
 }
 
@@ -534,69 +588,81 @@ function computeRiskIndicators(
   const indicators: import("./types").MicRiskIndicator[] = [];
 
   // Sanctions hit — direct
-  const sanctionsHits = evidence.filter((e) => e.kind === "sanctions" && e.fields.status !== "delisted");
+  const sanctionsHits = evidence.filter(
+    (e) => e.kind === "sanctions" && e.fields.status !== "delisted",
+  );
   if (sanctionsHits.length > 0) {
     indicators.push({
-      kind:        "sanctions-hit",
-      label:       "Active Sanctions Listing",
-      score:       1.0,
-      weight:      0.30,
-      points:      30,
-      rationale:   `${sanctionsHits.length} active sanctions listing(s) detected`,
-      citations:   sanctionsHits.map(citationFromEvidence),
-      nodeIds:     [node.id],
-      confidence:  micTierFromScore(micScoreFromGrade(bestGrade(sanctionsHits.map((e) => e.grade)))),
+      kind: "sanctions-hit",
+      label: "Active Sanctions Listing",
+      score: 1.0,
+      weight: 0.3,
+      points: 30,
+      rationale: `${sanctionsHits.length} active sanctions listing(s) detected`,
+      citations: sanctionsHits.map(citationFromEvidence),
+      nodeIds: [node.id],
+      confidence: micTierFromScore(micScoreFromGrade(bestGrade(sanctionsHits.map((e) => e.grade)))),
     });
   }
 
   // AIS dark activity
-  const aisGaps = evidence.filter((e) => e.kind === "position" && Number(e.fields.gapHours ?? 0) > 12);
+  const aisGaps = evidence.filter(
+    (e) => e.kind === "position" && Number(e.fields.gapHours ?? 0) > 12,
+  );
   if (aisGaps.length > 0) {
     const maxGap = Math.max(...aisGaps.map((e) => Number(e.fields.gapHours ?? 0)));
     const score = Math.min(1, maxGap / 72);
     indicators.push({
-      kind:        "ais-dark-activity",
-      label:       "AIS Dark Activity",
+      kind: "ais-dark-activity",
+      label: "AIS Dark Activity",
       score,
-      weight:      0.20,
-      points:      Math.round(score * 20),
-      rationale:   `AIS gap of ${maxGap.toFixed(0)}h detected across ${aisGaps.length} event(s)`,
-      citations:   aisGaps.map(citationFromEvidence),
-      nodeIds:     [node.id],
-      confidence:  micTierFromScore(score),
+      weight: 0.2,
+      points: Math.round(score * 20),
+      rationale: `AIS gap of ${maxGap.toFixed(0)}h detected across ${aisGaps.length} event(s)`,
+      citations: aisGaps.map(citationFromEvidence),
+      nodeIds: [node.id],
+      confidence: micTierFromScore(score),
     });
   }
 
   // Inspection failures
-  const failedInspections = evidence.filter((e) => e.kind === "inspection" && e.fields.result === "fail");
+  const failedInspections = evidence.filter(
+    (e) => e.kind === "inspection" && e.fields.result === "fail",
+  );
   if (failedInspections.length > 0) {
     const score = Math.min(1, failedInspections.length / 3);
     indicators.push({
-      kind:        "repeated-inspection-fail",
-      label:       "Repeated Inspection Failures",
+      kind: "repeated-inspection-fail",
+      label: "Repeated Inspection Failures",
       score,
-      weight:      0.15,
-      points:      Math.round(score * 15),
-      rationale:   `${failedInspections.length} failed inspection(s)`,
-      citations:   failedInspections.map(citationFromEvidence),
-      nodeIds:     [node.id],
-      confidence:  "MEDIUM",
+      weight: 0.15,
+      points: Math.round(score * 15),
+      rationale: `${failedInspections.length} failed inspection(s)`,
+      citations: failedInspections.map(citationFromEvidence),
+      nodeIds: [node.id],
+      confidence: "MEDIUM",
     });
   }
 
   // Satellite anomaly (Copernicus evidence in area with AIS dark)
-  const satObs = evidence.filter((e) => e.kind === "other" && String(e.fields.platform ?? "").toUpperCase().startsWith("SENTINEL"));
+  const satObs = evidence.filter(
+    (e) =>
+      e.kind === "other" &&
+      String(e.fields.platform ?? "")
+        .toUpperCase()
+        .startsWith("SENTINEL"),
+  );
   if (satObs.length > 0 && aisGaps.length > 0) {
     indicators.push({
-      kind:        "satellite-anomaly",
-      label:       "Satellite Observation During AIS Gap",
-      score:       0.7,
-      weight:      0.15,
-      points:      11,
-      rationale:   `${satObs.length} satellite observation(s) correlated with AIS gap period`,
-      citations:   satObs.map(citationFromEvidence),
-      nodeIds:     [node.id],
-      confidence:  "HIGH",
+      kind: "satellite-anomaly",
+      label: "Satellite Observation During AIS Gap",
+      score: 0.7,
+      weight: 0.15,
+      points: 11,
+      rationale: `${satObs.length} satellite observation(s) correlated with AIS gap period`,
+      citations: satObs.map(citationFromEvidence),
+      nodeIds: [node.id],
+      confidence: "HIGH",
     });
   }
 
@@ -606,15 +672,15 @@ function computeRiskIndicators(
   if (sanctionedNeighbours.length > 0) {
     const score = Math.min(1, sanctionedNeighbours.length / 3);
     indicators.push({
-      kind:        "sanctions-proximity",
-      label:       "Sanctions Proximity via Graph",
+      kind: "sanctions-proximity",
+      label: "Sanctions Proximity via Graph",
       score,
-      weight:      0.20,
-      points:      Math.round(score * 20),
-      rationale:   `${sanctionedNeighbours.length} sanctions-linked entity/entities in the intelligence graph`,
-      citations:   [],
-      nodeIds:     [node.id, ...sanctionedNeighbours.map((n) => n.neighbor.id)],
-      confidence:  "MEDIUM",
+      weight: 0.2,
+      points: Math.round(score * 20),
+      rationale: `${sanctionedNeighbours.length} sanctions-linked entity/entities in the intelligence graph`,
+      citations: [],
+      nodeIds: [node.id, ...sanctionedNeighbours.map((n) => n.neighbor.id)],
+      confidence: "MEDIUM",
     });
   }
 
@@ -635,7 +701,14 @@ function buildRiskNarrative(
     .sort((a, b) => b.points - a.points)
     .slice(0, 3)
     .map((i) => i.rationale);
-  const bandLabel = band === "critical" ? "CRITICAL" : band === "high" ? "HIGH" : band === "elevated" ? "ELEVATED" : "LOW";
+  const bandLabel =
+    band === "critical"
+      ? "CRITICAL"
+      : band === "high"
+        ? "HIGH"
+        : band === "elevated"
+          ? "ELEVATED"
+          : "LOW";
   return `${node.label} — operational risk: ${bandLabel} (${confidence} confidence). ${topLines.join("; ")}.`;
 }
 

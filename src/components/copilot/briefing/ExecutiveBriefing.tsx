@@ -90,10 +90,7 @@ function Section({
 function KpiTile({ kpi }: { kpi: KpiCard }) {
   return (
     <div
-      className={cn(
-        "rounded-2xl px-4 py-3 ring-1 shadow-sm",
-        TONE_BG[kpi.tone] ?? TONE_BG.neutral,
-      )}
+      className={cn("rounded-2xl px-4 py-3 ring-1 shadow-sm", TONE_BG[kpi.tone] ?? TONE_BG.neutral)}
     >
       <div className="text-[11px] uppercase tracking-wide opacity-70">{kpi.label}</div>
       <div className="mt-1 text-lg font-semibold leading-tight">{kpi.value}</div>
@@ -178,7 +175,11 @@ function DisclosureGroup({ group }: { group: EvidenceGroup }) {
         className="flex w-full items-center justify-between bg-slate-50 px-3 py-2 text-left text-[12px] font-medium text-slate-800 hover:bg-slate-100"
       >
         <span className="flex items-center gap-2">
-          {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+          {open ? (
+            <ChevronDown className="h-3.5 w-3.5" />
+          ) : (
+            <ChevronRight className="h-3.5 w-3.5" />
+          )}
           {group.label}
         </span>
         <span className="text-[11px] text-slate-500">{group.items.length}</span>
@@ -208,13 +209,34 @@ function IdentityResolutionCard({ data }: { data: IdentityResolutionSection }) {
         <div className="min-w-0">
           <div className="text-[14px] font-semibold text-slate-900">{data.selectedLabel}</div>
           <div className="mt-0.5 flex flex-wrap gap-1.5 text-[11px] text-slate-500">
-            {data.imo ? <span className="rounded-full bg-slate-50 px-2 py-0.5 ring-1 ring-slate-200">IMO {data.imo}</span> : null}
-            {data.mmsi ? <span className="rounded-full bg-slate-50 px-2 py-0.5 ring-1 ring-slate-200">MMSI {data.mmsi}</span> : null}
-            {data.callSign ? <span className="rounded-full bg-slate-50 px-2 py-0.5 ring-1 ring-slate-200">Call {data.callSign}</span> : null}
-            {data.flag ? <span className="rounded-full bg-slate-50 px-2 py-0.5 ring-1 ring-slate-200">Flag {data.flag}</span> : null}
+            {data.imo ? (
+              <span className="rounded-full bg-slate-50 px-2 py-0.5 ring-1 ring-slate-200">
+                IMO {data.imo}
+              </span>
+            ) : null}
+            {data.mmsi ? (
+              <span className="rounded-full bg-slate-50 px-2 py-0.5 ring-1 ring-slate-200">
+                MMSI {data.mmsi}
+              </span>
+            ) : null}
+            {data.callSign ? (
+              <span className="rounded-full bg-slate-50 px-2 py-0.5 ring-1 ring-slate-200">
+                Call {data.callSign}
+              </span>
+            ) : null}
+            {data.flag ? (
+              <span className="rounded-full bg-slate-50 px-2 py-0.5 ring-1 ring-slate-200">
+                Flag {data.flag}
+              </span>
+            ) : null}
           </div>
         </div>
-        <div className={cn("rounded-2xl px-3 py-2 text-right ring-1", TIER_TONE[data.tier] ?? TIER_TONE.UNCONFIRMED)}>
+        <div
+          className={cn(
+            "rounded-2xl px-3 py-2 text-right ring-1",
+            TIER_TONE[data.tier] ?? TIER_TONE.UNCONFIRMED,
+          )}
+        >
           <div className="text-[10px] uppercase tracking-wide opacity-70">Confidence</div>
           <div className="text-lg font-semibold leading-tight">{data.confidenceScore}/100</div>
           <div className="text-[10px] font-medium">{data.tier}</div>
@@ -229,10 +251,15 @@ function IdentityResolutionCard({ data }: { data: IdentityResolutionSection }) {
       ) : null}
       {data.matchingCriteria.length ? (
         <div className="mt-4">
-          <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Matching criteria</div>
+          <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+            Matching criteria
+          </div>
           <ul className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
             {data.matchingCriteria.map((m) => (
-              <li key={m.label} className="flex items-start gap-2 rounded-xl bg-emerald-50/60 px-3 py-1.5 text-[12px] text-emerald-800 ring-1 ring-emerald-200">
+              <li
+                key={m.label}
+                className="flex items-start gap-2 rounded-xl bg-emerald-50/60 px-3 py-1.5 text-[12px] text-emerald-800 ring-1 ring-emerald-200"
+              >
                 <CheckCircle2 className="mt-0.5 h-3.5 w-3.5" />
                 <span className="min-w-0">
                   <span className="font-medium">{m.label}</span>{" "}
@@ -246,10 +273,15 @@ function IdentityResolutionCard({ data }: { data: IdentityResolutionSection }) {
       ) : null}
       {data.rejectedCandidates.length ? (
         <div className="mt-4">
-          <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Rejected candidates</div>
+          <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+            Rejected candidates
+          </div>
           <ul className="mt-2 space-y-1.5">
             {data.rejectedCandidates.map((r) => (
-              <li key={r.id} className="flex items-start gap-2 rounded-xl bg-rose-50/60 px-3 py-1.5 text-[12px] text-rose-800 ring-1 ring-rose-200">
+              <li
+                key={r.id}
+                className="flex items-start gap-2 rounded-xl bg-rose-50/60 px-3 py-1.5 text-[12px] text-rose-800 ring-1 ring-rose-200"
+              >
                 <XCircle className="mt-0.5 h-3.5 w-3.5" />
                 <span className="min-w-0">
                   <span className="font-medium">{r.label}</span>{" "}
@@ -263,10 +295,15 @@ function IdentityResolutionCard({ data }: { data: IdentityResolutionSection }) {
       ) : null}
       {data.alternates.length ? (
         <div className="mt-4">
-          <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Also considered</div>
+          <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+            Also considered
+          </div>
           <ul className="mt-2 space-y-1.5">
             {data.alternates.map((a) => (
-              <li key={a.id} className="flex items-start gap-2 rounded-xl bg-slate-50 px-3 py-1.5 text-[12px] text-slate-700 ring-1 ring-slate-200">
+              <li
+                key={a.id}
+                className="flex items-start gap-2 rounded-xl bg-slate-50 px-3 py-1.5 text-[12px] text-slate-700 ring-1 ring-slate-200"
+              >
                 <Circle className="mt-0.5 h-3.5 w-3.5 text-slate-400" />
                 <span className="min-w-0">
                   <span className="font-medium">{a.label}</span>{" "}
@@ -318,7 +355,12 @@ function TimelineRow({ ev }: { ev: AisInterruptionTimelineItem }) {
             <span className="text-slate-600">{formatHours(ev.durationHours)}</span>
           </div>
           {ev.priority ? (
-            <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ring-1", tone)}>
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ring-1",
+                tone,
+              )}
+            >
               {ev.priority}
             </span>
           ) : null}
@@ -334,9 +376,7 @@ function TimelineRow({ ev }: { ev: AisInterruptionTimelineItem }) {
             </span>
           ) : null}
           {ev.endLabel && ev.endLabel !== ev.startLabel ? (
-            <span className="inline-flex items-center gap-1 text-slate-400">
-              → {ev.endLabel}
-            </span>
+            <span className="inline-flex items-center gap-1 text-slate-400">→ {ev.endLabel}</span>
           ) : null}
           <span className="text-slate-400">confidence {Math.round(ev.confidence * 100)}%</span>
         </div>
@@ -355,25 +395,44 @@ function AisContinuityCard({ data }: { data: AisContinuitySection }) {
     <Section title="AIS Continuity" icon={Radio}>
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
         <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-          <div className="text-[10px] uppercase tracking-wide text-slate-500">Total interruptions</div>
-          <div className="mt-0.5 text-lg font-semibold text-slate-900">{data.totalInterruptions}</div>
+          <div className="text-[10px] uppercase tracking-wide text-slate-500">
+            Total interruptions
+          </div>
+          <div className="mt-0.5 text-lg font-semibold text-slate-900">
+            {data.totalInterruptions}
+          </div>
           <div className="text-[10px] text-slate-500">discrete disabling events</div>
         </div>
         <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-          <div className="text-[10px] uppercase tracking-wide text-slate-500">Longest interruption</div>
+          <div className="text-[10px] uppercase tracking-wide text-slate-500">
+            Longest interruption
+          </div>
           <div className="mt-0.5 text-lg font-semibold text-slate-900">
             {data.longestInterruptionHours > 0 ? formatHours(data.longestInterruptionHours) : "—"}
           </div>
           <div className="text-[10px] text-slate-500">continuous dark span</div>
         </div>
         <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-          <div className="text-[10px] uppercase tracking-wide text-slate-500">Coverage-uncertain</div>
-          <div className="mt-0.5 text-lg font-semibold text-slate-900">{data.coverageUncertainCount}</div>
+          <div className="text-[10px] uppercase tracking-wide text-slate-500">
+            Coverage-uncertain
+          </div>
+          <div className="mt-0.5 text-lg font-semibold text-slate-900">
+            {data.coverageUncertainCount}
+          </div>
           <div className="text-[10px] text-slate-500">not counted as interruptions</div>
         </div>
-        <div className={cn("rounded-xl p-3 ring-1", data.overallPriority ? AIS_PRIORITY_TONE[data.overallPriority] : AIS_PRIORITY_TONE.watch)}>
+        <div
+          className={cn(
+            "rounded-xl p-3 ring-1",
+            data.overallPriority
+              ? AIS_PRIORITY_TONE[data.overallPriority]
+              : AIS_PRIORITY_TONE.watch,
+          )}
+        >
           <div className="text-[10px] uppercase tracking-wide opacity-70">OSAE priority</div>
-          <div className="mt-0.5 text-lg font-semibold uppercase">{data.overallPriority ?? "—"}</div>
+          <div className="mt-0.5 text-lg font-semibold uppercase">
+            {data.overallPriority ?? "—"}
+          </div>
           <div className="text-[10px] opacity-70">overall assessment</div>
         </div>
       </div>
@@ -383,7 +442,9 @@ function AisContinuityCard({ data }: { data: AisContinuitySection }) {
 
       {data.patterns.length ? (
         <div className="mt-4">
-          <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Pattern analysis</div>
+          <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+            Pattern analysis
+          </div>
           <ul className="mt-2 grid grid-cols-1 gap-1.5 md:grid-cols-2">
             {data.patterns.map((p) => (
               <li
@@ -394,9 +455,12 @@ function AisContinuityCard({ data }: { data: AisContinuitySection }) {
                 <span className="min-w-0">
                   <span className="font-medium">{p.label}</span>{" "}
                   <span className="text-amber-700/80">
-                    ({p.occurrences} occurrence{p.occurrences === 1 ? "" : "s"}, conf {Math.round(p.confidence * 100)}%)
+                    ({p.occurrences} occurrence{p.occurrences === 1 ? "" : "s"}, conf{" "}
+                    {Math.round(p.confidence * 100)}%)
                   </span>
-                  <span className="mt-0.5 block text-[11px] text-amber-900/80">{p.description}</span>
+                  <span className="mt-0.5 block text-[11px] text-amber-900/80">
+                    {p.description}
+                  </span>
                 </span>
               </li>
             ))}
@@ -410,7 +474,10 @@ function AisContinuityCard({ data }: { data: AisContinuitySection }) {
             Timeline of discrete AIS events{" "}
             <span className="text-slate-400">
               ({disablingCount} disabling
-              {data.coverageUncertainCount ? `, ${data.coverageUncertainCount} coverage-uncertain` : ""})
+              {data.coverageUncertainCount
+                ? `, ${data.coverageUncertainCount} coverage-uncertain`
+                : ""}
+              )
             </span>
           </div>
           <ol className="mt-2 space-y-2 border-l border-slate-200 pl-1">
@@ -426,7 +493,8 @@ function AisContinuityCard({ data }: { data: AisContinuitySection }) {
       )}
 
       <p className="mt-3 text-[11px] italic text-slate-500">
-        Evidence: {data.evidenceCitation}. Every interruption is traceable to Global Fishing Watch AIS events.
+        Evidence: {data.evidenceCitation}. Every interruption is traceable to Global Fishing Watch
+        AIS events.
       </p>
     </Section>
   );
@@ -477,7 +545,6 @@ export function ExecutiveBriefing({ brief, isAdmin, onFollowUp }: ExecutiveBrief
         <p className="text-[14px] leading-relaxed text-slate-800">{executiveSummary}</p>
         <p className="mt-3 text-[12px] italic text-slate-500">{confidence.headline}</p>
       </Section>
-
 
       {/* Section 2 — Intelligence Assessment */}
       <Section title="Intelligence Assessment" icon={Gauge}>
@@ -644,7 +711,6 @@ export function ExecutiveBriefing({ brief, isAdmin, onFollowUp }: ExecutiveBrief
         </Section>
       ) : null}
 
-
       {/* Section 8 — Recommendations */}
       {recommendations.length ? (
         <Section title="Recommended Next Steps" icon={Scale}>
@@ -702,11 +768,11 @@ export function ExecutiveBriefing({ brief, isAdmin, onFollowUp }: ExecutiveBrief
                 Raw evidence records (Admin)
               </summary>
               <pre className="mt-2 max-h-64 overflow-auto rounded-lg bg-white p-2 text-[10px] text-slate-700 ring-1 ring-slate-200">
-{JSON.stringify(
-  evidenceGroups.flatMap((g) => g.items),
-  null,
-  2,
-)}
+                {JSON.stringify(
+                  evidenceGroups.flatMap((g) => g.items),
+                  null,
+                  2,
+                )}
               </pre>
             </details>
           ) : null}

@@ -30,11 +30,24 @@ const report = await runLoadTest({
       queryText: `assess vessel risk for run ${officerId}`,
     });
     await trace.stage("classification", async () => {});
-    await trace.stage("retrieval", async () => { await sleep(20 + Math.random() * 40); });
-    await trace.stage("fusion", async () => { await sleep(15 + Math.random() * 30); });
-    await trace.stage("reasoning", async () => { await sleep(60 + Math.random() * 200); });
-    await trace.stage("rendering", async () => { await sleep(5 + Math.random() * 15); });
-    trace.recordEvidence({ traceId: trace.traceId, evidenceIds: ["ev-1"], sourceIds: ["opensanctions"], grades: { A: 1 } });
+    await trace.stage("retrieval", async () => {
+      await sleep(20 + Math.random() * 40);
+    });
+    await trace.stage("fusion", async () => {
+      await sleep(15 + Math.random() * 30);
+    });
+    await trace.stage("reasoning", async () => {
+      await sleep(60 + Math.random() * 200);
+    });
+    await trace.stage("rendering", async () => {
+      await sleep(5 + Math.random() * 15);
+    });
+    trace.recordEvidence({
+      traceId: trace.traceId,
+      evidenceIds: ["ev-1"],
+      sourceIds: ["opensanctions"],
+      grades: { A: 1 },
+    });
     trace.finish();
   },
 });
@@ -44,6 +57,10 @@ if (!report.withinBudget) {
   console.error(`[loadtest] FAIL: p95=${report.p95Ms}ms > budget=${targetP95Ms}ms`);
   process.exit(1);
 }
-console.log(`[loadtest] PASS: p95=${report.p95Ms}ms under ${targetP95Ms}ms with ${officers} officers`);
+console.log(
+  `[loadtest] PASS: p95=${report.p95Ms}ms under ${targetP95Ms}ms with ${officers} officers`,
+);
 
-function sleep(ms: number) { return new Promise((r) => setTimeout(r, ms)); }
+function sleep(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
+}

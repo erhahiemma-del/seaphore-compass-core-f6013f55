@@ -91,9 +91,7 @@ export function IalAdminPanel() {
       const records = results.reduce((n, r) => n + r.records, 0);
       const failures = results.filter((r) => !r.ok).length;
       if (failures > 0) {
-        toast.warning(
-          `Prewarm completed with ${failures} failure(s) · ${records} records loaded`,
-        );
+        toast.warning(`Prewarm completed with ${failures} failure(s) · ${records} records loaded`);
       } else {
         toast.success(
           `Cache prewarmed · ${results.length} quer${results.length === 1 ? "y" : "ies"} · ${records} records`,
@@ -108,7 +106,11 @@ export function IalAdminPanel() {
   const kpis = useMemo(
     () => [
       { label: "Cache Size", value: stats.size.toString(), hint: "entries" },
-      { label: "Hit Rate", value: `${Math.round(stats.hitRate * 100)}%`, hint: `${stats.hits} hits` },
+      {
+        label: "Hit Rate",
+        value: `${Math.round(stats.hitRate * 100)}%`,
+        hint: `${stats.hits} hits`,
+      },
       { label: "Misses", value: stats.misses.toString(), hint: "since boot" },
       { label: "Connectors", value: connectors.length.toString(), hint: "registered" },
     ],
@@ -121,8 +123,8 @@ export function IalAdminPanel() {
         <div>
           <div className="type-h2 text-foreground">Intelligence Acquisition Controls</div>
           <p className="type-small text-slate mt-1 max-w-2xl">
-            Force-refresh individual connectors, clear the evidence cache, or prewarm it with
-            the canonical query set. Every action is written to the audit log.
+            Force-refresh individual connectors, clear the evidence cache, or prewarm it with the
+            canonical query set. Every action is written to the audit log.
           </p>
         </div>
         <div className="flex gap-2">
@@ -149,10 +151,7 @@ export function IalAdminPanel() {
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {kpis.map((k) => (
-          <div
-            key={k.label}
-            className="rounded-lg border border-line bg-surface p-4"
-          >
+          <div key={k.label} className="rounded-lg border border-line bg-surface p-4">
             <div className="type-caption text-slate uppercase tracking-wide">{k.label}</div>
             <div className="type-h1 text-foreground mt-1">{k.value}</div>
             <div className="type-caption text-slate mt-1">{k.hint}</div>
@@ -173,9 +172,7 @@ export function IalAdminPanel() {
         </div>
         <ul className="divide-y divide-line">
           {connectors.length === 0 ? (
-            <li className="p-6 text-center type-small text-slate">
-              No connectors registered.
-            </li>
+            <li className="p-6 text-center type-small text-slate">No connectors registered.</li>
           ) : (
             connectors.map((c) => {
               const isBusy = busy.kind === "refresh" && busy.connectorId === c.id;
@@ -204,9 +201,7 @@ export function IalAdminPanel() {
                       onClick={() => handleRefresh(c.id)}
                       disabled={busy.kind !== "idle"}
                     >
-                      <RefreshCcw
-                        className={cn("h-3.5 w-3.5 mr-1.5", isBusy && "animate-spin")}
-                      />
+                      <RefreshCcw className={cn("h-3.5 w-3.5 mr-1.5", isBusy && "animate-spin")} />
                       {isBusy ? "Refreshing…" : "Force Refresh"}
                     </Button>
                   </div>
@@ -229,9 +224,7 @@ export function IalAdminPanel() {
             <Row label="Latency" value={`${lastRefresh.latencyMs} ms`} />
           </dl>
           {lastRefresh.error && (
-            <p className="type-small text-[color:var(--color-danger)] mt-2">
-              {lastRefresh.error}
-            </p>
+            <p className="type-small text-[color:var(--color-danger)] mt-2">{lastRefresh.error}</p>
           )}
         </OutcomePanel>
       )}
@@ -243,7 +236,10 @@ export function IalAdminPanel() {
         >
           <ul className="divide-y divide-line">
             {lastPrewarm.map((r, idx) => (
-              <li key={idx} className="flex flex-wrap items-center justify-between gap-2 py-2 type-small">
+              <li
+                key={idx}
+                className="flex flex-wrap items-center justify-between gap-2 py-2 type-small"
+              >
                 <span className="text-foreground font-mono truncate max-w-[60%]">
                   {r.query.entity?.id ?? r.query.text ?? "(empty)"}
                 </span>

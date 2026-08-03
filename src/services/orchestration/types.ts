@@ -10,12 +10,7 @@ export type BriefingMode = "lookup" | "assessment" | "investigation" | "forecast
 export type Workspace = "ownership" | "revenue" | "compliance" | "evidence" | "vessel" | "port";
 
 export type EvidenceGrade =
-  | "VERIFIED"
-  | "CORROBORATED"
-  | "OBSERVED"
-  | "REPORTED"
-  | "INFERRED"
-  | "UNKNOWN";
+  "VERIFIED" | "CORROBORATED" | "OBSERVED" | "REPORTED" | "INFERRED" | "UNKNOWN";
 
 export type CapabilityId =
   | "OWNERSHIP_ANALYSIS"
@@ -56,7 +51,6 @@ export interface OfficerQuery {
   /** Flattened Mission Context snapshot passed as grounding to the engine. */
   mission?: Record<string, unknown>;
 }
-
 
 /** 2.1 output of the Intent Classifier. */
 export interface Intent {

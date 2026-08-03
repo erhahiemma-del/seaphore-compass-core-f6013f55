@@ -113,7 +113,6 @@ function buildIssue(code: DictationIssueCode, detail?: string): DictationIssue {
   return { code, ...base, detail: detail ?? base.detail };
 }
 
-
 const TARGET_RATE = 16000;
 
 function downsample(chunks: Float32Array[], from: number, to: number): Float32Array {
@@ -261,7 +260,6 @@ export function useVoiceDictation(options: Options = {}) {
     };
   }, []);
 
-
   const teardown = useCallback(() => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
@@ -280,68 +278,72 @@ export function useVoiceDictation(options: Options = {}) {
 
   useEffect(() => teardown, [teardown]);
 
-  const transcribe = useCallback(async (blob: Blob) => {
-    setState("transcribing");
-    try {
-      const form = new FormData();
-      form.append("audio", blob, "dictation.wav");
+  const transcribe = useCallback(
+    async (blob: Blob) => {
+      setState("transcribing");
+      try {
+        const form = new FormData();
+        form.append("audio", blob, "dictation.wav");
 
-      const response = await fetch("/api/copilot/transcribe", { method: "POST", body: form });
-      if (!response.ok || !response.body) {
-        const detail = await response.json().catch(() => null);
-        throw new Error(
-          (detail as { error?: string } | null)?.error ?? `Transcription failed (${response.status}).`,
-        );
-      }
+        const response = await fetch("/api/copilot/transcribe", { method: "POST", body: form });
+        if (!response.ok || !response.body) {
+          const detail = await response.json().catch(() => null);
+          throw new Error(
+            (detail as { error?: string } | null)?.error ??
+              `Transcription failed (${response.status}).`,
+          );
+        }
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffered = "";
-      let text = "";
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffered = "";
+        let text = "";
 
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffered += decoder.decode(value, { stream: true });
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffered += decoder.decode(value, { stream: true });
 
-        const lines = buffered.split("\n");
-        buffered = lines.pop() ?? "";
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed.startsWith("data:")) continue;
-          const payload = trimmed.slice(5).trim();
-          if (!payload || payload === "[DONE]") continue;
-          try {
-            const event = JSON.parse(payload) as {
-              type?: string;
-              delta?: string;
-              text?: string;
-            };
-            if (event.type === "transcript.text.delta" && event.delta) {
-              text += event.delta;
-              cbRef.current.onPartial?.(text);
-            } else if (event.type === "transcript.text.done" && typeof event.text === "string") {
-              text = event.text;
+          const lines = buffered.split("\n");
+          buffered = lines.pop() ?? "";
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed.startsWith("data:")) continue;
+            const payload = trimmed.slice(5).trim();
+            if (!payload || payload === "[DONE]") continue;
+            try {
+              const event = JSON.parse(payload) as {
+                type?: string;
+                delta?: string;
+                text?: string;
+              };
+              if (event.type === "transcript.text.delta" && event.delta) {
+                text += event.delta;
+                cbRef.current.onPartial?.(text);
+              } else if (event.type === "transcript.text.done" && typeof event.text === "string") {
+                text = event.text;
+              }
+            } catch {
+              // Ignore keep-alive / non-JSON frames.
             }
-          } catch {
-            // Ignore keep-alive / non-JSON frames.
           }
         }
-      }
 
-      const final = text.trim();
-      if (!final) {
-        raise("no-speech");
-        return;
+        const final = text.trim();
+        if (!final) {
+          raise("no-speech");
+          return;
+        }
+        clearIssue();
+        cbRef.current.onFinal?.(final);
+      } catch (error) {
+        raise("transcription-failed", error instanceof Error ? error.message : undefined);
+      } finally {
+        setState("idle");
       }
-      clearIssue();
-      cbRef.current.onFinal?.(final);
-    } catch (error) {
-      raise("transcription-failed", error instanceof Error ? error.message : undefined);
-    } finally {
-      setState("idle");
-    }
-  }, [raise, clearIssue]);
+    },
+    [raise, clearIssue],
+  );
 
   const finish = useCallback(async () => {
     const rate = ctxRef.current?.sampleRate ?? TARGET_RATE;
@@ -458,4 +460,3 @@ export function useVoiceDictation(options: Options = {}) {
     toggle,
   };
 }
-

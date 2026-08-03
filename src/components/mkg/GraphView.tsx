@@ -11,11 +11,7 @@
  * network analytics. Ships with the Golden Rule caption baked in.
  */
 import { useMemo, useState } from "react";
-import type {
-  MkgEdge,
-  MkgNode,
-  MkgNodeKind,
-} from "@/services/mkg/types";
+import type { MkgEdge, MkgNode, MkgNodeKind } from "@/services/mkg/types";
 import { cn } from "@/lib/utils";
 
 const KIND_COLOR: Record<MkgNodeKind, string> = {
@@ -168,13 +164,14 @@ export function GraphView({
             const b = byId.get(e.toId);
             if (!a || !b) return null;
             const highlighted =
-              hover === e.id ||
-              selectedNodeId === e.fromId ||
-              selectedNodeId === e.toId;
+              hover === e.id || selectedNodeId === e.fromId || selectedNodeId === e.toId;
             return (
               <g key={e.id}>
                 <line
-                  x1={a.x} y1={a.y} x2={b.x} y2={b.y}
+                  x1={a.x}
+                  y1={a.y}
+                  x2={b.x}
+                  y2={b.y}
                   stroke={GRADE_STROKE[e.grade] ?? "hsl(var(--muted-foreground))"}
                   strokeWidth={highlighted ? 2.2 : 1}
                   strokeDasharray={e.type === "ALIAS_OF" ? "4 3" : undefined}
@@ -220,7 +217,13 @@ export function GraphView({
                   opacity={p.node.hasContradictions ? 0.75 : 1}
                 />
                 {p.node.hasContradictions ? (
-                  <circle r={14} fill="none" stroke="hsl(var(--destructive))" strokeWidth={1.2} strokeDasharray="3 2" />
+                  <circle
+                    r={14}
+                    fill="none"
+                    stroke="hsl(var(--destructive))"
+                    strokeWidth={1.2}
+                    strokeDasharray="3 2"
+                  />
                 ) : null}
                 <text
                   y={-14}
@@ -246,10 +249,19 @@ export function GraphView({
         </g>
       </svg>
       <div className="absolute right-3 top-3 flex flex-wrap gap-2 text-[10px] uppercase tracking-wide text-muted-foreground">
-        {(["vessel","company","person","port","cargo","sanction","voyage"] as MkgNodeKind[]).map((k) => (
-          <span key={k} className={cn("flex items-center gap-1 rounded-md border border-border/50 bg-card/80 px-2 py-0.5")}
+        {(
+          ["vessel", "company", "person", "port", "cargo", "sanction", "voyage"] as MkgNodeKind[]
+        ).map((k) => (
+          <span
+            key={k}
+            className={cn(
+              "flex items-center gap-1 rounded-md border border-border/50 bg-card/80 px-2 py-0.5",
+            )}
           >
-            <span className="inline-block h-2 w-2 rounded-full" style={{ background: KIND_COLOR[k] }} />
+            <span
+              className="inline-block h-2 w-2 rounded-full"
+              style={{ background: KIND_COLOR[k] }}
+            />
             {k}
           </span>
         ))}

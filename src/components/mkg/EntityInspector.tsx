@@ -43,8 +43,8 @@ export function EntityInspector({ entityId, onSelectNode }: Props) {
           <CardTitle className="text-sm">Entity Inspector</CardTitle>
         </CardHeader>
         <CardContent className="text-xs text-muted-foreground">
-          Select a node in the graph to see every evidence source, direct
-          relationship, and indirect connection the MKG has recorded.
+          Select a node in the graph to see every evidence source, direct relationship, and indirect
+          connection the MKG has recorded.
         </CardContent>
       </Card>
     );
@@ -101,10 +101,15 @@ export function EntityInspector({ entityId, onSelectNode }: Props) {
           </h4>
           <ul className="space-y-1">
             {node.provenance.slice(0, 6).map((p) => (
-              <li key={`${p.connectorId}::${p.evidenceId}`} className="rounded-md border border-border/50 bg-muted/20 px-2 py-1">
+              <li
+                key={`${p.connectorId}::${p.evidenceId}`}
+                className="rounded-md border border-border/50 bg-muted/20 px-2 py-1"
+              >
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-medium">{p.sourceName}</span>
-                  <Badge variant="outline" className="text-[9px] uppercase">{p.grade}</Badge>
+                  <Badge variant="outline" className="text-[9px] uppercase">
+                    {p.grade}
+                  </Badge>
                 </div>
                 <div className="text-[10px] text-muted-foreground">
                   {p.evidenceId} · {p.observedAt}
@@ -136,7 +141,9 @@ export function EntityInspector({ entityId, onSelectNode }: Props) {
                   <span className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
                     {edge.type}
                   </span>
-                  <Badge variant="outline" className="text-[9px] uppercase">{edge.grade}</Badge>
+                  <Badge variant="outline" className="text-[9px] uppercase">
+                    {edge.grade}
+                  </Badge>
                 </div>
                 <div className="truncate">{neighbor.label}</div>
                 <div className="text-[10px] text-muted-foreground">
@@ -185,7 +192,9 @@ export function EdgeCitations({ edge }: { edge: MkgEdge }) {
   return (
     <ul className="text-[10px] text-muted-foreground">
       {edgeCitations(edge).map((c, i) => (
-        <li key={i} className="truncate">• {c}</li>
+        <li key={i} className="truncate">
+          • {c}
+        </li>
       ))}
     </ul>
   );

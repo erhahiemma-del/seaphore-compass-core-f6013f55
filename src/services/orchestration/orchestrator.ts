@@ -51,9 +51,9 @@ export async function orchestrate(
   deps: OrchestrationDeps = {},
 ): Promise<Briefing> {
   const started = performance.now();
-  const orchestrationStartedAt = Date.now();  // wall-clock for IPEF telemetry
+  const orchestrationStartedAt = Date.now(); // wall-clock for IPEF telemetry
   const session = ensureSession(query);
-  let micBootstrapResult: MicBootstrapResult | null = null;  // captured for IPEF
+  let micBootstrapResult: MicBootstrapResult | null = null; // captured for IPEF
 
   // 1. Intent
   const intent = classifyIntent(query);
@@ -122,18 +122,18 @@ export async function orchestrate(
   //     On any failure: caught, logged, outcome=failed — pipeline continues.
   if (isMicEnabled()) {
     const micResult = processMicBootstrap(uip, uipId);
-    micBootstrapResult = micResult;  // captured for IPEF
+    micBootstrapResult = micResult; // captured for IPEF
     console.info("[MIC] bootstrap", {
       executionId: micResult.executionId,
-      outcome:     micResult.outcome,
-      durationMs:  micResult.telemetry.totalDurationMs,
-      entities:    micResult.telemetry.entitiesRegistered,
-      evidence:    micResult.telemetry.evidenceRegistered,
-      risk:        micResult.telemetry.riskProfilesComputed,
-      timeline:    micResult.telemetry.timelineEvents,
-      flag:        "enabled",
-      warnings:    micResult.telemetry.warnings.length,
-      errors:      micResult.telemetry.errors.length,
+      outcome: micResult.outcome,
+      durationMs: micResult.telemetry.totalDurationMs,
+      entities: micResult.telemetry.entitiesRegistered,
+      evidence: micResult.telemetry.evidenceRegistered,
+      risk: micResult.telemetry.riskProfilesComputed,
+      timeline: micResult.telemetry.timelineEvents,
+      flag: "enabled",
+      warnings: micResult.telemetry.warnings.length,
+      errors: micResult.telemetry.errors.length,
     });
   } else {
     console.info("[MIC] bootstrap skipped — MIC_ENABLED=false");
@@ -226,27 +226,25 @@ export async function orchestrate(
   // IPEF — build and register provenance record.
   // Runs after the briefing is complete. Never throws — IPEF failure is silent.
   try {
-    const collectionMs = Math.round(
-      (performance.now() - started) - (briefing.latency_ms ?? 0),
-    );
+    const collectionMs = Math.round(performance.now() - started - (briefing.latency_ms ?? 0));
     const ipefRecord = buildIpefRecord({
-      correlationId:          uipId,
+      correlationId: uipId,
       uip,
       micBootstrapResult,
       briefing,
       orchestrationStartedAt,
-      evidenceCollectionMs:   Math.max(0, collectionMs),
-      sourcesQueried:         briefing.sources_queried,
-      sourcesResponded:       briefing.sources_responded,
-      sourcesCorroborated:    briefing.sources_corroborated,
+      evidenceCollectionMs: Math.max(0, collectionMs),
+      sourcesQueried: briefing.sources_queried,
+      sourcesResponded: briefing.sources_responded,
+      sourcesCorroborated: briefing.sources_corroborated,
       evidenceCount,
     });
     ipefRegistry.register(ipefRecord);
     console.info("[IPEF] record registered", {
       correlationId: ipefRecord.correlationId,
-      contributors:  ipefRecord.contributors.length,
-      gaps:          ipefRecord.intelligenceGaps.length,
-      status:        ipefRecord.overallStatus,
+      contributors: ipefRecord.contributors.length,
+      gaps: ipefRecord.intelligenceGaps.length,
+      status: ipefRecord.overallStatus,
     });
   } catch (err) {
     console.warn("[IPEF] record build failed (non-fatal):", err);

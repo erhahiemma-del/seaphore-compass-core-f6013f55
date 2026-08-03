@@ -34,8 +34,10 @@ export function validateContract(
         if (!e.projection) {
           issues.push({ id: e.id, problem: "PROJECTED entry missing `projection`" });
         } else {
-          if (!e.projection.surface) issues.push({ id: e.id, problem: "projection.surface required" });
-          if (!e.projection.location) issues.push({ id: e.id, problem: "projection.location required" });
+          if (!e.projection.surface)
+            issues.push({ id: e.id, problem: "projection.surface required" });
+          if (!e.projection.location)
+            issues.push({ id: e.id, problem: "projection.location required" });
         }
         if (e.internal || e.justified) {
           issues.push({ id: e.id, problem: "PROJECTED entry must not carry internal/justified" });

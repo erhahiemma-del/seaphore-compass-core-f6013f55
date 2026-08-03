@@ -51,9 +51,7 @@ describe("AdaptiveBriefing", () => {
   it("exposes all 4 override options on the Human Override Bar", () => {
     render(<AdaptiveBriefing briefing={SAMPLE_BRIEFINGS[1]} />);
     for (const label of ["agree", "disagree", "modify", "dismiss"]) {
-      expect(
-        screen.getByRole("button", { name: new RegExp(`^${label}$`, "i") }),
-      ).toBeTruthy();
+      expect(screen.getByRole("button", { name: new RegExp(`^${label}$`, "i") })).toBeTruthy();
     }
   });
 

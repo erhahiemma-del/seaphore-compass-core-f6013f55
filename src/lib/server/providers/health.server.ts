@@ -25,7 +25,6 @@ export type ProviderHealthState =
   | "unauthenticated"
   | "offline";
 
-
 export interface ProviderHealthSnapshot {
   readonly id: string;
   readonly displayName: string;
@@ -105,14 +104,12 @@ function stateOf(health: ConnectorHealth): ProviderHealthState {
   return "healthy";
 }
 
-
 function baseSnapshot(connector: Connector, checkedAt: string) {
   const meta = connector.provider ?? {};
   return {
     id: connector.id,
     displayName: connector.displayName,
-    specVersion:
-      (connector as unknown as { specVersion?: string }).specVersion ?? null,
+    specVersion: (connector as unknown as { specVersion?: string }).specVersion ?? null,
     providerType: String(meta.providerType ?? "LIVE"),
     environment: String(meta.environment ?? "both"),
     enabled: meta.enabled ?? true,

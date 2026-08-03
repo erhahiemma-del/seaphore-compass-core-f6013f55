@@ -123,7 +123,12 @@ const detectManifestUnderDeclaration: Detector = (ev, ctx) => {
 
 const detectUnpaidPortFee: Detector = (ev, ctx) => {
   return ev
-    .filter((e) => e.kind === "port-call" || readStr(e.fields["expectedFee"]) !== undefined || readNum(e.fields["expectedFee"]) !== undefined)
+    .filter(
+      (e) =>
+        e.kind === "port-call" ||
+        readStr(e.fields["expectedFee"]) !== undefined ||
+        readNum(e.fields["expectedFee"]) !== undefined,
+    )
     .flatMap((e) => {
       const expected = readNum(e.fields["expectedFee"]);
       const paid = readNum(e.fields["paidFee"]);
@@ -302,7 +307,9 @@ export const useRevenueLeakageStore = create<LeakageState>((set) => ({
   approve(id, officer) {
     set((s) => ({
       findings: s.findings.map((f) =>
-        f.id === id ? { ...f, humanApproved: true, approvedBy: officer, approvedAt: new Date().toISOString() } : f,
+        f.id === id
+          ? { ...f, humanApproved: true, approvedBy: officer, approvedAt: new Date().toISOString() }
+          : f,
       ),
     }));
   },

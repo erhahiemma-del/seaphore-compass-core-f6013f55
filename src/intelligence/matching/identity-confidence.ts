@@ -42,11 +42,7 @@
  * ─────────────────────────────────────────────────────────────────────
  */
 
-export type IdentityConfidenceTier =
-  | "VERIFIED"
-  | "OBSERVED"
-  | "INFERRED"
-  | "UNCONFIRMED";
+export type IdentityConfidenceTier = "VERIFIED" | "OBSERVED" | "INFERRED" | "UNCONFIRMED";
 
 export type IdentitySignalKind =
   | "imo"
@@ -137,11 +133,7 @@ export interface IdentitySelection<C extends IdentityCandidate> {
    */
   requiresConfirmation: boolean;
   /** Machine-readable reason for `requiresConfirmation`. */
-  ambiguityReason:
-    | "none"
-    | "below-threshold"
-    | "tied-candidates"
-    | "no-candidates";
+  ambiguityReason: "none" | "below-threshold" | "tied-candidates" | "no-candidates";
   /** Officer-facing sentence explaining WHY this candidate was selected. */
   selectionReason: string;
 }
@@ -216,10 +208,7 @@ function jaroWinkler(a: string, b: string): number {
     k++;
   }
   const jaro =
-    (matches / a.length +
-      matches / b.length +
-      (matches - transpositions / 2) / matches) /
-    3;
+    (matches / a.length + matches / b.length + (matches - transpositions / 2) / matches) / 3;
   // Winkler prefix boost
   let prefix = 0;
   for (let i = 0; i < Math.min(4, a.length, b.length); i++) {
@@ -259,7 +248,12 @@ function parseQuery(query: string, hints?: IdentityConfidenceInput["hints"]): Pa
   const cs = normaliseIdentifier(raw);
   const looksLikeCallSign =
     hints?.callSign ??
-    (cs.length >= 3 && cs.length <= 7 && /[A-Z]/.test(cs) && /[0-9]/.test(cs) && !looksLikeImo && !looksLikeMmsi
+    (cs.length >= 3 &&
+    cs.length <= 7 &&
+    /[A-Z]/.test(cs) &&
+    /[0-9]/.test(cs) &&
+    !looksLikeImo &&
+    !looksLikeMmsi
       ? cs
       : null);
   return { raw, name: raw, looksLikeImo, looksLikeMmsi, looksLikeCallSign };
@@ -388,8 +382,7 @@ export function scoreIdentityCandidate(
 
   // Vessel type — fires when the officer provided a type hint.
   if (input.hints?.vesselType && candidate.vesselType) {
-    const hit =
-      candidate.vesselType.toLowerCase() === input.hints.vesselType.toLowerCase();
+    const hit = candidate.vesselType.toLowerCase() === input.hints.vesselType.toLowerCase();
     signals.push(
       fireSignal(
         "vesselType",
@@ -437,9 +430,7 @@ export function scoreIdentityCandidate(
     mfDetail = `Provider verdict: ${mf}.`;
   }
   if (mf) {
-    signals.push(
-      fireSignal("matchFields", "Provider match fields", mfContribution, mfDetail),
-    );
+    signals.push(fireSignal("matchFields", "Provider match fields", mfContribution, mfDetail));
   }
 
   // Normalise: score as a percentage of the signals that were
@@ -449,9 +440,7 @@ export function scoreIdentityCandidate(
   const contributionSum = signals.reduce((s, x) => s + x.contribution, 0);
   const applicableWeight = signals.reduce((s, x) => s + x.weight, 0);
   const rawScore =
-    applicableWeight > 0
-      ? Math.round((contributionSum / applicableWeight) * 100)
-      : 0;
+    applicableWeight > 0 ? Math.round((contributionSum / applicableWeight) * 100) : 0;
 
   // NO_MATCH damper preserved as a secondary safety belt on top of the
   // primary matchFields signal — a provider that says "not this vessel"
@@ -503,9 +492,7 @@ export function selectIdentity<C extends IdentityCandidate>(
       candidate,
       confidence,
       rejected: isNoMatch,
-      rejectionReason: isNoMatch
-        ? "Upstream provider tagged this record as NO_MATCH."
-        : undefined,
+      rejectionReason: isNoMatch ? "Upstream provider tagged this record as NO_MATCH." : undefined,
     } satisfies IdentityAlternate<C>;
   });
 

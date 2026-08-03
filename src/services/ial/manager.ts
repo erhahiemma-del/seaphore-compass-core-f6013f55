@@ -206,7 +206,9 @@ export class ConnectorManager {
       this.cache.reset();
       return size;
     }
-    return this.cache.invalidateWhere((k) => k.endsWith(`::${connectorId}`) || k === `ial:${connectorId}`);
+    return this.cache.invalidateWhere(
+      (k) => k.endsWith(`::${connectorId}`) || k === `ial:${connectorId}`,
+    );
   }
 
   /** Re-authenticate a single connector and drop its cached envelopes.
@@ -220,7 +222,13 @@ export class ConnectorManager {
   }> {
     const connector = this.registry.get(connectorId);
     if (!connector) {
-      return { connectorId, authenticated: false, cacheEntriesCleared: 0, latencyMs: 0, error: "connector not registered" };
+      return {
+        connectorId,
+        authenticated: false,
+        cacheEntriesCleared: 0,
+        latencyMs: 0,
+        error: "connector not registered",
+      };
     }
     const started = performance.now();
     let authenticated = false;
@@ -240,7 +248,9 @@ export class ConnectorManager {
     // top-level `ial:*` merged entries whose per-connector child was
     // just invalidated. This is a bounded set and only fires on admin
     // action.
-    const mergedCleared = this.cache.invalidateWhere((k) => k.startsWith("ial:") && !k.includes("::"));
+    const mergedCleared = this.cache.invalidateWhere(
+      (k) => k.startsWith("ial:") && !k.includes("::"),
+    );
     return {
       connectorId,
       authenticated,
@@ -289,7 +299,6 @@ export class ConnectorManager {
     );
   }
 
-
   private selectTargets(query: AcquisitionQuery): ReadonlyArray<Connector> {
     const all = this.registry.list();
     if (!query.connectors || query.connectors.length === 0) return all;
@@ -330,7 +339,13 @@ export class ConnectorManager {
       // Sprint 1A.2: publish connector completion onto the canonical
       // orchestration event bus. Reuses `evidence.collected` — no new
       // event system introduced.
-      void emitConnectorEvent(connector.id, result.ok, latency, result.records.length, result.error);
+      void emitConnectorEvent(
+        connector.id,
+        result.ok,
+        latency,
+        result.records.length,
+        result.error,
+      );
       return result;
     } catch (err) {
       const latency = Math.round(performance.now() - started);
@@ -365,7 +380,6 @@ async function emitConnectorEvent(
     /* best-effort — the pipeline never fails on telemetry */
   }
 }
-
 
 function describe(err: unknown): string {
   if (err instanceof Error) return err.message;

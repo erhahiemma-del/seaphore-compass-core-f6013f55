@@ -10,11 +10,7 @@
  * providers contributed.
  */
 
-import type {
-  CanonicalEntityRef,
-  ConnectorId,
-  NormalizedEvidence,
-} from "@/services/ial/types";
+import type { CanonicalEntityRef, ConnectorId, NormalizedEvidence } from "@/services/ial/types";
 
 export type FieldCategory =
   | "IDENTITY"
@@ -41,12 +37,7 @@ export type Severity = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
 export type CorroborationLevel = "PARTIAL" | "STRONG" | "VERIFIED";
 
 export type ConfidenceLevel =
-  | "OBSERVED"
-  | "DECLARED"
-  | "INFERRED"
-  | "CORROBORATED"
-  | "VERIFIED"
-  | "AUDITED";
+  "OBSERVED" | "DECLARED" | "INFERRED" | "CORROBORATED" | "VERIFIED" | "AUDITED";
 
 export type RiskTier = "T0" | "T1" | "T2" | "T3";
 
@@ -129,7 +120,7 @@ export interface FusedField {
   readonly fusedValue: unknown;
   readonly winningSource: ConnectorId | null;
   readonly winningEvidenceScore: number;
-  readonly confidence: number;         // 0..1
+  readonly confidence: number; // 0..1
   readonly confidenceLevel: ConfidenceLevel;
   readonly cellStatus: CellStatus;
   readonly hasConflict: boolean;

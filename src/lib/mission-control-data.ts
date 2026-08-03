@@ -10,13 +10,7 @@ import type { ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
 import type { RiskLevel } from "@/components/intelligence/RiskPill";
 import type { MapVessel } from "@/components/gulf-of-guinea-map";
 
-export type MetricKey =
-  | "manifest"
-  | "vessel"
-  | "container"
-  | "revenue"
-  | "risk"
-  | "historical";
+export type MetricKey = "manifest" | "vessel" | "container" | "revenue" | "risk" | "historical";
 
 export interface RibbonKpi {
   key: string;

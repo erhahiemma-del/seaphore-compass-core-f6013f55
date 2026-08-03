@@ -15,9 +15,16 @@ export const Route = createFileRoute("/workspace/")({
   head: () => ({
     meta: [
       { title: "Investigation Workspace — Seaphore" },
-      { name: "description", content: "Persistent maritime investigation workspaces with evidence, hypotheses, tasks, decisions and timeline." },
+      {
+        name: "description",
+        content:
+          "Persistent maritime investigation workspaces with evidence, hypotheses, tasks, decisions and timeline.",
+      },
       { property: "og:title", content: "Seaphore Investigation Workspace" },
-      { property: "og:description", content: "Every conversation becomes a persistent investigation." },
+      {
+        property: "og:description",
+        content: "Every conversation becomes a persistent investigation.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -38,7 +45,8 @@ function WorkspaceIndex() {
           <div>
             <h1 className="text-xl font-semibold">Investigation Workspace</h1>
             <p className="text-sm text-muted-foreground">
-              Every investigation persists across sessions. Evidence, hypotheses, tasks and decisions all in one place.
+              Every investigation persists across sessions. Evidence, hypotheses, tasks and
+              decisions all in one place.
             </p>
           </div>
           <Button
@@ -74,7 +82,9 @@ function WorkspaceIndex() {
                         <span>·</span>
                         <span>{w.status}</span>
                         <span>·</span>
-                        <span>Confidence {w.confidenceTier} ({w.confidencePct}%)</span>
+                        <span>
+                          Confidence {w.confidenceTier} ({w.confidencePct}%)
+                        </span>
                         <span>·</span>
                         <span>Evidence {w.evidenceCompleteness}%</span>
                         <span>·</span>

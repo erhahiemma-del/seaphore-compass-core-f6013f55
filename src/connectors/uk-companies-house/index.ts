@@ -68,7 +68,9 @@ const SEED: ChRaw[] = [
       { name: "SMITH, John", role: "director", appointedOn: "2019-04-12", nationality: "British" },
     ],
     sicCodes: ["50200"],
-    filingHistory: [{ date: "2025-06-30", category: "accounts", description: "Annual accounts filed" }],
+    filingHistory: [
+      { date: "2025-06-30", category: "accounts", description: "Annual accounts filed" },
+    ],
     linkedVesselImos: ["9074729"],
   },
   {
@@ -83,7 +85,13 @@ const SEED: ChRaw[] = [
       { name: "PATEL, Anita", role: "director", appointedOn: "2020-11-01", nationality: "British" },
     ],
     sicCodes: ["52290"],
-    filingHistory: [{ date: "2025-08-14", category: "confirmation-statement", description: "Confirmation statement" }],
+    filingHistory: [
+      {
+        date: "2025-08-14",
+        category: "confirmation-statement",
+        description: "Confirmation statement",
+      },
+    ],
     linkedVesselImos: ["9151147"],
   },
   {
@@ -95,10 +103,17 @@ const SEED: ChRaw[] = [
     incorporatedOn: "1999-11-22",
     registeredAddress: "1 St. Mary Axe, London, EC3A 8BF",
     officers: [
-      { name: "OKAFOR, Chinedu", role: "director", appointedOn: "2021-05-30", nationality: "Nigerian" },
+      {
+        name: "OKAFOR, Chinedu",
+        role: "director",
+        appointedOn: "2021-05-30",
+        nationality: "Nigerian",
+      },
     ],
     sicCodes: ["50200"],
-    filingHistory: [{ date: "2025-04-11", category: "accounts", description: "Micro-entity accounts" }],
+    filingHistory: [
+      { date: "2025-04-11", category: "accounts", description: "Micro-entity accounts" },
+    ],
     linkedVesselImos: ["9354923"],
   },
 ];
@@ -108,9 +123,7 @@ function authHeader(): string | null {
   if (!key) return null;
   // Companies House uses HTTP Basic with the API key as username, empty password.
   const token =
-    typeof Buffer !== "undefined"
-      ? Buffer.from(`${key}:`).toString("base64")
-      : btoa(`${key}:`);
+    typeof Buffer !== "undefined" ? Buffer.from(`${key}:`).toString("base64") : btoa(`${key}:`);
   return `Basic ${token}`;
 }
 
@@ -136,22 +149,39 @@ export class UkCompaniesHouseConnector implements ConnectorInterface {
       try {
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), 15000);
-        const headers = { Authorization: auth, Accept: "application/json", "User-Agent": "Seaphore-OSINT/1.0" };
+        const headers = {
+          Authorization: auth,
+          Accept: "application/json",
+          "User-Agent": "Seaphore-OSINT/1.0",
+        };
 
         const [companyRes, officersRes, filingsRes] = await Promise.all([
           fetch(`${CH_ENDPOINT}/company/${num}`, { headers, signal: controller.signal }),
           fetch(`${CH_ENDPOINT}/company/${num}/officers`, { headers, signal: controller.signal }),
-          fetch(`${CH_ENDPOINT}/company/${num}/filing-history`, { headers, signal: controller.signal }),
+          fetch(`${CH_ENDPOINT}/company/${num}/filing-history`, {
+            headers,
+            signal: controller.signal,
+          }),
         ]);
         clearTimeout(timer);
         if (!companyRes.ok) continue;
 
         const company = (await companyRes.json()) as Record<string, unknown>;
-        const officersJson = officersRes.ok ? ((await officersRes.json()) as Record<string, unknown>) : { items: [] };
-        const filingsJson = filingsRes.ok ? ((await filingsRes.json()) as Record<string, unknown>) : { items: [] };
+        const officersJson = officersRes.ok
+          ? ((await officersRes.json()) as Record<string, unknown>)
+          : { items: [] };
+        const filingsJson = filingsRes.ok
+          ? ((await filingsRes.json()) as Record<string, unknown>)
+          : { items: [] };
 
         const addr = (company["registered_office_address"] ?? {}) as Record<string, string>;
-        const addressStr = [addr.address_line_1, addr.address_line_2, addr.locality, addr.postal_code, addr.country]
+        const addressStr = [
+          addr.address_line_1,
+          addr.address_line_2,
+          addr.locality,
+          addr.postal_code,
+          addr.country,
+        ]
           .filter(Boolean)
           .join(", ");
 
@@ -163,14 +193,18 @@ export class UkCompaniesHouseConnector implements ConnectorInterface {
           companyType: String(company["type"] ?? "unknown"),
           incorporatedOn: String(company["date_of_creation"] ?? ""),
           registeredAddress: addressStr,
-          officers: ((officersJson["items"] as Array<Record<string, unknown>> | undefined) ?? []).map((o) => ({
+          officers: (
+            (officersJson["items"] as Array<Record<string, unknown>> | undefined) ?? []
+          ).map((o) => ({
             name: String(o["name"] ?? ""),
             role: String(o["officer_role"] ?? ""),
             appointedOn: o["appointed_on"] as string | undefined,
             nationality: o["nationality"] as string | undefined,
           })),
           sicCodes: (company["sic_codes"] as string[] | undefined) ?? [],
-          filingHistory: ((filingsJson["items"] as Array<Record<string, unknown>> | undefined) ?? [])
+          filingHistory: (
+            (filingsJson["items"] as Array<Record<string, unknown>> | undefined) ?? []
+          )
             .slice(0, 10)
             .map((f) => ({
               date: String(f["date"] ?? ""),
@@ -252,7 +286,11 @@ export class UkCompaniesHouseConnector implements ConnectorInterface {
     if (!connectorId) throw new Error(`Connector ${this.name} is not registered`);
     const { data: run } = await supabaseAdmin
       .from("osint_sync_runs")
-      .insert({ connector_id: connectorId, started_at: new Date().toISOString(), status: "running" })
+      .insert({
+        connector_id: connectorId,
+        started_at: new Date().toISOString(),
+        status: "running",
+      })
       .select("id")
       .single();
     const runId = (run as { id: string } | null)?.id ?? "";
@@ -318,14 +356,21 @@ export class UkCompaniesHouseConnector implements ConnectorInterface {
         "User-Agent": "Seaphore-OSINT/1.0",
       };
       if (auth) headers.Authorization = auth;
-      const res = await fetch(`${CH_ENDPOINT}/company/00000006`, { headers, signal: controller.signal });
+      const res = await fetch(`${CH_ENDPOINT}/company/00000006`, {
+        headers,
+        signal: controller.signal,
+      });
       const latencyMs = Date.now() - started;
       // Without an API key CH returns 401 — endpoint is up, we're just unauthenticated.
       if (res.ok) return { status: "healthy", latencyMs };
       if (res.status === 401 || res.status === 403) {
         return auth
           ? { status: "degraded", latencyMs, message: `Auth rejected (HTTP ${res.status})` }
-          : { status: "healthy", latencyMs, message: "Reachable; awaiting COMPANIES_HOUSE_API_KEY" };
+          : {
+              status: "healthy",
+              latencyMs,
+              message: "Reachable; awaiting COMPANIES_HOUSE_API_KEY",
+            };
       }
       if (res.status >= 500) return { status: "down", latencyMs, message: `HTTP ${res.status}` };
       return { status: "degraded", latencyMs, message: `HTTP ${res.status}` };

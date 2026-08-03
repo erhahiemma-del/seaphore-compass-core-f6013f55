@@ -5,12 +5,14 @@ Consolidate four coexisting fusion implementations into a single canonical Intel
 ## Current state (audit-confirmed)
 
 Four fusion paths coexist:
+
 1. `src/services/ife/*` — declared canonical; has `identity-resolver`, `canonical-builder`, `unified.ts` (UIP shape).
 2. `src/services/fusion/*` — parallel "Sprint 7" pipeline (raw → normalize → score → dedupe → conflicts → rank).
 3. `src/services/ice/*` — 14-module correlation engine with its own fusion/scoring/explainability.
 4. `src/services/orchestration/evidence-fusion.ts` — the path actually used by the live Copilot.
 
 Demo/fixture paths reaching production routes:
+
 - `src/lib/api/mock-dataset.ts` (used by `/api/copilot/query`, `/api/session|entity|evidence|investigation|relationship/$id`)
 - `src/services/okl/fixtures.ts` referenced by routes
 - `revenue-leakage.tsx`, `predictions.tsx`, `intelligence-evidence.tsx`, `operational-knowledge.tsx` generate their own intelligence.
@@ -30,6 +32,7 @@ Officer Query
 ## Plan
 
 ### 1. Canonical IFE
+
 - Treat `src/services/ife` as canonical. Keep its public types: `UnifiedIntelligencePackage`, `unifiedPackageId`, `CanonicalEntity`, `FusedEvidence`, `Provenance`.
 - Fold missing capabilities from siblings into IFE where absent:
   - Bring `services/fusion/hash.ts` claim-hash + `dedupe`/`rank` semantics into `ife/canonical-builder.ts` (or a new `ife/dedupe.ts`, `ife/rank.ts`).
@@ -37,17 +40,21 @@ Officer Query
 - Add `ife/pipeline.ts` exposing one entry: `runIntelligencePipeline(query, manager) → Promise<UIP>`. Internally: plan → collect (via IAL) → identity-resolve → fuse → rank → conflicts → explain → freeze.
 
 ### 2. UIP registry (single source of truth at runtime)
+
 - New `src/services/ife/registry.ts`: in-memory Map keyed by `unifiedPackageId` with `set/get/getByQueryHash`. Optional persistence hook (no schema change this sprint).
 - Every consumer accepts either `uip: UIP` or `unifiedPackageId: string` and resolves via the registry.
 
 ### 3. Retire duplicate fusion paths
+
 - `src/services/fusion/*` → thin re-export shims delegating to IFE, marked `@deprecated`. Delete internal impls once callers migrate (this sprint).
 - `src/services/ice/engine.ts` → refactor `runIce` to call `runIntelligencePipeline` and adapt UIP to the existing `IntelligencePackage` return type (preserves callers).
 - `src/services/orchestration/evidence-fusion.ts` → replace body with a call to IFE; keep exported function signature.
 - `src/services/orchestration/orchestrator.ts` and OIE `engine.ts` → route retrieval + fusion through `runIntelligencePipeline`; stamp resulting `unifiedPackageId` onto the `Briefing`.
 
 ### 4. Wire downstream capabilities to UIP
+
 Add `fromUip(uip: UIP)` adapters (no behaviour change to their output types):
+
 - `services/mkg/ingest.ts` — build/refresh graph from UIP entities+edges.
 - `services/pie/engine.ts` — accept UIP; drop route-side synthetic feeds.
 - `services/okl/engine.ts` — accept UIP; remove `fixtures.ts` from production imports.
@@ -55,12 +62,14 @@ Add `fromUip(uip: UIP)` adapters (no behaviour change to their output types):
 - `services/mission/*`, `stores/workspace.store.ts` (MIW), MIBC report builders — resolve UIP by `unifiedPackageId`.
 
 ### 5. Purge demo/fixtures from production paths
+
 - `src/routes/api/copilot/query.ts` and the five `src/routes/api/*/$id.ts` files: replace `mockDb.*` with real service calls sourced from UIP (or return `404` when unresolved — no fabricated data).
 - `src/lib/api/mock-dataset.ts` → moved under `src/mocks/` and referenced only by tests/Storybook.
 - Routes `revenue-leakage.tsx`, `predictions.tsx`, `intelligence-evidence.tsx`, `operational-knowledge.tsx`: replace local intelligence generation with hooks that read UIP for the current investigation/query.
 - `services/okl/fixtures.ts` → move under `__tests__`.
 
 ### 6. Projection Contract + tests
+
 - Add/adjust registry entries in `src/lib/projection-contract/registry.ts`:
   - `capability.unified-intelligence-package` — Officer Projection: Executive Briefing header shows `unifiedPackageId` chip; Evidence Explorer filters by it.
   - Mark deprecated fusion modules as Internal Only with retirement note.
@@ -70,6 +79,7 @@ Add `fromUip(uip: UIP)` adapters (no behaviour change to their output types):
   - `tests/unit/no-demo-in-prod-routes.test.ts` — static grep: no `mock-dataset`, `okl/fixtures`, `seedEvidence` imports from `src/routes/**` or `src/features/**` (excluding `__tests__`, `stories`).
 
 ### 7. Non-goals (explicit)
+
 - No new user-facing features.
 - No DB migrations.
 - No UI redesign. Executive Briefing gains only a small `UIP <id>` chip and existing evidence deep-links keep working.

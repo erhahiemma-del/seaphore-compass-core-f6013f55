@@ -27,13 +27,7 @@ export interface LineageEvidence {
 
 /** A pointer into the shared mission / workspace context. */
 export interface LineageContextLink {
-  kind:
-    | "mission_slice"
-    | "hypothesis"
-    | "decision"
-    | "prior_finding"
-    | "entity"
-    | "conversation";
+  kind: "mission_slice" | "hypothesis" | "decision" | "prior_finding" | "entity" | "conversation";
   label: string;
   detail?: string;
   /** Free-form ref (mission slice key, hypothesis id, decision id, entity name). */

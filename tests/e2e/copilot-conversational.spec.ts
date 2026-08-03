@@ -65,9 +65,7 @@ test.describe("Copilot · conversational intelligence (/copilot)", () => {
     await openCopilot(page);
   });
 
-  test("bare vessel mention renders a briefing (no clarification card)", async ({
-    page,
-  }) => {
+  test("bare vessel mention renders a briefing (no clarification card)", async ({ page }) => {
     await askCopilot(page, "Tell me about MV Ocean Pearl");
 
     // Wait for the briefing to settle. The immutable officer-decision

@@ -68,9 +68,7 @@ function baseConfidence(uip: UnifiedIntelligencePackage): {
     (best, c) => (c.aliasIds.length > best.aliasIds.length ? c : best),
     uip.identity[0],
   );
-  const identity = cluster
-    ? Math.min(100, Math.round(50 + cluster.aliasIds.length * 15))
-    : 40;
+  const identity = cluster ? Math.min(100, Math.round(50 + cluster.aliasIds.length * 15)) : 40;
 
   // Evidence: freshness + source count.
   const freshDays = uip.freshestSeconds / 86_400;
@@ -87,11 +85,7 @@ function baseConfidence(uip: UnifiedIntelligencePackage): {
   return { identity, evidence, fusion };
 }
 
-function pyramid(
-  ctx: DetectorCtx,
-  patternScore: number,
-  reason: string,
-): ConfidencePyramid {
+function pyramid(ctx: DetectorCtx, patternScore: number, reason: string): ConfidencePyramid {
   const { identityScore, evidenceScore, fusionScore } = ctx;
   const pattern = Math.max(0, Math.min(100, Math.round(patternScore)));
   // Recommendation confidence is the min of the pyramid layers, gently
@@ -133,10 +127,7 @@ function collectEntityEvidence(
   return { ids, connectors: [...connectors] };
 }
 
-function investigationsFor(
-  ctx: DetectorCtx,
-  entityIds: ReadonlyArray<string>,
-): string[] {
+function investigationsFor(ctx: DetectorCtx, entityIds: ReadonlyArray<string>): string[] {
   const hits = new Set<string>();
   for (const inv of ctx.investigations) {
     if (inv.entityIds.some((e) => entityIds.includes(e))) hits.add(inv.investigationId);
@@ -211,9 +202,7 @@ function makePattern(input: {
 function detectRepeatOffender(ctx: DetectorCtx): OperationalPattern[] {
   const out: OperationalPattern[] = [];
   for (const rec of ctx.uip.fused.canonical) {
-    const priors = ctx.historical.filter(
-      (h) => h.entityId === rec.entity.id && h.count >= 2,
-    );
+    const priors = ctx.historical.filter((h) => h.entityId === rec.entity.id && h.count >= 2);
     if (priors.length === 0) continue;
     const total = priors.reduce((s, p) => s + p.count, 0);
     const patternScore = Math.min(95, 45 + total * 8);
@@ -247,9 +236,7 @@ function detectRepeatOffender(ctx: DetectorCtx): OperationalPattern[] {
             requiresOfficerApproval: true,
           },
         ],
-        historicalContext: `${total} detections since ${priors
-          .map((p) => p.lastSeen)
-          .sort()[0]}`,
+        historicalContext: `${total} detections since ${priors.map((p) => p.lastSeen).sort()[0]}`,
       }),
     );
   }
@@ -276,8 +263,7 @@ function detectSuspiciousRouting(ctx: DetectorCtx): OperationalPattern[] {
       (r) => Number(r.fields.deviationKm ?? 0) > 200 || r.excerpt?.match(/deviation|detour/i),
     );
     if (flagPorts.length === 0 && !detour) continue;
-    const patternScore =
-      Math.min(90, 40 + flagPorts.length * 12 + (detour ? 15 : 0));
+    const patternScore = Math.min(90, 40 + flagPorts.length * 12 + (detour ? 15 : 0));
     const entity = records[0]?.entity;
     if (!entity) continue;
     out.push(
@@ -387,9 +373,7 @@ function detectOwnershipLink(ctx: DetectorCtx): OperationalPattern[] {
   }
   for (const [owner, records] of byBeneficiary) {
     if (records.length < 2) continue;
-    const entities = Array.from(
-      new Map(records.map((r) => [r.entity.id, r.entity])).values(),
-    );
+    const entities = Array.from(new Map(records.map((r) => [r.entity.id, r.entity])).values());
     const patternScore = Math.min(90, 45 + entities.length * 10);
     out.push(
       makePattern({
@@ -435,8 +419,7 @@ function detectCargoAnomaly(ctx: DetectorCtx): OperationalPattern[] {
     const observed = Number(r.fields.observedWeightTonnes ?? 0);
     const declaredValue = Number(r.fields.declaredValueUsd ?? 0);
     const marketValue = Number(r.fields.marketValueUsd ?? 0);
-    const weightGap =
-      declared > 0 && observed > 0 ? Math.abs(observed - declared) / declared : 0;
+    const weightGap = declared > 0 && observed > 0 ? Math.abs(observed - declared) / declared : 0;
     const valueGap =
       declaredValue > 0 && marketValue > 0
         ? Math.abs(marketValue - declaredValue) / marketValue
@@ -483,9 +466,10 @@ function detectManifestInconsistency(ctx: DetectorCtx): OperationalPattern[] {
   const out: OperationalPattern[] = [];
   // A manifest inconsistency shows up in IFE as a field contradiction on
   // cargo/voyage/identity for a vessel.
-  const relevant = ctx.uip.fused.contradictions.filter((c) =>
-    ["cargo", "voyage", "identity", "port"].includes(c.field.toLowerCase()) ||
-    c.field.match(/manifest|cargo|voyage|port|destination/i),
+  const relevant = ctx.uip.fused.contradictions.filter(
+    (c) =>
+      ["cargo", "voyage", "identity", "port"].includes(c.field.toLowerCase()) ||
+      c.field.match(/manifest|cargo|voyage|port|destination/i),
   );
   for (const cx of relevant) {
     const patternScore = cx.severity === "critical" ? 80 : cx.severity === "warn" ? 60 : 45;
@@ -499,10 +483,7 @@ function detectManifestInconsistency(ctx: DetectorCtx): OperationalPattern[] {
           "Conflicting values across sources on a manifest field breaks provenance — hold cargo release.",
         patternScore,
         reason: cx.explanation,
-        reasoning: [
-          { step: "IFE contradiction consumed" },
-          { step: `Severity: ${cx.severity}` },
-        ],
+        reasoning: [{ step: "IFE contradiction consumed" }, { step: `Severity: ${cx.severity}` }],
         alternatives: [
           {
             label: "Late amendment not yet propagated",
@@ -534,8 +515,7 @@ function detectRevenueLeakage(ctx: DetectorCtx): OperationalPattern[] {
       Number(e.fields.marketValueUsd ?? 0) > Number(e.fields.declaredValueUsd ?? 0) * 1.2,
   );
   for (const r of cargoLeaks) {
-    const gap =
-      Number(r.fields.marketValueUsd ?? 0) - Number(r.fields.declaredValueUsd ?? 0);
+    const gap = Number(r.fields.marketValueUsd ?? 0) - Number(r.fields.declaredValueUsd ?? 0);
     const patternScore = Math.min(95, 55 + Math.min(30, Math.round(gap / 100_000)));
     out.push(
       makePattern({
@@ -633,8 +613,7 @@ function detectPortCongestion(ctx: DetectorCtx): OperationalPattern[] {
   }
   for (const [port, recs] of byPort) {
     if (recs.length < 5) continue;
-    const avgWait =
-      recs.reduce((s, r) => s + Number(r.fields.waitHours ?? 0), 0) / recs.length;
+    const avgWait = recs.reduce((s, r) => s + Number(r.fields.waitHours ?? 0), 0) / recs.length;
     if (avgWait < 24) continue;
     const patternScore = Math.min(90, 40 + Math.round(avgWait));
     const entity: CanonicalEntityRef = {
@@ -776,9 +755,7 @@ function detectHistoricalBehaviour(ctx: DetectorCtx): OperationalPattern[] {
 
 // ─── Orchestrator ──────────────────────────────────────────────────────
 
-export function analyzeOperationalKnowledge(
-  input: AnalyzeOklInput,
-): OperationalKnowledgePackage {
+export function analyzeOperationalKnowledge(input: AnalyzeOklInput): OperationalKnowledgePackage {
   const base = baseConfidence(input.uip);
   const ctx: DetectorCtx = {
     uip: input.uip,
@@ -818,16 +795,18 @@ export function analyzeOperationalKnowledge(
             seen.add(n.neighbor.id);
             const k = n.neighbor.kind;
             const canonicalKind: CanonicalEntityRef["kind"] =
-              k === "vessel" || k === "company" || k === "person" ||
-              k === "port" || k === "cargo" || k === "voyage"
+              k === "vessel" ||
+              k === "company" ||
+              k === "person" ||
+              k === "port" ||
+              k === "cargo" ||
+              k === "voyage"
                 ? k
                 : "company";
             related.push({ kind: canonicalKind, id: n.neighbor.id, label: n.neighbor.label });
           }
         }
-        return related.length
-          ? { ...p, entities: [...p.entities, ...related] }
-          : p;
+        return related.length ? { ...p, entities: [...p.entities, ...related] } : p;
       })
     : patterns;
 
@@ -850,9 +829,7 @@ export function analyzeOperationalKnowledge(
     evidence: base.evidence,
     fusion: base.fusion,
     pattern: enriched.length
-      ? Math.round(
-          enriched.reduce((s, p) => s + p.confidence.pattern, 0) / enriched.length,
-        )
+      ? Math.round(enriched.reduce((s, p) => s + p.confidence.pattern, 0) / enriched.length)
       : 0,
     recommendation: topRecommendation?.confidence ?? 0,
     tier: tierFromScore(topRecommendation?.confidence ?? 0),

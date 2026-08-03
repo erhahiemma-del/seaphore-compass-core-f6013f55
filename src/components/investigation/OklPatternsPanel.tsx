@@ -72,10 +72,7 @@ export function OklPatternsPanel({ w }: { w: InvestigationWorkspace }) {
     return latestId ? s.byId[latestId] : undefined;
   });
 
-  const linkedIds = useMemo(
-    () => new Set(w.oklPatternIds ?? []),
-    [w.oklPatternIds],
-  );
+  const linkedIds = useMemo(() => new Set(w.oklPatternIds ?? []), [w.oklPatternIds]);
 
   const allPatterns = useMemo(() => {
     if (!uip) return [] as OperationalPattern[];
@@ -93,7 +90,9 @@ export function OklPatternsPanel({ w }: { w: InvestigationWorkspace }) {
 
   function handleAutoIngest() {
     if (!uip) {
-      toast.info("No Unified Intelligence Package available. Run a briefing from the Copilot first.");
+      toast.info(
+        "No Unified Intelligence Package available. Run a briefing from the Copilot first.",
+      );
       return;
     }
     const res = autoIngestOklIntoInvestigations(
@@ -167,7 +166,8 @@ export function OklPatternsPanel({ w }: { w: InvestigationWorkspace }) {
             <Brain className="h-4 w-4 text-violet-600" /> Operational Knowledge
           </h3>
           <p className="text-[11px] text-muted-foreground">
-            OKL patterns linked to this case. Reasoning is evidence-backed. Recommendations require officer approval.
+            OKL patterns linked to this case. Reasoning is evidence-backed. Recommendations require
+            officer approval.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -183,7 +183,9 @@ export function OklPatternsPanel({ w }: { w: InvestigationWorkspace }) {
       <div className="space-y-3 p-4">
         {patterns.length === 0 ? (
           <p className="rounded border border-dashed p-3 text-xs text-muted-foreground">
-            No OKL patterns have been linked to this investigation yet. Run <span className="font-medium">Sync OKL</span> to project any detected patterns whose entities overlap this case.
+            No OKL patterns have been linked to this investigation yet. Run{" "}
+            <span className="font-medium">Sync OKL</span> to project any detected patterns whose
+            entities overlap this case.
           </p>
         ) : (
           patterns.map((p) => (
@@ -335,13 +337,18 @@ function PatternCard({
               {pattern.alternatives.map((a, i) => (
                 <li key={i}>
                   <span className="font-medium">{a.label}</span>
-                  <span className="text-muted-foreground"> ({a.likelihood.toLowerCase()}) — {a.rationale}</span>
+                  <span className="text-muted-foreground">
+                    {" "}
+                    ({a.likelihood.toLowerCase()}) — {a.rationale}
+                  </span>
                 </li>
               ))}
             </ul>
           )}
           {pattern.historicalContext ? (
-            <p className="mt-1 text-[10px] italic text-muted-foreground">{pattern.historicalContext}</p>
+            <p className="mt-1 text-[10px] italic text-muted-foreground">
+              {pattern.historicalContext}
+            </p>
           ) : null}
         </section>
       </div>
@@ -370,7 +377,10 @@ function PatternCard({
                         {rec.confidence}%
                       </Badge>
                       {rec.requiresOfficerApproval ? (
-                        <Badge variant="outline" className="border-amber-500/40 text-[10px] text-amber-700">
+                        <Badge
+                          variant="outline"
+                          className="border-amber-500/40 text-[10px] text-amber-700"
+                        >
                           approval gated
                         </Badge>
                       ) : null}

@@ -446,7 +446,8 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     id: "ial.gfw-vessel-evidence",
     name: "GFW vessel identity + last position",
     producer: "IAL",
-    description: "Identity, flag, MMSI/IMO, and last-known position collected from Global Fishing Watch.",
+    description:
+      "Identity, flag, MMSI/IMO, and last-known position collected from Global Fishing Watch.",
     state: "PROJECTED",
     projection: {
       surface: "Key Facts · vessel identity",
@@ -492,7 +493,8 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
       "Sprint EP-02 — the platform's single environmental evidence source (Tier 1, keyless, hourly). Open-Meteo Marine is Source 1 behind a source-adapter architecture (NOAA, Copernicus, ECMWF, tides, currents, storm/cyclone/flood feeds plug in as adapters). Acquires observations only: waveHeight (m), waveDirection (deg), windSpeed (kn), windDirection (deg), visibility (m), seaSurfaceTemperature (degC), with location, observationTime, source, acquisition confidence, rawPayload and rawHash. Cached 1h in the existing EvidenceCache. It never characterises the sea state (no CALM/ROUGH/SAFE/UNSAFE, no severity, no forecast) — interpretation belongs to the OIE.",
     state: "PROJECTED",
     projection: {
-      surface: "Evidence Provenance · citation list (environmental observations with units and observation time)",
+      surface:
+        "Evidence Provenance · citation list (environmental observations with units and observation time)",
       location: "src/components/copilot/briefing/EvidenceProvenancePanel.tsx",
       component: "src/connectors/implementations/EnvironmentalIntelligenceProvider.ts",
       interaction: "drill-in",
@@ -509,7 +511,8 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
       "Sprint EP-02 — corporate registry evidence (company name, number, jurisdiction, type, status, incorporation/dissolution dates, registered address, evidenceUrl, rawHash) from OpenCorporates /v0.4/companies/search, cached 12h. Acquisition only: no beneficial-ownership inference, no identity resolution, no DB writes, no UIP creation.",
     state: "PROJECTED",
     projection: {
-      surface: "Evidence Provenance · citation list (corporate registry records) and Ownership Centre sources",
+      surface:
+        "Evidence Provenance · citation list (corporate registry records) and Ownership Centre sources",
       location: "src/components/copilot/briefing/EvidenceProvenancePanel.tsx",
       component: "src/connectors/implementations/OpenCorporatesProvider.ts",
       interaction: "drill-in",
@@ -525,7 +528,8 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
       "Sprint EP-03 — ship particulars, management and classification evidence (vesselName, imoNumber, mmsi, callSign, flagState, shipType, grossTonnage, deadweight, yearOfBuild, registeredOwner, ismManager, classificationSociety, rawHash) from Equasis, cached 24h. Account-gated: with no credentials configured the provider reports an explicit acquisition failure and never simulates particulars.",
     state: "PROJECTED",
     projection: {
-      surface: "Evidence Provenance · citation list (ship particulars with source and observation time)",
+      surface:
+        "Evidence Provenance · citation list (ship particulars with source and observation time)",
       location: "src/components/copilot/briefing/EvidenceProvenancePanel.tsx",
       component: "src/connectors/implementations/EquasisProvider.ts",
       interaction: "drill-in",
@@ -541,7 +545,8 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
       "Sprint EP-04 — IMO registry evidence (vesselName, imoNumber, formerNames, flagState, flagRegistrationDate, shipType, grossTonnage, yearOfBuild, registeredOwner, operator, registryStatus, rawHash) from GISIS, cached 7d. Account-gated: absent credentials produce an explicit acquisition failure, never fabricated registry data.",
     state: "PROJECTED",
     projection: {
-      surface: "Evidence Provenance · citation list (IMO registry records incl. former names and flag history)",
+      surface:
+        "Evidence Provenance · citation list (IMO registry records incl. former names and flag history)",
       location: "src/components/copilot/briefing/EvidenceProvenancePanel.tsx",
       component: "src/connectors/implementations/ImoGisisProvider.ts",
       interaction: "drill-in",
@@ -557,7 +562,8 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
       "Sprint EP-06 — AIS-derived identity and activity evidence (vesselName, imoNumber, mmsi, callSign, flagState, vesselType, gearTypes, first/lastTransmissionDate, gfwVesselId, rawHash) from Global Fishing Watch API v3, cached 1h. Observations are reported verbatim: the provider never labels behaviour dark/suspicious, never scores risk and never infers intent — interpretation belongs to the IFE/OIE.",
     state: "PROJECTED",
     projection: {
-      surface: "Evidence Provenance · citation list (AIS observations) and Supporting Evidence · AIS continuity",
+      surface:
+        "Evidence Provenance · citation list (AIS observations) and Supporting Evidence · AIS continuity",
       location: "src/components/copilot/briefing/EvidenceProvenancePanel.tsx",
       component: "src/connectors/implementations/GlobalFishingWatchProvider.ts",
       interaction: "drill-in",
@@ -573,7 +579,8 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
       "Sprint EP-07 — primary-source US Treasury OFAC SDN designations (entityName, sdnType, sanctionLists, sanctionPrograms, aliases, countries, imoNumber, callSign, vesselFlag, vesselType, remarks, listPublishDate, evidenceUrl, rawHash) from Treasury's published export, cached 24h. Keyless. Corroborates OpenSanctions; asserts no match and scores no risk.",
     state: "PROJECTED",
     projection: {
-      surface: "Evidence Provenance · citation list (OFAC SDN designations with programme and publish date)",
+      surface:
+        "Evidence Provenance · citation list (OFAC SDN designations with programme and publish date)",
       location: "src/components/copilot/briefing/EvidenceProvenancePanel.tsx",
       component: "src/connectors/implementations/OfacProvider.ts",
       interaction: "drill-in",
@@ -589,7 +596,8 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
       "Sprint EP-08 — primary-source UN Security Council consolidated designations (entityName, sanctionLists, sanctionPrograms/unListType, unReferenceNumber, committee, startDate, aliases, countries, remarks, evidenceUrl, rawHash) from the UN's published consolidated XML, cached 24h. Keyless. Corroborates OpenSanctions; asserts no match and scores no risk.",
     state: "PROJECTED",
     projection: {
-      surface: "Evidence Provenance · citation list (UN consolidated-list designations with reference number)",
+      surface:
+        "Evidence Provenance · citation list (UN consolidated-list designations with reference number)",
       location: "src/components/copilot/briefing/EvidenceProvenancePanel.tsx",
       component: "src/connectors/implementations/UnSecurityCouncilProvider.ts",
       interaction: "drill-in",
@@ -642,13 +650,12 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     reviewedAt: REVIEWED,
   },
 
-
-
   {
     id: "reasoning.ais-continuity-report",
     name: "AIS Behaviour Analyzer continuity report",
     producer: "REASONING",
-    description: "Contextualised gap analysis (weather, distance from coast, historical frequency). Never risk-scored.",
+    description:
+      "Contextualised gap analysis (weather, distance from coast, historical frequency). Never risk-scored.",
     state: "PROJECTED",
     projection: {
       surface: "Supporting Evidence · AIS continuity",
@@ -661,7 +668,8 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     id: "capability.osae-assessment",
     name: "OSAE operational priority + narrative",
     producer: "CAPABILITY",
-    description: "Priority (watch/monitor/act/urgent) and officer-safe narrative — the only authorised interpretation of AIS continuity.",
+    description:
+      "Priority (watch/monitor/act/urgent) and officer-safe narrative — the only authorised interpretation of AIS continuity.",
     state: "PROJECTED",
     projection: {
       surface: "Officer Decision Header · priority chip",
@@ -1133,7 +1141,8 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
       "Sprint DIAG-02 — CARGO evidence coverage behind indexed manifest records. Projected as a smart KPI state (Active / Waiting for Credentials / Provider Offline / Rate Limited / No Evidence Found / Projection Missing / Dashboard Mapping Error) with an expandable coverage trace: provider, status, last successful sync, evidence count, coverage %, confidence, projection status, dashboard status and root cause.",
     state: "PROJECTED",
     projection: {
-      surface: "Mission Control ribbon · Manifest Intelligence KPI card (expandable coverage details)",
+      surface:
+        "Mission Control ribbon · Manifest Intelligence KPI card (expandable coverage details)",
       location: "src/features/mission-control/MissionControl.tsx",
       component: "src/components/intelligence/KpiCoverageCard.tsx",
       interaction: "drill-in",
@@ -1148,7 +1157,8 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
       "Sprint DIAG-02 — IDENTITY / VESSEL_SCREENING evidence coverage behind vessel profiles. Projected as a smart KPI state (Active / Waiting for Credentials / Provider Offline / Rate Limited / No Evidence Found / Projection Missing / Dashboard Mapping Error) with an expandable coverage trace: provider, status, last successful sync, evidence count, coverage %, confidence, projection status, dashboard status and root cause.",
     state: "PROJECTED",
     projection: {
-      surface: "Mission Control ribbon · Vessel Intelligence KPI card (expandable coverage details)",
+      surface:
+        "Mission Control ribbon · Vessel Intelligence KPI card (expandable coverage details)",
       location: "src/features/mission-control/MissionControl.tsx",
       component: "src/components/intelligence/KpiCoverageCard.tsx",
       interaction: "drill-in",
@@ -1163,7 +1173,8 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
       "Sprint DIAG-02 — CARGO evidence coverage behind tracked container movements. Projected as a smart KPI state (Active / Waiting for Credentials / Provider Offline / Rate Limited / No Evidence Found / Projection Missing / Dashboard Mapping Error) with an expandable coverage trace: provider, status, last successful sync, evidence count, coverage %, confidence, projection status, dashboard status and root cause.",
     state: "PROJECTED",
     projection: {
-      surface: "Mission Control ribbon · Container Intelligence KPI card (expandable coverage details)",
+      surface:
+        "Mission Control ribbon · Container Intelligence KPI card (expandable coverage details)",
       location: "src/features/mission-control/MissionControl.tsx",
       component: "src/components/intelligence/KpiCoverageCard.tsx",
       interaction: "drill-in",
@@ -1178,7 +1189,8 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
       "Sprint DIAG-02 — CARGO-derived revenue-at-risk evidence coverage. Projected as a smart KPI state (Active / Waiting for Credentials / Provider Offline / Rate Limited / No Evidence Found / Projection Missing / Dashboard Mapping Error) with an expandable coverage trace: provider, status, last successful sync, evidence count, coverage %, confidence, projection status, dashboard status and root cause.",
     state: "PROJECTED",
     projection: {
-      surface: "Mission Control ribbon · Revenue Intelligence KPI card (expandable coverage details)",
+      surface:
+        "Mission Control ribbon · Revenue Intelligence KPI card (expandable coverage details)",
       location: "src/features/mission-control/MissionControl.tsx",
       component: "src/components/intelligence/KpiCoverageCard.tsx",
       interaction: "drill-in",
@@ -1208,7 +1220,8 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
       "Sprint DIAG-02 — POSITION / PORT_CALL evidence coverage behind movement history. Projected as a smart KPI state (Active / Waiting for Credentials / Provider Offline / Rate Limited / No Evidence Found / Projection Missing / Dashboard Mapping Error) with an expandable coverage trace: provider, status, last successful sync, evidence count, coverage %, confidence, projection status, dashboard status and root cause.",
     state: "PROJECTED",
     projection: {
-      surface: "Mission Control ribbon · Historical Intelligence KPI card (expandable coverage details)",
+      surface:
+        "Mission Control ribbon · Historical Intelligence KPI card (expandable coverage details)",
       location: "src/features/mission-control/MissionControl.tsx",
       component: "src/components/intelligence/KpiCoverageCard.tsx",
       interaction: "drill-in",
@@ -1416,7 +1429,7 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     name: "Cargo Investigation Copilot — sticky investigation subject",
     producer: "OIE",
     description:
-      "Sprint CAP-04 — the cargo entity carried between turns so follow-up questions such as \"show related vessels\" stay on the same subject. The carried subject is always named back to the officer in the resolution note.",
+      'Sprint CAP-04 — the cargo entity carried between turns so follow-up questions such as "show related vessels" stay on the same subject. The carried subject is always named back to the officer in the resolution note.',
     state: "PROJECTED",
     projection: {
       surface: "Copilot answer header — resolution note naming the carried entity",
@@ -1449,7 +1462,8 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
       "Sprint CAP-03 — bounded traversal and path finding across evidenced cargo relationships. Each path is graded at its weakest link and rendered as an officer-readable narrative.",
     state: "PROJECTED",
     projection: {
-      surface: "Cargo Intelligence Workspace · Cargo Knowledge Graph panel (Relationship paths tab)",
+      surface:
+        "Cargo Intelligence Workspace · Cargo Knowledge Graph panel (Relationship paths tab)",
       location: "src/features/cargo-workspace/CargoGraphPanel.tsx",
       component: "src/services/cargo-graph/queries.ts",
       interaction: "passive-display",
@@ -1528,7 +1542,8 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
       "Cache TTL: 6h. Acquisition only — no persistence, no registerUip(), no identity resolution.",
     state: "PROJECTED",
     projection: {
-      surface: "Cargo Intelligence Workspace — manifest, container, cargo, trade, revenue, risk centres",
+      surface:
+        "Cargo Intelligence Workspace — manifest, container, cargo, trade, revenue, risk centres",
       location: "src/routes/cargo-workspace.$centre.tsx",
       component: "src/connectors/implementations/NcsCustomsProvider.ts",
       interaction: "drill-in",
@@ -1543,7 +1558,8 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
       "Sprint EP-COPERNICUS-01 — satellite imagery metadata from the Copernicus Data Space Ecosystem (CDSE). Sentinel-1 SAR, Sentinel-2 multispectral and all Copernicus mission collections. Metadata only: scene IDs, bounding boxes, acquisition times, collection names, cloud cover, GSD, SAR mode, polarisation, and licensing. OAuth 2.0 password-grant authentication with automatic token refresh. Credentials: COPERNICUS_USERNAME and COPERNICUS_PASSWORD. Grade: CORROBORATED (government ESA satellite acquisition). Never downloads imagery. Acquisition only: no vessel detection, no risk scoring, no SAR interpretation. Interpretation belongs to the IFE/OIE reasoning layers.",
     state: "PROJECTED",
     projection: {
-      surface: "Evidence Provenance — satellite scene metadata with coordinates and acquisition time",
+      surface:
+        "Evidence Provenance — satellite scene metadata with coordinates and acquisition time",
       location: "src/components/copilot/briefing/EvidenceProvenancePanel.tsx",
       component: "src/connectors/implementations/CopernicusProvider.ts",
       interaction: "drill-in",

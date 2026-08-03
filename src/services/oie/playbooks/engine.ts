@@ -12,12 +12,7 @@ import type {
   SectionKind,
 } from "@/services/orchestration";
 import type { ConfidenceBadge, OperationalMission } from "../types";
-import type {
-  Playbook,
-  PlaybookContext,
-  PlaybookEvaluation,
-  PlaybookFinding,
-} from "./types";
+import type { Playbook, PlaybookContext, PlaybookEvaluation, PlaybookFinding } from "./types";
 
 const DEFAULT_MATRIX: ConfidenceMatrix = {
   evidenceQuality: 0,
@@ -45,11 +40,9 @@ export function buildPlaybookContext(
     []) as PlaybookFinding[];
   const gaps = (pickSection(sections, "intelligence_gaps")?.payload?.list ?? []) as string[];
   const impact = pickSection(sections, "decision_impact")?.payload as
-    | PlaybookContext["decisionImpact"]
-    | undefined;
+    PlaybookContext["decisionImpact"] | undefined;
   const sourcesPayload = pickSection(sections, "evidence_sources")?.payload as
-    | Partial<PlaybookContext["sources"]>
-    | undefined;
+    Partial<PlaybookContext["sources"]> | undefined;
 
   return {
     briefing,
@@ -80,12 +73,8 @@ function countMandatoryEvidenceCovered(
   const sections = Array.isArray(briefing?.sections) ? briefing.sections : [];
   const critical = (pickSection(sections, "critical_findings")?.payload?.findings ??
     []) as PlaybookFinding[];
-  const verified = (pickSection(sections, "verified_evidence")?.payload?.items ??
-    []) as string[];
-  const haystack = [
-    ...critical.map((f) => `${f?.title ?? ""} ${f?.source ?? ""}`),
-    ...verified,
-  ]
+  const verified = (pickSection(sections, "verified_evidence")?.payload?.items ?? []) as string[];
+  const haystack = [...critical.map((f) => `${f?.title ?? ""} ${f?.source ?? ""}`), ...verified]
     .join(" \n ")
     .toLowerCase();
   const missing: string[] = [];
@@ -93,16 +82,20 @@ function countMandatoryEvidenceCovered(
   for (const item of mandatory) {
     const needle = item.toLowerCase();
     const keywords = needle.split(/[^a-z0-9]+/).filter((w) => w.length >= 4);
-    const hit = keywords.length === 0
-      ? haystack.includes(needle)
-      : keywords.some((k) => haystack.includes(k));
+    const hit =
+      keywords.length === 0
+        ? haystack.includes(needle)
+        : keywords.some((k) => haystack.includes(k));
     if (hit) covered += 1;
     else missing.push(item);
   }
   return { covered, missing };
 }
 
-function pickBand(playbook: Playbook, ctx: PlaybookContext): {
+function pickBand(
+  playbook: Playbook,
+  ctx: PlaybookContext,
+): {
   badge: ConfidenceBadge;
   explanation: string;
 } {

@@ -22,12 +22,12 @@ export const getMioIpefExecutionsFn = createServerFn({ method: "GET" })
     const summary = ipefRegistry.summary();
     return {
       executions: records.map((r) => ({
-        correlationId:    r.correlationId,
-        createdAt:        r.createdAt,
-        overallStatus:    r.overallStatus,
-        totalDurationMs:  r.totalDurationMs,
+        correlationId: r.correlationId,
+        createdAt: r.createdAt,
+        overallStatus: r.overallStatus,
+        totalDurationMs: r.totalDurationMs,
         contributorCount: r.contributors.length,
-        gapCount:         r.intelligenceGaps.length,
+        gapCount: r.intelligenceGaps.length,
         confidenceEntities: r.confidenceDecompositions.length,
       })),
       summary,
@@ -48,13 +48,13 @@ export const getMioIpefProvenanceFn = createServerFn({ method: "GET" })
     }
     return {
       record: {
-        correlationId:   record.correlationId,
-        createdAt:       record.createdAt,
-        overallStatus:   record.overallStatus,
+        correlationId: record.correlationId,
+        createdAt: record.createdAt,
+        overallStatus: record.overallStatus,
         totalDurationMs: record.totalDurationMs,
-        pipelineTrace:   record.pipelineTrace,
-        contributors:    record.contributors,
-        intelligenceGaps:record.intelligenceGaps,
+        pipelineTrace: record.pipelineTrace,
+        contributors: record.contributors,
+        intelligenceGaps: record.intelligenceGaps,
       },
       timestamp: new Date().toISOString(),
     };
@@ -71,9 +71,17 @@ export const getMioIpefContributorsFn = createServerFn({ method: "GET" })
     }
 
     // Aggregate per contributor across all executions
-    const byContributor = new Map<string, {
-      displayName: string; total: number; success: number; failed: number; avgDurationMs: number; totalFacts: number;
-    }>();
+    const byContributor = new Map<
+      string,
+      {
+        displayName: string;
+        total: number;
+        success: number;
+        failed: number;
+        avgDurationMs: number;
+        totalFacts: number;
+      }
+    >();
 
     for (const record of records) {
       for (const c of record.contributors) {
@@ -119,8 +127,8 @@ export const getMioIpefConfidenceFn = createServerFn({ method: "GET" })
     }
     return {
       decompositions: record.confidenceDecompositions,
-      correlationId:  record.correlationId,
-      timestamp:      new Date().toISOString(),
+      correlationId: record.correlationId,
+      timestamp: new Date().toISOString(),
     };
   });
 
@@ -134,9 +142,9 @@ export const getMioIpefLineageFn = createServerFn({ method: "GET" })
       return { chains: [], gaps: [], timestamp: new Date().toISOString() };
     }
     return {
-      chains:          record.recommendationProvenance,
-      gaps:            record.intelligenceGaps,
-      correlationId:   record.correlationId,
-      timestamp:       new Date().toISOString(),
+      chains: record.recommendationProvenance,
+      gaps: record.intelligenceGaps,
+      correlationId: record.correlationId,
+      timestamp: new Date().toISOString(),
     };
   });

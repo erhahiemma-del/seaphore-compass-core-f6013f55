@@ -6,16 +6,8 @@
  * band, escalations, evidence limitations, and applied rule IDs.
  */
 import { describe, expect, it } from "vitest";
-import type {
-  Briefing,
-  BriefingSection,
-  ConfidenceMatrix,
-} from "@/services/orchestration";
-import {
-  evaluatePlaybook,
-  findPlaybook,
-  listPlaybooks,
-} from "../index";
+import type { Briefing, BriefingSection, ConfidenceMatrix } from "@/services/orchestration";
+import { evaluatePlaybook, findPlaybook, listPlaybooks } from "../index";
 import type { Playbook } from "../types";
 
 const HIGH_MATRIX: ConfidenceMatrix = {
@@ -109,7 +101,9 @@ function pb(id: string): Playbook {
 
 describe("Playbook Registry", () => {
   it("registers all nine SOP playbooks", () => {
-    const ids = listPlaybooks().map((p) => p.skillId).sort();
+    const ids = listPlaybooks()
+      .map((p) => p.skillId)
+      .sort();
     expect(ids).toEqual(
       [
         "cargo_investigation",
@@ -148,12 +142,8 @@ describe("Manifest Investigation Playbook", () => {
 
     const actions = evalRes.recommendedActions.map((r) => r.action);
     expect(actions).toContain("Request a revised manifest before clearance");
-    expect(actions).toContain(
-      "Physically verify the Bill of Lading against the declared manifest",
-    );
-    expect(actions).toContain(
-      "Escalate to Revenue Intelligence for shortfall assessment",
-    );
+    expect(actions).toContain("Physically verify the Bill of Lading against the declared manifest");
+    expect(actions).toContain("Escalate to Revenue Intelligence for shortfall assessment");
     expect(evalRes.confidence.badge).toBe("High Confidence");
     expect(evalRes.reasoningNotes.some((n) => n.toLowerCase().includes("weight"))).toBe(true);
     expect(evalRes.insufficientEvidence).toBe(false);
@@ -180,17 +170,12 @@ describe("Cargo Verification Playbook", () => {
         { priority: "critical", title: "Container count discrepancy detected", source: "customs" },
         { priority: "high", title: "Hazmat annex missing UN class", source: "manifest" },
       ],
-      verified: [
-        "Declared cargo items list retrieved",
-        "Container classification retrieved",
-      ],
+      verified: ["Declared cargo items list retrieved", "Container classification retrieved"],
     });
     const evalRes = evaluatePlaybook(pb("cargo_investigation"), briefing);
     const actions = evalRes.recommendedActions.map((r) => r.action);
     expect(actions).toContain("Verify cargo physically before clearance");
-    expect(actions).toContain(
-      "Trigger hazmat inspection and confirm stowage compliance",
-    );
+    expect(actions).toContain("Trigger hazmat inspection and confirm stowage compliance");
     expect(evalRes.escalations.some((e) => e.toLowerCase().includes("hazmat"))).toBe(true);
   });
 });
@@ -199,7 +184,11 @@ describe("Vessel Risk Assessment Playbook", () => {
   it("holds vessel on sanctions proximity and escalates to Compliance", () => {
     const briefing = makeBriefing({
       findings: [
-        { priority: "critical", title: "OFAC sanctions match on beneficial owner", source: "sanctions" },
+        {
+          priority: "critical",
+          title: "OFAC sanctions match on beneficial owner",
+          source: "sanctions",
+        },
         { priority: "high", title: "Prior PSC detention on record", source: "psc" },
       ],
       verified: ["Vessel registry record", "AIS movement history", "Owner and operator record"],
@@ -247,15 +236,17 @@ describe("Compliance Review Playbook", () => {
   it("holds clearance when a mandatory certificate has expired", () => {
     const briefing = makeBriefing({
       findings: [
-        { priority: "critical", title: "SOLAS certificate expired 3 months ago", source: "compliance" },
+        {
+          priority: "critical",
+          title: "SOLAS certificate expired 3 months ago",
+          source: "compliance",
+        },
       ],
       verified: ["Certification status retrieved", "NIMASA obligations record retrieved"],
     });
     const evalRes = evaluatePlaybook(pb("compliance_review"), briefing);
     const actions = evalRes.recommendedActions.map((r) => r.action);
-    expect(actions).toContain(
-      "Hold clearance until the expired certificate is reissued",
-    );
+    expect(actions).toContain("Hold clearance until the expired certificate is reissued");
     expect(evalRes.escalations.some((e) => e.toLowerCase().includes("compliance"))).toBe(true);
   });
 });
@@ -275,9 +266,7 @@ describe("Voyage Comparison Playbook", () => {
     });
     const evalRes = evaluatePlaybook(pb("voyage_comparison"), briefing);
     const actions = evalRes.recommendedActions.map((r) => r.action);
-    expect(actions).toContain(
-      "Investigate the route change and screen all new port calls",
-    );
+    expect(actions).toContain("Investigate the route change and screen all new port calls");
     expect(actions).toContain("Reconcile the cargo diff with the operator");
   });
 });
@@ -297,12 +286,8 @@ describe("Port Intelligence Playbook", () => {
     });
     const evalRes = evaluatePlaybook(pb("port_intelligence"), briefing);
     const actions = evalRes.recommendedActions.map((r) => r.action);
-    expect(actions).toContain(
-      "Apply enhanced monitoring on high-risk vessels in the roster",
-    );
-    expect(actions).toContain(
-      "Coordinate with berth planning to smooth congestion",
-    );
+    expect(actions).toContain("Apply enhanced monitoring on high-risk vessels in the roster");
+    expect(actions).toContain("Coordinate with berth planning to smooth congestion");
   });
 });
 

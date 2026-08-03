@@ -15,12 +15,7 @@ import type { UnifiedIntelligencePackage } from "@/services/ife/unified";
 import type { NormalizedEvidence } from "@/services/ial/types";
 import { createBaselineStore } from "./baselines";
 import { DEFAULT_DETECTORS } from "./detectors";
-import type {
-  BaselineStore,
-  Detector,
-  Prediction,
-  PredictionCycle,
-} from "./types";
+import type { BaselineStore, Detector, Prediction, PredictionCycle } from "./types";
 
 export interface PredictiveIntelligenceEngineOptions {
   readonly detectors?: ReadonlyArray<Detector>;
@@ -35,7 +30,10 @@ export interface PredictiveIntelligenceEngineOptions {
 export type PieIngestInput =
   | { readonly evidence: ReadonlyArray<NormalizedEvidence> }
   | { readonly fused: FusedEvidencePackage; readonly evidence?: ReadonlyArray<NormalizedEvidence> }
-  | { readonly unified: UnifiedIntelligencePackage; readonly evidence?: ReadonlyArray<NormalizedEvidence> };
+  | {
+      readonly unified: UnifiedIntelligencePackage;
+      readonly evidence?: ReadonlyArray<NormalizedEvidence>;
+    };
 
 type Listener = (cycle: PredictionCycle) => void;
 
@@ -141,8 +139,10 @@ export class PredictiveIntelligenceEngine {
 
 function pickEvidence(input: PieIngestInput): ReadonlyArray<NormalizedEvidence> {
   if ("evidence" in input && input.evidence) return input.evidence;
-  if ("fused" in input && input.fused && "evidence" in input && input.evidence) return input.evidence;
-  if ("unified" in input && input.unified && "evidence" in input && input.evidence) return input.evidence;
+  if ("fused" in input && input.fused && "evidence" in input && input.evidence)
+    return input.evidence;
+  if ("unified" in input && input.unified && "evidence" in input && input.evidence)
+    return input.evidence;
   return [];
 }
 
