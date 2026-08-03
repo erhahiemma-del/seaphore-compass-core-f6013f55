@@ -81,8 +81,8 @@ describe("Government Maritime Evidence Provider", () => {
     const evidence = result.records[0];
     expect(evidence.source).toBe("gov-maritime");
     expect(evidence.entity.kind).toBe("cargo");
-    expect(provider.lineageFor(evidence.id)?.chain.length).toBe(7);
-    expect(provider.confidenceFor(evidence.id)?.grade).toBeTruthy();
+    expect(provider.lineage.get(evidence.id)?.chain.length).toBe(7);
+    expect(provider.confidence.get(evidence.id)?.grade).toBeTruthy();
   });
 
   it("grades a complete, fresh, corroborated authority record VERIFIED", () => {

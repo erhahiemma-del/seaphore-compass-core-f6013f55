@@ -210,14 +210,14 @@ export class GovernmentMaritimeProvider extends BaseEvidenceProvider {
     return this.lastIssues;
   }
 
-  /** Full provenance chain for one piece of government evidence. */
-  lineageFor(evidenceId: string): GovernmentLineage | null {
-    return this.lineageByEvidenceId.get(evidenceId) ?? null;
+  /** Full provenance chain per evidence id, for officer drill-in. */
+  get lineage(): ReadonlyMap<string, GovernmentLineage> {
+    return this.lineageByEvidenceId;
   }
 
-  /** Cargo Confidence Model breakdown for one piece of evidence. */
-  confidenceFor(evidenceId: string): CargoConfidence | null {
-    return this.confidenceByEvidenceId.get(evidenceId) ?? null;
+  /** Cargo Confidence Model breakdown per evidence id. */
+  get confidence(): ReadonlyMap<string, CargoConfidence> {
+    return this.confidenceByEvidenceId;
   }
 
   /** Package-level confidence across the most recent acquisition. */
