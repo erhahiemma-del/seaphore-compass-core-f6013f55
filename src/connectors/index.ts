@@ -58,6 +58,13 @@ import {
   NcsCustomsProvider,
   ncsCustomsProvider,
 } from "./implementations/NcsCustomsProvider";
+export {
+  GovernmentMaritimeProvider,
+  governmentMaritimeProvider,
+  GOVERNMENT_MARITIME_METADATA,
+  GOVERNMENT_MARITIME_CACHE_TTL_MS,
+} from "./implementations/GovernmentMaritimeProvider";
+import { governmentMaritimeProvider as govMaritime } from "./implementations/GovernmentMaritimeProvider";
 import {
   COPERNICUS_METADATA,
   COPERNICUS_CACHE_TTL_MS,
@@ -128,6 +135,7 @@ export function registerEvidenceProviders(manager: ConnectorManager): void {
     ofacProvider,
     unSecurityCouncilProvider,
     ncsCustomsProvider,
+    govMaritime,
     copernicusProvider,
   ]) {
     registerCertifiedProvider(manager, provider, {

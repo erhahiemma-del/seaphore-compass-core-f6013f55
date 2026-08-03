@@ -38,6 +38,10 @@ import {
   UNSC_CACHE_TTL_MS,
 } from "./implementations/UnSecurityCouncilProvider";
 import { copernicusProvider, COPERNICUS_CACHE_TTL_MS } from "./implementations/CopernicusProvider";
+import {
+  governmentMaritimeProvider,
+  GOVERNMENT_MARITIME_CACHE_TTL_MS,
+} from "./implementations/GovernmentMaritimeProvider";
 
 /** Descriptive, human-authored half of a catalog row. */
 interface CatalogDeclaration {
@@ -178,6 +182,32 @@ const DECLARATIONS: ReadonlyArray<{
       referenceImplementation: false,
       documentation: DOCS,
       sourceFile: "src/connectors/implementations/NcsCustomsProvider.ts",
+    },
+  },
+  {
+    provider: governmentMaritimeProvider,
+    declaration: {
+      sprint: "EP-GOV-01",
+      dataSources: [
+        "Nigeria Customs Service / NICIS II (credentialed)",
+        "NIMASA statutory inspections and voyage reports (credentialed)",
+        "Nigerian Ports Authority clearances and container events (credentialed)",
+      ],
+      authentication: "api-token",
+      credentialEnv: [
+        "NCS_CUSTOMS_API_BASE_URL",
+        "NCS_CUSTOMS_API_TOKEN",
+        "NIMASA_API_BASE_URL",
+        "NIMASA_API_TOKEN",
+        "NPA_API_BASE_URL",
+        "NPA_API_TOKEN",
+      ],
+      cacheTtlMs: GOVERNMENT_MARITIME_CACHE_TTL_MS,
+      testCoverage: ["src/connectors/__tests__/government-maritime.test.ts"],
+      lastValidationDate: VALIDATED,
+      referenceImplementation: false,
+      documentation: DOCS,
+      sourceFile: "src/connectors/implementations/GovernmentMaritimeProvider.ts",
     },
   },
   {

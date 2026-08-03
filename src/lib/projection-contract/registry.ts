@@ -1566,6 +1566,22 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: "2026-07-27",
   },
+  {
+    id: "ial.government-maritime-evidence-provider",
+    name: "Government Maritime Evidence Provider",
+    producer: "IAL",
+    description:
+      "Sprint EP-GOV-01 — ONE certified CAPABILITY.CARGO provider for every Nigerian government maritime authority (NCS, NIMASA, NPA) behind a reusable Government Adapter layer. Authoritative evidence: customs declarations, cargo declarations, manifest returns, revenue assessments, inspection records, voyage reports, port clearances and container events. Cargo Confidence Model grades authority, completeness, corroboration and freshness; full lineage from agency endpoint to officer surface. Credentials: NCS_CUSTOMS_API_BASE_URL/TOKEN, NIMASA_API_BASE_URL/TOKEN, NPA_API_BASE_URL/TOKEN. Cache TTL: 6h. Acquisition only — no persistence, no registerUip(), no identity resolution, no risk scoring.",
+    state: "PROJECTED",
+    projection: {
+      surface:
+        "Cargo Intelligence Workspace — manifest, container, cargo, trade, revenue and risk centres with confidence chips and government citations",
+      location: "src/routes/cargo-workspace.$centre.tsx",
+      component: "src/connectors/implementations/GovernmentMaritimeProvider.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-07-27",
+  },
 ];
 
 export function getContractEntry(id: string): ProjectionContractEntry | undefined {
