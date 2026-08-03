@@ -86,7 +86,7 @@ export function assertContracted(id: string): void {
   if (!found) {
     // Non-fatal in production; loud in dev. The Golden Rule violation is
     // real — surface it in the console so the audit view catches it too.
-    // eslint-disable-next-line no-console
+
     console.warn(
       `[projection-contract] Missing entry for backend artifact "${id}". ` +
         `Add it to src/lib/projection-contract/registry.ts with a projection state.`,

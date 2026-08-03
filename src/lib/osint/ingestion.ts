@@ -68,12 +68,10 @@ export async function ingestRecords(
           entity_id: row.entity_id,
           record_id: row.id,
         }));
-        await db
-          .from("osint_entity_index")
-          .upsert(idxRows, {
-            onConflict: "entity_type,entity_id,record_id",
-            ignoreDuplicates: true,
-          });
+        await db.from("osint_entity_index").upsert(idxRows, {
+          onConflict: "entity_type,entity_id,record_id",
+          ignoreDuplicates: true,
+        });
       }
     }
   }

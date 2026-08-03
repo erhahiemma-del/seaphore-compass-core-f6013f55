@@ -1457,7 +1457,6 @@ function CopilotCommandsPanel({
               onClick={() => {
                 const res = routeCommand(cmd, ctx, onRun);
                 if (!res.ok) {
-                  // eslint-disable-next-line no-console
                   console.info("[CopilotCommand] blocked:", res.message);
                 }
               }}
