@@ -7,7 +7,7 @@ describe("Projection Contract (Golden Rule)", () => {
     const report = validateContract();
     if (!report.ok) {
       // Print helpful diagnostics on failure.
-      // eslint-disable-next-line no-console
+
       console.error(report.issues);
     }
     expect(report.ok).toBe(true);

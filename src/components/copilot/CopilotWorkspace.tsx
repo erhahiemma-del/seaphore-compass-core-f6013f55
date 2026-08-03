@@ -176,7 +176,6 @@ export function CopilotWorkspace({
       session.appendCopilot(`Briefing: ${q}`, adapted.id, instance);
       await queryClient.invalidateQueries({ queryKey: ["intel", "briefings"] });
 
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const _keepBriefing = briefing;
       return { kind: "briefing", briefing: adapted, followUps };
     },

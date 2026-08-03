@@ -74,7 +74,7 @@ export function buildIntelligenceObjects(
     const score = micScoreFromGrade(grade);
 
     // Merge attributes from all evidence records for this entity
-    let mergedAttributes: Record<string, unknown> = {};
+    const mergedAttributes: Record<string, unknown> = {};
     for (const ev of nodeEvidence) {
       const partial = extractAttributes(ev, objectKind);
       if (partial) {

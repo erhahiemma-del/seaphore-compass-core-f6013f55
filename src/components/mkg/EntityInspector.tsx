@@ -20,7 +20,7 @@ interface Props {
 }
 
 export function EntityInspector({ entityId, onSelectNode }: Props) {
-  const revision = useMkgStore((s) => s.revision); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const revision = useMkgStore((s) => s.revision);
   const graph = useMkgStore((s) => s.graph);
 
   const summary = useMemo(

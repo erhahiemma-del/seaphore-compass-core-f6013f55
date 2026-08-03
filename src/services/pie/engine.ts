@@ -81,7 +81,7 @@ export class PredictiveIntelligenceEngine {
       } catch (err) {
         // Deterministic failure: a single detector never breaks the cycle.
         // Fail closed — no prediction rather than a wrong one.
-        // eslint-disable-next-line no-console
+
         console.warn(`[PIE] detector ${det.id} failed`, err);
       }
     }

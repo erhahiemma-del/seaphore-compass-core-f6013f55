@@ -62,7 +62,7 @@ const nullProviderCall: ProviderCall = async () => ({
 
 function logStageFailure(stage: string, err: unknown, ctx?: Record<string, unknown>) {
   // Developer-console only — officer never sees these details.
-  // eslint-disable-next-line no-console
+
   console.error(`[OIE] ${stage} failed`, err, ctx ?? {});
 }
 

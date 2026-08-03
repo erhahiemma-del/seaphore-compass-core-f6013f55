@@ -107,7 +107,7 @@ describe("Sprint 12 · retry", () => {
 
 describe("Sprint 12 · circuit breaker", () => {
   it("opens after 5 consecutive failures", async () => {
-    let t = 0;
+    const t = 0;
     const b = createBreaker({ name: "svc", failureThreshold: 5, resetMs: 1000, now: () => t });
     for (let i = 0; i < 5; i++) {
       await expect(
@@ -174,7 +174,7 @@ describe("Sprint 12 · circuit breaker", () => {
 
 describe("Sprint 12 · rate limiter", () => {
   it("allows within capacity, blocks past it, reports retryAfter", () => {
-    let t = 0;
+    const t = 0;
     const rl = createRateLimiter({ capacity: 3, refillPerSec: 1 }, () => t);
     for (let i = 0; i < 3; i++) expect(rl.take("officer:1").allowed).toBe(true);
     const denied = rl.take("officer:1");
