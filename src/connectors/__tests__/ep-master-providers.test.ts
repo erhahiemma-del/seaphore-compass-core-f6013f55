@@ -261,11 +261,11 @@ describe("EP-MASTER · Evidence Provider Catalog", () => {
       "equasis",
       "imo-gisis",
       "ncs-customs",
+      "gov-maritime",
       "environmental-intelligence",
       "global-fishing-watch",
       "ofac",
       "un-security-council",
-      "gov-maritime",
       "copernicus-cdse",
     ]);
   });
