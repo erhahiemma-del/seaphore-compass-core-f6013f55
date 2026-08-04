@@ -75,11 +75,14 @@ interface MapSessionState {
    */
   readonly rendererDraws: boolean;
   readonly vesselCount: number;
+  /** Sampled renderer frame rate, or null when unmeasured. */
+  readonly fps: number | null;
   readonly lastAppliedAt: string | null;
   readonly lastError: string | null;
   readonly setRenderer: (id: string | null, draws: boolean) => void;
   readonly setStatus: (status: RendererStatus) => void;
   readonly setVesselCount: (count: number, appliedAt?: string) => void;
+  readonly setFps: (fps: number | null) => void;
   readonly setError: (message: string | null) => void;
   readonly reset: () => void;
 }
@@ -89,6 +92,7 @@ const INITIAL_SESSION = {
   rendererStatus: "idle" as RendererStatus,
   rendererDraws: false,
   vesselCount: 0,
+  fps: null,
   lastAppliedAt: null,
   lastError: null,
 };
@@ -100,6 +104,7 @@ export const useMapSessionStore = create<MapSessionState>((set) => ({
   setStatus: (rendererStatus) => set({ rendererStatus }),
   setVesselCount: (vesselCount, appliedAt) =>
     set({ vesselCount, lastAppliedAt: appliedAt ?? new Date().toISOString() }),
+  setFps: (fps) => set({ fps }),
   setError: (lastError) => set({ lastError, rendererStatus: lastError ? "error" : "ready" }),
   reset: () => set({ ...INITIAL_SESSION }),
 }));

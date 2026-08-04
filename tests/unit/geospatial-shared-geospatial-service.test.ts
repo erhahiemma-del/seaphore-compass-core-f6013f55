@@ -369,3 +369,84 @@ describe("SharedGeospatialService", () => {
     });
   });
 });
+
+describe("SharedGeospatialService — layer opacity (G5.5.2)", () => {
+  function svc() {
+    return new SharedGeospatialService({ urlSync: false });
+  }
+
+  it("starts with no opacity overrides", () => {
+    expect(svc().get().layerOpacity).toEqual({});
+  });
+
+  it("sets and reads a layer's opacity", () => {
+    const service = svc();
+    service.setLayerOpacity("vessels", 0.4);
+
+    expect(service.layerOpacity("vessels")).toBe(0.4);
+    expect(service.get().layerOpacity).toEqual({ vessels: 0.4 });
+  });
+
+  it("defaults to fully opaque when no override is set", () => {
+    expect(svc().layerOpacity("ports")).toBe(1);
+  });
+
+  it("clamps out-of-range values", () => {
+    const service = svc();
+    service.setLayerOpacity("vessels", 5);
+    expect(service.layerOpacity("vessels")).toBe(1);
+    service.setLayerOpacity("vessels", -2);
+    expect(service.layerOpacity("vessels")).toBe(0);
+  });
+
+  it("clears an override with null", () => {
+    const service = svc();
+    service.setLayerOpacity("vessels", 0.3);
+    service.setLayerOpacity("vessels", null);
+
+    expect(service.get().layerOpacity).toEqual({});
+    expect(service.layerOpacity("vessels")).toBe(1);
+  });
+
+  it("ignores unknown layers", () => {
+    const service = svc();
+    service.setLayerOpacity("not-a-layer", 0.5);
+
+    expect(service.get().layerOpacity).toEqual({});
+  });
+
+  it("does not notify when the same opacity is reapplied", () => {
+    const service = svc();
+    service.setLayerOpacity("vessels", 0.5);
+    const handler = vi.fn();
+    service.subscribe(handler);
+
+    service.setLayerOpacity("vessels", 0.5);
+
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it("round-trips opacity through the URL", () => {
+    const source = svc();
+    source.setLayerOpacity("vessels", 0.25);
+    source.setLayerOpacity("ports", 0.8);
+    const target = svc();
+
+    target.loadFromURL(`?${source.toSearchParams().toString()}`);
+
+    expect(target.layerOpacity("vessels")).toBe(0.25);
+    expect(target.layerOpacity("ports")).toBe(0.8);
+  });
+
+  it("omits the opacity parameter when nothing is overridden", () => {
+    expect(svc().toSearchParams().has("opacity")).toBe(false);
+  });
+
+  it("drops malformed or unknown entries when hydrating", () => {
+    const service = svc();
+
+    service.loadFromURL("?opacity=vessels:0.5,ghost:0.2,ports:notanumber");
+
+    expect(service.get().layerOpacity).toEqual({ vessels: 0.5 });
+  });
+});

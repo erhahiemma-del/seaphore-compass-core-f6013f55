@@ -130,8 +130,20 @@ export type {
   VesselRenderBatch,
 } from "./renderer";
 
-export { MAPLIBRE_AVAILABLE, MapLibreRenderer } from "./renderers/maplibre-renderer";
+export {
+  MAPLIBRE_AVAILABLE,
+  MapLibreRenderer,
+  NIGERIA_BOUNDS,
+} from "./renderers/maplibre-renderer";
 export { StubMapRenderer } from "./renderers/stub-renderer";
+
+export {
+  VESSEL_SPRITE_SIZE,
+  VESSEL_SPRITE_VARIANTS,
+  buildVesselSprites,
+  createPortDiamondImage,
+  createVesselArrowImage,
+} from "./icons/vessel-arrow";
 
 export {
   EmptyVesselSource,

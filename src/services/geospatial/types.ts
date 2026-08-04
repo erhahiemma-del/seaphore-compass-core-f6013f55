@@ -63,6 +63,13 @@ export interface MapState {
   readonly selectedEntityImo: string | null;
   /** Logical layer keys currently switched on. See the Layer Registry. */
   readonly activeLayers: readonly string[];
+  /**
+   * Per-layer opacity overrides, keyed by logical layer id, 0–1.
+   *
+   * Sparse on purpose: a layer absent from this map renders at its own default,
+   * so the common case costs nothing to store or serialise.
+   */
+  readonly layerOpacity: Readonly<Record<string, number>>;
   readonly filters: MapFilters;
   /** ISO timestamp when replaying history; `null` means "live". */
   readonly timelinePosition: string | null;

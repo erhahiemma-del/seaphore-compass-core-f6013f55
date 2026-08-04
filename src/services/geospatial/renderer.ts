@@ -94,6 +94,26 @@ export interface MapRenderer {
 
   /** Register vessel sprite variants (risk colours, selected, stale). */
   loadVesselIcons(): Promise<void>;
+
+  /**
+   * Set a render layer's opacity, 0–1.
+   *
+   * Optional and additive (G5.5.2): the G5.5.1 contract is unchanged, so
+   * adapters written against it remain valid. Callers must feature-detect.
+   */
+  setLayerOpacity?(renderLayerId: string, opacity: number): void;
+
+  /** Animate the camera to fit a bounding box. Optional (G5.5.2). */
+  fitBounds?(bounds: BoundingBox, options?: { padding?: number; duration?: number }): void;
+
+  /** Animate the camera to a position. Optional (G5.5.2). */
+  flyTo?(center: LonLat, zoom?: number): void;
+
+  /**
+   * Frames rendered per second, sampled by the adapter. `null` when the
+   * adapter does not measure. Optional (G5.5.2).
+   */
+  getFps?(): number | null;
 }
 
 /** An incremental change set handed to the renderer. */

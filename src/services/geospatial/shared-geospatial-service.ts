@@ -40,6 +40,7 @@ export function createDefaultMapState(registry: LayerRegistry = layerRegistry): 
     selectedEntityId: null,
     selectedEntityImo: null,
     activeLayers: registry.defaultActiveLayers(),
+    layerOpacity: {},
     filters: DEFAULT_FILTERS,
     timelinePosition: null,
     timelinePlaying: false,
@@ -124,6 +125,23 @@ export class SharedGeospatialService {
     this.setActiveLayers([...active]);
   }
 
+  /**
+   * Set a layer's opacity, 0-1. Passing `null` clears the override so the
+   * layer returns to its own default.
+   */
+  setLayerOpacity(layerId: string, opacity: number | null): void {
+    if (!this.registry.has(layerId)) return;
+    const next = { ...this.state.layerOpacity };
+    if (opacity === null) delete next[layerId];
+    else next[layerId] = Math.min(1, Math.max(0, opacity));
+    this.update({ layerOpacity: next });
+  }
+
+  /** Current opacity for a layer, or 1 when no override is set. */
+  layerOpacity(layerId: string): number {
+    return this.state.layerOpacity[layerId] ?? 1;
+  }
+
   /** Whether a layer is currently switched on. */
   isLayerActive(layerId: string): boolean {
     return this.state.activeLayers.includes(layerId);
@@ -174,6 +192,10 @@ export class SharedGeospatialService {
       zoom: state.zoom.toFixed(1),
       layers: state.activeLayers.join(","),
     });
+    const opacityEntries = Object.entries(state.layerOpacity);
+    if (opacityEntries.length > 0) {
+      params.set("opacity", opacityEntries.map(([id, value]) => `${id}:${value}`).join(","));
+    }
     if (state.selectedEntityImo) params.set("vessel", state.selectedEntityImo);
     if (state.missionId) params.set("mission", state.missionId);
     return params;
@@ -215,6 +237,19 @@ export class SharedGeospatialService {
       // An explicit empty list is meaningful ("hide everything"); a list of
       // entirely unknown ids is not, and is ignored.
       if (known.length > 0 || layers.trim() === "") patch.activeLayers = known;
+    }
+
+    const opacity = params.get("opacity");
+    if (opacity) {
+      const parsed: Record<string, number> = {};
+      for (const entry of opacity.split(",")) {
+        const [id, raw] = entry.split(":");
+        const value = Number.parseFloat(raw ?? "");
+        if (id && this.registry.has(id) && Number.isFinite(value)) {
+          parsed[id] = Math.min(1, Math.max(0, value));
+        }
+      }
+      if (Object.keys(parsed).length > 0) patch.layerOpacity = parsed;
     }
 
     const vessel = params.get("vessel");
@@ -276,6 +311,15 @@ function hasChanged(previous: MapState, next: MapState): boolean {
       const listA = a as readonly string[];
       const listB = b as readonly string[];
       if (listA.length !== listB.length || listA.some((id, i) => id !== listB[i])) return true;
+      continue;
+    }
+    if (key === "layerOpacity") {
+      const mapA = a as Record<string, number>;
+      const mapB = b as Record<string, number>;
+      const keysA = Object.keys(mapA);
+      const keysB = Object.keys(mapB);
+      if (keysA.length !== keysB.length) return true;
+      if (keysA.some((k) => mapA[k] !== mapB[k])) return true;
       continue;
     }
     if (key === "filters") {

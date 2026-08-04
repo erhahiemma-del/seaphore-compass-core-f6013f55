@@ -1,24 +1,25 @@
 /**
  * Maritime — Map canvas host.
  *
- * Owns the renderer lifecycle and wires the geospatial services together:
- * it mounts a {@link MapRenderer}, keeps layer visibility in step with the
- * Shared Geospatial Service, and feeds vessel data through the update engine.
+ * Owns the renderer lifecycle and wires the geospatial services together: it
+ * mounts a {@link MapRenderer}, keeps layer visibility and opacity in step with
+ * the Shared Geospatial Service, feeds vessel data through the update engine,
+ * and translates bus events back into SGS state.
  *
- * It deliberately contains no map-library code. The engine arrives by
- * injection, so this component is identical whether the stub or a real
- * MapLibre adapter is attached.
+ * It holds no map state. Selection identity lives in SGS; this component only
+ * looks the selected vessel's data up from the update engine and hands it to
+ * the parent for display.
  */
 import { useEffect, useMemo, useRef } from "react";
 import { MapPinOff } from "lucide-react";
 
 import {
   BASEMAP_STYLE,
+  EmptyVesselSource,
   MAP_DEFAULTS,
   MapLibreRenderer,
   TIMING,
   VesselUpdateEngine,
-  EmptyVesselSource,
   layerRegistry,
   mapEventBus,
   sgs,
@@ -26,16 +27,19 @@ import {
   type MapEventBus,
   type MapRenderer,
   type SharedGeospatialService,
+  type Vessel,
   type VesselSource,
 } from "@/services/geospatial";
 
 export interface MapCanvasProps {
-  /** Renderer to attach. Defaults to the MapLibre adapter (stub for now). */
+  /** Renderer to attach. Defaults to the MapLibre adapter. */
   readonly renderer?: MapRenderer;
   /** Where vessels come from. Defaults to an empty source. */
   readonly vesselSource?: VesselSource;
   readonly service?: SharedGeospatialService;
   readonly bus?: MapEventBus;
+  /** Called with the selected vessel's data, or null when deselected. */
+  readonly onVesselSelected?: (vessel: Vessel | null) => void;
 }
 
 export function MapCanvas({
@@ -43,16 +47,16 @@ export function MapCanvas({
   vesselSource,
   service = sgs,
   bus = mapEventBus,
+  onVesselSelected,
 }: MapCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const setRenderer = useMapSessionStore((s) => s.setRenderer);
   const setStatus = useMapSessionStore((s) => s.setStatus);
   const setVesselCount = useMapSessionStore((s) => s.setVesselCount);
   const setError = useMapSessionStore((s) => s.setError);
+  const setFps = useMapSessionStore((s) => s.setFps);
   const rendererDraws = useMapSessionStore((s) => s.rendererDraws);
 
-  // Construct once per mount. Injected instances are used as given so tests
-  // and Storybook can supply a stub and assert on what it received.
   const renderer = useMemo(
     () => injectedRenderer ?? new MapLibreRenderer({ bus }),
     [injectedRenderer, bus],
@@ -77,7 +81,8 @@ export function MapCanvas({
     let cancelled = false;
 
     const state = service.get();
-    setRenderer(renderer.id, renderer instanceof MapLibreRenderer ? renderer.isRealEngine : true);
+    const draws = renderer instanceof MapLibreRenderer ? renderer.isRealEngine : true;
+    setRenderer(renderer.id, draws);
     setStatus("mounting");
 
     void renderer
@@ -90,11 +95,13 @@ export function MapCanvas({
         maxZoom: MAP_DEFAULTS.maxZoom,
         maxBounds: MAP_DEFAULTS.maxBounds,
       })
-      .then(async () => {
-        if (cancelled) return;
-        await renderer.loadVesselIcons();
+      .then(() => {
         if (cancelled) return;
         engine.attachRenderer(renderer);
+        // Apply current layer state once the style is live.
+        for (const [id, visible] of layerRegistry.resolveVisibility(service.get().activeLayers)) {
+          renderer.setLayerVisibility(id, visible);
+        }
         setStatus("ready");
       })
       .catch((error: unknown) => {
@@ -110,7 +117,7 @@ export function MapCanvas({
     };
   }, [renderer, engine, service, setRenderer, setStatus, setError]);
 
-  // ── Layer visibility follows SGS ──────────────────────────────────────
+  // ── Layer visibility and opacity follow SGS ───────────────────────────
   useEffect(
     () =>
       service.subscribe((state) => {
@@ -119,24 +126,56 @@ export function MapCanvas({
         )) {
           renderer.setLayerVisibility(renderLayerId, visible);
         }
+        for (const layer of layerRegistry.list()) {
+          const opacity = state.layerOpacity[layer.id];
+          if (opacity === undefined || !renderer.setLayerOpacity) continue;
+          for (const renderLayerId of layer.renderLayerIds) {
+            renderer.setLayerOpacity(renderLayerId, opacity);
+          }
+        }
       }),
     [renderer, service],
   );
 
-  // ── Camera follows SGS ────────────────────────────────────────────────
-  useEffect(
-    () =>
-      service.subscribe((state) => {
-        if (!renderer.isReady()) return;
-        renderer.setCamera({
-          center: state.center,
-          zoom: state.zoom,
-          pitch: state.pitch,
-          bearing: state.bearing,
-        });
-      }),
-    [renderer, service],
-  );
+  // ── Camera follows SGS, but never fights the user's own gesture ───────
+  useEffect(() => {
+    let applying = false;
+    const offMove = bus.on("map:move", (camera) => {
+      // Echo the map's own movement into SGS without re-driving the camera.
+      applying = true;
+      service.setCamera(camera);
+      applying = false;
+    });
+    const offState = service.subscribe((state) => {
+      if (applying || !renderer.isReady()) return;
+      renderer.setCamera({
+        center: state.center,
+        zoom: state.zoom,
+        pitch: state.pitch,
+        bearing: state.bearing,
+      });
+    });
+    return () => {
+      offMove();
+      offState();
+    };
+  }, [renderer, service, bus]);
+
+  // ── Interaction → SGS ─────────────────────────────────────────────────
+  useEffect(() => {
+    const offClick = bus.on("vessel:click", ({ imo }) => {
+      service.selectEntity(imo, imo);
+      onVesselSelected?.(engine.get(imo) ?? null);
+    });
+    const offMapClick = bus.on("map:click", () => {
+      service.clearSelection();
+      onVesselSelected?.(null);
+    });
+    return () => {
+      offClick();
+      offMapClick();
+    };
+  }, [bus, service, engine, onVesselSelected]);
 
   // ── Vessel data: realtime where offered, polling otherwise ────────────
   useEffect(() => {
@@ -161,8 +200,6 @@ export function MapCanvas({
     void refresh();
     const interval = setInterval(() => void refresh(), TIMING.positionRefreshMs);
 
-    // A source with a push channel bypasses polling for individual updates —
-    // this is the path that avoids a full re-render per position report.
     const unsubscribe = source.subscribe?.((vessel) => {
       engine.applyPatch(vessel);
       setVesselCount(engine.size);
@@ -174,6 +211,18 @@ export function MapCanvas({
       unsubscribe?.();
     };
   }, [source, engine, bus, setVesselCount]);
+
+  // ── Frame-rate sampling (development telemetry) ───────────────────────
+  useEffect(() => {
+    if (!renderer.getFps) return;
+    // One sample per second: enough for an operator-visible readout, far too
+    // coarse to affect the render loop it is measuring.
+    const interval = setInterval(() => setFps(renderer.getFps?.() ?? null), 1_000);
+    return () => {
+      clearInterval(interval);
+      setFps(null);
+    };
+  }, [renderer, setFps]);
 
   // ── Selection changes re-derive presentation, not data ────────────────
   useEffect(() => {
@@ -196,20 +245,18 @@ export function MapCanvas({
 /**
  * Shown while no drawing engine is attached.
  *
- * Stating this plainly matters: an empty dark canvas is indistinguishable
- * from a data outage, and an officer must never mistake "no renderer
- * installed" for "no vessels in Nigerian waters".
+ * An empty dark canvas is indistinguishable from a data outage, and an officer
+ * must never mistake "no renderer" for "no vessels in Nigerian waters".
  */
 function RendererPendingNotice() {
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-[#0B1F3A]">
       <div className="max-w-md px-6 text-center">
         <MapPinOff className="mx-auto mb-3 h-8 w-8 text-muted-foreground" aria-hidden />
-        <p className="text-sm font-semibold text-foreground">Rendering engine not installed</p>
+        <p className="text-sm font-semibold text-foreground">Rendering engine unavailable</p>
         <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
           The geospatial foundation is active — shared state, layers, and the update engine are all
-          running. No basemap is drawn because <code className="font-mono">maplibre-gl</code> is not
-          yet a dependency. This is not a data outage.
+          running. This is not a data outage.
         </p>
       </div>
     </div>
