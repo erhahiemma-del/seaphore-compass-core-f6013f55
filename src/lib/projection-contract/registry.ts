@@ -1582,7 +1582,51 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: "2026-07-27",
   },
+  {
+    id: "cargo.governance.source-registry",
+    name: "National Maritime Data Source Registry",
+    producer: "CAPABILITY",
+    description:
+      "Sprint GOV-02 — canonical classification of every cargo evidence source (Government, Commercial, Supporting, Derived) with authority, jurisdiction, evidence types, capabilities, trust level, coverage, update frequency, priority P0–P3, integration status and recommended usage. Specification only; no providers or connectors.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Admin Console · Intelligence Capability governance view (source classes, trust and priority matrices)",
+      location: "src/routes/admin.projection-contract.tsx",
+      component: "src/services/cargo-governance/source-registry.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-08-04",
+  },
+  {
+    id: "cargo.governance.confidence-model",
+    name: "Cargo Confidence Model (0–100%, grade A–E)",
+    producer: "CAPABILITY",
+    description:
+      "Sprint GOV-02 — weighted, explainable cargo confidence across eight evidence axes (government declaration, NIMASA return, Bill of Lading, AIS/voyage, company verification, revenue assessment, sanctions, supporting intelligence). Returns score, grade, evidence breakdown, missing evidence, conflicting evidence and an officer-facing explanation.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Confidence chip explainer on every cargo number (score, grade, breakdown, what is missing)",
+      location: "src/components/intelligence/ConfidenceChip.tsx",
+      component: "src/services/cargo-governance/cargo-confidence.ts",
+      interaction: "hover-explainer",
+    },
+    reviewedAt: "2026-08-04",
+  },
+  {
+    id: "cargo.governance.trust-matrix",
+    name: "Trust Classification & Provider Priority matrices",
+    producer: "CAPABILITY",
+    description:
+      "Sprint GOV-02 — derived matrices mapping trust level to evidence weight ceiling and usage rule, and priority tier to integration intent. Derived entirely from the source registry.",
+    state: "INTERNAL",
+    internal: {
+      reason: "implementation-detail",
+      note: "Governance weighting used by the confidence model; officers see the resulting score, grade and per-axis breakdown rather than the weight tables.",
+    },
+    reviewedAt: "2026-08-04",
+  },
 ];
+
 
 export function getContractEntry(id: string): ProjectionContractEntry | undefined {
   return PROJECTION_CONTRACT.find((e) => e.id === id);
