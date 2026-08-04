@@ -27,6 +27,7 @@ import { Route as InvestigationsRouteImport } from './routes/investigations'
 import { Route as InvestigationsWorkflowRouteImport } from './routes/investigations-workflow'
 import { Route as KnowledgeGraphRouteImport } from './routes/knowledge-graph'
 import { Route as ManifestRouteImport } from './routes/manifest'
+import { Route as MaritimeRouteImport } from './routes/maritime'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as MemoryRouteImport } from './routes/memory'
 import { Route as MissionsRouteImport } from './routes/missions'
@@ -166,6 +167,11 @@ const KnowledgeGraphRoute = KnowledgeGraphRouteImport.update({
 const ManifestRoute = ManifestRouteImport.update({
   id: '/manifest',
   path: '/manifest',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MaritimeRoute = MaritimeRouteImport.update({
+  id: '/maritime',
+  path: '/maritime',
   getParentRoute: () => rootRouteImport,
 } as any)
 const McpRoute = McpRouteImport.update({
@@ -441,6 +447,7 @@ export interface FileRoutesByFullPath {
   '/investigations-workflow': typeof InvestigationsWorkflowRoute
   '/knowledge-graph': typeof KnowledgeGraphRoute
   '/manifest': typeof ManifestRoute
+  '/maritime': typeof MaritimeRoute
   '/mcp': typeof McpRoute
   '/memory': typeof MemoryRoute
   '/missions': typeof MissionsRoute
@@ -508,6 +515,7 @@ export interface FileRoutesByTo {
   '/investigations-workflow': typeof InvestigationsWorkflowRoute
   '/knowledge-graph': typeof KnowledgeGraphRoute
   '/manifest': typeof ManifestRoute
+  '/maritime': typeof MaritimeRoute
   '/mcp': typeof McpRoute
   '/memory': typeof MemoryRoute
   '/missions': typeof MissionsRoute
@@ -578,6 +586,7 @@ export interface FileRoutesById {
   '/investigations-workflow': typeof InvestigationsWorkflowRoute
   '/knowledge-graph': typeof KnowledgeGraphRoute
   '/manifest': typeof ManifestRoute
+  '/maritime': typeof MaritimeRoute
   '/mcp': typeof McpRoute
   '/memory': typeof MemoryRoute
   '/missions': typeof MissionsRoute
@@ -650,6 +659,7 @@ export interface FileRouteTypes {
     | '/investigations-workflow'
     | '/knowledge-graph'
     | '/manifest'
+    | '/maritime'
     | '/mcp'
     | '/memory'
     | '/missions'
@@ -717,6 +727,7 @@ export interface FileRouteTypes {
     | '/investigations-workflow'
     | '/knowledge-graph'
     | '/manifest'
+    | '/maritime'
     | '/mcp'
     | '/memory'
     | '/missions'
@@ -786,6 +797,7 @@ export interface FileRouteTypes {
     | '/investigations-workflow'
     | '/knowledge-graph'
     | '/manifest'
+    | '/maritime'
     | '/mcp'
     | '/memory'
     | '/missions'
@@ -857,6 +869,7 @@ export interface RootRouteChildren {
   InvestigationsWorkflowRoute: typeof InvestigationsWorkflowRoute
   KnowledgeGraphRoute: typeof KnowledgeGraphRoute
   ManifestRoute: typeof ManifestRoute
+  MaritimeRoute: typeof MaritimeRoute
   McpRoute: typeof McpRoute
   MemoryRoute: typeof MemoryRoute
   MissionsRoute: typeof MissionsRoute
@@ -1024,6 +1037,13 @@ declare module '@tanstack/react-router' {
       path: '/manifest'
       fullPath: '/manifest'
       preLoaderRoute: typeof ManifestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/maritime': {
+      id: '/maritime'
+      path: '/maritime'
+      fullPath: '/maritime'
+      preLoaderRoute: typeof MaritimeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mcp': {
@@ -1457,6 +1477,7 @@ const rootRouteChildren: RootRouteChildren = {
   InvestigationsWorkflowRoute: InvestigationsWorkflowRoute,
   KnowledgeGraphRoute: KnowledgeGraphRoute,
   ManifestRoute: ManifestRoute,
+  MaritimeRoute: MaritimeRoute,
   McpRoute: McpRoute,
   MemoryRoute: MemoryRoute,
   MissionsRoute: MissionsRoute,

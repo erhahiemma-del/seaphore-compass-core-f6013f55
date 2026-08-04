@@ -1,0 +1,203 @@
+/**
+ * GIP — Vessel domain model.
+ *
+ * The canonical in-memory representation of a vessel on the operational map,
+ * plus the pure functions that derive its *presentation* state.
+ *
+ * Boundary (Sprint G5.5.1): this module owns identity, position, freshness,
+ * and rendering shape. It owns no intelligence. `riskLevel` and
+ * `attentionScore` are carried as externally-populated fields — the map
+ * displays what OSAE decides, and never decides for itself. Nothing here
+ * scores, ranks, or classifies.
+ */
+import { RISK_COLORS, RISK_OPACITY, TIMING } from "./constants";
+import type { GeoJsonFeature, GeoJsonPoint, LonLat, RiskLevel, VesselType } from "./types";
+
+/** Stable identity of a vessel across data sources. */
+export interface VesselIdentity {
+  /** IMO number — the canonical key for a vessel on the map. */
+  readonly imo: string;
+  /** Maritime Mobile Service Identity, when known. */
+  readonly mmsi?: string;
+  readonly name: string;
+  readonly callSign?: string;
+  readonly flag?: string;
+  readonly type?: VesselType;
+}
+
+/** A single positional report. */
+export interface VesselPosition {
+  readonly lon: number;
+  readonly lat: number;
+  /** Course over ground in degrees, 0–359, where 0 is true north. */
+  readonly heading: number;
+  /** Speed over ground in knots. */
+  readonly speed: number;
+  /** ISO-8601 timestamp of the report. */
+  readonly timestamp: string;
+  readonly destination?: string;
+  /** Hours until estimated arrival, when derivable upstream. */
+  readonly etaHours?: number | null;
+}
+
+/**
+ * A vessel as the map knows it.
+ *
+ * Deliberately flat and serialisable so it can cross a worker boundary, be
+ * cached, or be snapshotted in a test fixture.
+ */
+export interface Vessel {
+  readonly identity: VesselIdentity;
+  readonly position: VesselPosition;
+  /**
+   * Risk band assigned upstream (ICE/OSAE). `UNKNOWN` when no assessment has
+   * been resolved — never inferred locally.
+   */
+  readonly riskLevel: RiskLevel;
+  /**
+   * Attention score 0–100, populated by OSAE from G5.5 onward. `0` means
+   * "not ranked", not "low priority".
+   */
+  readonly attentionScore: number;
+  /** Provenance of the snapshot this vessel was derived from. */
+  readonly sourceSnapshotId?: string;
+}
+
+/** Properties attached to each rendered vessel feature. */
+export interface VesselFeatureProperties {
+  readonly imo: string;
+  readonly name: string;
+  readonly risk: RiskLevel;
+  readonly speed: number;
+  readonly heading: number;
+  readonly opacity: number;
+  readonly destination: string;
+  readonly etaHours: number | null;
+  readonly isStale: boolean;
+  readonly isSelected: boolean;
+  readonly attentionScore: number;
+  readonly lastUpdated: string;
+  readonly iconId: string;
+  readonly snapshotId: string;
+}
+
+/** A vessel rendered as a GeoJSON point feature. */
+export type VesselFeature = GeoJsonFeature<GeoJsonPoint, VesselFeatureProperties>;
+
+/** Presentation context that varies per render, independent of the vessel. */
+export interface VesselRenderContext {
+  /** IMO of the current selection, if any. */
+  readonly selectedImo?: string | null;
+  /** Evaluation time in epoch ms. Injectable so freshness is testable. */
+  readonly now?: number;
+  /**
+   * When an attention set is active, vessels outside it are dimmed. Supplied
+   * by OSAE; the map only applies the opacity.
+   */
+  readonly dimUnattended?: boolean;
+}
+
+/** The stable key identifying a vessel in every collection and diff. */
+export function vesselKey(vessel: Vessel): string {
+  return vessel.identity.imo;
+}
+
+/**
+ * Age of a position report in milliseconds.
+ * Returns `Number.POSITIVE_INFINITY` for an unparseable timestamp, so an
+ * undated report is treated as maximally stale rather than silently fresh.
+ */
+export function positionAgeMs(position: VesselPosition, now: number = Date.now()): number {
+  const reported = Date.parse(position.timestamp);
+  if (Number.isNaN(reported)) return Number.POSITIVE_INFINITY;
+  return Math.max(0, now - reported);
+}
+
+/**
+ * Whether a vessel's position is stale.
+ *
+ * Mechanical freshness only — a stale marker means "this position may have
+ * changed", never "this vessel is suspicious".
+ */
+export function isStale(vessel: Vessel, now: number = Date.now()): boolean {
+  return positionAgeMs(vessel.position, now) > TIMING.staleThresholdMs;
+}
+
+/** Marker opacity for a vessel under the given render context. */
+export function vesselOpacity(vessel: Vessel, ctx: VesselRenderContext = {}): number {
+  const now = ctx.now ?? Date.now();
+  const selected = ctx.selectedImo != null && ctx.selectedImo === vessel.identity.imo;
+  if (selected) return RISK_OPACITY.ACTIVE;
+  if (isStale(vessel, now)) return RISK_OPACITY.STALE;
+  if (ctx.dimUnattended && vessel.attentionScore <= 0) return RISK_OPACITY.DIMMED;
+  return RISK_OPACITY.ACTIVE;
+}
+
+/** Sprite id for a vessel, matching the icons registered with the renderer. */
+export function vesselIconId(vessel: Vessel, ctx: VesselRenderContext = {}): string {
+  const now = ctx.now ?? Date.now();
+  if (ctx.selectedImo != null && ctx.selectedImo === vessel.identity.imo) return "vessel-selected";
+  if (isStale(vessel, now)) return "vessel-stale";
+  return `vessel-${vessel.riskLevel.toLowerCase()}`;
+}
+
+/** Palette colour for a risk band, falling back to `UNKNOWN`. */
+export function riskColor(risk: RiskLevel): string {
+  return RISK_COLORS[risk] ?? RISK_COLORS.UNKNOWN;
+}
+
+/** Normalise any heading to the 0–359 range MapLibre's `icon-rotate` expects. */
+export function normalizeHeading(heading: number): number {
+  if (!Number.isFinite(heading)) return 0;
+  return ((heading % 360) + 360) % 360;
+}
+
+/** Project a vessel to its GeoJSON feature, applying presentation rules. */
+export function toVesselFeature(vessel: Vessel, ctx: VesselRenderContext = {}): VesselFeature {
+  const now = ctx.now ?? Date.now();
+  const selected = ctx.selectedImo != null && ctx.selectedImo === vessel.identity.imo;
+  const coordinates: LonLat = [vessel.position.lon, vessel.position.lat];
+  return {
+    type: "Feature",
+    id: vessel.identity.imo,
+    geometry: { type: "Point", coordinates },
+    properties: {
+      imo: vessel.identity.imo,
+      name: vessel.identity.name,
+      risk: vessel.riskLevel,
+      speed: vessel.position.speed,
+      heading: normalizeHeading(vessel.position.heading),
+      opacity: vesselOpacity(vessel, { ...ctx, now }),
+      destination: vessel.position.destination ?? "",
+      etaHours: vessel.position.etaHours ?? null,
+      isStale: isStale(vessel, now),
+      isSelected: selected,
+      attentionScore: vessel.attentionScore,
+      lastUpdated: vessel.position.timestamp,
+      iconId: vesselIconId(vessel, { ...ctx, now }),
+      snapshotId: vessel.sourceSnapshotId ?? "",
+    },
+  };
+}
+
+/**
+ * Whether two vessels differ in any way the renderer would need to redraw.
+ *
+ * Used by the update engine to keep incremental batches minimal. Compares
+ * only render-affecting fields — provenance and unrendered identity metadata
+ * are ignored on purpose.
+ */
+export function hasRenderableChange(a: Vessel, b: Vessel): boolean {
+  return (
+    a.position.lon !== b.position.lon ||
+    a.position.lat !== b.position.lat ||
+    a.position.heading !== b.position.heading ||
+    a.position.speed !== b.position.speed ||
+    a.position.timestamp !== b.position.timestamp ||
+    a.position.destination !== b.position.destination ||
+    a.position.etaHours !== b.position.etaHours ||
+    a.riskLevel !== b.riskLevel ||
+    a.attentionScore !== b.attentionScore ||
+    a.identity.name !== b.identity.name
+  );
+}
