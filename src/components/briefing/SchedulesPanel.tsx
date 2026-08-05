@@ -28,6 +28,7 @@ import {
   formatRelative,
   type RecurringCadence,
 } from "@/lib/mibc/cadence";
+import { useAuth } from "@/hooks/use-auth";
 import {
   REPORT_TYPES,
   REPORT_TYPE_LABEL,
