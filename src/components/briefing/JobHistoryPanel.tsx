@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { listReportJobs, retryReportJob, signArtifactUrl } from "@/lib/mibc/schedules.functions";
 import { formatRelative } from "@/lib/mibc/cadence";
+import { useAuth } from "@/hooks/use-auth";
 import {
   REPORT_TYPE_LABEL,
   REPORT_PERIOD_LABEL,
