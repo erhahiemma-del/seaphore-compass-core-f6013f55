@@ -70,7 +70,11 @@ function BriefingCentre() {
   const officerId = session?.user?.id;
   const officerName =
     session?.user?.user_metadata?.full_name ?? session?.user?.email ?? "Officer on duty";
-  const investigations = useWorkspaceStore((s) => Object.values(s.investigations));
+  // Select the raw record (stable reference) and derive the array in a memo —
+  // returning `Object.values(...)` straight from the selector creates a new
+  // array on every store read and loops React's render cycle.
+  const investigationsById = useWorkspaceStore((s) => s.investigations);
+  const investigations = useMemo(() => Object.values(investigationsById), [investigationsById]);
   // Subscribe so the Live-UIP selector re-renders as new UIPs register.
   const uipOrder = useUipStore((s) => s.order);
   const uipsById = useUipStore((s) => s.byId);

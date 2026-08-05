@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { listReportJobs, retryReportJob, signArtifactUrl } from "@/lib/mibc/schedules.functions";
 import { formatRelative } from "@/lib/mibc/cadence";
+import { useAuth } from "@/hooks/use-auth";
 import {
   REPORT_TYPE_LABEL,
   REPORT_PERIOD_LABEL,
@@ -42,6 +43,7 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "
 
 export function JobHistoryPanel() {
   const qc = useQueryClient();
+  const { session } = useAuth();
   const list = useServerFn(listReportJobs);
   const retry = useServerFn(retryReportJob);
   const sign = useServerFn(signArtifactUrl);
@@ -49,6 +51,8 @@ export function JobHistoryPanel() {
   const { data: jobs = [], isLoading } = useQuery({
     queryKey: ["mibc", "jobs"],
     queryFn: () => list(),
+    // Protected server fn — never call it without a signed-in session.
+    enabled: !!session,
     refetchInterval: 8_000,
   });
 
