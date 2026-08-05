@@ -39,6 +39,7 @@ import {
 
 export function SchedulesPanel({ workspaceIds }: { workspaceIds: string[] }) {
   const qc = useQueryClient();
+  const { session } = useAuth();
   const list = useServerFn(listReportSchedules);
   const create = useServerFn(createReportSchedule);
   const toggle = useServerFn(toggleReportSchedule);
@@ -48,6 +49,8 @@ export function SchedulesPanel({ workspaceIds }: { workspaceIds: string[] }) {
   const { data: schedules = [], isLoading } = useQuery({
     queryKey: ["mibc", "schedules"],
     queryFn: () => list(),
+    // Protected server fn — never call it without a signed-in session.
+    enabled: !!session,
   });
 
   const [name, setName] = useState("Daily executive brief");
