@@ -225,3 +225,5 @@ export {
   type FusionContribution,
   type FusionOptions,
 } from "./fusion";
+
+export { computeIntelligenceMetrics, type IntelligenceMetrics } from "./vessel-source";

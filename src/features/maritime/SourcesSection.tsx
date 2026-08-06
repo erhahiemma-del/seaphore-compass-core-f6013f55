@@ -19,11 +19,13 @@ import { Radio } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {
+  computeIntelligenceMetrics,
   formatAge,
   freshnessBandForAge,
   freshnessColor,
   freshnessLabel,
   listVesselSources,
+  type IntelligenceMetrics,
   sgs,
   useMapSelector,
   type SharedGeospatialService,
@@ -40,27 +42,30 @@ export interface SourcesSectionProps {
 
 export function SourcesSection({ service = sgs, refreshMs = 5_000 }: SourcesSectionProps) {
   const enabledCsv = useMapSelector((state) => state.enabledSources.join(","), service);
-  const enabled = new Set(enabledCsv ? enabledCsv.split(",") : []);
+  const enabledIds = enabledCsv ? enabledCsv.split(",") : [];
+  const enabled = new Set(enabledIds);
 
   // Providers report on their own cadence; poll rather than subscribe so a
   // provider needs no event plumbing to appear here.
   const [rows, setRows] = useState<
     ReadonlyArray<{ descriptor: VesselSourceDescriptor; report: SourceHealthReport }>
   >([]);
+  const [metrics, setMetrics] = useState<IntelligenceMetrics | null>(null);
 
   useEffect(() => {
     function read() {
+      const sources = listVesselSources();
       setRows(
-        listVesselSources().map((source) => ({
-          descriptor: source.describe(),
-          report: source.report(),
-        })),
+        sources.map((source) => ({ descriptor: source.describe(), report: source.report() })),
       );
+      // Derived inside the effect: `enabledIds` is a fresh array each render,
+      // so depending on it directly would re-run this on every render.
+      setMetrics(computeIntelligenceMetrics(enabledCsv ? enabledCsv.split(",") : [], sources));
     }
     read();
     const interval = setInterval(read, refreshMs);
     return () => clearInterval(interval);
-  }, [refreshMs]);
+  }, [refreshMs, enabledCsv]);
 
   return (
     <section className="border-b border-border/60 px-4 py-3">
@@ -73,6 +78,8 @@ export function SourcesSection({ service = sgs, refreshMs = 5_000 }: SourcesSect
           {enabled.size}/{rows.length} on
         </span>
       </div>
+
+      {metrics && rows.length > 0 ? <IntelligenceSummary metrics={metrics} /> : null}
 
       {rows.length === 0 ? (
         <p className="text-xs leading-snug text-muted-foreground">
@@ -92,6 +99,40 @@ export function SourcesSection({ service = sgs, refreshMs = 5_000 }: SourcesSect
         </ul>
       )}
     </section>
+  );
+}
+
+/**
+ * Operational summary across providers.
+ *
+ * Every number is derived from reports the providers already produce —
+ * no extra polling, no extra state.
+ */
+function IntelligenceSummary({ metrics }: { metrics: IntelligenceMetrics }) {
+  return (
+    <dl className="mb-3 grid grid-cols-2 gap-x-3 gap-y-1 rounded border border-border/60 bg-muted/30 p-2 text-[10px] text-muted-foreground">
+      <Metric label="Providers" value={`${metrics.activeProviders}/${metrics.totalProviders} on`} />
+      <Metric
+        label="Healthy"
+        value={
+          metrics.degradedProviders > 0
+            ? `${metrics.healthyProviders} (${metrics.degradedProviders} degraded)`
+            : String(metrics.healthyProviders)
+        }
+      />
+      <Metric label="Vessels" value={String(metrics.totalVessels)} />
+      <Metric label="Disabled" value={String(metrics.disabledProviders)} />
+      <Metric
+        label="Avg confidence"
+        value={
+          metrics.averageConfidence === null
+            ? "—"
+            : `${Math.round(metrics.averageConfidence * 100)}%`
+        }
+      />
+      <Metric label="Avg freshness" value={formatAge(metrics.averageFreshnessMs)} />
+      <Metric label="Last update" value={formatTimestamp(metrics.lastIntelligenceUpdate)} />
+    </dl>
   );
 }
 

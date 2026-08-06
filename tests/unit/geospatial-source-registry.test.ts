@@ -4,6 +4,7 @@ import {
   GlobalFishingWatchVesselSource,
   SharedGeospatialService,
   clearVesselSources,
+  computeIntelligenceMetrics,
   defaultEnabledSourceIds,
   getVesselSource,
   isDescribable,
@@ -350,5 +351,81 @@ describe("source diagnostics (commit 3)", () => {
     expect(s.report().warnedCount).toBe(1);
     expect(s.report().rejectedCount).toBe(0);
     expect(s.report().recordCount).toBe(1);
+  });
+});
+
+describe("intelligence metrics (commit 7)", () => {
+  function reporting(id: string, over: Partial<SourceHealthReport> = {}): DescribableVesselSource {
+    const base = fakeSource({ id });
+    return {
+      ...base,
+      report: () => ({ ...base.report(), ...over, sourceId: id }),
+    };
+  }
+
+  it("counts active, healthy, disabled and degraded providers", () => {
+    const sources = [
+      reporting("a", { connected: true }),
+      reporting("b", { connected: false }),
+      reporting("c", { connected: true }),
+    ];
+
+    const metrics = computeIntelligenceMetrics(["a", "b"], sources);
+
+    expect(metrics.totalProviders).toBe(3);
+    expect(metrics.activeProviders).toBe(2);
+    expect(metrics.healthyProviders).toBe(1);
+    expect(metrics.disabledProviders).toBe(1);
+    expect(metrics.degradedProviders).toBe(1);
+  });
+
+  it("sums vessels across enabled providers only", () => {
+    const sources = [reporting("a", { recordCount: 10 }), reporting("b", { recordCount: 5 })];
+
+    expect(computeIntelligenceMetrics(["a"], sources).totalVessels).toBe(10);
+  });
+
+  it("averages confidence across enabled providers only", () => {
+    // A switched-off provider must not drag the picture's confidence down.
+    const sources = [reporting("a", { confidence: 0.9 }), reporting("b", { confidence: 0.1 })];
+
+    expect(computeIntelligenceMetrics(["a"], sources).averageConfidence).toBe(0.9);
+    expect(computeIntelligenceMetrics(["a", "b"], sources).averageConfidence).toBeCloseTo(0.5, 5);
+  });
+
+  it("averages freshness, ignoring providers that report none", () => {
+    const sources = [
+      reporting("a", { freshnessMs: 60_000 }),
+      reporting("b", { freshnessMs: null }),
+      reporting("c", { freshnessMs: 180_000 }),
+    ];
+
+    expect(computeIntelligenceMetrics(["a", "b", "c"], sources).averageFreshnessMs).toBe(120_000);
+  });
+
+  it("reports the most recent successful sync", () => {
+    const sources = [
+      reporting("a", { lastSuccessfulSync: "2026-08-04T10:00:00.000Z" }),
+      reporting("b", { lastSuccessfulSync: "2026-08-04T12:00:00.000Z" }),
+    ];
+
+    expect(computeIntelligenceMetrics(["a", "b"], sources).lastIntelligenceUpdate).toBe(
+      "2026-08-04T12:00:00.000Z",
+    );
+  });
+
+  it("returns nulls rather than zeros when nothing is measurable", () => {
+    const metrics = computeIntelligenceMetrics([], []);
+
+    expect(metrics.averageConfidence).toBeNull();
+    expect(metrics.averageFreshnessMs).toBeNull();
+    expect(metrics.lastIntelligenceUpdate).toBeNull();
+    expect(metrics.totalProviders).toBe(0);
+  });
+
+  it("reads from the live registry by default", () => {
+    registerVesselSource(fakeSource({ id: "registered" }));
+
+    expect(computeIntelligenceMetrics(["registered"]).activeProviders).toBe(1);
   });
 });

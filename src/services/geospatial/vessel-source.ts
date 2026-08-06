@@ -282,3 +282,93 @@ export function defaultEnabledSourceIds(): readonly string[] {
     .filter((descriptor) => descriptor.defaultEnabled)
     .map((descriptor) => descriptor.id);
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+ *  FLEET METRICS  (commit 7 · additive)
+ *
+ *  Aggregates the reports providers already produce. Adds no new data
+ *  source and no new state — every number here is derived from
+ *  describe() and report().
+ * ───────────────────────────────────────────────────────────────────── */
+
+/** Operational summary across every registered provider. */
+export interface IntelligenceMetrics {
+  readonly totalProviders: number;
+  /** Registered and switched on. */
+  readonly activeProviders: number;
+  /** Enabled and reporting a connected status. */
+  readonly healthyProviders: number;
+  /** Registered but switched off. */
+  readonly disabledProviders: number;
+  /** Enabled but not connected — the number that needs attention. */
+  readonly degradedProviders: number;
+  /** Records held across enabled providers. */
+  readonly totalVessels: number;
+  /** Mean confidence across enabled providers that report one. */
+  readonly averageConfidence: number | null;
+  /** Mean freshness age in ms across enabled providers that report one. */
+  readonly averageFreshnessMs: number | null;
+  /** Most recent successful sync across enabled providers. */
+  readonly lastIntelligenceUpdate: string | null;
+}
+
+/**
+ * Compute metrics across registered providers.
+ *
+ * Averages deliberately span *enabled* providers only. Including a
+ * switched-off provider would let a disabled feed drag the operational
+ * picture's apparent confidence down.
+ */
+export function computeIntelligenceMetrics(
+  enabledSourceIds: readonly string[],
+  sources: readonly DescribableVesselSource[] = listVesselSources(),
+): IntelligenceMetrics {
+  const enabled = new Set(enabledSourceIds);
+  let activeProviders = 0;
+  let healthyProviders = 0;
+  let totalVessels = 0;
+  let confidenceSum = 0;
+  let confidenceCount = 0;
+  let freshnessSum = 0;
+  let freshnessCount = 0;
+  let lastUpdate: number | null = null;
+  let lastUpdateIso: string | null = null;
+
+  for (const source of sources) {
+    const descriptor = source.describe();
+    if (!enabled.has(descriptor.id)) continue;
+    activeProviders += 1;
+
+    const report = source.report();
+    if (report.connected) healthyProviders += 1;
+    totalVessels += report.recordCount;
+
+    if (report.confidence !== null) {
+      confidenceSum += report.confidence;
+      confidenceCount += 1;
+    }
+    if (report.freshnessMs !== null) {
+      freshnessSum += report.freshnessMs;
+      freshnessCount += 1;
+    }
+    if (report.lastSuccessfulSync) {
+      const at = Date.parse(report.lastSuccessfulSync);
+      if (!Number.isNaN(at) && (lastUpdate === null || at > lastUpdate)) {
+        lastUpdate = at;
+        lastUpdateIso = report.lastSuccessfulSync;
+      }
+    }
+  }
+
+  return {
+    totalProviders: sources.length,
+    activeProviders,
+    healthyProviders,
+    disabledProviders: sources.length - activeProviders,
+    degradedProviders: activeProviders - healthyProviders,
+    totalVessels,
+    averageConfidence: confidenceCount === 0 ? null : confidenceSum / confidenceCount,
+    averageFreshnessMs: freshnessCount === 0 ? null : freshnessSum / freshnessCount,
+    lastIntelligenceUpdate: lastUpdateIso,
+  };
+}
