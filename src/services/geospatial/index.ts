@@ -202,3 +202,15 @@ export {
   type FreshnessBand,
   type FreshnessThresholds,
 } from "./freshness";
+
+export {
+  ReplayPlayer,
+  ReplayRecorder,
+  type ReplayFrame,
+  type ReplayPlayerOptions,
+  type ReplayRecorderOptions,
+  type ReplaySink,
+  type ReplaySpeed,
+  type ReplayState,
+  type ReplayStatus,
+} from "./replay";
