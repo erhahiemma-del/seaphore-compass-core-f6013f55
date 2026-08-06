@@ -214,3 +214,14 @@ export {
   type ReplayState,
   type ReplayStatus,
 } from "./replay";
+
+export {
+  contributionFrom,
+  fuseObservation,
+  fuseObservations,
+  type FusedObservation,
+  type FusionCitation,
+  type FusionConflict,
+  type FusionContribution,
+  type FusionOptions,
+} from "./fusion";
