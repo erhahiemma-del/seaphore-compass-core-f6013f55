@@ -26,6 +26,8 @@ import {
   type SharedGeospatialService,
 } from "@/services/geospatial";
 
+import { SourcesSection } from "./SourcesSection";
+
 export interface LayerPanelProps {
   readonly service?: SharedGeospatialService;
   readonly registry?: LayerRegistry;
@@ -95,6 +97,8 @@ export function LayerPanel({ service = sgs, registry = layerRegistry }: LayerPan
       </header>
 
       <div className="flex-1 overflow-y-auto">
+        {/* Providers first: what is feeding the map precedes how it is drawn. */}
+        <SourcesSection service={service} />
         {visibleGroups.length === 0 ? (
           <p className="px-4 py-6 text-center text-xs text-muted-foreground">
             No layers match “{query}”.

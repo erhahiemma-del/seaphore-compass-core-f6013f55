@@ -139,3 +139,127 @@ export class StaticVesselSource implements VesselSource {
     for (const listener of [...this.listeners]) listener(vessel);
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+ *  SOURCE DESCRIPTORS AND DISCOVERY  (Step 4b · additive)
+ *
+ *  The Layer Panel's Sources section must list every registered provider
+ *  without knowing any provider's name. That requires two things, both
+ *  added here rather than in a new module:
+ *
+ *    1. A descriptor every source declares about itself.
+ *    2. A place to look them up.
+ *
+ *  This is deliberately the thinnest possible discovery surface — a Map
+ *  and three functions — mirroring `@/lib/osint/registry`, which does the
+ *  same job for OSINT connectors. It introduces no lifecycle, no
+ *  ordering guarantees, and no orchestration.
+ * ───────────────────────────────────────────────────────────────────── */
+
+/** Where a provider's data comes from, for officer-facing grouping. */
+export type SourceType = "OSINT" | "COMMERCIAL" | "GOVERNMENT";
+
+/** Operational state of a provider, independent of any one query. */
+export type SourceStatus =
+  "ok" | "empty" | "credentials-missing" | "auth-failed" | "upstream-error" | "not-queried";
+
+/**
+ * Self-description of a provider.
+ *
+ * The UI renders from this alone, so adding a provider never requires a
+ * UI change — which is the whole point of the descriptor.
+ */
+export interface VesselSourceDescriptor {
+  readonly id: string;
+  readonly label: string;
+  readonly type: SourceType;
+  /** One line an officer can read to know what this provider contributes. */
+  readonly description: string;
+  /**
+   * Honest statement of what the data is and is not. Rendered beside the
+   * provider so a limitation can never be lost between code and screen.
+   */
+  readonly caveat?: string;
+  /** Whether the provider is switched on when no preference is stored. */
+  readonly defaultEnabled: boolean;
+}
+
+/** A point-in-time report from a provider. */
+export interface SourceHealthReport {
+  readonly sourceId: string;
+  readonly status: SourceStatus;
+  readonly connected: boolean;
+  readonly message: string | null;
+  readonly lastCheckedAt: string | null;
+  readonly lastLatencyMs: number | null;
+  /** Records currently held from this provider. */
+  readonly recordCount: number;
+  /** Confidence the provider's observations carry, 0-1, or null if unknown. */
+  readonly confidence: number | null;
+  /** Banded form of {@link confidence}. */
+  readonly confidenceLevel: string | null;
+  /** Age of the newest observation in milliseconds, or null if none. */
+  readonly freshnessMs: number | null;
+}
+
+/**
+ * A provider that can appear in the Sources section.
+ *
+ * Optional on {@link VesselSource} so existing sources — the empty and
+ * static ones — remain valid without change.
+ */
+export interface DescribableVesselSource extends VesselSource {
+  describe(): VesselSourceDescriptor;
+  report(): SourceHealthReport;
+}
+
+/** True when a source can describe itself well enough to be listed. */
+export function isDescribable(source: VesselSource): source is DescribableVesselSource {
+  const candidate = source as Partial<DescribableVesselSource>;
+  return typeof candidate.describe === "function" && typeof candidate.report === "function";
+}
+
+const sources = new Map<string, DescribableVesselSource>();
+
+/**
+ * Make a source discoverable by the Sources section.
+ *
+ * Idempotent by id: re-registering replaces, so hot reload does not
+ * produce duplicates. Returns an unregister handle.
+ */
+export function registerVesselSource(source: DescribableVesselSource): () => void {
+  const id = source.describe().id;
+  sources.set(id, source);
+  return () => {
+    if (sources.get(id) === source) sources.delete(id);
+  };
+}
+
+/** Every registered source, ordered by type then label. */
+export function listVesselSources(): readonly DescribableVesselSource[] {
+  const order: Record<SourceType, number> = { GOVERNMENT: 0, COMMERCIAL: 1, OSINT: 2 };
+  return [...sources.values()].sort((a, b) => {
+    const da = a.describe();
+    const db = b.describe();
+    const byType = order[da.type] - order[db.type];
+    return byType !== 0 ? byType : da.label.localeCompare(db.label);
+  });
+}
+
+/** Look up one registered source. */
+export function getVesselSource(id: string): DescribableVesselSource | undefined {
+  return sources.get(id);
+}
+
+/** Remove every registration. Test isolation only. */
+export function clearVesselSources(): void {
+  sources.clear();
+}
+
+/** Ids of sources enabled by default, for seeding map state. */
+export function defaultEnabledSourceIds(): readonly string[] {
+  return listVesselSources()
+    .map((source) => source.describe())
+    .filter((descriptor) => descriptor.defaultEnabled)
+    .map((descriptor) => descriptor.id);
+}

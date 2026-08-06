@@ -39,7 +39,13 @@ import { baseConfidence, confidenceLevelFor } from "@/lib/osint/confidence";
 
 import { NIGERIA_EEZ_BBOX } from "../constants";
 import type { Vessel, VesselProvenance } from "../vessel";
-import type { VesselQuery, VesselSource } from "../vessel-source";
+import {
+  registerVesselSource,
+  type DescribableVesselSource,
+  type SourceHealthReport,
+  type VesselQuery,
+  type VesselSourceDescriptor,
+} from "../vessel-source";
 
 /** Connector id — matches the registered OSINT connector name. */
 export const GFW_SOURCE_ID = "global-fishing-watch";
@@ -106,7 +112,7 @@ export interface GlobalFishingWatchVesselSourceOptions {
 
 const DEFAULT_WINDOW_MS = 24 * 60 * 60 * 1000;
 
-export class GlobalFishingWatchVesselSource implements VesselSource {
+export class GlobalFishingWatchVesselSource implements DescribableVesselSource {
   readonly id = GFW_SOURCE_ID;
   readonly label = GFW_SOURCE_LABEL;
 
@@ -125,6 +131,10 @@ export class GlobalFishingWatchVesselSource implements VesselSource {
     vesselsRejected: 0,
   };
   private lastDiagnostics: GfwAreaDiagnostics | null = null;
+  /** Newest observation timestamp seen, in epoch ms. Drives freshness. */
+  private newestObservedAt: number | null = null;
+  /** Vessels held from the most recent successful query. */
+  private recordCount = 0;
 
   constructor(options: GlobalFishingWatchVesselSourceOptions = {}) {
     this.areaSearch = options.areaSearch ?? defaultAreaSearch;
@@ -236,6 +246,13 @@ export class GlobalFishingWatchVesselSource implements VesselSource {
       }
     }
 
+    this.recordCount = vessels.length;
+    this.newestObservedAt = vessels.reduce<number | null>((newest, vessel) => {
+      const at = Date.parse(vessel.position.timestamp);
+      if (Number.isNaN(at)) return newest;
+      return newest === null || at > newest ? at : newest;
+    }, null);
+
     this.recordHealth(result.status, result.message, result.diagnostics);
     return {
       status: result.status,
@@ -339,6 +356,45 @@ export class GlobalFishingWatchVesselSource implements VesselSource {
     ];
   }
 
+  /**
+   * Self-description for the Sources section.
+   *
+   * The UI renders from this alone, which is why the caveat lives here and
+   * not in a component: a limitation stated in the descriptor cannot be
+   * lost between the data layer and the screen.
+   */
+  describe(): VesselSourceDescriptor {
+    return {
+      id: this.id,
+      label: this.label,
+      type: "OSINT",
+      description: "AIS-derived vessel activity from Global Fishing Watch.",
+      caveat:
+        "Event-derived positions, not a continuous live feed. Shows vessels that " +
+        "produced an AIS event in the area during the window.",
+      defaultEnabled: true,
+    };
+  }
+
+  /** Point-in-time report for the Sources section and diagnostics. */
+  report(): SourceHealthReport {
+    const health = this.lastHealth;
+    const confidence = baseConfidence(GFW_PROVENANCE);
+    return {
+      sourceId: this.id,
+      status: health.lastCheckedAt === null ? "not-queried" : health.status,
+      connected: health.connected,
+      message: health.message,
+      lastCheckedAt: health.lastCheckedAt,
+      lastLatencyMs: health.lastLatencyMs,
+      recordCount: this.recordCount,
+      confidence,
+      confidenceLevel: confidenceLevelFor(confidence),
+      freshnessMs:
+        this.newestObservedAt === null ? null : Math.max(0, this.now() - this.newestObservedAt),
+    };
+  }
+
   private recordHealth(
     status: GfwAreaStatus,
     message: string | null,
@@ -373,4 +429,16 @@ async function loadVesselSearch(): Promise<
 > {
   const { gfwSearch } = await import("@/lib/gfw.functions");
   return gfwSearch as unknown as (input: { data: { query: string } }) => Promise<unknown>;
+}
+
+/**
+ * Register the shipped GFW source so the Sources section discovers it.
+ *
+ * Idempotent: `registerVesselSource` replaces by id, so importing this more
+ * than once cannot produce a duplicate row. Call from an app entry point.
+ */
+export function registerGlobalFishingWatchSource(
+  options?: GlobalFishingWatchVesselSourceOptions,
+): () => void {
+  return registerVesselSource(new GlobalFishingWatchVesselSource(options));
 }

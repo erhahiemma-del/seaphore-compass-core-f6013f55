@@ -149,8 +149,19 @@ export {
 export {
   EmptyVesselSource,
   StaticVesselSource,
+  clearVesselSources,
+  defaultEnabledSourceIds,
+  getVesselSource,
+  isDescribable,
+  listVesselSources,
+  registerVesselSource,
+  type DescribableVesselSource,
+  type SourceHealthReport,
+  type SourceStatus,
+  type SourceType,
   type VesselQuery,
   type VesselSource,
+  type VesselSourceDescriptor,
 } from "./vessel-source";
 
 export {
@@ -160,6 +171,7 @@ export {
   type GfwSourceHealth,
   type GfwSourceStats,
   type GlobalFishingWatchVesselSourceOptions,
+  registerGlobalFishingWatchSource,
   type VesselCitation,
 } from "./sources/global-fishing-watch-source";
 

@@ -70,6 +70,13 @@ export interface MapState {
    * so the common case costs nothing to store or serialise.
    */
   readonly layerOpacity: Readonly<Record<string, number>>;
+  /**
+   * Intelligence providers currently switched on, by source id.
+   *
+   * Owned by SGS like every other map preference, so a shared link carries
+   * the officer's source selection with it.
+   */
+  readonly enabledSources: readonly string[];
   readonly filters: MapFilters;
   /** ISO timestamp when replaying history; `null` means "live". */
   readonly timelinePosition: string | null;

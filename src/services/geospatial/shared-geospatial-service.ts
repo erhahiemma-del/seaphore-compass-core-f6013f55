@@ -19,6 +19,7 @@
  */
 import { MAP_DEFAULTS } from "./constants";
 import { layerRegistry, MISSION_PRESETS, type LayerRegistry } from "./layer-registry";
+import { defaultEnabledSourceIds } from "./vessel-source";
 import type { LonLat, MapFilters, MapState, Unsubscribe, ViewMode } from "./types";
 
 /** Default filter state — everything unfiltered. */
@@ -41,6 +42,7 @@ export function createDefaultMapState(registry: LayerRegistry = layerRegistry): 
     selectedEntityImo: null,
     activeLayers: registry.defaultActiveLayers(),
     layerOpacity: {},
+    enabledSources: defaultEnabledSourceIds(),
     filters: DEFAULT_FILTERS,
     timelinePosition: null,
     timelinePlaying: false,
@@ -125,6 +127,24 @@ export class SharedGeospatialService {
     this.setActiveLayers([...active]);
   }
 
+  /** Turn an intelligence provider on or off by source id. */
+  toggleSource(sourceId: string): void {
+    const enabled = new Set(this.state.enabledSources);
+    if (enabled.has(sourceId)) enabled.delete(sourceId);
+    else enabled.add(sourceId);
+    this.update({ enabledSources: [...enabled] });
+  }
+
+  /** Whether a provider is currently switched on. */
+  isSourceEnabled(sourceId: string): boolean {
+    return this.state.enabledSources.includes(sourceId);
+  }
+
+  /** Replace the enabled provider set outright. */
+  setEnabledSources(sourceIds: readonly string[]): void {
+    this.update({ enabledSources: [...new Set(sourceIds)] });
+  }
+
   /**
    * Set a layer's opacity, 0-1. Passing `null` clears the override so the
    * layer returns to its own default.
@@ -196,6 +216,7 @@ export class SharedGeospatialService {
     if (opacityEntries.length > 0) {
       params.set("opacity", opacityEntries.map(([id, value]) => `${id}:${value}`).join(","));
     }
+    if (state.enabledSources.length > 0) params.set("sources", state.enabledSources.join(","));
     if (state.selectedEntityImo) params.set("vessel", state.selectedEntityImo);
     if (state.missionId) params.set("mission", state.missionId);
     return params;
@@ -250,6 +271,14 @@ export class SharedGeospatialService {
         }
       }
       if (Object.keys(parsed).length > 0) patch.layerOpacity = parsed;
+    }
+
+    const sources = params.get("sources");
+    if (sources !== null) {
+      patch.enabledSources = sources
+        .split(",")
+        .map((id) => id.trim())
+        .filter((id) => id.length > 0);
     }
 
     const vessel = params.get("vessel");
@@ -308,6 +337,12 @@ function hasChanged(previous: MapState, next: MapState): boolean {
       continue;
     }
     if (key === "activeLayers") {
+      const listA = a as readonly string[];
+      const listB = b as readonly string[];
+      if (listA.length !== listB.length || listA.some((id, i) => id !== listB[i])) return true;
+      continue;
+    }
+    if (key === "enabledSources") {
       const listA = a as readonly string[];
       const listB = b as readonly string[];
       if (listA.length !== listB.length || listA.some((id, i) => id !== listB[i])) return true;
