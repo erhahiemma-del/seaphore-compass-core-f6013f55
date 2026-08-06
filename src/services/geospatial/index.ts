@@ -176,3 +176,15 @@ export {
 } from "./sources/global-fishing-watch-source";
 
 export { useMapSelector, useMapSessionStore, useMapState, type RendererStatus } from "./store";
+
+export {
+  validateBatch,
+  validateObservation,
+  type BatchValidationResult,
+  type ValidationCode,
+  type ValidationOptions,
+  type ValidationReason,
+  type ValidationResult,
+  type ValidationSummary,
+  type ValidationVerdict,
+} from "./validation";

@@ -38,6 +38,7 @@ import type {
 import { baseConfidence, confidenceLevelFor } from "@/lib/osint/confidence";
 
 import { NIGERIA_EEZ_BBOX } from "../constants";
+import { validateBatch, type ValidationSummary } from "../validation";
 import type { Vessel, VesselProvenance } from "../vessel";
 import {
   registerVesselSource,
@@ -82,6 +83,10 @@ export interface GfwSourceStats {
   readonly entriesDiscarded: number;
   readonly vesselsAccepted: number;
   readonly vesselsRejected: number;
+  /** Observations admitted with a caveat. */
+  readonly vesselsWarned: number;
+  /** Findings from the most recent batch, by code. */
+  readonly lastValidation: ValidationSummary | null;
   readonly lastDiagnostics: GfwAreaDiagnostics | null;
 }
 
@@ -129,8 +134,10 @@ export class GlobalFishingWatchVesselSource implements DescribableVesselSource {
     entriesDiscarded: 0,
     vesselsAccepted: 0,
     vesselsRejected: 0,
+    vesselsWarned: 0,
   };
   private lastDiagnostics: GfwAreaDiagnostics | null = null;
+  private lastValidation: ValidationSummary | null = null;
   /** Newest observation timestamp seen, in epoch ms. Drives freshness. */
   private newestObservedAt: number | null = null;
   /** Vessels held from the most recent successful query. */
@@ -184,7 +191,11 @@ export class GlobalFishingWatchVesselSource implements DescribableVesselSource {
 
   /** Cumulative counters for the diagnostics surface. */
   stats(): GfwSourceStats {
-    return { ...this.counters, lastDiagnostics: this.lastDiagnostics };
+    return {
+      ...this.counters,
+      lastDiagnostics: this.lastDiagnostics,
+      lastValidation: this.lastValidation,
+    };
   }
 
   /**
@@ -235,16 +246,21 @@ export class GlobalFishingWatchVesselSource implements DescribableVesselSource {
       this.counters.failures += 1;
     }
 
-    const vessels: Vessel[] = [];
+    // Normalise first, then validate. Normalisation answers "can this be
+    // represented?"; validation answers "should this reach the map?".
+    const normalised: Vessel[] = [];
     for (const raw of result.vessels) {
       const vessel = this.normalize(raw);
-      if (vessel) {
-        vessels.push(vessel);
-        this.counters.vesselsAccepted += 1;
-      } else {
-        this.counters.vesselsRejected += 1;
-      }
+      if (vessel) normalised.push(vessel);
+      else this.counters.vesselsRejected += 1;
     }
+
+    const validated = validateBatch(normalised, { now: this.now() });
+    const vessels = [...validated.vessels];
+    this.counters.vesselsAccepted += validated.summary.accepted + validated.summary.warned;
+    this.counters.vesselsRejected += validated.summary.rejected;
+    this.counters.vesselsWarned += validated.summary.warned;
+    this.lastValidation = validated.summary;
 
     this.recordCount = vessels.length;
     this.newestObservedAt = vessels.reduce<number | null>((newest, vessel) => {
