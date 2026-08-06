@@ -200,6 +200,25 @@ export interface SourceHealthReport {
   readonly confidenceLevel: string | null;
   /** Age of the newest observation in milliseconds, or null if none. */
   readonly freshnessMs: number | null;
+
+  /* ── Diagnostics (commit 3) — derived from the source's own counters ── */
+
+  /** Total queries issued since construction. */
+  readonly requestCount: number;
+  /** Queries that failed to return usable data. */
+  readonly failureCount: number;
+  /** Successful fraction of requests, 0-1. `null` before the first request. */
+  readonly successRate: number | null;
+  /** Mean response time across successful requests, ms. */
+  readonly averageLatencyMs: number | null;
+  /** Whether the most recent response was served from cache. */
+  readonly cacheState: "hit" | "miss" | "unknown";
+  /** ISO timestamp of the last query that returned without error. */
+  readonly lastSuccessfulSync: string | null;
+  /** Observations admitted with a caveat by the validation pipeline. */
+  readonly warnedCount: number;
+  /** Observations refused by the validation pipeline. */
+  readonly rejectedCount: number;
 }
 
 /**

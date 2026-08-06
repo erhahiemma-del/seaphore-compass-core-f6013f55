@@ -148,6 +148,28 @@ function SourceRow({ descriptor, report, checked, onToggle }: SourceRowProps) {
                 : `${Math.round(report.confidence * 100)}% ${report.confidenceLevel ?? ""}`.trim()
             }
           />
+          <Metric
+            label="Success"
+            value={report.successRate === null ? "—" : `${Math.round(report.successRate * 100)}%`}
+          />
+          <Metric
+            label="Latency"
+            value={report.averageLatencyMs === null ? "—" : `${report.averageLatencyMs}ms`}
+          />
+          <Metric
+            label="Requests"
+            value={`${report.requestCount}${report.failureCount > 0 ? ` (${report.failureCount} failed)` : ""}`}
+          />
+          <Metric label="Cache" value={report.cacheState} />
+          <Metric
+            label="Validation"
+            value={
+              report.warnedCount + report.rejectedCount === 0
+                ? "clean"
+                : `${report.warnedCount}w / ${report.rejectedCount}r`
+            }
+          />
+          <Metric label="Last sync" value={formatTimestamp(report.lastSuccessfulSync)} />
         </dl>
       </div>
     </li>

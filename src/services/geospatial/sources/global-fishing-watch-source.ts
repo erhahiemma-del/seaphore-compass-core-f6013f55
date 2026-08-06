@@ -138,6 +138,9 @@ export class GlobalFishingWatchVesselSource implements DescribableVesselSource {
   };
   private lastDiagnostics: GfwAreaDiagnostics | null = null;
   private lastValidation: ValidationSummary | null = null;
+  /** Latencies of successful requests, for the mean. */
+  private latencies: number[] = [];
+  private lastSuccessfulSync: string | null = null;
   /** Newest observation timestamp seen, in epoch ms. Drives freshness. */
   private newestObservedAt: number | null = null;
   /** Vessels held from the most recent successful query. */
@@ -261,6 +264,13 @@ export class GlobalFishingWatchVesselSource implements DescribableVesselSource {
     this.counters.vesselsRejected += validated.summary.rejected;
     this.counters.vesselsWarned += validated.summary.warned;
     this.lastValidation = validated.summary;
+
+    if (result.status === "ok" || result.status === "empty") {
+      this.latencies.push(result.diagnostics.latencyMs);
+      // Bounded window — a long-running session must not grow this forever.
+      if (this.latencies.length > 100) this.latencies.shift();
+      this.lastSuccessfulSync = result.diagnostics.requestedAt;
+    }
 
     this.recordCount = vessels.length;
     this.newestObservedAt = vessels.reduce<number | null>((newest, vessel) => {
@@ -408,6 +418,21 @@ export class GlobalFishingWatchVesselSource implements DescribableVesselSource {
       confidenceLevel: confidenceLevelFor(confidence),
       freshnessMs:
         this.newestObservedAt === null ? null : Math.max(0, this.now() - this.newestObservedAt),
+      requestCount: this.counters.requests,
+      failureCount: this.counters.failures,
+      successRate:
+        this.counters.requests === 0
+          ? null
+          : (this.counters.requests - this.counters.failures) / this.counters.requests,
+      averageLatencyMs:
+        this.latencies.length === 0
+          ? null
+          : Math.round(this.latencies.reduce((a, b) => a + b, 0) / this.latencies.length),
+      cacheState:
+        this.lastDiagnostics === null ? "unknown" : this.lastDiagnostics.fromCache ? "hit" : "miss",
+      lastSuccessfulSync: this.lastSuccessfulSync,
+      warnedCount: this.counters.vesselsWarned,
+      rejectedCount: this.counters.vesselsRejected,
     };
   }
 

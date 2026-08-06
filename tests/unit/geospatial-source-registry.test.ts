@@ -42,6 +42,14 @@ function fakeSource(
       confidence: null,
       confidenceLevel: null,
       freshnessMs: null,
+      requestCount: 0,
+      failureCount: 0,
+      successRate: null,
+      averageLatencyMs: null,
+      cacheState: "unknown",
+      lastSuccessfulSync: null,
+      warnedCount: 0,
+      rejectedCount: 0,
     }),
   };
 }
@@ -225,5 +233,122 @@ describe("SGS — enabled sources", () => {
     service.loadFromURL("?sources=");
 
     expect(service.get().enabledSources).toEqual([]);
+  });
+});
+
+describe("source diagnostics (commit 3)", () => {
+  const OK_DIAG = {
+    requestedAt: "2026-08-04T12:00:00.000Z",
+    latencyMs: 20,
+    entriesReceived: 0,
+    entriesDiscarded: 0,
+    vesselsReturned: 0,
+    fromCache: false,
+  };
+
+  function source(results: Array<Record<string, unknown>>) {
+    let i = 0;
+    return new GlobalFishingWatchVesselSource({
+      now: () => Date.parse("2026-08-04T12:00:00.000Z"),
+      areaSearch: async () => (results[Math.min(i++, results.length - 1)] ?? {}) as never,
+    });
+  }
+
+  it("reports zero-state before any request", () => {
+    const report = source([]).report();
+
+    expect(report.requestCount).toBe(0);
+    expect(report.successRate).toBeNull();
+    expect(report.averageLatencyMs).toBeNull();
+    expect(report.cacheState).toBe("unknown");
+    expect(report.lastSuccessfulSync).toBeNull();
+  });
+
+  it("computes success rate across mixed outcomes", async () => {
+    const s = source([
+      { status: "ok", vessels: [], message: null, diagnostics: OK_DIAG },
+      { status: "upstream-error", vessels: [], message: "boom", diagnostics: OK_DIAG },
+    ]);
+
+    await s.list();
+    await s.list();
+    const report = s.report();
+
+    expect(report.requestCount).toBe(2);
+    expect(report.failureCount).toBe(1);
+    expect(report.successRate).toBe(0.5);
+  });
+
+  it("averages latency over successful requests only", async () => {
+    const s = source([
+      { status: "ok", vessels: [], message: null, diagnostics: { ...OK_DIAG, latencyMs: 10 } },
+      { status: "ok", vessels: [], message: null, diagnostics: { ...OK_DIAG, latencyMs: 30 } },
+    ]);
+
+    await s.list();
+    await s.list();
+
+    expect(s.report().averageLatencyMs).toBe(20);
+  });
+
+  it("reports cache state from the last response", async () => {
+    const s = source([
+      { status: "ok", vessels: [], message: null, diagnostics: { ...OK_DIAG, fromCache: true } },
+    ]);
+
+    await s.list();
+
+    expect(s.report().cacheState).toBe("hit");
+  });
+
+  it("records the last successful sync but not a failed one", async () => {
+    const s = source([
+      { status: "ok", vessels: [], message: null, diagnostics: OK_DIAG },
+      {
+        status: "upstream-error",
+        vessels: [],
+        message: "boom",
+        diagnostics: { ...OK_DIAG, requestedAt: "2026-08-04T13:00:00.000Z" },
+      },
+    ]);
+
+    await s.list();
+    await s.list();
+
+    expect(s.report().lastSuccessfulSync).toBe("2026-08-04T12:00:00.000Z");
+  });
+
+  it("surfaces validation counts", async () => {
+    const s = source([
+      {
+        status: "ok",
+        message: null,
+        diagnostics: { ...OK_DIAG, entriesReceived: 1, vesselsReturned: 1 },
+        vessels: [
+          {
+            vesselId: "v1",
+            imo: "9411765",
+            mmsi: null,
+            name: "No MMSI",
+            flag: null,
+            latitude: 5,
+            longitude: 4,
+            speedKnots: 1,
+            courseDeg: 1,
+            timestamp: "2026-08-04T11:59:00.000Z",
+            eventType: "fishing",
+            source: "global-fishing-watch",
+            retrievedAt: "2026-08-04T12:00:00.000Z",
+          },
+        ],
+      },
+    ]);
+
+    await s.list();
+
+    // Missing MMSI is a warning, not a rejection — it still reaches the map.
+    expect(s.report().warnedCount).toBe(1);
+    expect(s.report().rejectedCount).toBe(0);
+    expect(s.report().recordCount).toBe(1);
   });
 });
