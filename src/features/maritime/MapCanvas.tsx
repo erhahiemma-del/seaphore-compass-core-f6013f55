@@ -17,6 +17,7 @@ import {
   BASEMAP_STYLE,
   EmptyVesselSource,
   MAP_DEFAULTS,
+  ReplayRecorder,
   getVesselSource,
   MapLibreRenderer,
   TIMING,
@@ -42,6 +43,11 @@ export interface MapCanvasProps {
   readonly bus?: MapEventBus;
   /** Called with the selected vessel's data, or null when deselected. */
   readonly onVesselSelected?: (vessel: Vessel | null) => void;
+  /**
+   * Receives the live recorder once mounted, so a timeline surface can
+   * construct a ReplayPlayer over it without a second data path.
+   */
+  readonly onRecorderReady?: (recorder: ReplayRecorder) => void;
 }
 
 export function MapCanvas({
@@ -50,6 +56,7 @@ export function MapCanvas({
   service = sgs,
   bus = mapEventBus,
   onVesselSelected,
+  onRecorderReady,
 }: MapCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const setRenderer = useMapSessionStore((s) => s.setRenderer);
@@ -76,6 +83,11 @@ export function MapCanvas({
     }
     return new EmptyVesselSource();
   }, [vesselSource, enabledCsv]);
+  // Records exactly what the map was shown. Fed from the same accepted
+  // observations the update engine receives — never a parallel copy — so a
+  // recording can only ever contain what an officer actually saw.
+  const recorder = useMemo(() => new ReplayRecorder(), []);
+
   const engine = useMemo(
     () =>
       new VesselUpdateEngine({
@@ -197,6 +209,7 @@ export function MapCanvas({
         const vessels = await source.list();
         if (disposed) return;
         engine.applyFull(vessels);
+        recorder.recordBatch(vessels);
         setVesselCount(engine.size);
       } catch (error: unknown) {
         if (disposed) return;
@@ -213,6 +226,7 @@ export function MapCanvas({
 
     const unsubscribe = source.subscribe?.((vessel) => {
       engine.applyPatch(vessel);
+      recorder.record(vessel);
       setVesselCount(engine.size);
     });
 
@@ -221,7 +235,11 @@ export function MapCanvas({
       clearInterval(interval);
       unsubscribe?.();
     };
-  }, [source, engine, bus, setVesselCount]);
+  }, [source, engine, recorder, bus, setVesselCount]);
+
+  useEffect(() => {
+    onRecorderReady?.(recorder);
+  }, [recorder, onRecorderReady]);
 
   // ── Frame-rate sampling (development telemetry) ───────────────────────
   useEffect(() => {

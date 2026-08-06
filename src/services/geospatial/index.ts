@@ -227,3 +227,5 @@ export {
 } from "./fusion";
 
 export { computeIntelligenceMetrics, type IntelligenceMetrics } from "./vessel-source";
+
+export { describeFleet, summarizeFleet, type FleetSummary } from "./fleet-summary";
