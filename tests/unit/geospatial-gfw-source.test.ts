@@ -85,14 +85,16 @@ describe("GlobalFishingWatchVesselSource — VesselSource contract", () => {
     expect(query.limit).toBe(25);
   });
 
-  it("requests a 24-hour activity window by default", async () => {
+  it("requests a 30-day activity window by default", async () => {
+    // Verified live: a 24-hour window over the Gulf of Guinea returns ZERO
+    // GFW events. 30 days is the smallest window that yields a picture.
     const { source, areaSearch } = makeSource(result());
 
     await source.list();
 
     const query = areaSearch.mock.calls[0][0];
     expect(query.until).toBe("2026-08-04T12:00:00.000Z");
-    expect(query.since).toBe("2026-08-03T12:00:00.000Z");
+    expect(query.since).toBe("2026-07-05T12:00:00.000Z");
   });
 });
 

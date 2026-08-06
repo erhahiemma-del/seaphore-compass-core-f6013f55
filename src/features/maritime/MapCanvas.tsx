@@ -17,12 +17,14 @@ import {
   BASEMAP_STYLE,
   EmptyVesselSource,
   MAP_DEFAULTS,
+  getVesselSource,
   MapLibreRenderer,
   TIMING,
   VesselUpdateEngine,
   layerRegistry,
   mapEventBus,
   sgs,
+  useMapSelector,
   useMapSessionStore,
   type MapEventBus,
   type MapRenderer,
@@ -61,10 +63,19 @@ export function MapCanvas({
     () => injectedRenderer ?? new MapLibreRenderer({ bus }),
     [injectedRenderer, bus],
   );
-  const source = useMemo<VesselSource>(
-    () => vesselSource ?? new EmptyVesselSource(),
-    [vesselSource],
-  );
+  // Which provider feeds the map is an SGS decision, not a component one:
+  // the first ENABLED registered source wins, so the Sources panel toggle
+  // drives the live feed. Falls back to the empty source, which renders the
+  // honest "no data, and here is why" state.
+  const enabledCsv = useMapSelector((state) => state.enabledSources.join(","), service);
+  const source = useMemo<VesselSource>(() => {
+    if (vesselSource) return vesselSource;
+    for (const id of enabledCsv ? enabledCsv.split(",") : []) {
+      const registered = getVesselSource(id);
+      if (registered) return registered;
+    }
+    return new EmptyVesselSource();
+  }, [vesselSource, enabledCsv]);
   const engine = useMemo(
     () =>
       new VesselUpdateEngine({
