@@ -1,12 +1,29 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { MaritimeCommand } from "@/features/maritime/MaritimeCommand";
-import { registerGlobalFishingWatchSource } from "@/services/geospatial";
+import {
+  defaultEnabledSourceIds,
+  registerGlobalFishingWatchSource,
+  sgs,
+} from "@/services/geospatial";
 
 // Register the live provider once, at module load. `registerVesselSource`
 // replaces by id, so a hot reload cannot produce a duplicate row in the
 // Sources panel.
 registerGlobalFishingWatchSource();
+
+// Seed the enabled set AFTER registration.
+//
+// The SGS singleton is constructed when its module is first imported, which
+// happens before any provider has registered — so its initial
+// `enabledSources` is necessarily empty and a `defaultEnabled` provider
+// would render switched off. Seeding here, at the composition root, is the
+// only place both facts are known. Only applied when nothing is enabled, so
+// an officer's explicit choice (including "none") is never overridden, and
+// `loadFromURL` still wins because it runs later, on mount.
+if (sgs.get().enabledSources.length === 0) {
+  sgs.setEnabledSources(defaultEnabledSourceIds());
+}
 
 export const Route = createFileRoute("/maritime")({
   head: () => ({
