@@ -19,6 +19,10 @@ import { Radio } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {
+  formatAge,
+  freshnessBandForAge,
+  freshnessColor,
+  freshnessLabel,
   listVesselSources,
   sgs,
   useMapSelector,
@@ -138,7 +142,7 @@ function SourceRow({ descriptor, report, checked, onToggle }: SourceRowProps) {
 
         <dl className="mt-1.5 grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px] text-muted-foreground">
           <Metric label="Records" value={String(report.recordCount)} />
-          <Metric label="Freshness" value={formatAge(report.freshnessMs)} />
+          <FreshnessMetric ageMs={report.freshnessMs} />
           <Metric label="Updated" value={formatTimestamp(report.lastCheckedAt)} />
           <Metric
             label="Confidence"
@@ -173,6 +177,19 @@ function SourceRow({ descriptor, report, checked, onToggle }: SourceRowProps) {
         </dl>
       </div>
     </li>
+  );
+}
+
+/** Freshness shown as band + age, with colour as a secondary cue only. */
+function FreshnessMetric({ ageMs }: { ageMs: number | null }) {
+  const band = freshnessBandForAge(ageMs);
+  return (
+    <div className="flex justify-between gap-2">
+      <dt>Freshness</dt>
+      <dd className="truncate font-mono" style={{ color: freshnessColor(band) }}>
+        {freshnessLabel(band)} · {formatAge(ageMs)}
+      </dd>
+    </div>
   );
 }
 
@@ -213,18 +230,6 @@ function StatusPill({ status }: { status: SourceStatus }) {
       {STATUS_LABEL[status]}
     </span>
   );
-}
-
-/** Freshness as an age, or an explicit dash when nothing has been observed. */
-function formatAge(ms: number | null): string {
-  if (ms === null) return "—";
-  const seconds = Math.round(ms / 1000);
-  if (seconds < 60) return `${seconds}s`;
-  const minutes = Math.round(seconds / 60);
-  if (minutes < 60) return `${minutes}m`;
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours}h`;
-  return `${Math.round(hours / 24)}d`;
 }
 
 function formatTimestamp(iso: string | null): string {

@@ -11,6 +11,7 @@
  * scores, ranks, or classifies.
  */
 import { RISK_COLORS, RISK_OPACITY, TIMING } from "./constants";
+import { freshnessBandForTimestamp, type FreshnessBand } from "./freshness";
 import type { GeoJsonFeature, GeoJsonPoint, LonLat, RiskLevel, VesselType } from "./types";
 
 /** Stable identity of a vessel across data sources. */
@@ -111,6 +112,10 @@ export interface VesselFeatureProperties {
   readonly lastUpdated: string;
   readonly iconId: string;
   readonly snapshotId: string;
+  /** Freshness band of this observation. Mechanical age, never behaviour. */
+  readonly freshness: FreshnessBand;
+  /** Age of the observation in milliseconds at projection time. */
+  readonly ageMs: number;
 }
 
 /** A vessel rendered as a GeoJSON point feature. */
@@ -208,6 +213,8 @@ export function toVesselFeature(vessel: Vessel, ctx: VesselRenderContext = {}): 
       lastUpdated: vessel.position.timestamp,
       iconId: vesselIconId(vessel, { ...ctx, now }),
       snapshotId: vessel.sourceSnapshotId ?? "",
+      freshness: freshnessBandForTimestamp(vessel.position.timestamp, now),
+      ageMs: positionAgeMs(vessel.position, now),
     },
   };
 }

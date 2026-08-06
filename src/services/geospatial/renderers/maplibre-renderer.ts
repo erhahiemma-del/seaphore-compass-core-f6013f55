@@ -30,6 +30,7 @@
  * therefore safe to import from server-rendered code.
  */
 import { BASEMAP_STYLE, LAYER_IDS, RISK_COLORS, TIMING } from "../constants";
+import { FRESHNESS_COLORS, FRESHNESS_LABELS, formatAge } from "../freshness";
 import type { MapEventBus } from "../event-bus";
 import { buildVesselSprites, createPortDiamondImage } from "../icons/vessel-arrow";
 import type {
@@ -646,7 +647,7 @@ export class MapLibreRenderer implements MapRenderer {
       p.destination
         ? `<div style="color:#9CA3AF">${p.etaHours !== null ? `ETA ${p.etaHours}h → ` : "→ "}${escapeHtml(p.destination)}</div>`
         : "",
-      p.isStale ? `<div style="color:#D4890A">⚠ Position may be stale</div>` : "",
+      `<div style="color:${FRESHNESS_COLORS[p.freshness]}">${FRESHNESS_LABELS[p.freshness]} · ${formatAge(p.ageMs)}</div>`,
     ]
       .filter(Boolean)
       .join("");

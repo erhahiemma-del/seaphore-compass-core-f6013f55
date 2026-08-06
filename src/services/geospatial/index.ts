@@ -188,3 +188,17 @@ export {
   type ValidationSummary,
   type ValidationVerdict,
 } from "./validation";
+
+export {
+  DEFAULT_FRESHNESS_THRESHOLDS,
+  FRESHNESS_COLORS,
+  FRESHNESS_LABELS,
+  formatAge,
+  freshnessBandForAge,
+  freshnessBandForTimestamp,
+  freshnessColor,
+  freshnessDistribution,
+  freshnessLabel,
+  type FreshnessBand,
+  type FreshnessThresholds,
+} from "./freshness";
