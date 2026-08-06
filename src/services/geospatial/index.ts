@@ -109,6 +109,7 @@ export {
   type VesselFeatureProperties,
   type VesselIdentity,
   type VesselPosition,
+  type VesselProvenance,
   type VesselRenderContext,
 } from "./vessel";
 
@@ -151,5 +152,15 @@ export {
   type VesselQuery,
   type VesselSource,
 } from "./vessel-source";
+
+export {
+  GFW_SOURCE_ID,
+  GFW_SOURCE_LABEL,
+  GlobalFishingWatchVesselSource,
+  type GfwSourceHealth,
+  type GfwSourceStats,
+  type GlobalFishingWatchVesselSourceOptions,
+  type VesselCitation,
+} from "./sources/global-fishing-watch-source";
 
 export { useMapSelector, useMapSessionStore, useMapState, type RendererStatus } from "./store";

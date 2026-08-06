@@ -41,6 +41,26 @@ export interface VesselPosition {
 }
 
 /**
+ * Where an observation came from, and when.
+ *
+ * Carried per-vessel rather than per-batch so a fused picture built from
+ * several providers keeps each vessel's own lineage. Added in G5.5.3 for
+ * the live pipeline; optional so existing constructions stay valid.
+ */
+export interface VesselProvenance {
+  /** Connector id, e.g. `"global-fishing-watch"`. */
+  readonly source: string;
+  /** Human-readable provider name for display. */
+  readonly provider: string;
+  /** Upstream dataset the observation came from, when known. */
+  readonly datasetId?: string;
+  /** When Seaphore retrieved it. */
+  readonly retrievedAt: string;
+  /** When the vessel was actually observed upstream. */
+  readonly observedAt: string;
+}
+
+/**
  * A vessel as the map knows it.
  *
  * Deliberately flat and serialisable so it can cross a worker boundary, be
@@ -61,6 +81,18 @@ export interface Vessel {
   readonly attentionScore: number;
   /** Provenance of the snapshot this vessel was derived from. */
   readonly sourceSnapshotId?: string;
+  /**
+   * Lineage of this observation. Optional — a vessel constructed from a
+   * fixture or a future provider may not carry one.
+   */
+  readonly provenance?: VesselProvenance;
+  /**
+   * Confidence in this observation, 0-1, from the OSINT confidence engine
+   * (`@/lib/osint/confidence`). Never computed locally by the map.
+   */
+  readonly confidence?: number;
+  /** Banded form of {@link confidence}, e.g. `"CORROBORATED"`. */
+  readonly confidenceLevel?: string;
 }
 
 /** Properties attached to each rendered vessel feature. */
