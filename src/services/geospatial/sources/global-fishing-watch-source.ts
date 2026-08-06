@@ -115,7 +115,26 @@ export interface GlobalFishingWatchVesselSourceOptions {
   readonly now?: () => number;
 }
 
-const DEFAULT_WINDOW_MS = 24 * 60 * 60 * 1000;
+/**
+ * Activity window.
+ *
+ * VERIFIED LIVE 2026-08-06: GFW event data lags materially. A 24-hour
+ * window over the Gulf of Guinea returns ZERO events; 7 days returns 277
+ * and 30 days returns 1,824 (fishing dataset alone). 30 days is the
+ * smallest window that reliably yields an operational picture.
+ */
+const DEFAULT_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+
+/**
+ * Age ceiling handed to validation for THIS source.
+ *
+ * The default 7-day rejection is right for a live AIS feed and wrong for an
+ * event feed: a port visit can legitimately have started years ago and
+ * still be the vessel's latest known position. Rejecting those would empty
+ * the map. Their age is communicated honestly by the freshness band
+ * (they show as Stale) rather than by discarding them.
+ */
+const EVENT_MAX_AGE_MS = 10 * 365 * 24 * 60 * 60 * 1000;
 
 export class GlobalFishingWatchVesselSource implements DescribableVesselSource {
   readonly id = GFW_SOURCE_ID;
@@ -258,7 +277,7 @@ export class GlobalFishingWatchVesselSource implements DescribableVesselSource {
       else this.counters.vesselsRejected += 1;
     }
 
-    const validated = validateBatch(normalised, { now: this.now() });
+    const validated = validateBatch(normalised, { now: this.now(), maxAgeMs: EVENT_MAX_AGE_MS });
     const vessels = [...validated.vessels];
     this.counters.vesselsAccepted += validated.summary.accepted + validated.summary.warned;
     this.counters.vesselsRejected += validated.summary.rejected;

@@ -42,7 +42,14 @@ const EVENTS_PATH = "/v3/events";
 const HEALTH_TIMEOUT_MS = 4000;
 // GFW v3 requires a datasets[] param on every vessel/event call.
 const VESSEL_IDENTITY_DATASET = "public-global-vessel-identity:latest";
-const EVENTS_DATASET = "public-global-events:latest";
+/**
+ * Dataset for the per-vessel movement fetch used by `runGfwSearch`.
+ *
+ * FIXED 2026-08-06 after live probing: the previous value,
+ * `public-global-events:latest`, does not exist and returned HTTP 404 on
+ * every call, so movement history was silently always empty.
+ */
+const EVENTS_DATASET = "public-global-fishing-events:latest";
 
 /**
  * Accepted credential variables, canonical first. `GFW_API_TOKEN` is the
@@ -474,6 +481,26 @@ export async function runGfwHealthCheck(): Promise<GfwHealthPayload> {
  * ───────────────────────────────────────────────────────────────────── */
 
 /**
+ * Event datasets queried by the area search.
+ *
+ * VERIFIED LIVE 2026-08-06. `public-global-events:latest` — the name this
+ * module previously assumed — does not exist and returns HTTP 404. These
+ * five are the real v3 event datasets, confirmed by probing each:
+ *   fishing 587,823 · gaps 23,575 · encounters 77,386 ·
+ *   loitering 778,201 · port-visits 2,415,359 (global 30-day totals).
+ *
+ * Ordered by operational value for the Nigerian picture. Querying several
+ * gives a fuller activity view than any one dataset alone.
+ */
+const AREA_EVENT_DATASETS = [
+  "public-global-fishing-events:latest",
+  "public-global-gaps-events:latest",
+  "public-global-encounters-events:latest",
+  "public-global-loitering-events:latest",
+  "public-global-port-visits-events:latest",
+] as const;
+
+/**
  * Cache TTL for area results.
  *
  * Deliberately short and independent of the provider's 6-hour evidence
@@ -710,7 +737,9 @@ export async function runGfwAreaSearch(query: GfwAreaQuery): Promise<GfwAreaResu
       ["offset", "0"],
     ],
     {
-      datasets: [EVENTS_DATASET],
+      // POST with the geometry in the body is the only spatial filter v3
+      // accepts — a `bbox` query parameter is rejected with HTTP 422.
+      datasets: [...AREA_EVENT_DATASETS],
       startDate: since,
       endDate: until,
       geometry: bboxToPolygon(bbox),
