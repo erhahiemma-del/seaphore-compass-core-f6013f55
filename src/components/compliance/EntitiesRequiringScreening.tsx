@@ -5,7 +5,7 @@
  * dispatches per-entity screenings through the SANCTIONS capability. Each
  * row updates independently as its screening resolves.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ShieldAlert,
   ShieldCheck,
@@ -114,21 +114,30 @@ export function EntitiesRequiringScreening({
   }, []);
 
   // Live sync from workspace entities → screening queue.
+  // Tracks already-synced workspace entities in a ref so this effect never
+  // depends on (or loops on) the queue it writes to.
+  const syncedRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (!syncWithWorkspace || !active) return;
+    const existing = useScreeningQueueStore.getState().entities;
     const existingNames = new Set(
-      Object.values(entities).map((e) => `${e.kind ?? "?"}::${e.name.toLowerCase()}`),
+      Object.values(existing).map((e) => e.name.toLowerCase()),
     );
     for (const ent of active.entities) {
-      const key = `${ent.type ?? "?"}::${ent.name.toLowerCase()}`;
-      if (existingNames.has(key)) continue;
+      const key = ent.name.toLowerCase();
+      if (syncedRef.current.has(key) || existingNames.has(key)) {
+        syncedRef.current.add(key);
+        continue;
+      }
+      syncedRef.current.add(key);
       enqueue({
         name: ent.name,
         kind: (ent.type as ScreeningEntity["kind"]) ?? undefined,
         origin: `workspace:${active.title}`,
       });
     }
-  }, [active, entities, enqueue, syncWithWorkspace]);
+  }, [active, enqueue, syncWithWorkspace]);
+
 
   const rows = useMemo(
     () => order.map((id) => entities[id]).filter((e): e is ScreeningEntity => !!e),
