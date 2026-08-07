@@ -97,6 +97,13 @@ export class GlobalFishingWatchProvider extends BaseEvidenceProvider {
   private readonly fetchImpl: typeof fetch;
   /** Explicit test credential. Production reads env per call, never here. */
   private readonly injectedToken: string | null;
+  /**
+   * True when the caller passed `credential` explicitly (including
+   * `null`). An explicit `null` means "no credential" — the env read is
+   * skipped so an unconfigured state can be exercised honestly even on a
+   * machine where the runtime secret happens to be present.
+   */
+  private readonly credentialInjected: boolean;
   /** Last resolved authentication state — reported, never inferred. */
   private authState: GfwAuthState = "CREDENTIALS_MISSING";
   /** Which env var supplied the active credential, for the health surface. */
@@ -110,6 +117,7 @@ export class GlobalFishingWatchProvider extends BaseEvidenceProvider {
     });
     this.fetchImpl = opts.fetchImpl ?? ((...args) => fetch(...args));
     this.injectedToken = opts.credential ?? null;
+    this.credentialInjected = "credential" in opts;
   }
 
   /**
@@ -125,10 +133,16 @@ export class GlobalFishingWatchProvider extends BaseEvidenceProvider {
       this.credentialSource = "injected";
       return this.injectedToken;
     }
+    if (this.credentialInjected) {
+      this.credentialSource = null;
+      return null;
+    }
     const found = readFirstProviderCredential(GFW_CREDENTIAL_ENV);
     this.credentialSource = found?.source ?? null;
     return found?.value ?? null;
   }
+
+
 
   /** Officer-facing authentication state from the most recent probe. */
   get authenticationState(): GfwAuthState {
