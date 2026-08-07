@@ -212,12 +212,14 @@ export const useScreeningQueueStore = create<ScreeningQueueState>()(
         if (!e || e.status === "RUNNING") return;
         get().markRunning(id);
         try {
-          const result = await runSanctionsScreening({
-            target: { kind: e.kind, name: e.name, imo: e.imo },
+          // Screening runs server-side so the authenticated SANCTIONS
+          // provider resolves its credentials from the server environment.
+          const result = await screenSanctions({
+            data: { kind: e.kind, name: e.name, imo: e.imo },
           });
-          const findings = result.package.verified.filter((v) => v.kind === "sanctions");
-          const hitCount = findings.length;
-          const providers = result.providers.map((p) => p.displayName);
+          const hitCount = result.hitCount;
+          const providers = [...result.providers];
+
           const status = classifyHits(hitCount);
           const summary =
             hitCount === 0
