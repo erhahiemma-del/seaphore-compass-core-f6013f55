@@ -16,6 +16,8 @@
  *
  * The registry holds no scoring logic and no weights. It is a catalogue.
  */
+import type { VesselProvenance } from "@/services/geospatial";
+
 import type { IntelligenceFinding, RiskModuleId } from "./types";
 
 /** Whether a module can produce findings today. */
@@ -27,6 +29,13 @@ export interface FindingContext {
   readonly displayName: string;
   /** Evaluation time, injectable so modules are deterministic in tests. */
   readonly now: number;
+  /**
+   * Lineage for the data the caller fed into the engines this subject's
+   * findings will draw on. Modules copy it into `provenance.sources`; they
+   * cannot infer it, because by the time evidence reaches OSAE the
+   * connector it came from is no longer attached to it.
+   */
+  readonly sources?: readonly VesselProvenance[];
 }
 
 /**

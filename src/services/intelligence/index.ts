@@ -9,6 +9,9 @@
  * `@/services/reasoning`, `@/services/osae`, `@/lib/osint/confidence` and
  * `AISBehaviourAnalyzer`. Everything here composes them.
  */
+import { riskModuleRegistry } from "./module-registry";
+import { aisIntegrityModule } from "./modules/ais-integrity";
+
 export {
   isValidFinding,
   validateFinding,
@@ -46,3 +49,10 @@ export {
   type FindingSet,
   type ModuleContribution,
 } from "./aggregator";
+
+export { aisIntegrityModule };
+
+// Composition point. AIS Integrity registers here rather than in
+// module-registry.ts, which it imports — registering there would close an
+// import cycle.
+riskModuleRegistry.register(aisIntegrityModule);
