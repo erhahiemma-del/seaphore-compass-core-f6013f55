@@ -60,9 +60,25 @@ export interface MissionContext {
 }
 
 interface MissionState {
+  /**
+   * The open investigation, or null.
+   *
+   * G6.0: `null` is the normal state. Before it, the console booted with
+   * an investigation already selected, so there was no such thing as "no
+   * investigation" and every question was asked against a subject — an
+   * officer looking at the whole fleet was silently looking at one vessel.
+   */
   activeId: string | null;
   missions: Record<string, MissionContext>;
   setActive: (id: string | null) => void;
+  /**
+   * Open a subject. Replaces whatever was open rather than stacking: a
+   * second subject means the officer moved on, and keeping the first is
+   * the contamination G6.0 removed.
+   */
+  openInvestigation: (id: string, title?: string) => void;
+  /** Close the open investigation, returning to null. */
+  closeInvestigation: () => void;
   ensureMission: (id: string, title?: string) => MissionContext;
   setMissionSlice: <K extends MissionSliceKey>(
     id: string,
@@ -95,9 +111,18 @@ function emptyMission(id: string, title?: string): MissionContext {
 export const useMissionContextStore = create<MissionState>()(
   persist(
     (set, get) => ({
-      activeId: AMBIENT_ID,
+      // No investigation until the officer opens one.
+      activeId: null,
       missions: { [AMBIENT_ID]: emptyMission(AMBIENT_ID, "Ambient session") },
-      setActive: (id) => set({ activeId: id ?? AMBIENT_ID }),
+      setActive: (id) => set({ activeId: id }),
+      openInvestigation: (id, title) => {
+        const existing = get().missions[id];
+        if (!existing) {
+          set((s) => ({ missions: { ...s.missions, [id]: emptyMission(id, title) } }));
+        }
+        set({ activeId: id });
+      },
+      closeInvestigation: () => set({ activeId: null }),
       ensureMission: (id, title) => {
         const existing = get().missions[id];
         if (existing) return existing;
@@ -152,17 +177,37 @@ export const useMissionContextStore = create<MissionState>()(
     }),
     {
       name: "seaphore.mission-context.v1",
-      version: 1,
+      // v2: activeId is nullable and no longer defaults to the ambient
+      // session. A persisted v1 state would restore a subject the officer
+      // never opened in this session, so the active selection is dropped
+      // on migration while the mission bodies are kept.
+      version: 2,
+      migrate: (persisted, from) => {
+        const state = persisted as Partial<MissionState> | undefined;
+        if (from < 2) return { ...state, activeId: null } as MissionState;
+        return state as MissionState;
+      },
     },
   ),
 );
 
-/** Convenience selector for the active mission (falls back to ambient). */
-export function useActiveMission(): MissionContext {
-  return useMissionContextStore((s) => {
-    const id = s.activeId ?? AMBIENT_ID;
-    return s.missions[id] ?? emptyMission(id);
-  });
+/**
+ * The open investigation, or null when there is none.
+ *
+ * Callers must handle null — that is the point. A component that renders
+ * a vessel name regardless is how the hardcoded subject survived.
+ */
+export function useActiveMission(): MissionContext | null {
+  return useMissionContextStore((s) => (s.activeId ? (s.missions[s.activeId] ?? null) : null));
+}
+
+/**
+ * The ambient scratch session, for surfaces that must write somewhere even
+ * with no investigation open (e.g. the global Copilot conversation log).
+ * Distinct from an investigation: it is never a query subject.
+ */
+export function useAmbientMission(): MissionContext {
+  return useMissionContextStore((s) => s.missions[AMBIENT_ID] ?? emptyMission(AMBIENT_ID));
 }
 
 export const MISSION_AMBIENT_ID = AMBIENT_ID;

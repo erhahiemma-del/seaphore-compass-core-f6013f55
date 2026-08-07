@@ -233,7 +233,9 @@ function CopilotOpsPage() {
   const [clarify, setClarify] = useState<Clarification | null>(null);
   const [followUps, setFollowUps] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [activeInvestigation, setActiveInvestigation] = useState<string>("inv-ocean-pearl");
+  // null until the officer opens one. See mission-context.ts — "no
+  // investigation" is the normal state, not an error state.
+  const [activeInvestigation, setActiveInvestigation] = useState<string | null>(null);
   const [panelTab, setPanelTab] = useState<"context" | "evidence" | "timeline" | "notes">(
     "context",
   );
@@ -619,7 +621,14 @@ function CopilotOpsPage() {
    * briefing above, input docked to the bottom. Same submit path.
    */
   const investigationMode = Boolean(briefing) || isStreaming || Boolean(clarify) || Boolean(error);
-  const subjectLabel = (context?.label ?? "MV Ocean Pearl").split("·")[0]!.trim();
+  /**
+   * The subject on screen, or null.
+   *
+   * G6.0: no fallback vessel. A hardcoded name here is what made an
+   * officer with nothing open appear to be investigating a specific ship,
+   * and made every unrelated question look like it was about that ship.
+   */
+  const subjectLabel = context?.label ? context.label.split("·")[0]!.trim() : null;
 
   /**
    * Focus management — the command input is remounted when the workspace
@@ -762,24 +771,49 @@ function CopilotOpsPage() {
           <section className="flex flex-col gap-3">
             <div className="flex flex-1 flex-col rounded-xl border border-border/60 bg-white shadow-sm">
               <div className="flex items-start justify-between border-b border-border/60 px-4 py-2.5">
+                {/* Context bar. States absence rather than filling it with a
+                    vessel the officer never opened — the whole point of the
+                    G6.0 context fix. */}
                 <div className="flex items-start gap-3 text-[12px]">
-                  <span className="mt-1 inline-block h-2 w-2 rounded-full bg-[color:var(--color-teal)]" />
+                  <span
+                    className={cn(
+                      "mt-1 inline-block h-2 w-2 rounded-full",
+                      subjectLabel ? "bg-[color:var(--color-teal)]" : "bg-muted-foreground/40",
+                    )}
+                  />
                   <div>
                     <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                       Current Investigation
                     </div>
-                    <div className="text-[13px] font-semibold text-foreground">
-                      {context?.label ?? "MV Ocean Pearl · IMO 9438291"}
+                    <div
+                      className={cn(
+                        "text-[13px] font-semibold",
+                        subjectLabel ? "text-foreground" : "text-muted-foreground",
+                      )}
+                    >
+                      {context?.label ?? "No active investigation"}
                     </div>
                     <div className="mt-0.5 flex items-center gap-2 text-[11px]">
-                      <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
-                        Active
-                      </span>
-                      <span className="text-muted-foreground">
-                        Mission ·{" "}
-                        <span className="font-medium text-foreground">
-                          {briefing?.query ? "Intelligence briefing" : "Awaiting Investigation"}
+                      {subjectLabel ? (
+                        <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
+                          Active
                         </span>
+                      ) : (
+                        <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Global
+                        </span>
+                      )}
+                      <span className="text-muted-foreground">
+                        {subjectLabel ? (
+                          <>
+                            Mission ·{" "}
+                            <span className="font-medium text-foreground">
+                              {briefing?.query ? "Intelligence briefing" : "Awaiting Investigation"}
+                            </span>
+                          </>
+                        ) : (
+                          "Questions are answered across the whole fleet"
+                        )}
                       </span>
                     </div>
                   </div>
@@ -1051,14 +1085,30 @@ function CopilotOpsPage() {
                   ))}
                 </div>
 
+                {/* Adaptive rail. The vessel, risk and ownership panels are
+                    about a subject, so they mount only when there is one.
+                    Showing them against no investigation is what made the
+                    console look like it was always investigating a ship. */}
                 <div className="space-y-5 p-4">
-                  <VesselSnapshot />
-                  <RiskOverview />
-                  <OwnershipGraph />
+                  {subjectLabel ? (
+                    <>
+                      <VesselSnapshot label={subjectLabel} />
+                      <RiskOverview />
+                      <OwnershipGraph />
+                    </>
+                  ) : (
+                    <section className="rounded-lg border border-dashed border-border/60 bg-muted/20 p-4">
+                      <SectionLabel>No subject selected</SectionLabel>
+                      <p className="mt-1.5 text-[11.5px] text-muted-foreground">
+                        Vessel, risk and ownership panels appear once you open an investigation.
+                        Questions asked now are answered across the whole fleet.
+                      </p>
+                    </section>
+                  )}
                   <CopilotCommandsPanel
                     onRun={handleSubmit}
-                    vessel={context?.label ?? "MV Ocean Pearl"}
-                    investigation={activeInvestigation}
+                    vessel={subjectLabel ?? ""}
+                    investigation={activeInvestigation ?? ""}
                     hasIntelligencePackage={Boolean(briefing)}
                     role="officer"
                     disabled={mutation.isPending}
@@ -1301,7 +1351,15 @@ function InvestigationRow({
 
 /* ---------- Right panel widgets ---------- */
 
-function VesselSnapshot() {
+/**
+ * Vessel snapshot.
+ *
+ * The identifiers below are still demo fixtures — no connector supplies a
+ * vessel particulars record yet. The *name* is now the subject the officer
+ * actually opened, so the panel can no longer claim to be showing a vessel
+ * nobody selected. Wiring the remaining rows is tracked as G6.1.
+ */
+function VesselSnapshot({ label }: { label: string }) {
   return (
     <section>
       <div className="mb-2 flex items-center justify-between">
@@ -1315,7 +1373,7 @@ function VesselSnapshot() {
           <Ship className="h-8 w-8 opacity-80" />
         </div>
         <div className="space-y-1 p-3 text-[11.5px]">
-          <div className="text-[13px] font-semibold text-foreground">MV Ocean Pearl</div>
+          <div className="text-[13px] font-semibold text-foreground">{label}</div>
           <Row label="IMO" value="9438291" />
           <Row label="MMSI" value="657123400" />
           <Row label="Flag" value="Panama" />
