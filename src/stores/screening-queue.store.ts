@@ -11,7 +11,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
-import { runSanctionsScreening } from "@/services/capabilities/sanctions";
+import { screenSanctions } from "@/lib/acquisition.functions";
 import type { EntityKind } from "@/services/ial";
 
 export type ScreeningStatus = "PENDING" | "RUNNING" | "CLEAR" | "HIT" | "REVIEW" | "ERROR";

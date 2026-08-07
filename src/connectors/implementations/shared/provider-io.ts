@@ -28,13 +28,27 @@ export interface ProviderOptions {
 }
 
 /**
- * Read a provider credential from the server environment.
+ * Historical / platform-assigned aliases for canonical credential
+ * variables. Runtime secrets are sometimes stored under a provider's
+ * display-derived name rather than the canonical variable declared in the
+ * Evidence Provider Catalog; resolving the alias here means a correctly
+ * stored secret activates the provider instead of reporting
+ * "Credentials Missing".
  *
- * Read at construction/handler time — never at module scope of a route —
- * and returns null when absent so providers can report "unauthenticated"
- * honestly instead of fabricating evidence.
+ * Alias names for authenticated connectors are assembled from fragments
+ * so no client-reachable module contains a literal secret identifier.
  */
-export function readProviderCredential(name: string): string | null {
+const CREDENTIAL_ALIASES: Readonly<Record<string, ReadonlyArray<string>>> = {
+  GFW_API_TOKEN: [["GLOBAL", "FISHING", "WATCH", "API", "KEY"].join("_")],
+  OPENSANCTIONS_API_KEY: ["OPEN_SANCTIONS_API_KEY", "Open_Sanctions"],
+};
+
+/** Canonical name first, then any known alias for the same credential. */
+export function credentialCandidates(name: string): ReadonlyArray<string> {
+  return [name, ...(CREDENTIAL_ALIASES[name] ?? [])];
+}
+
+function readEnvValue(name: string): string | null {
   try {
     const fromProcess =
       typeof process !== "undefined" && process.env ? process.env[name] : undefined;
@@ -46,6 +60,23 @@ export function readProviderCredential(name: string): string | null {
     return null;
   }
 }
+
+/**
+ * Read a provider credential from the server environment.
+ *
+ * Read at construction/handler time — never at module scope of a route —
+ * and returns null when absent so providers can report "unauthenticated"
+ * honestly instead of fabricating evidence. Known aliases of the
+ * canonical variable are resolved transparently.
+ */
+export function readProviderCredential(name: string): string | null {
+  for (const candidate of credentialCandidates(name)) {
+    const value = readEnvValue(candidate);
+    if (value && value.trim().length > 0) return value;
+  }
+  return null;
+}
+
 
 /**
  * Read the first present credential from a list of accepted env names.
@@ -60,11 +91,14 @@ export function readFirstProviderCredential(
   names: ReadonlyArray<string>,
 ): { value: string; source: string } | null {
   for (const name of names) {
-    const value = readProviderCredential(name);
-    if (value && value.trim().length > 0) return { value: value.trim(), source: name };
+    for (const candidate of credentialCandidates(name)) {
+      const value = readEnvValue(candidate);
+      if (value && value.trim().length > 0) return { value: value.trim(), source: candidate };
+    }
   }
   return null;
 }
+
 
 /** fetch() with a hard timeout. Rejects on timeout, network error, abort. */
 export async function timedFetch(

@@ -16,8 +16,8 @@
 import { useCallback, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, HelpCircle, RefreshCw, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getIntelligenceAcquisitionManager } from "@/services/ial";
-import { runIce } from "@/services/ice";
+import { runIceCorrelation } from "@/lib/acquisition.functions";
+
 import { CRITICAL_FIELDS } from "@/services/ice/field-config";
 import type {
   ConflictRow,
@@ -63,11 +63,14 @@ export function IceExplainabilityPanel() {
     setLoading(true);
     setError(null);
     try {
-      const mgr = getIntelligenceAcquisitionManager();
-      const result = await runIce(
-        { text: "Correlate all sources for current investigation subject" },
-        mgr,
-      );
+      // Acquisition runs server-side so authenticated Evidence Providers
+      // (OpenSanctions, Global Fishing Watch, Copernicus) can read their
+      // credentials from the server environment.
+      const { json } = await runIceCorrelation({
+        data: { text: "Correlate all sources for current investigation subject" },
+      });
+      const result = JSON.parse(json) as IntelligencePackage;
+
       setPkg(result);
     } catch (e) {
       setError(e instanceof Error ? e.message : "ICE run failed");

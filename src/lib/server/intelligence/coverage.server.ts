@@ -13,6 +13,8 @@
  * ─────────────────────────────────────────────────────────────────────
  */
 import { buildEvidenceProviderCatalog } from "@/connectors/catalog";
+import { credentialCandidates } from "@/connectors/implementations/shared/provider-io";
+
 import { probeAllProviders } from "@/lib/server/providers/health.server";
 import { PROJECTION_CONTRACT } from "@/lib/projection-contract/registry";
 import {
@@ -31,13 +33,18 @@ function credentialsFor(catalog: ReadonlyArray<CoverageCatalogRow>): Record<stri
   for (const row of catalog) {
     out[row.providerId] =
       row.credentialEnv.length === 0 ||
-      row.credentialEnv.every((name) => {
-        const v = process.env[name];
-        return typeof v === "string" && v.trim().length > 0;
-      });
+      // Alias-aware: a secret stored under a platform-assigned alias of the
+      // canonical variable still counts as configured.
+      row.credentialEnv.every((name) =>
+        credentialCandidates(name).some((candidate) => {
+          const v = process.env[candidate];
+          return typeof v === "string" && v.trim().length > 0;
+        }),
+      );
   }
   return out;
 }
+
 
 async function measureEvidence(): Promise<Record<KpiDomainKey, DomainEvidence>> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
