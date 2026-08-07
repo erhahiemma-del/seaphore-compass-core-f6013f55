@@ -44,11 +44,19 @@ const RULES: readonly IntentRule[] = [
   { intent: "container-intelligence", rx: /\b[A-Z]{3}[UJZ]\s?\d{7}\b/, weight: 0.95 },
   { intent: "container-intelligence", rx: /\bcontainers?\b/i, weight: 0.85 },
 
-  // Replay names an operation, not a domain — "replay the voyage" is a
-  // replay of a voyage, not a voyage question.
+  // Replay and forecast name operations, not domains — "replay the
+  // voyage" is a replay of a voyage, and "forecast revenue leakage" is a
+  // forecast of revenue. The operation is what the officer asked for; the
+  // domain rides along in `alternatives` and still reaches the capability
+  // list.
   {
     intent: "historical-replay",
     rx: /\b(replay|rewind|play ?back|reconstruct)\b/i,
+    weight: 0.92,
+  },
+  {
+    intent: "trend-analysis",
+    rx: /\b(forecast|predict|project(?:ion|ed)?|outlook)\b/i,
     weight: 0.92,
   },
 

@@ -39,11 +39,9 @@ const RULES: readonly Rule[] = [
     label: (n) => `last ${n} months`,
   },
 
-  {
-    rx: /\b(?:right )?now|live|currently|at this moment\b/i,
-    span: 15 * MINUTE,
-    label: "last 15 minutes",
-  },
+  // Calendar words outrank "live"/"now": in "what vessels are live
+  // today?" the officer named a period, and a named period beats an
+  // implied one.
   { rx: /\btoday\b/i, span: DAY, label: "today" },
   { rx: /\byesterday\b/i, span: 2 * DAY, label: "last 2 days" },
   { rx: /\bthis week\b/i, span: 7 * DAY, label: "this week" },
@@ -56,6 +54,13 @@ const RULES: readonly Rule[] = [
     rx: /\ball time|ever|histor(?:y|ical)\b/i,
     span: 5 * 365 * DAY,
     label: "all available history",
+  },
+
+  // Last, so any named period above wins over an implied "right now".
+  {
+    rx: /\b(?:right )?now|live|currently|at this moment\b/i,
+    span: 15 * MINUTE,
+    label: "last 15 minutes",
   },
 ];
 

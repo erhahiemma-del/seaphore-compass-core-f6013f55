@@ -33,6 +33,14 @@ const PORT_OF = /\bport of\s+([A-Z][\w'-]*(?:\s+[A-Z][\w'-]*)*)/gi;
 const PROPER_PHRASE = /\b([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,})+)\b/g;
 
 /**
+ * Imperative verbs that open a question and get capitalised by sentence
+ * position, not by being names. Without stripping these, "Investigate
+ * Ocean Pearl" yields a vessel called "Investigate Ocean Pearl".
+ */
+const LEADING_VERB =
+  /^(investigate|show|find|list|open|check|review|compare|trace|search|screen|analyse|analyze|assess|monitor|track|replay|pull|give|tell)\s+/i;
+
+/**
  * Words that look like proper nouns at the head of a sentence but name no
  * entity. Without this, "Show Vessels Owned By Maersk" yields "Show
  * Vessels" as a vessel.
@@ -154,8 +162,11 @@ export function resolveEntities(raw: string): readonly ResolvedEntity[] {
   // ends up anchored to whichever vessel was mentioned in passing.
   if (out.length === 0) {
     for (const m of text.matchAll(PROPER_PHRASE)) {
-      const phrase = m[1].trim();
-      if (STOP_PHRASES.has(phrase.toLowerCase())) continue;
+      const phrase = m[1].trim().replace(LEADING_VERB, "").trim();
+      if (!phrase || STOP_PHRASES.has(phrase.toLowerCase())) continue;
+      // A single word left after stripping the verb is too weak to name a
+      // vessel — "Show Apapa" should not yield a vessel called "Apapa".
+      if (!/\s/.test(phrase)) continue;
       push(out, seen, {
         kind: "vessel",
         text: phrase,
