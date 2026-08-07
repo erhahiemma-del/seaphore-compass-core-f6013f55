@@ -65,8 +65,13 @@ describe("OpenSanctionsConnector — connect()", () => {
   });
 
   it("reports a Configuration Error, not offline, when the key is missing", async () => {
+    // Clear the canonical variable AND every accepted alias so the case is
+    // genuinely "unconfigured" even in an environment holding real secrets.
     delete process.env.OPENSANCTIONS_API_KEY;
+    delete process.env.OPEN_SANCTIONS_API_KEY;
+    delete process.env.Open_Sanctions;
     const c = new OpenSanctionsConnector({
+
       fetchImpl: vi.fn(async () => jsonResponse({ status: "ok" })) as unknown as typeof fetch,
     });
     expect(await c.authenticate()).toBe(false);

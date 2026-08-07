@@ -20,6 +20,9 @@
  * Blocked from client bundles by the `.server.ts` filename convention.
  * ─────────────────────────────────────────────────────────────────────
  */
+import { credentialCandidates } from "@/connectors/implementations/shared/provider-io";
+
+
 
 export type ConnectorHealthState =
   | "healthy"
@@ -76,9 +79,12 @@ export function registerAuthenticatedConnector(meta: AuthenticatedConnectorMeta)
 }
 
 export function hasSecret(envName: string): boolean {
-  const v = process.env[envName];
-  return typeof v === "string" && v.length > 0;
+  return credentialCandidates(envName).some((candidate) => {
+    const v = process.env[candidate];
+    return typeof v === "string" && v.length > 0;
+  });
 }
+
 
 function snapshotOf(record: InternalRecord): ConnectorAdminSnapshot {
   const avg =

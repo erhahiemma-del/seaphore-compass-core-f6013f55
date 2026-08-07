@@ -208,6 +208,13 @@ export class CopernicusProvider extends BaseEvidenceProvider {
   private readonly fetchImpl: typeof fetch;
   private readonly injectedUsername: string | null;
   private readonly injectedPassword: string | null;
+  /**
+   * True when the caller passed credentials explicitly (including
+   * `null`). An explicit `null` means "no credentials" — the env read is
+   * skipped so an unconfigured state can be exercised honestly even on a
+   * machine where the runtime secrets happen to be present.
+   */
+  private readonly credentialsInjected: boolean;
 
   /** Current OAuth token. Null until first successful authentication. */
   private token: ActiveToken | null = null;
@@ -224,6 +231,7 @@ export class CopernicusProvider extends BaseEvidenceProvider {
     this.fetchImpl = opts.fetchImpl ?? ((...args) => fetch(...args));
     this.injectedUsername = opts.username ?? null;
     this.injectedPassword = opts.password ?? null;
+    this.credentialsInjected = "username" in opts || "password" in opts;
   }
 
   // ── SECTION 4A: CREDENTIAL RESOLUTION ──────────────────────────────
@@ -234,11 +242,16 @@ export class CopernicusProvider extends BaseEvidenceProvider {
    * capturing at construction gives a null credential in production.
    */
   private resolveCredentials(): { username: string; password: string } | null {
-    const username = this.injectedUsername ?? readProviderCredential(COPERNICUS_CREDENTIAL_ENV[0]);
-    const password = this.injectedPassword ?? readProviderCredential(COPERNICUS_CREDENTIAL_ENV[1]);
+    if (this.credentialsInjected) {
+      if (!this.injectedUsername || !this.injectedPassword) return null;
+      return { username: this.injectedUsername, password: this.injectedPassword };
+    }
+    const username = readProviderCredential(COPERNICUS_CREDENTIAL_ENV[0]);
+    const password = readProviderCredential(COPERNICUS_CREDENTIAL_ENV[1]);
     if (!username || !password) return null;
     return { username, password };
   }
+
 
   // ── SECTION 4B: TOKEN LIFECYCLE ────────────────────────────────────
 
