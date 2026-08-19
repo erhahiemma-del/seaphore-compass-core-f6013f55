@@ -3,7 +3,7 @@
 **Seaphore · Phase 1 deliverable · no implementation**
 
 Execution order per the brief: audit, discover, register, prioritise —
-*then* build. This document covers steps 1–13. No connector has been
+_then_ build. This document covers steps 1–13. No connector has been
 written.
 
 **Every claim below is marked VERIFIED or UNVERIFIED.** Verified means I
@@ -19,8 +19,8 @@ means I did not check it, and it must not be treated as fact.
 Two independent access controls, both verified:
 
 1. `shippos.nigerianports.gov.ng` returns **HTTP 403** to automated
-   requests, and a `/login` route exists (search result title: *"Daily
-   Shipping Position - v2 - Log in"*). SHIPPOS v2 is an authenticated
+   requests, and a `/login` route exists (search result title: _"Daily
+   Shipping Position - v2 - Log in"_). SHIPPOS v2 is an authenticated
    application.
 2. `nigerianports.gov.ng/robots.txt` **explicitly disallows AI crawlers**
    — `ClaudeBot`, `GPTBot`, `CCBot`, `Google-Extended`, `Bytespider`,
@@ -43,22 +43,22 @@ lifecycle and the fusion logic are the hard parts — but it ships as
 
 Reuse these. Do not duplicate.
 
-| Concern              | Existing asset                                                          | Verdict for this sprint          |
-| -------------------- | ----------------------------------------------------------------------- | -------------------------------- |
-| Source registry      | `public.data_sources` + `data_source_health` tables, RLS, admin-write    | **Extend** — do not create a new registry table |
-| Connector framework  | `src/connectors/framework/BaseEvidenceProvider.ts`, `spec.ts`, `register.ts`, `certification.ts` | **Extend** — `GovernmentDataAdapter` derives from it |
-| Acquisition layer    | `src/services/ial/` — manager, cache, hash, normalizer, validator, entity-resolver, package-builder | Reuse wholesale |
-| Provenance           | `NormalizedEvidence` (source, sourceName, grade, observedAt, retrievedAt, freshnessSeconds, hash, providerRecordId) | Already satisfies §16 |
-| Freshness            | `src/services/geospatial/freshness.ts` — bands, recomputed at render     | Reuse; already satisfies §20     |
-| Conflict handling    | `src/services/ice/` — conflict, corroboration, correlation, scoring, trust-registry | Already satisfies §18            |
-| Source authority     | `src/services/ice/source-trust.ts`, `trust-registry.ts`                  | **Extend** with agency authority |
-| Confidence           | `src/lib/osint/confidence.ts`, `src/services/reasoning/confidence.ts`    | Reuse — do not add a third scale |
-| Findings model       | `src/services/intelligence/` — `IntelligenceFinding`, `RiskModuleRegistry` | Government modules register here |
-| Correlation engines  | `src/services/eo/` — AIS gap + dark contact                              | Pattern to follow for NPA↔AIS fusion |
-| Map                  | `src/services/geospatial/` — SGS, layer registry, MapLibre renderer      | New layers register here         |
-| Orchestration        | `src/services/orchestration/` — one intent classifier, workspace planner | Copilot questions route here     |
-| AIS adapters         | `datalastic.adapter.ts` (stub, honest), `spire.adapter.ts`               | Fusion counterparties            |
-| Server secrets       | `.server.ts` pattern (`gfw.server.ts`, `eo.server.ts`)                   | Mandatory for any credentials    |
+| Concern             | Existing asset                                                                                                      | Verdict for this sprint                              |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Source registry     | `public.data_sources` + `data_source_health` tables, RLS, admin-write                                               | **Extend** — do not create a new registry table      |
+| Connector framework | `src/connectors/framework/BaseEvidenceProvider.ts`, `spec.ts`, `register.ts`, `certification.ts`                    | **Extend** — `GovernmentDataAdapter` derives from it |
+| Acquisition layer   | `src/services/ial/` — manager, cache, hash, normalizer, validator, entity-resolver, package-builder                 | Reuse wholesale                                      |
+| Provenance          | `NormalizedEvidence` (source, sourceName, grade, observedAt, retrievedAt, freshnessSeconds, hash, providerRecordId) | Already satisfies §16                                |
+| Freshness           | `src/services/geospatial/freshness.ts` — bands, recomputed at render                                                | Reuse; already satisfies §20                         |
+| Conflict handling   | `src/services/ice/` — conflict, corroboration, correlation, scoring, trust-registry                                 | Already satisfies §18                                |
+| Source authority    | `src/services/ice/source-trust.ts`, `trust-registry.ts`                                                             | **Extend** with agency authority                     |
+| Confidence          | `src/lib/osint/confidence.ts`, `src/services/reasoning/confidence.ts`                                               | Reuse — do not add a third scale                     |
+| Findings model      | `src/services/intelligence/` — `IntelligenceFinding`, `RiskModuleRegistry`                                          | Government modules register here                     |
+| Correlation engines | `src/services/eo/` — AIS gap + dark contact                                                                         | Pattern to follow for NPA↔AIS fusion                 |
+| Map                 | `src/services/geospatial/` — SGS, layer registry, MapLibre renderer                                                 | New layers register here                             |
+| Orchestration       | `src/services/orchestration/` — one intent classifier, workspace planner                                            | Copilot questions route here                         |
+| AIS adapters        | `datalastic.adapter.ts` (stub, honest), `spire.adapter.ts`                                                          | Fusion counterparties                                |
+| Server secrets      | `.server.ts` pattern (`gfw.server.ts`, `eo.server.ts`)                                                              | Mandatory for any credentials                        |
 
 **Tables that exist:** `ports`, `vessels`, `voyages`, `companies`,
 `cargo_items`, `containers`, `manifests`, `agencies`, `evidence`,
@@ -80,16 +80,16 @@ NIMASA is out of scope per the brief; I have not touched it.
 
 ### NPA — Nigerian Ports Authority · Priority 1
 
-| Field | Value |
-| ----- | ----- |
-| SHIPPOS | `https://shippos.nigerianports.gov.ng/` — **HTTP 403**, `/login` exists |
-| Main site | `https://nigerianports.gov.ng/` — **HTTP 403** to automated fetch |
-| Public page | `https://nigerianports.gov.ng/lagos-port/daily-shipping-position/` (VERIFIED to exist via search; **content not retrieved**) |
-| Historical artefact | `https://nigerianports.gov.ng/wp-content/uploads/2017/05/ShipInRivers20Sep17.pdf` — WordPress uploads; Daily Shipping Position published as **PDF** |
-| Platform | WordPress (`/wp-content/`, `/wp-admin/admin-ajax.php` allowed in robots) |
-| robots.txt | AI crawlers disallowed; `ai-train=no, use=reference` |
-| **Status** | **`AUTHORIZATION_REQUIRED`** |
-| Access classification | `AUTHENTICATED_API` (SHIPPOS) / `DOCUMENT` (PDF positions) |
+| Field                 | Value                                                                                                                                               |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SHIPPOS               | `https://shippos.nigerianports.gov.ng/` — **HTTP 403**, `/login` exists                                                                             |
+| Main site             | `https://nigerianports.gov.ng/` — **HTTP 403** to automated fetch                                                                                   |
+| Public page           | `https://nigerianports.gov.ng/lagos-port/daily-shipping-position/` (VERIFIED to exist via search; **content not retrieved**)                        |
+| Historical artefact   | `https://nigerianports.gov.ng/wp-content/uploads/2017/05/ShipInRivers20Sep17.pdf` — WordPress uploads; Daily Shipping Position published as **PDF** |
+| Platform              | WordPress (`/wp-content/`, `/wp-admin/admin-ajax.php` allowed in robots)                                                                            |
+| robots.txt            | AI crawlers disallowed; `ai-train=no, use=reference`                                                                                                |
+| **Status**            | **`AUTHORIZATION_REQUIRED`**                                                                                                                        |
+| Access classification | `AUTHENTICATED_API` (SHIPPOS) / `DOCUMENT` (PDF positions)                                                                                          |
 
 **What I did not do:** I did not probe `/wp-json/`, did not vary user
 agent, did not attempt the SHIPPOS login, and did not enumerate the PDF
@@ -105,36 +105,36 @@ unlock in the entire programme.
 
 ### NOSDRA — Oil Spill Monitor · Priority 2 — **CONNECT NOW**
 
-| Field | Value |
-| ----- | ----- |
-| URL | `https://oilspillmonitor.ng/` |
-| Access | **Public, no authentication** (VERIFIED) |
-| Exports | **CSV and JSON**, both *filtered* and *complete dataset* (VERIFIED — quoted: "Download filtered data as CSV", "Download complete dataset as JSON") |
-| Fields | incident coordinates, dates, operators, volumes |
-| GIS layers | oil blocks, pipelines, terminals, wetlands, waterbodies, population |
-| Contact | `oilspillalerts@nosdra.gov.ng` |
-| **Status** | **`EXPORT_CONNECTED` candidate** |
-| Classification | `OFFICIAL_EXPORT` + `GIS_SERVICE` |
-| Data class | `PERIODIC` / `HISTORICAL` — **not** live |
-| Feeds | Environmental Intelligence, Energy Intelligence, Risk Engine, map layer |
+| Field          | Value                                                                                                                                              |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| URL            | `https://oilspillmonitor.ng/`                                                                                                                      |
+| Access         | **Public, no authentication** (VERIFIED)                                                                                                           |
+| Exports        | **CSV and JSON**, both _filtered_ and _complete dataset_ (VERIFIED — quoted: "Download filtered data as CSV", "Download complete dataset as JSON") |
+| Fields         | incident coordinates, dates, operators, volumes                                                                                                    |
+| GIS layers     | oil blocks, pipelines, terminals, wetlands, waterbodies, population                                                                                |
+| Contact        | `oilspillalerts@nosdra.gov.ng`                                                                                                                     |
+| **Status**     | **`EXPORT_CONNECTED` candidate**                                                                                                                   |
+| Classification | `OFFICIAL_EXPORT` + `GIS_SERVICE`                                                                                                                  |
+| Data class     | `PERIODIC` / `HISTORICAL` — **not** live                                                                                                           |
+| Feeds          | Environmental Intelligence, Energy Intelligence, Risk Engine, map layer                                                                            |
 
 **This is the one source ready to build against today.** Exact export URLs
 still need capture, and the licence is **UNVERIFIED** → `LICENSE_REVIEW`.
 
 ### NBS — National Bureau of Statistics · Priority 3
 
-| Field | Value |
-| ----- | ----- |
-| E-library | `https://nigerianstat.gov.ng/elibrary` (VERIFIED) |
-| Microdata | `https://microdata.nigerianstat.gov.ng/` — NADA (VERIFIED, referenced) |
-| Open data | `https://nigeria.opendataforafrica.org/` (VERIFIED, referenced) |
-| robots.txt | **404** — no crawl restrictions published |
-| Relevant datasets | Foreign Trade in Goods (quarterly), Road/Rail Transport Data, Commodity Price Indices |
-| Port/shipping stats | **None visible** in the e-library listing |
-| API | **None advertised** on the e-library |
-| **Status** | `PUBLIC` |
-| Classification | `DOWNLOAD` / `DOCUMENT` |
-| Data class | `QUARTERLY` → `PERIODIC` / `HISTORICAL` |
+| Field               | Value                                                                                 |
+| ------------------- | ------------------------------------------------------------------------------------- |
+| E-library           | `https://nigerianstat.gov.ng/elibrary` (VERIFIED)                                     |
+| Microdata           | `https://microdata.nigerianstat.gov.ng/` — NADA (VERIFIED, referenced)                |
+| Open data           | `https://nigeria.opendataforafrica.org/` (VERIFIED, referenced)                       |
+| robots.txt          | **404** — no crawl restrictions published                                             |
+| Relevant datasets   | Foreign Trade in Goods (quarterly), Road/Rail Transport Data, Commodity Price Indices |
+| Port/shipping stats | **None visible** in the e-library listing                                             |
+| API                 | **None advertised** on the e-library                                                  |
+| **Status**          | `PUBLIC`                                                                              |
+| Classification      | `DOWNLOAD` / `DOCUMENT`                                                               |
+| Data class          | `QUARTERLY` → `PERIODIC` / `HISTORICAL`                                               |
 
 Trade statistics are quarterly documents, not an operational feed. Useful
 for Trade Intelligence baselines; useless for live awareness. The ODP
@@ -147,18 +147,18 @@ portal is the most likely machine-readable route — **UNVERIFIED**.
 I did not investigate these in this session. **They carry no status
 until checked**, and no connector should be scoped against them.
 
-| Agency | Named systems to investigate | Why it matters |
-| ------ | ---------------------------- | -------------- |
-| NCS | National Single Window, B'Odogwu, customs.gov.ng | Trade/cargo intelligence |
-| NSC | ICTN, Port Process Manual, tariffs, dry ports | Port cost & logistics |
-| NIWA | ERIS, inland vessels, jetties, permits | Inland waterways |
-| NHA | ENC, bathymetry, tides, wrecks, NtM, WMS/WFS | Navigation & geospatial |
-| NUPRC | fields, operators, licences, pipelines, terminals | Energy intelligence |
-| NIOMR | oceanography, fisheries, waves, currents | Environmental |
-| NEMA | flooding, coastal hazards, hazard maps | Disaster/risk |
-| NESREA | environmental compliance, permits, incidents | Compliance |
-| FMMBE | policy, blue-economy programmes | Reference only |
-| Nigerian Navy | publicly released security incidents only | Maritime security |
+| Agency        | Named systems to investigate                      | Why it matters           |
+| ------------- | ------------------------------------------------- | ------------------------ |
+| NCS           | National Single Window, B'Odogwu, customs.gov.ng  | Trade/cargo intelligence |
+| NSC           | ICTN, Port Process Manual, tariffs, dry ports     | Port cost & logistics    |
+| NIWA          | ERIS, inland vessels, jetties, permits            | Inland waterways         |
+| NHA           | ENC, bathymetry, tides, wrecks, NtM, WMS/WFS      | Navigation & geospatial  |
+| NUPRC         | fields, operators, licences, pipelines, terminals | Energy intelligence      |
+| NIOMR         | oceanography, fisheries, waves, currents          | Environmental            |
+| NEMA          | flooding, coastal hazards, hazard maps            | Disaster/risk            |
+| NESREA        | environmental compliance, permits, incidents      | Compliance               |
+| FMMBE         | policy, blue-economy programmes                   | Reference only           |
+| Nigerian Navy | publicly released security incidents only         | Maritime security        |
 
 **Excluded by instruction:** NIMASA.
 
@@ -197,14 +197,14 @@ existing admin surfaces then work with no change.
 
 ## 5. Integration priority matrix
 
-| # | Source | Dataset | Verified access | Status | Action |
-| - | ------ | ------- | --------------- | ------ | ------ |
-| 1 | **NOSDRA** | Oil spill incidents | CSV + JSON export | `EXPORT_CONNECTED` | **CONNECT NOW** |
-| 2 | **NPA SHIPPOS** | Daily Shipping Schedule, Vessels Expected/Awaiting/At Berth/Departed | Login required; AI crawlers disallowed | `AUTHORIZATION_REQUIRED` | **CONNECTOR READY — AWAITING ACCESS** |
-| 3 | **NPA** | Historical Daily Shipping Position | PDF on WordPress; crawling disallowed | `AUTHORIZATION_REQUIRED` | Request archive via agreement |
-| 4 | **NBS** | Foreign Trade in Goods, Transport | Public documents | `PUBLIC` | Connect through export (manual/scheduled) |
-| 5 | **NBS ODP** | Open Data for Africa | Portal exists | `UNVERIFIED` | Verify next |
-| 6 | NCS, NSC, NIWA, NHA, NUPRC, NIOMR, NEMA, NESREA | — | — | `UNVERIFIED` | Discovery required |
+| #   | Source                                          | Dataset                                                              | Verified access                        | Status                   | Action                                    |
+| --- | ----------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------- | ------------------------ | ----------------------------------------- |
+| 1   | **NOSDRA**                                      | Oil spill incidents                                                  | CSV + JSON export                      | `EXPORT_CONNECTED`       | **CONNECT NOW**                           |
+| 2   | **NPA SHIPPOS**                                 | Daily Shipping Schedule, Vessels Expected/Awaiting/At Berth/Departed | Login required; AI crawlers disallowed | `AUTHORIZATION_REQUIRED` | **CONNECTOR READY — AWAITING ACCESS**     |
+| 3   | **NPA**                                         | Historical Daily Shipping Position                                   | PDF on WordPress; crawling disallowed  | `AUTHORIZATION_REQUIRED` | Request archive via agreement             |
+| 4   | **NBS**                                         | Foreign Trade in Goods, Transport                                    | Public documents                       | `PUBLIC`                 | Connect through export (manual/scheduled) |
+| 5   | **NBS ODP**                                     | Open Data for Africa                                                 | Portal exists                          | `UNVERIFIED`             | Verify next                               |
+| 6   | NCS, NSC, NIWA, NHA, NUPRC, NIOMR, NEMA, NESREA | —                                                                    | —                                      | `UNVERIFIED`             | Discovery required                        |
 
 ### Classification per §13 of the brief
 
@@ -248,7 +248,7 @@ as corroboration, never as a sole merge key, with `match_confidence`,
 ## 7. What I recommend building first
 
 1. **Registry migration + admin surface** — `government_data_sources`,
-   seeded with every source above at its *verified* status. This makes
+   seeded with every source above at its _verified_ status. This makes
    the Control Centre (§26) truthful on day one, including the rows that
    say `AUTHORIZATION_REQUIRED`.
 2. **`GovernmentDataAdapter`** over `BaseEvidenceProvider`, with the §15
