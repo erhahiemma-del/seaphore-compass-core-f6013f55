@@ -56,6 +56,35 @@ export {
 } from "./ais-gap";
 
 export {
+  DEFAULT_AIS_WINDOW_MS,
+  aisWindowFor,
+  bboxAround,
+  clearAisHistoryProvider,
+  describeCoverage,
+  getAisHistoryProvider,
+  queryAisAroundAcquisition,
+  registerAisHistoryProvider,
+  supportsUnmatchedConclusion,
+  type AisCoverage,
+  type AisHistoryProvider,
+  type AisHistoryResult,
+  type BoundingBox,
+} from "./ais-history";
+
+export {
+  AisProviderRegistry,
+  AisProviderRegistryError,
+  DATALASTIC_ENTRY,
+  SEAVANTAGE_ENTRY,
+  aisProviderRegistry,
+  describeAisAvailability,
+  type AisProviderCapabilities,
+  type AisProviderEntry,
+  type AisProviderStatus,
+  type UnverifiedCapabilities,
+} from "./ais-providers";
+
+export {
   CANDIDATE_FLOOR,
   MATCH_THRESHOLD,
   correlateDetection,

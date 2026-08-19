@@ -152,14 +152,48 @@ export interface AisReport {
   readonly mmsi: string;
   readonly imo: string | null;
   readonly name: string | null;
+  /** When the vessel transmitted. The only time that describes the world. */
   readonly reportedAt: string;
   readonly latitude: number;
   readonly longitude: number;
   readonly speedKnots: number | null;
+  /**
+   * Course over ground — the direction of travel.
+   *
+   * Distinct from {@link headingDeg}, which is where the hull points. A
+   * vessel setting against a current has both, and they differ; the
+   * correlator compares SAR's heading axis against the hull, falling back
+   * to course only when no heading was transmitted.
+   */
   readonly courseDeg: number | null;
   readonly lengthM: number | null;
   /** Connector id, e.g. `"datalastic"`. Carried into evidence. */
   readonly source: string;
+
+  /* ── Optional identity and voyage fields ──────────────────────
+   * Added in Phase 7B. Optional so every existing producer keeps
+   * compiling: providers differ in what they carry, and a required
+   * field would force callers to invent values they do not have.
+   */
+
+  /** True heading in degrees — where the hull points. */
+  readonly headingDeg?: number | null;
+  /** Provider's vessel-type label, verbatim. Never normalised into risk. */
+  readonly vesselType?: string | null;
+  /** Officer-declared destination. Self-reported, so weak evidence. */
+  readonly destination?: string | null;
+  readonly callSign?: string | null;
+  readonly flag?: string | null;
+  readonly widthM?: number | null;
+  readonly draughtM?: number | null;
+  /**
+   * When the provider received the report, as opposed to when the vessel
+   * sent it. Satellite AIS can lag transmission by minutes to hours, and
+   * conflating the two would make a stale report look current.
+   */
+  readonly receivedAt?: string | null;
+  /** Provider's own record id, for citation back to source. */
+  readonly sourceRecordId?: string | null;
 }
 
 /** One reason a candidate scored as it did. Shown, never summarised away. */

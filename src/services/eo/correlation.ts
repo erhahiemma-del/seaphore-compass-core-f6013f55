@@ -31,6 +31,7 @@
 import { confidenceLevelFor } from "@/lib/osint/confidence";
 
 import { haversineM } from "./ais-gap";
+import { supportsUnmatchedConclusion, type AisCoverage } from "./ais-history";
 import type {
   AisReport,
   CandidateIdentity,
@@ -64,6 +65,21 @@ export interface CorrelateOptions {
   /** Maximum AIS age either side of acquisition to consider. Default 1 h. */
   readonly maxTimeDeltaSec?: number;
   readonly now?: number;
+  /**
+   * What the AIS provider declares it actually looked at.
+   *
+   * When supplied this is **authoritative** for the coverage question,
+   * and it is the only way to tell an empty result apart from an
+   * unasked one: a provider that ran and covers the area earns the
+   * right to have its silence mean `unmatched`; anything else yields
+   * `no-ais-coverage`.
+   *
+   * Omitted, the correlator falls back to inferring coverage from the
+   * report count — the pre-Phase-7 behaviour, retained so existing
+   * callers keep working, but it cannot distinguish the two cases and
+   * resolves ambiguity toward `no-ais-coverage`.
+   */
+  readonly coverage?: AisCoverage;
 }
 
 /**
@@ -232,26 +248,24 @@ export function correlateDetection(
   const correlatedAt = new Date(options.now ?? Date.now()).toISOString();
   const searchRadiusM = BASE_SEARCH_RADIUS_M + detection.positionUncertaintyM;
 
-  if (aisReports.length === 0) {
-    // Nothing can be concluded. Not "unmatched" — we could not see.
-    return {
-      detectionId: detection.id,
-      status: "no-ais-coverage",
-      candidates: [],
-      aisReportsConsidered: 0,
-      searchRadiusM,
-      correlatedAt,
-    };
-  }
+  // A provider that actually ran and covers this area has earned the
+  // right to have its silence mean something. Without that declaration,
+  // an empty result is our blindness and nothing more.
+  const coverageSupportsConclusion = options.coverage
+    ? supportsUnmatchedConclusion(options.coverage)
+    : aisReports.length > 0;
 
-  const nearest = nearestPerVessel(aisReports, acquiredMs, maxTimeDeltaSec);
+  const nearest =
+    aisReports.length > 0 ? nearestPerVessel(aisReports, acquiredMs, maxTimeDeltaSec) : [];
 
   if (nearest.length === 0) {
     return {
       detectionId: detection.id,
-      status: "no-ais-coverage",
+      // Declared coverage with zero reports is an observation about the
+      // world: AIS was watching and nothing was transmitting here.
+      status: coverageSupportsConclusion ? "unmatched" : "no-ais-coverage",
       candidates: [],
-      aisReportsConsidered: 0,
+      aisReportsConsidered: nearest.length,
       searchRadiusM,
       correlatedAt,
     };
