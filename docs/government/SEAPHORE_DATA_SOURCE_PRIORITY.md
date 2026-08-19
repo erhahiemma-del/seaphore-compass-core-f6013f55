@@ -177,3 +177,40 @@ complementarity + legal feasibility puts the order at:
 3. **NCS access request** — highest ceiling, no connector yet
 4. **NIWA tide feed verification** — cheap, possibly the only live feed
 5. **NHA re-check** — calendar-driven, no effort until the repository opens
+
+---
+---
+
+# Final tiering after Phase 6B (discovery complete)
+
+Eleven agencies assessed. Prioritised by intelligence value × uniqueness
+× freshness × coverage × accessibility × commercial feasibility ×
+integration effort — **not** by agency importance.
+
+| Tier | Members | Note |
+| ---- | ------- | ---- |
+| **1 — CONNECT NOW** | *(empty)* | Nothing is both technically connectable and commercially clear |
+| **2 — EXPORT / GIS** | NOSDRA incidents · NOSDRA GIS · NSC tariffs & freight rates (PDF) · NBS quarterly (PDF) | All `LICENSE_BLOCKED` pending review |
+| **3 — INTEGRATION PENDING** | NPA ×5 *(connector built)* · NCS *(no connector)* | Authorization conversations |
+| **4 — LICENSE REVIEW** | NOSDRA · NSC · NBS · NPA | Blocks commercial use, not development |
+| **5 — FUTURE** | NHA *(date-dependent)* · NIWA tide feed *(verify)* · NIWA ERIS · NIOMR-via-OBIS · NUPRC | |
+| **6 — REFERENCE ONLY** | NSC Process Manual · NESREA legislation · FMMBE · Navy public releases | Copilot grounding at best |
+| **— DO NOT PRIORITISE** | **NEMA** · **NESREA** · NIOMR ocean-state | `NO_VERIFIED_DATASET` |
+
+## Ranked next actions
+
+1. **NOSDRA licence review** — one document read from Tier 1. Highest
+   return per hour of effort in the entire programme.
+2. **NPA access request** — connector built; **+90-day accumulation lead
+   time** makes this the earliest thing to unblock even though it lands last.
+3. **NCS access request** — highest ceiling, no connector yet.
+4. **NIWA tide feed verification** — cheap; the only live candidate found
+   across eleven agencies. Two sets of terms to read (NIWA + port-log.net).
+5. **NHA quarterly re-check** — calendar-driven, zero effort until the
+   Marine Data Repository opens.
+
+## What discovery settled
+
+Further discovery is **not** the constraint. Eleven agencies produced one
+machine-readable open dataset. The constraints are licensing and
+authorization, and both are conversations rather than engineering.
