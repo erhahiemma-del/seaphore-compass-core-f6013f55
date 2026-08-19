@@ -315,6 +315,47 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     status: "ready",
     order: 20,
   },
+  {
+    id: "sarDetections",
+    label: "SAR Detections",
+    description:
+      "Objects detected in Sentinel-1 radar imagery. Snapshots at acquisition time, not live positions.",
+    group: "INTELLIGENCE",
+    renderLayerIds: [LAYER_IDS.sarDetections, LAYER_IDS.sarDetectionLabels],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 40,
+    // Scene search works once Copernicus credentials are set; detection
+    // does not, and without it there is nothing to draw. Stated as the
+    // real blocker rather than as "coming soon".
+    pendingReason:
+      "No SAR ship-detection service is configured. Sentinel-1 scenes can be catalogued, but the imagery is not processed, so no detections exist to plot.",
+  },
+  {
+    id: "sarSceneFootprints",
+    label: "SAR Coverage",
+    description:
+      "Footprints of Sentinel-1 acquisitions, showing where the satellite actually looked and when.",
+    group: "ANALYSIS",
+    renderLayerIds: [LAYER_IDS.sarSceneFootprints],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 30,
+    pendingReason: "Awaiting Copernicus credentials (COPERNICUS_USERNAME / COPERNICUS_PASSWORD).",
+  },
+  {
+    id: "darkContactAreas",
+    label: "Dark Contact Areas",
+    description:
+      "Where a vessel in an AIS gap could have reached, bounded by its last reported speed.",
+    group: "ANALYSIS",
+    renderLayerIds: [LAYER_IDS.darkContactAreas],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 40,
+    pendingReason:
+      "Requires an AIS history source; Datalastic is registered but not wired, and SeaVantage is not implemented.",
+  },
 ] as const;
 
 /** Build a registry pre-loaded with the default layer catalogue. */

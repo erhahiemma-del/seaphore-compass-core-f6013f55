@@ -167,6 +167,12 @@ export const LAYER_IDS = {
   revenueHeat: "revenue-heatmap-layer",
   investigArea: "investigation-area-layer",
   weatherOverlay: "weather-layer",
+  /** Non-cooperative SAR detections, and the scene footprints they came from. */
+  sarDetections: "sar-detections-layer",
+  sarDetectionLabels: "sar-detection-labels-layer",
+  sarSceneFootprints: "sar-scene-footprints-layer",
+  /** Reachable-area circles for open AIS gaps. */
+  darkContactAreas: "dark-contact-areas-layer",
 } as const;
 
 /** Operational timings, in milliseconds. */
