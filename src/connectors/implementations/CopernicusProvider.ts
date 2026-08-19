@@ -539,6 +539,17 @@ export class CopernicusProvider extends BaseEvidenceProvider {
         (a) => a.type?.startsWith("image/") || a.title?.toLowerCase().includes("thumbnail"),
       )?.href ?? null;
 
+    // The full product, as opposed to the browse image above. CDSE names
+    // this asset inconsistently across collections, so try the documented
+    // keys before falling back to the first non-image asset.
+    const assets = feature.assets ?? {};
+    const productHref =
+      assets.PRODUCT?.href ??
+      assets.product?.href ??
+      assets.SAFE?.href ??
+      Object.values(assets).find((a) => a.href && !a.type?.startsWith("image/"))?.href ??
+      null;
+
     const fields: Record<string, EvidenceFieldValue> = {
       sceneId,
       collection,
@@ -558,6 +569,14 @@ export class CopernicusProvider extends BaseEvidenceProvider {
       license: props.license ?? "proprietary",
       title: props.title ?? sceneId,
       thumbnailHref: browseHref,
+      // Href of the full product, for a downstream processing service to
+      // fetch directly. Seaphore never downloads it — carrying the
+      // pointer is what lets a SAR detector read the pixels without the
+      // imagery passing through this application. Distinct from
+      // `thumbnailHref`, which is a browse image: running a detector on a
+      // preview JPEG would produce confident nonsense.
+      productHref: productHref,
+      geometryJson: feature.geometry ? JSON.stringify(feature.geometry) : null,
       rawHash: stableHash({ id: sceneId, props }),
     };
 
