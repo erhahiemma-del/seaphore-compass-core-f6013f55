@@ -133,3 +133,47 @@ A source changes tier only on evidence:
 **One source can produce data today.** The rest is either awaiting
 permission or awaiting investigation, and saying so plainly is more
 useful than a roadmap that implies otherwise.
+
+---
+---
+
+# Revision after Phase 6 (20 Aug 2026)
+
+Phase 6 verified **no new connectable dataset**. Four agencies were
+investigated; four were not reached. The tiering changes as follows.
+
+## Movements
+
+| Source | From | To | Evidence |
+| ------ | ---- | -- | -------- |
+| **NUPRC** | Tier 5 | **Tier 5 — confirmed** | OGISP verified as a login-gated permit portal, not a data repository |
+| **NCS** | Tier 5 | **Tier 3 — INTEGRATION PENDING** | Crawler policy is a stated access control, not an absence of data. Promoted because an agreement is a realistic route and the payoff is the highest in the programme |
+| **NHA** | Tier 5 | **Tier 5 — confirmed, with a date dependency** | Marine Data Repository is "Coming Soon". Nothing to integrate *yet*; re-check quarterly |
+| **NIWA** | Tier 5 | **Tier 5, with one Tier 2 candidate** | Live tide feed at `niwa.port-log.net` warrants its own verification |
+| NSC, NIOMR, NEMA, NESREA | Tier 5 | **Tier 5 — not investigated** | No evidence either way |
+
+## Standing after Phase 6
+
+| Tier | Members |
+| ---- | ------- |
+| **1 — CONNECT NOW** | *(none — NOSDRA is technically ready but licence-gated)* |
+| **2 — EXPORT / GIS** | NOSDRA incidents (CSV/JSON) · NOSDRA GIS layers · NBS quarterly documents · **NIWA tide feed (candidate)** |
+| **3 — INTEGRATION PENDING** | NPA ×5 datasets *(connector built)* · **NCS** *(no connector)* |
+| **4 — LICENSE REVIEW** | NOSDRA · NPA · NBS |
+| **5 — FUTURE** | NUPRC · NHA *(date-dependent)* · NIWA ERIS · NSC · NIOMR · NEMA · NESREA |
+| **6 — REFERENCE** | FMMBE · Nigerian Navy public releases |
+
+## The one thing that changed the picture
+
+Tier 1 is now **empty**. NOSDRA sits in Tier 2/4 rather than Tier 1
+because "technically reachable" and "usable in a commercial product" are
+different tests, and only the first has been passed.
+
+Prioritisation by value + accessibility + freshness + uniqueness +
+complementarity + legal feasibility puts the order at:
+
+1. **NOSDRA licence review** — one document read away from Tier 1
+2. **NPA access request** — connector built, longest accumulation lead time
+3. **NCS access request** — highest ceiling, no connector yet
+4. **NIWA tide feed verification** — cheap, possibly the only live feed
+5. **NHA re-check** — calendar-driven, no effort until the repository opens
