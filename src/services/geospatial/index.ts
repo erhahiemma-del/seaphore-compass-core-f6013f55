@@ -231,6 +231,17 @@ export { computeIntelligenceMetrics, type IntelligenceMetrics } from "./vessel-s
 export { describeFleet, summarizeFleet, type FleetSummary } from "./fleet-summary";
 
 export {
+  buildNationalPicture,
+  describeMetric,
+  inputsFromFleetSummary,
+  metricFreshness,
+  pictureCoverage,
+  type Metric,
+  type NationalPicture,
+  type NationalPictureInputs,
+} from "./national-picture";
+
+export {
   LAYER_FRESHNESS_LABELS,
   LIVE_THRESHOLD_MS,
   isLive,
