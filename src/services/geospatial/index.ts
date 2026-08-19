@@ -231,6 +231,16 @@ export { computeIntelligenceMetrics, type IntelligenceMetrics } from "./vessel-s
 export { describeFleet, summarizeFleet, type FleetSummary } from "./fleet-summary";
 
 export {
+  LAYER_FRESHNESS_LABELS,
+  LIVE_THRESHOLD_MS,
+  isLive,
+  resolveLayerState,
+  type LayerFreshness,
+  type LayerObservation,
+  type LayerRuntimeState,
+} from "./layer-registry";
+
+export {
   OPERATING_MODES,
   OPERATING_MODE_DESCRIPTIONS,
   OPERATING_MODE_LABELS,

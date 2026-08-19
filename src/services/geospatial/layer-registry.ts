@@ -20,10 +20,42 @@ import { LAYER_IDS } from "./constants";
  * Mission-oriented grouping shown in the Layer Panel.
  * Ordered by operational primacy: what is happening, what it means, what to do.
  */
-export type LayerGroup = "OPERATIONAL" | "INTELLIGENCE" | "ANALYSIS";
+export type LayerGroup =
+  // Original three. Retained with their exact ids so every registered
+  // layer keeps its group and no persisted state is invalidated.
+  | "OPERATIONAL"
+  | "INTELLIGENCE"
+  | "ANALYSIS"
+  // Phase 8 groups. Added alongside rather than replacing — the same
+  // widening pattern used for `Workspace` in G6.0.
+  | "VESSELS"
+  | "PORTS_INFRASTRUCTURE"
+  | "MARITIME_ZONES"
+  | "ENVIRONMENT"
+  | "TRADE_LOGISTICS"
+  | "RISK_INTELLIGENCE"
+  | "SATELLITE_EO"
+  | "INVESTIGATIONS"
+  | "GOVERNMENT_DATA";
 
-/** Display order of the groups in the panel. */
+/**
+ * Display order of the groups in the panel.
+ *
+ * Ordered by how an officer reads the picture: what is moving, where it
+ * is going, the boundaries that matter, then the interpretive layers.
+ */
 export const LAYER_GROUP_ORDER: readonly LayerGroup[] = [
+  "VESSELS",
+  "PORTS_INFRASTRUCTURE",
+  "MARITIME_ZONES",
+  "ENVIRONMENT",
+  "TRADE_LOGISTICS",
+  "RISK_INTELLIGENCE",
+  "SATELLITE_EO",
+  "INVESTIGATIONS",
+  "GOVERNMENT_DATA",
+  // Legacy groups last: any layer not yet re-grouped still renders, at
+  // the bottom, rather than vanishing from the panel.
   "OPERATIONAL",
   "INTELLIGENCE",
   "ANALYSIS",
@@ -31,10 +63,58 @@ export const LAYER_GROUP_ORDER: readonly LayerGroup[] = [
 
 /** Human-readable group headings. */
 export const LAYER_GROUP_LABELS: Readonly<Record<LayerGroup, string>> = {
+  VESSELS: "Vessels",
+  PORTS_INFRASTRUCTURE: "Ports & Infrastructure",
+  MARITIME_ZONES: "Maritime Zones",
+  ENVIRONMENT: "Environment",
+  TRADE_LOGISTICS: "Trade & Logistics",
+  RISK_INTELLIGENCE: "Risk & Intelligence",
+  SATELLITE_EO: "Satellite / EO",
+  INVESTIGATIONS: "Investigations",
+  GOVERNMENT_DATA: "Government Data",
   OPERATIONAL: "Operational",
   INTELLIGENCE: "Intelligence",
   ANALYSIS: "Analysis",
 } as const;
+
+/**
+ * How current a layer's data is.
+ *
+ * Distinct from {@link LayerStatus}, which describes whether a connector
+ * exists at all. A layer can be `ready` and `STALE` at once — wired, but
+ * showing an old picture — and collapsing the two would let a stale layer
+ * present as live.
+ */
+export type LayerFreshness =
+  /** Source is connected and the data is current. */
+  | "LIVE"
+  /** Connected, but the newest observation is ageing. */
+  | "RECENT"
+  /** Deliberately historical — a replay or an archive layer. */
+  | "HISTORICAL"
+  /** A satellite pass. Never "live"; always carries an acquisition time. */
+  | "ACQUIRED"
+  /** No connector yet. Not an absence of objects in the world. */
+  | "PENDING"
+  /** Connected but currently failing. */
+  | "UNAVAILABLE"
+  /** Fixture data for development. Must never render as LIVE. */
+  | "DEMO";
+
+/** Runtime state of one layer, recomputed rather than stored. */
+export interface LayerRuntimeState {
+  readonly layerId: string;
+  readonly freshness: LayerFreshness;
+  /** Provider id behind the layer, when one is connected. */
+  readonly sourceId: string | null;
+  readonly sourceLabel: string | null;
+  /** Age of the newest observation, ms. Null when nothing has loaded. */
+  readonly ageMs: number | null;
+  readonly loading: boolean;
+  readonly featureCount: number | null;
+  /** Populated for PENDING, UNAVAILABLE and DEMO. Officer-facing. */
+  readonly note: string | null;
+}
 
 /**
  * Readiness of a layer's backing data.
@@ -178,6 +258,123 @@ export class LayerRegistry {
   }
 }
 
+/* ── Runtime state ─────────────────────────────────────────────── */
+
+/** What a caller knows about a layer's data at this moment. */
+export interface LayerObservation {
+  readonly sourceId?: string | null;
+  readonly sourceLabel?: string | null;
+  /** Newest observation time, ISO. */
+  readonly observedAt?: string | null;
+  readonly loading?: boolean;
+  readonly featureCount?: number | null;
+  /** True when the data came from a fixture rather than a provider. */
+  readonly isFixture?: boolean;
+  /** True when the provider is connected but currently failing. */
+  readonly failed?: boolean;
+  readonly failureReason?: string | null;
+}
+
+/** Above this age a connected layer is `RECENT` rather than `LIVE`. */
+export const LIVE_THRESHOLD_MS = 15 * 60 * 1000;
+
+/**
+ * Resolve a layer's runtime state.
+ *
+ * The order of these checks is the guarantee. A fixture is `DEMO` before
+ * anything else can promote it; a layer with no connector is `PENDING`
+ * before any age calculation runs; and freshness is derived from the
+ * observation time rather than trusted from a caller. Nothing can reach
+ * `LIVE` except a connected, non-fixture layer with a recent observation.
+ *
+ * That ordering is why "DEMO must never render as LIVE" and "stale must
+ * never render as LIVE" are structural rather than conventions the UI is
+ * asked to honour.
+ */
+export function resolveLayerState(
+  definition: LayerDefinition,
+  observation: LayerObservation = {},
+  now: number = Date.now(),
+): LayerRuntimeState {
+  const base = {
+    layerId: definition.id,
+    sourceId: observation.sourceId ?? null,
+    sourceLabel: observation.sourceLabel ?? null,
+    loading: observation.loading ?? false,
+    featureCount: observation.featureCount ?? null,
+  };
+
+  // 1. Fixture wins over everything. There is no path from here to LIVE.
+  if (observation.isFixture) {
+    return {
+      ...base,
+      freshness: "DEMO",
+      ageMs: null,
+      note: "Demonstration data. Not a live observation.",
+    };
+  }
+
+  // 2. No connector. Absence of features here says nothing about the world.
+  if (definition.status === "pending-source") {
+    return {
+      ...base,
+      freshness: "PENDING",
+      ageMs: null,
+      note:
+        definition.pendingReason ??
+        "No source is connected for this layer. An empty layer reflects Seaphore's collection, not the absence of objects.",
+    };
+  }
+
+  // 3. Connected but failing.
+  if (observation.failed) {
+    return {
+      ...base,
+      freshness: "UNAVAILABLE",
+      ageMs: null,
+      note: observation.failureReason ?? "The source for this layer is currently unavailable.",
+    };
+  }
+
+  // 4. Connected, nothing loaded yet.
+  const observedMs = observation.observedAt ? Date.parse(observation.observedAt) : NaN;
+  if (Number.isNaN(observedMs)) {
+    return {
+      ...base,
+      freshness: observation.loading ? "PENDING" : "UNAVAILABLE",
+      ageMs: null,
+      note: observation.loading
+        ? "Loading."
+        : "Connected, but no observation has been received for this layer.",
+    };
+  }
+
+  // 5. Age decides. Never asserted by the caller.
+  const ageMs = Math.max(0, now - observedMs);
+  return {
+    ...base,
+    freshness: ageMs <= LIVE_THRESHOLD_MS ? "LIVE" : "RECENT",
+    ageMs,
+    note: null,
+  };
+}
+
+/** Whether a layer may be presented as live. The single gate. */
+export function isLive(state: LayerRuntimeState): boolean {
+  return state.freshness === "LIVE";
+}
+
+/** Officer-facing freshness labels. */
+export const LAYER_FRESHNESS_LABELS: Readonly<Record<LayerFreshness, string>> = {
+  LIVE: "Live",
+  RECENT: "Recent",
+  HISTORICAL: "Historical",
+  ACQUIRED: "Acquired",
+  PENDING: "Pending",
+  UNAVAILABLE: "Unavailable",
+  DEMO: "Demo",
+};
+
 /**
  * A named bundle of layers matching an operational task.
  *
@@ -225,7 +422,7 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     id: "vessels",
     label: "Vessels",
     description: "Live vessel positions as heading-rotated arrows, coloured by risk.",
-    group: "OPERATIONAL",
+    group: "VESSELS",
     renderLayerIds: [LAYER_IDS.vessels, LAYER_IDS.vesselHeadings, LAYER_IDS.vesselLabels],
     defaultVisible: true,
     status: "ready",
@@ -235,7 +432,7 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     id: "ports",
     label: "Ports",
     description: "The five NIMASA ports with anchorage extents.",
-    group: "OPERATIONAL",
+    group: "PORTS_INFRASTRUCTURE",
     renderLayerIds: [LAYER_IDS.ports, LAYER_IDS.portLabels, LAYER_IDS.portAnchorage],
     defaultVisible: true,
     status: "ready",
@@ -245,7 +442,7 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     id: "eezBoundary",
     label: "EEZ Boundary",
     description: "Nigerian Exclusive Economic Zone, 200 nautical miles.",
-    group: "OPERATIONAL",
+    group: "MARITIME_ZONES",
     renderLayerIds: [LAYER_IDS.eezBoundary],
     defaultVisible: true,
     status: "ready",
@@ -255,7 +452,7 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     id: "weather",
     label: "Weather",
     description: "Weather overlay affecting port approach and ETA.",
-    group: "OPERATIONAL",
+    group: "ENVIRONMENT",
     renderLayerIds: [LAYER_IDS.weatherOverlay],
     defaultVisible: false,
     status: "pending-source",
@@ -266,7 +463,7 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     id: "riskHeatmap",
     label: "Risk Heatmap",
     description: "Density of risk-assessed vessels.",
-    group: "INTELLIGENCE",
+    group: "RISK_INTELLIGENCE",
     renderLayerIds: [LAYER_IDS.riskHeatmap],
     defaultVisible: false,
     status: "pending-source",
@@ -277,7 +474,7 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     id: "revenueHeat",
     label: "Revenue Exposure",
     description: "Revenue exposure concentration by area.",
-    group: "INTELLIGENCE",
+    group: "TRADE_LOGISTICS",
     renderLayerIds: [LAYER_IDS.revenueHeat],
     defaultVisible: false,
     status: "pending-source",
@@ -288,7 +485,7 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     id: "aisTrack",
     label: "AIS Tracks",
     description: "Historic track lines, with dark periods highlighted.",
-    group: "INTELLIGENCE",
+    group: "VESSELS",
     renderLayerIds: [LAYER_IDS.aisTrack, LAYER_IDS.aisTrackDark],
     defaultVisible: false,
     status: "pending-source",
@@ -299,7 +496,7 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     id: "vesselClusters",
     label: "Vessel Clusters",
     description: "Cluster vessels at low zoom to keep the picture readable.",
-    group: "ANALYSIS",
+    group: "VESSELS",
     renderLayerIds: [LAYER_IDS.vesselClusters, LAYER_IDS.clusterCount],
     defaultVisible: false,
     status: "ready",
@@ -309,7 +506,7 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     id: "investigArea",
     label: "Investigation Area",
     description: "Officer-drawn area of interest.",
-    group: "ANALYSIS",
+    group: "INVESTIGATIONS",
     renderLayerIds: [LAYER_IDS.investigArea],
     defaultVisible: false,
     status: "ready",
@@ -320,7 +517,7 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     label: "SAR Detections",
     description:
       "Objects detected in Sentinel-1 radar imagery. Snapshots at acquisition time, not live positions.",
-    group: "INTELLIGENCE",
+    group: "SATELLITE_EO",
     renderLayerIds: [LAYER_IDS.sarDetections, LAYER_IDS.sarDetectionLabels],
     defaultVisible: false,
     status: "pending-source",
@@ -336,7 +533,7 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     label: "SAR Coverage",
     description:
       "Footprints of Sentinel-1 acquisitions, showing where the satellite actually looked and when.",
-    group: "ANALYSIS",
+    group: "SATELLITE_EO",
     renderLayerIds: [LAYER_IDS.sarSceneFootprints],
     defaultVisible: false,
     status: "pending-source",
@@ -348,7 +545,7 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     label: "Dark Contact Areas",
     description:
       "Where a vessel in an AIS gap could have reached, bounded by its last reported speed.",
-    group: "ANALYSIS",
+    group: "RISK_INTELLIGENCE",
     renderLayerIds: [LAYER_IDS.darkContactAreas],
     defaultVisible: false,
     status: "pending-source",
