@@ -20,6 +20,15 @@
 import { MAP_DEFAULTS } from "./constants";
 import { layerRegistry, MISSION_PRESETS, type LayerRegistry } from "./layer-registry";
 import { defaultEnabledSourceIds } from "./vessel-source";
+import {
+  OPERATING_MODES,
+  decodeSelection,
+  encodeSelection,
+  modeForSelection,
+  selectionFromLegacy,
+  type MapSelection,
+  type OperatingMode,
+} from "./selection";
 import type { LonLat, MapFilters, MapState, Unsubscribe, ViewMode } from "./types";
 
 /** Default filter state — everything unfiltered. */
@@ -34,10 +43,12 @@ export const DEFAULT_FILTERS: MapFilters = {
 export function createDefaultMapState(registry: LayerRegistry = layerRegistry): MapState {
   return {
     viewMode: "2D",
+    operatingMode: "NATIONAL",
     center: MAP_DEFAULTS.center,
     zoom: MAP_DEFAULTS.zoom,
     pitch: 0,
     bearing: 0,
+    selection: null,
     selectedEntityId: null,
     selectedEntityImo: null,
     activeLayers: registry.defaultActiveLayers(),
@@ -178,13 +189,50 @@ export class SharedGeospatialService {
     return true;
   }
 
-  /** Select an entity. Pass `imo` when the entity is a vessel. */
+  /**
+   * Set the current selection, across any selectable kind.
+   *
+   * The legacy `selectedEntityId`/`selectedEntityImo` fields are derived
+   * here and nowhere else, so they cannot drift from `selection`. There
+   * is one source of truth; those two are projections of it.
+   *
+   * Selecting an object that implies a mode also switches to it —
+   * clicking a port *is* the officer asking for port mode, and making
+   * them then change mode by hand would be asking twice. Kinds that
+   * imply no mode leave the current one alone rather than forcing a
+   * context change on the officer.
+   */
+  select(selection: MapSelection | null): void {
+    const implied = modeForSelection(selection);
+    this.update({
+      selection,
+      selectedEntityId: selection?.id ?? null,
+      selectedEntityImo: selection?.kind === "vessel" ? (selection.imo ?? null) : null,
+      ...(implied ? { operatingMode: implied } : {}),
+    });
+  }
+
+  /**
+   * Select an entity by id.
+   *
+   * @deprecated Vessel-only shim retained for un-migrated callers. Use
+   * {@link select} with an explicit `MapSelection`.
+   */
   selectEntity(entityId: string | null, imo: string | null = null): void {
-    this.update({ selectedEntityId: entityId, selectedEntityImo: imo });
+    this.select(selectionFromLegacy(entityId, imo));
   }
 
   clearSelection(): void {
-    this.selectEntity(null, null);
+    this.select(null);
+  }
+
+  /**
+   * Switch the intelligence context.
+   *
+   * Distinct from {@link switchView}, which changes 2D/3D rendering.
+   */
+  setOperatingMode(operatingMode: OperatingMode): void {
+    this.update({ operatingMode });
   }
 
   /** Merge a partial filter change. */
@@ -217,6 +265,11 @@ export class SharedGeospatialService {
       params.set("opacity", opacityEntries.map(([id, value]) => `${id}:${value}`).join(","));
     }
     if (state.enabledSources.length > 0) params.set("sources", state.enabledSources.join(","));
+    if (state.operatingMode !== "NATIONAL") params.set("mode", state.operatingMode);
+    const encoded = encodeSelection(state.selection);
+    if (encoded) params.set("sel", encoded);
+    // `vessel` is retained so links shared before the selection model
+    // landed still open on the right vessel.
     if (state.selectedEntityImo) params.set("vessel", state.selectedEntityImo);
     if (state.missionId) params.set("mission", state.missionId);
     return params;
@@ -281,8 +334,27 @@ export class SharedGeospatialService {
         .filter((id) => id.length > 0);
     }
 
-    const vessel = params.get("vessel");
-    if (vessel) patch.selectedEntityImo = vessel;
+    // `sel` is authoritative; `vessel` is the pre-selection-model form and
+    // only applies when no `sel` was present, so a modern link never has
+    // its selection overwritten by the legacy parameter.
+    const selection = decodeSelection(params.get("sel"));
+    if (selection) {
+      patch.selection = selection;
+      patch.selectedEntityId = selection.id;
+      patch.selectedEntityImo = selection.kind === "vessel" ? (selection.imo ?? null) : null;
+    } else {
+      const vessel = params.get("vessel");
+      if (vessel) {
+        patch.selection = { kind: "vessel", id: vessel, imo: vessel };
+        patch.selectedEntityId = vessel;
+        patch.selectedEntityImo = vessel;
+      }
+    }
+
+    const mode = params.get("mode");
+    if (mode && (OPERATING_MODES as readonly string[]).includes(mode)) {
+      patch.operatingMode = mode as OperatingMode;
+    }
 
     const mission = params.get("mission");
     if (mission) patch.missionId = mission;

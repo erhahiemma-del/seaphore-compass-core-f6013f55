@@ -10,6 +10,7 @@
  * belong to OSAE (`@/services/osae`) and are referenced here only as
  * optional, externally-populated fields.
  */
+import type { MapSelection, OperatingMode } from "./selection";
 
 /** A WGS84 coordinate pair in MapLibre/GeoJSON order: `[lon, lat]`. */
 export type LonLat = readonly [number, number];
@@ -52,14 +53,37 @@ export interface MapFilters {
  * asserted against in tests.
  */
 export interface MapState {
+  /** Rendering perspective. 2D/3D only — see `operatingMode` for context. */
   readonly viewMode: ViewMode;
+  /**
+   * The intelligence context the officer is working in.
+   *
+   * Deliberately separate from `viewMode`: one is what the map is *for*,
+   * the other is how it draws. Overloading a single field would recreate
+   * the vocabulary drift G6.0 removed from the orchestration layer.
+   */
+  readonly operatingMode: OperatingMode;
   readonly center: LonLat;
   readonly zoom: number;
   readonly pitch: number;
   readonly bearing: number;
-  /** Canonical entity id of the current selection, if any. */
+  /**
+   * What the officer currently has open, across every selectable kind.
+   *
+   * The single source of truth for selection. `selectedEntityId` and
+   * `selectedEntityImo` below are derived from this and exist only for
+   * un-migrated readers.
+   */
+  readonly selection: MapSelection | null;
+  /**
+   * @deprecated Derived from `selection`. Read `selection` instead.
+   * Removed once every consumer has migrated.
+   */
   readonly selectedEntityId: string | null;
-  /** IMO of the selected vessel, when the selection is a vessel. */
+  /**
+   * @deprecated Derived from `selection`. Read `selection` instead.
+   * Non-null only when the selection is a vessel carrying an IMO.
+   */
   readonly selectedEntityImo: string | null;
   /** Logical layer keys currently switched on. See the Layer Registry. */
   readonly activeLayers: readonly string[];

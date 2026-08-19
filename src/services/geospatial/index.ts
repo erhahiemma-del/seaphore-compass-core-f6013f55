@@ -229,3 +229,19 @@ export {
 export { computeIntelligenceMetrics, type IntelligenceMetrics } from "./vessel-source";
 
 export { describeFleet, summarizeFleet, type FleetSummary } from "./fleet-summary";
+
+export {
+  OPERATING_MODES,
+  OPERATING_MODE_DESCRIPTIONS,
+  OPERATING_MODE_LABELS,
+  decodeSelection,
+  describeSelection,
+  encodeSelection,
+  isSameSelection,
+  modeForSelection,
+  selectionFromLegacy,
+  selectionKey,
+  type MapSelection,
+  type MapSelectionKind,
+  type OperatingMode,
+} from "./selection";
