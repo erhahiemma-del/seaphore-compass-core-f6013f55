@@ -77,6 +77,34 @@ export {
 } from "./npa/models";
 
 export {
+  coverageDays,
+  createSnapshot,
+  describeFailure,
+  hasCoverageFor,
+  ingest,
+  snapshotVesselKey,
+  type IngestionFailure,
+  type IngestionOutcome,
+  type LicenseStatus,
+  type NpaDailySnapshot,
+  type NpaDatasetKey,
+  type ProcessingStatus,
+  type SnapshotRecord,
+} from "./npa/snapshot";
+
+export {
+  describeDrift,
+  detectChanges,
+  etaChanges,
+  etaHistory,
+  summarizeChanges,
+  type EtaHistory,
+  type EtaObservationPoint,
+  type NpaChange,
+  type NpaChangeType,
+} from "./npa/change-detection";
+
+export {
   APPROACH_RANGE_M,
   ARRIVAL_RANGE_M,
   STATIONARY_SPEED_KN,
