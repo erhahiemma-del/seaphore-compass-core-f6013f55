@@ -187,7 +187,11 @@ export function MapCanvas({
   // ── Interaction → SGS ─────────────────────────────────────────────────
   useEffect(() => {
     const offClick = bus.on("vessel:click", ({ imo }) => {
-      service.selectEntity(imo, imo);
+      // The typed selection, not the deprecated vessel-only shim. Feature
+      // ids are IMOs here, so it doubles as the identifier; a provider
+      // that keys by something else would set `imo: null` and still
+      // select correctly.
+      service.select({ kind: "vessel", id: imo, imo });
       onVesselSelected?.(engine.get(imo) ?? null);
     });
     const offMapClick = bus.on("map:click", () => {

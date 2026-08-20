@@ -9,11 +9,13 @@
  * Every toolbar action writes to SGS rather than reaching into the renderer, so
  * the camera has exactly one owner and the URL stays in step.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Crosshair,
   Maximize2,
   Minus,
+  PanelLeftClose,
+  PanelLeftOpen,
   Plus,
   RotateCcw,
   Ruler,
@@ -24,16 +26,22 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   MAP_DEFAULTS,
+  buildNationalPicture,
   sgs,
   useMapSelector,
   useMapSessionStore,
   type Vessel,
   type ViewMode,
 } from "@/services/geospatial";
+import type { IntelligenceMapPlan } from "@/services/orchestration";
 
+import { ContextDrawer } from "./ContextDrawer";
 import { LayerPanel } from "./LayerPanel";
 import { MapCanvas } from "./MapCanvas";
-import { VesselIntelligenceCard } from "./VesselIntelligenceCard";
+import { MapSearch } from "./MapSearch";
+import { NationalPicturePanel } from "./NationalPicturePanel";
+import { OperatingModeBar } from "./OperatingModeBar";
+import { TimelineBar } from "./TimelineBar";
 
 const VIEW_MODES: ReadonlyArray<{ mode: ViewMode; label: string; title: string }> = [
   { mode: "2D", label: "Operational View", title: "Overhead national picture" },
@@ -47,9 +55,30 @@ const VIEW_MODES: ReadonlyArray<{ mode: ViewMode; label: string; title: string }
 /** Centre and zoom that frame Nigeria and its maritime approaches. */
 const NIGERIA_VIEW = { center: [5.7, 4.35] as const, zoom: 6 };
 
+/**
+ * Vessel-source capability.
+ *
+ * GFW is the only connected provider and publishes no speed on its event
+ * datasets, so the anchored metric stays unanswerable. Declared here
+ * rather than inferred, because a fleet with no speed data looks
+ * identical to a fleet that is stopped.
+ */
+function vesselCapabilities(enabledSources: readonly string[]) {
+  return {
+    connected: enabledSources.length > 0,
+    reportsSpeed: enabledSources.some((id) => id !== "global-fishing-watch"),
+  };
+}
+
 export function MaritimeCommand() {
   const viewMode = useMapSelector((state) => state.viewMode);
+  const selection = useMapSelector((state) => state.selection);
+  const enabledCsv = useMapSelector((state) => state.enabledSources.join(","));
+  const vesselCount = useMapSessionStore((s) => s.vesselCount);
+
   const [selectedVessel, setSelectedVessel] = useState<Vessel | null>(null);
+  const [leftOpen, setLeftOpen] = useState(true);
+  const [lastPlan, setLastPlan] = useState<IntelligenceMapPlan | null>(null);
   const shellRef = useRef<HTMLDivElement>(null);
 
   // Hydrate shared state from the URL so a pasted link restores the view.
@@ -66,15 +95,27 @@ export function MaritimeCommand() {
     setSelectedVessel(null);
   }, []);
 
+  // Built from the loaded fleet plus declared provider capability. Every
+  // metric with no connected source reports pending rather than zero.
+  const picture = useMemo(() => {
+    const enabled = enabledCsv.length > 0 ? enabledCsv.split(",") : [];
+    const capability = vesselCapabilities(enabled);
+    return buildNationalPicture({
+      vessels: [],
+      vesselSourceConnected: capability.connected && vesselCount > 0,
+      providerReportsSpeed: capability.reportsSpeed,
+    });
+  }, [enabledCsv, vesselCount]);
+
   return (
     <div ref={shellRef} className="flex h-full flex-col overflow-hidden bg-background">
-      <header className="flex shrink-0 items-center justify-between gap-4 border-b border-border px-4 py-2">
-        <div className="flex min-w-0 items-center gap-3">
-          <h1 className="shrink-0 text-sm font-semibold tracking-wide">Live Command Map</h1>
-          <span className="truncate text-xs text-muted-foreground">
-            Gulf of Guinea · Nigerian EEZ
-          </span>
-        </div>
+      {/* ── TOP COMMAND BAR ─────────────────────────────────────── */}
+      <header className="flex shrink-0 items-center gap-3 border-b border-border px-3 py-2">
+        <h1 className="shrink-0 text-sm font-semibold tracking-wide">Seaphore</h1>
+
+        <MapSearch onApplied={setLastPlan} className="max-w-md" />
+
+        <OperatingModeBar />
 
         <CommandToolbar
           shellRef={shellRef}
@@ -110,7 +151,46 @@ export function MaritimeCommand() {
         </div>
       </header>
 
+      {/* One quiet line saying what a search just did. Not a toast: the
+          officer should be able to read it at leisure, or ignore it. */}
+      {lastPlan ? (
+        <div
+          data-testid="map-explanation"
+          className="shrink-0 border-b border-border/60 bg-muted/30 px-3 py-1 text-[11px] text-muted-foreground"
+        >
+          {lastPlan.explanation}
+        </div>
+      ) : null}
+
       <div className="flex min-h-0 flex-1">
+        {/* ── LEFT INTELLIGENCE DRAWER ──────────────────────────── */}
+        {leftOpen ? (
+          <aside
+            aria-label="Layers and national picture"
+            data-testid="left-drawer"
+            className="flex w-[300px] shrink-0 flex-col overflow-auto border-r border-border"
+          >
+            <NationalPicturePanel picture={picture} />
+            <LayerPanel />
+          </aside>
+        ) : null}
+
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-7 w-7 self-start"
+          aria-label={leftOpen ? "Collapse layers panel" : "Expand layers panel"}
+          aria-expanded={leftOpen}
+          onClick={() => setLeftOpen((open) => !open)}
+        >
+          {leftOpen ? (
+            <PanelLeftClose className="h-3.5 w-3.5" aria-hidden />
+          ) : (
+            <PanelLeftOpen className="h-3.5 w-3.5" aria-hidden />
+          )}
+        </Button>
+
+        {/* ── MAP CANVAS — the dominant surface ─────────────────── */}
         <main className="relative min-w-0 flex-1">
           {viewMode === "2D" ? (
             <MapCanvas onVesselSelected={handleSelected} />
@@ -118,11 +198,13 @@ export function MaritimeCommand() {
             <TerrainPerspectivePlaceholder />
           )}
         </main>
-        {selectedVessel ? (
-          <VesselIntelligenceCard vessel={selectedVessel} onClose={closeCard} />
-        ) : null}
-        <LayerPanel />
+
+        {/* ── RIGHT CONTEXT DRAWER ──────────────────────────────── */}
+        <ContextDrawer selection={selection} vessel={selectedVessel} onClose={closeCard} />
       </div>
+
+      {/* ── TIMELINE / REPLAY ─────────────────────────────────── */}
+      <TimelineBar status={null} windowLabel="live" />
 
       <MapStatusBar />
     </div>
