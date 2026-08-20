@@ -18,6 +18,7 @@ import {
   EmptyVesselSource,
   MAP_DEFAULTS,
   ReplayRecorder,
+  type ReplaySink,
   getVesselSource,
   MapLibreRenderer,
   TIMING,
@@ -48,6 +49,42 @@ export interface MapCanvasProps {
    * construct a ReplayPlayer over it without a second data path.
    */
   readonly onRecorderReady?: (recorder: ReplayRecorder) => void;
+  /**
+   * Reports the canonical vessel set after every applied change.
+   *
+   * The `VesselUpdateEngine` owns the vessels; this hands out its
+   * `snapshot()` so surfaces like the National Picture read the same
+   * objects the map drew, rather than keeping a second store that could
+   * disagree with what is on screen.
+   */
+  readonly onVesselsChanged?: (vessels: readonly Vessel[], feed: VesselFeedState) => void;
+  /**
+   * Hands out the canonical `VesselUpdateEngine` as a `ReplaySink`.
+   *
+   * Replay applies frames through this, so playback moves the vessels the
+   * map is already drawing instead of a second copy. Narrowed to the sink
+   * interface deliberately: a timeline should be able to apply frames and
+   * nothing else.
+   */
+  readonly onEngineReady?: (engine: ReplaySink) => void;
+}
+
+/**
+ * How the vessel feed itself is doing.
+ *
+ * Separate from the vessel array because an empty array means different
+ * things in each state, and collapsing them is what turns "we could not
+ * ask" into "there is nothing there".
+ */
+export interface VesselFeedState {
+  /** True before the first response has arrived. */
+  readonly loading: boolean;
+  /** Set when the last attempt failed. Null on success. */
+  readonly error: string | null;
+  /** Source id the feed is reading, or null when none is enabled. */
+  readonly sourceId: string | null;
+  /** When the last successful response was applied. */
+  readonly lastAppliedAt: string | null;
 }
 
 export function MapCanvas({
@@ -57,6 +94,8 @@ export function MapCanvas({
   bus = mapEventBus,
   onVesselSelected,
   onRecorderReady,
+  onVesselsChanged,
+  onEngineReady,
 }: MapCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const setRenderer = useMapSessionStore((s) => s.setRenderer);
@@ -208,6 +247,17 @@ export function MapCanvas({
   useEffect(() => {
     let disposed = false;
 
+    // Reported alongside the vessels so a consumer can tell an empty
+    // fleet apart from a feed that has not answered or has failed.
+    let feed: VesselFeedState = {
+      loading: true,
+      error: null,
+      sourceId: source.id,
+      lastAppliedAt: null,
+    };
+    const report = () => onVesselsChanged?.(engine.snapshot(), feed);
+    report();
+
     async function refresh() {
       try {
         const vessels = await source.list();
@@ -215,11 +265,24 @@ export function MapCanvas({
         engine.applyFull(vessels);
         recorder.recordBatch(vessels);
         setVesselCount(engine.size);
+        feed = {
+          loading: false,
+          error: null,
+          sourceId: source.id,
+          lastAppliedAt: new Date().toISOString(),
+        };
+        report();
       } catch (error: unknown) {
         if (disposed) return;
+        const message = error instanceof Error ? error.message : String(error);
+        // The previously loaded vessels are kept — a failed refresh does
+        // not mean they left. `error` marks the picture as stale rather
+        // than emptying it.
+        feed = { ...feed, loading: false, error: message };
+        report();
         bus.emit("map:error", {
           scope: `vessel-source:${source.id}`,
-          message: error instanceof Error ? error.message : String(error),
+          message,
           cause: error,
         });
       }
@@ -232,6 +295,8 @@ export function MapCanvas({
       engine.applyPatch(vessel);
       recorder.record(vessel);
       setVesselCount(engine.size);
+      feed = { ...feed, loading: false, lastAppliedAt: new Date().toISOString() };
+      report();
     });
 
     return () => {
@@ -239,11 +304,15 @@ export function MapCanvas({
       clearInterval(interval);
       unsubscribe?.();
     };
-  }, [source, engine, recorder, bus, setVesselCount]);
+  }, [source, engine, recorder, bus, setVesselCount, onVesselsChanged]);
 
   useEffect(() => {
     onRecorderReady?.(recorder);
   }, [recorder, onRecorderReady]);
+
+  useEffect(() => {
+    onEngineReady?.(engine);
+  }, [engine, onEngineReady]);
 
   // ── Frame-rate sampling (development telemetry) ───────────────────────
   useEffect(() => {

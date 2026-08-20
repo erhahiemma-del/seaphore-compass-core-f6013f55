@@ -26,10 +26,12 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   MAP_DEFAULTS,
+  NIMASA_PORTS,
   buildNationalPicture,
   sgs,
   useMapSelector,
   useMapSessionStore,
+  type ReplaySink,
   type Vessel,
   type ViewMode,
 } from "@/services/geospatial";
@@ -37,7 +39,8 @@ import type { IntelligenceMapPlan } from "@/services/orchestration";
 
 import { ContextDrawer } from "./ContextDrawer";
 import { LayerPanel } from "./LayerPanel";
-import { MapCanvas } from "./MapCanvas";
+import { MapCanvas, type VesselFeedState } from "./MapCanvas";
+import { useReplayTimeline } from "./useReplayTimeline";
 import { MapSearch } from "./MapSearch";
 import { NationalPicturePanel } from "./NationalPicturePanel";
 import { OperatingModeBar } from "./OperatingModeBar";
@@ -56,6 +59,26 @@ const VIEW_MODES: ReadonlyArray<{ mode: ViewMode; label: string; title: string }
 const NIGERIA_VIEW = { center: [5.7, 4.35] as const, zoom: 6 };
 
 /**
+ * Radius around a selected port that counts as its approaches.
+ *
+ * 50 km is roughly the outer anchorage and approach channel for the
+ * Nigerian ports — wide enough to include vessels waiting, tight enough
+ * that a passing coastal transit is not counted as port activity.
+ */
+const PORT_SCOPE_KM = 50;
+
+/** Great-circle distance in kilometres. */
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 2 * 6371 * Math.asin(Math.min(1, Math.sqrt(a)));
+}
+
+/**
  * Vessel-source capability.
  *
  * GFW is the only connected provider and publishes no speed on its event
@@ -72,14 +95,39 @@ function vesselCapabilities(enabledSources: readonly string[]) {
 
 export function MaritimeCommand() {
   const viewMode = useMapSelector((state) => state.viewMode);
+  const operatingMode = useMapSelector((state) => state.operatingMode);
   const selection = useMapSelector((state) => state.selection);
   const enabledCsv = useMapSelector((state) => state.enabledSources.join(","));
-  const vesselCount = useMapSessionStore((s) => s.vesselCount);
 
   const [selectedVessel, setSelectedVessel] = useState<Vessel | null>(null);
   const [leftOpen, setLeftOpen] = useState(true);
   const [lastPlan, setLastPlan] = useState<IntelligenceMapPlan | null>(null);
   const shellRef = useRef<HTMLDivElement>(null);
+
+  // ── Canonical vessel feed ──────────────────────────────────────
+  // These come from VesselUpdateEngine.snapshot() via MapCanvas, so the
+  // panel counts exactly the objects the map drew.
+  const [vessels, setVessels] = useState<readonly Vessel[]>([]);
+  const [feed, setFeed] = useState<VesselFeedState>({
+    loading: true,
+    error: null,
+    sourceId: null,
+    lastAppliedAt: null,
+  });
+  const handleVessels = useCallback((next: readonly Vessel[], nextFeed: VesselFeedState) => {
+    setVessels(next);
+    setFeed(nextFeed);
+  }, []);
+
+  // ── Canonical replay ───────────────────────────────────────────
+  // The sink is the engine MapCanvas draws from, so replaying moves the
+  // vessels on screen rather than a private copy.
+  const engineRef = useRef<ReplaySink | null>(null);
+  const replay = useReplayTimeline({
+    sink: engineRef.current,
+    feedLoading: feed.loading,
+    feedError: feed.error,
+  });
 
   // Hydrate shared state from the URL so a pasted link restores the view.
   useEffect(() => {
@@ -95,17 +143,38 @@ export function MaritimeCommand() {
     setSelectedVessel(null);
   }, []);
 
-  // Built from the loaded fleet plus declared provider capability. Every
-  // metric with no connected source reports pending rather than zero.
+  /**
+   * Vessels in scope for the current mode.
+   *
+   * In PORT mode the picture is about that port, so the fleet is narrowed
+   * to its approaches. In HISTORY and REPLAY the vessels *are* historical
+   * — the replay player applies frames to the same engine MapCanvas
+   * draws from — so the counts follow the playhead with no separate
+   * historical path and no risk of a live count being labelled historical.
+   */
+  const scopedVessels = useMemo(() => {
+    if (operatingMode !== "PORT" || selection?.kind !== "port") return vessels;
+    const port = NIMASA_PORTS[selection.id];
+    if (!port) return vessels;
+    return vessels.filter(
+      (vessel) =>
+        haversineKm(vessel.position.lat, vessel.position.lon, port.lat, port.lon) <= PORT_SCOPE_KM,
+    );
+  }, [vessels, operatingMode, selection]);
+
+  // Built from the canonical fleet plus declared provider capability.
+  // Every metric with no connected source reports pending, never zero.
   const picture = useMemo(() => {
     const enabled = enabledCsv.length > 0 ? enabledCsv.split(",") : [];
     const capability = vesselCapabilities(enabled);
     return buildNationalPicture({
-      vessels: [],
-      vesselSourceConnected: capability.connected && vesselCount > 0,
+      vessels: scopedVessels,
+      vesselSourceConnected: capability.connected,
       providerReportsSpeed: capability.reportsSpeed,
+      vesselsLoading: feed.loading,
+      vesselFeedError: feed.error,
     });
-  }, [enabledCsv, vesselCount]);
+  }, [enabledCsv, scopedVessels, feed.loading, feed.error]);
 
   return (
     <div ref={shellRef} className="flex h-full flex-col overflow-hidden bg-background">
@@ -193,7 +262,14 @@ export function MaritimeCommand() {
         {/* ── MAP CANVAS — the dominant surface ─────────────────── */}
         <main className="relative min-w-0 flex-1">
           {viewMode === "2D" ? (
-            <MapCanvas onVesselSelected={handleSelected} />
+            <MapCanvas
+              onVesselSelected={handleSelected}
+              onVesselsChanged={handleVessels}
+              onRecorderReady={replay.attachRecorder}
+              onEngineReady={(engine) => {
+                engineRef.current = engine;
+              }}
+            />
           ) : (
             <TerrainPerspectivePlaceholder />
           )}
@@ -204,7 +280,19 @@ export function MaritimeCommand() {
       </div>
 
       {/* ── TIMELINE / REPLAY ─────────────────────────────────── */}
-      <TimelineBar status={null} windowLabel="live" />
+      <TimelineBar
+        status={replay.status}
+        unavailableReason={replay.unavailableReason}
+        windowLabel={
+          operatingMode === "REPLAY" || operatingMode === "HISTORY" ? "historical" : "live"
+        }
+        onPlay={replay.play}
+        onPause={replay.pause}
+        onStep={replay.step}
+        onRestart={replay.restart}
+        onSpeed={replay.setSpeed}
+        onScrub={replay.scrub}
+      />
 
       <MapStatusBar />
     </div>

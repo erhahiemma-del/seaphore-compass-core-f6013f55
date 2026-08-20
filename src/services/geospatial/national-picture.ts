@@ -127,6 +127,21 @@ export interface NationalPictureInputs {
   } | null;
   /** Investigations open to this officer. Always computable — it is ours. */
   readonly activeInvestigations?: number;
+  /**
+   * True while the vessel feed has not yet answered.
+   *
+   * Distinct from `vesselSourceConnected: false`. A connected source
+   * mid-request has not returned zero vessels; it has returned nothing
+   * yet, and reporting that as a count would be a number invented during
+   * a network round-trip.
+   */
+  readonly vesselsLoading?: boolean;
+  /**
+   * Set when the last refresh failed. The previously loaded vessels are
+   * still counted — they did not leave — but the picture is marked stale
+   * rather than presented as current.
+   */
+  readonly vesselFeedError?: string | null;
   readonly now?: number;
 }
 
@@ -146,6 +161,13 @@ export function buildNationalPicture(inputs: NationalPictureInputs): NationalPic
     vessels = pending(
       "No vessel provider is connected, so the number of vessels in Nigerian waters cannot be established.",
       "An AIS provider (Datalastic or SeaVantage) or Global Fishing Watch",
+    );
+  } else if (inputs.vesselsLoading && inputs.vessels.length === 0) {
+    // Mid-request. Reporting 0 here would be a number invented during a
+    // network round-trip.
+    vessels = pending(
+      "The vessel feed has not yet returned. No count can be given until it does.",
+      "The in-flight request to complete",
     );
   } else {
     const ages = inputs.vessels.map((vessel) => positionAgeMs(vessel.position, now));

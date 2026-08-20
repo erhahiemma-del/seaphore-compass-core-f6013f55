@@ -99,9 +99,17 @@ describe("NpaDailySnapshot", () => {
   });
 
   it("hashes identical content identically, so a re-run is a no-op", () => {
-    const a = snapshot(normalize(), "2026-08-19T06:00:00.000Z");
-    const b = snapshot(normalize(), "2026-08-19T18:00:00.000Z");
+    // One normalise, two snapshots. Calling normalize() twice would stamp
+    // two different `retrievedAt` values — which legitimately change the
+    // hash — and the resulting failure would be about clock resolution
+    // rather than about content.
+    const records = normalize();
+    const a = snapshot(records, "2026-08-19T06:00:00.000Z");
+    const b = snapshot(records, "2026-08-19T18:00:00.000Z");
+
     expect(a.contentHash).toBe(b.contentHash);
+    // Different retrieval times, same content — so the ids differ.
+    expect(a.snapshotId).not.toBe(b.snapshotId);
   });
 
   it("defaults to licence review rather than assuming reuse rights", () => {
