@@ -48,6 +48,28 @@ export {
 } from "./executive-brief";
 
 export { classifyIntent, type ClassifyOptions } from "./intent-classifier";
+
+// Map ↔ Copilot bridge. One understanding drives both directions.
+export {
+  GULF_OF_GUINEA_TARGET,
+  NATIONAL_TARGET,
+  captureMapContext,
+  contextInvalidatedBy,
+  describeMapContext,
+  intentsToStatePatch,
+  planMap,
+  resolveGeographicTarget,
+  selectionAsEntity,
+  validateIntents,
+  type GeographicTarget,
+  type IntelligenceMapPlan,
+  type IntentRejection,
+  type MapContext,
+  type MapIntent,
+  type PlanMapOptions,
+  type ValidateOptions,
+  type ValidationResult,
+} from "./map-plan";
 export { CAPABILITY_REGISTRY, agentsForCapabilities } from "./capability-registry";
 export { orchestrate, type OrchestrationDeps } from "./orchestrator";
 export { captureOverride, overrideWorkflowEngine } from "./override-gate";

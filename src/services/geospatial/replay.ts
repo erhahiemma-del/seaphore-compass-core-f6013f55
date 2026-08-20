@@ -31,8 +31,16 @@ export interface ReplayFrame {
   readonly vessel: Vessel;
 }
 
-/** Playback rate multipliers. */
-export type ReplaySpeed = 1 | 5 | 10;
+/**
+ * Playback rate multipliers.
+ *
+ * 20 and 100 were added in Phase 8 for scrubbing long historical windows;
+ * 10 is retained so existing callers and saved states keep working.
+ */
+export type ReplaySpeed = 1 | 5 | 10 | 20 | 100;
+
+/** Speeds offered in the timeline UI, slowest first. */
+export const REPLAY_SPEEDS: readonly ReplaySpeed[] = [1, 5, 20, 100] as const;
 
 export interface ReplayRecorderOptions {
   /** Clock, injectable for deterministic tests. */

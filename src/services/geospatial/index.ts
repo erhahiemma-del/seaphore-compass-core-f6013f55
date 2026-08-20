@@ -204,6 +204,7 @@ export {
 } from "./freshness";
 
 export {
+  REPLAY_SPEEDS,
   ReplayPlayer,
   ReplayRecorder,
   type ReplayFrame,
