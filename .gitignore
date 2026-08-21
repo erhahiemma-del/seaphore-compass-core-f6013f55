@@ -31,6 +31,12 @@ dist-ssr
 *.sln
 *.sw?
 
+# Claude Code — launch.json is the shared preview config and stays tracked.
+# Everything else under .claude/ is per-machine: local permission settings and
+# scratch worktrees.
+.claude/*
+!.claude/launch.json
+
 # Environment — never commit real secrets.
 # .env.example is the tracked template; .env is local-only.
 .env

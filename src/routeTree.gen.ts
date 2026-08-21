@@ -17,8 +17,8 @@ import { Route as CargoRouteImport } from './routes/cargo'
 import { Route as CargoWorkspaceRouteImport } from './routes/cargo-workspace'
 import { Route as CommandCenterRouteImport } from './routes/command-center'
 import { Route as ComplianceRouteImport } from './routes/compliance'
-import { Route as DataSourcesRouteImport } from './routes/data-sources'
 import { Route as CopilotRouteImport } from './routes/copilot'
+import { Route as DataSourcesRouteImport } from './routes/data-sources'
 import { Route as DecideRouteImport } from './routes/decide'
 import { Route as DetectRouteImport } from './routes/detect'
 import { Route as EvidenceRouteImport } from './routes/evidence'
@@ -120,14 +120,14 @@ const ComplianceRoute = ComplianceRouteImport.update({
   path: '/compliance',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DataSourcesRoute = DataSourcesRouteImport.update({
-  id: '/data-sources',
-  path: '/data-sources',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const CopilotRoute = CopilotRouteImport.update({
   id: '/copilot',
   path: '/copilot',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DataSourcesRoute = DataSourcesRouteImport.update({
+  id: '/data-sources',
+  path: '/data-sources',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DecideRoute = DecideRouteImport.update({
@@ -443,8 +443,8 @@ export interface FileRoutesByFullPath {
   '/cargo-workspace': typeof CargoWorkspaceRouteWithChildren
   '/command-center': typeof CommandCenterRoute
   '/compliance': typeof ComplianceRoute
-  '/data-sources': typeof DataSourcesRoute
   '/copilot': typeof CopilotRoute
+  '/data-sources': typeof DataSourcesRoute
   '/decide': typeof DecideRouteWithChildren
   '/detect': typeof DetectRoute
   '/evidence': typeof EvidenceRoute
@@ -514,8 +514,8 @@ export interface FileRoutesByTo {
   '/cargo': typeof CargoRoute
   '/command-center': typeof CommandCenterRoute
   '/compliance': typeof ComplianceRoute
-  '/data-sources': typeof DataSourcesRoute
   '/copilot': typeof CopilotRoute
+  '/data-sources': typeof DataSourcesRoute
   '/detect': typeof DetectRoute
   '/evidence': typeof EvidenceRoute
   '/intelligence-evidence': typeof IntelligenceEvidenceRoute
@@ -584,8 +584,8 @@ export interface FileRoutesById {
   '/cargo-workspace': typeof CargoWorkspaceRouteWithChildren
   '/command-center': typeof CommandCenterRoute
   '/compliance': typeof ComplianceRoute
-  '/data-sources': typeof DataSourcesRoute
   '/copilot': typeof CopilotRoute
+  '/data-sources': typeof DataSourcesRoute
   '/decide': typeof DecideRouteWithChildren
   '/detect': typeof DetectRoute
   '/evidence': typeof EvidenceRoute
@@ -658,8 +658,8 @@ export interface FileRouteTypes {
     | '/cargo-workspace'
     | '/command-center'
     | '/compliance'
-    | '/data-sources'
     | '/copilot'
+    | '/data-sources'
     | '/decide'
     | '/detect'
     | '/evidence'
@@ -729,8 +729,8 @@ export interface FileRouteTypes {
     | '/cargo'
     | '/command-center'
     | '/compliance'
-    | '/data-sources'
     | '/copilot'
+    | '/data-sources'
     | '/detect'
     | '/evidence'
     | '/intelligence-evidence'
@@ -798,8 +798,8 @@ export interface FileRouteTypes {
     | '/cargo-workspace'
     | '/command-center'
     | '/compliance'
-    | '/data-sources'
     | '/copilot'
+    | '/data-sources'
     | '/decide'
     | '/detect'
     | '/evidence'
@@ -872,6 +872,7 @@ export interface RootRouteChildren {
   CommandCenterRoute: typeof CommandCenterRoute
   ComplianceRoute: typeof ComplianceRoute
   CopilotRoute: typeof CopilotRoute
+  DataSourcesRoute: typeof DataSourcesRoute
   DecideRoute: typeof DecideRouteWithChildren
   DetectRoute: typeof DetectRoute
   EvidenceRoute: typeof EvidenceRoute
@@ -981,18 +982,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComplianceRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/data-sources': {
-      id: '/data-sources'
-      path: '/data-sources'
-      fullPath: '/data-sources'
-      preLoaderRoute: typeof DataSourcesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/copilot': {
       id: '/copilot'
       path: '/copilot'
       fullPath: '/copilot'
       preLoaderRoute: typeof CopilotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/data-sources': {
+      id: '/data-sources'
+      path: '/data-sources'
+      fullPath: '/data-sources'
+      preLoaderRoute: typeof DataSourcesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/decide': {
@@ -1486,8 +1487,8 @@ const rootRouteChildren: RootRouteChildren = {
   CargoWorkspaceRoute: CargoWorkspaceRouteWithChildren,
   CommandCenterRoute: CommandCenterRoute,
   ComplianceRoute: ComplianceRoute,
-  DataSourcesRoute: DataSourcesRoute,
   CopilotRoute: CopilotRoute,
+  DataSourcesRoute: DataSourcesRoute,
   DecideRoute: DecideRouteWithChildren,
   DetectRoute: DetectRoute,
   EvidenceRoute: EvidenceRoute,
