@@ -66,7 +66,7 @@ import { getIntelligenceMetrics } from "@/lib/intelligence-metrics.functions";
 import { copilotOverrideFn } from "@/lib/orchestration.functions";
 import { runOIEFn } from "@/lib/oie/oie.functions";
 import { cn } from "@/lib/utils";
-import { captureOverride } from "@/services/orchestration";
+import { captureOverride, type MissionContext } from "@/services/orchestration";
 import { runOIE, type Clarification } from "@/services/oie";
 import { enhanceWithIBE, persistHypotheses } from "@/services/ibe";
 import { IntelligenceProjectionPanel } from "@/components/copilot/projection/IntelligenceProjectionPanel";
@@ -81,7 +81,7 @@ import type { HumanResponse } from "@/services/oie/types";
 import type { IbeResult } from "@/services/ibe/types";
 import { ClarifyCard } from "@/components/copilot/ClarifyCard";
 import { useAuthStore } from "@/stores/auth.store";
-import { useCopilotStore } from "@/stores/copilot.store";
+import { useCopilotStore, type CopilotContext } from "@/stores/copilot.store";
 import { useCopilotRunStore, readResumableRun } from "@/stores/copilot-run.store";
 import { useIsDevBypass } from "@/stores/dev-mode.store";
 import { useMissionContextStore } from "@/stores/mission-context.store";
@@ -116,6 +116,45 @@ export const Route = createFileRoute("/copilot")({
 });
 
 type Stage = "idle" | "classifying" | "retrieving" | "reasoning" | "rendering" | "ready";
+
+/**
+ * Build the canonical `MissionContext` from the Copilot's context bar.
+ *
+ * Returns null when nothing is open, which is the normal state — not an
+ * error and not a reason to substitute a default subject. The kind is
+ * carried explicitly so the context policy can reason about it; the
+ * legacy `{vessel, port, investigation_id}` shape could not, because a
+ * bare label does not say what it names.
+ */
+function missionContextFor(
+  context: CopilotContext | null,
+  activeMissionId: string | null,
+): MissionContext | null {
+  if (!context) return null;
+
+  const kind: MissionContext["subject"]["kind"] | null =
+    context.kind === "vessel" ? "vessel" : context.kind === "port" ? "port" : null;
+  // An investigation or case is not a map entity the understanding layer
+  // can resolve, so it is not offered as an ambient subject.
+  if (!kind) return null;
+
+  // The label may carry a trailing identifier, e.g. "MV X · IMO 9074729".
+  const label = context.label.split("·")[0]!.trim();
+  const imo = /\b(\d{7})\b/.exec(context.label)?.[1] ?? null;
+
+  return {
+    investigationId: activeMissionId ?? `inv-${imo ?? label.toLowerCase().replace(/\s+/g, "-")}`,
+    subject: {
+      kind,
+      text: label,
+      identifier: imo,
+      identifierKind: imo ? "imo" : null,
+      // Explicitly opened by the officer, so the subject is not in doubt.
+      confidence: 1,
+    },
+    openedAt: new Date().toISOString(),
+  };
+}
 
 interface Investigation {
   id: string;
@@ -290,6 +329,14 @@ function CopilotOpsPage() {
         query: q,
         officer_id: officerId,
         mission: mission as unknown as Record<string, unknown> | undefined,
+        // The canonical shape. Null when nothing is open — the normal
+        // state — and offered rather than imposed: the context policy
+        // decides whether this subject may reach the query, so a fleet
+        // question cannot inherit an open vessel.
+        mission_context: missionContextFor(context, activeMissionId),
+        // Legacy fields, retained for un-migrated consumers. They name a
+        // subject without saying what kind it is, which is why
+        // `mission_context` supersedes them.
         context: context
           ? {
               investigation_id: context.kind === "investigation" ? context.label : undefined,

@@ -24,6 +24,7 @@
  * detections. Nothing is cached here, so the drawer cannot show a staler
  * copy than the map.
  */
+import { useState } from "react";
 import { X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ import { cn } from "@/lib/utils";
 import { describeSelection, type MapSelection, type Vessel } from "@/services/geospatial";
 
 import { VesselIntelligenceCard } from "./VesselIntelligenceCard";
+import { VesselIntelligenceView } from "./VesselIntelligenceView";
 
 export interface ContextDrawerProps {
   readonly selection: MapSelection | null;
@@ -120,7 +122,7 @@ function SelectionPanel({
       // selection. Absent means the engine has not loaded it — a real
       // state, distinct from "no such vessel".
       return vessel ? (
-        <VesselIntelligenceCard vessel={vessel} onClose={onClose} />
+        <VesselTabs vessel={vessel} onClose={onClose} />
       ) : (
         <Unresolved
           title="Vessel not loaded"
@@ -212,6 +214,61 @@ function SelectionPanel({
         />
       );
   }
+}
+
+/**
+ * Vessel drawer with an Overview / Intelligence split.
+ *
+ * Overview is the existing identity card, unchanged. Intelligence runs
+ * the risk-module registry over the vessel and renders the brief. Two
+ * tabs rather than one long scroll: an officer opening a vessel usually
+ * wants one or the other, and stacking them buries whichever they came
+ * for.
+ */
+function VesselTabs({ vessel, onClose }: { vessel: Vessel; onClose: () => void }) {
+  const [tab, setTab] = useState<"overview" | "intelligence">("overview");
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div
+        role="tablist"
+        aria-label="Vessel view"
+        className="flex shrink-0 gap-1 border-b border-border/60 px-3 py-1.5"
+      >
+        {(
+          [
+            ["overview", "Overview"],
+            ["intelligence", "Intelligence"],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            role="tab"
+            type="button"
+            aria-selected={tab === id}
+            data-testid={`vessel-tab-${id}`}
+            onClick={() => setTab(id)}
+            className={cn(
+              "rounded px-2 py-1 text-[11px] font-medium transition-colors",
+              tab === id
+                ? "bg-accent text-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-auto">
+        {tab === "overview" ? (
+          <VesselIntelligenceCard vessel={vessel} onClose={onClose} />
+        ) : (
+          <VesselIntelligenceView vessel={vessel} />
+        )}
+      </div>
+    </div>
+  );
 }
 
 /**

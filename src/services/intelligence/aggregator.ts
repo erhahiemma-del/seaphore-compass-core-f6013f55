@@ -16,6 +16,8 @@
  * forbids. Instead the aggregator reports every module's contribution
  * separately, including the ones that contributed nothing and why.
  */
+import type { VesselProvenance } from "@/services/geospatial";
+
 import { RiskModuleRegistry, riskModuleRegistry, type FindingContext } from "./module-registry";
 import { validateFinding, type IntelligenceFinding, type RiskModuleId } from "./types";
 
@@ -56,6 +58,17 @@ export interface AggregateOptions {
   /** Restrict to specific modules. Defaults to all registered. */
   readonly modules?: readonly RiskModuleId[];
   readonly now?: number;
+  /**
+   * Lineage of the data the caller fed into the engines.
+   *
+   * Modules copy this into `provenance.sources` and onto their evidence.
+   * It has to come from the caller because by the time an observation
+   * reaches OSAE the connector that produced it is no longer attached —
+   * so a module cannot recover it, and without this a finding built from
+   * live Global Fishing Watch data is labelled `unattributed` despite
+   * having perfectly good provenance one layer up.
+   */
+  readonly sources?: readonly VesselProvenance[];
 }
 
 /**
@@ -73,7 +86,7 @@ export async function aggregateFindings(
 ): Promise<FindingSet> {
   const registry = options.registry ?? riskModuleRegistry;
   const now = options.now ?? Date.now();
-  const context: FindingContext = { subjectId, displayName, now };
+  const context: FindingContext = { subjectId, displayName, now, sources: options.sources };
 
   const selected = options.modules
     ? registry.list().filter((module) => options.modules?.includes(module.id))
