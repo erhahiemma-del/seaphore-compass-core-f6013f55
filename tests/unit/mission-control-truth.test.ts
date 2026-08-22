@@ -12,7 +12,10 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import {
+  projectComplianceWatchlist,
   projectIntelligenceFeed,
+  projectPortOperations,
+  projectRecentBriefings,
   projectTodaysPriorities,
 } from "@/lib/intelligence/dashboard-projection";
 import type { KpiCoverage } from "@/lib/intelligence/coverage-model";
@@ -182,6 +185,98 @@ describe("confidence comes from the evidence grade", () => {
       coverage: ACTIVE,
     });
     expect(priorities.data?.items[0].approved).toBe(true);
+  });
+});
+
+/* ═══════ Currency is a separate axis from availability ═══════ */
+
+describe("freshness is reported independently of availability", () => {
+  const NOW = Date.parse("2026-08-22T12:00:00.000Z");
+  const at = (ms: number) => new Date(NOW - ms).toISOString();
+
+  function feedAt(detectedAt: string) {
+    return projectIntelligenceFeed({
+      uipId: "u1",
+      findings: [finding({ detectedAt })],
+      coverage: ACTIVE,
+      now: NOW,
+    });
+  }
+
+  it("reports a recent signal as fresh", () => {
+    expect(feedAt(at(30_000)).data?.freshness).toBe("fresh");
+  });
+
+  it("reports an old signal as stale while still ACTIVE", () => {
+    // The case a single merged enum could not express: the capability is
+    // reporting normally, and what it reports is old.
+    const feed = feedAt(at(30 * 24 * 3_600_000));
+    expect(feed.state).toBe("ACTIVE");
+    expect(feed.data?.freshness).toBe("stale");
+  });
+
+  it("never calls an unparseable timestamp fresh", () => {
+    expect(feedAt("not-a-date").data?.freshness).toBe("unknown");
+  });
+
+  it("flags a partial feed when a signal could not be graded", () => {
+    const feed = projectIntelligenceFeed({
+      uipId: "u1",
+      findings: [finding({ confidence: undefined as never })],
+      coverage: ACTIVE,
+      now: NOW,
+    });
+    expect(feed.data?.partial).toBe(true);
+  });
+
+  it("is not partial when every signal carries a grade", () => {
+    expect(feedAt(at(1_000)).data?.partial).toBe(false);
+  });
+});
+
+/* ═══════ Panels with no connected provider ═══════ */
+
+describe("panels without a provider say so rather than inventing numbers", () => {
+  const panels = [
+    ["port operations", projectPortOperations({ uipId: null })],
+    ["compliance watchlist", projectComplianceWatchlist({ uipId: null })],
+    ["recent briefings", projectRecentBriefings({ uipId: null })],
+  ] as const;
+
+  it.each(panels)("%s reports NO_PROVIDER", (_name, projection) => {
+    expect(projection.state).toBe("NO_PROVIDER");
+  });
+
+  it.each(panels)("%s carries no data to render", (_name, projection) => {
+    // The guarantee that matters: there is nothing for a panel to
+    // accidentally display as intelligence.
+    expect(projection.data).toBeNull();
+  });
+
+  it.each(panels)("%s explains what is missing", (_name, projection) => {
+    expect(projection.stateDetail.length).toBeGreaterThan(40);
+  });
+
+  it("distinguishes a missing provider from an empty result", () => {
+    // NO_PROVIDER ≠ NO_EVIDENCE. One means we never looked, the other
+    // means we looked and found nothing — an officer must not read the
+    // first as the second.
+    expect(projectPortOperations({ uipId: null }).state).not.toBe("NO_EVIDENCE");
+  });
+
+  it("never claims a congestion index without a source", () => {
+    const detail = projectPortOperations({ uipId: null }).stateDetail;
+    expect(detail).toMatch(/NPA SHIPPOS/);
+    // The fabricated fixture values must not survive anywhere.
+    expect(JSON.stringify(projectPortOperations({ uipId: null }))).not.toMatch(/\b88\b|Critical/);
+  });
+
+  it("does not claim zero sanctioned arrivals", () => {
+    // A bare 0 would assert that nothing arrived. Seaphore does not know
+    // that — it has no arrivals source at all.
+    const projection = projectComplianceWatchlist({ uipId: null });
+    expect(projection.data).toBeNull();
+    expect(projection.stateDetail).toMatch(/no arrivals source is connected/i);
   });
 });
 

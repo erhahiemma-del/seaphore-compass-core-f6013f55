@@ -15,6 +15,7 @@
  *  and never a bare "0".
  * ─────────────────────────────────────────────────────────────────────
  */
+import { freshnessBandForAge, type FreshnessBand } from "@/services/geospatial/freshness";
 import type { NormalizedEvidence, EvidenceGrade } from "@/services/ial/types";
 import type { LeakageFinding } from "@/services/revenue-leakage";
 import type { KpiCoverage, KpiStateCode } from "./coverage-model";
@@ -170,6 +171,21 @@ export interface FeedSignal {
 
 export interface FeedPanelData {
   readonly signals: readonly FeedSignal[];
+  /**
+   * Currency of the newest signal, from the shared freshness bands.
+   *
+   * Kept as a separate axis from `PanelProjection.state` on purpose.
+   * Availability ("is the capability reporting?") and currency ("how old
+   * is what it reported?") are independent questions, and a single enum
+   * that mixed them would make LIVE-but-stale inexpressible — which is
+   * precisely the condition an officer most needs to see.
+   */
+  readonly freshness: FreshnessBand;
+  /**
+   * True when at least one finding could not be graded — the panel is
+   * reporting, but not on everything it was asked about.
+   */
+  readonly partial: boolean;
 }
 
 /**
@@ -188,8 +204,10 @@ export function projectIntelligenceFeed(input: {
   uipId: string | null;
   findings: ReadonlyArray<LeakageFinding>;
   coverage: KpiCoverage | undefined;
+  /** Injected so freshness is deterministic under test. */
+  now?: number;
 }): PanelProjection<FeedPanelData> {
-  const { uipId, findings, coverage } = input;
+  const { uipId, findings, coverage, now = Date.now() } = input;
   const { state, detail } = stateFrom(coverage, uipId, findings.length > 0);
   const base = {
     stateLabel: KPI_STATE_META[state].label,
@@ -212,7 +230,24 @@ export function projectIntelligenceFeed(input: {
       observedAt: finding.detectedAt,
     }));
 
-  return { ...base, state, data: { signals } };
+  // Freshness of the newest signal, using the shared bands rather than a
+  // staleness rule invented here.
+  const newest = signals.reduce<number | null>((best, signal) => {
+    const parsed = Date.parse(signal.observedAt);
+    if (!Number.isFinite(parsed)) return best;
+    return best === null || parsed > best ? parsed : best;
+  }, null);
+  const freshness = freshnessBandForAge(newest === null ? null : now - newest);
+
+  return {
+    ...base,
+    state,
+    data: {
+      signals,
+      freshness,
+      partial: signals.some((signal) => signal.confidence === "unconfirmed"),
+    },
+  };
 }
 
 /* ── Today's Priorities ─────────────────────────────────────────────── */
@@ -331,4 +366,75 @@ export function projectManifestIntelligence(input: {
     ],
   };
   return { ...base, state, data };
+}
+
+/* ── Panels with no connected provider ──────────────────────────── */
+
+/**
+ * Port operations, compliance screening and past briefings.
+ *
+ * All three shipped as static fixtures that asserted their own
+ * confidence — congestion indices marked `observed`, sanctions counts
+ * marked `verified`, neither backed by anything. The numbers were
+ * invented, and the confidence tier attached to them made the invention
+ * read as measurement.
+ *
+ * None has a connected provider today:
+ *
+ *   port congestion   NPA SHIPPOS is registered but NOT_CONFIGURED
+ *   compliance join   needs sanctions *and* arrivals; arrivals are absent
+ *   briefings         no store persists a generated brief
+ *
+ * So each projects `NO_PROVIDER` and renders through the shared
+ * `PanelStateNotice`. Manufacturing a number to fill the card is the one
+ * option not available: an officer reading "Apapa 88 · Critical ·
+ * observed" would be reading fiction with a confidence badge on it.
+ *
+ * Each becomes ACTIVE the moment its provider is configured — the
+ * projection is the seam, so no panel needs rewriting when access lands.
+ */
+function noProviderPanel<T>(
+  capabilityId: string,
+  capabilityHref: string,
+  uipId: string | null,
+  detail: string,
+): PanelProjection<T> {
+  return {
+    state: "NO_PROVIDER",
+    stateLabel: KPI_STATE_META.NO_PROVIDER.label,
+    stateDetail: detail,
+    uipId,
+    capabilityId,
+    capabilityHref,
+    data: null,
+  };
+}
+
+export function projectPortOperations(input: { uipId: string | null }): PanelProjection<never> {
+  return noProviderPanel(
+    "capability.port-operations",
+    "/data-sources",
+    input.uipId,
+    "No port operations provider is connected. NPA SHIPPOS is registered as the Tier 1 Nigerian source but has no machine-readable route configured, so berth occupancy and congestion cannot be observed. Nothing here should be read as a measure of current port activity.",
+  );
+}
+
+export function projectComplianceWatchlist(input: {
+  uipId: string | null;
+}): PanelProjection<never> {
+  return noProviderPanel(
+    "capability.compliance-screening",
+    "/data-sources",
+    input.uipId,
+    "Compliance counts require both a sanctions list and a record of arrivals. Sanctions screening is available, but no arrivals source is connected, so no vessel can be matched against it. An empty count here would claim that nothing arrived, which is not something Seaphore currently knows.",
+  );
+}
+
+export function projectRecentBriefings(input: { uipId: string | null }): PanelProjection<never> {
+  return noProviderPanel(
+    "capability.briefing-history",
+    "/copilot",
+    input.uipId,
+    "No briefing history is stored. Executive briefs are generated on demand and are not yet persisted, so there is no archive to list. This is a missing capability, not an absence of past activity.",
+  );
 }
