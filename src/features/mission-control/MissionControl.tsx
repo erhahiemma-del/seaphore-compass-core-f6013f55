@@ -36,20 +36,22 @@ import { useRenderTrace } from "@/lib/perf/hooks";
 import { cn } from "@/lib/utils";
 import {
   COMPLIANCE_METRICS,
-  INTELLIGENCE_FEED,
   PORT_CONGESTION,
   RECENT_BRIEFINGS,
   RIBBON_KPIS,
-  TODAYS_PRIORITIES,
-  type FeedRow,
   type PortCongestion,
-  type Priority,
 } from "@/lib/mission-control-data";
 import { useUipStore } from "@/stores/uip.store";
 import { scanForLeakage } from "@/services/revenue-leakage";
 import {
+  projectIntelligenceFeed,
   projectManifestIntelligence,
   projectRevenueIntelligence,
+  projectTodaysPriorities,
+  type FeedPanelData,
+  type FeedSignal,
+  type PanelProjection,
+  type PrioritiesPanelData,
 } from "@/lib/intelligence/dashboard-projection";
 import { PanelStateNotice } from "@/components/intelligence/PanelStateNotice";
 import type { KpiCoverage } from "@/lib/intelligence/coverage-model";
@@ -96,6 +98,25 @@ const RIBBON_ICONS: Record<string, LucideIcon> = {
 };
 
 export function MissionControl() {
+  // One scan, projected two ways. Both panels read the findings the
+  // detection capability actually produced — neither computes its own.
+  const uip = useLatestUip();
+  const { data: coverage } = useCoverage();
+  const findings = useMemo(
+    () => (uip && uip.rawEvidence.length > 0 ? scanForLeakage(uip.rawEvidence) : []),
+    [uip],
+  );
+  const feedProjection = projectIntelligenceFeed({
+    uipId: uip?.id ?? null,
+    findings,
+    coverage: coverageFor(coverage?.kpis, "risk"),
+  });
+  const prioritiesProjection = projectTodaysPriorities({
+    uipId: uip?.id ?? null,
+    findings,
+    coverage: coverageFor(coverage?.kpis, "risk"),
+  });
+
   return (
     <AppShell title="Mission Control" subtitle="National maritime operating picture" mode="light">
       <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-6 py-5">
@@ -105,7 +126,7 @@ export function MissionControl() {
 
         <div className="grid gap-4 lg:grid-cols-[1.55fr_1fr]">
           <MaritimePicturePanel />
-          <IntelligenceFeedPanel />
+          <IntelligenceFeedPanel projection={feedProjection} />
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -118,11 +139,48 @@ export function MissionControl() {
         <CargoWorkspaceStrip />
 
         <div className="grid gap-4 lg:grid-cols-[1fr_1.3fr]">
-          <TodaysPrioritiesPanel />
+          <TodaysPrioritiesPanel projection={prioritiesProjection} />
           <RecentBriefingsPanel />
         </div>
       </div>
     </AppShell>
+  );
+}
+
+/**
+ * A panel with nothing to report.
+ *
+ * Deliberately not styled as an error. "Nothing was observed" is a
+ * finding in its own right, and an officer who sees a warning icon every
+ * time a queue is clear learns to ignore warning icons.
+ */
+function EmptyPanelNote({ headline, detail }: { headline: string; detail: string }) {
+  return (
+    <div
+      data-testid="empty-panel-note"
+      className="flex flex-1 flex-col items-center justify-center px-6 py-10 text-center"
+    >
+      <ShieldCheck className="mb-2 h-5 w-5 text-slate/60" aria-hidden />
+      <p className="type-h2 text-foreground">{headline}</p>
+      <p className="mt-1 max-w-[36ch] type-small leading-relaxed text-slate">{detail}</p>
+    </div>
+  );
+}
+
+/** One observed signal, rendered from a real finding. */
+function SignalItem({ signal, onClick }: { signal: FeedSignal; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full flex-col gap-1 px-4 py-3 text-left motion-fast hover:bg-surface"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <span className="type-h2 min-w-0 truncate text-foreground">{signal.title}</span>
+        <ConfidenceChip tier={signal.confidence} size={9} />
+      </div>
+      <span className="type-small leading-relaxed text-slate">{signal.subtitle}</span>
+    </button>
   );
 }
 
@@ -346,9 +404,11 @@ function DataStateBadge({ state }: { state: MapDataStateResult }) {
 
 /* ---------------- Intelligence Feed Panel ---------------- */
 
-function IntelligenceFeedPanel() {
+function IntelligenceFeedPanel({ projection }: { projection: PanelProjection<FeedPanelData> }) {
   useRenderTrace("feed.render", { surface: "mission-control" });
   const handoff = useHandoffNavigate();
+  const signals = projection.data?.signals ?? [];
+
   return (
     <PanelCard variant="edge" className="flex h-[520px] flex-col">
       <PanelHeader
@@ -358,78 +418,42 @@ function IntelligenceFeedPanel() {
         toLabel="Open Detect"
       />
       <div className="flex-1 overflow-y-auto">
-        <ul className="divide-y divide-line">
-          {INTELLIGENCE_FEED.map((row) => (
-            <li key={row.id}>
-              <FeedItem
-                row={row}
-                onClick={() =>
-                  handoff({
-                    target: row.investigationId
-                      ? `/investigate/${row.investigationId}`
-                      : `/entity/${row.entityId}`,
-                    context: {
-                      entityId: row.entityId,
-                      voyageId: row.voyageId,
-                      signalId: row.id,
-                      investigationId: row.investigationId,
-                      confidence: row.confidence.toUpperCase() as
-                        "VERIFIED" | "OBSERVED" | "INFERRED" | "UNCONFIRMED",
-                      fromStage: "Detect",
-                      fromRoute: "/",
-                    },
-                  })
-                }
-              />
-            </li>
-          ))}
-        </ul>
+        {projection.state !== "ACTIVE" ? (
+          <PanelStateNotice state={projection.state} detail={projection.stateDetail} />
+        ) : signals.length === 0 ? (
+          <EmptyPanelNote
+            headline="No verified intelligence findings"
+            detail="Nothing has been observed for the current operating picture. This is a complete answer, not a missing one."
+          />
+        ) : (
+          <ul className="divide-y divide-line">
+            {signals.map((signal) => (
+              <li key={signal.id}>
+                <SignalItem
+                  signal={signal}
+                  onClick={() =>
+                    handoff({
+                      target: `/entity/${signal.subjectId}`,
+                      context: {
+                        entityId: signal.subjectId,
+                        signalId: signal.id,
+                        confidence: signal.confidence.toUpperCase() as
+                          "VERIFIED" | "OBSERVED" | "INFERRED" | "UNCONFIRMED",
+                        fromStage: "Detect",
+                        fromRoute: "/",
+                      },
+                    })
+                  }
+                />
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
       <div className="border-t border-line px-4 py-2 italic type-small text-slate">
         Observations, not findings. Click any item to view evidence.
       </div>
     </PanelCard>
-  );
-}
-
-const SEVERITY_ICON: Record<FeedRow["severity"], LucideIcon> = {
-  high: AlertTriangle,
-  medium: BellRing,
-  low: Info,
-  info: Info,
-};
-
-const SEVERITY_COLOR: Record<FeedRow["severity"], string> = {
-  high: "text-[color:var(--color-red)]",
-  medium: "text-[color:var(--color-amber)]",
-  low: "text-[color:var(--color-blue)]",
-  info: "text-slate",
-};
-
-function FeedItem({ row, onClick }: { row: FeedRow; onClick: () => void }) {
-  const Icon = SEVERITY_ICON[row.severity];
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex w-full items-start gap-3 px-4 py-3 text-left motion-fast hover:bg-surface-2"
-    >
-      <span className={cn("mt-0.5 shrink-0", SEVERITY_COLOR[row.severity])}>
-        <Icon className="h-4 w-4" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-2">
-          <span className="type-h2 truncate text-foreground">{row.title}</span>
-          <span className="type-mono text-[11px] text-slate">{row.time}</span>
-        </span>
-        <span className="mt-0.5 block truncate type-small text-slate">{row.subtitle}</span>
-        <span className="mt-1.5 flex items-center gap-2">
-          <RiskPill level={row.risk} />
-          <ConfidenceChip tier={row.confidence} size={9} />
-        </span>
-      </span>
-      <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-slate" />
-    </button>
   );
 }
 
@@ -714,15 +738,14 @@ function PortBar({ port }: { port: PortCongestion }) {
 
 /* ---------------- Today's Priorities ---------------- */
 
-const TAG_STYLE: Record<Priority["tag"], string> = {
-  "HIGH RISK": "bg-[color:var(--color-red)]/10 text-[color:var(--color-red)]",
-  "NETWORK EXPANSION": "bg-[color:var(--color-purple)]/10 text-[color:var(--color-purple)]",
-  "SANCTION MATCH": "bg-[color:var(--color-navy)]/10 text-[color:var(--color-navy)]",
-  DISCREPANCY: "bg-[color:var(--color-amber)]/10 text-[color:var(--color-amber)]",
-};
-
-function TodaysPrioritiesPanel() {
+function TodaysPrioritiesPanel({
+  projection,
+}: {
+  projection: PanelProjection<PrioritiesPanelData>;
+}) {
   const handoff = useHandoffNavigate();
+  const items = projection.data?.items ?? [];
+
   return (
     <PanelCard className="flex flex-col">
       <PanelHeader
@@ -732,55 +755,58 @@ function TodaysPrioritiesPanel() {
         toLabel="Open Investigate"
         compact
       />
-      <ul className="flex flex-col gap-2.5">
-        {TODAYS_PRIORITIES.map((p) => (
-          <li key={p.investigationId}>
-            <button
-              type="button"
-              onClick={() =>
-                handoff({
-                  target: `/investigate/${p.investigationId}`,
-                  context: {
-                    investigationId: p.investigationId,
-                    entityId: p.entityId,
-                    confidence: p.confidence.toUpperCase() as
-                      "VERIFIED" | "OBSERVED" | "INFERRED" | "UNCONFIRMED",
-                    fromStage: "Monitor",
-                    fromRoute: "/",
-                  },
-                })
-              }
-              className="w-full rounded-md border border-line bg-surface p-3 text-left motion-fast hover:border-[color:var(--color-teal)] hover:shadow-card"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <span className="min-w-0">
-                  <span className="type-h2 block truncate text-foreground">{p.entityName}</span>
-                  <span className="type-mono text-[11px] text-slate">{p.investigationId}</span>
-                </span>
-                <span
-                  className={cn(
-                    "shrink-0 rounded-sm px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.06em]",
-                    TAG_STYLE[p.tag],
-                  )}
-                >
-                  {p.tag}
-                </span>
-              </div>
-              <p className="mt-1.5 type-small text-foreground/80">{p.note}</p>
-              <div className="mt-2 flex items-center justify-between">
-                <span className="type-small text-slate">
-                  {p.assignee} · {p.updated}
-                </span>
-                <ConfidenceChip tier={p.confidence} size={9} />
-              </div>
-            </button>
-          </li>
-        ))}
-      </ul>
+      {projection.state !== "ACTIVE" ? (
+        <PanelStateNotice state={projection.state} detail={projection.stateDetail} />
+      ) : items.length === 0 ? (
+        <EmptyPanelNote
+          headline="No high-priority actions require attention"
+          detail="The detection capability ran and surfaced nothing critical or high. This is a healthy queue, not an empty one."
+        />
+      ) : (
+        <ul className="flex flex-col gap-2.5">
+          {items.map((item) => (
+            <li key={item.id}>
+              <button
+                type="button"
+                onClick={() =>
+                  handoff({
+                    target: `/entity/${item.id}`,
+                    context: {
+                      entityId: item.id,
+                      confidence: item.confidence.toUpperCase() as
+                        "VERIFIED" | "OBSERVED" | "INFERRED" | "UNCONFIRMED",
+                      fromStage: "Monitor",
+                      fromRoute: "/",
+                    },
+                  })
+                }
+                className="w-full rounded-md border border-line bg-surface p-3 text-left motion-fast hover:border-[color:var(--color-teal)] hover:shadow-card"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <span className="min-w-0">
+                    <span className="type-h2 block truncate text-foreground">
+                      {item.entityName}
+                    </span>
+                  </span>
+                  <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.06em] text-foreground">
+                    {item.priority}
+                  </span>
+                </div>
+                <p className="mt-1.5 type-small text-foreground/80">{item.rationale}</p>
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="type-small text-slate">
+                    {item.approved ? "Officer approved" : "Awaiting officer decision"}
+                  </span>
+                  <ConfidenceChip tier={item.confidence} size={9} />
+                </div>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </PanelCard>
   );
 }
-
 /* ---------------- Recent Briefings ---------------- */
 
 function RecentBriefingsPanel() {

@@ -155,6 +155,132 @@ export function projectRevenueIntelligence(input: {
   return { ...base, state, data };
 }
 
+/* ── Intelligence Feed ──────────────────────────────────────────────── */
+
+/** One observed signal. Every field traces to a real finding. */
+export interface FeedSignal {
+  readonly id: string;
+  readonly title: string;
+  readonly subtitle: string;
+  readonly subjectId: string;
+  /** Grade of the evidence behind it — never averaged with anything. */
+  readonly confidence: PanelConfidence;
+  readonly observedAt: string;
+}
+
+export interface FeedPanelData {
+  readonly signals: readonly FeedSignal[];
+}
+
+/**
+ * Intelligence Feed → real leakage findings.
+ *
+ * Previously a hardcoded array of invented signals ("MV Ocean Pearl ·
+ * signal lost 2h 14m") rendered under a confidence chip, which presented
+ * fixtures as observed intelligence. The feed now shows findings the
+ * detection capability actually produced, and shows nothing when it
+ * produced nothing.
+ *
+ * No finding is synthesised to fill the panel: an empty feed is a true
+ * statement about the operating picture, and a fabricated one is not.
+ */
+export function projectIntelligenceFeed(input: {
+  uipId: string | null;
+  findings: ReadonlyArray<LeakageFinding>;
+  coverage: KpiCoverage | undefined;
+}): PanelProjection<FeedPanelData> {
+  const { uipId, findings, coverage } = input;
+  const { state, detail } = stateFrom(coverage, uipId, findings.length > 0);
+  const base = {
+    stateLabel: KPI_STATE_META[state].label,
+    stateDetail: detail,
+    uipId,
+    capabilityId: "capability.revenue-leakage-detection",
+    capabilityHref: "/detect",
+  };
+  if (state !== "ACTIVE") return { ...base, state, data: null };
+
+  const signals = [...findings]
+    .sort((a, b) => Date.parse(b.detectedAt) - Date.parse(a.detectedAt))
+    .map((finding): FeedSignal => ({
+      id: finding.id,
+      title: finding.headline,
+      subtitle: finding.explanation,
+      subjectId: finding.subjectId,
+      // The finding's own grade, carried through rather than restated.
+      confidence: gradeToTier(finding.confidence),
+      observedAt: finding.detectedAt,
+    }));
+
+  return { ...base, state, data: { signals } };
+}
+
+/* ── Today's Priorities ─────────────────────────────────────────────── */
+
+export interface PriorityItem {
+  readonly id: string;
+  readonly entityName: string;
+  readonly rationale: string;
+  readonly priority: LeakageFinding["priority"];
+  readonly confidence: PanelConfidence;
+  /** True when an officer has already signed off. */
+  readonly approved: boolean;
+}
+
+export interface PrioritiesPanelData {
+  readonly items: readonly PriorityItem[];
+}
+
+/**
+ * Today's Priorities → findings that actually warrant attention.
+ *
+ * Only `critical` and `high` findings qualify, and the priority is the
+ * one the detection capability assigned. Nothing here re-ranks or
+ * re-scores: a panel that computed its own urgency would be a second
+ * opinion wearing the first one's clothes.
+ *
+ * "No high-priority actions require attention" is a real operational
+ * state, not an empty container to be filled.
+ */
+export function projectTodaysPriorities(input: {
+  uipId: string | null;
+  findings: ReadonlyArray<LeakageFinding>;
+  coverage: KpiCoverage | undefined;
+}): PanelProjection<PrioritiesPanelData> {
+  const { uipId, findings, coverage } = input;
+  const urgent = findings.filter(
+    (finding) => finding.priority === "critical" || finding.priority === "high",
+  );
+  // Coverage is judged on whether any finding exists at all. A healthy
+  // scan that surfaced nothing urgent is ACTIVE with an empty list —
+  // which reads as "nothing needs you", not as "we have no data".
+  const { state, detail } = stateFrom(coverage, uipId, findings.length > 0);
+  const base = {
+    stateLabel: KPI_STATE_META[state].label,
+    stateDetail: detail,
+    uipId,
+    capabilityId: "capability.revenue-leakage-detection",
+    capabilityHref: "/revenue-leakage",
+  };
+  if (state !== "ACTIVE") return { ...base, state, data: null };
+
+  const order: Record<string, number> = { critical: 0, high: 1 };
+  const items = [...urgent]
+    .sort(
+      (a, b) => (order[a.priority] ?? 9) - (order[b.priority] ?? 9) || b.magnitude - a.magnitude,
+    )
+    .map((finding): PriorityItem => ({
+      id: finding.id,
+      entityName: finding.subjectLabel || finding.headline,
+      rationale: finding.headline,
+      priority: finding.priority,
+      confidence: gradeToTier(finding.confidence),
+      approved: finding.humanApproved,
+    }));
+
+  return { ...base, state, data: { items } };
+}
+
 /** Manifest Intelligence → Canonical UIP rawEvidence (cargo + voyage records). */
 export function projectManifestIntelligence(input: {
   uipId: string | null;
