@@ -159,10 +159,25 @@ export const KPI_STATE_META: Record<
   AWAITING_CREDENTIALS: { label: "Waiting for Credentials", dot: "🟡", tone: "warn" },
   PROVIDER_OFFLINE: { label: "Provider Offline", dot: "🔴", tone: "bad" },
   RATE_LIMITED: { label: "Rate Limited", dot: "🟠", tone: "warn" },
+  // Checked, and nothing qualified. Neutral: an empty result is an answer.
   NO_EVIDENCE: { label: "No Evidence Found", dot: "⚪", tone: "neutral" },
   PROJECTION_MISSING: { label: "Projection Missing", dot: "🔵", tone: "info" },
   DASHBOARD_MAPPING_ERROR: { label: "Dashboard Mapping Error", dot: "🟣", tone: "bad" },
-  NO_PROVIDER: { label: "No Provider Connected", dot: "🔴", tone: "bad" },
+  /**
+   * Never configured — not a failure.
+   *
+   * This carried 🔴/bad, identical to PROVIDER_OFFLINE, which made an
+   * unconnected source look like an active operational alert. The two are
+   * opposites: PROVIDER_OFFLINE is a provider we rely on that went down
+   * and warrants alarm; NO_PROVIDER is one nobody has connected yet, and
+   * dressing that as danger trains officers to ignore red.
+   *
+   * Neutral tone, but a distinct glyph and label from NO_EVIDENCE — "we
+   * never looked" must stay readable apart from "we looked and found
+   * nothing". Severity for release-readiness is unaffected: that report
+   * reads `state`, not `tone`, and still treats this as BLOCKING.
+   */
+  NO_PROVIDER: { label: "Data source not connected", dot: "○", tone: "neutral" },
 };
 
 export const ROOT_CAUSE_LABELS: Record<RootCause, string> = {

@@ -111,8 +111,14 @@ export function IntelligenceReadinessCard({
       <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Group dot="🟢" title="Operational" names={readiness.operational} />
         <Group dot="🟡" title="Partial" names={readiness.partial} />
-        <Group dot="🔴" title="Awaiting Credentials" names={readiness.awaitingConfiguration} />
-        <Group dot="⚫" title="Offline" names={readiness.offline} />
+        {/*
+          These two were inverted against KPI_STATE_META: awaiting
+          credentials showed red while a genuinely offline provider showed
+          black. Waiting on a credential is a configuration task, not an
+          outage — the outage is the one that earns red.
+        */}
+        <Group dot="🟡" title="Awaiting Credentials" names={readiness.awaitingConfiguration} />
+        <Group dot="🔴" title="Offline" names={readiness.offline} />
       </div>
 
       {exported ? (
