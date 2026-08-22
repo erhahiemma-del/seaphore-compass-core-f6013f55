@@ -31,6 +31,25 @@ export interface MapCamera {
 }
 
 /** Everything a renderer needs to attach itself to the DOM. */
+/**
+ * Map chrome the renderer attaches.
+ *
+ * Presentation only — every field here changes what the officer sees, not
+ * what the map knows. A surface that hides the scale bar is still reading
+ * the same state from the same service.
+ *
+ * Attribution is deliberately absent: CARTO and OpenStreetMap require it,
+ * so it is not something a caller may switch off.
+ */
+export interface MapControlOptions {
+  /** Zoom buttons. Default true. */
+  readonly navigation?: boolean;
+  /** Compass/bearing reset within the navigation control. Default true. */
+  readonly compass?: boolean;
+  /** Nautical scale bar. Default true. */
+  readonly scale?: boolean;
+}
+
 export interface MapRendererMountOptions {
   /** Element the map attaches to. Must be laid out before mounting. */
   readonly container: HTMLElement;
@@ -41,6 +60,11 @@ export interface MapRendererMountOptions {
   readonly minZoom: number;
   readonly maxZoom: number;
   readonly maxBounds: BoundingBox;
+  /**
+   * Chrome to attach. Absent means the full command set, so existing
+   * callers keep their current appearance without change.
+   */
+  readonly controls?: MapControlOptions;
 }
 
 /** A collection of vessel point features, ready to hand to the engine. */

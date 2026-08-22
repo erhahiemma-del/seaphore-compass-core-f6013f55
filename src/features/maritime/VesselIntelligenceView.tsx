@@ -28,17 +28,42 @@ import {
 } from "@/components/intelligence/ExecutiveBriefPanel";
 import { FindingEvidenceViewer } from "@/components/intelligence/FindingEvidenceViewer";
 import { Button } from "@/components/ui/button";
+import { writeAuditLog } from "@/lib/audit.functions";
 import type { Vessel } from "@/services/geospatial";
 import {
   aggregateFindings,
   type FindingSet,
   type IntelligenceFinding,
 } from "@/services/intelligence";
-import { buildExecutiveBrief, understand, type ExecutiveBriefV2 } from "@/services/orchestration";
+import {
+  buildExecutiveBrief,
+  DECISION_LABEL,
+  recordOfficerDecision,
+  understand,
+  type DecisionSink,
+  type ExecutiveBriefV2,
+  type OperationalRecord,
+} from "@/services/orchestration";
+
+/**
+ * Persist to the append-only audit log.
+ *
+ * Wrapped rather than passed directly so this component depends on the
+ * `DecisionSink` contract, which tests can substitute without a
+ * Supabase client or an authenticated request.
+ */
+const auditSink: DecisionSink = (input) => writeAuditLog({ data: input });
 
 export interface VesselIntelligenceViewProps {
   readonly vessel: Vessel;
+  /**
+   * Notified after a decision is recorded. Optional: the view records
+   * the decision itself, so the drawer does not have to supply one to
+   * make the controls work.
+   */
   readonly onDecision?: (decision: BriefDecision, brief: ExecutiveBriefV2) => void;
+  /** Overridden in tests. Defaults to the audit log. */
+  readonly sink?: DecisionSink;
 }
 
 type LoadState =
@@ -46,9 +71,28 @@ type LoadState =
   | { readonly kind: "ready"; readonly set: FindingSet; readonly brief: ExecutiveBriefV2 }
   | { readonly kind: "failed"; readonly message: string };
 
-export function VesselIntelligenceView({ vessel, onDecision }: VesselIntelligenceViewProps) {
+/**
+ * The decision the officer has taken on the current brief.
+ *
+ * `persisted` is tracked separately from the record because a decision
+ * whose audit write failed is still a decision the officer made — it is
+ * shown as recorded-but-unsaved rather than silently dropped or
+ * silently claimed as saved.
+ */
+type DecisionState = {
+  readonly record: OperationalRecord;
+  readonly persisted: boolean;
+  readonly error: string | null;
+};
+
+export function VesselIntelligenceView({
+  vessel,
+  onDecision,
+  sink = auditSink,
+}: VesselIntelligenceViewProps) {
   const [state, setState] = useState<LoadState>({ kind: "loading" });
   const [openFinding, setOpenFinding] = useState<IntelligenceFinding | null>(null);
+  const [decision, setDecision] = useState<DecisionState | null>(null);
 
   const imo = vessel.identity.imo;
   const name = vessel.identity.name;
@@ -57,6 +101,9 @@ export function VesselIntelligenceView({ vessel, onDecision }: VesselIntelligenc
   useEffect(() => {
     let disposed = false;
     setOpenFinding(null);
+    // A decision belongs to the brief it was taken on. Selecting another
+    // vessel must not carry it across.
+    setDecision(null);
     setState({ kind: "loading" });
 
     void aggregateFindings(imo, name, {
@@ -81,6 +128,19 @@ export function VesselIntelligenceView({ vessel, onDecision }: VesselIntelligenc
       disposed = true;
     };
   }, [imo, name, provenance]);
+
+  /**
+   * Record the officer's decision.
+   *
+   * `state.brief` is passed by value and never written back, so the
+   * finding set behind it is untouched by this path — the decision
+   * becomes a separate operational record.
+   */
+  async function decide(kind: BriefDecision, brief: ExecutiveBriefV2) {
+    const result = await recordOfficerDecision(brief, kind, sink);
+    setDecision(result);
+    onDecision?.(kind, brief);
+  }
 
   if (state.kind === "loading") {
     return <Note>Evaluating intelligence modules…</Note>;
@@ -117,14 +177,50 @@ export function VesselIntelligenceView({ vessel, onDecision }: VesselIntelligenc
       <ExecutiveBriefPanel
         brief={state.brief}
         findings={state.set.findings}
-        onDecision={onDecision}
+        onDecision={(kind, brief) => void decide(kind, brief)}
         onViewEvidence={(findingId) => {
           const finding = state.set.findings.find((candidate) => candidate.id === findingId);
           if (finding) setOpenFinding(finding);
         }}
       />
 
+      {decision ? <DecisionReceipt state={decision} /> : null}
+
       <SarEvidenceNote />
+    </div>
+  );
+}
+
+/**
+ * Confirmation that a decision was recorded.
+ *
+ * States explicitly that the assessment is unchanged. An officer who
+ * dismisses a finding and then sees the same priority still displayed
+ * would otherwise reasonably assume the control failed — the priority
+ * is OSAE's and does not move because someone disagreed with it.
+ */
+function DecisionReceipt({ state }: { state: DecisionState }) {
+  const { record, persisted, error } = state;
+
+  return (
+    <div
+      data-testid="decision-receipt"
+      role="status"
+      className="rounded-md border border-border/60 bg-muted/20 p-3"
+    >
+      <p className="text-[12px] font-medium text-foreground">
+        Recorded: {DECISION_LABEL[record.decision]}
+      </p>
+      <p className="mt-0.5 text-[11px] text-muted-foreground">
+        Logged against this brief at {record.decidedAt.slice(0, 16).replace("T", " ")}Z. The
+        assessment, its confidence and its priority are unchanged.
+      </p>
+      {!persisted ? (
+        <p className="mt-1 text-[11px] text-amber-700">
+          The decision was not written to the audit log{error ? `: ${error}` : ""}. It is shown here
+          but has not been persisted.
+        </p>
+      ) : null}
     </div>
   );
 }

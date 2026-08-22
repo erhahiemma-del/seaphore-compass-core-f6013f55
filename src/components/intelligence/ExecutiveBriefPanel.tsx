@@ -23,11 +23,22 @@ import { AlertTriangle, ChevronDown, ChevronRight, ShieldQuestion } from "lucide
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { ExecutiveBriefV2, SummaryLine } from "@/services/orchestration";
+import {
+  DECISION_LABEL,
+  OFFICER_DECISIONS,
+  type ExecutiveBriefV2,
+  type OfficerDecisionKind,
+  type SummaryLine,
+} from "@/services/orchestration";
 import type { IntelligenceFinding } from "@/services/intelligence";
 
-/** What an officer can do with a brief. Wired to existing workflow. */
-export type BriefDecision = "approve" | "reject" | "escalate" | "investigate" | "monitor";
+/**
+ * What an officer can do with a brief.
+ *
+ * Re-exported from `services/orchestration` so the vocabulary has one
+ * definition. The panel renders these; it does not decide what they are.
+ */
+export type BriefDecision = OfficerDecisionKind;
 
 export interface ExecutiveBriefPanelProps {
   readonly brief: ExecutiveBriefV2;
@@ -132,38 +143,19 @@ export function ExecutiveBriefPanel({
         )}
 
         {onDecision ? (
+          // Driven off the canonical list so a decision added in
+          // `officer-decision.ts` cannot be missing a button here.
           <div className="mt-1 flex flex-wrap gap-1.5">
-            <DecisionButton
-              decision="approve"
-              label="Approve"
-              brief={brief}
-              onDecision={onDecision}
-              primary
-            />
-            <DecisionButton
-              decision="investigate"
-              label="Investigate"
-              brief={brief}
-              onDecision={onDecision}
-            />
-            <DecisionButton
-              decision="escalate"
-              label="Escalate"
-              brief={brief}
-              onDecision={onDecision}
-            />
-            <DecisionButton
-              decision="monitor"
-              label="Monitor"
-              brief={brief}
-              onDecision={onDecision}
-            />
-            <DecisionButton
-              decision="reject"
-              label="Reject"
-              brief={brief}
-              onDecision={onDecision}
-            />
+            {OFFICER_DECISIONS.map((decision, index) => (
+              <DecisionButton
+                key={decision}
+                decision={decision}
+                label={DECISION_LABEL[decision]}
+                brief={brief}
+                onDecision={onDecision}
+                primary={index === 0}
+              />
+            ))}
           </div>
         ) : null}
       </div>

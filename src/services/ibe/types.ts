@@ -19,7 +19,7 @@
  */
 import type { HumanResponse, OIEResult } from "@/services/oie/types";
 import type { ResponseContract } from "./response-contract";
-import type { MissionContext } from "@/stores/mission-context.store";
+import type { MissionWorkspaceState } from "@/stores/mission-workspace.store";
 
 /** How the Copilot speaks to the current officer. */
 export type OfficerPersona =
@@ -75,7 +75,7 @@ export interface IbeThought {
 export interface IbeContext {
   persona: OfficerPersona;
   stage: InvestigationStage;
-  mission: MissionContext | null;
+  mission: MissionWorkspaceState | null;
   /** Rolling summary of what the Copilot has already told the officer. */
   priorTurnCount: number;
   hasPriorFindings: boolean;

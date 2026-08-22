@@ -26,5 +26,19 @@ export default defineConfig({
     // — so this is skipped only on Windows. Lovable builds on Linux and is
     // unaffected, keeping MCP behaviour identical in deployment.
     plugins: process.platform === "win32" ? [] : [mcpPlugin()],
-  },
+
+    // Vitest reads this file, so the exclusions live here rather than in a
+    // second config that would have to re-declare the `@/` alias every
+    // test depends on.
+    //
+    // `.claude/worktrees/` holds full checkouts of other branches. Vitest
+    // walks into them and runs their copies of the suite, which report as
+    // ~50 failures against code that is not on this branch — phantom
+    // regressions that hide real ones. `node_modules` is excluded for the
+    // same reason; both are restored explicitly because naming `exclude`
+    // replaces Vitest's defaults rather than adding to them.
+    test: {
+      exclude: ["**/node_modules/**", "**/dist/**", "**/.claude/**"],
+    },
+  } as NonNullable<Parameters<typeof defineConfig>[0]>["vite"],
 });

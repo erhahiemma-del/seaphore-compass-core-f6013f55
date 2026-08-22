@@ -191,7 +191,10 @@ describe("2. Executive Brief is decision-first", () => {
     const value = await brief();
     render(<ExecutiveBriefPanel brief={value} onDecision={onDecision} />);
 
-    for (const label of ["Approve", "Investigate", "Escalate", "Monitor", "Reject"]) {
+    // G6.1 changed this vocabulary deliberately: an officer acknowledges
+    // or dismisses intelligence, but does not "approve" a finding — a
+    // finding is not a request awaiting sign-off.
+    for (const label of ["Acknowledge", "Investigate", "Escalate", "Not actionable"]) {
       expect(screen.getByRole("button", { name: label })).toBeInTheDocument();
     }
 

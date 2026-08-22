@@ -66,7 +66,12 @@ import { getIntelligenceMetrics } from "@/lib/intelligence-metrics.functions";
 import { copilotOverrideFn } from "@/lib/orchestration.functions";
 import { runOIEFn } from "@/lib/oie/oie.functions";
 import { cn } from "@/lib/utils";
-import { captureOverride, type MissionContext } from "@/services/orchestration";
+import {
+  captureOverride,
+  missionForSelection,
+  type MissionContext,
+} from "@/services/orchestration";
+import { useMapSelector } from "@/services/geospatial";
 import { runOIE, type Clarification } from "@/services/oie";
 import { enhanceWithIBE, persistHypotheses } from "@/services/ibe";
 import { IntelligenceProjectionPanel } from "@/components/copilot/projection/IntelligenceProjectionPanel";
@@ -84,7 +89,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useCopilotStore, type CopilotContext } from "@/stores/copilot.store";
 import { useCopilotRunStore, readResumableRun } from "@/stores/copilot-run.store";
 import { useIsDevBypass } from "@/stores/dev-mode.store";
-import { useMissionContextStore } from "@/stores/mission-context.store";
+import { useMissionWorkspaceStore } from "@/stores/mission-workspace.store";
 import { useWorkspaceStore } from "@/stores/workspace.store";
 import { buildLineageTrace } from "@/lib/lineage/build-lineage";
 import { useCopilotSession } from "@/hooks/use-copilot-session";
@@ -246,10 +251,26 @@ function CopilotOpsPage() {
   const authUserId = useAuthStore((s) => s.officer?.userId);
   const officerId = authUserId ?? "00000000-0000-0000-0000-000000000000";
   const session = useCopilotSession();
-  const activeMissionId = useMissionContextStore((s) => s.activeId);
-  const activeMission = useMissionContextStore((s) =>
+  const activeMissionId = useMissionWorkspaceStore((s) => s.activeId);
+  const activeMission = useMissionWorkspaceStore((s) =>
     s.activeId ? (s.missions[s.activeId] ?? null) : null,
   );
+
+  /**
+   * What the officer has open on the map, as operational context.
+   *
+   * Read straight from the shared geospatial service — the single owner
+   * of selection — so this is not a second copy that could disagree with
+   * what is on screen. `missionForSelection` returns `null` for kinds
+   * with no honest entity representation (a SAR detection is not a
+   * vessel), and stale context cannot persist because this recomputes
+   * from the current selection on every change.
+   */
+  const mapSelection = useMapSelector((state) => state.selection);
+  const missionFromMap = useMemo(() => {
+    const bridged = missionForSelection(mapSelection);
+    return bridged.status === "opened" ? bridged.mission : null;
+  }, [mapSelection]);
 
   const [text, setText] = useState("");
   const [stage, setStage] = useState<Stage>("idle");
@@ -323,7 +344,7 @@ function CopilotOpsPage() {
       await new Promise((r) => setTimeout(r, 60));
       setStage("retrieving");
 
-      const missionState = useMissionContextStore.getState();
+      const missionState = useMissionWorkspaceStore.getState();
       const mission = activeMissionId ? missionState.missions[activeMissionId] : undefined;
       const payload = {
         query: q,
@@ -333,7 +354,12 @@ function CopilotOpsPage() {
         // state — and offered rather than imposed: the context policy
         // decides whether this subject may reach the query, so a fleet
         // question cannot inherit an open vessel.
-        mission_context: missionContextFor(context, activeMissionId),
+        // The context bar is an explicit choice, so it wins. When it is
+        // empty the officer's map selection stands in — closing the link
+        // that previously stopped at the Context Drawer. Either way the
+        // result is *offered*, and `classifyIntent` still applies it only
+        // when the question's own context policy resolves to `inherit`.
+        mission_context: missionContextFor(context, activeMissionId) ?? missionFromMap,
         // Legacy fields, retained for un-migrated consumers. They name a
         // subject without saying what kind it is, which is why
         // `mission_context` supersedes them.

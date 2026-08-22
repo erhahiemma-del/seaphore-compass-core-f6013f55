@@ -24,11 +24,16 @@
  *
  * ## This is not the mission *store*
  *
- * `@/stores/mission-context.store` persists the rich per-investigation
- * workspace (evidence, tasks, hypotheses, conversation). This module owns
- * only the question "what, if anything, is the officer looking at?", in a
- * form the orchestration pipeline can consume without importing a React
- * store. The store adopts this shape; it does not compete with it.
+ * `@/stores/mission-workspace.store` holds `MissionWorkspaceState` — the
+ * rich per-investigation workspace (evidence, tasks, hypotheses,
+ * conversation). This module owns only the question "what, if anything,
+ * is the officer looking at?", in a form the orchestration pipeline can
+ * consume without importing a React store.
+ *
+ * The two were once both called `MissionContext`. They are separate by
+ * design, not by accident: this one is the input to `ambientEntityOf()`
+ * and therefore part of the query-isolation boundary, so it stays narrow
+ * and fully typed. The store does not compete with it.
  */
 import type { EntityKind, ResolvedEntity } from "./understanding/types";
 

@@ -124,6 +124,7 @@ export {
 
 export type {
   MapCamera,
+  MapControlOptions,
   MapRenderer,
   MapRendererDependencies,
   MapRendererMountOptions,
@@ -202,6 +203,15 @@ export {
   type FreshnessBand,
   type FreshnessThresholds,
 } from "./freshness";
+
+// What a map surface is entitled to claim about its own data.
+export {
+  DATA_STATE_LABELS,
+  resolveMapDataState,
+  type MapDataState,
+  type MapDataStateInput,
+  type MapDataStateResult,
+} from "./data-state";
 
 export {
   REPLAY_SPEEDS,

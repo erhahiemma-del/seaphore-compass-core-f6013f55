@@ -28,6 +28,7 @@ import {
   sgs,
   useMapSelector,
   useMapSessionStore,
+  type MapControlOptions,
   type MapEventBus,
   type MapRenderer,
   type SharedGeospatialService,
@@ -35,7 +36,27 @@ import {
   type VesselSource,
 } from "@/services/geospatial";
 
+/**
+ * How much of the map's chrome to show.
+ *
+ * A presentation choice, not a second map. Both modes mount the same
+ * renderer, read the same `SharedGeospatialService`, draw the same layers
+ * and write selection to the same place — `overview` simply asks for less
+ * furniture, because a dashboard tile with a scale bar and a compass is a
+ * command surface that happens to be small.
+ */
+export type MapCanvasMode = "command" | "overview";
+
+const MODE_CONTROLS: Readonly<Record<MapCanvasMode, MapControlOptions>> = {
+  command: { navigation: true, compass: true, scale: true },
+  // Zoom only. No compass — a dashboard overview is never rotated — and no
+  // scale bar, which is unreadable at tile size.
+  overview: { navigation: true, compass: false, scale: false },
+};
+
 export interface MapCanvasProps {
+  /** Presentation mode. Defaults to the full command surface. */
+  readonly mode?: MapCanvasMode;
   /** Renderer to attach. Defaults to the MapLibre adapter. */
   readonly renderer?: MapRenderer;
   /** Where vessels come from. Defaults to an empty source. */
@@ -88,6 +109,7 @@ export interface VesselFeedState {
 }
 
 export function MapCanvas({
+  mode = "command",
   renderer: injectedRenderer,
   vesselSource,
   service = sgs,
@@ -156,6 +178,9 @@ export function MapCanvas({
         minZoom: MAP_DEFAULTS.minZoom,
         maxZoom: MAP_DEFAULTS.maxZoom,
         maxBounds: MAP_DEFAULTS.maxBounds,
+        // Presentation only. The overview surface reads exactly the same
+        // state from the same service — it simply shows less chrome.
+        controls: MODE_CONTROLS[mode],
       })
       .then(() => {
         if (cancelled) return;
@@ -177,7 +202,10 @@ export function MapCanvas({
       renderer.destroy();
       setStatus("idle");
     };
-  }, [renderer, engine, service, setRenderer, setStatus, setError]);
+    // `mode` is read at mount because controls are attached during
+    // `mount()`. Listing it here remounts on a mode change, which is
+    // correct: MapLibre has no API to remove a control set afterwards.
+  }, [mode, renderer, engine, service, setRenderer, setStatus, setError]);
 
   // ── Layer visibility and opacity follow SGS ───────────────────────────
   useEffect(

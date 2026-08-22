@@ -5,7 +5,7 @@
  * officer would miss if the Copilot only answered what was asked.
  */
 import type { OIEResult } from "@/services/oie/types";
-import type { MissionContext } from "@/stores/mission-context.store";
+import type { MissionWorkspaceState } from "@/stores/mission-workspace.store";
 import type { ProactiveNudge } from "./types";
 
 function has(obj: unknown, key: string): boolean {
@@ -19,7 +19,7 @@ function readString(obj: unknown, key: string): string | null {
 }
 
 export function scanForNudges(
-  mission: MissionContext | null,
+  mission: MissionWorkspaceState | null,
   oie: OIEResult | null,
 ): ProactiveNudge[] {
   const nudges: ProactiveNudge[] = [];

@@ -142,8 +142,19 @@ export class MapLibreRenderer implements MapRenderer {
 
     this.map = map;
 
-    map.addControl(new maplibre.NavigationControl({ showCompass: true }), "top-left");
-    map.addControl(new maplibre.ScaleControl({ maxWidth: 120, unit: "nautical" }), "bottom-left");
+    // Chrome. Defaults preserve the command-surface appearance exactly, so
+    // a caller that passes nothing sees no change.
+    const controls = options.controls ?? {};
+    if (controls.navigation !== false) {
+      map.addControl(
+        new maplibre.NavigationControl({ showCompass: controls.compass !== false }),
+        "top-left",
+      );
+    }
+    if (controls.scale !== false) {
+      map.addControl(new maplibre.ScaleControl({ maxWidth: 120, unit: "nautical" }), "bottom-left");
+    }
+    // Not optional: CARTO and OpenStreetMap require attribution.
     map.addControl(
       new maplibre.AttributionControl({
         compact: true,

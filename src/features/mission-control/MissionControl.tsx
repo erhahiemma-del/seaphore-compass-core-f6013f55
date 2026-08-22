@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useCallback, useMemo, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getIntelligenceCoverage } from "@/lib/intelligence-coverage.functions";
 import { IntelligenceReadinessCard } from "@/components/intelligence/IntelligenceReadinessCard";
@@ -16,6 +16,7 @@ import {
   Info,
   Landmark,
   Radar,
+  Radio,
   Ship,
   ShieldCheck,
   Target,
@@ -27,7 +28,8 @@ import { PanelCard } from "@/components/panel-card";
 import { ConfidenceChip, type ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
 import { ConfidenceLegend } from "@/components/confidence-legend";
 import { RiskPill } from "@/components/intelligence/RiskPill";
-import { GulfOfGuineaMap } from "@/components/gulf-of-guinea-map";
+import { MapCanvas, type VesselFeedState } from "@/features/maritime/MapCanvas";
+import { resolveMapDataState, type MapDataStateResult, type Vessel } from "@/services/geospatial";
 import { MissionCommandBar } from "@/components/mission-command-bar";
 import { useHandoffNavigate } from "@/lib/nav-context";
 import { useRenderTrace } from "@/lib/perf/hooks";
@@ -35,7 +37,6 @@ import { cn } from "@/lib/utils";
 import {
   COMPLIANCE_METRICS,
   INTELLIGENCE_FEED,
-  MAP_VESSELS,
   PORT_CONGESTION,
   RECENT_BRIEFINGS,
   RIBBON_KPIS,
@@ -103,7 +104,7 @@ export function MissionControl() {
         <ConfidenceLegend />
 
         <div className="grid gap-4 lg:grid-cols-[1.55fr_1fr]">
-          <LiveMapPanel />
+          <MaritimePicturePanel />
           <IntelligenceFeedPanel />
         </div>
 
@@ -207,36 +208,139 @@ function Ribbon() {
   );
 }
 
-/* ---------------- Live Map Panel ---------------- */
+/* ---------------- Maritime Picture Panel ---------------- */
 
-function LiveMapPanel() {
-  const navigate = useNavigate();
+/**
+ * Mission Control's geographic overview.
+ *
+ * ## What changed and why
+ *
+ * This panel previously rendered a hand-drawn SVG over a hardcoded
+ * `MAP_VESSELS` array, under a pulsing "LIVE" badge whose `live` prop
+ * defaulted to `true`. Officers were shown fabricated vessels —
+ * MV Ocean Pearl among them, at `x`/`y` percentages rather than
+ * coordinates — presented as current maritime intelligence.
+ *
+ * It now mounts the canonical `MapCanvas`, so the geography is real even
+ * when the vessel feed is not, and the badge is *derived* from the feed
+ * rather than asserted by a prop. When nothing is connected the map still
+ * draws Nigeria's EEZ and ports — verified static geography — and says
+ * plainly that no vessel source is connected.
+ *
+ * ## Not a second Maritime Command
+ *
+ * Deliberately no drawer, no layer panel, no timeline, no mode bar. This
+ * is a dashboard-level situational overview with one call to action:
+ * open the full environment. Selection still flows through the shared
+ * `sgs` singleton, so a vessel chosen here is the same selection
+ * `/maritime` will open with.
+ */
+function MaritimePicturePanel() {
+  const [vessels, setVessels] = useState<readonly Vessel[]>([]);
+  const [feed, setFeed] = useState<VesselFeedState>({
+    loading: true,
+    error: null,
+    sourceId: null,
+    lastAppliedAt: null,
+  });
+
+  const handleVessels = useCallback((next: readonly Vessel[], nextFeed: VesselFeedState) => {
+    setVessels(next);
+    setFeed(nextFeed);
+  }, []);
+
+  // The claim is computed from the feed, never asserted by this component.
+  const dataState = resolveMapDataState({
+    loading: feed.loading,
+    error: feed.error,
+    sourceId: feed.sourceId,
+    lastAppliedAt: feed.lastAppliedAt,
+    recordCount: vessels.length,
+  });
+
   return (
     <PanelCard variant="edge" className="flex h-[520px] flex-col">
       <PanelHeader
-        title="Live Maritime Picture"
-        subtitle="Gulf of Guinea · vessel positions coloured by risk"
-        to="/vessel"
-        toLabel="Open Vessel Intelligence"
+        title="Maritime Picture"
+        subtitle="Nigerian EEZ and approaches"
+        to="/maritime"
+        toLabel="Open Maritime Command"
       />
-      <div className="flex-1 p-4 pt-0">
-        <GulfOfGuineaMap
-          vessels={MAP_VESSELS}
-          live
-          onVesselClick={(v) =>
-            navigate({
-              to: "/entity/$id",
-              params: { id: v.id },
-              search: {
-                entityId: v.id,
-                fromStage: "Monitor",
-                fromRoute: "/",
-              },
-            })
-          }
-        />
+
+      <div className="flex items-center gap-2 px-4 pb-2">
+        <DataStateBadge state={dataState} />
+        <span className="text-[11px] text-muted-foreground">{dataState.reason}</span>
+      </div>
+
+      <div className="relative flex-1 overflow-hidden rounded-b-[inherit]">
+        {/*
+          Overview mode: the same engine, same service, same layers as
+          /maritime — less chrome. Selection writes to the shared `sgs`
+          singleton, so a vessel chosen here is already selected when the
+          officer opens Maritime Command.
+        */}
+        <MapCanvas mode="overview" onVesselsChanged={handleVessels} />
+        {dataState.state !== "LIVE" ? <MaritimeDataNotice state={dataState} /> : null}
       </div>
     </PanelCard>
+  );
+}
+
+/**
+ * Status when vessel intelligence is not live.
+ *
+ * Deliberately a small corner card, not a takeover. The map stays fully
+ * visible and usable underneath: the EEZ, coastline and ports are
+ * verified geography that remain true whether or not a vessel feed is
+ * connected, and hiding them would discard real intelligence because a
+ * different layer is missing.
+ *
+ * `pointer-events-none` so the officer can still pan and zoom through it.
+ */
+function MaritimeDataNotice({ state }: { state: MapDataStateResult }) {
+  return (
+    <div
+      data-testid="maritime-data-notice"
+      className="pointer-events-none absolute bottom-3 left-3 max-w-[300px] rounded border border-border/60 bg-background/92 p-2.5 shadow-sm backdrop-blur-sm"
+    >
+      <p className="text-[9.5px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+        Maritime data
+      </p>
+      <p className="mt-0.5 text-[12px] font-medium text-foreground">{state.label}</p>
+      <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{state.reason}</p>
+      <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+        Geographic and verified intelligence layers remain accessible.
+      </p>
+    </div>
+  );
+}
+
+/**
+ * The data-state badge.
+ *
+ * Only `LIVE` animates. The pulse is a claim about currency, so it is
+ * bound to the one state entitled to make it.
+ */
+function DataStateBadge({ state }: { state: MapDataStateResult }) {
+  const tone: Record<MapDataStateResult["state"], string> = {
+    LIVE: "border-emerald-600/40 bg-emerald-600/10 text-emerald-700",
+    DELAYED: "border-amber-600/40 bg-amber-600/10 text-amber-700",
+    DATA_UNAVAILABLE: "border-slate-500/40 bg-slate-500/10 text-slate-600",
+    DEMO: "border-violet-600/40 bg-violet-600/10 text-violet-700",
+  };
+
+  return (
+    <span
+      data-testid="map-data-state"
+      data-state={state.state}
+      className={cn(
+        "inline-flex shrink-0 items-center gap-1.5 rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em]",
+        tone[state.state],
+      )}
+    >
+      <Radio className={cn("h-3 w-3", state.isLive && "animate-pulse")} aria-hidden />
+      {state.label}
+    </span>
   );
 }
 
@@ -728,6 +832,7 @@ function PanelHeader({
   title: string;
   subtitle?: string;
   to:
+    | "/maritime"
     | "/detect"
     | "/investigate"
     | "/decide"

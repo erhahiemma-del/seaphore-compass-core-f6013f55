@@ -8,7 +8,6 @@
  */
 import type { ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
 import type { RiskLevel } from "@/components/intelligence/RiskPill";
-import type { MapVessel } from "@/components/gulf-of-guinea-map";
 
 export type MetricKey = "manifest" | "vessel" | "container" | "revenue" | "risk" | "historical";
 
@@ -354,39 +353,4 @@ export const RECENT_BRIEFINGS: Briefing[] = [
     format: "PDF",
     confidence: "inferred",
   },
-];
-
-export const MAP_VESSELS: MapVessel[] = [
-  { id: "V1", imo: "9432187", name: "MV Ocean Pearl", x: 28, y: 44, risk: "high", watchlist: true },
-  { id: "V2", imo: "9187562", name: "MV Crimson Endeavour", x: 40, y: 38, risk: "high" },
-  {
-    id: "V3",
-    imo: "9722145",
-    name: "Blue Horizon",
-    x: 46,
-    y: 50,
-    risk: "sanctioned",
-    watchlist: true,
-  },
-  { id: "V4", imo: "9601028", name: "Star of Lagos", x: 34, y: 55, risk: "normal" },
-  { id: "V5", imo: "9445310", name: "Delta Nomad", x: 55, y: 46, risk: "medium", watchlist: true },
-  { id: "V6", imo: "9298471", name: "Niger Ranger", x: 62, y: 52, risk: "normal" },
-  { id: "V7", imo: "9812774", name: "Atlantic Merit", x: 20, y: 36, risk: "normal" },
-  { id: "V8", imo: "9558123", name: "Bight Falcon", x: 68, y: 58, risk: "medium" },
-  { id: "V9", imo: "9905442", name: "Cape Fortune", x: 76, y: 62, risk: "normal" },
-  { id: "V10", imo: "9224871", name: "Onne Voyager", x: 66, y: 60, risk: "high" },
-  { id: "V11", imo: "9781200", name: "Bonny Trader", x: 71, y: 64, risk: "sanctioned" },
-  { id: "V12", imo: "9660098", name: "Gulf Sentinel", x: 50, y: 44, risk: "normal" },
-  { id: "V13", imo: "9401336", name: "MV Warri Star", x: 52, y: 58, risk: "medium" },
-  { id: "V14", imo: "9310022", name: "Kaduna Voyager", x: 30, y: 48, risk: "normal" },
-  {
-    id: "V15",
-    imo: "9877110",
-    name: "Escravos Reach",
-    x: 44,
-    y: 56,
-    risk: "medium",
-    watchlist: true,
-  },
-  { id: "V16", imo: "9556674", name: "Ibom Progress", x: 74, y: 66, risk: "normal" },
 ];

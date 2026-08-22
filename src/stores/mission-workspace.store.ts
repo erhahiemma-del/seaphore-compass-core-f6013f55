@@ -1,17 +1,32 @@
 /**
- * mission-context.store — persistent Mission Context.
+ * mission-workspace.store — per-investigation UI workspace state.
  *
  * A single per-investigation object every module reads and updates. It
- * carries the full operational state (vessel, voyage, manifest, port,
- * companies, alerts, evidence, decisions, tasks, hypotheses, next
+ * carries the full operational working state (vessel, voyage, manifest,
+ * port, companies, alerts, evidence, decisions, tasks, hypotheses, next
  * actions) plus the shared Copilot `conversation`. Every Copilot
  * surface (global launcher modal, /copilot page, centre panels) reads
  * from and writes to the same slice, so moving between modules never
  * loses context.
  *
- * Persisted to localStorage under `seaphore.mission-context.v1`. A
- * future server-side snapshot table can hydrate this on sign-in; for
- * now the store is authoritative on the client.
+ * ## Why this is not `MissionContext`
+ *
+ * It was called that, and shared the name with
+ * `services/orchestration/mission-context.ts` while having an entirely
+ * different shape and responsibility. That one is a narrow, fully typed
+ * contract — `{ investigationId, subject, openedAt }` — describing *one
+ * subject* for the classifier, and it is the input to
+ * `ambientEntityOf()`, the single function guarding against an open
+ * investigation contaminating an unrelated query.
+ *
+ * This is a UI accumulator: fifteen slices, most typed `unknown`, plus
+ * conversation history. Merging the two would push all of that into the
+ * contract that protects query isolation. They are deliberately
+ * separate, and now named accordingly.
+ *
+ * Persisted to localStorage under `seaphore.mission-context.v1` — the
+ * storage key is intentionally unchanged, so existing sessions rehydrate
+ * across this rename rather than silently losing their workspace.
  */
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
@@ -41,7 +56,7 @@ export interface ConversationEntry {
   instance?: string;
 }
 
-export interface MissionContext {
+export interface MissionWorkspaceState {
   investigationId: string;
   title?: string;
   vessel?: unknown;
@@ -69,7 +84,7 @@ interface MissionState {
    * officer looking at the whole fleet was silently looking at one vessel.
    */
   activeId: string | null;
-  missions: Record<string, MissionContext>;
+  missions: Record<string, MissionWorkspaceState>;
   setActive: (id: string | null) => void;
   /**
    * Open a subject. Replaces whatever was open rather than stacking: a
@@ -79,11 +94,11 @@ interface MissionState {
   openInvestigation: (id: string, title?: string) => void;
   /** Close the open investigation, returning to null. */
   closeInvestigation: () => void;
-  ensureMission: (id: string, title?: string) => MissionContext;
+  ensureMission: (id: string, title?: string) => MissionWorkspaceState;
   setMissionSlice: <K extends MissionSliceKey>(
     id: string,
     key: K,
-    value: MissionContext[K],
+    value: MissionWorkspaceState[K],
   ) => void;
   appendConversation: (id: string, entry: Omit<ConversationEntry, "id" | "ts">) => void;
   resetConversation: (id: string) => void;
@@ -92,7 +107,7 @@ interface MissionState {
 
 const AMBIENT_ID = "ambient";
 
-function emptyMission(id: string, title?: string): MissionContext {
+function emptyMission(id: string, title?: string): MissionWorkspaceState {
   return {
     investigationId: id,
     title,
@@ -108,7 +123,7 @@ function emptyMission(id: string, title?: string): MissionContext {
   };
 }
 
-export const useMissionContextStore = create<MissionState>()(
+export const useMissionWorkspaceStore = create<MissionState>()(
   persist(
     (set, get) => ({
       // No investigation until the officer opens one.
@@ -197,8 +212,8 @@ export const useMissionContextStore = create<MissionState>()(
  * Callers must handle null — that is the point. A component that renders
  * a vessel name regardless is how the hardcoded subject survived.
  */
-export function useActiveMission(): MissionContext | null {
-  return useMissionContextStore((s) => (s.activeId ? (s.missions[s.activeId] ?? null) : null));
+export function useActiveMission(): MissionWorkspaceState | null {
+  return useMissionWorkspaceStore((s) => (s.activeId ? (s.missions[s.activeId] ?? null) : null));
 }
 
 /**
@@ -206,8 +221,8 @@ export function useActiveMission(): MissionContext | null {
  * with no investigation open (e.g. the global Copilot conversation log).
  * Distinct from an investigation: it is never a query subject.
  */
-export function useAmbientMission(): MissionContext {
-  return useMissionContextStore((s) => s.missions[AMBIENT_ID] ?? emptyMission(AMBIENT_ID));
+export function useAmbientMission(): MissionWorkspaceState {
+  return useMissionWorkspaceStore((s) => s.missions[AMBIENT_ID] ?? emptyMission(AMBIENT_ID));
 }
 
 export const MISSION_AMBIENT_ID = AMBIENT_ID;
