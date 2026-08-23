@@ -23,6 +23,9 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { ContextRail } from "@/components/layout/ContextRail";
+import { useFocusSubjectStore } from "@/stores/focus-subject.store";
+
 import { PanelCard } from "@/components/panel-card";
 import { ConfidenceChip, type ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
 import { ConfidenceLegend } from "@/components/confidence-legend";
