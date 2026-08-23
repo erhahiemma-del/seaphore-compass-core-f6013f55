@@ -16,10 +16,11 @@
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
     "test:e2e": "playwright test",
-    "validate": "bun run lint && bun run typecheck && bun run test:unit && bun run build",
+    "validate": "bun run lint && bun run typecheck && bun run test:unit && bun run build && bun run verify:bundle",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "prepare": "husky || true"
+    "prepare": "husky || true",
+    "verify:bundle": "node scripts/verify-prod-bundle.mjs .output/public"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [

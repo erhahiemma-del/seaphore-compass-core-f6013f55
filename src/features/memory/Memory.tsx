@@ -27,6 +27,7 @@ import { PanelCard } from "@/components/panel-card";
 import { PanelHead } from "@/components/panel-head";
 import { RiskPill } from "@/components/intelligence/RiskPill";
 import { cn } from "@/lib/utils";
+import { DemoDataNotice } from "@/components/intelligence/DemoDataNotice";
 
 import {
   ENTITY_SUBTABS,
@@ -111,10 +112,10 @@ const RECOMMENDED_ACTIONS = [
 ];
 
 const KEY_INSIGHTS_TAGGED = [
-  { text: "This vessel is owned by Oceanic Lines Ltd.", tier: "observed" as const },
+  { text: "This vessel is owned by Oceanic Lines Ltd.", tier: "unconfirmed" as const },
   { text: "Beneficial ownership traces to Mr. Adewale Ogunleye.", tier: "inferred" as const },
-  { text: "Visited 6 high-risk ports in the last 12 months.", tier: "observed" as const },
-  { text: "Associated with 7 investigations across 3 countries.", tier: "verified" as const },
+  { text: "Visited 6 high-risk ports in the last 12 months.", tier: "unconfirmed" as const },
+  { text: "Associated with 7 investigations across 3 countries.", tier: "unconfirmed" as const },
   { text: "Revenue impact estimated at ₦612M.", tier: "inferred" as const },
 ];
 
@@ -300,7 +301,7 @@ const KPI_DRILLDOWNS: Record<
     title: "Investigated",
     subtitle: "Distinct investigations referencing MV Ocean Pearl",
     value: `${ENTITY_META.investigated} times`,
-    confidence: "verified",
+    confidence: "unconfirmed",
     explanation:
       "Count of distinct investigation records where MV Ocean Pearl is a named subject entity. Aggregated across all closed and open cases in the Seaphore case ledger.",
     sources: [
@@ -309,7 +310,7 @@ const KPI_DRILLDOWNS: Record<
         label: "Seaphore Case Ledger — subject_entity index",
         system: "Seaphore",
         timestamp: "2026-06-04 09:12 UTC",
-        confidence: "verified",
+        confidence: "unconfirmed",
         reference: "ledger#IMO/9457893",
       },
       {
@@ -317,7 +318,7 @@ const KPI_DRILLDOWNS: Record<
         label: "NIMASA cross-reference report",
         system: "NIMASA",
         timestamp: "2026-05-30 14:00 UTC",
-        confidence: "verified",
+        confidence: "unconfirmed",
         reference: "NR-2026-Q2-118",
       },
     ],
@@ -340,7 +341,7 @@ const KPI_DRILLDOWNS: Record<
     kind: "kpi",
     title: "Open Cases",
     value: String(ENTITY_META.openCases),
-    confidence: "verified",
+    confidence: "unconfirmed",
     explanation:
       "Investigations with status ≠ CLOSED that name this vessel as a subject. Counted directly from the case ledger.",
     sources: [
@@ -349,7 +350,7 @@ const KPI_DRILLDOWNS: Record<
         label: "INV-2026-00431 · Duty variance review",
         system: "Seaphore",
         timestamp: "2026-06-04 09:12 UTC",
-        confidence: "verified",
+        confidence: "unconfirmed",
         reference: "INV-2026-00431",
       },
       {
@@ -357,7 +358,7 @@ const KPI_DRILLDOWNS: Record<
         label: "INV-2026-00427 · AIS anomaly",
         system: "Seaphore",
         timestamp: "2026-06-02 18:44 UTC",
-        confidence: "verified",
+        confidence: "unconfirmed",
         reference: "INV-2026-00427",
       },
     ],
@@ -388,14 +389,14 @@ const KPI_DRILLDOWNS: Record<
         label: "AIS blackout events (30d)",
         system: "SpireGlobal",
         timestamp: "2026-06-04 08:00 UTC",
-        confidence: "observed",
+        confidence: "unconfirmed",
       },
       {
         id: "s3",
         label: "OFAC / UN sanctions match check",
         system: "OpenSanctions",
         timestamp: "2026-06-04 06:00 UTC",
-        confidence: "verified",
+        confidence: "unconfirmed",
       },
     ],
     audit: [
@@ -413,7 +414,7 @@ const KPI_DRILLDOWNS: Record<
     title: "Confidence",
     subtitle: "Composite evidence quality · Strong",
     value: `${ENTITY_META.confidencePct}%`,
-    confidence: "observed",
+    confidence: "unconfirmed",
     explanation:
       "Blend of source diversity, recency and tier distribution across all facts linked to this entity. 62% of underlying facts are Verified, 26% Observed, 12% Inferred.",
     sources: [
@@ -422,14 +423,14 @@ const KPI_DRILLDOWNS: Record<
         label: "Fact tier distribution",
         system: "Seaphore",
         timestamp: "2026-06-04 09:12 UTC",
-        confidence: "verified",
+        confidence: "unconfirmed",
       },
       {
         id: "s2",
         label: "Source diversity index",
         system: "Seaphore",
         timestamp: "2026-06-04 09:12 UTC",
-        confidence: "observed",
+        confidence: "unconfirmed",
       },
     ],
     audit: [{ at: "2026-06-04 09:12 UTC", actor: "system", action: "Confidence recomputed" }],
@@ -456,7 +457,7 @@ const KPI_DRILLDOWNS: Record<
         label: "Nigerian Customs tariff schedule 2026",
         system: "NCS",
         timestamp: "2026-01-01",
-        confidence: "verified",
+        confidence: "unconfirmed",
       },
     ],
     audit: [
@@ -516,7 +517,7 @@ function rowDrilldown(
         label: "Seaphore ingestion & normalization log",
         system: "Seaphore",
         timestamp: r.date,
-        confidence: "verified",
+        confidence: "unconfirmed",
       },
     ],
     audit: [
@@ -570,6 +571,7 @@ export function MemoryPage() {
 
   return (
     <AppShell title="Institutional Memory" subtitle="Knowledge & Learning" mode="light">
+      <DemoDataNotice surface="Institutional Memory" className="mb-3" />
       <div className="mx-auto max-w-[1600px] space-y-4 p-4 lg:p-6">
         {/* Page title + search */}
         <div className="flex flex-wrap items-end justify-between gap-4">

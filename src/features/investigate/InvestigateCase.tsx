@@ -27,6 +27,7 @@ import {
 } from "@/components/intelligence/KnowledgeGraph";
 import { RiskPill } from "@/components/intelligence/RiskPill";
 import { cn } from "@/lib/utils";
+import { DemoDataNotice } from "@/components/intelligence/DemoDataNotice";
 import {
   AI_FINDINGS,
   AUDIT_TRAIL,
@@ -112,6 +113,7 @@ function Workspace({ inv }: { inv: Investigation }) {
 
   return (
     <AppShell title="Investigate" subtitle="Voyage Workspace" mode="light">
+      <DemoDataNotice surface="This case workspace" className="mb-3" />
       <div className="mx-auto max-w-[1600px] space-y-4 p-4 lg:p-6">
         {/* INV-1 Case Header Bar */}
         <CaseHeader inv={inv} />
@@ -291,7 +293,7 @@ function Workspace({ inv }: { inv: Investigation }) {
                         <th className="px-3 py-2 text-left">Category</th>
                         <th className="px-3 py-2 text-left">Confidence</th>
                         <th className="px-3 py-2 text-left">Evidence</th>
-                        <th className="px-3 py-2 text-left">First Observed</th>
+                        <th className="px-3 py-2 text-left">First Seen</th>
                         <th className="px-3 py-2 text-left">Status</th>
                       </tr>
                     </thead>
@@ -314,7 +316,7 @@ function Workspace({ inv }: { inv: Investigation }) {
                             {f.confidencePct}%
                           </td>
                           <td className="px-3 py-2 text-slate">{f.evidenceCount}</td>
-                          <td className="px-3 py-2 text-slate">{f.firstObserved}</td>
+                          <td className="px-3 py-2 text-slate">{f.firstSeen}</td>
                           <td className="px-3 py-2">
                             <span
                               className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${
