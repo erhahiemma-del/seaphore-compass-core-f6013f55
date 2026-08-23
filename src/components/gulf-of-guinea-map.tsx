@@ -145,6 +145,9 @@ export function GulfOfGuineaMap({
   const drag = useRef<{ id: number; x: number; y: number } | null>(null);
   const onPointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0) return;
+    // Never capture the pointer over an interactive marker or control — doing
+    // so swallows its click.
+    if ((e.target as HTMLElement).closest("button,label,input")) return;
     drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
