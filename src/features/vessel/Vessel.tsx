@@ -95,6 +95,24 @@ export function VesselCentre() {
   const [selectedId, setSelectedId] = useState<string>("v-ocean-pearl");
   const v = vesselById(selectedId)!;
 
+  const { focused, dismiss, isReceded } = useCentreFocus(
+    useMemo(
+      () => ({
+        kind: "vessel" as const,
+        id: v.id,
+        title: v.name,
+        descriptor: `IMO ${v.imo} · ${v.type} · ${v.flag}`,
+        facts: [
+          { label: "Voyage", value: v.voyage, confidence: "verified" },
+          { label: "Risk score", value: String(v.riskScore), confidence: "observed" },
+          { label: "AIS gap (24h)", value: `${v.aisBlackoutHours.toFixed(1)}h`, confidence: "observed" },
+        ],
+      }),
+      [v],
+    ),
+  );
+
+
   // VES-2 mock voyage history for the selected vessel
   const history = Array.from({ length: 8 }).map((_, i) => {
     const port = ["APP", "TCT", "ONN", "PHC", "CAL"][i % 5] as "APP";
