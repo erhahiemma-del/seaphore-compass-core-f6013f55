@@ -83,8 +83,10 @@ export function AppShell({ children, title, subtitle, mode = "light" }: AppShell
             <TopBar title={title} subtitle={subtitle} />
             <main className="flex-1 overflow-x-hidden">{children}</main>
             <AppFooter />
+            <GoToPalette />
             <GlobalCopilotLauncher />
           </SidebarInset>
+
         </div>
       </SidebarProvider>
     </MapProviderRoot>
