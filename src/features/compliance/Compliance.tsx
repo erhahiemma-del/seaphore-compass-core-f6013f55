@@ -34,6 +34,7 @@ import { IntelMap, type IntelMapEntity } from "@/components/intelligence/IntelMa
 import { EntitiesRequiringScreening } from "@/components/compliance/EntitiesRequiringScreening";
 import { PORTS, VESSELS, vesselById } from "@/lib/intel-centre-data";
 import { cn } from "@/lib/utils";
+import { DemoDataNotice } from "@/components/intelligence/DemoDataNotice";
 
 /* ============================================================
  * Compliance Intelligence Centre
@@ -471,7 +472,7 @@ function ComplianceProfilePanel() {
           <div className="mt-0.5 flex items-center gap-1 text-[11.5px] text-[color:var(--color-red)]">
             <ArrowUpRight className="h-3 w-3 rotate-180" /> High Risk
           </div>
-          <ConfidenceChip tier="verified" size={9} />
+          <ConfidenceChip tier="unconfirmed" size={9} />
         </div>
       </div>
 
@@ -752,7 +753,7 @@ const PORT_ENTITIES: IntelMapEntity[] = PORTS.map((p) => ({
   name: p.name,
   position: { lat: p.lat, lng: p.lng },
   risk: "unknown",
-  confidence: "verified",
+  confidence: "unconfirmed",
   subtitle: `${p.code} · ${p.city}`,
 }));
 
@@ -789,7 +790,7 @@ function buildComplianceMapEntities(mask: number): IntelMapEntity[] {
       name: v.name,
       position: { lat: port.lat - sinRad * 0.4 - 0.15, lng: port.lng + cosRad * 0.4 },
       risk: v.riskLevel,
-      confidence: v.sanctionsHit ? "inferred" : v.status === "validated" ? "verified" : "observed",
+      confidence: v.sanctionsHit ? "inferred" : "unconfirmed",
       subtitle: `${v.type} · IMO ${v.imo}`,
       meta: [
         ["Flag", v.flag],
@@ -829,6 +830,7 @@ export function ComplianceCentre() {
       subtitle="Regulatory compliance. Detect violations. Reduce risk. Protect revenue."
       mode="dark"
     >
+      <DemoDataNotice surface="Compliance Intelligence" className="mb-3" />
       <div className="space-y-3 p-4">
         {/* Search bar */}
         <div className="flex items-center gap-2 rounded-md border border-line/60 bg-surface-1 px-3 py-2">

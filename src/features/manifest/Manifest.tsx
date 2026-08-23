@@ -32,6 +32,7 @@ import { PanelStateNotice } from "@/components/intelligence/PanelStateNotice";
 
 import { cargoCentreBySlug } from "@/lib/intelligence/cargo-workspace-projection";
 import { useCargoCentreProjection } from "@/features/cargo-workspace/use-cargo-projection";
+import { DemoDataNotice } from "@/components/intelligence/DemoDataNotice";
 
 /** The manifest centre definition — resolved from the frozen CARGO_CENTRES registry. */
 const MANIFEST_CENTRE = cargoCentreBySlug("manifest")!;
@@ -62,181 +63,186 @@ export function ManifestCentre() {
   const hasData = projection.state === "ACTIVE" && !!projection.data;
 
   return (
-    <IntelCentreShell
-      title="Manifest Intelligence"
-      subtitle="Declared manifests, bills of lading and voyage records"
-      kpiRibbon={
-        kpis.length > 0 ? (
-          <KpiRibbon items={kpis} />
-        ) : (
-          <PanelStateNotice
-            state={projection.state}
-            detail={projection.stateDetail}
-            href="/admin/provider-health"
-            hrefLabel="Inspect provider health"
-          />
-        )
-      }
-      tabs={[
-        { key: "workspace", label: "Workspace" },
-        { key: "evidence", label: "Evidence", count: projection.data?.evidenceCount },
-        { key: "timeline", label: "Timeline" },
-        { key: "analytics", label: "Analytics" },
-      ]}
-      activeTab={tab}
-      onTabChange={setTab}
-      tabTrailing={
-        <>
-          <button className="inline-flex items-center gap-1 rounded px-2 py-1 hover:bg-surface-2/50">
-            <LineChart className="h-3 w-3" /> Analytics
-          </button>
-          <button className="inline-flex items-center gap-1 rounded px-2 py-1 hover:bg-surface-2/50">
-            <Download className="h-3 w-3" /> Export
-          </button>
-          <button className="inline-flex items-center gap-1 rounded px-2 py-1 hover:bg-surface-2/50">
-            <Columns3 className="h-3 w-3" /> Columns
-          </button>
-        </>
-      }
-      filters={
-        <>
-          <FilterSearch placeholder="Search vessel, IMO, manifest…" />
-          <FilterBlock label="Saved views">
-            <SavedViewList
-              views={["High risk arrivals", "Duplicates today", "Amended manifests"]}
-            />
-          </FilterBlock>
-          <FilterBlock label="Time range">
-            <CheckList
-              options={["Last 24h", "Last 7d", "Last 30d"]}
-              defaultChecked={["Last 24h"]}
-            />
-          </FilterBlock>
-          <FilterBlock label="Port">
-            <CheckList
-              options={["Apapa", "Tin Can", "Onne", "Port Harcourt", "Calabar"]}
-              defaultChecked={["Apapa", "Tin Can"]}
-            />
-          </FilterBlock>
-          <FilterBlock label="Status">
-            <CheckList options={["Validated", "Pending", "Duplicate", "Amended"]} />
-          </FilterBlock>
-          <FilterBlock label="Risk">
-            <CheckList options={["High", "Medium", "Low"]} defaultChecked={["High", "Medium"]} />
-          </FilterBlock>
-          <FilterBlock label="Agency">
-            <CheckList options={["NCS", "NPA", "NIMASA"]} />
-          </FilterBlock>
-          <FilterBlock label="Watchlists">
-            <CheckList options={["High Risk Vessels", "Sanctioned Entities", "Repeat Offenders"]} />
-          </FilterBlock>
-        </>
-      }
-      main={
-        <div className="space-y-4">
-          {!hasData ? (
-            <Section>
-              <PanelStateNotice
-                state={projection.state}
-                detail={isLoading ? "Loading intelligence coverage…" : projection.stateDetail}
-                href={MANIFEST_CENTRE.capabilityHref}
-                hrefLabel="Inspect capability"
-              />
-              <div className="mt-3 space-y-1">
-                {projection.recommendedActions.map((a) => (
-                  <p key={a} className="flex items-start gap-1.5 text-[12px] text-foreground/80">
-                    <ArrowRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate" />
-                    {a}
-                  </p>
-                ))}
-              </div>
-            </Section>
+    <>
+      <DemoDataNotice surface="The tables on this page" className="mb-3" />
+      <IntelCentreShell
+        title="Manifest Intelligence"
+        subtitle="Declared manifests, bills of lading and voyage records"
+        kpiRibbon={
+          kpis.length > 0 ? (
+            <KpiRibbon items={kpis} />
           ) : (
-            <>
-              {/* Evidence timeline from the Canonical UIP */}
-              <Section title="Manifest Evidence · Canonical UIP">
-                <ol className="divide-y divide-line/60">
-                  {projection.data!.timeline.map((t) => (
-                    <li key={t.id} className="flex items-start gap-3 py-2.5">
-                      <span className="font-mono whitespace-nowrap text-[11px] text-slate">
-                        {t.at.slice(0, 16).replace("T", " ")}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[12px] font-semibold text-foreground">
-                          {t.title}
-                        </span>
-                        <span className="block truncate text-[11px] text-slate">{t.detail}</span>
-                      </span>
-                      <ConfidenceChip tier={t.confidence} size={9} />
-                    </li>
+            <PanelStateNotice
+              state={projection.state}
+              detail={projection.stateDetail}
+              href="/admin/provider-health"
+              hrefLabel="Inspect provider health"
+            />
+          )
+        }
+        tabs={[
+          { key: "workspace", label: "Workspace" },
+          { key: "evidence", label: "Evidence", count: projection.data?.evidenceCount },
+          { key: "timeline", label: "Timeline" },
+          { key: "analytics", label: "Analytics" },
+        ]}
+        activeTab={tab}
+        onTabChange={setTab}
+        tabTrailing={
+          <>
+            <button className="inline-flex items-center gap-1 rounded px-2 py-1 hover:bg-surface-2/50">
+              <LineChart className="h-3 w-3" /> Analytics
+            </button>
+            <button className="inline-flex items-center gap-1 rounded px-2 py-1 hover:bg-surface-2/50">
+              <Download className="h-3 w-3" /> Export
+            </button>
+            <button className="inline-flex items-center gap-1 rounded px-2 py-1 hover:bg-surface-2/50">
+              <Columns3 className="h-3 w-3" /> Columns
+            </button>
+          </>
+        }
+        filters={
+          <>
+            <FilterSearch placeholder="Search vessel, IMO, manifest…" />
+            <FilterBlock label="Saved views">
+              <SavedViewList
+                views={["High risk arrivals", "Duplicates today", "Amended manifests"]}
+              />
+            </FilterBlock>
+            <FilterBlock label="Time range">
+              <CheckList
+                options={["Last 24h", "Last 7d", "Last 30d"]}
+                defaultChecked={["Last 24h"]}
+              />
+            </FilterBlock>
+            <FilterBlock label="Port">
+              <CheckList
+                options={["Apapa", "Tin Can", "Onne", "Port Harcourt", "Calabar"]}
+                defaultChecked={["Apapa", "Tin Can"]}
+              />
+            </FilterBlock>
+            <FilterBlock label="Status">
+              <CheckList options={["Validated", "Pending", "Duplicate", "Amended"]} />
+            </FilterBlock>
+            <FilterBlock label="Risk">
+              <CheckList options={["High", "Medium", "Low"]} defaultChecked={["High", "Medium"]} />
+            </FilterBlock>
+            <FilterBlock label="Agency">
+              <CheckList options={["NCS", "NPA", "NIMASA"]} />
+            </FilterBlock>
+            <FilterBlock label="Watchlists">
+              <CheckList
+                options={["High Risk Vessels", "Sanctioned Entities", "Repeat Offenders"]}
+              />
+            </FilterBlock>
+          </>
+        }
+        main={
+          <div className="space-y-4">
+            {!hasData ? (
+              <Section>
+                <PanelStateNotice
+                  state={projection.state}
+                  detail={isLoading ? "Loading intelligence coverage…" : projection.stateDetail}
+                  href={MANIFEST_CENTRE.capabilityHref}
+                  hrefLabel="Inspect capability"
+                />
+                <div className="mt-3 space-y-1">
+                  {projection.recommendedActions.map((a) => (
+                    <p key={a} className="flex items-start gap-1.5 text-[12px] text-foreground/80">
+                      <ArrowRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate" />
+                      {a}
+                    </p>
                   ))}
-                </ol>
+                </div>
               </Section>
-
-              {/* Evidence records with provenance */}
-              <Section title="Evidence Records">
-                <ul className="divide-y divide-line/60">
-                  {projection.data!.evidence.map((e) => (
-                    <li key={e.id} className="py-2.5">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="truncate text-[12px] font-semibold text-foreground">
-                          {e.title}
+            ) : (
+              <>
+                {/* Evidence timeline from the Canonical UIP */}
+                <Section title="Manifest Evidence · Canonical UIP">
+                  <ol className="divide-y divide-line/60">
+                    {projection.data!.timeline.map((t) => (
+                      <li key={t.id} className="flex items-start gap-3 py-2.5">
+                        <span className="font-mono whitespace-nowrap text-[11px] text-slate">
+                          {t.at.slice(0, 16).replace("T", " ")}
                         </span>
-                        <ConfidenceChip tier={e.confidence} size={9} />
-                      </div>
-                      <div className="font-mono mt-0.5 truncate text-[11px] text-slate">
-                        {e.source} · {e.grade} · {e.hash.slice(0, 12)}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </Section>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[12px] font-semibold text-foreground">
+                            {t.title}
+                          </span>
+                          <span className="block truncate text-[11px] text-slate">{t.detail}</span>
+                        </span>
+                        <ConfidenceChip tier={t.confidence} size={9} />
+                      </li>
+                    ))}
+                  </ol>
+                </Section>
 
-              {/* Intelligence status */}
-              <Section title="Intelligence Status">
-                <dl className="space-y-1.5 text-[12px]">
-                  <Row label="Canonical UIP" value={projection.uipId ?? "—"} />
-                  <Row label="Evidence records" value={String(projection.data!.evidenceCount)} />
-                  <Row label="Confidence" value={projection.data!.confidence} />
-                  <Row label="Projection binding" value={MANIFEST_CENTRE.projectionContractId} />
-                </dl>
-                <p className="mt-2 text-[11px] text-slate">
-                  System recommends; officer decides. Evidence first. Explainable always.
-                </p>
-              </Section>
-            </>
-          )}
-        </div>
-      }
-      copilot={
-        <CentreCopilot
-          name="Manifest Copilot"
-          instance="manifest"
-          observed={
-            hasData
-              ? projection.data!.summary.map((s) => ({
-                  title: s.slice(0, 60),
-                  detail: s,
-                  confidence: "observed" as const,
-                }))
-              : [
-                  {
-                    title: "No evidence in session",
-                    detail: projection.stateDetail,
-                    confidence: "inferred" as const,
-                  },
-                ]
-          }
-          recommendations={projection.recommendedActions.map((a) => ({
-            title: a,
-            detail: "System recommends; officer decides.",
-            confidence: "inferred" as const,
-          }))}
-          historical={[]}
-          related={[]}
-        />
-      }
-    />
+                {/* Evidence records with provenance */}
+                <Section title="Evidence Records">
+                  <ul className="divide-y divide-line/60">
+                    {projection.data!.evidence.map((e) => (
+                      <li key={e.id} className="py-2.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="truncate text-[12px] font-semibold text-foreground">
+                            {e.title}
+                          </span>
+                          <ConfidenceChip tier={e.confidence} size={9} />
+                        </div>
+                        <div className="font-mono mt-0.5 truncate text-[11px] text-slate">
+                          {e.source} · {e.grade} · {e.hash.slice(0, 12)}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </Section>
+
+                {/* Intelligence status */}
+                <Section title="Intelligence Status">
+                  <dl className="space-y-1.5 text-[12px]">
+                    <Row label="Canonical UIP" value={projection.uipId ?? "—"} />
+                    <Row label="Evidence records" value={String(projection.data!.evidenceCount)} />
+                    <Row label="Confidence" value={projection.data!.confidence} />
+                    <Row label="Projection binding" value={MANIFEST_CENTRE.projectionContractId} />
+                  </dl>
+                  <p className="mt-2 text-[11px] text-slate">
+                    System recommends; officer decides. Evidence first. Explainable always.
+                  </p>
+                </Section>
+              </>
+            )}
+          </div>
+        }
+        copilot={
+          <CentreCopilot
+            name="Manifest Copilot"
+            instance="manifest"
+            observed={
+              hasData
+                ? projection.data!.summary.map((s) => ({
+                    title: s.slice(0, 60),
+                    detail: s,
+                    confidence: "observed" as const,
+                  }))
+                : [
+                    {
+                      title: "No evidence in session",
+                      detail: projection.stateDetail,
+                      confidence: "inferred" as const,
+                    },
+                  ]
+            }
+            recommendations={projection.recommendedActions.map((a) => ({
+              title: a,
+              detail: "System recommends; officer decides.",
+              confidence: "inferred" as const,
+            }))}
+            historical={[]}
+            related={[]}
+          />
+        }
+      />
+    </>
   );
 }
 

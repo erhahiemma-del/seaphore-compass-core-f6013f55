@@ -115,6 +115,71 @@ describe("every fixture-backed route carries the notice", () => {
   });
 });
 
+/* ═══════ The second fixture layer: Intelligence Centre ═══════ */
+
+describe("intel-centre fixtures cannot claim observation either", () => {
+  const INTEL = "src/lib/intel-centre-data.ts";
+
+  it("leaves no observed/verified literal in the shared fixture source", () => {
+    // 1254 lines feeding eighteen consumers. Its own header says
+    // "replace with real Supabase queries when the data foundation goes
+    // live" — until then nothing in it was observed.
+    const code = read(INTEL).replace(/\/\*[\s\S]*?\*\//g, "");
+    // Negative lookahead skips type positions — `confidence: "verified" |
+    // "observed" | ...` is the tier vocabulary itself (category D), not a
+    // claim about any value.
+    expect(code).not.toMatch(/(tier|confidence): "(observed|verified)"(?!\s*\|)/);
+  });
+
+  it.each([
+    "src/features/mission-control/CommandCenter.tsx",
+    "src/features/vessel/Vessel.tsx",
+    "src/features/ports/Ports.tsx",
+    "src/features/ownership/ownership-data.ts",
+    "src/features/ownership/Ownership.tsx",
+    "src/features/evidence/data.ts",
+    "src/features/evidence/Evidence.tsx",
+    "src/features/compliance/Compliance.tsx",
+  ])("%s carries no fixture-backed observed/verified claim", (path) => {
+    const code = read(path).replace(/\/\*[\s\S]*?\*\//g, "");
+    // Negative lookahead skips type positions — `confidence: "verified" |
+    // "observed" | ...` is the tier vocabulary itself (category D), not a
+    // claim about any value.
+    expect(code).not.toMatch(/(tier|confidence): "(observed|verified)"(?!\s*\|)/);
+  });
+
+  it.each([
+    "src/features/vessel/Vessel.tsx",
+    "src/features/ports/Ports.tsx",
+    "src/features/evidence/Evidence.tsx",
+    "src/features/ownership/Ownership.tsx",
+    "src/features/compliance/Compliance.tsx",
+    "src/features/mission-control/CommandCenter.tsx",
+    "src/features/alerts/Alerts.tsx",
+  ])("%s marks itself as simulated", (path) => {
+    expect(read(path)).toContain("<DemoDataNotice");
+  });
+});
+
+/* ═══════ Provider-backed claims survive ═══════ */
+
+describe("real projection output keeps its confidence", () => {
+  it.each([
+    "src/features/cargo/Cargo.tsx",
+    "src/features/revenue/Revenue.tsx",
+    "src/features/manifest/Manifest.tsx",
+  ])("%s still labels projection summaries observed", (path) => {
+    // These three are the exception the audit turned up: their single
+    // `observed` sits on `projection.data.summary`, gated on `hasData`,
+    // falling back to `inferred` when the projection is empty. Downgrading
+    // them would have understated real evidence — the reason a bulk
+    // find-and-replace would have been wrong.
+    const source = read(path);
+    expect(source).toContain('confidence: "observed" as const');
+    expect(source).toContain("hasData");
+  });
+});
+
 /* ═══════ 8 & 9. Availability vocabulary stays distinct ═══════ */
 
 describe("demo provenance does not disturb the availability states", () => {

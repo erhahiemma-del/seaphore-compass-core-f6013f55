@@ -23,6 +23,7 @@ import { ModeBadge } from "@/components/ai/mode-badge";
 import { COPILOT_MODES } from "@/lib/ai/types";
 import type { CopilotMode } from "@/lib/ai/types";
 import { COPILOT_REGISTRY } from "@/lib/ai/copilots";
+import { DemoDataNotice } from "@/components/intelligence/DemoDataNotice";
 
 const MODE_ICON: Record<CopilotMode, React.ComponentType<{ className?: string }>> = {
   SEARCH: Radar,
@@ -55,11 +56,11 @@ const MISSION_STATS: MissionStat[] = [
     confidence: "inferred",
     hint: "Composite of arrivals, alerts, revenue-at-risk",
   },
-  { label: "Today's Alerts", value: "42", confidence: "verified" },
+  { label: "Today's Alerts", value: "42", confidence: "unconfirmed" },
   { label: "Revenue at Risk", value: "₦1.24B", confidence: "inferred" },
-  { label: "Recovered Today", value: "₦186M", confidence: "verified" },
-  { label: "Open Investigations", value: "27", confidence: "verified" },
-  { label: "AI Confidence", value: "82%", confidence: "observed" },
+  { label: "Recovered Today", value: "₦186M", confidence: "unconfirmed" },
+  { label: "Open Investigations", value: "27", confidence: "unconfirmed" },
+  { label: "AI Confidence", value: "82%", confidence: "unconfirmed" },
 ];
 
 interface TimelineEvent {
@@ -97,6 +98,7 @@ export function CommandCenter() {
 
   return (
     <AppShell title="Command Center" subtitle="Mission Control AI" mode="light">
+      <DemoDataNotice surface="This command centre" className="mb-3" />
       <div className="mx-auto max-w-[1400px] space-y-6 px-6 py-6">
         {/* Header banner */}
         <section className="rounded-xl border border-line bg-gradient-to-r from-primary/10 via-surface to-surface p-5">
@@ -113,10 +115,12 @@ export function CommandCenter() {
                 >
                   BETA
                 </span>
-                <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[color:var(--color-green)]">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--color-green)]" />
-                  Live
-                </span>
+                {/*
+                  A green "Live" chip used to sit here. It was bound to
+                  nothing — a static claim of currency on a surface whose
+                  every figure is a fixture. The DemoDataNotice above
+                  states what this page actually is.
+                */}
               </div>
               <p className="mt-1 text-[13px] text-slate">
                 Search · Retrieve · Interpret · Advise. One AI orchestrating every intelligence
@@ -186,7 +190,7 @@ export function CommandCenter() {
             <PanelCard className="p-4">
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="type-h2 text-foreground">Intelligence timeline</h2>
-                <ConfidenceChip tier="observed" />
+                <ConfidenceChip tier="unconfirmed" />
               </div>
               <ol className="relative border-l border-line pl-4">
                 {timeline.map((e, i) => (
@@ -336,37 +340,37 @@ function buildPreview(file: File, risk: "HIGH" | "MEDIUM" | "LOW"): ManifestPrev
       {
         label: "Bill of lading",
         value: bol,
-        confidence: "verified",
+        confidence: "unconfirmed",
         note: "OCR match · header block",
       },
       {
         label: "Vessel",
         value: vessel,
-        confidence: "verified",
+        confidence: "unconfirmed",
         note: "Cross-checked against AIS registry",
       },
-      { label: "Voyage", value: voyage, confidence: "observed" },
+      { label: "Voyage", value: voyage, confidence: "unconfirmed" },
       {
         label: "Consignee",
         value: consignee,
-        confidence: risk === "HIGH" ? "unconfirmed" : "observed",
+        confidence: "unconfirmed",
         note: risk === "HIGH" ? "No prior filings under this TIN" : undefined,
       },
-      { label: "Shipper", value: shipper, confidence: "observed" },
-      { label: "Port of loading", value: pol, confidence: "verified" },
-      { label: "Port of discharge", value: pod, confidence: "verified" },
+      { label: "Shipper", value: shipper, confidence: "unconfirmed" },
+      { label: "Port of loading", value: pol, confidence: "unconfirmed" },
+      { label: "Port of discharge", value: pod, confidence: "unconfirmed" },
       {
         label: "HS codes",
         value: hs.join(" · "),
         confidence: "inferred",
         note: "Derived from cargo descriptions",
       },
-      { label: "Line items", value: "148", confidence: "verified" },
-      { label: "Containers", value: String(6 + (seed % 5)), confidence: "verified" },
+      { label: "Line items", value: "148", confidence: "unconfirmed" },
+      { label: "Containers", value: String(6 + (seed % 5)), confidence: "unconfirmed" },
       {
         label: "Gross weight",
         value: `${(1240 + (seed % 400)).toLocaleString()} kg`,
-        confidence: "observed",
+        confidence: "unconfirmed",
       },
     ],
     flags: [
@@ -746,7 +750,7 @@ function UploadHistoryList({
         <History className="h-3.5 w-3.5 text-slate" />
         <span className="text-[12px] font-semibold text-foreground">Upload run history</span>
         <span className="text-[10.5px] text-slate">· {runs.length} recent</span>
-        <ConfidenceChip tier="observed" size={9} className="ml-2" />
+        <ConfidenceChip tier="unconfirmed" size={9} className="ml-2" />
         <button
           onClick={onClear}
           className="ml-auto rounded-md border border-line px-2 py-0.5 text-[10.5px] font-semibold text-foreground/70 hover:bg-surface-2"

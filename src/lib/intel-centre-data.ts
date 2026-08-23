@@ -1,10 +1,17 @@
 /**
- * Intelligence Centre shared mock data.
+ * Intelligence Centre DEMO fixtures.
  *
- * One source of truth so vessels / IMOs / MMSIs / ports / companies /
- * cargo / revenue figures line up across every centre. Replace with
- * real Supabase queries when the data foundation goes live —
- * component shapes are stable.
+ * One invented dataset so vessels, IMOs, MMSIs, ports, companies, cargo
+ * and revenue line up across every centre. None of it came from a
+ * provider. Replace with real Supabase queries when the data foundation
+ * goes live — the component shapes are stable.
+ *
+ * ## Confidence never exceeds `unconfirmed`
+ *
+ * `observed` is documented as "directly observed / measured" and
+ * `verified` as "confirmed by authoritative source". No value here was
+ * either, so neither tier may appear in this file. Surfaces rendering it
+ * carry `DemoDataNotice`.
  */
 import type { ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
 
@@ -834,7 +841,7 @@ export const ALERTS: AlertItem[] = [
     timeISO: iso(8),
     status: "NEW",
     vesselId: "v-ocean-pearl",
-    confidence: "observed",
+    confidence: "unconfirmed",
   },
   {
     id: "al-02",
@@ -845,7 +852,7 @@ export const ALERTS: AlertItem[] = [
     timeISO: iso(7),
     status: "NEW",
     vesselId: "v-niger-runner",
-    confidence: "observed",
+    confidence: "unconfirmed",
   },
   {
     id: "al-03",
@@ -856,7 +863,7 @@ export const ALERTS: AlertItem[] = [
     timeISO: iso(6),
     status: "ACK",
     vesselId: "v-delta-star",
-    confidence: "observed",
+    confidence: "unconfirmed",
   },
   {
     id: "al-04",
@@ -878,7 +885,7 @@ export const ALERTS: AlertItem[] = [
     timeISO: iso(4),
     status: "NEW",
     vesselId: "v-niger-runner",
-    confidence: "verified",
+    confidence: "unconfirmed",
   },
   {
     id: "al-06",
@@ -889,7 +896,7 @@ export const ALERTS: AlertItem[] = [
     timeISO: iso(3),
     status: "ACK",
     vesselId: "v-gulf-trader",
-    confidence: "verified",
+    confidence: "unconfirmed",
   },
   {
     id: "al-07",
@@ -900,7 +907,7 @@ export const ALERTS: AlertItem[] = [
     timeISO: iso(2),
     status: "NEW",
     vesselId: "v-serengeti-bay",
-    confidence: "observed",
+    confidence: "unconfirmed",
   },
   {
     id: "al-08",
@@ -911,7 +918,7 @@ export const ALERTS: AlertItem[] = [
     timeISO: iso(1),
     status: "NEW",
     vesselId: "v-sahara-wind",
-    confidence: "observed",
+    confidence: "unconfirmed",
   },
   {
     id: "al-09",
@@ -922,7 +929,7 @@ export const ALERTS: AlertItem[] = [
     timeISO: iso(0),
     status: "RESOLVED",
     vesselId: "v-atlantic-crown",
-    confidence: "observed",
+    confidence: "unconfirmed",
   },
 ];
 
@@ -961,7 +968,7 @@ export const EVIDENCE: EvidenceItem[] = [
     uploadedBy: "Officer Adeyemi",
     linkedInvestigation: "INV-2412-01",
     linkedVesselId: "v-ocean-pearl",
-    confidence: "verified",
+    confidence: "unconfirmed",
     sizeKb: 412,
   },
   {
@@ -973,7 +980,7 @@ export const EVIDENCE: EvidenceItem[] = [
     uploadedBy: "Sahara Cargo Ni.",
     linkedInvestigation: "INV-2412-01",
     linkedVesselId: "v-ocean-pearl",
-    confidence: "verified",
+    confidence: "unconfirmed",
     sizeKb: 88,
   },
   {
@@ -985,7 +992,7 @@ export const EVIDENCE: EvidenceItem[] = [
     uploadedBy: "Sahara Cargo Ni.",
     linkedInvestigation: "INV-2412-01",
     linkedVesselId: "v-ocean-pearl",
-    confidence: "observed",
+    confidence: "unconfirmed",
     sizeKb: 21,
   },
   {
@@ -997,7 +1004,7 @@ export const EVIDENCE: EvidenceItem[] = [
     uploadedBy: "Officer Bello",
     linkedInvestigation: "INV-2412-02",
     linkedVesselId: "v-delta-star",
-    confidence: "observed",
+    confidence: "unconfirmed",
     sizeKb: 208,
   },
   {
@@ -1009,7 +1016,7 @@ export const EVIDENCE: EvidenceItem[] = [
     uploadedBy: "Officer Bello",
     linkedInvestigation: "INV-2412-02",
     linkedVesselId: "v-delta-star",
-    confidence: "observed",
+    confidence: "unconfirmed",
     sizeKb: 3120,
   },
   {
@@ -1021,7 +1028,7 @@ export const EVIDENCE: EvidenceItem[] = [
     uploadedBy: "System",
     linkedInvestigation: "INV-2412-03",
     linkedVesselId: "v-niger-runner",
-    confidence: "observed",
+    confidence: "unconfirmed",
     sizeKb: 14,
   },
   {
@@ -1033,7 +1040,7 @@ export const EVIDENCE: EvidenceItem[] = [
     uploadedBy: "Officer Adeyemi",
     linkedInvestigation: "INV-2412-04",
     linkedVesselId: "v-gulf-trader",
-    confidence: "verified",
+    confidence: "unconfirmed",
     sizeKb: 604,
   },
   {
@@ -1045,7 +1052,7 @@ export const EVIDENCE: EvidenceItem[] = [
     uploadedBy: "Officer Chukwu",
     linkedInvestigation: "INV-2412-05",
     linkedVesselId: "v-sahara-wind",
-    confidence: "verified",
+    confidence: "unconfirmed",
     sizeKb: 512,
   },
   {
@@ -1057,7 +1064,7 @@ export const EVIDENCE: EvidenceItem[] = [
     uploadedBy: "Sahara Cargo Ni.",
     linkedInvestigation: "INV-2412-01",
     linkedVesselId: "v-ocean-pearl",
-    confidence: "observed",
+    confidence: "unconfirmed",
     sizeKb: 92,
   },
   {
@@ -1069,7 +1076,7 @@ export const EVIDENCE: EvidenceItem[] = [
     uploadedBy: "Officer Adeyemi",
     linkedInvestigation: "INV-2412-06",
     linkedVesselId: "v-baltic-horizon",
-    confidence: "verified",
+    confidence: "unconfirmed",
     sizeKb: 44,
   },
 ];
@@ -1096,21 +1103,21 @@ export const OWNERSHIP_EDGES: OwnershipEdge[] = [
     fromId: "co-oceanline",
     toId: "v-ocean-pearl",
     label: "owns",
-    confidence: "verified",
+    confidence: "unconfirmed",
     sourceNote: "IMO GISIS registry",
   },
   {
     fromId: "co-delta",
     toId: "v-ocean-pearl",
     label: "operates",
-    confidence: "verified",
+    confidence: "unconfirmed",
     sourceNote: "Time charter registered",
   },
   {
     fromId: "co-gulfmar",
     toId: "v-ocean-pearl",
     label: "manages",
-    confidence: "observed",
+    confidence: "unconfirmed",
     sourceNote: "Class society filing",
   },
   {
@@ -1124,42 +1131,42 @@ export const OWNERSHIP_EDGES: OwnershipEdge[] = [
     fromId: "co-trident",
     toId: "v-niger-runner",
     label: "owns",
-    confidence: "verified",
+    confidence: "unconfirmed",
     sourceNote: "OFAC SDN linkage",
   },
   {
     fromId: "co-northstar",
     toId: "v-gulf-trader",
     label: "owns",
-    confidence: "verified",
+    confidence: "unconfirmed",
     sourceNote: "IMO GISIS registry",
   },
   {
     fromId: "co-northstar",
     toId: "v-serengeti-bay",
     label: "owns",
-    confidence: "verified",
+    confidence: "unconfirmed",
     sourceNote: "IMO GISIS registry",
   },
   {
     fromId: "co-delta",
     toId: "v-delta-star",
     label: "owns",
-    confidence: "verified",
+    confidence: "unconfirmed",
     sourceNote: "CAC filing RC-482911",
   },
   {
     fromId: "co-sahara",
     toId: "v-ocean-pearl",
     label: "agent-of",
-    confidence: "verified",
+    confidence: "unconfirmed",
     sourceNote: "NPA agent registry",
   },
   {
     fromId: "co-atlaslog",
     toId: "v-lagos-voyager",
     label: "agent-of",
-    confidence: "verified",
+    confidence: "unconfirmed",
     sourceNote: "NPA agent registry",
   },
   {
@@ -1184,7 +1191,7 @@ export const PEP_SCREEN = [
   {
     name: "A. Chukwuma Okoro",
     role: "Former Board Member — Trident Maritime",
-    confidence: "verified" as ConfidenceTier,
+    confidence: "unconfirmed" as ConfidenceTier,
     hit: true,
   },
   {
@@ -1209,12 +1216,12 @@ export const ENTITY_DISAMBIGUATION = [
       "Delta Cargo Freight (GH)",
       "Delta Freight Services Ltd (KE)",
     ],
-    confidence: "verified" as ConfidenceTier,
+    confidence: "unconfirmed" as ConfidenceTier,
   },
   {
     canonical: "OceanLine Shipping SA (PA)",
     candidates: ["Ocean Line Shipping Co. (LR)", "OceanLine Marine (SG)"],
-    confidence: "observed" as ConfidenceTier,
+    confidence: "unconfirmed" as ConfidenceTier,
   },
 ];
 
