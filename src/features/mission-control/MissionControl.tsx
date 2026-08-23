@@ -118,7 +118,7 @@ export function MissionControl() {
           )}
         >
           <LiveMapPanel />
-          {focused ? <ContextRail /> : <IntelligenceFeedPanel />}
+          {focused ? <FocusRail /> : <IntelligenceFeedPanel />}
         </div>
 
         <div className={cn("grid gap-4 md:grid-cols-2 xl:grid-cols-4", recede)}>
@@ -224,10 +224,27 @@ function Ribbon() {
   );
 }
 
+/* ---------------- Focus rail ---------------- */
+
+/** Context Rail bound to Mission Control's entity route contract. */
+function FocusRail() {
+  const navigate = useNavigate();
+  return (
+    <ContextRail
+      onOpen={(id) =>
+        void navigate({
+          to: "/entity/$id",
+          params: { id },
+          search: { entityId: id, fromStage: "Monitor", fromRoute: "/" },
+        })
+      }
+    />
+  );
+}
+
 /* ---------------- Live Map Panel ---------------- */
 
 function LiveMapPanel() {
-  const navigate = useNavigate();
   return (
     <PanelCard variant="edge" className="flex h-[520px] flex-col">
       <PanelHeader
@@ -240,17 +257,6 @@ function LiveMapPanel() {
         <GulfOfGuineaMap
           vessels={MAP_VESSELS}
           live
-          onVesselClick={(v) =>
-            navigate({
-              to: "/entity/$id",
-              params: { id: v.id },
-              search: {
-                entityId: v.id,
-                fromStage: "Monitor",
-                fromRoute: "/",
-              },
-            })
-          }
         />
       </div>
     </PanelCard>

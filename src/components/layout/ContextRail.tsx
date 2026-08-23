@@ -19,7 +19,14 @@ const KIND_LABEL: Record<string, string> = {
  * calling surface already projected; it performs no acquisition, no scoring
  * and asserts no freshness of its own.
  */
-export function ContextRail({ className }: { className?: string }) {
+export function ContextRail({
+  className,
+  onOpen,
+}: {
+  className?: string;
+  /** Officer action for "Open in workspace" when the route needs params. */
+  onOpen?: (subjectId: string) => void;
+}) {
   const subject = useFocusSubjectStore((s) => s.subject);
   const clear = useFocusSubjectStore((s) => s.clearSubject);
 
@@ -70,7 +77,16 @@ export function ContextRail({ className }: { className?: string }) {
       )}
 
       <div className="border-t border-line px-4 py-3">
-        {subject.href ? (
+        {onOpen ? (
+          <button
+            type="button"
+            onClick={() => onOpen(subject.id)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-2 px-2.5 py-1.5 type-small font-semibold text-foreground hover:border-[color:var(--color-teal)]/45 motion-fast"
+          >
+            Open in workspace
+            <ArrowUpRight className="h-3.5 w-3.5" />
+          </button>
+        ) : subject.href ? (
           <Link
             to={subject.href}
             className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-2 px-2.5 py-1.5 type-small font-semibold text-foreground hover:border-[color:var(--color-teal)]/45 motion-fast"
