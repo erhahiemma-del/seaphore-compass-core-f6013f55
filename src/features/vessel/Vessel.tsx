@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Columns3, Download, LineChart, ShieldCheck } from "lucide-react";
 
 import {
