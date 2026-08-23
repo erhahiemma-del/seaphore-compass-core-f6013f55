@@ -7,14 +7,23 @@ export function Section({
   actions,
   children,
   className,
+  receded = false,
 }: {
   title?: string;
   actions?: ReactNode;
   children: ReactNode;
   className?: string;
+  /** True when a subject of another kind is in focus — this panel recedes. */
+  receded?: boolean;
 }) {
   return (
-    <section className={cn("rounded-lg border border-line/60 bg-surface/60 p-3", className)}>
+    <section
+      className={cn(
+        "rounded-lg border border-line/60 bg-surface/60 p-3 motion-fast",
+        receded && "is-receded",
+        className,
+      )}
+    >
       {(title || actions) && (
         <header className="mb-2 flex items-center justify-between gap-2">
           {title && (

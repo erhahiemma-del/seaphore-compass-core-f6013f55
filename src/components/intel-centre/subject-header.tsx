@@ -100,7 +100,7 @@ export function EvidenceChipPill({ chip }: { chip: EvidenceChip }) {
     <span className="inline-flex items-center gap-1.5 rounded-sm border border-line/60 bg-surface-2/40 px-2 py-0.5 text-[10.5px] text-slate">
       <span className="uppercase tracking-[0.06em]">{chip.label}</span>
       <span className="font-semibold text-foreground/90">{chip.value}</span>
-      {chip.confidence && <ConfidenceChip tier={chip.confidence} size={8} />}
+      {chip.confidence && <ConfidenceChip tier={chip.confidence} size={9} />}
     </span>
   );
 }
