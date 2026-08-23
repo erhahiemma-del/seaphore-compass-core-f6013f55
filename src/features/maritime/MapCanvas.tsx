@@ -32,6 +32,7 @@ import {
   useMapSessionStore,
   planCameraMove,
   selectionKey,
+  type CameraMovePlan,
   type MapControlOptions,
   type MapEventBus,
   type MapRenderer,
@@ -50,6 +51,33 @@ import {
  * command surface that happens to be small.
  */
 export type MapCanvasMode = "command" | "overview";
+
+/**
+ * Development-only record of camera decisions.
+ *
+ * The camera policy is pure and unit-tested, but whether it is correctly
+ * *wired* is a runtime question, and the renderer is deliberately not
+ * reachable from the page. This publishes the decision — never the
+ * renderer — so a browser check can confirm which rule fired and whether
+ * it matched the officer's action.
+ *
+ * `import.meta.env.DEV` compiles the whole thing out of production, so
+ * nothing here widens the production surface.
+ */
+function recordCameraDecision(
+  plan: CameraMovePlan,
+  selectionKeyValue: string,
+  viewport: unknown,
+): void {
+  if (!import.meta.env.DEV || typeof window === "undefined") return;
+  const scope = window as typeof window & {
+    __seaphoreCamera?: { plan: CameraMovePlan; selection: string; viewport: unknown; at: number }[];
+  };
+  scope.__seaphoreCamera ??= [];
+  scope.__seaphoreCamera.push({ plan, selection: selectionKeyValue, viewport, at: Date.now() });
+  // Bounded: a long session must not accumulate an unbounded array.
+  if (scope.__seaphoreCamera.length > 20) scope.__seaphoreCamera.shift();
+}
 
 const MODE_CONTROLS: Readonly<Record<MapCanvasMode, MapControlOptions>> = {
   command: { navigation: true, compass: true, scale: true },
@@ -370,11 +398,13 @@ export function MapCanvas({
       // Move the camera only when the selection came from somewhere the
       // officer is not already looking. `planCameraMove` owns that rule;
       // this block only carries out its decision.
+      const viewport = renderer.getVisibleBounds?.() ?? null;
       const plan = planCameraMove({
         focus: state.selection?.focus,
-        viewport: renderer.getVisibleBounds?.() ?? null,
+        viewport,
         reducedMotion: prefersReducedMotion(),
       });
+      recordCameraDecision(plan, key, viewport);
       if (!plan.move || !plan.center) return;
 
       if (plan.animate) renderer.flyTo?.(plan.center);

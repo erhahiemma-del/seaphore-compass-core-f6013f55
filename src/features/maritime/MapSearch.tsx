@@ -15,7 +15,13 @@ import { Search } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { layerRegistry, sgs, type SharedGeospatialService } from "@/services/geospatial";
+import {
+  layerRegistry,
+  sgs,
+  useMapSelector,
+  type MapSelection,
+  type SharedGeospatialService,
+} from "@/services/geospatial";
 import {
   captureMapContext,
   intentsToStatePatch,
@@ -33,8 +39,42 @@ export interface MapSearchProps {
   readonly className?: string;
 }
 
+/**
+ * Placeholder text for what the officer currently has selected.
+ *
+ * Reflects canonical selection, not a mode the officer picked. That
+ * distinction matters: the prompt describes what asking a question here
+ * would actually resolve against, so it stays true by construction
+ * rather than by a chip someone forgot to change.
+ *
+ * Only kinds whose ambient context genuinely reaches `understand()` get
+ * their own prompt. Everything else keeps the global wording, because
+ * promising "ask about the selected detection" when nothing downstream
+ * resolves a detection would be an invitation to a dead end.
+ */
+const GLOBAL_PLACEHOLDER = "Search vessels, ports, areas — or ask a question";
+
+function placeholderFor(selection: MapSelection | null): string {
+  switch (selection?.kind) {
+    case "vessel":
+      return "Search, or ask about the selected vessel";
+    case "port":
+    case "terminal":
+    case "berth":
+    case "anchorage":
+      return "Search, or ask about the selected port";
+    default:
+      return GLOBAL_PLACEHOLDER;
+  }
+}
+
 export function MapSearch({ service = sgs, onApplied, className }: MapSearchProps) {
   const [text, setText] = useState("");
+  // Subscribed rather than read once, so the prompt follows selection.
+  const selectionKindKey = useMapSelector((state) => state.selection?.kind ?? "", service);
+  const placeholder = placeholderFor(
+    selectionKindKey ? ({ kind: selectionKindKey } as MapSelection) : null,
+  );
 
   const submit = useCallback(
     (query: string) => {
@@ -81,8 +121,8 @@ export function MapSearch({ service = sgs, onApplied, className }: MapSearchProp
       <Input
         value={text}
         onChange={(event) => setText(event.target.value)}
-        placeholder="Search vessels, ports, areas — or ask a question"
-        aria-label="Search vessels, ports, areas, or ask a question"
+        placeholder={placeholder}
+        aria-label={placeholder}
         data-testid="map-search"
         className="h-8 pl-8 text-[12px]"
       />
