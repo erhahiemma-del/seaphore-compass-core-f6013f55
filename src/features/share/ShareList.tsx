@@ -5,10 +5,12 @@ import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { PanelCard } from "@/components/panel-card";
 import { PanelHead } from "@/components/panel-head";
 import { INVESTIGATIONS, RECENT_SHARES } from "@/lib/lifecycle-data";
+import { DemoDataNotice } from "@/components/intelligence/DemoDataNotice";
 
 export function ShareList() {
   return (
     <AppShell title="Share" subtitle="Briefings & Collaboration" mode="light">
+      <DemoDataNotice surface="Share" className="mb-3" />
       <div className="mx-auto max-w-[1400px] space-y-4 p-4 lg:p-6">
         <div className="flex items-start gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[color:var(--color-teal)]/10 text-[color:var(--color-teal)]">

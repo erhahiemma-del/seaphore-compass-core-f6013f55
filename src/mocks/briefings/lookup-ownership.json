@@ -41,8 +41,5 @@
     "responded": 4,
     "corroborated": 3
   },
-  "nextQuestions": [
-    "Show beneficial ownership chain",
-    "Any sanctions exposure on directors?"
-  ]
+  "nextQuestions": ["Show beneficial ownership chain", "Any sanctions exposure on directors?"]
 }

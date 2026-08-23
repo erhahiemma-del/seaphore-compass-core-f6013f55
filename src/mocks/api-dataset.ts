@@ -5,12 +5,7 @@
  */
 
 export type EvidenceGrade =
-  | "verified"
-  | "corroborated"
-  | "observed"
-  | "reported"
-  | "inferred"
-  | "unconfirmed";
+  "verified" | "corroborated" | "observed" | "reported" | "inferred" | "unconfirmed";
 
 export interface MockEntity {
   id: string;

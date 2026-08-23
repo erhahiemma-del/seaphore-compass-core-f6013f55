@@ -17,6 +17,7 @@ import { useCentreFocus } from "@/components/intel-centre/use-centre-focus";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { NigeriaMap } from "@/components/intel-centre/nigeria-map";
 import { OwnershipGraph } from "@/components/intel-centre/ownership-graph";
+import { DemoDataNotice } from "@/components/intelligence/DemoDataNotice";
 import {
   OWNERSHIP_EDGES,
   VESSELS,
@@ -33,7 +34,7 @@ const KPIS: KpiSpec[] = [
     value: String(VESSELS.length),
     delta: "+2",
     trend: "up",
-    confidence: "verified",
+    confidence: "unconfirmed",
     series: sparkSeries(2),
   },
   {
@@ -41,7 +42,7 @@ const KPIS: KpiSpec[] = [
     value: String(VESSELS.filter((v) => v.riskLevel === "high").length),
     delta: "+1",
     trend: "up",
-    confidence: "observed",
+    confidence: "unconfirmed",
     series: sparkSeries(4),
     emphasis: "risk",
   },
@@ -50,7 +51,7 @@ const KPIS: KpiSpec[] = [
     value: String(VESSELS.filter((v) => v.sanctionsHit).length),
     delta: "0",
     trend: "flat",
-    confidence: "verified",
+    confidence: "unconfirmed",
     series: sparkSeries(8),
     emphasis: "risk",
   },
@@ -59,7 +60,7 @@ const KPIS: KpiSpec[] = [
     value: String(VESSELS.filter((v) => v.aisBlackoutHours > 4).length),
     delta: "+1",
     trend: "up",
-    confidence: "observed",
+    confidence: "unconfirmed",
     series: sparkSeries(12),
     emphasis: "warn",
   },
@@ -68,7 +69,7 @@ const KPIS: KpiSpec[] = [
     value: "2",
     delta: "+1",
     trend: "up",
-    confidence: "verified",
+    confidence: "unconfirmed",
     series: sparkSeries(16),
   },
   {
@@ -76,7 +77,7 @@ const KPIS: KpiSpec[] = [
     value: "84%",
     delta: "+0.9%",
     trend: "up",
-    confidence: "observed",
+    confidence: "unconfirmed",
     series: sparkSeries(22),
     emphasis: "ok",
   },
@@ -85,7 +86,7 @@ const KPIS: KpiSpec[] = [
     value: "9",
     delta: "+2",
     trend: "up",
-    confidence: "verified",
+    confidence: "unconfirmed",
     series: sparkSeries(26),
   },
 ];
@@ -103,9 +104,9 @@ export function VesselCentre() {
         title: v.name,
         descriptor: `IMO ${v.imo} · ${v.type} · ${v.flag}`,
         facts: [
-          { label: "Voyage", value: v.voyage, confidence: "verified" },
-          { label: "Risk score", value: String(v.riskScore), confidence: "observed" },
-          { label: "AIS gap (24h)", value: `${v.aisBlackoutHours.toFixed(1)}h`, confidence: "observed" },
+          { label: "Voyage", value: v.voyage, confidence: "unconfirmed" },
+          { label: "Risk score", value: String(v.riskScore), confidence: "unconfirmed" },
+          { label: "AIS gap (24h)", value: `${v.aisBlackoutHours.toFixed(1)}h`, confidence: "unconfirmed" },
         ],
       }),
       [v],
@@ -127,7 +128,9 @@ export function VesselCentre() {
   });
 
   return (
-    <IntelCentreShell
+    <>
+      <DemoDataNotice surface="Vessel Intelligence" className="mb-3" />
+      <IntelCentreShell
       title="Vessel Intelligence"
       subtitle="Vessel identity, behaviour, ownership and compliance."
       kpiRibbon={<KpiRibbon items={KPIS} />}
@@ -200,12 +203,12 @@ export function VesselCentre() {
               descriptor={`IMO ${v.imo} · ${v.type} · ${v.flag} · Built ${v.yearBuilt}`}
               confidence={v.status === "validated" ? "verified" : "observed"}
               evidence={[
-                { label: "Risk", value: String(v.riskScore), confidence: "observed" },
-                { label: "AIS gap", value: `${v.aisBlackoutHours.toFixed(1)}h`, confidence: "observed" },
+                { label: "Risk", value: String(v.riskScore), confidence: "unconfirmed" },
+                { label: "AIS gap", value: `${v.aisBlackoutHours.toFixed(1)}h`, confidence: "unconfirmed" },
                 {
                   label: "Sanctions",
                   value: v.sanctionsHit ? "Match" : "No hits",
-                  confidence: "verified",
+                  confidence: "unconfirmed",
                 },
               ]}
               onDismiss={dismiss}
@@ -231,20 +234,20 @@ export function VesselCentre() {
               </div>
               <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11.5px]">
                 {[
-                  ["IMO", v.imo, "verified"],
-                  ["MMSI", v.mmsi, "verified"],
-                  ["Class", v.classSociety, "verified"],
-                  ["GT", v.gt.toLocaleString(), "verified"],
-                  ["DWT", v.dwt.toLocaleString(), "verified"],
-                  ["Owner", companyById(v.ownerId)?.name ?? "—", "verified"],
-                  ["Operator", companyById(v.operatorId)?.name ?? "—", "verified"],
-                  ["Manager", companyById(v.managerId)?.name ?? "—", "observed"],
+                  ["IMO", v.imo, "unconfirmed"],
+                  ["MMSI", v.mmsi, "unconfirmed"],
+                  ["Class", v.classSociety, "unconfirmed"],
+                  ["GT", v.gt.toLocaleString(), "unconfirmed"],
+                  ["DWT", v.dwt.toLocaleString(), "unconfirmed"],
+                  ["Owner", companyById(v.ownerId)?.name ?? "—", "unconfirmed"],
+                  ["Operator", companyById(v.operatorId)?.name ?? "—", "unconfirmed"],
+                  ["Manager", companyById(v.managerId)?.name ?? "—", "unconfirmed"],
                   [
                     "Insurer",
                     v.insurerId ? (companyById(v.insurerId)?.name ?? "—") : "—",
                     "inferred",
                   ],
-                  ["ETA", fmtTime(v.etaISO), "observed"],
+                  ["ETA", fmtTime(v.etaISO), "unconfirmed"],
                 ].map(([k, val, c]) => (
                   <div key={k as string} className="contents">
                     <dt className="text-slate">{k}</dt>
@@ -317,7 +320,7 @@ export function VesselCentre() {
                   </div>
                 )}
                 <div className="mt-1">
-                  <ConfidenceChip tier="verified" size={9} />
+                  <ConfidenceChip tier="unconfirmed" size={9} />
                 </div>
               </div>
 
@@ -349,7 +352,7 @@ export function VesselCentre() {
                   </ul>
                 )}
                 <div className="mt-1">
-                  <ConfidenceChip tier="verified" size={9} />
+                  <ConfidenceChip tier="unconfirmed" size={9} />
                 </div>
               </div>
 
@@ -362,7 +365,7 @@ export function VesselCentre() {
                 </div>
                 <div className="text-[11.5px] text-foreground/90">Flag: {v.flag}</div>
                 <div className="mt-1">
-                  <ConfidenceChip tier="verified" size={9} />
+                  <ConfidenceChip tier="unconfirmed" size={9} />
                 </div>
               </div>
             </div>
@@ -376,12 +379,12 @@ export function VesselCentre() {
             {
               title: "AIS blackout observed",
               detail: `${v.name}: ${v.aisBlackoutHours}h gap in last 24h.`,
-              confidence: "observed",
+              confidence: "unconfirmed",
             },
             {
               title: "Sister vessels under same manager",
               detail: "3 vessels managed by GulfMarine Holdings show similar risk pattern.",
-              confidence: "observed",
+              confidence: "unconfirmed",
             },
             {
               title: "Class deficiency trend",
@@ -393,12 +396,12 @@ export function VesselCentre() {
             {
               title: "Request MMSI validation from NIMASA",
               detail: "Confirm identity before berth allocation.",
-              confidence: "observed",
+              confidence: "unconfirmed",
             },
             {
               title: "Escalate to Compliance Centre",
               detail: "If sanctions match verified, freeze clearance.",
-              confidence: "verified",
+              confidence: "unconfirmed",
             },
           ]}
           historical={[
@@ -414,6 +417,7 @@ export function VesselCentre() {
           ]}
         />
       }
-    />
+      />
+    </>
   );
 }

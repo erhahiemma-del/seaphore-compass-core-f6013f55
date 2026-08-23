@@ -34,13 +34,6 @@ import type {
 } from "./telemetry/types";
 import { globalMicSink } from "./telemetry-registry";
 
-/** Defensive shape for possibly-malformed UIP inputs. */
-interface UipLike {
-  id?: string;
-  rawEvidence?: ReadonlyArray<unknown>;
-  fused?: { stats?: { canonicalEntities?: number; contradictions?: number } };
-}
-
 export interface MicBootstrapResult {
   readonly executionId: string;
   readonly outcome: MicExecutionOutcome;
@@ -77,8 +70,8 @@ export function processMicBootstrap(
 
   try {
     // ── Pre-flight: validate the UIP is populated ────────────────────
-    const rawEvidence = (uip as UipLike | null | undefined)?.rawEvidence;
-    const canonicalEntities = (uip as UipLike | null | undefined)?.fused?.stats?.canonicalEntities;
+    const rawEvidence = (uip as any)?.rawEvidence;
+    const canonicalEntities = (uip as any)?.fused?.stats?.canonicalEntities;
     if (!rawEvidence || rawEvidence.length === 0) {
       warnings.push("UIP has no rawEvidence — MIC will process an empty package");
     }
@@ -181,10 +174,10 @@ export function processMicBootstrap(
     errors,
     retryCount: 0, // retry logic deferred to INT-01G async pipeline
     attributes: {
-      uip_id: (uip as UipLike | null | undefined)?.id ?? "unknown",
-      uip_entities: (uip as UipLike | null | undefined)?.fused?.stats?.canonicalEntities ?? 0,
-      uip_evidence: (uip as UipLike | null | undefined)?.rawEvidence?.length ?? 0,
-      uip_contradictions: (uip as UipLike | null | undefined)?.fused?.stats?.contradictions ?? 0,
+      uip_id: (uip as any)?.id ?? "unknown",
+      uip_entities: (uip as any)?.fused?.stats?.canonicalEntities ?? 0,
+      uip_evidence: (uip as any)?.rawEvidence?.length ?? 0,
+      uip_contradictions: (uip as any)?.fused?.stats?.contradictions ?? 0,
       mic_version: "INT-01A.1",
     },
   };

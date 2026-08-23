@@ -30,18 +30,10 @@ import {
 
 /** Kinds of ambient state a command can require before it runs. */
 export type CommandContextRequirement =
-  | "vessel"
-  | "entity"
-  | "investigation"
-  | "intelligence_package"
-  | "ais_context";
+  "vessel" | "entity" | "investigation" | "intelligence_package" | "ais_context";
 
 export type CommandCategory =
-  | "briefing"
-  | "intelligence"
-  | "operations"
-  | "compliance"
-  | "reporting";
+  "briefing" | "intelligence" | "operations" | "compliance" | "reporting";
 
 export type CommandPermission = "officer" | "analyst" | "director" | "administrator";
 

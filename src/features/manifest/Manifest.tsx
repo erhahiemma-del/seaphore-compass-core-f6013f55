@@ -32,6 +32,7 @@ import { PanelStateNotice } from "@/components/intelligence/PanelStateNotice";
 
 import { cargoCentreBySlug } from "@/lib/intelligence/cargo-workspace-projection";
 import { useCargoCentreProjection } from "@/features/cargo-workspace/use-cargo-projection";
+import { DemoDataNotice } from "@/components/intelligence/DemoDataNotice";
 
 /** The manifest centre definition — resolved from the frozen CARGO_CENTRES registry. */
 const MANIFEST_CENTRE = cargoCentreBySlug("manifest")!;
@@ -62,7 +63,9 @@ export function ManifestCentre() {
   const hasData = projection.state === "ACTIVE" && !!projection.data;
 
   return (
-    <IntelCentreShell
+    <>
+      <DemoDataNotice surface="The tables on this page" className="mb-3" />
+      <IntelCentreShell
       title="Manifest Intelligence"
       subtitle="Declared manifests, bills of lading and voyage records"
       kpiRibbon={
@@ -236,7 +239,8 @@ export function ManifestCentre() {
           related={[]}
         />
       }
-    />
+      />
+    </>
   );
 }
 

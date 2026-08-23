@@ -6,13 +6,13 @@
  * investigation, vessel, port and companies are already in play and
  * what has already been said.
  */
-import type { MissionContext } from "@/stores/mission-context.store";
+import type { MissionWorkspaceState } from "@/stores/mission-workspace.store";
 import type { InvestigationStage, OfficerPersona } from "./types";
 
 const OFFICER_HISTORY_LOOKBACK = 6;
 
 /** Persona inference — coarse, purely behavioural, never gated. */
-export function inferPersona(mission: MissionContext | null): OfficerPersona {
+export function inferPersona(mission: MissionWorkspaceState | null): OfficerPersona {
   if (!mission) return "operational";
   const convo = mission.conversation ?? [];
   const officerText = convo
@@ -37,7 +37,7 @@ export function inferPersona(mission: MissionContext | null): OfficerPersona {
  * state. IBE uses this to know whether it should still be collecting
  * or already summarising.
  */
-export function inferInvestigationStage(mission: MissionContext | null): InvestigationStage {
+export function inferInvestigationStage(mission: MissionWorkspaceState | null): InvestigationStage {
   if (!mission) return "planning";
   if ((mission.decisions ?? []).length > 0) return "completed";
   if ((mission.nextActions ?? []).length > 0) return "decision_support";

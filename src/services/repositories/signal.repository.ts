@@ -33,12 +33,7 @@ export type SignalDomain =
 
 export type SignalStatus = "NEW" | "ACK";
 export type SignalType =
-  | "Anomalies"
-  | "Discrepancies"
-  | "Duplicates"
-  | "Changes"
-  | "Gaps"
-  | "Matches";
+  "Anomalies" | "Discrepancies" | "Duplicates" | "Changes" | "Gaps" | "Matches";
 
 /** UI-facing signal (mapped from SignalRow via repository). */
 export interface Signal {

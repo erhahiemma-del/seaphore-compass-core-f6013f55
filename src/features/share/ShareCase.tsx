@@ -23,6 +23,7 @@ import {
 
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { SendShareGate } from "@/components/compliance/send-share-gate";
+import { DemoDataNotice } from "@/components/intelligence/DemoDataNotice";
 import {
   AGENCY_RECIPIENTS,
   CLASSIFICATIONS,
@@ -163,6 +164,7 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
 
   return (
     <AppShell title="Share" subtitle="Intelligence Briefing Workspace" mode="light">
+      <DemoDataNotice surface="This briefing workspace" className="mb-3" />
       <div className="mx-auto max-w-[1600px] space-y-4 p-4 lg:p-6">
         <HeaderBar
           inv={inv}

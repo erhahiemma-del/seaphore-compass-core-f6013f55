@@ -147,7 +147,7 @@ export const OWNERSHIP_EVENTS: OwnershipEvent[] = [
     kind: "Company Incorporated",
     entityId: "co-oceanline",
     summary: "OceanLine Shipping SA incorporated in Panama",
-    confidence: "verified",
+    confidence: "unconfirmed",
   },
   {
     id: "e2",
@@ -155,7 +155,7 @@ export const OWNERSHIP_EVENTS: OwnershipEvent[] = [
     kind: "Ownership Transfer",
     entityId: "co-oceanline",
     summary: "50% stake transferred to holding vehicle in Cyprus",
-    confidence: "verified",
+    confidence: "unconfirmed",
   },
   {
     id: "e3",
@@ -163,7 +163,7 @@ export const OWNERSHIP_EVENTS: OwnershipEvent[] = [
     kind: "New Director Appointed",
     entityId: "co-delta",
     summary: "M. K. Bello appointed director — Delta Freight Ltd",
-    confidence: "verified",
+    confidence: "unconfirmed",
   },
   {
     id: "e4",
@@ -171,7 +171,7 @@ export const OWNERSHIP_EVENTS: OwnershipEvent[] = [
     kind: "Beneficial Owner Change",
     entityId: "co-oceanline",
     summary: "Beneficial owner disclosure updated — 75 / 25 split",
-    confidence: "verified",
+    confidence: "unconfirmed",
   },
   {
     id: "e5",
@@ -179,7 +179,7 @@ export const OWNERSHIP_EVENTS: OwnershipEvent[] = [
     kind: "Operator Change",
     entityId: "v-ocean-pearl",
     summary: "Operator changed from OceanLine SA to Delta Freight",
-    confidence: "observed",
+    confidence: "unconfirmed",
   },
   {
     id: "e6",
@@ -195,7 +195,7 @@ export const OWNERSHIP_EVENTS: OwnershipEvent[] = [
     kind: "Vessel Acquired",
     entityId: "co-northstar",
     summary: "MV Serengeti Bay acquired from Baltic Holdings",
-    confidence: "verified",
+    confidence: "unconfirmed",
   },
   {
     id: "e8",
@@ -203,7 +203,7 @@ export const OWNERSHIP_EVENTS: OwnershipEvent[] = [
     kind: "Sanctions Match",
     entityId: "co-trident",
     summary: "OFAC SDN match on beneficial owner cluster",
-    confidence: "verified",
+    confidence: "unconfirmed",
   },
 ];
 
@@ -302,10 +302,14 @@ export interface RecommendedAction {
   confidence: ConfidenceTier;
 }
 export const RECOMMENDED_ACTIONS: RecommendedAction[] = [
-  { text: "Verify beneficial ownership documents", severity: "HIGH", confidence: "verified" },
-  { text: "Cross-check with CAC & IMO records", severity: "HIGH", confidence: "verified" },
-  { text: "Screen all linked entities for sanctions", severity: "MEDIUM", confidence: "observed" },
-  { text: "Review recent vessel transfers", severity: "MEDIUM", confidence: "observed" },
+  { text: "Verify beneficial ownership documents", severity: "HIGH", confidence: "unconfirmed" },
+  { text: "Cross-check with CAC & IMO records", severity: "HIGH", confidence: "unconfirmed" },
+  {
+    text: "Screen all linked entities for sanctions",
+    severity: "MEDIUM",
+    confidence: "unconfirmed",
+  },
+  { text: "Review recent vessel transfers", severity: "MEDIUM", confidence: "unconfirmed" },
   { text: "Open investigation: Ownership changes", severity: "LOW", confidence: "inferred" },
 ];
 

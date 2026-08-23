@@ -31,6 +31,7 @@ import { PanelStateNotice } from "@/components/intelligence/PanelStateNotice";
 
 import { cargoCentreBySlug } from "@/lib/intelligence/cargo-workspace-projection";
 import { useCargoCentreProjection } from "@/features/cargo-workspace/use-cargo-projection";
+import { DemoDataNotice } from "@/components/intelligence/DemoDataNotice";
 
 const REVENUE_CENTRE = cargoCentreBySlug("revenue")!;
 
@@ -56,7 +57,9 @@ export function RevenueCentre() {
   const hasData = projection.state === "ACTIVE" && !!projection.data;
 
   return (
-    <IntelCentreShell
+    <>
+      <DemoDataNotice surface="The tables on this page" className="mb-3" />
+      <IntelCentreShell
       title="Revenue Intelligence"
       subtitle="Duty exposure and leakage detected on cargo evidence"
       kpiRibbon={
@@ -256,7 +259,8 @@ export function RevenueCentre() {
           related={[]}
         />
       }
-    />
+      />
+    </>
   );
 }
 

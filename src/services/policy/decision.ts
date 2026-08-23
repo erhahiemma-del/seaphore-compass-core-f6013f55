@@ -11,11 +11,7 @@ import type { WorkflowId } from "@/services/workflows";
 import type { Permission } from "./permissions";
 
 export type DecisionOutcome =
-  | "allow"
-  | "deny_permission"
-  | "escalate"
-  | "rate_limited"
-  | "conflict";
+  "allow" | "deny_permission" | "escalate" | "rate_limited" | "conflict";
 
 export interface Decision {
   readonly outcome: DecisionOutcome;

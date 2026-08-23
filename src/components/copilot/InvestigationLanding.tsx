@@ -92,7 +92,12 @@ const PROMPT_CHIPS: PromptChip[] = [
 ];
 
 export interface InvestigationLandingProps {
-  subject: string;
+  /**
+   * The open investigation's subject, or null when none is open. Null is
+   * the ordinary case on a fresh session — the landing must not imply a
+   * vessel the officer never selected.
+   */
+  subject: string | null;
   value: string;
   onChange: (v: string) => void;
   onSubmit: (q: string, attachments?: OfficerAttachment[]) => void;
@@ -185,7 +190,11 @@ export function InvestigationLanding({
   const showTypewriter = idle;
 
   const typedPlaceholder = useTypewriterPlaceholder({
-    phrases: [`Investigate ${subject}...`, ...TYPING_EXAMPLES.map((e) => `${e}...`)],
+    // Only suggest investigating a subject when one is actually open.
+    phrases: [
+      ...(subject ? [`Investigate ${subject}...`] : []),
+      ...TYPING_EXAMPLES.map((e) => `${e}...`),
+    ],
     paused: !showTypewriter,
   });
 
@@ -387,6 +396,7 @@ export function InvestigationLanding({
             e.preventDefault();
             submit();
           }}
+
           className="mt-5"
         >
           {/* Detected intent — a courtesy echo, dismissible, never a filter. */}
@@ -442,6 +452,7 @@ export function InvestigationLanding({
                     acceptContinuation(continuations[0]);
                   }
                 }}
+
                 placeholder={
                   recording
                     ? "Listening — speak your investigation..."
@@ -449,7 +460,9 @@ export function InvestigationLanding({
                       ? "Transcribing..."
                       : showTypewriter
                         ? ""
-                        : `Investigate ${subject}...`
+                        : subject
+                          ? `Investigate ${subject}...`
+                          : "Ask about the fleet, a vessel, a company or a port..."
                 }
                 aria-label="Investigation query"
                 className="max-h-44 min-h-[48px] w-full resize-none bg-transparent text-[14px] leading-6 outline-none placeholder:text-muted-foreground disabled:opacity-60"

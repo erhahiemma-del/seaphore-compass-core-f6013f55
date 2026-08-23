@@ -17,6 +17,7 @@ import { useCentreFocus } from "@/components/intel-centre/use-centre-focus";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { IntelMap, type IntelMapEntity } from "@/components/intelligence/IntelMap";
 import { PORTS, VESSELS, sparkSeries, type Port } from "@/lib/intel-centre-data";
+import { DemoDataNotice } from "@/components/intelligence/DemoDataNotice";
 
 const KPIS: KpiSpec[] = [
   {
@@ -24,7 +25,7 @@ const KPIS: KpiSpec[] = [
     value: String(PORTS.length),
     delta: "0",
     trend: "flat",
-    confidence: "verified",
+    confidence: "unconfirmed",
     series: sparkSeries(3),
   },
   {
@@ -32,7 +33,7 @@ const KPIS: KpiSpec[] = [
     value: `${Math.round(PORTS.reduce((a, p) => a + p.congestionIndex, 0) / PORTS.length)}%`,
     delta: "+3.2%",
     trend: "up",
-    confidence: "observed",
+    confidence: "unconfirmed",
     series: sparkSeries(6),
     emphasis: "warn",
   },
@@ -41,7 +42,7 @@ const KPIS: KpiSpec[] = [
     value: `${Math.round(PORTS.reduce((a, p) => a + p.avgWaitHours, 0) / PORTS.length)}h`,
     delta: "+1.4h",
     trend: "up",
-    confidence: "observed",
+    confidence: "unconfirmed",
     series: sparkSeries(9),
     emphasis: "warn",
   },
@@ -50,7 +51,7 @@ const KPIS: KpiSpec[] = [
     value: "31/44",
     delta: "+2",
     trend: "up",
-    confidence: "verified",
+    confidence: "unconfirmed",
     series: sparkSeries(12),
   },
   {
@@ -58,7 +59,7 @@ const KPIS: KpiSpec[] = [
     value: String(PORTS.reduce((a, p) => a + p.todaysEta, 0)),
     delta: "+4",
     trend: "up",
-    confidence: "verified",
+    confidence: "unconfirmed",
     series: sparkSeries(15),
   },
   {
@@ -66,7 +67,7 @@ const KPIS: KpiSpec[] = [
     value: "86%",
     delta: "+0.2%",
     trend: "up",
-    confidence: "observed",
+    confidence: "unconfirmed",
     series: sparkSeries(18),
     emphasis: "ok",
   },
@@ -75,7 +76,7 @@ const KPIS: KpiSpec[] = [
     value: "5",
     delta: "+1",
     trend: "up",
-    confidence: "verified",
+    confidence: "unconfirmed",
     series: sparkSeries(21),
     emphasis: "risk",
   },
@@ -88,7 +89,7 @@ function buildMapEntities(selectedCode: Port["code"]): IntelMapEntity[] {
     name: p.name,
     position: { lat: p.lat, lng: p.lng },
     risk: p.congestionIndex > 70 ? "high" : p.congestionIndex > 45 ? "medium" : "low",
-    confidence: "verified",
+    confidence: "unconfirmed",
     subtitle: `${p.code} · ${p.city}`,
     meta: [
       ["Congestion", `${p.congestionIndex}%`],
@@ -112,7 +113,7 @@ function buildMapEntities(selectedCode: Port["code"]): IntelMapEntity[] {
         lng: port.lng + Math.cos(rad) * offset,
       },
       risk: v.riskLevel,
-      confidence: v.status === "validated" ? "verified" : v.sanctionsHit ? "inferred" : "observed",
+      confidence: v.status === "validated" ? "unconfirmed" : v.sanctionsHit ? "inferred" : "unconfirmed",
       subtitle: `${v.type} · ${v.flag} · IMO ${v.imo}`,
       meta: [
         ["Voyage", v.voyage],
@@ -145,10 +146,10 @@ export function PortOpsCentre() {
           {
             label: "Congestion",
             value: `${port.congestionIndex}%`,
-            confidence: "observed",
+            confidence: "unconfirmed",
           },
-          { label: "Avg wait", value: `${port.avgWaitHours}h`, confidence: "observed" },
-          { label: "Arrivals today", value: String(port.todaysEta), confidence: "verified" },
+          { label: "Avg wait", value: `${port.avgWaitHours}h`, confidence: "unconfirmed" },
+          { label: "Arrivals today", value: String(port.todaysEta), confidence: "unconfirmed" },
         ],
       }),
       [port],
@@ -157,7 +158,9 @@ export function PortOpsCentre() {
 
 
   return (
-    <IntelCentreShell
+    <>
+      <DemoDataNotice surface="Port Intelligence" className="mb-3" />
+      <IntelCentreShell
       title="Port Operations"
       subtitle="Live congestion, berth status and forecast across Nigerian ports."
       kpiRibbon={<KpiRibbon items={KPIS} />}
@@ -228,9 +231,9 @@ export function PortOpsCentre() {
               descriptor={`${port.code} · ${port.city}`}
               confidence="verified"
               evidence={[
-                { label: "Congestion", value: `${port.congestionIndex}%`, confidence: "observed" },
-                { label: "Avg wait", value: `${port.avgWaitHours}h`, confidence: "observed" },
-                { label: "Arrivals", value: String(port.todaysEta), confidence: "verified" },
+                { label: "Congestion", value: `${port.congestionIndex}%`, confidence: "unconfirmed" },
+                { label: "Avg wait", value: `${port.avgWaitHours}h`, confidence: "unconfirmed" },
+                { label: "Arrivals", value: String(port.todaysEta), confidence: "unconfirmed" },
               ]}
               onDismiss={dismiss}
             />
@@ -253,7 +256,7 @@ export function PortOpsCentre() {
               <div className="mb-2 flex items-center gap-2">
                 <Anchor className="h-4 w-4 text-[color:var(--color-blue)]" />
                 <div className="text-[13px] font-semibold text-foreground">{port.name}</div>
-                <ConfidenceChip tier="verified" size={9} />
+                <ConfidenceChip tier="unconfirmed" size={9} />
               </div>
               <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11.5px]">
                 {[
@@ -363,7 +366,7 @@ export function PortOpsCentre() {
                   key: "c",
                   label: "Confidence",
                   align: "right",
-                  render: () => <ConfidenceChip tier="observed" size={9} />,
+                  render: () => <ConfidenceChip tier="unconfirmed" size={9} />,
                 },
               ]}
               rows={arrivals}
@@ -409,12 +412,12 @@ export function PortOpsCentre() {
             {
               title: "Apapa congestion trending up",
               detail: "Observed +6pts in 6h · anchorage queue at 14 vessels.",
-              confidence: "observed",
+              confidence: "unconfirmed",
             },
             {
               title: "Berth 4 idle > 8h at Onne",
               detail: "No allocation logged since 02:14 UTC.",
-              confidence: "observed",
+              confidence: "unconfirmed",
             },
             {
               title: "Weather advisory · Bight",
@@ -431,7 +434,7 @@ export function PortOpsCentre() {
             {
               title: "Notify pilotage of MV Ocean Pearl priority",
               detail: "High risk, hold on validation.",
-              confidence: "observed",
+              confidence: "unconfirmed",
             },
           ]}
           historical={[
@@ -444,7 +447,8 @@ export function PortOpsCentre() {
           related={[{ ref: "INV-2412-01", title: "Ocean Pearl berth clearance", status: "Open" }]}
         />
       }
-    />
+      />
+    </>
   );
 }
 

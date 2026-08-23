@@ -19,7 +19,11 @@
       "request": {
         "method": "POST",
         "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "url": { "raw": "{{baseUrl}}/api/copilot/query", "host": ["{{baseUrl}}"], "path": ["api", "copilot", "query"] },
+        "url": {
+          "raw": "{{baseUrl}}/api/copilot/query",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "copilot", "query"]
+        },
         "body": {
           "mode": "raw",
           "raw": "{\n  \"query\": \"Summarise ownership risk for MV Crimson Endeavour\",\n  \"investigationId\": \"inv_2026_00431\"\n}"
@@ -30,35 +34,55 @@
       "name": "GET /api/entity/:id",
       "request": {
         "method": "GET",
-        "url": { "raw": "{{baseUrl}}/api/entity/ent_vessel_9837456", "host": ["{{baseUrl}}"], "path": ["api", "entity", "ent_vessel_9837456"] }
+        "url": {
+          "raw": "{{baseUrl}}/api/entity/ent_vessel_9837456",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "entity", "ent_vessel_9837456"]
+        }
       }
     },
     {
       "name": "GET /api/relationship/:id",
       "request": {
         "method": "GET",
-        "url": { "raw": "{{baseUrl}}/api/relationship/rel_operates_001", "host": ["{{baseUrl}}"], "path": ["api", "relationship", "rel_operates_001"] }
+        "url": {
+          "raw": "{{baseUrl}}/api/relationship/rel_operates_001",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "relationship", "rel_operates_001"]
+        }
       }
     },
     {
       "name": "GET /api/evidence/:id",
       "request": {
         "method": "GET",
-        "url": { "raw": "{{baseUrl}}/api/evidence/evd_ais_001", "host": ["{{baseUrl}}"], "path": ["api", "evidence", "evd_ais_001"] }
+        "url": {
+          "raw": "{{baseUrl}}/api/evidence/evd_ais_001",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "evidence", "evd_ais_001"]
+        }
       }
     },
     {
       "name": "GET /api/investigation/:id",
       "request": {
         "method": "GET",
-        "url": { "raw": "{{baseUrl}}/api/investigation/inv_2026_00431", "host": ["{{baseUrl}}"], "path": ["api", "investigation", "inv_2026_00431"] }
+        "url": {
+          "raw": "{{baseUrl}}/api/investigation/inv_2026_00431",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "investigation", "inv_2026_00431"]
+        }
       }
     },
     {
       "name": "GET /api/session/:id",
       "request": {
         "method": "GET",
-        "url": { "raw": "{{baseUrl}}/api/session/ses_9c17ab", "host": ["{{baseUrl}}"], "path": ["api", "session", "ses_9c17ab"] }
+        "url": {
+          "raw": "{{baseUrl}}/api/session/ses_9c17ab",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "session", "ses_9c17ab"]
+        }
       }
     }
   ]

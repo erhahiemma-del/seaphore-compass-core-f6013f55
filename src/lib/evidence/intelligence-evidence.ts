@@ -30,13 +30,7 @@ import type { NormalizedEvidence } from "@/services/ial/types";
 
 /** Broad category — drives the filter chips in the viewer. */
 export type EvidenceType =
-  | "ais-continuity"
-  | "movement"
-  | "identity"
-  | "sanctions"
-  | "ownership"
-  | "assessment"
-  | "other";
+  "ais-continuity" | "movement" | "identity" | "sanctions" | "ownership" | "assessment" | "other";
 
 /** Officer-facing verification status. */
 export type EvidenceStatus = "verified" | "pending" | "historical" | "conflicting" | "rejected";
@@ -49,13 +43,7 @@ export type EvidenceConfidence = "VERIFIED" | "OBSERVED" | "INFERRED" | "UNCONFI
  * Never contains raw API payloads.
  */
 export type EvidenceEntityType =
-  | "vessel"
-  | "company"
-  | "person"
-  | "cargo"
-  | "port"
-  | "incident"
-  | "document";
+  "vessel" | "company" | "person" | "cargo" | "port" | "incident" | "document";
 
 export interface EvidenceEntityRef {
   type: EvidenceEntityType;

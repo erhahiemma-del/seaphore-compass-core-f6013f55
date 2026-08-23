@@ -22,6 +22,7 @@
  * OKL panels — reads the same fused package.
  */
 import { classifyIntent } from "./intent-classifier";
+import { ambientEntityOf, type MissionContext } from "./mission-context";
 import { ensureSession, appendHistory } from "./context-manager";
 import { scheduleRetrievals } from "./scheduler";
 import { bridgeToIal } from "./ial-bridge";
@@ -44,6 +45,15 @@ export interface OrchestrationDeps {
   /** Authenticated Supabase client (server-fn context). If omitted the
    *  browser client is used and persistence is best-effort. */
   supabase?: SupabaseClient;
+  /**
+   * The investigation the officer currently has open, or null.
+   *
+   * Offered to the classifier, which applies it only when the query's own
+   * context policy resolves to `inherit`. A question that named its own
+   * subject, or asked about the whole fleet, never sees it — so an open
+   * investigation cannot narrow an unrelated question.
+   */
+  missionContext?: MissionContext | null;
 }
 
 export async function orchestrate(
@@ -55,8 +65,17 @@ export async function orchestrate(
   const session = ensureSession(query);
   let micBootstrapResult: MicBootstrapResult | null = null; // captured for IPEF
 
-  // 1. Intent
-  const intent = classifyIntent(query);
+  // 1. Intent — one authoritative reading. The mission context is offered,
+  //    not imposed; see OrchestrationDeps.missionContext.
+  const intent = classifyIntent(query, {
+    ambientEntity: ambientEntityOf(deps.missionContext ?? null),
+  });
+  console.info("[orchestrator] intent", {
+    officerIntent: intent.understanding.intent,
+    scope: intent.understanding.scope,
+    contextPolicy: intent.understanding.contextPolicy,
+    workspace: intent.workspace,
+  });
 
   // 2. Schedule specialist retrievals in parallel — thread the authenticated
   //    client so every agent reads under the officer's auth context (RLS).

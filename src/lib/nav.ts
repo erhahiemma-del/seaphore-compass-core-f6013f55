@@ -1,5 +1,7 @@
 import {
+  Database,
   LayoutDashboard,
+  Map,
   Radar,
   Search,
   Gavel,
@@ -53,6 +55,12 @@ export const NAV_GROUPS: NavGroup[] = [
         subtitle: "National Overview",
         url: "/",
         icon: LayoutDashboard,
+      },
+      {
+        title: "Maritime Command",
+        subtitle: "Live Operational Map",
+        url: "/maritime",
+        icon: Map,
       },
       {
         title: "Command Center",
@@ -172,6 +180,12 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: "System",
     items: [
+      {
+        title: "Data Sources",
+        subtitle: "Evidence Providers",
+        url: "/data-sources",
+        icon: Database,
+      },
       { title: "Administration", subtitle: "System Management", url: "/admin", icon: Settings },
     ],
   },

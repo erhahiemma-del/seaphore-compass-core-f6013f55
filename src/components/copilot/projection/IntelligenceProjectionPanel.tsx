@@ -35,7 +35,7 @@ import {
 } from "lucide-react";
 import type { IbeResult } from "@/services/ibe/types";
 import type { HumanResponse } from "@/services/oie/types";
-import type { MissionContext } from "@/stores/mission-context.store";
+import type { MissionWorkspaceState } from "@/stores/mission-workspace.store";
 import { useWorkspaceStore } from "@/stores/workspace.store";
 
 /* ── STAGE COPY ─────────────────────────────────────────────────────────── */
@@ -80,7 +80,7 @@ function nextMilestone(stage: string | undefined): string {
 export interface IntelligenceProjectionPanelProps {
   ibe: IbeResult["ibe"] | null | undefined;
   humanResponse: HumanResponse | null | undefined;
-  mission: MissionContext | null | undefined;
+  mission: MissionWorkspaceState | null | undefined;
   briefingId?: string;
   className?: string;
 }
@@ -166,7 +166,7 @@ function InvestigationStatusCard({
   workspaceArtefactCount,
 }: {
   ibe: IbeResult["ibe"] | null | undefined;
-  mission: MissionContext | null | undefined;
+  mission: MissionWorkspaceState | null | undefined;
   humanResponse: HumanResponse | null | undefined;
   workspaceArtefactCount: number;
 }) {
@@ -481,7 +481,7 @@ function LiveInvestigationTimelineCard({
   workspaceArtefactCount,
 }: {
   ibe: IbeResult["ibe"] | null | undefined;
-  mission: MissionContext | null | undefined;
+  mission: MissionWorkspaceState | null | undefined;
   briefingId?: string;
   workspaceArtefactCount: number;
 }) {

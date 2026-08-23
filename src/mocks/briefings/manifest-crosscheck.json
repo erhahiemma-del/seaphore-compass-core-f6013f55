@@ -60,9 +60,7 @@
     { "step": "2", "from": "Container list", "to": "HS code per container" },
     { "step": "3", "from": "Cross-check with EDI", "to": "2 mismatches" }
   ],
-  "intelligenceGaps": [
-    "Physical inspection outcome for the two flagged containers."
-  ],
+  "intelligenceGaps": ["Physical inspection outcome for the two flagged containers."],
   "decisionImpact": {
     "revenue": 0.25,
     "security": 0.1,
@@ -70,7 +68,10 @@
     "cargo": 0.55
   },
   "officerActions": [
-    { "id": "act-inspect", "label": "Order physical inspection of containers MSCU-8827134-042 and -117" },
+    {
+      "id": "act-inspect",
+      "label": "Order physical inspection of containers MSCU-8827134-042 and -117"
+    },
     { "id": "act-hold", "label": "Place manifest on customs hold pending inspection" }
   ],
   "evidenceSources": {

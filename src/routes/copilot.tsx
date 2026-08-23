@@ -66,7 +66,12 @@ import { getIntelligenceMetrics } from "@/lib/intelligence-metrics.functions";
 import { copilotOverrideFn } from "@/lib/orchestration.functions";
 import { runOIEFn } from "@/lib/oie/oie.functions";
 import { cn } from "@/lib/utils";
-import { captureOverride } from "@/services/orchestration";
+import {
+  captureOverride,
+  missionForSelection,
+  type MissionContext,
+} from "@/services/orchestration";
+import { useMapSelector } from "@/services/geospatial";
 import { runOIE, type Clarification } from "@/services/oie";
 import { enhanceWithIBE, persistHypotheses } from "@/services/ibe";
 import { IntelligenceProjectionPanel } from "@/components/copilot/projection/IntelligenceProjectionPanel";
@@ -81,10 +86,10 @@ import type { HumanResponse } from "@/services/oie/types";
 import type { IbeResult } from "@/services/ibe/types";
 import { ClarifyCard } from "@/components/copilot/ClarifyCard";
 import { useAuthStore } from "@/stores/auth.store";
-import { useCopilotStore } from "@/stores/copilot.store";
+import { useCopilotStore, type CopilotContext } from "@/stores/copilot.store";
 import { useCopilotRunStore, readResumableRun } from "@/stores/copilot-run.store";
 import { useIsDevBypass } from "@/stores/dev-mode.store";
-import { useMissionContextStore } from "@/stores/mission-context.store";
+import { useMissionWorkspaceStore } from "@/stores/mission-workspace.store";
 import { useWorkspaceStore } from "@/stores/workspace.store";
 import { buildLineageTrace } from "@/lib/lineage/build-lineage";
 import { useCopilotSession } from "@/hooks/use-copilot-session";
@@ -116,6 +121,45 @@ export const Route = createFileRoute("/copilot")({
 });
 
 type Stage = "idle" | "classifying" | "retrieving" | "reasoning" | "rendering" | "ready";
+
+/**
+ * Build the canonical `MissionContext` from the Copilot's context bar.
+ *
+ * Returns null when nothing is open, which is the normal state — not an
+ * error and not a reason to substitute a default subject. The kind is
+ * carried explicitly so the context policy can reason about it; the
+ * legacy `{vessel, port, investigation_id}` shape could not, because a
+ * bare label does not say what it names.
+ */
+function missionContextFor(
+  context: CopilotContext | null,
+  activeMissionId: string | null,
+): MissionContext | null {
+  if (!context) return null;
+
+  const kind: MissionContext["subject"]["kind"] | null =
+    context.kind === "vessel" ? "vessel" : context.kind === "port" ? "port" : null;
+  // An investigation or case is not a map entity the understanding layer
+  // can resolve, so it is not offered as an ambient subject.
+  if (!kind) return null;
+
+  // The label may carry a trailing identifier, e.g. "MV X · IMO 9074729".
+  const label = context.label.split("·")[0]!.trim();
+  const imo = /\b(\d{7})\b/.exec(context.label)?.[1] ?? null;
+
+  return {
+    investigationId: activeMissionId ?? `inv-${imo ?? label.toLowerCase().replace(/\s+/g, "-")}`,
+    subject: {
+      kind,
+      text: label,
+      identifier: imo,
+      identifierKind: imo ? "imo" : null,
+      // Explicitly opened by the officer, so the subject is not in doubt.
+      confidence: 1,
+    },
+    openedAt: new Date().toISOString(),
+  };
+}
 
 interface Investigation {
   id: string;
@@ -207,10 +251,26 @@ function CopilotOpsPage() {
   const authUserId = useAuthStore((s) => s.officer?.userId);
   const officerId = authUserId ?? "00000000-0000-0000-0000-000000000000";
   const session = useCopilotSession();
-  const activeMissionId = useMissionContextStore((s) => s.activeId);
-  const activeMission = useMissionContextStore((s) =>
+  const activeMissionId = useMissionWorkspaceStore((s) => s.activeId);
+  const activeMission = useMissionWorkspaceStore((s) =>
     s.activeId ? (s.missions[s.activeId] ?? null) : null,
   );
+
+  /**
+   * What the officer has open on the map, as operational context.
+   *
+   * Read straight from the shared geospatial service — the single owner
+   * of selection — so this is not a second copy that could disagree with
+   * what is on screen. `missionForSelection` returns `null` for kinds
+   * with no honest entity representation (a SAR detection is not a
+   * vessel), and stale context cannot persist because this recomputes
+   * from the current selection on every change.
+   */
+  const mapSelection = useMapSelector((state) => state.selection);
+  const missionFromMap = useMemo(() => {
+    const bridged = missionForSelection(mapSelection);
+    return bridged.status === "opened" ? bridged.mission : null;
+  }, [mapSelection]);
 
   const [text, setText] = useState("");
   const [stage, setStage] = useState<Stage>("idle");
@@ -233,7 +293,9 @@ function CopilotOpsPage() {
   const [clarify, setClarify] = useState<Clarification | null>(null);
   const [followUps, setFollowUps] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [activeInvestigation, setActiveInvestigation] = useState<string>("inv-ocean-pearl");
+  // null until the officer opens one. See mission-context.ts — "no
+  // investigation" is the normal state, not an error state.
+  const [activeInvestigation, setActiveInvestigation] = useState<string | null>(null);
   const [panelTab, setPanelTab] = useState<"context" | "evidence" | "timeline" | "notes">(
     "context",
   );
@@ -282,12 +344,25 @@ function CopilotOpsPage() {
       await new Promise((r) => setTimeout(r, 60));
       setStage("retrieving");
 
-      const missionState = useMissionContextStore.getState();
+      const missionState = useMissionWorkspaceStore.getState();
       const mission = activeMissionId ? missionState.missions[activeMissionId] : undefined;
       const payload = {
         query: q,
         officer_id: officerId,
         mission: mission as unknown as Record<string, unknown> | undefined,
+        // The canonical shape. Null when nothing is open — the normal
+        // state — and offered rather than imposed: the context policy
+        // decides whether this subject may reach the query, so a fleet
+        // question cannot inherit an open vessel.
+        // The context bar is an explicit choice, so it wins. When it is
+        // empty the officer's map selection stands in — closing the link
+        // that previously stopped at the Context Drawer. Either way the
+        // result is *offered*, and `classifyIntent` still applies it only
+        // when the question's own context policy resolves to `inherit`.
+        mission_context: missionContextFor(context, activeMissionId) ?? missionFromMap,
+        // Legacy fields, retained for un-migrated consumers. They name a
+        // subject without saying what kind it is, which is why
+        // `mission_context` supersedes them.
         context: context
           ? {
               investigation_id: context.kind === "investigation" ? context.label : undefined,
@@ -316,9 +391,7 @@ function CopilotOpsPage() {
       // downstream surface can resolve evidence via getUip(source_uip_id).
       if (abandoned()) throw new CancelledRun();
       const uipFromResult = (rawResult as { uip?: unknown }).uip as
-        | import("@/services/ife/unified").UnifiedIntelligencePackage
-        | null
-        | undefined;
+        import("@/services/ife/unified").UnifiedIntelligencePackage | null | undefined;
       if (uipFromResult && uipFromResult.id) {
         (await import("@/stores/uip.store")).useUipStore.getState().register(uipFromResult);
         setUipId(uipFromResult.id);
@@ -621,7 +694,14 @@ function CopilotOpsPage() {
    * briefing above, input docked to the bottom. Same submit path.
    */
   const investigationMode = Boolean(briefing) || isStreaming || Boolean(clarify) || Boolean(error);
-  const subjectLabel = (context?.label ?? "MV Ocean Pearl").split("·")[0]!.trim();
+  /**
+   * The subject on screen, or null.
+   *
+   * G6.0: no fallback vessel. A hardcoded name here is what made an
+   * officer with nothing open appear to be investigating a specific ship,
+   * and made every unrelated question look like it was about that ship.
+   */
+  const subjectLabel = context?.label ? context.label.split("·")[0]!.trim() : null;
 
   /**
    * Focus management — the command input is remounted when the workspace
@@ -764,24 +844,49 @@ function CopilotOpsPage() {
           <section className="flex flex-col gap-3">
             <div className="flex flex-1 flex-col rounded-xl border border-border/60 bg-white shadow-sm">
               <div className="flex items-start justify-between border-b border-border/60 px-4 py-2.5">
+                {/* Context bar. States absence rather than filling it with a
+                    vessel the officer never opened — the whole point of the
+                    G6.0 context fix. */}
                 <div className="flex items-start gap-3 text-[12px]">
-                  <span className="mt-1 inline-block h-2 w-2 rounded-full bg-[color:var(--color-teal)]" />
+                  <span
+                    className={cn(
+                      "mt-1 inline-block h-2 w-2 rounded-full",
+                      subjectLabel ? "bg-[color:var(--color-teal)]" : "bg-muted-foreground/40",
+                    )}
+                  />
                   <div>
                     <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                       Current Investigation
                     </div>
-                    <div className="text-[13px] font-semibold text-foreground">
-                      {context?.label ?? "MV Ocean Pearl · IMO 9438291"}
+                    <div
+                      className={cn(
+                        "text-[13px] font-semibold",
+                        subjectLabel ? "text-foreground" : "text-muted-foreground",
+                      )}
+                    >
+                      {context?.label ?? "No active investigation"}
                     </div>
                     <div className="mt-0.5 flex items-center gap-2 text-[11px]">
-                      <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
-                        Active
-                      </span>
-                      <span className="text-muted-foreground">
-                        Mission ·{" "}
-                        <span className="font-medium text-foreground">
-                          {briefing?.query ? "Intelligence briefing" : "Awaiting Investigation"}
+                      {subjectLabel ? (
+                        <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
+                          Active
                         </span>
+                      ) : (
+                        <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Global
+                        </span>
+                      )}
+                      <span className="text-muted-foreground">
+                        {subjectLabel ? (
+                          <>
+                            Mission ·{" "}
+                            <span className="font-medium text-foreground">
+                              {briefing?.query ? "Intelligence briefing" : "Awaiting Investigation"}
+                            </span>
+                          </>
+                        ) : (
+                          "Questions are answered across the whole fleet"
+                        )}
                       </span>
                     </div>
                   </div>
@@ -829,6 +934,7 @@ function CopilotOpsPage() {
               <div
                 ref={workspaceScrollRef}
                 data-testid="copilot-workspace-scroll"
+
                 className={cn(
                   "min-h-0 flex-1 overflow-auto overscroll-contain scroll-smooth",
                   investigationMode ? "p-4" : "flex p-0",
@@ -1052,14 +1158,30 @@ function CopilotOpsPage() {
                   ))}
                 </div>
 
+                {/* Adaptive rail. The vessel, risk and ownership panels are
+                    about a subject, so they mount only when there is one.
+                    Showing them against no investigation is what made the
+                    console look like it was always investigating a ship. */}
                 <div className="space-y-5 p-4">
-                  <VesselSnapshot />
-                  <RiskOverview />
-                  <OwnershipGraph />
+                  {subjectLabel ? (
+                    <>
+                      <VesselSnapshot label={subjectLabel} />
+                      <RiskOverview />
+                      <OwnershipGraph />
+                    </>
+                  ) : (
+                    <section className="rounded-lg border border-dashed border-border/60 bg-muted/20 p-4">
+                      <SectionLabel>No subject selected</SectionLabel>
+                      <p className="mt-1.5 text-[11.5px] text-muted-foreground">
+                        Vessel, risk and ownership panels appear once you open an investigation.
+                        Questions asked now are answered across the whole fleet.
+                      </p>
+                    </section>
+                  )}
                   <CopilotCommandsPanel
                     onRun={handleSubmit}
-                    vessel={context?.label ?? "MV Ocean Pearl"}
-                    investigation={activeInvestigation}
+                    vessel={subjectLabel ?? ""}
+                    investigation={activeInvestigation ?? ""}
                     hasIntelligencePackage={Boolean(briefing)}
                     role="officer"
                     disabled={mutation.isPending}
@@ -1302,7 +1424,15 @@ function InvestigationRow({
 
 /* ---------- Right panel widgets ---------- */
 
-function VesselSnapshot() {
+/**
+ * Vessel snapshot.
+ *
+ * The identifiers below are still demo fixtures — no connector supplies a
+ * vessel particulars record yet. The *name* is now the subject the officer
+ * actually opened, so the panel can no longer claim to be showing a vessel
+ * nobody selected. Wiring the remaining rows is tracked as G6.1.
+ */
+function VesselSnapshot({ label }: { label: string }) {
   return (
     <section>
       <div className="mb-2 flex items-center justify-between">
@@ -1316,7 +1446,7 @@ function VesselSnapshot() {
           <Ship className="h-8 w-8 opacity-80" />
         </div>
         <div className="space-y-1 p-3 text-[11.5px]">
-          <div className="text-[13px] font-semibold text-foreground">MV Ocean Pearl</div>
+          <div className="text-[13px] font-semibold text-foreground">{label}</div>
           <Row label="IMO" value="9438291" />
           <Row label="MMSI" value="657123400" />
           <Row label="Flag" value="Panama" />

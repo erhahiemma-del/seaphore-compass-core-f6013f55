@@ -30,6 +30,7 @@ import { TypeTiles } from "@/components/type-tiles";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { useHandoffNavigate } from "@/lib/nav-context";
 import { QUERY_KEYS, QUERY_STALE } from "@/lib/query-keys";
+import { DemoDataNotice } from "@/components/intelligence/DemoDataNotice";
 import {
   getDetectFeed,
   SIGNAL_DOMAINS,
@@ -79,10 +80,7 @@ export function DetectPage() {
         signalId: s.id,
         entityId: s.entityId,
         confidence: s.confidence.toUpperCase() as
-          | "VERIFIED"
-          | "OBSERVED"
-          | "INFERRED"
-          | "UNCONFIRMED",
+          "VERIFIED" | "OBSERVED" | "INFERRED" | "UNCONFIRMED",
         fromStage: "Detect",
         fromRoute: "/detect",
       },
@@ -92,6 +90,7 @@ export function DetectPage() {
 
   return (
     <AppShell title="Detect" subtitle="Intelligence Feed" mode="light">
+      <DemoDataNotice surface="Detect" className="mb-3" />
       <div className="mx-auto max-w-[1500px] space-y-4 p-4 lg:p-6">
         {/* DET-1 */}
         <DomainFilterTabs

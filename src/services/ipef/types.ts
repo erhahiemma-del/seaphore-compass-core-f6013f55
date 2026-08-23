@@ -27,14 +27,7 @@
  * Future: cargo-intelligence, threat-intelligence, behavioral-engine, etc.
  */
 export type IpefContributorId =
-  | "evidence-providers"
-  | "ial"
-  | "ife"
-  | "mic"
-  | "canonical-uip"
-  | "oie"
-  | "copilot"
-  | string; // future engines register their own id
+  "evidence-providers" | "ial" | "ife" | "mic" | "canonical-uip" | "oie" | "copilot" | string; // future engines register their own id
 
 export type IpefStageStatus = "success" | "degraded" | "failed" | "skipped" | "not-run";
 

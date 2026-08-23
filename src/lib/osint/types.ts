@@ -8,34 +8,15 @@
  */
 
 export type OsintCategory =
-  | "AIS"
-  | "SANCTIONS"
-  | "REGISTRY"
-  | "WEATHER"
-  | "IMAGERY"
-  | "TRADE"
-  | "COMPLIANCE";
+  "AIS" | "SANCTIONS" | "REGISTRY" | "WEATHER" | "IMAGERY" | "TRADE" | "COMPLIANCE";
 
 export type OsintAuthMethod = "none" | "api_key" | "oauth" | "credentials";
 
 export type OsintEntityType =
-  | "VESSEL"
-  | "VOYAGE"
-  | "AGENT"
-  | "CARGO"
-  | "OWNER"
-  | "PORT"
-  | "SANCTION"
-  | "WEATHER"
-  | "ALERT";
+  "VESSEL" | "VOYAGE" | "AGENT" | "CARGO" | "OWNER" | "PORT" | "SANCTION" | "WEATHER" | "ALERT";
 
 export type OsintConfidenceLevel =
-  | "OBSERVED"
-  | "DECLARED"
-  | "INFERRED"
-  | "CORROBORATED"
-  | "VERIFIED"
-  | "AUDITED";
+  "OBSERVED" | "DECLARED" | "INFERRED" | "CORROBORATED" | "VERIFIED" | "AUDITED";
 
 export type OsintHealthStatus = "healthy" | "degraded" | "down";
 export type OsintSyncStatus = "success" | "partial" | "failed";

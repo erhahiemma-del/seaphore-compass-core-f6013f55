@@ -7,7 +7,7 @@
  * from prior conversation.
  */
 import type { OIEResult } from "@/services/oie/types";
-import type { MissionContext } from "@/stores/mission-context.store";
+import type { MissionWorkspaceState } from "@/stores/mission-workspace.store";
 import type { IbeHypothesis } from "./types";
 
 const DOMAIN_PATTERNS: Array<{ re: RegExp; domain: IbeHypothesis["domain"]; statement: string }> = [
@@ -60,7 +60,7 @@ function isHypothesis(x: unknown): x is IbeHypothesis {
   );
 }
 
-export function readMissionHypotheses(mission: MissionContext | null): IbeHypothesis[] {
+export function readMissionHypotheses(mission: MissionWorkspaceState | null): IbeHypothesis[] {
   return (mission?.hypotheses ?? []).filter(isHypothesis);
 }
 

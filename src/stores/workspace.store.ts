@@ -16,12 +16,7 @@ export type WorkspaceStatus = "ACTIVE" | "MONITORING" | "SUSPENDED" | "CLOSED";
 export type WorkspacePriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 export type ConfidenceTier = "LOW" | "MEDIUM" | "HIGH";
 export type InvestigationStage =
-  | "INTAKE"
-  | "EVIDENCE"
-  | "ANALYSIS"
-  | "DECISION"
-  | "REPORT"
-  | "CLOSED";
+  "INTAKE" | "EVIDENCE" | "ANALYSIS" | "DECISION" | "REPORT" | "CLOSED";
 export const INVESTIGATION_STAGES: InvestigationStage[] = [
   "INTAKE",
   "EVIDENCE",
@@ -56,12 +51,7 @@ export interface WorkspaceEvidence {
 }
 
 export type HypothesisStatus =
-  | "UNDER_REVIEW"
-  | "SUPPORTED"
-  | "CONTRADICTED"
-  | "CONFIRMED"
-  | "REJECTED"
-  | "RETIRED";
+  "UNDER_REVIEW" | "SUPPORTED" | "CONTRADICTED" | "CONFIRMED" | "REJECTED" | "RETIRED";
 export interface WorkspaceHypothesis {
   id: string;
   statement: string;
@@ -139,17 +129,10 @@ export interface WorkspaceRecommendation {
 // OUTCOME record. OIE's HISTORICAL_OUTCOME + RECOMMENDATION_EFFECTIVENESS
 // lenses read these fields via okl_records.
 export type ResolutionStatus =
-  | "RESOLVED"
-  | "PARTIALLY_RESOLVED"
-  | "UNRESOLVED"
-  | "ESCALATED"
-  | "REFERRED";
+  "RESOLVED" | "PARTIALLY_RESOLVED" | "UNRESOLVED" | "ESCALATED" | "REFERRED";
 export type SuccessRating = "SUCCESS" | "PARTIAL_SUCCESS" | "FAILURE" | "INCONCLUSIVE";
 export type RecommendationEffectiveness =
-  | "EFFECTIVE"
-  | "PARTIALLY_EFFECTIVE"
-  | "INEFFECTIVE"
-  | "NOT_ACTIONED";
+  "EFFECTIVE" | "PARTIALLY_EFFECTIVE" | "INEFFECTIVE" | "NOT_ACTIONED";
 export interface RecommendationRating {
   recommendationId?: string;
   label: string;
@@ -179,12 +162,7 @@ export interface WorkspaceOutcome {
 // and tasks remain first-class panels but are also linkable from notebook
 // entries by ref.
 export type NotebookKind =
-  | "NOTE"
-  | "FINDING"
-  | "HYPOTHESIS"
-  | "RECOMMENDATION"
-  | "QUESTION"
-  | "TASK";
+  "NOTE" | "FINDING" | "HYPOTHESIS" | "RECOMMENDATION" | "QUESTION" | "TASK";
 export interface NotebookVersion {
   at: string;
   body: string;

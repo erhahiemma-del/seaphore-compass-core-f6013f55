@@ -1,7 +1,9 @@
 ## Summary
+
 <!-- What does this PR do and why? Link to the spec section it satisfies. -->
 
 ## Acceptance Criteria
+
 - [ ] Lint passes (`bun run lint`)
 - [ ] Typecheck passes (`bunx tsgo --noEmit`)
 - [ ] Unit tests pass (`bun run test:unit`)

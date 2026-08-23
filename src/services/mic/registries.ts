@@ -77,9 +77,7 @@ export class MicEntityRegistry extends BaseRegistry<MicEntityRegistryEntry> {
   private readonly byKind = new Map<string, Set<string>>();
   private readonly byAlias = new Map<string, string>(); // alias → canonical id
 
-  register(
-    entry: Omit<MicEntityRegistryEntry, "id" | "revision" | "registeredAt" | "lastUpdatedAt">,
-  ): MicEntityRegistryEntry {
+  register(entry: Omit<MicEntityRegistryEntry, "id" | "revision">): MicEntityRegistryEntry {
     const existing = this.store.get(entry.canonicalId);
     const now = new Date().toISOString();
     const revision = (existing?.revision ?? 0) + 1;
@@ -140,7 +138,7 @@ export class MicRelationshipRegistry extends BaseRegistry<MicRelationshipRegistr
   private readonly byEntity = new Map<string, Set<string>>(); // entityId → edgeIds
 
   register(
-    entry: Omit<MicRelationshipRegistryEntry, "id" | "revision" | "registeredAt" | "lastUpdatedAt">,
+    entry: Omit<MicRelationshipRegistryEntry, "id" | "revision">,
   ): MicRelationshipRegistryEntry {
     const existing = this.store.get(entry.edgeId);
     const now = new Date().toISOString();
@@ -193,9 +191,7 @@ export class MicEvidenceRegistry extends BaseRegistry<MicEvidenceRegistryEntry> 
   private readonly byUip = new Map<string, Set<string>>();
   private readonly byConnector = new Map<string, Set<string>>();
 
-  register(
-    entry: Omit<MicEvidenceRegistryEntry, "id" | "revision" | "registeredAt" | "lastUpdatedAt">,
-  ): MicEvidenceRegistryEntry {
+  register(entry: Omit<MicEvidenceRegistryEntry, "id" | "revision">): MicEvidenceRegistryEntry {
     if (this.store.has(entry.evidenceId)) {
       return this.store.get(entry.evidenceId)!;
     }
@@ -234,9 +230,7 @@ export class MicEvidenceRegistry extends BaseRegistry<MicEvidenceRegistryEntry> 
 // ─────────────────────────────────────────────────────────────────────
 
 export class MicConfidenceRegistry extends BaseRegistry<MicConfidenceRegistryEntry> {
-  register(
-    entry: Omit<MicConfidenceRegistryEntry, "id" | "revision" | "registeredAt" | "lastUpdatedAt">,
-  ): MicConfidenceRegistryEntry {
+  register(entry: Omit<MicConfidenceRegistryEntry, "id" | "revision">): MicConfidenceRegistryEntry {
     const id = `${entry.subjectKind}:${entry.subjectId}`;
     const now = new Date().toISOString();
     const existing = this.store.get(id);
@@ -267,9 +261,7 @@ export class MicConfidenceRegistry extends BaseRegistry<MicConfidenceRegistryEnt
 export class MicTimelineRegistry extends BaseRegistry<MicTimelineEvent> {
   private readonly byEntity = new Map<string, Set<string>>();
 
-  register(
-    entry: Omit<MicTimelineEvent, "id" | "revision" | "registeredAt" | "lastUpdatedAt">,
-  ): MicTimelineEvent {
+  register(entry: Omit<MicTimelineEvent, "id" | "revision">): MicTimelineEvent {
     // Derive a stable id from entity + kind + occurredAt so duplicate
     // ingestion of the same event doesn't create duplicate entries.
     const stableId = `tl:${entry.entityId}:${entry.kind}:${entry.occurredAt}`;
@@ -304,9 +296,7 @@ export class MicTimelineRegistry extends BaseRegistry<MicTimelineEvent> {
 // ─────────────────────────────────────────────────────────────────────
 
 export class MicGraphRegistry extends BaseRegistry<MicGraphRegistryEntry> {
-  register(
-    entry: Omit<MicGraphRegistryEntry, "id" | "revision" | "registeredAt" | "lastUpdatedAt">,
-  ): MicGraphRegistryEntry {
+  register(entry: Omit<MicGraphRegistryEntry, "id" | "revision">): MicGraphRegistryEntry {
     const now = new Date().toISOString();
     const existing = this.store.get(entry.uipId);
     const revision = (existing?.revision ?? 0) + 1;
@@ -328,9 +318,7 @@ export class MicGraphRegistry extends BaseRegistry<MicGraphRegistryEntry> {
 export class MicRiskRegistry extends BaseRegistry<MicRiskRegistryEntry> {
   private readonly byBand = new Map<string, Set<string>>();
 
-  register(
-    entry: Omit<MicRiskRegistryEntry, "id" | "revision" | "registeredAt" | "lastUpdatedAt">,
-  ): MicRiskRegistryEntry {
+  register(entry: Omit<MicRiskRegistryEntry, "id" | "revision">): MicRiskRegistryEntry {
     const id = `risk:${entry.entityId}`;
     const now = new Date().toISOString();
     const existing = this.store.get(id);
@@ -368,9 +356,7 @@ export class MicReasoningRegistry extends BaseRegistry<MicReasoningRegistryEntry
   private readonly bySession = new Map<string, Set<string>>();
   private readonly byEntity = new Map<string, Set<string>>();
 
-  register(
-    entry: Omit<MicReasoningRegistryEntry, "id" | "revision" | "registeredAt" | "lastUpdatedAt">,
-  ): MicReasoningRegistryEntry {
+  register(entry: Omit<MicReasoningRegistryEntry, "id" | "revision">): MicReasoningRegistryEntry {
     const id = `reasoning:${entry.sessionId}:${entry.uipId}`;
     const now = new Date().toISOString();
     const existing = this.store.get(id);

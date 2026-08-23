@@ -37,8 +37,10 @@ const PROVIDER_STATUS_LABEL: Record<ProviderCoverageStatus, string> = {
   CREDENTIALS_INVALID: "🟠 Credentials invalid",
 
   RATE_LIMITED: "🟠 Rate limited",
+  // A provider we depend on that stopped answering. Genuine fault.
   OFFLINE: "🔴 Offline",
-  NOT_REGISTERED: "🔴 Not registered",
+  // Nobody ever registered it. Not a fault, so not red.
+  NOT_REGISTERED: "○ Not registered",
 };
 
 function when(iso: string | null): string {

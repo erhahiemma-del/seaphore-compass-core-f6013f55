@@ -30,14 +30,7 @@
 export type CapabilityStatus = "OPERATIONAL" | "DESIGNING" | "PLANNED";
 export type MaturityLevel = 1 | 2 | 3 | 4 | 5;
 export type CapabilityDomain =
-  | "vessel"
-  | "cargo"
-  | "revenue"
-  | "risk"
-  | "compliance"
-  | "port"
-  | "environmental"
-  | "operational";
+  "vessel" | "cargo" | "revenue" | "risk" | "compliance" | "port" | "environmental" | "operational";
 
 export interface CapabilityKpi {
   readonly label: string;

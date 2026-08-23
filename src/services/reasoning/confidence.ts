@@ -32,8 +32,17 @@ export const STEP_RATIO = Object.freeze({
 
 const round3 = (n: number) => Math.round(Math.min(1, Math.max(0, n)) * 1000) / 1000;
 
-/** Anchor = mean confidence of top-K evidence (default 5). */
-export function anchorFromEvidence(items: readonly ScoredEvidence[], k = 5): number {
+/**
+ * Anchor = mean confidence of top-K evidence (default 5).
+ *
+ * Typed against the only field it reads so that non-Fusion evidence —
+ * `AisDarkEvidence`, for instance — can anchor the same ladder rather than
+ * reimplement it. `ScoredEvidence` satisfies this shape unchanged.
+ */
+export function anchorFromEvidence(
+  items: readonly Pick<ScoredEvidence, "confidence">[],
+  k = 5,
+): number {
   if (items.length === 0) return 0;
   const top = items.slice(0, k);
   const sum = top.reduce((acc, it) => acc + it.confidence, 0);

@@ -27,18 +27,10 @@ export type EvidenceKind =
   | "Payment Receipt";
 
 export type EvidenceCategory =
-  | "Documents"
-  | "Media"
-  | "AIS Records"
-  | "Manifests"
-  | "Bills of Lading";
+  "Documents" | "Media" | "AIS Records" | "Manifests" | "Bills of Lading";
 
 export type EvidenceClassification =
-  | "Official Document"
-  | "Field Capture"
-  | "System Ingest"
-  | "Third-Party Feed"
-  | "OSINT";
+  "Official Document" | "Field Capture" | "System Ingest" | "Third-Party Feed" | "OSINT";
 
 export interface EvidenceItem {
   id: string;
@@ -101,7 +93,7 @@ export const EVIDENCE_LIBRARY: EvidenceItem[] = [
     format: "PDF",
     classification: "Official Document",
     source: "Shipping Line",
-    confidence: "verified",
+    confidence: "unconfirmed",
     confidenceScore: 98,
     uploadedAt: iso(0.1),
     uploadedBy: "John Bello",
@@ -123,7 +115,7 @@ export const EVIDENCE_LIBRARY: EvidenceItem[] = [
     format: "PDF",
     classification: "Official Document",
     source: "Customs Service",
-    confidence: "verified",
+    confidence: "unconfirmed",
     confidenceScore: 96,
     uploadedAt: iso(0.4),
     uploadedBy: "Mary Akinyemi",
@@ -143,7 +135,7 @@ export const EVIDENCE_LIBRARY: EvidenceItem[] = [
     format: "PDF",
     classification: "Field Capture",
     source: "PSC Inspection",
-    confidence: "observed",
+    confidence: "unconfirmed",
     confidenceScore: 84,
     uploadedAt: iso(0.7),
     uploadedBy: "Ibrahim Yusuf",
@@ -163,7 +155,7 @@ export const EVIDENCE_LIBRARY: EvidenceItem[] = [
     format: "JPG",
     classification: "Field Capture",
     source: "Officer Camera",
-    confidence: "verified",
+    confidence: "unconfirmed",
     confidenceScore: 95,
     uploadedAt: iso(1),
     uploadedBy: "John Bello",
@@ -183,7 +175,7 @@ export const EVIDENCE_LIBRARY: EvidenceItem[] = [
     format: "JSON",
     classification: "System Ingest",
     source: "MarineTraffic",
-    confidence: "verified",
+    confidence: "unconfirmed",
     confidenceScore: 99,
     uploadedAt: iso(1.3),
     uploadedBy: "System Ingest",
@@ -221,7 +213,7 @@ export const EVIDENCE_LIBRARY: EvidenceItem[] = [
     format: "PDF",
     classification: "Official Document",
     source: "Class Society",
-    confidence: "verified",
+    confidence: "unconfirmed",
     confidenceScore: 97,
     uploadedAt: iso(2),
     uploadedBy: "System Ingest",
@@ -240,7 +232,7 @@ export const EVIDENCE_LIBRARY: EvidenceItem[] = [
     format: "CSV",
     classification: "Third-Party Feed",
     source: "Terminal Operator",
-    confidence: "observed",
+    confidence: "unconfirmed",
     confidenceScore: 88,
     uploadedAt: iso(2.4),
     uploadedBy: "Sahara Cargo Ni.",
@@ -260,7 +252,7 @@ export const EVIDENCE_LIBRARY: EvidenceItem[] = [
     format: "JSON",
     classification: "System Ingest",
     source: "AIS Feed",
-    confidence: "observed",
+    confidence: "unconfirmed",
     confidenceScore: 90,
     uploadedAt: iso(3),
     uploadedBy: "System Ingest",
@@ -279,7 +271,7 @@ export const EVIDENCE_LIBRARY: EvidenceItem[] = [
     format: "PDF",
     classification: "Official Document",
     source: "Cargo Filing",
-    confidence: "observed",
+    confidence: "unconfirmed",
     confidenceScore: 85,
     uploadedAt: iso(3.6),
     uploadedBy: "Officer Bello",
@@ -298,7 +290,7 @@ export const EVIDENCE_LIBRARY: EvidenceItem[] = [
     format: "JPG",
     classification: "Field Capture",
     source: "Officer Camera",
-    confidence: "observed",
+    confidence: "unconfirmed",
     confidenceScore: 82,
     uploadedAt: iso(4),
     uploadedBy: "Officer Bello",
@@ -317,7 +309,7 @@ export const EVIDENCE_LIBRARY: EvidenceItem[] = [
     format: "PDF",
     classification: "Official Document",
     source: "Bank Feed",
-    confidence: "verified",
+    confidence: "unconfirmed",
     confidenceScore: 94,
     uploadedAt: iso(4.5),
     uploadedBy: "Officer Adeyemi",

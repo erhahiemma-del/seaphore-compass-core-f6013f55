@@ -19,18 +19,18 @@ bun run dev          # http://localhost:8080
 
 ## Scripts
 
-| Script                  | Purpose                                                     |
-| ----------------------- | ----------------------------------------------------------- |
-| `bun run dev`           | Vite dev server                                             |
-| `bun run build`         | Production build                                            |
-| `bun run lint`          | ESLint (flat config, `eslint.config.js`) + Prettier         |
-| `bun run lint:fix`      | Auto-fix                                                    |
-| `bun run format`        | Prettier over the tree                                      |
-| `bun run typecheck`     | `tsgo --noEmit` (strict mode enforced)                      |
-| `bun run test:unit`     | Vitest suite in `tests/unit/`                               |
-| `bun run test:e2e`      | Playwright suite in `tests/e2e/`                            |
-| `bun run validate`      | Lint + typecheck + unit tests + build (mirrors CI)          |
-| `bun run storybook`     | Storybook on `:6006` — see `.storybook/README.md` to install |
+| Script              | Purpose                                                      |
+| ------------------- | ------------------------------------------------------------ |
+| `bun run dev`       | Vite dev server                                              |
+| `bun run build`     | Production build                                             |
+| `bun run lint`      | ESLint (flat config, `eslint.config.js`) + Prettier          |
+| `bun run lint:fix`  | Auto-fix                                                     |
+| `bun run format`    | Prettier over the tree                                       |
+| `bun run typecheck` | `tsgo --noEmit` (strict mode enforced)                       |
+| `bun run test:unit` | Vitest suite in `tests/unit/`                                |
+| `bun run test:e2e`  | Playwright suite in `tests/e2e/`                             |
+| `bun run validate`  | Lint + typecheck + unit tests + build (mirrors CI)           |
+| `bun run storybook` | Storybook on `:6006` — see `.storybook/README.md` to install |
 
 ## Project layout
 

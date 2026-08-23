@@ -4,18 +4,43 @@
  * Contracts here are stable across model swaps (Layer 6). No component in
  * `src/services/orchestration/*` may deviate.
  */
+import type { QueryUnderstanding } from "./understanding/types";
 
 export type BriefingMode = "lookup" | "assessment" | "investigation" | "forecast";
 
-export type Workspace = "ownership" | "revenue" | "compliance" | "evidence" | "vessel" | "port";
+/**
+ * Workspace layouts.
+ *
+ * The first six are the original contracts and keep their exact ids, so
+ * persisted briefings and the `intel_briefings.workspace` column continue
+ * to resolve. The rest are the G6.0 adaptive workspaces, and their ids are
+ * identical to `WorkspaceMode` in `./understanding/types` — one vocabulary,
+ * so the workspace planner's output needs no translation.
+ */
+export type Workspace =
+  // ── Original six ────────────────────────────────────────────────
+  | "ownership"
+  | "revenue"
+  | "compliance"
+  | "evidence"
+  | "vessel"
+  | "port"
+  // ── Adaptive workspaces (G6.0) ──────────────────────────────────
+  | "fleet-overview"
+  | "executive-briefing"
+  | "investigation"
+  | "company-intelligence"
+  | "manifest-intelligence"
+  | "cargo-intelligence"
+  | "port-operations"
+  | "voyage"
+  | "pattern-analysis"
+  | "timeline"
+  | "evidence-review"
+  | "decision-support";
 
 export type EvidenceGrade =
-  | "VERIFIED"
-  | "CORROBORATED"
-  | "OBSERVED"
-  | "REPORTED"
-  | "INFERRED"
-  | "UNKNOWN";
+  "VERIFIED" | "CORROBORATED" | "OBSERVED" | "REPORTED" | "INFERRED" | "UNKNOWN";
 
 export type CapabilityId =
   | "OWNERSHIP_ANALYSIS"
@@ -57,7 +82,16 @@ export interface OfficerQuery {
   mission?: Record<string, unknown>;
 }
 
-/** 2.1 output of the Intent Classifier. */
+/**
+ * 2.1 output of the Intent Classifier — the single authoritative reading
+ * of an officer's question.
+ *
+ * `mode`, `capabilities`, `entities` and `workspace` are all **derived
+ * from `understanding`**, never computed separately. That is what makes
+ * intent drift impossible: there is one classification, and these fields
+ * are projections of it for the scheduler, the capability registry and
+ * the briefing builder, which each speak an older vocabulary.
+ */
 export interface Intent {
   mode: BriefingMode;
   capabilities: CapabilityId[];
@@ -65,6 +99,12 @@ export interface Intent {
   workspace?: Workspace;
   raw: string;
   reasoning: string;
+  /**
+   * The G6.0 reading: 22-value intent, scope, entities, time window,
+   * workspace mode and context policy. Authoritative — every other field
+   * on this interface is projected from it.
+   */
+  understanding: QueryUnderstanding;
 }
 
 export interface EvidenceItem {

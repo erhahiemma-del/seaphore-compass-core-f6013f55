@@ -18,8 +18,8 @@
  */
 import type { Briefing, BriefingSection, SectionKind } from "@/services/orchestration";
 import type { HumanResponse, OIEResult } from "@/services/oie/types";
-import type { MissionContext } from "@/stores/mission-context.store";
-import { useMissionContextStore } from "@/stores/mission-context.store";
+import type { MissionWorkspaceState } from "@/stores/mission-workspace.store";
+import { useMissionWorkspaceStore } from "@/stores/mission-workspace.store";
 
 import { inferInvestigationStage, inferPersona } from "./mission-awareness";
 import { think } from "./think";
@@ -40,7 +40,7 @@ export type {
 
 interface EnhanceInput {
   query: string;
-  mission: MissionContext | null;
+  mission: MissionWorkspaceState | null;
   result: OIEResult;
 }
 
@@ -118,12 +118,7 @@ function patchBriefingSections(briefing: Briefing, hr: HumanResponse, closer: st
       priority: f.priority,
       title: f.text,
       grade: (f.citations?.[0]?.grade ?? "OBSERVED") as
-        | "VERIFIED"
-        | "CORROBORATED"
-        | "OBSERVED"
-        | "REPORTED"
-        | "INFERRED"
-        | "UNKNOWN",
+        "VERIFIED" | "CORROBORATED" | "OBSERVED" | "REPORTED" | "INFERRED" | "UNKNOWN",
       source: f.citations?.[0]?.source ?? "Copilot behavioural layer",
       id: `${briefing.id}-ibe-kf-${i}`,
       citations: (f.citations ?? []).map((c) => ({
@@ -235,7 +230,7 @@ export function enhanceWithIBE(input: EnhanceInput): IbeResult {
 export function persistHypotheses(missionId: string | null, hypotheses: IbeHypothesis[]): void {
   if (!missionId || hypotheses.length === 0) return;
   try {
-    useMissionContextStore.getState().setMissionSlice(missionId, "hypotheses", hypotheses);
+    useMissionWorkspaceStore.getState().setMissionSlice(missionId, "hypotheses", hypotheses);
   } catch {
     // best-effort — persistence must never break the render path
   }

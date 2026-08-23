@@ -70,9 +70,41 @@ function pushHistory(mode: EntityType, query: string) {
   HISTORY[mode] = list.slice(0, 8);
 }
 
-export function MissionCommandBar() {
-  const [modeKey, setModeKey] = useState<EntityType>(DEFAULT_MODE);
+export interface MissionCommandBarProps {
+  /**
+   * Mode implied by what the officer currently has selected, or null when
+   * the selection implies nothing. Advisory only — a deliberate choice
+   * outranks it (see `pinned` below).
+   */
+  readonly contextMode?: EntityType | null;
+  /** Origin recorded on dispatch, so handoffs know where they came from. */
+  readonly fromRoute?: string;
+}
+
+export function MissionCommandBar({ contextMode = null, fromRoute }: MissionCommandBarProps = {}) {
+  /**
+   * A mode the officer chose, which context must not overrule.
+   *
+   * Null means "follow the context". Once a chip is clicked this holds
+   * that choice, because someone who deliberately switched to Manifest
+   * and then clicks a vessel on the map is still working on manifests —
+   * yanking the mode out from under them mid-task is the surprising
+   * behaviour worth designing against.
+   *
+   * The pin clears when the officer deselects, since returning to the
+   * global picture is a natural end to whatever they were doing.
+   */
+  const [pinned, setPinned] = useState<EntityType | null>(null);
+
+  useEffect(() => {
+    if (contextMode === null) setPinned(null);
+  }, [contextMode]);
+
+  const modeKey = pinned ?? contextMode ?? DEFAULT_MODE;
   const mode = MODE_BY_KEY[modeKey];
+  // Track the mode the input's prefix was written for, so a context-driven
+  // change re-prefixes without discarding what the officer has typed.
+  const prefixedFor = useRef<EntityType>(modeKey);
   const [input, setInput] = useState(mode.prefix);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -93,10 +125,21 @@ export function MissionCommandBar() {
     });
   }, []);
 
+  useEffect(() => {
+    if (prefixedFor.current === modeKey) return;
+    const previous = MODE_BY_KEY[prefixedFor.current];
+    prefixedFor.current = modeKey;
+    setInput((prev) => MODE_BY_KEY[modeKey].prefix + stripPrefix(prev, previous));
+  }, [modeKey]);
+
   const selectMode = useCallback(
     (next: EntityType) => {
       const nextMode = MODE_BY_KEY[next];
-      setModeKey(next);
+      // Clicking a chip is the deliberate act that pins the mode.
+      setPinned(next);
+      // This path re-prefixes the input itself, so claim the change here
+      // or the context-sync effect below would prefix it a second time.
+      prefixedFor.current = next;
       // Preserve any text the officer had typed by re-prefixing it.
       setInput((prev) => {
         const currentMode = MODE_BY_KEY[modeKey];
@@ -128,7 +171,7 @@ export function MissionCommandBar() {
     const query = suggestion ?? stripPrefix(raw, mode);
     if (!query) {
       // Chip-only navigation to the intelligence centre.
-      dispatch({ type: modeKey });
+      dispatch({ type: modeKey, fromRoute });
       return;
     }
     pushHistory(modeKey, query);
@@ -138,6 +181,7 @@ export function MissionCommandBar() {
       // AI awareness — downstream reasoners (Copilot / Gemini) read this
       // to constrain their answer to the active intelligence domain.
       aiContext: mode.aiContext,
+      fromRoute,
     });
   };
 

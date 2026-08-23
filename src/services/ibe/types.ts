@@ -19,16 +19,11 @@
  */
 import type { HumanResponse, OIEResult } from "@/services/oie/types";
 import type { ResponseContract } from "./response-contract";
-import type { MissionContext } from "@/stores/mission-context.store";
+import type { MissionWorkspaceState } from "@/stores/mission-workspace.store";
 
 /** How the Copilot speaks to the current officer. */
 export type OfficerPersona =
-  | "executive"
-  | "operational"
-  | "analyst"
-  | "investigator"
-  | "trainer"
-  | "briefing";
+  "executive" | "operational" | "analyst" | "investigator" | "trainer" | "briefing";
 
 /** Where the investigation currently sits in its lifecycle. */
 export type InvestigationStage =
@@ -45,14 +40,7 @@ export interface IbeHypothesis {
   id: string;
   statement: string;
   domain:
-    | "sanctions"
-    | "ownership"
-    | "revenue"
-    | "ais"
-    | "compliance"
-    | "cargo"
-    | "identity"
-    | "other";
+    "sanctions" | "ownership" | "revenue" | "ais" | "compliance" | "cargo" | "identity" | "other";
   supporting: string[];
   contradicting: string[];
   /** Free-form confidence in officer language (never a percentage). */
@@ -87,7 +75,7 @@ export interface IbeThought {
 export interface IbeContext {
   persona: OfficerPersona;
   stage: InvestigationStage;
-  mission: MissionContext | null;
+  mission: MissionWorkspaceState | null;
   /** Rolling summary of what the Copilot has already told the officer. */
   priorTurnCount: number;
   hasPriorFindings: boolean;
