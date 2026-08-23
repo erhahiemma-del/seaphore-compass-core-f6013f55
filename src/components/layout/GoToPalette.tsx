@@ -38,7 +38,7 @@ export function GoToPalette() {
   }, []);
 
   return (
-    <CommandDialog open={open} onOpenChange={setOpen} title="Go to" description="Jump to a workspace">
+    <CommandDialog open={open} onOpenChange={setOpen}>
       <CommandInput placeholder="Go to a workspace, centre or case…" />
       <CommandList>
         <CommandEmpty>No workspace matches that.</CommandEmpty>
