@@ -296,7 +296,7 @@ export function VesselCentre() {
           </Section>
 
           {/* Ownership graph (VES-3) */}
-          <Section title="Ownership Graph (VES-3)">
+          <Section title="Ownership Graph (VES-3)" receded={isReceded(["vessel", "company"])}>
             <OwnershipGraph centerId={v.id} edges={OWNERSHIP_EDGES} height={280} />
           </Section>
 
