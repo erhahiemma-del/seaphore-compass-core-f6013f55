@@ -238,6 +238,7 @@ export function CargoCentre() {
                   ]}
                   rows={projection.data!.leads}
                   rowKey={(r) => r.entityId}
+                  onRowClick={(r) => setSelectedLeadId(r.entityId)}
                   compact
                 />
               </Section>
