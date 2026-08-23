@@ -193,6 +193,25 @@ export function VesselCentre() {
       }
       main={
         <div className="space-y-4">
+          {focused && (
+            <SubjectHeader
+              kind="vessel"
+              title={v.name}
+              descriptor={`IMO ${v.imo} · ${v.type} · ${v.flag} · Built ${v.yearBuilt}`}
+              confidence={v.status === "validated" ? "verified" : "observed"}
+              evidence={[
+                { label: "Risk", value: String(v.riskScore), confidence: "observed" },
+                { label: "AIS gap", value: `${v.aisBlackoutHours.toFixed(1)}h`, confidence: "observed" },
+                {
+                  label: "Sanctions",
+                  value: v.sanctionsHit ? "Match" : "No hits",
+                  confidence: "verified",
+                },
+              ]}
+              onDismiss={dismiss}
+            />
+          )}
+
           {/* Map + profile */}
           <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_360px]">
             <div className="h-[340px]">
