@@ -27,6 +27,24 @@ export default defineConfig({
     // unaffected, keeping MCP behaviour identical in deployment.
     plugins: process.platform === "win32" ? [] : [mcpPlugin()],
 
+    optimizeDeps: {
+      /*
+       * MapLibre must not go through the dependency optimiser.
+       *
+       * Pre-bundling rewrites maplibre-gl into `.vite/deps`, but the
+       * worker it spawns is then requested at a path the optimiser does
+       * not serve, and `maplibre-gl-worker.mjs` 404s. Without its worker
+       * the map constructs, reports `mounting`, and stops there: no style
+       * fetch, no tile requests, a live canvas painting nothing.
+       *
+       * The failure is silent, which is what made it expensive to find.
+       * The renderer reported healthy, the basemap URL was reachable by
+       * hand, and the only symptom was a black rectangle that read as
+       * "the map is just a diagram".
+       */
+      exclude: ["maplibre-gl"],
+    },
+
     // Vitest reads this file, so the exclusions live here rather than in a
     // second config that would have to re-declare the `@/` alias every
     // test depends on.

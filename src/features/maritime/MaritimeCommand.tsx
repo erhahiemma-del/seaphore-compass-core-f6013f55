@@ -177,7 +177,16 @@ export function MaritimeCommand() {
   }, [enabledCsv, scopedVessels, feed.loading, feed.error]);
 
   return (
-    <div ref={shellRef} className="flex h-full flex-col overflow-hidden bg-background">
+    // `h-dvh`, not `h-full`. `h-full` is `height: 100%`, which resolves
+    // against <body> — and <body> has no viewport-bound height here, so it
+    // grew to content height (1930px on a 900px screen). The map inherited
+    // that and rendered as a tall narrow sliver: at zoom 6 the officer saw
+    // a vertical strip of ocean with the coastline off-frame, which read
+    // as "the basemap is broken" when the basemap was fine.
+    //
+    // Fixed on this shell rather than by giving html/body a height
+    // globally, which would change every other route.
+    <div ref={shellRef} className="flex h-dvh flex-col overflow-hidden bg-background">
       {/* ── TOP COMMAND BAR ─────────────────────────────────────── */}
       <header className="flex shrink-0 items-center gap-3 border-b border-border px-3 py-2">
         <h1 className="shrink-0 text-sm font-semibold tracking-wide">Seaphore</h1>

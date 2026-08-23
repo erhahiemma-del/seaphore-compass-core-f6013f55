@@ -90,6 +90,13 @@ export class MapLibreRenderer implements MapRenderer {
   private ready = false;
   private destroyed = false;
   private styleFailed = false;
+  /**
+   * Identifies the current mount attempt.
+   *
+   * Bumped by every `mount()` and by `destroy()`, so an in-flight mount
+   * can tell whether it still owns the renderer after each await.
+   */
+  private mountToken = 0;
 
   /** Authoritative feature set, mirrored so full rebuilds stay cheap. */
   private readonly features = new Map<string, VesselFeature>();
@@ -115,8 +122,26 @@ export class MapLibreRenderer implements MapRenderer {
   // ─── Lifecycle ──────────────────────────────────────────────────────────
 
   async mount(options: MapRendererMountOptions): Promise<void> {
-    if (this.destroyed) throw new Error("Renderer has been destroyed");
     if (this.map) return;
+
+    /*
+     * A destroyed renderer may be mounted again.
+     *
+     * It previously threw here, which made `destroy()` a one-way door —
+     * and the host holds this instance in a `useMemo`, so React's
+     * mount → cleanup → mount cycle called `mount()` on the corpse it had
+     * just buried. The throw left a live canvas with no map behind it:
+     * a black rectangle, no tile requests, and a basemap that looked
+     * broken while being perfectly healthy.
+     *
+     * Reviving is safe because `destroy()` already returns this object to
+     * its constructed state — map, popup and timers released, features
+     * cleared — and the flag guarded nothing else. Everything below
+     * rebuilds from scratch.
+     */
+    this.destroyed = false;
+    this.styleFailed = false;
+    const token = ++this.mountToken;
 
     // Dynamic import keeps `window` access out of the SSR path.
     const maplibre = await import("maplibre-gl");
@@ -174,11 +199,25 @@ export class MapLibreRenderer implements MapRenderer {
     // A failed basemap must degrade to a usable map, not a blank canvas.
     map.on("error", (event: { error?: { message?: string } }) => {
       const message = event?.error?.message ?? "Unknown map error";
-      if (!this.styleFailed && /style|sprite|glyphs/i.test(message)) {
+      /*
+       * Only a genuine style-document failure justifies swapping basemaps.
+       *
+       * This used to fire on any message merely *mentioning* sprite or
+       * glyphs — including the routine per-glyph 404s a vector basemap
+       * emits for character ranges it has no coverage for. One of those
+       * would swap a working CARTO style for the fallback, which needs an
+       * API key this deployment does not have, so the map went black and
+       * stayed black. Losing one glyph range is cosmetic; losing the
+       * basemap is not.
+       */
+      const styleDocumentFailed = /failed to (load|fetch).*style|style is not done loading/i.test(
+        message,
+      );
+      if (!this.styleFailed && styleDocumentFailed) {
         this.styleFailed = true;
         this.bus?.emit("map:error", {
           scope: "maplibre:style",
-          message: `Basemap failed (${message}) — falling back to Stadia Alidade Smooth Dark`,
+          message: `Basemap failed (${message}) — falling back to ${FALLBACK_BASEMAP}`,
         });
         map.setStyle(FALLBACK_BASEMAP);
         return;
@@ -194,7 +233,25 @@ export class MapLibreRenderer implements MapRenderer {
       map.once("load", () => resolve());
     });
 
+    /*
+     * Bail if this mount was superseded while awaiting the style.
+     *
+     * `mount()` is async and the host may tear down and remount before it
+     * finishes. Without this check the abandoned call resumes here and
+     * installs its sources onto whichever map is current — the *new* one,
+     * which has just installed them itself. MapLibre then throws
+     * `Source "nigeria-eez" already exists` and the second map dies too.
+     *
+     * `destroy()` and every later `mount()` bump the token, so a stale
+     * call returns quietly instead of corrupting a live map.
+     */
+    if (token !== this.mountToken) {
+      map.remove();
+      return;
+    }
+
     await this.loadVesselIcons();
+    if (token !== this.mountToken) return;
     this.installSourcesAndLayers();
     this.installInteractionHandlers();
     this.installFrameCounter();
@@ -213,6 +270,8 @@ export class MapLibreRenderer implements MapRenderer {
     this.features.clear();
     this.ready = false;
     this.destroyed = true;
+    // Any mount still awaiting a style now owns nothing.
+    this.mountToken += 1;
   }
 
   isReady(): boolean {
