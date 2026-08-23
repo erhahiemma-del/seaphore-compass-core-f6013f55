@@ -264,7 +264,7 @@ export function CargoCentre() {
               </Section>
 
               {/* Intelligence status */}
-              <Section title="Intelligence Status">
+              <Section title="Intelligence Status" receded={isReceded("cargo")}>
                 <dl className="space-y-1.5 text-[12px]">
                   <Row label="Canonical UIP" value={projection.uipId ?? "—"} />
                   <Row
