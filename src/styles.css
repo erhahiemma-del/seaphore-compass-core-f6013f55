@@ -458,3 +458,100 @@
     animation: none !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Premium light system — elevation, hierarchy, focus/recede, calm motion.
+   Presentation only. Tokens first; components never hard-code these values.
+--------------------------------------------------------------------------- */
+
+:root {
+  /* Three-step elevation scale: surface → raised → overlay */
+  --elev-1: 0 1px 2px rgba(11, 31, 58, 0.05);
+  --elev-2:
+    0 1px 2px rgba(11, 31, 58, 0.05), 0 6px 16px -8px rgba(11, 31, 58, 0.14);
+  --elev-3:
+    0 2px 4px rgba(11, 31, 58, 0.06), 0 18px 40px -16px rgba(11, 31, 58, 0.26);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-1: 120ms;
+  --dur-2: 200ms;
+  --dur-3: 320ms;
+}
+
+.dark {
+  --elev-1: 0 1px 2px rgba(0, 0, 0, 0.32);
+  --elev-2: 0 1px 2px rgba(0, 0, 0, 0.32), 0 8px 20px -10px rgba(0, 0, 0, 0.55);
+  --elev-3: 0 2px 6px rgba(0, 0, 0, 0.4), 0 22px 48px -18px rgba(0, 0, 0, 0.7);
+}
+
+@utility elev-1 { box-shadow: var(--elev-1); }
+@utility elev-2 { box-shadow: var(--elev-2); }
+@utility elev-3 { box-shadow: var(--elev-3); }
+
+/* Scale contrast — used for workspace titles and section leads. */
+@utility type-title {
+  font-size: 20px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.012em;
+}
+@utility type-h6 {
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 700;
+}
+@utility type-metric {
+  font-family: var(--font-mono-family);
+  font-variant-numeric: tabular-nums;
+  font-size: 18px;
+  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Adaptive workspace — unrelated surfaces recede while a subject is in focus. */
+@utility is-receded {
+  opacity: 0.46;
+  filter: saturate(0.65);
+  transition:
+    opacity var(--dur-2) var(--ease-out),
+    filter var(--dur-2) var(--ease-out);
+  &:hover,
+  &:focus-within {
+    opacity: 1;
+    filter: none;
+  }
+}
+
+@utility is-focused {
+  transition:
+    box-shadow var(--dur-2) var(--ease-out),
+    border-color var(--dur-2) var(--ease-out);
+  box-shadow: var(--elev-2);
+  border-color: color-mix(in oklab, var(--color-teal) 42%, var(--color-line));
+}
+
+@keyframes seaphore-rail-in {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@utility rail-in {
+  animation: seaphore-rail-in var(--dur-3) var(--ease-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rail-in {
+    animation: none !important;
+  }
+  .is-receded {
+    transition: none !important;
+  }
+}

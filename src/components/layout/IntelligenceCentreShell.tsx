@@ -4,10 +4,12 @@ import { useEffect } from "react";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
+import { GoToPalette } from "@/components/layout/GoToPalette";
 import { GlobalCopilotLauncher } from "@/components/ai/global-copilot-launcher";
 import { MapProviderRoot } from "@/lib/maps";
 import type { MapProviderName } from "@/lib/maps/types";
 import { cn } from "@/lib/utils";
+
 
 export interface AppShellProps {
   children: ReactNode;
@@ -81,8 +83,10 @@ export function AppShell({ children, title, subtitle, mode = "light" }: AppShell
             <TopBar title={title} subtitle={subtitle} />
             <main className="flex-1 overflow-x-hidden">{children}</main>
             <AppFooter />
+            <GoToPalette />
             <GlobalCopilotLauncher />
           </SidebarInset>
+
         </div>
       </SidebarProvider>
     </MapProviderRoot>

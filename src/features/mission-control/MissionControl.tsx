@@ -23,6 +23,9 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { ContextRail } from "@/components/layout/ContextRail";
+import { useFocusSubjectStore } from "@/stores/focus-subject.store";
+
 import { PanelCard } from "@/components/panel-card";
 import { ConfidenceChip, type ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
 import { ConfidenceLegend } from "@/components/confidence-legend";
@@ -95,28 +98,41 @@ const RIBBON_ICONS: Record<string, LucideIcon> = {
 };
 
 export function MissionControl() {
+  const focused = useFocusSubjectStore((s) => s.subject);
+  const recede = focused ? "is-receded" : undefined;
   return (
     <AppShell title="Mission Control" subtitle="National maritime operating picture" mode="light">
       <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-6 py-5">
         <MissionCommandBar />
-        <Ribbon />
-        <ConfidenceLegend />
-
-        <div className="grid gap-4 lg:grid-cols-[1.55fr_1fr]">
-          <LiveMapPanel />
-          <IntelligenceFeedPanel />
+        <div className={recede}>
+          <Ribbon />
+        </div>
+        <div className={recede}>
+          <ConfidenceLegend />
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div
+          className={cn(
+            "grid gap-4",
+            focused ? "xl:grid-cols-[1.5fr_320px]" : "lg:grid-cols-[1.55fr_1fr]",
+          )}
+        >
+          <LiveMapPanel />
+          {focused ? <FocusRail /> : <IntelligenceFeedPanel />}
+        </div>
+
+        <div className={cn("grid gap-4 md:grid-cols-2 xl:grid-cols-4", recede)}>
           <RevenueAssurancePanel />
           <ManifestIntelligencePanel />
           <ComplianceWatchlistPanel />
           <PortOperationsPanel />
         </div>
 
-        <CargoWorkspaceStrip />
+        <div className={recede}>
+          <CargoWorkspaceStrip />
+        </div>
 
-        <div className="grid gap-4 lg:grid-cols-[1fr_1.3fr]">
+        <div className={cn("grid gap-4 lg:grid-cols-[1fr_1.3fr]", recede)}>
           <TodaysPrioritiesPanel />
           <RecentBriefingsPanel />
         </div>
@@ -124,6 +140,7 @@ export function MissionControl() {
     </AppShell>
   );
 }
+
 
 /* ---------------- Ribbon ---------------- */
 
@@ -207,10 +224,27 @@ function Ribbon() {
   );
 }
 
+/* ---------------- Focus rail ---------------- */
+
+/** Context Rail bound to Mission Control's entity route contract. */
+function FocusRail() {
+  const navigate = useNavigate();
+  return (
+    <ContextRail
+      onOpen={(id) =>
+        void navigate({
+          to: "/entity/$id",
+          params: { id },
+          search: { entityId: id, fromStage: "Monitor", fromRoute: "/" },
+        })
+      }
+    />
+  );
+}
+
 /* ---------------- Live Map Panel ---------------- */
 
 function LiveMapPanel() {
-  const navigate = useNavigate();
   return (
     <PanelCard variant="edge" className="flex h-[520px] flex-col">
       <PanelHeader
@@ -223,17 +257,6 @@ function LiveMapPanel() {
         <GulfOfGuineaMap
           vessels={MAP_VESSELS}
           live
-          onVesselClick={(v) =>
-            navigate({
-              to: "/entity/$id",
-              params: { id: v.id },
-              search: {
-                entityId: v.id,
-                fromStage: "Monitor",
-                fromRoute: "/",
-              },
-            })
-          }
         />
       </div>
     </PanelCard>
