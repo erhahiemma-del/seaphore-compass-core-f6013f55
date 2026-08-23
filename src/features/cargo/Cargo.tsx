@@ -168,6 +168,27 @@ export function CargoCentre() {
             </Section>
           ) : (
             <>
+              {focused && lead && (
+                <SubjectHeader
+                  kind="cargo"
+                  title={lead.label}
+                  descriptor={lead.entityId}
+                  confidence={lead.confidence}
+                  evidence={[
+                    {
+                      label: "Evidence",
+                      value: String(lead.evidenceCount),
+                      confidence: lead.confidence,
+                    },
+                    { label: "Capability", value: "CARGO v1.0" },
+                  ]}
+                  onDismiss={() => {
+                    setSelectedLeadId(null);
+                    dismiss();
+                  }}
+                />
+              )}
+
               {/* KPI summary cards */}
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 {projection.data!.kpis.map((k) => (
