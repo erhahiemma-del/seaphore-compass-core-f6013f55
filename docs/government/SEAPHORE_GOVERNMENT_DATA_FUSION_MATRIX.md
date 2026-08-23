@@ -9,12 +9,12 @@ reachable today. Anything else names the specific blocker.
 
 ## PORT CALL INTELLIGENCE
 
-| Government | Commercial | Satellite/OSINT | Produces |
-| ---------- | ---------- | --------------- | -------- |
-| NPA SHIPPOS | Datalastic / SeaVantage | Sentinel-1 | EXPECTED → APPROACHING → ARRIVED → AWAITING BERTH → AT BERTH → DEPARTED |
+| Government  | Commercial              | Satellite/OSINT | Produces                                                                |
+| ----------- | ----------------------- | --------------- | ----------------------------------------------------------------------- |
+| NPA SHIPPOS | Datalastic / SeaVantage | Sentinel-1      | EXPECTED → APPROACHING → ARRIVED → AWAITING BERTH → AT BERTH → DEPARTED |
 
 **Unique output:** the full lifecycle. AIS alone gives position but never
-knows a vessel was *expected*, which terminal it was assigned, or that it
+knows a vessel was _expected_, which terminal it was assigned, or that it
 is alongside berth 4. NPA alone gives the schedule but never whether the
 vessel actually came.
 
@@ -25,9 +25,9 @@ also unwired (Datalastic returns empty by design).
 
 ## SCHEDULE RELIABILITY & PORT CONGESTION
 
-| Government | Commercial | Satellite/OSINT | Produces |
-| ---------- | ---------- | --------------- | -------- |
-| NPA daily snapshots (accumulated) | AIS dwell time | — | ETA drift, berth waiting time, terminal throughput, schedule reliability per agent |
+| Government                        | Commercial     | Satellite/OSINT | Produces                                                                           |
+| --------------------------------- | -------------- | --------------- | ---------------------------------------------------------------------------------- |
+| NPA daily snapshots (accumulated) | AIS dwell time | —               | ETA drift, berth waiting time, terminal throughput, schedule reliability per agent |
 
 **Unique output:** nobody sells Nigerian ETA-reliability data. It only
 exists if someone records the schedule daily and diffs it — which is
@@ -41,13 +41,13 @@ time in the programme and the reason to secure NPA access early.
 
 ## ENVIRONMENTAL MARITIME INTELLIGENCE
 
-| Government | Commercial | Satellite/OSINT | Produces |
-| ---------- | ---------- | --------------- | -------- |
-| NOSDRA oil-spill incidents | AIS | Sentinel-1 | Which vessels were near a spill site at the incident time |
+| Government                 | Commercial | Satellite/OSINT | Produces                                                  |
+| -------------------------- | ---------- | --------------- | --------------------------------------------------------- |
+| NOSDRA oil-spill incidents | AIS        | Sentinel-1      | Which vessels were near a spill site at the incident time |
 
 **Unique output:** spatio-temporal correlation between an official spill
-record and vessel presence. NOSDRA knows *where and when*; AIS knows *who
-was there*. Neither answers the joint question.
+record and vessel presence. NOSDRA knows _where and when_; AIS knows _who
+was there_. Neither answers the joint question.
 
 **Availability:** `AFTER LICENSING` — NOSDRA data is technically
 reachable now; its reuse terms are unread.
@@ -60,8 +60,8 @@ attribution.
 
 ## ENERGY INTELLIGENCE
 
-| Government | Commercial | Satellite/OSINT | Produces |
-| ---------- | ---------- | --------------- | -------- |
+| Government                          | Commercial | Satellite/OSINT  | Produces                                               |
+| ----------------------------------- | ---------- | ---------------- | ------------------------------------------------------ |
 | NUPRC (assets, operators, licences) | TradeAtlas | AIS + Sentinel-1 | Vessel → terminal → asset → operator → licence → cargo |
 
 **Unique output:** attributing a tanker call to a licensed operator and a
@@ -70,15 +70,15 @@ specific upstream asset.
 **Availability:** `FUTURE` — **no NUPRC dataset is verified**. OGISP was
 checked and is a permit-application portal behind login, not a data
 repository. NOSDRA's map layers include oil blocks, pipelines and
-terminals, and are currently the *only* verified route to this geometry.
+terminals, and are currently the _only_ verified route to this geometry.
 
 ---
 
 ## NAVIGATION INTELLIGENCE
 
-| Government | Commercial | Satellite/OSINT | Produces |
-| ---------- | ---------- | --------------- | -------- |
-| NHA charts, tides, bathymetry | AIS | NIOMR ocean conditions | Vessel → depth → hazard → tidal window |
+| Government                    | Commercial | Satellite/OSINT        | Produces                               |
+| ----------------------------- | ---------- | ---------------------- | -------------------------------------- |
+| NHA charts, tides, bathymetry | AIS        | NIOMR ocean conditions | Vessel → depth → hazard → tidal window |
 
 **Unique output:** whether a vessel's draught and the tidal window are
 compatible with the channel it is entering — a genuine navigation-risk
@@ -92,9 +92,9 @@ data. NIOMR unverified.
 
 ## TRADE / CARGO INTELLIGENCE
 
-| Government | Commercial | Satellite/OSINT | Produces |
-| ---------- | ---------- | --------------- | -------- |
-| NCS declarations | TradeAtlas | AIS | Vessel → cargo → importer/exporter → commodity → value |
+| Government       | Commercial | Satellite/OSINT | Produces                                               |
+| ---------------- | ---------- | --------------- | ------------------------------------------------------ |
+| NCS declarations | TradeAtlas | AIS             | Vessel → cargo → importer/exporter → commodity → value |
 
 **Unique output:** joining a physical vessel call to a customs
 declaration. This is the highest-value fusion in the entire programme and
@@ -109,9 +109,9 @@ be joined to a vessel.
 
 ## MARITIME DISASTER INTELLIGENCE
 
-| Government | Commercial | Satellite/OSINT | Produces |
-| ---------- | ---------- | --------------- | -------- |
-| NEMA flood/hazard | AIS | Sentinel-1 | Port disruption forecasting, coastal hazard exposure |
+| Government        | Commercial | Satellite/OSINT | Produces                                             |
+| ----------------- | ---------- | --------------- | ---------------------------------------------------- |
+| NEMA flood/hazard | AIS        | Sentinel-1      | Port disruption forecasting, coastal hazard exposure |
 
 **Availability:** `FUTURE` — NEMA unverified.
 
@@ -119,9 +119,9 @@ be joined to a vessel.
 
 ## INLAND WATERWAYS INTELLIGENCE
 
-| Government | Commercial | Satellite/OSINT | Produces |
-| ---------- | ---------- | --------------- | -------- |
-| NIWA ERIS, tide gauges | — | Sentinel-1/2 | Inland vessel → waterway → jetty → inland port |
+| Government             | Commercial | Satellite/OSINT | Produces                                       |
+| ---------------------- | ---------- | --------------- | ---------------------------------------------- |
+| NIWA ERIS, tide gauges | —          | Sentinel-1/2    | Inland vessel → waterway → jetty → inland port |
 
 **Unique output:** inland movement is invisible to conventional maritime
 AIS. This is genuinely uncovered ground.
@@ -135,9 +135,9 @@ unverified).
 
 ## DARK CONTACT ATTRIBUTION
 
-| Government | Commercial | Satellite/OSINT | Produces |
-| ---------- | ---------- | --------------- | -------- |
-| NPA schedule | AIS | Sentinel-1 SAR | A SAR return that matches no AIS track *and* no scheduled call |
+| Government   | Commercial | Satellite/OSINT | Produces                                                       |
+| ------------ | ---------- | --------------- | -------------------------------------------------------------- |
+| NPA schedule | AIS        | Sentinel-1 SAR  | A SAR return that matches no AIS track _and_ no scheduled call |
 
 **Unique output:** a third independent check. Today a `HIGH_CONFIDENCE_DARK_CONTACT`
 rests on SAR + AIS gap. Adding NPA answers "was anything even due here?",
@@ -152,18 +152,18 @@ service (none exists), plus NPA and AIS access.
 
 What each source adds that Seaphore does not already have:
 
-| Source | Adds | Verdict |
-| ------ | ---- | ------- |
-| NPA | Port schedule, berth state, terminal assignment | **Unique — no substitute** |
-| NCS | Customs declarations joinable to a call | **Unique — no substitute** |
-| NHA | Depth, hazards, tides | **Unique** |
-| NIWA | Inland waterways | **Unique** |
-| NOSDRA | Official spill register + oil/pipeline geometry | **Unique** |
-| NUPRC | Licence/operator attribution | Unique, but unverified |
-| NIOMR | Ocean conditions | Partly duplicated by NOAA/Open-Meteo → **assess before building** |
-| NEMA | Coastal hazard | Partly duplicated by commercial weather → **assess** |
-| NESREA | Environmental compliance | Overlaps NOSDRA → `LOW_INCREMENTAL_VALUE` pending verification |
-| NBS | Aggregate trade statistics | Duplicated by TradeAtlas at finer grain → `LOW_INCREMENTAL_VALUE` |
+| Source | Adds                                            | Verdict                                                           |
+| ------ | ----------------------------------------------- | ----------------------------------------------------------------- |
+| NPA    | Port schedule, berth state, terminal assignment | **Unique — no substitute**                                        |
+| NCS    | Customs declarations joinable to a call         | **Unique — no substitute**                                        |
+| NHA    | Depth, hazards, tides                           | **Unique**                                                        |
+| NIWA   | Inland waterways                                | **Unique**                                                        |
+| NOSDRA | Official spill register + oil/pipeline geometry | **Unique**                                                        |
+| NUPRC  | Licence/operator attribution                    | Unique, but unverified                                            |
+| NIOMR  | Ocean conditions                                | Partly duplicated by NOAA/Open-Meteo → **assess before building** |
+| NEMA   | Coastal hazard                                  | Partly duplicated by commercial weather → **assess**              |
+| NESREA | Environmental compliance                        | Overlaps NOSDRA → `LOW_INCREMENTAL_VALUE` pending verification    |
+| NBS    | Aggregate trade statistics                      | Duplicated by TradeAtlas at finer grain → `LOW_INCREMENTAL_VALUE` |
 
 ---
 

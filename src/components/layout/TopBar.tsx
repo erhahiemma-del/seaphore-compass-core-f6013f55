@@ -62,9 +62,7 @@ function GoToHint() {
   return (
     <button
       type="button"
-      onClick={() =>
-        window.dispatchEvent(new CustomEvent("seaphore:open-goto-palette"))
-      }
+      onClick={() => window.dispatchEvent(new CustomEvent("seaphore:open-goto-palette"))}
       className="hidden items-center gap-2 rounded-md border border-line bg-surface-2/70 px-2.5 py-1.5 text-slate hover:border-[color:var(--color-teal)]/40 hover:text-foreground motion-fast md:flex"
     >
       <Search className="h-3.5 w-3.5" />

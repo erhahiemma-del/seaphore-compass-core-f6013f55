@@ -77,7 +77,6 @@ export function readProviderCredential(name: string): string | null {
   return null;
 }
 
-
 /**
  * Read the first present credential from a list of accepted env names.
  *

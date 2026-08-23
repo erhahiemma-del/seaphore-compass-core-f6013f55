@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ─────────────────────────────────────────────────────────────────────
  *  INT-01B — Intelligence Object Model · Attribute Extractors
  * ─────────────────────────────────────────────────────────────────────
@@ -71,6 +71,8 @@ function strArray(v: unknown): ReadonlyArray<string> {
   return [];
 }
 
+type Mutable<T> = { -readonly [K in keyof T]: T[K] };
+
 type F = Readonly<Record<string, unknown>>;
 const f = (ev: NormalizedEvidence): F => ev.fields as F;
 
@@ -80,7 +82,7 @@ const f = (ev: NormalizedEvidence): F => ev.fields as F;
 
 export function extractVesselAttributes(ev: NormalizedEvidence): Partial<VesselAttributes> {
   const fields = f(ev);
-  const out: Partial<VesselAttributes> = {};
+  const out: Mutable<Partial<VesselAttributes>> = {};
 
   if (ev.kind === "identity" || ev.kind === "ownership") {
     const imo = str(fields.imo ?? fields.imoNumber);
@@ -145,7 +147,7 @@ export function extractVesselAttributes(ev: NormalizedEvidence): Partial<VesselA
 
 export function extractVoyageAttributes(ev: NormalizedEvidence): Partial<VoyageAttributes> {
   const fields = f(ev);
-  const out: Partial<VoyageAttributes> = {};
+  const out: Mutable<Partial<VoyageAttributes>> = {};
   if (ev.kind === "voyage" || ev.kind === "port-call" || ev.kind === "position") {
     const vn = str(fields.voyageNumber ?? fields.voyage);
     if (vn) out.voyageNumber = vn;
@@ -189,7 +191,7 @@ export function extractVoyageAttributes(ev: NormalizedEvidence): Partial<VoyageA
 
 export function extractPortAttributes(ev: NormalizedEvidence): Partial<PortAttributes> {
   const fields = f(ev);
-  const out: Partial<PortAttributes> = {};
+  const out: Mutable<Partial<PortAttributes>> = {};
   const unlocode = str(fields.unlocode ?? fields.portUnlocode ?? fields.locode);
   if (unlocode) out.unlocode = unlocode;
   const name = str(fields.portName ?? fields.name);
@@ -209,7 +211,7 @@ export function extractPortAttributes(ev: NormalizedEvidence): Partial<PortAttri
 
 export function extractCargoAttributes(ev: NormalizedEvidence): Partial<CargoAttributes> {
   const fields = f(ev);
-  const out: Partial<CargoAttributes> = {};
+  const out: Mutable<Partial<CargoAttributes>> = {};
   if (ev.kind === "cargo") {
     const desc = str(fields.description ?? fields.commodity ?? fields.cargoDescription);
     if (desc) out.description = desc;
@@ -245,7 +247,7 @@ export function extractCargoAttributes(ev: NormalizedEvidence): Partial<CargoAtt
 
 export function extractCompanyAttributes(ev: NormalizedEvidence): Partial<CompanyAttributes> {
   const fields = f(ev);
-  const out: Partial<CompanyAttributes> = {};
+  const out: Mutable<Partial<CompanyAttributes>> = {};
   const name = str(fields.companyName ?? fields.name ?? fields.registeredName);
   if (name) out.registeredName = name;
   const trade = str(fields.tradingName ?? fields.tradeName);
@@ -276,7 +278,7 @@ export function extractCompanyAttributes(ev: NormalizedEvidence): Partial<Compan
 
 export function extractPersonAttributes(ev: NormalizedEvidence): Partial<PersonAttributes> {
   const fields = f(ev);
-  const out: Partial<PersonAttributes> = {};
+  const out: Mutable<Partial<PersonAttributes>> = {};
   const name = str(fields.fullName ?? fields.name ?? fields.personName);
   if (name) out.fullName = name;
   const fmr = strArray(fields.formerNames ?? fields.aliases ?? fields.previousNames);
@@ -302,7 +304,7 @@ export function extractPersonAttributes(ev: NormalizedEvidence): Partial<PersonA
 
 export function extractSanctionAttributes(ev: NormalizedEvidence): Partial<SanctionAttributes> {
   const fields = f(ev);
-  const out: Partial<SanctionAttributes> = {};
+  const out: Mutable<Partial<SanctionAttributes>> = {};
   if (ev.kind === "sanctions") {
     const list = str(fields.sanctionList ?? fields.listName ?? fields.source);
     if (list) out.sanctionListName = list;
@@ -333,13 +335,13 @@ export function extractSanctionAttributes(ev: NormalizedEvidence): Partial<Sanct
 
 export function extractInspectionAttributes(ev: NormalizedEvidence): Partial<InspectionAttributes> {
   const fields = f(ev);
-  const out: Partial<InspectionAttributes> = {};
+  const out: Mutable<Partial<InspectionAttributes>> = {};
   if (ev.kind === "inspection") {
     const type = str(fields.inspectionType ?? fields.type);
     if (type)
       out.inspectionType = (
         ["PSC", "flag", "class", "internal", "ISM"].includes(type as string) ? type : null
-      ) as any;
+      ) as InspectionAttributes["inspectionType"];
     const auth = str(fields.authority ?? fields.pscAuthority);
     if (auth) out.authority = auth;
     const date = str(fields.inspectionDate ?? fields.date);
@@ -347,7 +349,9 @@ export function extractInspectionAttributes(ev: NormalizedEvidence): Partial<Ins
     const result = str(fields.result ?? fields.outcome);
     if (result) {
       const r = result.toLowerCase();
-      out.result = (["passed", "deficiencies", "detained", "failed"].includes(r) ? r : null) as any;
+      out.result = (
+        ["passed", "deficiencies", "detained", "failed"].includes(r) ? r : null
+      ) as InspectionAttributes["result"];
     }
     const def = num(fields.deficiencies ?? fields.deficiencyCount);
     if (def !== null) out.deficiencies = def;
@@ -367,7 +371,7 @@ export function extractSatelliteObservationAttributes(
   ev: NormalizedEvidence,
 ): Partial<SatelliteObservationAttributes> {
   const fields = f(ev);
-  const out: Partial<SatelliteObservationAttributes> = {};
+  const out: Mutable<Partial<SatelliteObservationAttributes>> = {};
   if (ev.kind === "other") {
     const sid = str(fields.sceneId);
     if (sid) out.sceneId = sid;
@@ -413,7 +417,7 @@ export function extractWeatherEventAttributes(
   ev: NormalizedEvidence,
 ): Partial<WeatherEventAttributes> {
   const fields = f(ev);
-  const out: Partial<WeatherEventAttributes> = {};
+  const out: Mutable<Partial<WeatherEventAttributes>> = {};
   if (ev.kind === "weather") {
     const time = str(fields.observationTime ?? ev.observedAt);
     if (time) out.observationTime = time;

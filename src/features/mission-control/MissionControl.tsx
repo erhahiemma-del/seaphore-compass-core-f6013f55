@@ -132,12 +132,12 @@ export function MissionControl() {
     <AppShell title="Mission Control" subtitle="National maritime operating picture" mode="light">
       <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-6 py-5">
         <MissionCommandBar />
-          <div className={recede}>
-            <Ribbon />
-          </div>
-          <div className={recede}>
-            <ConfidenceLegend />
-          </div>
+        <div className={recede}>
+          <Ribbon />
+        </div>
+        <div className={recede}>
+          <ConfidenceLegend />
+        </div>
 
         {/*
           Lovable's adaptive focus layout, driving Claude's projection
@@ -167,9 +167,9 @@ export function MissionControl() {
           <CargoWorkspaceStrip />
         </div>
 
-          <div className={cn("grid gap-4 lg:grid-cols-[1fr_1.3fr]", recede)}>
-            <TodaysPrioritiesPanel projection={prioritiesProjection} />
-            <RecentBriefingsPanel projection={briefingsProjection} />
+        <div className={cn("grid gap-4 lg:grid-cols-[1fr_1.3fr]", recede)}>
+          <TodaysPrioritiesPanel projection={prioritiesProjection} />
+          <RecentBriefingsPanel projection={briefingsProjection} />
         </div>
       </div>
     </AppShell>

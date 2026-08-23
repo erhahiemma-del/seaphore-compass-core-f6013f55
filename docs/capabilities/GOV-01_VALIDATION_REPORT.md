@@ -12,16 +12,16 @@ canonical entities, evidence providers, canonical UIP projections, OIE outputs,
 dashboard surfaces, Copilot features, KPIs, dependencies, owner, maturity level,
 and review date.
 
-| Capability | Domain | Status | Maturity | Owner |
-| --- | --- | --- | --- | --- |
-| Vessel Intelligence | vessel | OPERATIONAL | 4 | Intelligence Acquisition Layer (IAL) / IFE |
-| Cargo Intelligence | cargo | OPERATIONAL | 3 | Cargo Intelligence Capability (CAP-02, EP-CARGO-01) |
-| Revenue Intelligence | revenue | OPERATIONAL | 3 | Revenue Leakage Detection Engine (Sprint 1G) |
-| Risk Intelligence | risk | OPERATIONAL | 4 | Operational Knowledge Layer (OKL) / OSAE / PIE |
-| Compliance Intelligence | compliance | DESIGNING | 3 | Compliance Engine (Sprint COMP-01, planned) |
-| Port Intelligence | port | DESIGNING | 3 | Port Operations Intelligence (Sprint PORT-01, in design) |
-| Environmental Intelligence | environmental | OPERATIONAL | 5 | Environmental Intelligence Provider (Sprint EP-05) |
-| Operational Intelligence | operational | OPERATIONAL | 4 | OIE / OKL / MIBC Pipeline |
+| Capability                 | Domain        | Status      | Maturity | Owner                                                    |
+| -------------------------- | ------------- | ----------- | -------- | -------------------------------------------------------- |
+| Vessel Intelligence        | vessel        | OPERATIONAL | 4        | Intelligence Acquisition Layer (IAL) / IFE               |
+| Cargo Intelligence         | cargo         | OPERATIONAL | 3        | Cargo Intelligence Capability (CAP-02, EP-CARGO-01)      |
+| Revenue Intelligence       | revenue       | OPERATIONAL | 3        | Revenue Leakage Detection Engine (Sprint 1G)             |
+| Risk Intelligence          | risk          | OPERATIONAL | 4        | Operational Knowledge Layer (OKL) / OSAE / PIE           |
+| Compliance Intelligence    | compliance    | DESIGNING   | 3        | Compliance Engine (Sprint COMP-01, planned)              |
+| Port Intelligence          | port          | DESIGNING   | 3        | Port Operations Intelligence (Sprint PORT-01, in design) |
+| Environmental Intelligence | environmental | OPERATIONAL | 5        | Environmental Intelligence Provider (Sprint EP-05)       |
+| Operational Intelligence   | operational   | OPERATIONAL | 4        | OIE / OKL / MIBC Pipeline                                |
 
 Summary: 8 total — 6 OPERATIONAL, 2 DESIGNING, 0 PLANNED.
 
@@ -47,19 +47,19 @@ capabilities to maturity 5; Phase 2 promotes the two DESIGNING capabilities
 
 ## 4. Validation Report
 
-| Check | Result |
-| --- | --- |
-| Exactly 8 capabilities, unique ids, `cap.*` naming convention | PASS |
-| All 8 mandated domains covered exactly once | PASS |
-| Required descriptive fields present (name, purpose, owner, ISO review date) | PASS |
-| Status restricted to OPERATIONAL / DESIGNING / PLANNED | PASS |
-| Maturity within 1–5; OPERATIONAL implies maturity >= 3 | PASS |
-| Every capability declares >= 1 KPI | PASS |
-| Every capability declares >= 1 dashboard surface | PASS |
-| Every capability declares >= 1 canonical UIP projection | PASS |
-| Dependency matrix free of self-references and orphan targets | PASS |
-| Every referenced evidence provider id exists in `src/connectors/catalog.ts` | PASS |
-| Accessor functions (`getCapability`, `capabilitiesByStatus`, `capabilitiesByDomain`, `catalogSummary`) consistent with data | PASS |
+| Check                                                                                                                       | Result |
+| --------------------------------------------------------------------------------------------------------------------------- | ------ |
+| Exactly 8 capabilities, unique ids, `cap.*` naming convention                                                               | PASS   |
+| All 8 mandated domains covered exactly once                                                                                 | PASS   |
+| Required descriptive fields present (name, purpose, owner, ISO review date)                                                 | PASS   |
+| Status restricted to OPERATIONAL / DESIGNING / PLANNED                                                                      | PASS   |
+| Maturity within 1–5; OPERATIONAL implies maturity >= 3                                                                      | PASS   |
+| Every capability declares >= 1 KPI                                                                                          | PASS   |
+| Every capability declares >= 1 dashboard surface                                                                            | PASS   |
+| Every capability declares >= 1 canonical UIP projection                                                                     | PASS   |
+| Dependency matrix free of self-references and orphan targets                                                                | PASS   |
+| Every referenced evidence provider id exists in `src/connectors/catalog.ts`                                                 | PASS   |
+| Accessor functions (`getCapability`, `capabilitiesByStatus`, `capabilitiesByDomain`, `catalogSummary`) consistent with data | PASS   |
 
 Runtime architecture unchanged: the catalog is a declarative governance projection.
 It registers nothing, resolves nothing, and is not consulted by the OIE, IAL, IFE,

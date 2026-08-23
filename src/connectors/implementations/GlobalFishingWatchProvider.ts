@@ -139,8 +139,6 @@ export class GlobalFishingWatchProvider extends BaseEvidenceProvider {
     return found?.value ?? null;
   }
 
-
-
   /** Officer-facing authentication state from the most recent probe. */
   get authenticationState(): GfwAuthState {
     return this.authState;

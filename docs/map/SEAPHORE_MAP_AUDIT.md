@@ -11,14 +11,14 @@ expensive pieces — the renderer and the replay engine — are done.
 
 ## 1. Current map implementation
 
-| Asset | Lines | State |
-| ----- | ----- | ----- |
-| `routes/maritime.tsx` | 39 | Composition root. Registers GFW source, seeds enabled sources |
-| `features/maritime/MaritimeCommand.tsx` | 271 | Full-screen shell: toolbar, canvas, layer panel, vessel card, status bar |
-| `features/maritime/MapCanvas.tsx` | 293 | Renderer lifecycle, SGS wiring, layer visibility |
-| `features/maritime/LayerPanel.tsx` | 264 | Grouped layer toggles with pending-source notes |
-| `features/maritime/SourcesSection.tsx` | 281 | Provider toggles, diagnostics |
-| `features/maritime/VesselIntelligenceCard.tsx` | 209 | Selection detail |
+| Asset                                          | Lines | State                                                                    |
+| ---------------------------------------------- | ----- | ------------------------------------------------------------------------ |
+| `routes/maritime.tsx`                          | 39    | Composition root. Registers GFW source, seeds enabled sources            |
+| `features/maritime/MaritimeCommand.tsx`        | 271   | Full-screen shell: toolbar, canvas, layer panel, vessel card, status bar |
+| `features/maritime/MapCanvas.tsx`              | 293   | Renderer lifecycle, SGS wiring, layer visibility                         |
+| `features/maritime/LayerPanel.tsx`             | 264   | Grouped layer toggles with pending-source notes                          |
+| `features/maritime/SourcesSection.tsx`         | 281   | Provider toggles, diagnostics                                            |
+| `features/maritime/VesselIntelligenceCard.tsx` | 209   | Selection detail                                                         |
 
 **Verdict: reuse entirely.** The shell already matches the brief's
 top/left/centre layout. Missing are the right drawer and the bottom
@@ -26,12 +26,12 @@ timeline.
 
 ### Four competing map components — a real duplication problem
 
-| Component | Used by |
-| --------- | ------- |
-| `features/maritime/MapCanvas` | `/maritime` — **canonical** |
-| `components/gulf-of-guinea-map.tsx` (272) | `MissionControl`, `Compliance` |
-| `components/intel-centre/nigeria-map.tsx` (167) | intel centre |
-| `components/intelligence/IntelMap.tsx` (165) | `Ports`, `Vessel`, `Compliance` |
+| Component                                       | Used by                         |
+| ----------------------------------------------- | ------------------------------- |
+| `features/maritime/MapCanvas`                   | `/maritime` — **canonical**     |
+| `components/gulf-of-guinea-map.tsx` (272)       | `MissionControl`, `Compliance`  |
+| `components/intel-centre/nigeria-map.tsx` (167) | intel centre                    |
+| `components/intelligence/IntelMap.tsx` (165)    | `Ports`, `Vessel`, `Compliance` |
 
 Four map renderings, one canonical engine. This is the single largest
 consolidation opportunity in the codebase, and it must be handled
@@ -60,13 +60,13 @@ Investigations, Government Sources). Current `LayerGroup` has three.
 
 ## 3. AIS / GFW services
 
-| Asset | State |
-| ----- | ----- |
-| `sources/global-fishing-watch-source.ts` | **Live and working** — the only connected vessel source |
-| `vessel-source.ts` (374) | Provider registry, `computeIntelligenceMetrics` |
-| `services/eo/ais-providers.ts` | Datalastic + SeaVantage, `PENDING_CREDENTIALS` |
-| `services/eo/ais-history.ts` | Provider-agnostic history + declared coverage |
-| `adapters/ais/{datalastic,spire}.adapter.ts` | Honest stubs |
+| Asset                                        | State                                                   |
+| -------------------------------------------- | ------------------------------------------------------- |
+| `sources/global-fishing-watch-source.ts`     | **Live and working** — the only connected vessel source |
+| `vessel-source.ts` (374)                     | Provider registry, `computeIntelligenceMetrics`         |
+| `services/eo/ais-providers.ts`               | Datalastic + SeaVantage, `PENDING_CREDENTIALS`          |
+| `services/eo/ais-history.ts`                 | Provider-agnostic history + declared coverage           |
+| `adapters/ais/{datalastic,spire}.adapter.ts` | Honest stubs                                            |
 
 **GFW is the only source that puts real vessels on the map today.**
 
@@ -141,13 +141,13 @@ must change shape rather than merely widen.
 
 ## 8. Evidence / provenance components
 
-| Asset | Reuse |
-| ----- | ----- |
-| `FindingEvidenceViewer.tsx` | Full finding render — three confidence vocabularies kept apart |
-| `SarDetectionCard.tsx` | Sensor, acquisition, age, candidates, provenance |
-| `services/intelligence/` | `IntelligenceFinding`, registry, aggregator |
-| `services/geospatial/freshness.ts` | Bands, recomputed at render |
-| `services/geospatial/fusion.ts` | Cross-provider corroboration |
+| Asset                              | Reuse                                                          |
+| ---------------------------------- | -------------------------------------------------------------- |
+| `FindingEvidenceViewer.tsx`        | Full finding render — three confidence vocabularies kept apart |
+| `SarDetectionCard.tsx`             | Sensor, acquisition, age, candidates, provenance               |
+| `services/intelligence/`           | `IntelligenceFinding`, registry, aggregator                    |
+| `services/geospatial/freshness.ts` | Bands, recomputed at render                                    |
+| `services/geospatial/fusion.ts`    | Cross-provider corroboration                                   |
 
 **The drawer should render `IntelligenceFinding`s through the existing
 viewers, not a new detail component.**
@@ -192,22 +192,22 @@ satellite, terrain).
 
 ## What can be reused — summary
 
-| Brief phase | Status |
-| ----------- | ------ |
-| 1 Map shell | **Built** — needs right drawer + bottom bar |
-| 2 Layer system | **Built** — needs group widening |
-| 3 Object selection | **Partial** — vessels only |
-| 4 Vessel intelligence | **Partial** — card exists, no tabs |
-| 5 Port intelligence | **Not built** — engine ready, unwired |
-| 6 National picture | **Partial** — `fleet-summary.ts` exists |
-| 7 History + replay | **Engine built**, no UI |
-| 8 Copilot/map | **Not built** — the largest gap |
-| 9 SAR / environment | **Engine built**, layers registered, no data |
-| 10 Risk / intelligence | **Engine built** — `IntelligenceFinding` |
-| 11 Investigation | **Partial** — store + tables exist |
-| 12 3D / satellite | **Not built** — no basemap abstraction |
-| 13 Performance | **Partial** — MapLibre diffing; no clustering |
-| 14 Hardening | — |
+| Brief phase            | Status                                        |
+| ---------------------- | --------------------------------------------- |
+| 1 Map shell            | **Built** — needs right drawer + bottom bar   |
+| 2 Layer system         | **Built** — needs group widening              |
+| 3 Object selection     | **Partial** — vessels only                    |
+| 4 Vessel intelligence  | **Partial** — card exists, no tabs            |
+| 5 Port intelligence    | **Not built** — engine ready, unwired         |
+| 6 National picture     | **Partial** — `fleet-summary.ts` exists       |
+| 7 History + replay     | **Engine built**, no UI                       |
+| 8 Copilot/map          | **Not built** — the largest gap               |
+| 9 SAR / environment    | **Engine built**, layers registered, no data  |
+| 10 Risk / intelligence | **Engine built** — `IntelligenceFinding`      |
+| 11 Investigation       | **Partial** — store + tables exist            |
+| 12 3D / satellite      | **Not built** — no basemap abstraction        |
+| 13 Performance         | **Partial** — MapLibre diffing; no clustering |
+| 14 Hardening           | —                                             |
 
 ---
 

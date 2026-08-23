@@ -34,6 +34,19 @@ import type {
 } from "./telemetry/types";
 import { globalMicSink } from "./telemetry-registry";
 
+/**
+ * The subset of a UIP this bootstrap reads defensively.
+ *
+ * Narrow on purpose: telemetry and pre-flight checks run before the
+ * package has been validated, so they must tolerate a malformed shape
+ * without resorting to `any`.
+ */
+type UipProbe = {
+  readonly id?: string;
+  readonly rawEvidence?: readonly unknown[];
+  readonly fused?: { readonly stats?: { canonicalEntities?: number; contradictions?: number } };
+};
+
 export interface MicBootstrapResult {
   readonly executionId: string;
   readonly outcome: MicExecutionOutcome;
@@ -70,8 +83,12 @@ export function processMicBootstrap(
 
   try {
     // ── Pre-flight: validate the UIP is populated ────────────────────
-    const rawEvidence = (uip as any)?.rawEvidence;
-    const canonicalEntities = (uip as any)?.fused?.stats?.canonicalEntities;
+    // Structural probe rather than `any`. The parameter is typed, but this
+    // runs before the shape has been trusted, so it reads defensively
+    // without discarding type information altogether.
+    const probe = uip as UipProbe;
+    const rawEvidence = probe?.rawEvidence;
+    const canonicalEntities = probe?.fused?.stats?.canonicalEntities;
     if (!rawEvidence || rawEvidence.length === 0) {
       warnings.push("UIP has no rawEvidence — MIC will process an empty package");
     }
@@ -174,10 +191,10 @@ export function processMicBootstrap(
     errors,
     retryCount: 0, // retry logic deferred to INT-01G async pipeline
     attributes: {
-      uip_id: (uip as any)?.id ?? "unknown",
-      uip_entities: (uip as any)?.fused?.stats?.canonicalEntities ?? 0,
-      uip_evidence: (uip as any)?.rawEvidence?.length ?? 0,
-      uip_contradictions: (uip as any)?.fused?.stats?.contradictions ?? 0,
+      uip_id: (uip as UipProbe)?.id ?? "unknown",
+      uip_entities: (uip as UipProbe)?.fused?.stats?.canonicalEntities ?? 0,
+      uip_evidence: (uip as UipProbe)?.rawEvidence?.length ?? 0,
+      uip_contradictions: (uip as UipProbe)?.fused?.stats?.contradictions ?? 0,
       mic_version: "INT-01A.1",
     },
   };

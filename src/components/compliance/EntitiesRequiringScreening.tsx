@@ -120,9 +120,7 @@ export function EntitiesRequiringScreening({
   useEffect(() => {
     if (!syncWithWorkspace || !active) return;
     const existing = useScreeningQueueStore.getState().entities;
-    const existingNames = new Set(
-      Object.values(existing).map((e) => e.name.toLowerCase()),
-    );
+    const existingNames = new Set(Object.values(existing).map((e) => e.name.toLowerCase()));
     for (const ent of active.entities) {
       const key = ent.name.toLowerCase();
       if (syncedRef.current.has(key) || existingNames.has(key)) {
@@ -137,7 +135,6 @@ export function EntitiesRequiringScreening({
       });
     }
   }, [active, enqueue, syncWithWorkspace]);
-
 
   const rows = useMemo(
     () => order.map((id) => entities[id]).filter((e): e is ScreeningEntity => !!e),

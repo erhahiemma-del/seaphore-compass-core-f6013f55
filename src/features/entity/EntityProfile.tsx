@@ -38,13 +38,7 @@ import type { IpefRecord } from "@/services/ipef/types";
 // ── Types ─────────────────────────────────────────────────────────────
 
 type Tab =
-  | "summary"
-  | "timeline"
-  | "relationships"
-  | "evidence"
-  | "provenance"
-  | "graph"
-  | "copilot";
+  "summary" | "timeline" | "relationships" | "evidence" | "provenance" | "graph" | "copilot";
 interface EntityRiskIndicator {
   kind: string;
   label: string;

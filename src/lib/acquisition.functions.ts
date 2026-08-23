@@ -44,4 +44,3 @@ export const runIceCorrelation = createServerFn({ method: "POST" })
     const { runIceOnServer } = await import("@/lib/server/acquisition.server");
     return { json: JSON.stringify(await runIceOnServer({ text: data.text })) };
   });
-

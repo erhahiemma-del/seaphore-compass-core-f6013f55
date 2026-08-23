@@ -281,6 +281,7 @@ arrives the framework is already proven.
    in parallel?
 
 ---
+
 ---
 
 # Phase 6 — Agency Discovery
@@ -295,49 +296,49 @@ Verification was by permitted retrieval and search only. Two agencies
 (NPA, NCS) publish robots.txt files that disallow automated AI agents; I
 respected both and did not vary user agent, drive a browser at them, or
 otherwise work around the control. Where that blocked verification, the
-finding is *"access control observed"* — not *"no data exists"*.
+finding is _"access control observed"_ — not _"no data exists"_.
 
 ---
 
 ## NUPRC — Nigerian Upstream Petroleum Regulatory Commission
 
-| Item | Finding | Basis |
-| ---- | ------- | ----- |
-| Official site | `https://www.nuprc.gov.ng/` | VERIFIED |
-| **OGISP** | `https://ogisp.nuprc.gov.ng/` — **permit application portal, login required.** Not a data repository. No datasets, no map, no WMS/WFS/ArcGIS REST, no export, no API | **VERIFIED** |
-| Other portals | `hostcomply.nuprc.gov.ng`, `nogec.nuprc.gov.ng`, `elps.nuprc.gov.ng`, `ems.nuprc.gov.ng` — all transactional | VERIFIED (listed) |
-| Reports / publications | `/reports`, `/publications` | VERIFIED (listed) |
-| **Datasets** | **None verified** | — |
+| Item                   | Finding                                                                                                                                                              | Basis             |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| Official site          | `https://www.nuprc.gov.ng/`                                                                                                                                          | VERIFIED          |
+| **OGISP**              | `https://ogisp.nuprc.gov.ng/` — **permit application portal, login required.** Not a data repository. No datasets, no map, no WMS/WFS/ArcGIS REST, no export, no API | **VERIFIED**      |
+| Other portals          | `hostcomply.nuprc.gov.ng`, `nogec.nuprc.gov.ng`, `elps.nuprc.gov.ng`, `ems.nuprc.gov.ng` — all transactional                                                         | VERIFIED (listed) |
+| Reports / publications | `/reports`, `/publications`                                                                                                                                          | VERIFIED (listed) |
+| **Datasets**           | **None verified**                                                                                                                                                    | —                 |
 
 **Access method:** `AUTHENTICATED_SYSTEM` (OGISP) · `DOCUMENT` (reports)
 **Freshness:** `DOCUMENT` · **Status:** `UNVERIFIED` for any dataset
 
 The assumption that a regulator publishes machine-readable asset data did
-not survive contact. OGISP is where operators *apply for permits*, not
+not survive contact. OGISP is where operators _apply for permits_, not
 where the public reads the register.
 
 ---
 
 ## NCS — Nigerian Customs Service
 
-| Item | Finding | Basis |
-| ---- | ------- | ----- |
-| Official site | `https://customs.gov.ng/` — **HTTP 403** to automated request | **VERIFIED** |
-| robots.txt | Disallows **ClaudeBot, GPTBot, CCBot, Google-Extended, Bytespider, Amazonbot, Applebot-Extended, meta-externalagent, CloudflareBrowserRenderingCrawler**. `Content-Signal: search=yes, ai-train=no, use=reference`. Cites EU Directive 2019/790 Art. 4 | **VERIFIED** |
-| Sitemap | `https://customs.gov.ng/sitemap.xml` | VERIFIED |
-| National Single Window / B'Odogwu | Not reached | `UNVERIFIED` |
-| **Datasets** | **None verified** | — |
+| Item                              | Finding                                                                                                                                                                                                                                                | Basis        |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ |
+| Official site                     | `https://customs.gov.ng/` — **HTTP 403** to automated request                                                                                                                                                                                          | **VERIFIED** |
+| robots.txt                        | Disallows **ClaudeBot, GPTBot, CCBot, Google-Extended, Bytespider, Amazonbot, Applebot-Extended, meta-externalagent, CloudflareBrowserRenderingCrawler**. `Content-Signal: search=yes, ai-train=no, use=reference`. Cites EU Directive 2019/790 Art. 4 | **VERIFIED** |
+| Sitemap                           | `https://customs.gov.ng/sitemap.xml`                                                                                                                                                                                                                   | VERIFIED     |
+| National Single Window / B'Odogwu | Not reached                                                                                                                                                                                                                                            | `UNVERIFIED` |
+| **Datasets**                      | **None verified**                                                                                                                                                                                                                                      | —            |
 
 **Access method:** `UNKNOWN` · **Status:** `AUTHORIZATION_REQUIRED`
 
 Identical crawler policy to NPA — the same managed configuration.
 
-**Answering the brief's most important question** — *can Seaphore
+**Answering the brief's most important question** — _can Seaphore
 legitimately obtain a machine-readable customs dataset joinable to
-vessel → port → cargo → importer → commodity → value?*
+vessel → port → cargo → importer → commodity → value?_
 
 **Not through any route verified in this session.** NBS publishes
-quarterly *aggregate* trade statistics, which cannot be joined to a
+quarterly _aggregate_ trade statistics, which cannot be joined to a
 vessel or a consignment. A per-declaration join requires NCS
 authorization, and that is the single highest-value unlock after NPA.
 
@@ -349,16 +350,16 @@ Nigeria's hydrographic authority since **21 February 2022**, when the
 role transferred from the Nigerian Navy Hydrographic Office (NNHO).
 NNHO material is therefore historical.
 
-| Item | Finding | Basis |
-| ---- | ------- | ----- |
-| Official site | `https://nha.gov.ng/` | VERIFIED |
-| Notices to Mariners | `https://nha.gov.ng/notices-to-mariners/` | VERIFIED (exists) |
-| Tides | `https://nha.gov.ng/tides/` | VERIFIED (exists) |
-| Crowd Source Bathymetry | `https://nha.gov.ng/crowd-source-bathymetry/` | VERIFIED (exists) |
-| **Marine Data Repository** | `https://nha.gov.ng/marine-data-repository/` — **"Coming Soon…". Not launched.** No datasets, no API, no GIS, no registration | **VERIFIED** |
-| Charts / ENC | Supplied **on demand** via web link or paper sheet; no open download | SECONDARY_SOURCE |
-| GIS services | **None found.** No WMS, WFS, ArcGIS REST or GeoJSON | VERIFIED (absent) |
-| Contact | `info@nha.gov.ng`, `msi@nha.gov.ng` | VERIFIED |
+| Item                       | Finding                                                                                                                       | Basis             |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| Official site              | `https://nha.gov.ng/`                                                                                                         | VERIFIED          |
+| Notices to Mariners        | `https://nha.gov.ng/notices-to-mariners/`                                                                                     | VERIFIED (exists) |
+| Tides                      | `https://nha.gov.ng/tides/`                                                                                                   | VERIFIED (exists) |
+| Crowd Source Bathymetry    | `https://nha.gov.ng/crowd-source-bathymetry/`                                                                                 | VERIFIED (exists) |
+| **Marine Data Repository** | `https://nha.gov.ng/marine-data-repository/` — **"Coming Soon…". Not launched.** No datasets, no API, no GIS, no registration | **VERIFIED**      |
+| Charts / ENC               | Supplied **on demand** via web link or paper sheet; no open download                                                          | SECONDARY_SOURCE  |
+| GIS services               | **None found.** No WMS, WFS, ArcGIS REST or GeoJSON                                                                           | VERIFIED (absent) |
+| Contact                    | `info@nha.gov.ng`, `msi@nha.gov.ng`                                                                                           | VERIFIED          |
 
 **Access method:** `DOCUMENT` / `MANUAL_ONLY` · **Status:** `UNVERIFIED`
 
@@ -370,14 +371,14 @@ against it. The contact addresses are the actionable output.
 
 ## NIWA — National Inland Waterways Authority
 
-| Item | Finding | Basis |
-| ---- | ------- | ----- |
-| Official site | `https://niwa.gov.ng/` | VERIFIED |
-| **ERIS** | `https://eris.niwa.gov.ng/` — Electronic Registration Information System (vessel registration). Access model not established | VERIFIED (exists) |
-| Statistics Portal | Referenced in footer, URL not captured | `UNVERIFIED` |
+| Item                 | Finding                                                                                                                                                           | Basis             |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| Official site        | `https://niwa.gov.ng/`                                                                                                                                            | VERIFIED          |
+| **ERIS**             | `https://eris.niwa.gov.ng/` — Electronic Registration Information System (vessel registration). Access model not established                                      | VERIFIED (exists) |
+| Statistics Portal    | Referenced in footer, URL not captured                                                                                                                            | `UNVERIFIED`      |
 | **Live tide charts** | `https://niwa.port-log.net/live/display.php` — third-party tide-gauge network. **Possibly the only live Nigerian government-linked feed found.** Terms unverified | VERIFIED (exists) |
-| Regulations | Tariff structure, transport regulations, SLA — PDFs | VERIFIED |
-| **Datasets** | None with verified access | — |
+| Regulations          | Tariff structure, transport regulations, SLA — PDFs                                                                                                               | VERIFIED          |
+| **Datasets**         | None with verified access                                                                                                                                         | —                 |
 
 **Access method:** `AUTHENTICATED_SYSTEM` (ERIS) · `DOCUMENT`
 **Status:** `UNVERIFIED`
@@ -400,13 +401,13 @@ scoped against them.
 
 ## Phase 6 summary
 
-| Agency | Datasets verified | Status |
-| ------ | ----------------- | ------ |
-| NUPRC | 0 | Portals are transactional, not data |
-| NCS | 0 | Crawler-blocked; `AUTHORIZATION_REQUIRED` |
-| NHA | 0 | Repository "Coming Soon" |
-| NIWA | 0 | ERIS + a third-party tide feed to follow up |
-| NSC, NIOMR, NEMA, NESREA | — | Not investigated |
+| Agency                   | Datasets verified | Status                                      |
+| ------------------------ | ----------------- | ------------------------------------------- |
+| NUPRC                    | 0                 | Portals are transactional, not data         |
+| NCS                      | 0                 | Crawler-blocked; `AUTHORIZATION_REQUIRED`   |
+| NHA                      | 0                 | Repository "Coming Soon"                    |
+| NIWA                     | 0                 | ERIS + a third-party tide feed to follow up |
+| NSC, NIOMR, NEMA, NESREA | —                 | Not investigated                            |
 
 **Phase 6 verified no new connectable dataset.** NOSDRA remains the only
 government source with a confirmed machine-readable export, and its
@@ -414,6 +415,6 @@ licence is still unread.
 
 That is a disappointing result, and reporting it accurately is more
 useful than eight optimistic rows. The pattern is consistent: Nigerian
-agencies publish *transactional portals* for regulated parties and
-*documents* for the public. Open machine-readable data is the exception,
+agencies publish _transactional portals_ for regulated parties and
+_documents_ for the public. Open machine-readable data is the exception,
 and where it exists (NOSDRA) it is worth prioritising heavily.

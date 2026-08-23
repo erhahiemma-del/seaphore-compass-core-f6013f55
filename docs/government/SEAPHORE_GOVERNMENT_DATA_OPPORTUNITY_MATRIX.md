@@ -79,21 +79,22 @@ That is a smaller verified surface than the ambition implies, and stating
 it plainly is more useful than a matrix full of optimistic cells.
 
 ---
+
 ---
 
 # Phase 6 additions (verified 20 Aug 2026)
 
-| Agency | System | Dataset | URL | Access Method | Auth | Format | Data Role | Freshness | Historical | License | Value | Use Case | Status |
-| ------ | ------ | ------- | --- | ------------- | ---- | ------ | --------- | --------- | ---------- | ------- | ----- | -------- | ------ |
-| **NUPRC** | OGISP | *(none — permit portal)* | ogisp.nuprc.gov.ng | `AUTHENTICATED_SYSTEM` | Login | — | `ENERGY` | `UNKNOWN` | — | Unread | — | — | `UNVERIFIED` |
-| **NUPRC** | Website | Reports & publications | nuprc.gov.ng/reports | `DOCUMENT` | None | PDF | `ENERGY` | `DOCUMENT` | Unverified | Unread | LOW | `REPORTING` | `PUBLIC` |
-| **NCS** | customs.gov.ng | *(none verified)* | customs.gov.ng | `UNKNOWN` | Crawler-blocked | — | `TRADE_CUSTOMS` | `UNKNOWN` | Unverified | Unread | **CRITICAL** | `TRADE_INTELLIGENCE` | `AUTHORIZATION_REQUIRED` |
-| **NHA** | Marine Data Repository | *(not launched)* | nha.gov.ng/marine-data-repository | `UNKNOWN` | Unknown | — | `HYDROGRAPHY` | `UNKNOWN` | — | Unread | HIGH | `LIVE_MARITIME_MAP` | `UNVERIFIED` — "Coming Soon" |
-| **NHA** | — | Notices to Mariners | nha.gov.ng/notices-to-mariners | `DOCUMENT` | None | Unverified | `HYDROGRAPHY` | `PERIODIC` | Unverified | Unread | MEDIUM | `LIVE_MARITIME_MAP` | `PUBLIC` |
-| **NHA** | — | Tides | nha.gov.ng/tides | `UNKNOWN` | None | Unverified | `HYDROGRAPHY` | `UNKNOWN` | Unverified | Unread | MEDIUM | `PORT_DIGITAL_TWIN` | `UNVERIFIED` |
-| **NHA** | — | Charts / ENC | nha.gov.ng | `MANUAL_ONLY` | On demand | Paper/ENC | `HYDROGRAPHY` | `PERIODIC` | Unverified | **Likely paid** | HIGH | `LIVE_MARITIME_MAP` | `AUTHORIZATION_REQUIRED` |
-| **NIWA** | ERIS | Inland vessel registration | eris.niwa.gov.ng | `AUTHENTICATED_SYSTEM` | Unverified | — | `INLAND_WATERWAYS` | `UNKNOWN` | Unverified | Unread | MEDIUM | `VESSEL_INTELLIGENCE` | `UNVERIFIED` |
-| **NIWA** | port-log.net | **Live tide charts** | niwa.port-log.net/live/display.php | `UNKNOWN` | None apparent | Unverified | `HYDROGRAPHY` | **Possibly `LIVE`** | Unverified | **Third-party** | MEDIUM | `PORT_DIGITAL_TWIN` | `UNVERIFIED` — verify next |
+| Agency    | System                 | Dataset                    | URL                                | Access Method          | Auth            | Format     | Data Role          | Freshness           | Historical | License         | Value        | Use Case              | Status                       |
+| --------- | ---------------------- | -------------------------- | ---------------------------------- | ---------------------- | --------------- | ---------- | ------------------ | ------------------- | ---------- | --------------- | ------------ | --------------------- | ---------------------------- |
+| **NUPRC** | OGISP                  | _(none — permit portal)_   | ogisp.nuprc.gov.ng                 | `AUTHENTICATED_SYSTEM` | Login           | —          | `ENERGY`           | `UNKNOWN`           | —          | Unread          | —            | —                     | `UNVERIFIED`                 |
+| **NUPRC** | Website                | Reports & publications     | nuprc.gov.ng/reports               | `DOCUMENT`             | None            | PDF        | `ENERGY`           | `DOCUMENT`          | Unverified | Unread          | LOW          | `REPORTING`           | `PUBLIC`                     |
+| **NCS**   | customs.gov.ng         | _(none verified)_          | customs.gov.ng                     | `UNKNOWN`              | Crawler-blocked | —          | `TRADE_CUSTOMS`    | `UNKNOWN`           | Unverified | Unread          | **CRITICAL** | `TRADE_INTELLIGENCE`  | `AUTHORIZATION_REQUIRED`     |
+| **NHA**   | Marine Data Repository | _(not launched)_           | nha.gov.ng/marine-data-repository  | `UNKNOWN`              | Unknown         | —          | `HYDROGRAPHY`      | `UNKNOWN`           | —          | Unread          | HIGH         | `LIVE_MARITIME_MAP`   | `UNVERIFIED` — "Coming Soon" |
+| **NHA**   | —                      | Notices to Mariners        | nha.gov.ng/notices-to-mariners     | `DOCUMENT`             | None            | Unverified | `HYDROGRAPHY`      | `PERIODIC`          | Unverified | Unread          | MEDIUM       | `LIVE_MARITIME_MAP`   | `PUBLIC`                     |
+| **NHA**   | —                      | Tides                      | nha.gov.ng/tides                   | `UNKNOWN`              | None            | Unverified | `HYDROGRAPHY`      | `UNKNOWN`           | Unverified | Unread          | MEDIUM       | `PORT_DIGITAL_TWIN`   | `UNVERIFIED`                 |
+| **NHA**   | —                      | Charts / ENC               | nha.gov.ng                         | `MANUAL_ONLY`          | On demand       | Paper/ENC  | `HYDROGRAPHY`      | `PERIODIC`          | Unverified | **Likely paid** | HIGH         | `LIVE_MARITIME_MAP`   | `AUTHORIZATION_REQUIRED`     |
+| **NIWA**  | ERIS                   | Inland vessel registration | eris.niwa.gov.ng                   | `AUTHENTICATED_SYSTEM` | Unverified      | —          | `INLAND_WATERWAYS` | `UNKNOWN`           | Unverified | Unread          | MEDIUM       | `VESSEL_INTELLIGENCE` | `UNVERIFIED`                 |
+| **NIWA**  | port-log.net           | **Live tide charts**       | niwa.port-log.net/live/display.php | `UNKNOWN`              | None apparent   | Unverified | `HYDROGRAPHY`      | **Possibly `LIVE`** | Unverified | **Third-party** | MEDIUM       | `PORT_DIGITAL_TWIN`   | `UNVERIFIED` — verify next   |
 
 ## Not investigated
 
@@ -101,11 +102,11 @@ it plainly is more useful than a matrix full of optimistic cells.
 
 ## Incremental value
 
-| Source | Adds beyond existing Seaphore capability | Verdict |
-| ------ | ---------------------------------------- | ------- |
-| NCS | Customs declarations joinable to a port call | **Unique — highest ceiling** |
-| NHA | Depth, hazards, tides | **Unique** (when the repository opens) |
-| NIWA | Inland waterways — invisible to maritime AIS | **Unique** |
-| NUPRC | Licence/operator attribution | Unique in principle; nothing published |
-| NBS | Aggregate trade statistics | `LOW_INCREMENTAL_VALUE` — TradeAtlas is finer-grained |
-| NESREA | Environmental compliance | `LOW_INCREMENTAL_VALUE` — overlaps NOSDRA (pending verification) |
+| Source | Adds beyond existing Seaphore capability     | Verdict                                                          |
+| ------ | -------------------------------------------- | ---------------------------------------------------------------- |
+| NCS    | Customs declarations joinable to a port call | **Unique — highest ceiling**                                     |
+| NHA    | Depth, hazards, tides                        | **Unique** (when the repository opens)                           |
+| NIWA   | Inland waterways — invisible to maritime AIS | **Unique**                                                       |
+| NUPRC  | Licence/operator attribution                 | Unique in principle; nothing published                           |
+| NBS    | Aggregate trade statistics                   | `LOW_INCREMENTAL_VALUE` — TradeAtlas is finer-grained            |
+| NESREA | Environmental compliance                     | `LOW_INCREMENTAL_VALUE` — overlaps NOSDRA (pending verification) |

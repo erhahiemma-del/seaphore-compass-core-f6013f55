@@ -70,7 +70,9 @@ export function gradeForScore(score: number): CargoConfidenceGrade {
 export function axisAchievement(obs: CargoAxisObservation): number {
   if (!obs.present) return 0;
   const quality = clamp01(obs.quality ?? 0.7);
-  const corroboration = clamp01((obs.corroboration ?? 1) >= 3 ? 1 : ((obs.corroboration ?? 1) - 1) / 2);
+  const corroboration = clamp01(
+    (obs.corroboration ?? 1) >= 3 ? 1 : ((obs.corroboration ?? 1) - 1) / 2,
+  );
   let achieved = BASELINE + QUALITY_SHARE * quality + CORROBORATION_SHARE * corroboration;
   if (obs.conflicting) achieved *= 0.5;
   return clamp01(achieved);

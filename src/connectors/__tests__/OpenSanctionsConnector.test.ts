@@ -71,7 +71,6 @@ describe("OpenSanctionsConnector — connect()", () => {
     delete process.env.OPEN_SANCTIONS_API_KEY;
     delete process.env.Open_Sanctions;
     const c = new OpenSanctionsConnector({
-
       fetchImpl: vi.fn(async () => jsonResponse({ status: "ok" })) as unknown as typeof fetch,
     });
     expect(await c.authenticate()).toBe(false);

@@ -91,15 +91,12 @@ export function scoreGovernmentRecord(
   const corroboration = corroborationCount >= 2 ? 1 : corroborationCount === 1 ? 0.85 : 0.7;
   const fresh = freshnessScore(record.occurredAt, now);
 
-  const score =
-    authority * 0.45 + ratio * 0.25 + corroboration * 0.15 + fresh * 0.15;
+  const score = authority * 0.45 + ratio * 0.25 + corroboration * 0.15 + fresh * 0.15;
   const rounded = Math.round(score * 100) / 100;
 
   const parts = [
     `${record.agencyName} is the authority of record for ${record.recordType.replace(/-/g, " ")}`,
-    missing.length === 0
-      ? "all required fields present"
-      : `missing ${missing.join(", ")}`,
+    missing.length === 0 ? "all required fields present" : `missing ${missing.join(", ")}`,
     corroborationCount > 0
       ? `corroborated by ${corroborationCount} other government record${corroborationCount === 1 ? "" : "s"}`
       : "no corroborating government record in this acquisition",

@@ -27,7 +27,7 @@ Today:
 
 ```ts
 selectedEntityId: string | null;
-selectedEntityImo: string | null;   // assumes vessel
+selectedEntityImo: string | null; // assumes vessel
 ```
 
 Proposed — a discriminated union over the brief's thirteen object types:
@@ -57,8 +57,7 @@ field names encode one.
 
 ```ts
 type OperatingMode =
-  | "NATIONAL" | "PORT" | "VESSEL"
-  | "INCIDENT" | "INVESTIGATION" | "HISTORY" | "REPLAY";
+  "NATIONAL" | "PORT" | "VESSEL" | "INCIDENT" | "INVESTIGATION" | "HISTORY" | "REPLAY";
 ```
 
 Reusing `ViewMode` would recreate exactly the vocabulary drift G6.0
@@ -70,21 +69,21 @@ eliminated in the orchestration layer.
 
 Each is independently shippable, tested, and committed separately.
 
-### M1 — Shell completion *(no new data required)*
+### M1 — Shell completion _(no new data required)_
 
 Right-hand **Intelligence Drawer** and bottom **Timeline bar**, both
 collapsible and resizable. Drawer renders `IntelligenceFinding`s through
 the existing `FindingEvidenceViewer` and `SarDetectionCard` — no new
 detail component.
 
-*Value: makes existing engines visible. Testable today against GFW.*
+_Value: makes existing engines visible. Testable today against GFW._
 
 ### M2 — Selection model
 
 `MapSelection` + `OperatingMode` in SGS, URL-serialisable. Renderer emits
 typed selection events. Drawer switches on `kind`.
 
-*Unblocks every subsequent milestone.*
+_Unblocks every subsequent milestone._
 
 ### M3 — Layer group widening
 
@@ -98,7 +97,7 @@ KPI strip over `fleet-summary.ts` + `computeIntelligenceMetrics`. **Every
 metric carries source and freshness**, using `LIVE | RECENT | HISTORICAL |
 ACQUIRED | PENDING | UNAVAILABLE | DEMO`.
 
-*Testable today: GFW is live; every other tile reads `PENDING`.*
+_Testable today: GFW is live; every other tile reads `PENDING`._
 
 ### M5 — Vessel experience
 
@@ -109,7 +108,7 @@ Risk · Cargo · Ownership · Sanctions · Evidence.
 panel.** Only fields actually supported by connected providers appear —
 GFW carries no course, speed or IMO, and the card must say so.
 
-### M6 — Copilot ↔ map context *(the largest gap)*
+### M6 — Copilot ↔ map context _(the largest gap)_
 
 Bidirectional, over the existing orchestration layer:
 
@@ -122,7 +121,7 @@ QueryUnderstanding ──▶ MapState                     (Copilot transforms ma
 `MapPlan` — operating mode, layers, viewport, filters — derived from the
 same single understanding. **No second classifier.**
 
-*Delivers "show tankers near Lagos" and "why is this vessel here?".*
+_Delivers "show tankers near Lagos" and "why is this vessel here?"._
 
 ### M7 — Timeline and replay UI
 
@@ -159,13 +158,13 @@ Clustering, viewport loading, spatial filtering. Deferred deliberately:
 GFW returns tens to low hundreds of vessels, and optimising for thousands
 before we have thousands is speculative.
 
-### M13 — Port experience *(gated on NPA)*
+### M13 — Port experience _(gated on NPA)_
 
 Port mode over the port-call lifecycle. **Cannot be meaningfully built or
 tested until NPA access exists** — until then it renders
 `NPA DATA PENDING ACCESS`.
 
-### M14 — SAR / environment rendering *(gated)*
+### M14 — SAR / environment rendering _(gated)_
 
 Gated on a ship detector and NOSDRA licence respectively.
 
@@ -187,13 +186,13 @@ scheduling decision, not an architectural one.
 Beyond per-milestone coverage, five assertions the brief calls critical.
 Each must be **structural**, not wording:
 
-| Guarantee | Enforcement |
-| --------- | ----------- |
-| STALE cannot render as LIVE | Freshness recomputed at render from `ageMs` |
-| DEMO cannot render as LIVE | `provenance.kind: "fixture"` propagated to every surface |
-| Missing cannot become fabricated | Absent source → stated blocker |
-| AIS absence cannot become DARK CONTACT | `supportsUnmatchedConclusion()` — already enforced |
-| SAR detection cannot become identity | `SarDetection` has no identity field — already enforced |
+| Guarantee                              | Enforcement                                              |
+| -------------------------------------- | -------------------------------------------------------- |
+| STALE cannot render as LIVE            | Freshness recomputed at render from `ageMs`              |
+| DEMO cannot render as LIVE             | `provenance.kind: "fixture"` propagated to every surface |
+| Missing cannot become fabricated       | Absent source → stated blocker                           |
+| AIS absence cannot become DARK CONTACT | `supportsUnmatchedConclusion()` — already enforced       |
+| SAR detection cannot become identity   | `SarDetection` has no identity field — already enforced  |
 
 The last two already hold. The first three need map-level tests.
 

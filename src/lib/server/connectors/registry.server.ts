@@ -22,8 +22,6 @@
  */
 import { credentialCandidates } from "@/connectors/implementations/shared/provider-io";
 
-
-
 export type ConnectorHealthState =
   "healthy" | "auth_failed" | "offline" | "rate_limited" | "degraded" | "unavailable";
 
@@ -79,7 +77,6 @@ export function hasSecret(envName: string): boolean {
     return typeof v === "string" && v.length > 0;
   });
 }
-
 
 function snapshotOf(record: InternalRecord): ConnectorAdminSnapshot {
   const avg =

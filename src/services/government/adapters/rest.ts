@@ -124,9 +124,7 @@ export function createRestGovernmentAdapter(spec: RestAdapterSpec): GovernmentAg
       ctx: GovernmentAdapterContext,
     ): Promise<ReadonlyArray<GovernmentEvidenceRecord>> {
       if (!ctx.baseUrl) {
-        throw new Error(
-          `${spec.agencyName} endpoint not configured — set ${spec.baseUrlEnv[0]}`,
-        );
+        throw new Error(`${spec.agencyName} endpoint not configured — set ${spec.baseUrlEnv[0]}`);
       }
       if (!ctx.credential) {
         throw new Error(

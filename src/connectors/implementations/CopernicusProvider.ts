@@ -252,7 +252,6 @@ export class CopernicusProvider extends BaseEvidenceProvider {
     return { username, password };
   }
 
-
   // ── SECTION 4B: TOKEN LIFECYCLE ────────────────────────────────────
 
   /**

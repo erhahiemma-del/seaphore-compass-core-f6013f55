@@ -39,11 +39,10 @@ const USAGE_RULE: Readonly<Record<TrustLevel, string>> = {
     "May anchor identity and compliance findings. Requires an authority-of-record record before revenue action.",
   VERIFIED_COMMERCIAL:
     "May corroborate authoritative evidence. Never the sole basis for enforcement or revenue action.",
-  AGGREGATED:
-    "Context and pattern only. Always labelled as aggregated with its retrieval date.",
-  OPEN_SOURCE: "Lead generation only. Requires independent corroboration before projection as fact.",
-  DERIVED_ANALYTIC:
-    "Always labelled INFERRED. Raises questions; never answers them on its own.",
+  AGGREGATED: "Context and pattern only. Always labelled as aggregated with its retrieval date.",
+  OPEN_SOURCE:
+    "Lead generation only. Requires independent corroboration before projection as fact.",
+  DERIVED_ANALYTIC: "Always labelled INFERRED. Raises questions; never answers them on its own.",
 };
 
 export function trustClassificationMatrix(): ReadonlyArray<TrustClassificationRow> {

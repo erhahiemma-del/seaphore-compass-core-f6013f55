@@ -135,6 +135,7 @@ permission or awaiting investigation, and saying so plainly is more
 useful than a roadmap that implies otherwise.
 
 ---
+
 ---
 
 # Revision after Phase 6 (20 Aug 2026)
@@ -144,24 +145,24 @@ investigated; four were not reached. The tiering changes as follows.
 
 ## Movements
 
-| Source | From | To | Evidence |
-| ------ | ---- | -- | -------- |
-| **NUPRC** | Tier 5 | **Tier 5 — confirmed** | OGISP verified as a login-gated permit portal, not a data repository |
-| **NCS** | Tier 5 | **Tier 3 — INTEGRATION PENDING** | Crawler policy is a stated access control, not an absence of data. Promoted because an agreement is a realistic route and the payoff is the highest in the programme |
-| **NHA** | Tier 5 | **Tier 5 — confirmed, with a date dependency** | Marine Data Repository is "Coming Soon". Nothing to integrate *yet*; re-check quarterly |
-| **NIWA** | Tier 5 | **Tier 5, with one Tier 2 candidate** | Live tide feed at `niwa.port-log.net` warrants its own verification |
-| NSC, NIOMR, NEMA, NESREA | Tier 5 | **Tier 5 — not investigated** | No evidence either way |
+| Source                   | From   | To                                             | Evidence                                                                                                                                                             |
+| ------------------------ | ------ | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **NUPRC**                | Tier 5 | **Tier 5 — confirmed**                         | OGISP verified as a login-gated permit portal, not a data repository                                                                                                 |
+| **NCS**                  | Tier 5 | **Tier 3 — INTEGRATION PENDING**               | Crawler policy is a stated access control, not an absence of data. Promoted because an agreement is a realistic route and the payoff is the highest in the programme |
+| **NHA**                  | Tier 5 | **Tier 5 — confirmed, with a date dependency** | Marine Data Repository is "Coming Soon". Nothing to integrate _yet_; re-check quarterly                                                                              |
+| **NIWA**                 | Tier 5 | **Tier 5, with one Tier 2 candidate**          | Live tide feed at `niwa.port-log.net` warrants its own verification                                                                                                  |
+| NSC, NIOMR, NEMA, NESREA | Tier 5 | **Tier 5 — not investigated**                  | No evidence either way                                                                                                                                               |
 
 ## Standing after Phase 6
 
-| Tier | Members |
-| ---- | ------- |
-| **1 — CONNECT NOW** | *(none — NOSDRA is technically ready but licence-gated)* |
-| **2 — EXPORT / GIS** | NOSDRA incidents (CSV/JSON) · NOSDRA GIS layers · NBS quarterly documents · **NIWA tide feed (candidate)** |
-| **3 — INTEGRATION PENDING** | NPA ×5 datasets *(connector built)* · **NCS** *(no connector)* |
-| **4 — LICENSE REVIEW** | NOSDRA · NPA · NBS |
-| **5 — FUTURE** | NUPRC · NHA *(date-dependent)* · NIWA ERIS · NSC · NIOMR · NEMA · NESREA |
-| **6 — REFERENCE** | FMMBE · Nigerian Navy public releases |
+| Tier                        | Members                                                                                                    |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| **1 — CONNECT NOW**         | _(none — NOSDRA is technically ready but licence-gated)_                                                   |
+| **2 — EXPORT / GIS**        | NOSDRA incidents (CSV/JSON) · NOSDRA GIS layers · NBS quarterly documents · **NIWA tide feed (candidate)** |
+| **3 — INTEGRATION PENDING** | NPA ×5 datasets _(connector built)_ · **NCS** _(no connector)_                                             |
+| **4 — LICENSE REVIEW**      | NOSDRA · NPA · NBS                                                                                         |
+| **5 — FUTURE**              | NUPRC · NHA _(date-dependent)_ · NIWA ERIS · NSC · NIOMR · NEMA · NESREA                                   |
+| **6 — REFERENCE**           | FMMBE · Nigerian Navy public releases                                                                      |
 
 ## The one thing that changed the picture
 
@@ -179,6 +180,7 @@ complementarity + legal feasibility puts the order at:
 5. **NHA re-check** — calendar-driven, no effort until the repository opens
 
 ---
+
 ---
 
 # Final tiering after Phase 6B (discovery complete)
@@ -187,15 +189,15 @@ Eleven agencies assessed. Prioritised by intelligence value × uniqueness
 × freshness × coverage × accessibility × commercial feasibility ×
 integration effort — **not** by agency importance.
 
-| Tier | Members | Note |
-| ---- | ------- | ---- |
-| **1 — CONNECT NOW** | *(empty)* | Nothing is both technically connectable and commercially clear |
-| **2 — EXPORT / GIS** | NOSDRA incidents · NOSDRA GIS · NSC tariffs & freight rates (PDF) · NBS quarterly (PDF) | All `LICENSE_BLOCKED` pending review |
-| **3 — INTEGRATION PENDING** | NPA ×5 *(connector built)* · NCS *(no connector)* | Authorization conversations |
-| **4 — LICENSE REVIEW** | NOSDRA · NSC · NBS · NPA | Blocks commercial use, not development |
-| **5 — FUTURE** | NHA *(date-dependent)* · NIWA tide feed *(verify)* · NIWA ERIS · NIOMR-via-OBIS · NUPRC | |
-| **6 — REFERENCE ONLY** | NSC Process Manual · NESREA legislation · FMMBE · Navy public releases | Copilot grounding at best |
-| **— DO NOT PRIORITISE** | **NEMA** · **NESREA** · NIOMR ocean-state | `NO_VERIFIED_DATASET` |
+| Tier                        | Members                                                                                 | Note                                                           |
+| --------------------------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| **1 — CONNECT NOW**         | _(empty)_                                                                               | Nothing is both technically connectable and commercially clear |
+| **2 — EXPORT / GIS**        | NOSDRA incidents · NOSDRA GIS · NSC tariffs & freight rates (PDF) · NBS quarterly (PDF) | All `LICENSE_BLOCKED` pending review                           |
+| **3 — INTEGRATION PENDING** | NPA ×5 _(connector built)_ · NCS _(no connector)_                                       | Authorization conversations                                    |
+| **4 — LICENSE REVIEW**      | NOSDRA · NSC · NBS · NPA                                                                | Blocks commercial use, not development                         |
+| **5 — FUTURE**              | NHA _(date-dependent)_ · NIWA tide feed _(verify)_ · NIWA ERIS · NIOMR-via-OBIS · NUPRC |                                                                |
+| **6 — REFERENCE ONLY**      | NSC Process Manual · NESREA legislation · FMMBE · Navy public releases                  | Copilot grounding at best                                      |
+| **— DO NOT PRIORITISE**     | **NEMA** · **NESREA** · NIOMR ocean-state                                               | `NO_VERIFIED_DATASET`                                          |
 
 ## Ranked next actions
 

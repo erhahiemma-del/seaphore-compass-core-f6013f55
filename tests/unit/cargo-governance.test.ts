@@ -39,9 +39,9 @@ describe("GOV-02 · National Maritime Data Source Registry", () => {
 
   it("derives both governance matrices from the registry", () => {
     const trust = trustClassificationMatrix();
-    expect(trust.find((r) => r.trustLevel === "AUTHORITY_OF_RECORD")?.sources.length).toBeGreaterThan(
-      0,
-    );
+    expect(
+      trust.find((r) => r.trustLevel === "AUTHORITY_OF_RECORD")?.sources.length,
+    ).toBeGreaterThan(0);
     const priority = providerPriorityMatrix();
     expect(priority.map((r) => r.priority)).toEqual(["P0", "P1", "P2", "P3"]);
     expect(priority[0].sources.length).toBeGreaterThan(0);

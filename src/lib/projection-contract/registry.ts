@@ -1590,7 +1590,8 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
       "Sprint GOV-02 — canonical classification of every cargo evidence source (Government, Commercial, Supporting, Derived) with authority, jurisdiction, evidence types, capabilities, trust level, coverage, update frequency, priority P0–P3, integration status and recommended usage. Specification only; no providers or connectors.",
     state: "PROJECTED",
     projection: {
-      surface: "Admin Console · Intelligence Capability governance view (source classes, trust and priority matrices)",
+      surface:
+        "Admin Console · Intelligence Capability governance view (source classes, trust and priority matrices)",
       location: "src/routes/admin.projection-contract.tsx",
       component: "src/services/cargo-governance/source-registry.ts",
       interaction: "drill-in",
@@ -1605,7 +1606,8 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
       "Sprint GOV-02 — weighted, explainable cargo confidence across eight evidence axes (government declaration, NIMASA return, Bill of Lading, AIS/voyage, company verification, revenue assessment, sanctions, supporting intelligence). Returns score, grade, evidence breakdown, missing evidence, conflicting evidence and an officer-facing explanation.",
     state: "PROJECTED",
     projection: {
-      surface: "Confidence chip explainer on every cargo number (score, grade, breakdown, what is missing)",
+      surface:
+        "Confidence chip explainer on every cargo number (score, grade, breakdown, what is missing)",
       location: "src/components/intelligence/ConfidenceChip.tsx",
       component: "src/services/cargo-governance/cargo-confidence.ts",
       interaction: "hover-explainer",
@@ -1626,7 +1628,6 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     reviewedAt: "2026-08-04",
   },
 ];
-
 
 export function getContractEntry(id: string): ProjectionContractEntry | undefined {
   return PROJECTION_CONTRACT.find((e) => e.id === id);

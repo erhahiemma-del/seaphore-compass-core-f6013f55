@@ -13,7 +13,11 @@
  * the most valuable entry in the registry on the strength of a fact about
  * our client rather than about their data.
  */
-import { type GovernmentDataSource, type GovSourceStatus, type LicenseTerms } from "./source-registry";
+import {
+  type GovernmentDataSource,
+  type GovSourceStatus,
+  type LicenseTerms,
+} from "./source-registry";
 
 export class GovernmentRegistryError extends Error {
   constructor(message: string) {

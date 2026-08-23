@@ -19,26 +19,26 @@ UNVERIFIED              + anything        → UNVERIFIED
 
 ## Matrix
 
-| Agency | Dataset | Source | Type | Freshness | Hist. depth | Access | Commercial | **Readiness** | API | GIS | Export | Unique value | Capability | Priority |
-| ------ | ------- | ------ | ---- | --------- | ----------- | ------ | ---------- | ------------- | --- | --- | ------ | ------------ | ---------- | -------- |
-| **NOSDRA** | Oil spill incidents | oilspillmonitor.ng | Register | `PERIODIC` | Unverified | `TECHNICALLY_CONNECTABLE` | `LICENSE_REVIEW` | **LICENSE_BLOCKED** | ✗ | ✓ | **CSV+JSON** | **UNIQUE** — statutory spill register | `ENVIRONMENTAL_INTELLIGENCE` | **1** |
-| **NOSDRA** | Oil blocks, pipelines, terminals, wetlands | ” | Geospatial | `STATIC` | — | `TECHNICALLY_CONNECTABLE` | `LICENSE_REVIEW` | **LICENSE_BLOCKED** | ✗ | ✓ | Unverified | **UNIQUE** — only verified gov GIS | `LIVE_MARITIME_MAP`, `ENERGY_INTELLIGENCE` | **2** |
-| **NPA** | Vessels Expected | shippos | Schedule | `DAILY` | PDFs ≥2017 | `AUTHORIZATION_REQUIRED` | `UNKNOWN` | **AUTHORIZATION_BLOCKED** | ? | ✗ | Observed | **UNIQUE** — no substitute exists | `DAILY_SHIPPING_SCHEDULE` | **3** |
-| **NPA** | Awaiting Berth / At Berth / Departed | ” | Operational | `DAILY` | ” | `AUTHORIZATION_REQUIRED` | `UNKNOWN` | **AUTHORIZATION_BLOCKED** | ? | ✗ | Observed | **UNIQUE** | `PORT_DIGITAL_TWIN` | **3** |
-| **NCS** | Customs declarations | customs.gov.ng | Transactional | `UNKNOWN` | Unverified | `AUTHORIZATION_REQUIRED` | `UNKNOWN` | **AUTHORIZATION_BLOCKED** | ? | ✗ | ✗ | **UNIQUE** — highest ceiling | `CARGO_INTELLIGENCE`, `TRADE_INTELLIGENCE` | **4** |
-| **NIWA** | Live tide charts | niwa.port-log.net | Sensor | **Possibly `LIVE`** | Unverified | `UNVERIFIED` | `UNKNOWN` | **UNVERIFIED** | ? | ✗ | ? | **COMPLEMENTARY** — only live candidate found | `PORT_DIGITAL_TWIN` | **5** |
-| **NSC** | Freight rates, port tariffs | shipperscouncil.gov.ng | Reference | `PERIODIC` | 2018–2024 | `TECHNICALLY_CONNECTABLE` | `LICENSE_REVIEW` | **LICENSE_BLOCKED** | ✗ | ✗ | **PDF only** | **COMPLEMENTARY** — official tariffs | `REPORTING` | 6 |
-| **NSC** | Annual reports w/ freight statistics | ” | Document | `PERIODIC` | 2018–2024 | `TECHNICALLY_CONNECTABLE` | `LICENSE_REVIEW` | **LICENSE_BLOCKED** | ✗ | ✗ | PDF | `LOW_INCREMENTAL_VALUE` | `REPORTING` | 8 |
-| **NSC** | Nigerian Ports Process Manual, SOP | ” | Document | `STATIC` | — | `TECHNICALLY_CONNECTABLE` | `LICENSE_REVIEW` | **LICENSE_BLOCKED** | ✗ | ✗ | PDF | `REFERENCE_ONLY` | `COPILOT` | 9 |
-| **NIOMR** | Species occurrence records | **obis.org/organization/15920** | Biodiversity | `PERIODIC` | Unverified | `TECHNICALLY_CONNECTABLE` **via OBIS** | `UNKNOWN` | **UNVERIFIED** | **OBIS API** | ✗ | ✓ | **COMPLEMENTARY** — fisheries only | `ENVIRONMENTAL_INTELLIGENCE` | 7 |
-| **NIOMR** | Waves, currents, sea state, tides | niomr.gov.ng | — | — | — | `NOT_AVAILABLE` | — | **TECHNICAL_BLOCKED** | ✗ | ✗ | ✗ | **NO_VERIFIED_DATASET** | — | — |
-| **NHA** | Marine Data Repository | nha.gov.ng | — | — | — | `NOT_AVAILABLE` — "Coming Soon" | — | **TECHNICAL_BLOCKED** | ✗ | ✗ | ✗ | Would be UNIQUE | `NAVIGATION_INTELLIGENCE` | Re-check |
-| **NHA** | Charts / ENC | ” | Chart | `PERIODIC` | Unverified | `AUTHORIZATION_REQUIRED` | Likely paid | **AUTHORIZATION_BLOCKED** | ✗ | ✗ | On demand | **UNIQUE** | `NAVIGATION_INTELLIGENCE` | Later |
-| **NUPRC** | OGISP | ogisp.nuprc.gov.ng | Portal | — | — | `AUTHENTICATED` | — | **AUTHORIZATION_BLOCKED** | ✗ | ✗ | ✗ | **NO_VERIFIED_DATASET** | — | — |
-| **NEMA** | Disaster / hazard data | nema.gov.ng | — | — | — | `NOT_AVAILABLE` | — | **TECHNICAL_BLOCKED** | ✗ | ✗ | ✗ | **NO_VERIFIED_DATASET** | — | — |
-| **NESREA** | Facility registers, permits, monitoring | nesrea.gov.ng | — | — | — | `NOT_AVAILABLE` | — | **TECHNICAL_BLOCKED** | ✗ | ✗ | ✗ | **NO_VERIFIED_DATASET** | — | — |
-| **NESREA** | Accredited consultants list | ” | Reference | `STATIC` | — | `TECHNICALLY_CONNECTABLE` | `UNKNOWN` | **UNVERIFIED** | ✗ | ✗ | Web list | `LOW_VALUE` | — | — |
-| **NBS** | Foreign Trade in Goods | nigerianstat.gov.ng | Statistics | `QUARTERLY` | Multi-year | `TECHNICALLY_CONNECTABLE` | `LICENSE_REVIEW` | **LICENSE_BLOCKED** | ✗ | ✗ | Document | `DUPLICATIVE` — TradeAtlas finer | `TRADE_INTELLIGENCE` | 10 |
+| Agency     | Dataset                                    | Source                          | Type          | Freshness           | Hist. depth | Access                                 | Commercial       | **Readiness**             | API          | GIS | Export       | Unique value                                  | Capability                                 | Priority |
+| ---------- | ------------------------------------------ | ------------------------------- | ------------- | ------------------- | ----------- | -------------------------------------- | ---------------- | ------------------------- | ------------ | --- | ------------ | --------------------------------------------- | ------------------------------------------ | -------- |
+| **NOSDRA** | Oil spill incidents                        | oilspillmonitor.ng              | Register      | `PERIODIC`          | Unverified  | `TECHNICALLY_CONNECTABLE`              | `LICENSE_REVIEW` | **LICENSE_BLOCKED**       | ✗            | ✓   | **CSV+JSON** | **UNIQUE** — statutory spill register         | `ENVIRONMENTAL_INTELLIGENCE`               | **1**    |
+| **NOSDRA** | Oil blocks, pipelines, terminals, wetlands | ”                               | Geospatial    | `STATIC`            | —           | `TECHNICALLY_CONNECTABLE`              | `LICENSE_REVIEW` | **LICENSE_BLOCKED**       | ✗            | ✓   | Unverified   | **UNIQUE** — only verified gov GIS            | `LIVE_MARITIME_MAP`, `ENERGY_INTELLIGENCE` | **2**    |
+| **NPA**    | Vessels Expected                           | shippos                         | Schedule      | `DAILY`             | PDFs ≥2017  | `AUTHORIZATION_REQUIRED`               | `UNKNOWN`        | **AUTHORIZATION_BLOCKED** | ?            | ✗   | Observed     | **UNIQUE** — no substitute exists             | `DAILY_SHIPPING_SCHEDULE`                  | **3**    |
+| **NPA**    | Awaiting Berth / At Berth / Departed       | ”                               | Operational   | `DAILY`             | ”           | `AUTHORIZATION_REQUIRED`               | `UNKNOWN`        | **AUTHORIZATION_BLOCKED** | ?            | ✗   | Observed     | **UNIQUE**                                    | `PORT_DIGITAL_TWIN`                        | **3**    |
+| **NCS**    | Customs declarations                       | customs.gov.ng                  | Transactional | `UNKNOWN`           | Unverified  | `AUTHORIZATION_REQUIRED`               | `UNKNOWN`        | **AUTHORIZATION_BLOCKED** | ?            | ✗   | ✗            | **UNIQUE** — highest ceiling                  | `CARGO_INTELLIGENCE`, `TRADE_INTELLIGENCE` | **4**    |
+| **NIWA**   | Live tide charts                           | niwa.port-log.net               | Sensor        | **Possibly `LIVE`** | Unverified  | `UNVERIFIED`                           | `UNKNOWN`        | **UNVERIFIED**            | ?            | ✗   | ?            | **COMPLEMENTARY** — only live candidate found | `PORT_DIGITAL_TWIN`                        | **5**    |
+| **NSC**    | Freight rates, port tariffs                | shipperscouncil.gov.ng          | Reference     | `PERIODIC`          | 2018–2024   | `TECHNICALLY_CONNECTABLE`              | `LICENSE_REVIEW` | **LICENSE_BLOCKED**       | ✗            | ✗   | **PDF only** | **COMPLEMENTARY** — official tariffs          | `REPORTING`                                | 6        |
+| **NSC**    | Annual reports w/ freight statistics       | ”                               | Document      | `PERIODIC`          | 2018–2024   | `TECHNICALLY_CONNECTABLE`              | `LICENSE_REVIEW` | **LICENSE_BLOCKED**       | ✗            | ✗   | PDF          | `LOW_INCREMENTAL_VALUE`                       | `REPORTING`                                | 8        |
+| **NSC**    | Nigerian Ports Process Manual, SOP         | ”                               | Document      | `STATIC`            | —           | `TECHNICALLY_CONNECTABLE`              | `LICENSE_REVIEW` | **LICENSE_BLOCKED**       | ✗            | ✗   | PDF          | `REFERENCE_ONLY`                              | `COPILOT`                                  | 9        |
+| **NIOMR**  | Species occurrence records                 | **obis.org/organization/15920** | Biodiversity  | `PERIODIC`          | Unverified  | `TECHNICALLY_CONNECTABLE` **via OBIS** | `UNKNOWN`        | **UNVERIFIED**            | **OBIS API** | ✗   | ✓            | **COMPLEMENTARY** — fisheries only            | `ENVIRONMENTAL_INTELLIGENCE`               | 7        |
+| **NIOMR**  | Waves, currents, sea state, tides          | niomr.gov.ng                    | —             | —                   | —           | `NOT_AVAILABLE`                        | —                | **TECHNICAL_BLOCKED**     | ✗            | ✗   | ✗            | **NO_VERIFIED_DATASET**                       | —                                          | —        |
+| **NHA**    | Marine Data Repository                     | nha.gov.ng                      | —             | —                   | —           | `NOT_AVAILABLE` — "Coming Soon"        | —                | **TECHNICAL_BLOCKED**     | ✗            | ✗   | ✗            | Would be UNIQUE                               | `NAVIGATION_INTELLIGENCE`                  | Re-check |
+| **NHA**    | Charts / ENC                               | ”                               | Chart         | `PERIODIC`          | Unverified  | `AUTHORIZATION_REQUIRED`               | Likely paid      | **AUTHORIZATION_BLOCKED** | ✗            | ✗   | On demand    | **UNIQUE**                                    | `NAVIGATION_INTELLIGENCE`                  | Later    |
+| **NUPRC**  | OGISP                                      | ogisp.nuprc.gov.ng              | Portal        | —                   | —           | `AUTHENTICATED`                        | —                | **AUTHORIZATION_BLOCKED** | ✗            | ✗   | ✗            | **NO_VERIFIED_DATASET**                       | —                                          | —        |
+| **NEMA**   | Disaster / hazard data                     | nema.gov.ng                     | —             | —                   | —           | `NOT_AVAILABLE`                        | —                | **TECHNICAL_BLOCKED**     | ✗            | ✗   | ✗            | **NO_VERIFIED_DATASET**                       | —                                          | —        |
+| **NESREA** | Facility registers, permits, monitoring    | nesrea.gov.ng                   | —             | —                   | —           | `NOT_AVAILABLE`                        | —                | **TECHNICAL_BLOCKED**     | ✗            | ✗   | ✗            | **NO_VERIFIED_DATASET**                       | —                                          | —        |
+| **NESREA** | Accredited consultants list                | ”                               | Reference     | `STATIC`            | —           | `TECHNICALLY_CONNECTABLE`              | `UNKNOWN`        | **UNVERIFIED**            | ✗            | ✗   | Web list     | `LOW_VALUE`                                   | —                                          | —        |
+| **NBS**    | Foreign Trade in Goods                     | nigerianstat.gov.ng             | Statistics    | `QUARTERLY`         | Multi-year  | `TECHNICALLY_CONNECTABLE`              | `LICENSE_REVIEW` | **LICENSE_BLOCKED**       | ✗            | ✗   | Document     | `DUPLICATIVE` — TradeAtlas finer              | `TRADE_INTELLIGENCE`                       | 10       |
 
 ---
 
@@ -97,14 +97,14 @@ NESREA publishes the law. **Do not prioritise.**
 
 ## Limited verification pass — no material change
 
-| Source | Change |
-| ------ | ------ |
-| NPA | None. `AUTHORIZATION_REQUIRED`, connector ready |
-| NOSDRA | None. `LICENSE_REVIEW` stands |
-| NCS | None. Crawler-blocked |
-| NUPRC | None. OGISP transactional |
-| NIWA | None. Tide feed still the open question |
-| NHA | None. Repository still "Coming Soon" |
+| Source | Change                                          |
+| ------ | ----------------------------------------------- |
+| NPA    | None. `AUTHORIZATION_REQUIRED`, connector ready |
+| NOSDRA | None. `LICENSE_REVIEW` stands                   |
+| NCS    | None. Crawler-blocked                           |
+| NUPRC  | None. OGISP transactional                       |
+| NIWA   | None. Tide feed still the open question         |
+| NHA    | None. Repository still "Coming Soon"            |
 
 ---
 

@@ -60,8 +60,7 @@ export async function refreshConnectorHealth(db: AnyDb, connectorId: string): Pr
       : Math.round(latencies.reduce((a: number, b: number) => a + b, 0) / latencies.length);
 
   const last = rows[0] as
-    | { started_at?: string; status?: string; records_ingested?: number }
-    | undefined;
+    { started_at?: string; status?: string; records_ingested?: number } | undefined;
   const lastSyncAt = last?.started_at ? new Date(last.started_at) : new Date(0);
   const health = computeHealth({
     pollingIntervalMinutes: (connector as { polling_interval_minutes: number })
