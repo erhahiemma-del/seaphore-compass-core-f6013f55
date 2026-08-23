@@ -52,10 +52,37 @@ function useCargoKpis(
 
 export function CargoCentre() {
   const [tab, setTab] = useState("workspace");
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const { projection, isLoading } = useCargoCentreProjection(CARGO_CENTRE);
   const kpis = useCargoKpis(projection);
 
   const hasData = projection.state === "ACTIVE" && !!projection.data;
+  const lead = hasData
+    ? (projection.data!.leads.find((l) => l.entityId === selectedLeadId) ?? null)
+    : null;
+
+  const { focused, dismiss, isReceded } = useCentreFocus(
+    useMemo(
+      () =>
+        lead
+          ? {
+              kind: "cargo" as const,
+              id: lead.entityId,
+              title: lead.label,
+              descriptor: lead.entityId,
+              facts: [
+                {
+                  label: "Evidence records",
+                  value: String(lead.evidenceCount),
+                  confidence: lead.confidence,
+                },
+              ],
+            }
+          : null,
+      [lead],
+    ),
+  );
+
 
   return (
     <IntelCentreShell
