@@ -122,6 +122,9 @@ export {
   type VesselUpdateEngineOptions,
 } from "./update-engine";
 
+export { isComfortablyVisible, planCameraMove } from "./camera";
+export type { CameraMovePlan } from "./camera";
+
 export type {
   MapCamera,
   MapControlOptions,

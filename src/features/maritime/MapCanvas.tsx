@@ -13,6 +13,8 @@
 import { useEffect, useMemo, useRef } from "react";
 import { MapPinOff } from "lucide-react";
 
+import { prefersReducedMotion } from "@/hooks/use-reduced-motion";
+
 import {
   BASEMAP_STYLE,
   EmptyVesselSource,
@@ -28,6 +30,8 @@ import {
   sgs,
   useMapSelector,
   useMapSessionStore,
+  planCameraMove,
+  selectionKey,
   type MapControlOptions,
   type MapEventBus,
   type MapRenderer,
@@ -356,13 +360,30 @@ export function MapCanvas({
 
   // ── Selection changes re-derive presentation, not data ────────────────
   useEffect(() => {
-    let previous = service.get().selectedEntityImo;
+    let previous = selectionKey(service.get().selection);
     return service.subscribe((state) => {
-      if (state.selectedEntityImo === previous) return;
-      previous = state.selectedEntityImo;
+      const key = selectionKey(state.selection);
+      if (key === previous) return;
+      previous = key;
       engine.refreshPresentation();
+
+      // Move the camera only when the selection came from somewhere the
+      // officer is not already looking. `planCameraMove` owns that rule;
+      // this block only carries out its decision.
+      const plan = planCameraMove({
+        focus: state.selection?.focus,
+        viewport: renderer.getVisibleBounds?.() ?? null,
+        reducedMotion: prefersReducedMotion(),
+      });
+      if (!plan.move || !plan.center) return;
+
+      if (plan.animate) renderer.flyTo?.(plan.center);
+      // Reduced motion: arrive without the journey. `flyTo` sets
+      // `essential: true` inside MapLibre, which overrides the OS
+      // preference, so the jump has to come from here.
+      else renderer.setCamera({ center: plan.center });
     });
-  }, [engine, service]);
+  }, [engine, service, renderer]);
 
   return (
     <div className="relative h-full w-full">

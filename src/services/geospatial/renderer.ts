@@ -134,6 +134,14 @@ export interface MapRenderer {
   flyTo?(center: LonLat, zoom?: number): void;
 
   /**
+   * Currently visible bounds, for deciding whether a target is already on
+   * screen. Optional like the other camera helpers: a renderer that
+   * cannot report bounds simply causes the camera policy to fall back on
+   * moving, which is the safe direction.
+   */
+  getVisibleBounds?(): BoundingBox | null;
+
+  /**
    * Frames rendered per second, sampled by the adapter. `null` when the
    * adapter does not measure. Optional (G5.5.2).
    */

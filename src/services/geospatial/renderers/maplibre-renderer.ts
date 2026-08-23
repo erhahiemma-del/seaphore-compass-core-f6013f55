@@ -256,6 +256,15 @@ export class MapLibreRenderer implements MapRenderer {
     );
   }
 
+  getVisibleBounds(): BoundingBox | null {
+    const bounds = this.map?.getBounds();
+    if (!bounds) return null;
+    return [
+      [bounds.getWest(), bounds.getSouth()],
+      [bounds.getEast(), bounds.getNorth()],
+    ];
+  }
+
   flyTo(center: LonLat, zoom?: number): void {
     this.map?.flyTo({
       center: [center[0], center[1]],
