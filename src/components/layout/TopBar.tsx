@@ -1,13 +1,13 @@
-import { useEffect, useState } from "react";
 import { Link, useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bell, LogIn, LogOut, User2 } from "lucide-react";
+import { LogIn, LogOut, Search, User2 } from "lucide-react";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { useAuth } from "@/hooks/use-auth";
 import { performLogout } from "@/lib/auth/logout";
+import { useFocusSubjectStore } from "@/stores/focus-subject.store";
 import { cn } from "@/lib/utils";
 
 export interface TopBarProps {
@@ -16,65 +16,63 @@ export interface TopBarProps {
 }
 
 /**
- * TopBar — page title/subtitle (left), status dot + clock + alerts bell + officer (right).
- * Search lives exclusively in the Mission Intelligence Command Bar on Mission Control.
+ * WorkspaceHeader — subject breadcrumb (left), go-to palette + officer (right).
+ *
+ * Deliberately quiet: no fabricated system-health claim, no decorative alert
+ * dot, no clock. Freshness and provider health are reported by the surfaces
+ * that actually measure them (Provider Health, panel state notices).
  */
 export function TopBar({ title, subtitle }: TopBarProps) {
+  const subject = useFocusSubjectStore((s) => s.subject);
+
   return (
     <header
       className={cn(
-        "sticky top-0 z-30 flex h-14 items-center gap-3 px-4",
-        "border-b border-line bg-surface/95 backdrop-blur",
+        "sticky top-0 z-30 flex h-14 items-center gap-3 px-5",
+        "border-b border-line bg-surface/85 backdrop-blur-md",
       )}
     >
       <SidebarTrigger className="text-slate md:hidden" />
       <div className="min-w-0 flex-1">
-        <div className="type-h1 text-foreground truncate">{title}</div>
-        {subtitle && <div className="type-small text-slate truncate">{subtitle}</div>}
+        <div className="flex min-w-0 items-baseline gap-2">
+          <h1 className="type-title truncate text-foreground">{title}</h1>
+          {subject && (
+            <span className="hidden min-w-0 items-baseline gap-2 truncate md:flex">
+              <span className="text-slate">/</span>
+              <span className="type-small truncate font-semibold text-foreground">
+                {subject.title}
+              </span>
+            </span>
+          )}
+        </div>
+        {subtitle && <div className="type-small truncate text-slate">{subtitle}</div>}
       </div>
 
-      <div className="flex items-center gap-3">
-        <StatusIndicator />
-        <Clock />
+      <div className="flex items-center gap-2">
+        <GoToHint />
         <ThemeToggle />
-        <button
-          type="button"
-          aria-label="Alerts"
-          className="relative flex h-8 w-8 items-center justify-center rounded-md text-slate hover:bg-surface-2 motion-fast"
-        >
-          <Bell className="h-4 w-4" />
-          <span
-            aria-hidden
-            className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full"
-            style={{ backgroundColor: "#C0392B" }}
-          />
-        </button>
         <OfficerBadge />
       </div>
     </header>
   );
 }
 
-function StatusIndicator() {
+/** Discoverability affordance for the go-to palette (⌘J / Ctrl+J). */
+function GoToHint() {
   return (
-    <div className="hidden items-center gap-1.5 md:flex">
-      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: "#1E6B3A" }} />
-      <span className="type-small text-slate">All systems operational</span>
-    </div>
-  );
-}
-
-function Clock() {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(new Date()), 1000 * 30);
-    return () => window.clearInterval(id);
-  }, []);
-  const label = now.toUTCString().slice(17, 22);
-  return (
-    <div className="hidden type-mono text-slate lg:block" aria-label="UTC time">
-      {label} UTC
-    </div>
+    <button
+      type="button"
+      onClick={() =>
+        window.dispatchEvent(new CustomEvent("seaphore:open-goto-palette"))
+      }
+      className="hidden items-center gap-2 rounded-md border border-line bg-surface-2/70 px-2.5 py-1.5 text-slate hover:border-[color:var(--color-teal)]/40 hover:text-foreground motion-fast md:flex"
+    >
+      <Search className="h-3.5 w-3.5" />
+      <span className="type-small">Go to…</span>
+      <kbd className="type-mono rounded border border-line bg-surface px-1 text-[10px] text-slate">
+        ⌘J
+      </kbd>
+    </button>
   );
 }
 
@@ -93,13 +91,19 @@ function OfficerBadge() {
       </Button>
     );
   }
+  const email = session.user.email ?? "Officer";
   return (
     <div className="flex items-center gap-2">
-      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-foreground">
+      <div
+        className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-foreground"
+        title={email}
+      >
         <User2 className="h-4 w-4" />
       </div>
-      <div className="hidden text-right leading-tight sm:block">
-        <div className="type-small font-semibold text-foreground">{session.user.email}</div>
+      <div className="hidden max-w-[160px] text-right leading-tight lg:block">
+        <div className="type-small truncate font-semibold text-foreground">
+          {email.split("@")[0]}
+        </div>
         <div className="text-[10px] uppercase tracking-wider text-slate">Officer</div>
       </div>
       <Button
