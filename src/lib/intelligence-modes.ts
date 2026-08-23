@@ -14,6 +14,7 @@
  */
 
 import type { EntityType } from "@/lib/command-dispatch";
+import type { MapSelectionKind } from "@/services/geospatial/selection";
 
 export interface IntelligenceMode {
   /** Canonical dispatcher entity key. */
@@ -152,6 +153,35 @@ export const MODE_BY_KEY: Record<EntityType, IntelligenceMode> = Object.fromEntr
 ) as Record<EntityType, IntelligenceMode>;
 
 export const DEFAULT_MODE: EntityType = "imo";
+
+/**
+ * The mode a selection implies, or null when it implies none.
+ *
+ * Deliberately partial. `EntityType` covers eight search vocabularies;
+ * `MapSelectionKind` covers thirteen things on a map, and most of them
+ * — an AIS gap, a SAR detection, a geofence — have no search vocabulary
+ * of their own. Mapping those to some near-neighbour would silently
+ * retarget the officer's next search at the wrong index.
+ *
+ * Null means "this selection says nothing about how you want to search",
+ * and the caller leaves the mode alone. That is the honest answer far
+ * more often than a forced match.
+ */
+export function modeForSelectionKind(kind: MapSelectionKind | null): EntityType | null {
+  switch (kind) {
+    case "vessel":
+      return "vessel";
+    // A terminal, berth or anchorage is somewhere inside a port, and port
+    // search is the vocabulary that reaches all three.
+    case "port":
+    case "terminal":
+    case "berth":
+    case "anchorage":
+      return "port";
+    default:
+      return null;
+  }
+}
 
 /**
  * Strip the mode prefix from a raw input, leaving only the user's query.
