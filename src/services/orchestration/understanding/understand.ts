@@ -20,7 +20,7 @@ import {
   resolveWorkspaceMode,
 } from "./scope";
 import { resolveTimeWindow } from "./time";
-import type { QueryUnderstanding, ResolvedEntity } from "./types";
+import type { OfficerIntent, QueryUnderstanding, ResolvedEntity } from "./types";
 
 export interface UnderstandOptions extends PlanOptions {
   /** Injected so understanding is deterministic in tests. */
@@ -34,14 +34,45 @@ export interface UnderstandOptions extends PlanOptions {
    * it is deliberately narrow.
    */
   readonly ambientEntity?: ResolvedEntity | null;
+  /**
+   * The lens the officer has the surface set to, as a soft prior.
+   *
+   * Typed as `OfficerIntent` rather than a new domain enum: that vocabulary
+   * already names every domain a lens could express — `port-intelligence`,
+   * `cargo-intelligence`, `risk-assessment` — and a parallel enum would be
+   * a second way to say the same thing, needing a mapping table that could
+   * drift.
+   *
+   * Applied ONLY when the text itself classified as `unknown`. Any rule
+   * match scores at least 0.3, so a query that named its own subject
+   * always wins: "show me ports in Ghana" under a vessel lens is a port
+   * question, because the officer said so. The lens breaks ties for bare
+   * input like "Lagos", and nothing else.
+   */
+  readonly domainHint?: OfficerIntent | null;
 }
+
+/**
+ * Confidence assigned to an intent that came from the lens rather than
+ * the words. Below the classifier's 0.3 floor on purpose.
+ */
+const HINT_CONFIDENCE = 0.2;
 
 export function understand(query: string, options: UnderstandOptions = {}): QueryUnderstanding {
   const now = options.now ?? Date.now();
   const text = query.trim();
 
   const classification = classifyOfficerIntent(text);
-  const intent = classification.intent;
+
+  // The lens speaks only where the text said nothing. `classifyOfficerIntent`
+  // returns `unknown` at confidence 0 when no rule fired, and at least 0.3
+  // when one did, so this branch cannot overrule an explicit request.
+  const hinted = classification.intent === "unknown" && options.domainHint;
+  const intent = hinted ? options.domainHint! : classification.intent;
+  // Deliberately below the 0.3 floor a real rule match earns: this reading
+  // came from a UI control, not from anything the officer wrote, and
+  // downstream should be able to tell those apart.
+  const intentConfidence = hinted ? HINT_CONFIDENCE : classification.confidence;
 
   const extracted = resolveEntities(text);
   const scope = resolveScope(
@@ -61,7 +92,7 @@ export function understand(query: string, options: UnderstandOptions = {}): Quer
   return {
     query: text,
     intent,
-    intentConfidence: classification.confidence,
+    intentConfidence,
     alternativeIntents: classification.alternatives,
     scope,
     entities,

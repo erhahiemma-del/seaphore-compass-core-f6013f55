@@ -30,6 +30,7 @@ import {
   understand,
   validateIntents,
   type IntelligenceMapPlan,
+  type OfficerIntent,
 } from "@/services/orchestration";
 
 export interface MapSearchProps {
@@ -54,6 +55,32 @@ export interface MapSearchProps {
  */
 const GLOBAL_PLACEHOLDER = "Search vessels, ports, areas — or ask a question";
 
+/**
+ * Operational lenses offered on the map.
+ *
+ * Each carries an `OfficerIntent` straight into `understand()` as a soft
+ * prior — the canonical vocabulary, not a parallel domain enum.
+ *
+ * The set is deliberately short. Cargo and Compliance are omitted: both
+ * resolve, through the existing `INTENT_LAYERS`, to layers that are
+ * indistinguishable from Ports and Vessels respectively, so they would
+ * be controls that change a label and nothing else. They belong here as
+ * soon as they drive something an officer can see.
+ */
+const LENSES: readonly { readonly label: string; readonly hint: OfficerIntent | null }[] = [
+  { label: "All", hint: null },
+  { label: "Vessels", hint: "vessel-investigation" },
+  { label: "Ports", hint: "port-intelligence" },
+  { label: "Risk", hint: "risk-assessment" },
+];
+
+/** Prompt for a lens, used when nothing is selected. */
+const LENS_PLACEHOLDER: Readonly<Record<string, string>> = {
+  Vessels: "Search vessels by name, IMO or MMSI",
+  Ports: "Search port activity, calls or congestion",
+  Risk: "Search anomalies, AIS gaps or high-risk areas",
+};
+
 function placeholderFor(selection: MapSelection | null): string {
   switch (selection?.kind) {
     case "vessel":
@@ -70,11 +97,17 @@ function placeholderFor(selection: MapSelection | null): string {
 
 export function MapSearch({ service = sgs, onApplied, className }: MapSearchProps) {
   const [text, setText] = useState("");
+  const [lens, setLens] = useState<string>("All");
   // Subscribed rather than read once, so the prompt follows selection.
   const selectionKindKey = useMapSelector((state) => state.selection?.kind ?? "", service);
-  const placeholder = placeholderFor(
-    selectionKindKey ? ({ kind: selectionKindKey } as MapSelection) : null,
-  );
+  const domainHint = LENSES.find((entry) => entry.label === lens)?.hint ?? null;
+
+  // An explicitly chosen lens describes the officer's stated interest, so
+  // it outranks the selection when naming the prompt. With no lens set the
+  // prompt falls back to what is selected.
+  const placeholder =
+    LENS_PLACEHOLDER[lens] ??
+    placeholderFor(selectionKindKey ? ({ kind: selectionKindKey } as MapSelection) : null);
 
   const submit = useCallback(
     (query: string) => {
@@ -88,6 +121,10 @@ export function MapSearch({ service = sgs, onApplied, className }: MapSearchProp
       // vessel here?" resolves without the officer repeating the identity.
       const understanding = understand(trimmed, {
         ambientEntity: selectionAsEntity(state.selection),
+        // A soft prior only. `understand` applies it solely when the text
+        // itself classified as unknown, so the lens can never overrule a
+        // question that named its own subject.
+        domainHint,
       });
 
       const plan = planMap(understanding, { context });
@@ -101,7 +138,7 @@ export function MapSearch({ service = sgs, onApplied, className }: MapSearchProp
       service.update(intentsToStatePatch(accepted, state));
       onApplied?.(plan);
     },
-    [service, onApplied],
+    [service, onApplied, domainHint],
   );
 
   return (
@@ -126,6 +163,27 @@ export function MapSearch({ service = sgs, onApplied, className }: MapSearchProp
         data-testid="map-search"
         className="h-8 pl-8 text-[12px]"
       />
+      <div role="group" aria-label="Intelligence lens" className="mt-1 flex flex-wrap gap-1">
+        {LENSES.map((entry) => (
+          <button
+            key={entry.label}
+            type="button"
+            aria-pressed={lens === entry.label}
+            data-testid={`lens-${entry.label.toLowerCase()}`}
+            // Changing the lens never touches the query. The officer's
+            // words are theirs; the lens only changes how they are read.
+            onClick={() => setLens(entry.label)}
+            className={cn(
+              "rounded border px-1.5 py-0.5 text-[10px] font-medium transition-colors",
+              lens === entry.label
+                ? "border-transparent bg-foreground text-background"
+                : "border-border/60 text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {entry.label}
+          </button>
+        ))}
+      </div>
     </form>
   );
 }
