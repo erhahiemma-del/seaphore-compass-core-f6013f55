@@ -12,6 +12,8 @@ import {
 import { KpiRibbon, type KpiSpec } from "@/components/intel-centre/kpi-ribbon";
 import { CentreCopilot } from "@/components/intel-centre/centre-copilot";
 import { DataTable, Section, StatusBadge } from "@/components/intel-centre/primitives";
+import { SubjectHeader } from "@/components/intel-centre/subject-header";
+import { useCentreFocus } from "@/components/intel-centre/use-centre-focus";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { NigeriaMap } from "@/components/intel-centre/nigeria-map";
 import { OwnershipGraph } from "@/components/intel-centre/ownership-graph";
