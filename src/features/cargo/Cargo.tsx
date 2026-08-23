@@ -26,6 +26,8 @@ import {
 import { KpiRibbon, type KpiSpec } from "@/components/intel-centre/kpi-ribbon";
 import { CentreCopilot } from "@/components/intel-centre/centre-copilot";
 import { DataTable, Section } from "@/components/intel-centre/primitives";
+import { SubjectHeader } from "@/components/intel-centre/subject-header";
+import { useCentreFocus } from "@/components/intel-centre/use-centre-focus";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { PanelStateNotice } from "@/components/intelligence/PanelStateNotice";
 
@@ -50,10 +52,37 @@ function useCargoKpis(
 
 export function CargoCentre() {
   const [tab, setTab] = useState("workspace");
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const { projection, isLoading } = useCargoCentreProjection(CARGO_CENTRE);
   const kpis = useCargoKpis(projection);
 
   const hasData = projection.state === "ACTIVE" && !!projection.data;
+  const lead = hasData
+    ? (projection.data!.leads.find((l) => l.entityId === selectedLeadId) ?? null)
+    : null;
+
+  const { focused, dismiss, isReceded } = useCentreFocus(
+    useMemo(
+      () =>
+        lead
+          ? {
+              kind: "cargo" as const,
+              id: lead.entityId,
+              title: lead.label,
+              descriptor: lead.entityId,
+              facts: [
+                {
+                  label: "Evidence records",
+                  value: String(lead.evidenceCount),
+                  confidence: lead.confidence,
+                },
+              ],
+            }
+          : null,
+      [lead],
+    ),
+  );
+
 
   return (
     <IntelCentreShell
@@ -139,6 +168,27 @@ export function CargoCentre() {
             </Section>
           ) : (
             <>
+              {focused && lead && (
+                <SubjectHeader
+                  kind="cargo"
+                  title={lead.label}
+                  descriptor={lead.entityId}
+                  confidence={lead.confidence}
+                  evidence={[
+                    {
+                      label: "Evidence",
+                      value: String(lead.evidenceCount),
+                      confidence: lead.confidence,
+                    },
+                    { label: "Capability", value: "CARGO v1.0" },
+                  ]}
+                  onDismiss={() => {
+                    setSelectedLeadId(null);
+                    dismiss();
+                  }}
+                />
+              )}
+
               {/* KPI summary cards */}
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 {projection.data!.kpis.map((k) => (
@@ -188,6 +238,7 @@ export function CargoCentre() {
                   ]}
                   rows={projection.data!.leads}
                   rowKey={(r) => r.entityId}
+                  onRowClick={(r) => setSelectedLeadId(r.entityId)}
                   compact
                 />
               </Section>
@@ -213,7 +264,7 @@ export function CargoCentre() {
               </Section>
 
               {/* Intelligence status */}
-              <Section title="Intelligence Status">
+              <Section title="Intelligence Status" receded={isReceded("cargo")}>
                 <dl className="space-y-1.5 text-[12px]">
                   <Row label="Canonical UIP" value={projection.uipId ?? "—"} />
                   <Row

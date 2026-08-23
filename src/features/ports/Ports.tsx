@@ -12,6 +12,8 @@ import {
 import { KpiRibbon, Sparkline, type KpiSpec } from "@/components/intel-centre/kpi-ribbon";
 import { CentreCopilot } from "@/components/intel-centre/centre-copilot";
 import { DataTable, Section, StatusBadge } from "@/components/intel-centre/primitives";
+import { SubjectHeader } from "@/components/intel-centre/subject-header";
+import { useCentreFocus } from "@/components/intel-centre/use-centre-focus";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { IntelMap, type IntelMapEntity } from "@/components/intelligence/IntelMap";
 import { PORTS, VESSELS, sparkSeries, type Port } from "@/lib/intel-centre-data";
@@ -132,6 +134,28 @@ export function PortOpsCentre() {
   const arrivals = VESSELS.filter((v) => v.destinationPort === selected);
   const mapEntities = useMemo(() => buildMapEntities(selected), [selected]);
 
+  const { focused, dismiss, isReceded } = useCentreFocus(
+    useMemo(
+      () => ({
+        kind: "port" as const,
+        id: `port-${port.code}`,
+        title: port.name,
+        descriptor: `${port.code} · ${port.city}`,
+        facts: [
+          {
+            label: "Congestion",
+            value: `${port.congestionIndex}%`,
+            confidence: "observed",
+          },
+          { label: "Avg wait", value: `${port.avgWaitHours}h`, confidence: "observed" },
+          { label: "Arrivals today", value: String(port.todaysEta), confidence: "verified" },
+        ],
+      }),
+      [port],
+    ),
+  );
+
+
   return (
     <IntelCentreShell
       title="Port Operations"
@@ -197,6 +221,21 @@ export function PortOpsCentre() {
       }
       main={
         <div className="space-y-4">
+          {focused && (
+            <SubjectHeader
+              kind="port"
+              title={port.name}
+              descriptor={`${port.code} · ${port.city}`}
+              confidence="verified"
+              evidence={[
+                { label: "Congestion", value: `${port.congestionIndex}%`, confidence: "observed" },
+                { label: "Avg wait", value: `${port.avgWaitHours}h`, confidence: "observed" },
+                { label: "Arrivals", value: String(port.todaysEta), confidence: "verified" },
+              ]}
+              onDismiss={dismiss}
+            />
+          )}
+
           {/* Congestion map — vendor-neutral via MapProviderRoot (mock until keys land) */}
           <Section title="Port Congestion & Vessel Map (POR-1)">
             <IntelMap
@@ -282,7 +321,7 @@ export function PortOpsCentre() {
             </Section>
           </div>
 
-          <Section title="Arrivals · Selected Port">
+          <Section title="Arrivals · Selected Port" receded={isReceded(["port", "vessel"])}>
             <DataTable
               columns={[
                 {

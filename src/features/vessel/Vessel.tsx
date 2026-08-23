@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Columns3, Download, LineChart, ShieldCheck } from "lucide-react";
 
 import {
@@ -12,6 +12,8 @@ import {
 import { KpiRibbon, type KpiSpec } from "@/components/intel-centre/kpi-ribbon";
 import { CentreCopilot } from "@/components/intel-centre/centre-copilot";
 import { DataTable, Section, StatusBadge } from "@/components/intel-centre/primitives";
+import { SubjectHeader } from "@/components/intel-centre/subject-header";
+import { useCentreFocus } from "@/components/intel-centre/use-centre-focus";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { NigeriaMap } from "@/components/intel-centre/nigeria-map";
 import { OwnershipGraph } from "@/components/intel-centre/ownership-graph";
@@ -93,6 +95,24 @@ export function VesselCentre() {
   const [selectedId, setSelectedId] = useState<string>("v-ocean-pearl");
   const v = vesselById(selectedId)!;
 
+  const { focused, dismiss, isReceded } = useCentreFocus(
+    useMemo(
+      () => ({
+        kind: "vessel" as const,
+        id: v.id,
+        title: v.name,
+        descriptor: `IMO ${v.imo} · ${v.type} · ${v.flag}`,
+        facts: [
+          { label: "Voyage", value: v.voyage, confidence: "verified" },
+          { label: "Risk score", value: String(v.riskScore), confidence: "observed" },
+          { label: "AIS gap (24h)", value: `${v.aisBlackoutHours.toFixed(1)}h`, confidence: "observed" },
+        ],
+      }),
+      [v],
+    ),
+  );
+
+
   // VES-2 mock voyage history for the selected vessel
   const history = Array.from({ length: 8 }).map((_, i) => {
     const port = ["APP", "TCT", "ONN", "PHC", "CAL"][i % 5] as "APP";
@@ -173,6 +193,25 @@ export function VesselCentre() {
       }
       main={
         <div className="space-y-4">
+          {focused && (
+            <SubjectHeader
+              kind="vessel"
+              title={v.name}
+              descriptor={`IMO ${v.imo} · ${v.type} · ${v.flag} · Built ${v.yearBuilt}`}
+              confidence={v.status === "validated" ? "verified" : "observed"}
+              evidence={[
+                { label: "Risk", value: String(v.riskScore), confidence: "observed" },
+                { label: "AIS gap", value: `${v.aisBlackoutHours.toFixed(1)}h`, confidence: "observed" },
+                {
+                  label: "Sanctions",
+                  value: v.sanctionsHit ? "Match" : "No hits",
+                  confidence: "verified",
+                },
+              ]}
+              onDismiss={dismiss}
+            />
+          )}
+
           {/* Map + profile */}
           <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_360px]">
             <div className="h-[340px]">
@@ -257,7 +296,7 @@ export function VesselCentre() {
           </Section>
 
           {/* Ownership graph (VES-3) */}
-          <Section title="Ownership Graph (VES-3)">
+          <Section title="Ownership Graph (VES-3)" receded={isReceded(["vessel", "company"])}>
             <OwnershipGraph centerId={v.id} edges={OWNERSHIP_EDGES} height={280} />
           </Section>
 
