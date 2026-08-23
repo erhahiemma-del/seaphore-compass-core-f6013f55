@@ -321,7 +321,7 @@ export function PortOpsCentre() {
             </Section>
           </div>
 
-          <Section title="Arrivals · Selected Port">
+          <Section title="Arrivals · Selected Port" receded={isReceded(["port", "vessel"])}>
             <DataTable
               columns={[
                 {
