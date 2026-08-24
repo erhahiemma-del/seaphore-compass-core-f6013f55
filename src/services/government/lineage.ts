@@ -65,7 +65,8 @@ export function buildLineage(
       },
       {
         stage: "confidence-scoring",
-        detail: "Cargo Confidence Model scored authority, completeness, corroboration and freshness",
+        detail:
+          "Cargo Confidence Model scored authority, completeness, corroboration and freshness",
       },
       {
         stage: "evidence-package",
@@ -73,7 +74,8 @@ export function buildLineage(
       },
       {
         stage: "officer-projection",
-        detail: "Projected to the Cargo Intelligence Workspace with its confidence chip and citation",
+        detail:
+          "Projected to the Cargo Intelligence Workspace with its confidence chip and citation",
       },
     ],
   };

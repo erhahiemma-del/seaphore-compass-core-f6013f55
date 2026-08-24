@@ -59,6 +59,11 @@ export interface CommandDispatchInput {
    * scope their answers to the active intelligence context.
    */
   aiContext?: string;
+  /**
+   * Route the command was issued from. Defaults to Mission Control, which
+   * was the only mount point when this was written.
+   */
+  fromRoute?: string;
 }
 
 /**
@@ -69,14 +74,14 @@ export interface CommandDispatchInput {
 export function useCommandDispatch() {
   const navigate = useNavigate();
 
-  return ({ query, type, aiContext }: CommandDispatchInput) => {
+  return ({ query, type, aiContext, fromRoute = "/" }: CommandDispatchInput) => {
     const q = (query ?? "").trim();
     const resolved: EntityType = type ?? (q ? detectEntityType(q) : "vessel");
     const target = TYPE_ROUTE[resolved];
 
     const search: Record<string, string> = {
       fromStage: "Monitor",
-      fromRoute: "/",
+      fromRoute,
       type: resolved,
     };
     if (q) search.q = q;

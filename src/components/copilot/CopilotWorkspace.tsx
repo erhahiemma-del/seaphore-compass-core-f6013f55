@@ -38,7 +38,7 @@ import { runOIE, type Clarification, type OperationalPlan } from "@/services/oie
 import { useAuthStore } from "@/stores/auth.store";
 import { useCopilotStore } from "@/stores/copilot.store";
 import { useIsDevBypass } from "@/stores/dev-mode.store";
-import { useMissionContextStore } from "@/stores/mission-context.store";
+import { useMissionWorkspaceStore } from "@/stores/mission-workspace.store";
 
 type Stage = "idle" | "classifying" | "retrieving" | "reasoning" | "rendering" | "ready";
 
@@ -87,7 +87,7 @@ export function CopilotWorkspace({
   const officerId = authUserId ?? "00000000-0000-0000-0000-000000000000";
   const devBypass = useIsDevBypass();
   const session = useCopilotSession();
-  const activeMissionId = useMissionContextStore((s) => s.activeId);
+  const activeMissionId = useMissionWorkspaceStore((s) => s.activeId);
 
   const [text, setText] = useState("");
   const [stage, setStage] = useState<Stage>("idle");
@@ -113,7 +113,7 @@ export function CopilotWorkspace({
       // Flatten the active mission (vessel, alerts, evidence,
       // conversation…) so the OIE can resolve "it" / "this vessel" and
       // carry subjects across turns.
-      const missionState = useMissionContextStore.getState();
+      const missionState = useMissionWorkspaceStore.getState();
       const mission = activeMissionId ? missionState.missions[activeMissionId] : undefined;
 
       const payload = {

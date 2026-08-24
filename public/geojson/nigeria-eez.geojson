@@ -1,0 +1,50 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "name": "Nigerian Exclusive Economic Zone (simplified)",
+    "accuracy": "APPROXIMATE",
+    "notice": "Simplified outline for operational display only. NOT a legal or navigational boundary. The landward edge follows the Nigerian coastline; the seaward edge is an approximate 200nm envelope and does not encode negotiated tri-point boundaries with Benin, Cameroon, Equatorial Guinea, or Sao Tome and Principe.",
+    "replaceWith": "Official polygon from VLIZ Maritime Boundaries (marineregions.org, Nigeria EEZ) or the Nigerian Hydrographic Office.",
+    "crs": "EPSG:4326"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "nigeria-eez",
+      "properties": {
+        "name": "Nigerian EEZ",
+        "type": "eez",
+        "sovereign": "Nigeria",
+        "accuracy": "APPROXIMATE",
+        "claimNauticalMiles": 200
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [2.7, 6.37],
+            [3.4, 6.42],
+            [4.0, 6.35],
+            [4.6, 6.05],
+            [5.2, 5.6],
+            [5.6, 5.35],
+            [6.2, 4.95],
+            [6.8, 4.55],
+            [7.2, 4.45],
+            [7.6, 4.4],
+            [8.1, 4.5],
+            [8.6, 4.55],
+            [8.35, 3.6],
+            [7.9, 2.6],
+            [7.0, 2.0],
+            [5.8, 1.85],
+            [4.5, 2.1],
+            [3.4, 2.6],
+            [2.75, 3.4],
+            [2.7, 6.37]
+          ]
+        ]
+      }
+    }
+  ]
+}

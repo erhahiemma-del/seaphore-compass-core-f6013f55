@@ -16,10 +16,11 @@
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
     "test:e2e": "playwright test",
-    "validate": "bun run lint && bun run typecheck && bun run test:unit && bun run build",
+    "validate": "bun run lint && bun run typecheck && bun run test:unit && bun run build && bun run verify:bundle",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "prepare": "husky || true"
+    "prepare": "husky || true",
+    "verify:bundle": "node scripts/verify-prod-bundle.mjs .output/public"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
@@ -76,7 +77,9 @@
     "framer-motion": "^12.42.2",
     "input-otp": "^1.4.2",
     "jspdf": "^4.2.1",
+    "lodash": "^4.18.1",
     "lucide-react": "^0.575.0",
+    "maplibre-gl": "^6.1.0",
     "pino": "^10.3.1",
     "pptxgenjs": "^4.0.1",
     "react": "^19.2.0",
@@ -105,6 +108,7 @@
     "@types/node": "^22.16.5",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "@typescript/native-preview": "^7.0.0-dev.20260707.2",
     "@vitejs/plugin-react": "^5.2.0",
     "eslint": "^9.32.0",
     "eslint-config-prettier": "^10.1.1",

@@ -1,38 +1,117 @@
 /**
  * LAYER 2.2 — Intent Classifier.
- * Determines query intent (mode + capabilities + entities). NEVER retrieves data.
- * This is a deterministic, model-independent heuristic classifier so that the
- * pipeline can start reasoning about scope before any model call.
+ *
+ * Determines query intent. NEVER retrieves data. Deterministic and
+ * model-independent, so the pipeline can reason about scope before any
+ * model call.
+ *
+ * ## One classification, several vocabularies
+ *
+ * G6.0 made the 22-intent understanding model authoritative. This module
+ * no longer pattern-matches the query itself: it calls `understand()` once
+ * and *projects* that single result into the vocabularies the rest of the
+ * pipeline already speaks —
+ *
+ *   understanding.intent   → `mode`          (scheduler, perf budgets)
+ *                          → `capabilities`  (capability registry, agents)
+ *   understanding.entities → `entities`      (IAL bridge)
+ *   understanding.workspaceMode → `workspace` (briefing builder actions)
+ *
+ * Because every field is derived, the two readings cannot disagree.
+ * A second classifier over the same text is the drift this design
+ * forecloses.
  */
 import type { CapabilityId, Intent, OfficerQuery, Workspace } from "./types";
-import { WORKSPACE_CONTRACTS } from "./workspace-contracts";
+import { understand } from "./understanding";
+import type { OfficerIntent, ResolvedEntity } from "./understanding/types";
 
-const MODE_HINTS = {
-  investigation: [/investigat/i, /case /i, /open a case/i, /suspicious/i, /fraud/i],
-  forecast: [/forecast/i, /predict/i, /trend/i, /next (week|month|quarter)/i],
-  assessment: [/assess/i, /evaluat/i, /review /i, /analy(z|s)e/i, /why /i],
-  lookup: [/what is/i, /who is/i, /lookup/i, /find /i, /show me/i],
-} as const;
+/**
+ * Officer intent → briefing mode.
+ *
+ * Mode drives scheduling depth and the performance budget, so the mapping
+ * follows how much work the question implies, not what it is about: an
+ * investigation and a risk assessment both warrant the full agent set.
+ */
+const INTENT_MODE: Readonly<Record<OfficerIntent, Intent["mode"]>> = {
+  "vessel-investigation": "investigation",
+  "risk-assessment": "investigation",
+  "pattern-detection": "investigation",
+  "mission-planning": "investigation",
+  "company-intelligence": "investigation",
 
-const CAPABILITY_HINTS: Record<CapabilityId, RegExp[]> = {
-  OWNERSHIP_ANALYSIS: [/owner/i, /beneficial/i, /director/i, /shareholder/i, /parent compan/i],
-  REVENUE_LEAKAGE_DETECTION: [/revenue/i, /duty/i, /under[- ]declar/i, /tariff/i, /leakage/i],
-  MANIFEST_CORRELATION: [/manifest/i, /declar/i, /cargo/i, /bill of lading/i, /container/i],
-  RELATIONSHIP_DISCOVERY: [/related/i, /connect/i, /link/i, /network/i, /affiliat/i],
-  PATTERN_DETECTION: [/pattern/i, /similar/i, /historical/i, /previous case/i],
-  COMPLIANCE_ASSESSMENT: [/complian/i, /certificate/i, /isps/i, /marpol/i, /regulator/i],
-  SANCTIONS_SCREENING: [/sanction/i, /ofac/i, /designated/i, /blacklist/i],
-  EVIDENCE_SEARCH: [/evidence/i, /document/i, /record/i, /file/i],
-  DOCUMENT_ANALYSIS: [/analyze document/i, /extract/i, /parse/i, /ocr/i],
-  RISK_SCORING: [/risk score/i, /risk level/i, /risk /i],
-  RECOMMENDATION_ENGINE: [/recommend/i, /what should/i, /action/i, /next step/i],
+  "trend-analysis": "forecast",
+  "historical-replay": "forecast",
+
+  "ownership-intelligence": "assessment",
+  "compliance-intelligence": "assessment",
+  "revenue-intelligence": "assessment",
+  "manifest-intelligence": "assessment",
+  "cargo-intelligence": "assessment",
+  "operational-recommendation": "assessment",
+  "strategic-summary": "assessment",
+  "executive-brief": "assessment",
+  comparison: "assessment",
+
+  "fleet-intelligence": "lookup",
+  "container-intelligence": "lookup",
+  "port-intelligence": "lookup",
+  "voyage-intelligence": "lookup",
+  "natural-language-search": "lookup",
+  "officer-notes": "lookup",
+  unknown: "lookup",
 };
 
-const IMO_RE = /\bIMO\s?\d{7}\b/gi;
-const MMSI_RE = /\b\d{9}\b/g;
-const RC_RE = /\bRC[- ]?\d{5,8}\b/gi;
+/**
+ * Officer intent → capabilities.
+ *
+ * Ordered: the first capability is the one the Agent Scheduler consults
+ * first, so it names the question's primary dimension.
+ */
+const INTENT_CAPABILITIES: Readonly<Record<OfficerIntent, readonly CapabilityId[]>> = {
+  "fleet-intelligence": ["PATTERN_DETECTION", "RISK_SCORING"],
+  "vessel-investigation": [
+    "PATTERN_DETECTION",
+    "OWNERSHIP_ANALYSIS",
+    "COMPLIANCE_ASSESSMENT",
+    "SANCTIONS_SCREENING",
+    "RISK_SCORING",
+    "EVIDENCE_SEARCH",
+  ],
+  "manifest-intelligence": ["MANIFEST_CORRELATION", "DOCUMENT_ANALYSIS"],
+  "cargo-intelligence": ["MANIFEST_CORRELATION", "REVENUE_LEAKAGE_DETECTION"],
+  "container-intelligence": ["MANIFEST_CORRELATION", "EVIDENCE_SEARCH"],
+  "ownership-intelligence": ["OWNERSHIP_ANALYSIS", "RELATIONSHIP_DISCOVERY"],
+  "company-intelligence": [
+    "OWNERSHIP_ANALYSIS",
+    "RELATIONSHIP_DISCOVERY",
+    "SANCTIONS_SCREENING",
+    "PATTERN_DETECTION",
+  ],
+  "compliance-intelligence": ["COMPLIANCE_ASSESSMENT", "SANCTIONS_SCREENING", "RISK_SCORING"],
+  "revenue-intelligence": ["REVENUE_LEAKAGE_DETECTION", "MANIFEST_CORRELATION"],
+  "port-intelligence": ["PATTERN_DETECTION", "MANIFEST_CORRELATION"],
+  "voyage-intelligence": ["PATTERN_DETECTION", "EVIDENCE_SEARCH"],
+  "risk-assessment": ["RISK_SCORING", "PATTERN_DETECTION", "SANCTIONS_SCREENING"],
+  "operational-recommendation": ["RECOMMENDATION_ENGINE", "RISK_SCORING"],
+  "strategic-summary": ["PATTERN_DETECTION", "RISK_SCORING"],
+  "executive-brief": ["RISK_SCORING", "RECOMMENDATION_ENGINE", "PATTERN_DETECTION"],
+  "pattern-detection": ["PATTERN_DETECTION", "RELATIONSHIP_DISCOVERY"],
+  "trend-analysis": ["PATTERN_DETECTION"],
+  "historical-replay": ["PATTERN_DETECTION", "EVIDENCE_SEARCH"],
+  comparison: ["PATTERN_DETECTION", "RELATIONSHIP_DISCOVERY"],
+  "mission-planning": ["RECOMMENDATION_ENGINE", "RISK_SCORING", "PATTERN_DETECTION"],
+  "natural-language-search": ["EVIDENCE_SEARCH"],
+  "officer-notes": ["EVIDENCE_SEARCH"],
+  unknown: ["EVIDENCE_SEARCH"],
+};
 
-/** Module hint → primary capability biased into the scheduler. */
+/**
+ * Module hint → capability.
+ *
+ * When a query originates from a specialist Copilot surface, that surface's
+ * capability is consulted first. Retained from the pre-G6.0 classifier: the
+ * hint says where the officer was standing, which the query text cannot.
+ */
 const MODULE_HINT_CAPABILITY: Record<string, CapabilityId> = {
   manifest: "MANIFEST_CORRELATION",
   cargo: "MANIFEST_CORRELATION",
@@ -48,57 +127,85 @@ const MODULE_HINT_CAPABILITY: Record<string, CapabilityId> = {
   seaphore: "EVIDENCE_SEARCH",
 };
 
-export function classifyIntent(query: OfficerQuery): Intent {
-  const q = query.query;
+/** Entity kind → the legacy `entities[].type` tag the IAL bridge expects. */
+function legacyEntityType(entity: ResolvedEntity): string {
+  if (entity.identifierKind === "imo") return "vessel_imo";
+  if (entity.identifierKind === "mmsi") return "vessel_mmsi";
+  if (entity.identifierKind === "container") return "container_no";
+  switch (entity.kind) {
+    case "company":
+      return "company_name";
+    case "port":
+      return "port_name";
+    case "vessel":
+      return "vessel_name";
+    default:
+      return entity.kind;
+  }
+}
 
-  // Mode detection — investigation > forecast > assessment > lookup
-  let mode: Intent["mode"] = "lookup";
-  for (const [candidate, patterns] of Object.entries(MODE_HINTS) as Array<
-    [Intent["mode"], readonly RegExp[]]
-  >) {
-    if (patterns.some((p) => p.test(q))) {
-      mode = candidate;
-      break;
-    }
+export interface ClassifyOptions {
+  /** Injected so classification is deterministic in tests. */
+  readonly now?: number;
+  /**
+   * Subject of the open investigation, if any.
+   *
+   * Reaches the query ONLY when the context policy resolves to `inherit`.
+   * A question that named its own subject, or asked about the whole fleet,
+   * never sees it — see `understanding/scope.ts`.
+   */
+  readonly ambientEntity?: ResolvedEntity | null;
+}
+
+/**
+ * Classify an officer query.
+ *
+ * Backward compatible: the returned `Intent` keeps every field it had, and
+ * `understanding` is added alongside. Existing consumers are unaffected;
+ * new ones read the authoritative reading.
+ */
+export function classifyIntent(query: OfficerQuery, options: ClassifyOptions = {}): Intent {
+  const understanding = understand(query.query, {
+    now: options.now,
+    ambientEntity: options.ambientEntity,
+  });
+
+  const capabilities: CapabilityId[] = [...INTENT_CAPABILITIES[understanding.intent]];
+
+  // A question can name an operation and a domain at once — "forecast
+  // revenue leakage" is a forecast whose subject is revenue. The primary
+  // intent captures the operation; the runners-up carry the domain, and
+  // dropping them would send the scheduler after the wrong specialist.
+  for (const alternative of understanding.alternativeIntents) {
+    const primary = INTENT_CAPABILITIES[alternative][0];
+    if (primary && !capabilities.includes(primary)) capabilities.push(primary);
   }
 
-  // Capability detection
-  const capabilities: CapabilityId[] = [];
-  for (const [cap, patterns] of Object.entries(CAPABILITY_HINTS) as Array<
-    [CapabilityId, RegExp[]]
-  >) {
-    if (patterns.some((p) => p.test(q))) capabilities.push(cap);
-  }
-
-  // Module-hint bias — when the query originates from a specialist Copilot
-  // surface (Manifest / Revenue / etc.), prepend that module's primary
-  // capability so the Agent Scheduler consults its specialist first.
   const moduleCapability = MODULE_HINT_CAPABILITY[query.moduleHint ?? ""];
   if (moduleCapability && !capabilities.includes(moduleCapability)) {
     capabilities.unshift(moduleCapability);
   }
-
   if (capabilities.length === 0) capabilities.push("EVIDENCE_SEARCH");
 
-  // Entity extraction — non-fabricating; only lifts literals present in query
-  const entities: Intent["entities"] = [];
-  for (const m of q.matchAll(IMO_RE)) entities.push({ type: "vessel_imo", value: m[0] });
-  for (const m of q.matchAll(MMSI_RE)) entities.push({ type: "vessel_mmsi", value: m[0] });
-  for (const m of q.matchAll(RC_RE)) entities.push({ type: "company_rc", value: m[0] });
-
-  // Workspace — from context if provided, else infer from dominant capability
-  const workspace: Workspace | undefined =
-    query.context?.workspace ??
-    Object.values(WORKSPACE_CONTRACTS).find((w) =>
-      w.capabilities.some((c) => capabilities.includes(c)),
-    )?.id;
+  // An explicit workspace on the query is the officer's own choice and
+  // outranks the planner's. Otherwise the planner's mode *is* the
+  // workspace — the two vocabularies were unified in G6.0.
+  const workspace: Workspace = query.context?.workspace ?? understanding.workspaceMode;
 
   return {
-    mode,
+    mode: INTENT_MODE[understanding.intent],
     capabilities,
-    entities,
+    entities: understanding.entities.map((entity) => ({
+      type: legacyEntityType(entity),
+      value: entity.identifier ?? entity.text,
+    })),
     workspace,
-    raw: q,
-    reasoning: `mode=${mode}; capabilities=[${capabilities.join(",")}]; entities=${entities.length}`,
+    raw: query.query,
+    reasoning:
+      `intent=${understanding.intent}@${understanding.intentConfidence}; ` +
+      `scope=${understanding.scope}; context=${understanding.contextPolicy}; ` +
+      `window=${understanding.timeWindow.label}${understanding.timeWindow.inferred ? " (inferred)" : ""}; ` +
+      `workspace=${workspace}; capabilities=[${capabilities.join(",")}]`,
+    understanding,
   };
 }

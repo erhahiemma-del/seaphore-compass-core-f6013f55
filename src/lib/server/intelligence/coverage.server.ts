@@ -45,7 +45,6 @@ function credentialsFor(catalog: ReadonlyArray<CoverageCatalogRow>): Record<stri
   return out;
 }
 
-
 async function measureEvidence(): Promise<Record<KpiDomainKey, DomainEvidence>> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 

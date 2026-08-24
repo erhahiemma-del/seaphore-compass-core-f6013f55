@@ -34,12 +34,18 @@ import type {
 } from "./telemetry/types";
 import { globalMicSink } from "./telemetry-registry";
 
-/** Defensive shape for possibly-malformed UIP inputs. */
-interface UipLike {
-  id?: string;
-  rawEvidence?: ReadonlyArray<unknown>;
-  fused?: { stats?: { canonicalEntities?: number; contradictions?: number } };
-}
+/**
+ * The subset of a UIP this bootstrap reads defensively.
+ *
+ * Narrow on purpose: telemetry and pre-flight checks run before the
+ * package has been validated, so they must tolerate a malformed shape
+ * without resorting to `any`.
+ */
+type UipProbe = {
+  readonly id?: string;
+  readonly rawEvidence?: readonly unknown[];
+  readonly fused?: { readonly stats?: { canonicalEntities?: number; contradictions?: number } };
+};
 
 export interface MicBootstrapResult {
   readonly executionId: string;
@@ -77,8 +83,12 @@ export function processMicBootstrap(
 
   try {
     // ── Pre-flight: validate the UIP is populated ────────────────────
-    const rawEvidence = (uip as UipLike | null | undefined)?.rawEvidence;
-    const canonicalEntities = (uip as UipLike | null | undefined)?.fused?.stats?.canonicalEntities;
+    // Structural probe rather than `any`. The parameter is typed, but this
+    // runs before the shape has been trusted, so it reads defensively
+    // without discarding type information altogether.
+    const probe = uip as UipProbe;
+    const rawEvidence = probe?.rawEvidence;
+    const canonicalEntities = probe?.fused?.stats?.canonicalEntities;
     if (!rawEvidence || rawEvidence.length === 0) {
       warnings.push("UIP has no rawEvidence — MIC will process an empty package");
     }
@@ -181,10 +191,10 @@ export function processMicBootstrap(
     errors,
     retryCount: 0, // retry logic deferred to INT-01G async pipeline
     attributes: {
-      uip_id: (uip as UipLike | null | undefined)?.id ?? "unknown",
-      uip_entities: (uip as UipLike | null | undefined)?.fused?.stats?.canonicalEntities ?? 0,
-      uip_evidence: (uip as UipLike | null | undefined)?.rawEvidence?.length ?? 0,
-      uip_contradictions: (uip as UipLike | null | undefined)?.fused?.stats?.contradictions ?? 0,
+      uip_id: (uip as UipProbe)?.id ?? "unknown",
+      uip_entities: (uip as UipProbe)?.fused?.stats?.canonicalEntities ?? 0,
+      uip_evidence: (uip as UipProbe)?.rawEvidence?.length ?? 0,
+      uip_contradictions: (uip as UipProbe)?.fused?.stats?.contradictions ?? 0,
       mic_version: "INT-01A.1",
     },
   };

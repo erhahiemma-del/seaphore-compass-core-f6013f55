@@ -17,14 +17,14 @@ Intelligence Acquisition Layer.
 A provider **acquires raw evidence from one external source, normalizes
 it, and flags its quality**. That is all.
 
-| A provider MUST                                    | A provider MUST NOT                             |
-| -------------------------------------------------- | ----------------------------------------------- |
-| Fetch from exactly one upstream source family      | Write to the database or any persistent store   |
-| Normalize into `NormalizedEvidence` with provenance | Resolve identity or de-duplicate entities       |
-| Classify evidence OBSERVED / DERIVED / INFERRED     | Score risk, fuse, or rank                       |
-| Flag quality issues via `validateRecords`          | Create briefings or publish a UIP               |
-| Use the shared `EvidenceCache` and `stableHash`    | Hold its own registry or cache implementation   |
-| Declare an officer-facing Projection Contract id   | Import Supabase or any client-side store        |
+| A provider MUST                                     | A provider MUST NOT                           |
+| --------------------------------------------------- | --------------------------------------------- |
+| Fetch from exactly one upstream source family       | Write to the database or any persistent store |
+| Normalize into `NormalizedEvidence` with provenance | Resolve identity or de-duplicate entities     |
+| Classify evidence OBSERVED / DERIVED / INFERRED     | Score risk, fuse, or rank                     |
+| Flag quality issues via `validateRecords`           | Create briefings or publish a UIP             |
+| Use the shared `EvidenceCache` and `stableHash`     | Hold its own registry or cache implementation |
+| Declare an officer-facing Projection Contract id    | Import Supabase or any client-side store      |
 
 Downstream ownership is unchanged: **IFE** resolves identity and fuses,
 **UIP** is the single canonical package, **OKL** is memory, **OIE**
@@ -123,21 +123,21 @@ spec wins; when the spec is silent, OpenSanctions is the precedent.
 
 `EnvironmentalIntelligenceProvider.ts` is the second certified provider
 and demonstrates the adapter pattern: multiple upstream environmental
-sources live *inside* one provider rather than as separate registrations.
+sources live _inside_ one provider rather than as separate registrations.
 
 ---
 
 ## 6. Files
 
-| File                                             | Role                                   |
-| ------------------------------------------------ | -------------------------------------- |
-| `framework/spec.ts`                              | Frozen interface, API list, spec version |
-| `framework/certification.ts`                     | Certification engine and report        |
-| `framework/register.ts`                          | Registration gate                      |
-| `framework/BaseEvidenceProvider.ts`              | Optional base class with platform logic |
-| `framework/TEMPLATE_Provider.ts.txt`             | Copy-to-start template                 |
-| `framework/__tests__/certification.test.ts`      | Regression suite                       |
-| `framework/EVIDENCE_PROVIDER_FRAMEWORK.md`       | This contract                          |
+| File                                        | Role                                     |
+| ------------------------------------------- | ---------------------------------------- |
+| `framework/spec.ts`                         | Frozen interface, API list, spec version |
+| `framework/certification.ts`                | Certification engine and report          |
+| `framework/register.ts`                     | Registration gate                        |
+| `framework/BaseEvidenceProvider.ts`         | Optional base class with platform logic  |
+| `framework/TEMPLATE_Provider.ts.txt`        | Copy-to-start template                   |
+| `framework/__tests__/certification.test.ts` | Regression suite                         |
+| `framework/EVIDENCE_PROVIDER_FRAMEWORK.md`  | This contract                            |
 
 ---
 
@@ -154,16 +154,16 @@ off the provider instances and re-runs certification on every build. Officers
 see it on **Provider Health → Evidence Provider Catalog**
 (`src/routes/admin.provider-health.tsx`).
 
-| Sprint | Provider | Capability | Auth | Cache TTL | Source |
-| --- | --- | --- | --- | --- | --- |
-| EP-01 | OpenSanctions *(reference)* | SANCTIONS, screening | none | 24h | OpenSanctions `/v3/search` |
-| EP-02 | OpenCorporates | OWNERSHIP, COMPANY_SCREENING, IDENTITY | `OPENCORPORATES_API_TOKEN` | 12h | OpenCorporates `/v0.4/companies/search` |
-| EP-03 | Equasis | IDENTITY, OWNERSHIP, VESSEL_SCREENING, COMPLIANCE | `EQUASIS_USERNAME` + `EQUASIS_PASSWORD` | 24h | Equasis restricted ship search |
-| EP-04 | IMO GISIS | IDENTITY, OWNERSHIP, COMPLIANCE | `IMO_GISIS_API_TOKEN` | 7d | IMO GISIS ship module |
-| EP-05 | Environmental Intelligence | ENVIRONMENTAL_INTELLIGENCE | none | 1h | Open-Meteo Marine (Source 1) |
-| EP-06 | Global Fishing Watch | POSITION, PORT_CALL, IDENTITY | `GFW_API_TOKEN` | 1h | GFW API v3 |
-| EP-07 | OFAC | SANCTIONS + screening | none | 24h | US Treasury SDN XML export |
-| EP-08 | UN Security Council | SANCTIONS, PERSON/COMPANY screening | none | 24h | UN consolidated XML export |
+| Sprint | Provider                    | Capability                                        | Auth                                    | Cache TTL | Source                                  |
+| ------ | --------------------------- | ------------------------------------------------- | --------------------------------------- | --------- | --------------------------------------- |
+| EP-01  | OpenSanctions _(reference)_ | SANCTIONS, screening                              | none                                    | 24h       | OpenSanctions `/v3/search`              |
+| EP-02  | OpenCorporates              | OWNERSHIP, COMPANY_SCREENING, IDENTITY            | `OPENCORPORATES_API_TOKEN`              | 12h       | OpenCorporates `/v0.4/companies/search` |
+| EP-03  | Equasis                     | IDENTITY, OWNERSHIP, VESSEL_SCREENING, COMPLIANCE | `EQUASIS_USERNAME` + `EQUASIS_PASSWORD` | 24h       | Equasis restricted ship search          |
+| EP-04  | IMO GISIS                   | IDENTITY, OWNERSHIP, COMPLIANCE                   | `IMO_GISIS_API_TOKEN`                   | 7d        | IMO GISIS ship module                   |
+| EP-05  | Environmental Intelligence  | ENVIRONMENTAL_INTELLIGENCE                        | none                                    | 1h        | Open-Meteo Marine (Source 1)            |
+| EP-06  | Global Fishing Watch        | POSITION, PORT_CALL, IDENTITY                     | `GFW_API_TOKEN`                         | 1h        | GFW API v3                              |
+| EP-07  | OFAC                        | SANCTIONS + screening                             | none                                    | 24h       | US Treasury SDN XML export              |
+| EP-08  | UN Security Council         | SANCTIONS, PERSON/COMPANY screening               | none                                    | 24h       | UN consolidated XML export              |
 
 **Provider Resolution is unchanged.** OpenSanctions remains the resolved
 SANCTIONS provider (priority 100); OFAC (90) and UNSC (80) are primary-source

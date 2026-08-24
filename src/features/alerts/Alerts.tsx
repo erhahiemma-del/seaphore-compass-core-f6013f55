@@ -31,6 +31,7 @@ import { ALERTS, vesselById, type AlertItem, type AlertStatus } from "@/lib/inte
 import { useAlertsRealtime } from "@/hooks/use-alerts-realtime";
 import { PanelLive } from "@/components/intelligence/PanelLive";
 import { cn } from "@/lib/utils";
+import { DemoDataNotice } from "@/components/intelligence/DemoDataNotice";
 
 /* ============================================================
  * Alerts Center — Maritime Alert Operations Workspace
@@ -196,6 +197,7 @@ export function AlertsCentre() {
 
   return (
     <AppShell title="Alerts Center" subtitle="Triage. Prioritize. Act. Close the loop." mode="dark">
+      <DemoDataNotice surface="Alerts" className="mb-3" />
       <div className="min-h-full space-y-4 px-6 py-4">
         {/* Global search bar (page-level) */}
         <PageSearchBar query={query} onQuery={setQuery} live={live} />

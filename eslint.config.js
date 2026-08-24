@@ -6,7 +6,12 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", ".output", ".vinxi"] },
+  // `.claude/worktrees/` holds full checkouts of other branches. ESLint
+  // walks into them and reports ~150k problems against code that is not on
+  // this branch, burying the handful that are. It is gitignored, so CI
+  // never sees it — this only makes a local `bun run lint` mean the same
+  // thing CI means. Mirrors the Vitest exclusion in vite.config.ts.
+  { ignores: ["dist", ".output", ".vinxi", ".claude"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],

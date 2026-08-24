@@ -22,6 +22,7 @@ Cache:      in-memory (EvidenceCache) only
 ```
 
 Duplication observed:
+
 - Two connector contracts (`Connector` vs `ConnectorInterface`).
 - Two registries (`ConnectorRegistry` vs the OSINT module-level `REGISTRY`).
 - Two health surfaces.
@@ -52,19 +53,19 @@ One contract, one registry, one pipeline, one health system of record, one event
 
 ## Files Modified
 
-| File | Change |
-|---|---|
-| `src/services/ial/connectors/registry.ts` | Added `getAll()`, `getByEntityType(kind)`; kept `list()` alias. |
-| `src/services/ial/health.ts` | Added `flushToDatabase()` writing to `public.data_source_health`. |
-| `src/services/ial/manager.ts` | Emits `evidence.collected` on every connector call (ok or failure) via existing event bus. |
-| `src/services/ial/index.ts` | Registers bridged production OSINT connectors by default; simulators gated by mode; background `warmup()` on first access. |
+| File                                      | Change                                                                                                                     |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `src/services/ial/connectors/registry.ts` | Added `getAll()`, `getByEntityType(kind)`; kept `list()` alias.                                                            |
+| `src/services/ial/health.ts`              | Added `flushToDatabase()` writing to `public.data_source_health`.                                                          |
+| `src/services/ial/manager.ts`             | Emits `evidence.collected` on every connector call (ok or failure) via existing event bus.                                 |
+| `src/services/ial/index.ts`               | Registers bridged production OSINT connectors by default; simulators gated by mode; background `warmup()` on first access. |
 
 ## Files Added
 
-| File | Purpose |
-|---|---|
+| File                                          | Purpose                                                                                                                      |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | `src/services/ial/connectors/osint-bridge.ts` | Adapter wrapping `ConnectorInterface` (OSINT) as canonical `Connector` (IAL). Maps confidence, entity kinds, evidence kinds. |
-| `docs/ARCHITECTURE_CONSOLIDATION.md` | This report. |
+| `docs/ARCHITECTURE_CONSOLIDATION.md`          | This report.                                                                                                                 |
 
 ## Files Reused (unchanged)
 
@@ -100,21 +101,21 @@ contract via the bridge.
 
 ## Acceptance Criteria Check
 
-| Criterion | Status |
-|---|---|
-| One connector contract remains active | ✅ IAL `Connector` |
-| One connector registry remains active | ✅ IAL `ConnectorRegistry` |
-| IAL uses production connectors, not simulators | ✅ default mode `hybrid` registers all bridged OSINT connectors |
-| Existing production connectors remain functional | ✅ zero modifications to `src/connectors/*` |
-| Existing connector tests pass | ✅ 38/38 (IAL + ICE) |
-| OIE tests pass | ✅ unchanged |
-| ICE tests pass | ✅ 29/29 |
-| Operational Playbooks unchanged | ✅ |
-| Volume 0 unchanged | ✅ |
-| DB schema preserved | ✅ no migrations required |
-| Existing event bus reused | ✅ `evidence.collected` |
-| Health monitoring consolidated | ✅ DB is source of truth via `flushToDatabase()` |
-| No duplicate framework created | ✅ |
+| Criterion                                        | Status                                                          |
+| ------------------------------------------------ | --------------------------------------------------------------- |
+| One connector contract remains active            | ✅ IAL `Connector`                                              |
+| One connector registry remains active            | ✅ IAL `ConnectorRegistry`                                      |
+| IAL uses production connectors, not simulators   | ✅ default mode `hybrid` registers all bridged OSINT connectors |
+| Existing production connectors remain functional | ✅ zero modifications to `src/connectors/*`                     |
+| Existing connector tests pass                    | ✅ 38/38 (IAL + ICE)                                            |
+| OIE tests pass                                   | ✅ unchanged                                                    |
+| ICE tests pass                                   | ✅ 29/29                                                        |
+| Operational Playbooks unchanged                  | ✅                                                              |
+| Volume 0 unchanged                               | ✅                                                              |
+| DB schema preserved                              | ✅ no migrations required                                       |
+| Existing event bus reused                        | ✅ `evidence.collected`                                         |
+| Health monitoring consolidated                   | ✅ DB is source of truth via `flushToDatabase()`                |
+| No duplicate framework created                   | ✅                                                              |
 
 ## Configuration
 
@@ -123,7 +124,7 @@ manager:
 
 - `production` — bridged OSINT connectors only.
 - `simulation` — simulators only (offline, deterministic).
-- `hybrid` *(default)* — both; production takes precedence on id collision.
+- `hybrid` _(default)_ — both; production takes precedence on id collision.
 
 ## Rollback
 

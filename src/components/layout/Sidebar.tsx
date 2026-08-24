@@ -41,9 +41,7 @@ export function AppSidebar() {
 
   const groupsWithActive = useMemo(
     () =>
-      new Set(
-        NAV_GROUPS.filter((g) => g.items.some((i) => isActive(i.url))).map((g) => g.label),
-      ),
+      new Set(NAV_GROUPS.filter((g) => g.items.some((i) => isActive(i.url))).map((g) => g.label)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [currentPath],
   );

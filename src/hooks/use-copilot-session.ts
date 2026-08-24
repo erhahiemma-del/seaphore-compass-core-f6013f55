@@ -6,8 +6,8 @@
  * so the same history is visible everywhere and survives navigation.
  */
 import { useCallback } from "react";
-import { useMissionContextStore, MISSION_AMBIENT_ID } from "@/stores/mission-context.store";
-import type { ConversationEntry } from "@/stores/mission-context.store";
+import { useMissionWorkspaceStore, MISSION_AMBIENT_ID } from "@/stores/mission-workspace.store";
+import type { ConversationEntry } from "@/stores/mission-workspace.store";
 
 export interface CopilotSession {
   missionId: string;
@@ -18,10 +18,10 @@ export interface CopilotSession {
 }
 
 export function useCopilotSession(): CopilotSession {
-  const activeId = useMissionContextStore((s) => s.activeId ?? MISSION_AMBIENT_ID);
-  const history = useMissionContextStore((s) => s.missions[activeId]?.conversation ?? []);
-  const appendConversation = useMissionContextStore((s) => s.appendConversation);
-  const resetConversation = useMissionContextStore((s) => s.resetConversation);
+  const activeId = useMissionWorkspaceStore((s) => s.activeId ?? MISSION_AMBIENT_ID);
+  const history = useMissionWorkspaceStore((s) => s.missions[activeId]?.conversation ?? []);
+  const appendConversation = useMissionWorkspaceStore((s) => s.appendConversation);
+  const resetConversation = useMissionWorkspaceStore((s) => s.resetConversation);
 
   const appendOfficer = useCallback(
     (text: string, instance?: string) =>

@@ -7,7 +7,7 @@
  *     + hypotheses + response contract audit).
  *   • Adapted briefing (criticalFindings citations, intelligenceGaps,
  *     evidenceSources summary).
- *   • Active MissionContext (shared operational slices + conversation).
+ *   • Active MissionWorkspaceState (shared operational slices + conversation).
  *   • Active InvestigationWorkspace (REJECTED evidence, contradicted
  *     hypotheses, prior decisions).
  *
@@ -20,7 +20,7 @@ import type {
 } from "@/components/copilot/briefing/types";
 import type { HumanResponse, EvidenceCitation as OIECitation } from "@/services/oie/types";
 import type { IbeHypothesis } from "@/services/ibe/types";
-import type { MissionContext } from "@/stores/mission-context.store";
+import type { MissionWorkspaceState } from "@/stores/mission-workspace.store";
 import type { InvestigationWorkspace } from "@/stores/workspace.store";
 import type {
   DiscardedEvidence,
@@ -34,7 +34,7 @@ export interface BuildLineageInput {
   briefing: AdaptiveBriefingData;
   humanResponse?: HumanResponse;
   hypotheses?: readonly IbeHypothesis[];
-  mission?: MissionContext | null;
+  mission?: MissionWorkspaceState | null;
   workspace?: InvestigationWorkspace | null;
 }
 
@@ -61,12 +61,12 @@ function dedupeEvidence(list: LineageEvidence[]): LineageEvidence[] {
 }
 
 function collectSharedContext(
-  mission: MissionContext | null | undefined,
+  mission: MissionWorkspaceState | null | undefined,
   workspace: InvestigationWorkspace | null | undefined,
 ): LineageContextLink[] {
   const links: LineageContextLink[] = [];
   if (mission) {
-    const sliceKeys: Array<keyof MissionContext> = [
+    const sliceKeys: Array<keyof MissionWorkspaceState> = [
       "vessel",
       "voyage",
       "manifest",

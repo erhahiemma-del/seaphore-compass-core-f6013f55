@@ -79,12 +79,12 @@
 
   /* Sidebar (navy in both modes — structure never changes) */
   --color-sidebar: var(--navy);
-  --color-sidebar-foreground: #E4E8EC;
+  --color-sidebar-foreground: #e4e8ec;
   --color-sidebar-primary: var(--teal);
   --color-sidebar-primary-foreground: #ffffff;
-  --color-sidebar-accent: #14314F;
+  --color-sidebar-accent: #14314f;
   --color-sidebar-accent-foreground: #ffffff;
-  --color-sidebar-border: #1E3048;
+  --color-sidebar-border: #1e3048;
   --color-sidebar-ring: var(--teal);
 
   /* Shadows */
@@ -97,31 +97,31 @@
 
 :root {
   /* Brand colours */
-  --navy: #0B1F3A;
-  --teal: #0E7C7B;
-  --gold: #B8860B;
-  --ink: #1A2733;
-  --slate: #5A6B7B;
+  --navy: #0b1f3a;
+  --teal: #0e7c7b;
+  --gold: #b8860b;
+  --ink: #1a2733;
+  --slate: #5a6b7b;
 
-  --red: #C0392B;
-  --amber: #B06A00;
-  --green: #1E6B3A;
-  --blue: #2563EB;
-  --purple: #7C3AED;
+  --red: #c0392b;
+  --amber: #b06a00;
+  --green: #1e6b3a;
+  --blue: #2563eb;
+  --purple: #7c3aed;
 
   /* Confidence tokens (never used for decoration) */
-  --conf-verified: #1E6B3A;
-  --conf-observed: #2563EB;
-  --conf-inferred: #B06A00;
-  --conf-unconfirmed: #8A98A6;
+  --conf-verified: #1e6b3a;
+  --conf-observed: #2563eb;
+  --conf-inferred: #b06a00;
+  --conf-unconfirmed: #8a98a6;
 
   /* Light-mode surfaces */
-  --background: #F7F9FB;
+  --background: #f7f9fb;
   --foreground: var(--ink);
-  --surface: #FFFFFF;
-  --surface-1: #FFFFFF;
-  --surface-2: #F0F3F6;
-  --line: #E4E8EC;
+  --surface: #ffffff;
+  --surface-1: #ffffff;
+  --surface-2: #f0f3f6;
+  --line: #e4e8ec;
 
   /* Radius */
   --radius-sm-val: 4px;
@@ -131,30 +131,43 @@
 
   /* Fonts */
   --font-head:
-    "Segoe UI", -apple-system, BlinkMacSystemFont, system-ui, Roboto,
-    "Helvetica Neue", Arial, sans-serif;
-  --font-mono-family:
-    "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+    "Segoe UI", -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+  --font-mono-family: "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
 }
 
 .dark {
   /* Dark-mode surfaces — Intelligence Centres */
-  --background: #0D1B2A;
-  --foreground: #E4E8EC;
+  --background: #0d1b2a;
+  --foreground: #e4e8ec;
   --surface: #132032;
-  --surface-1: #151E32;
-  --surface-2: #172A40;
+  --surface-1: #151e32;
+  --surface-2: #172a40;
   --line: #243247;
 }
 
 /* Spacing utilities (4px base) */
-@utility p-space-1 { padding: 4px; }
-@utility p-space-2 { padding: 8px; }
-@utility p-space-3 { padding: 12px; }
-@utility p-space-4 { padding: 16px; }
-@utility p-space-5 { padding: 20px; }
-@utility p-space-6 { padding: 24px; }
-@utility p-space-8 { padding: 32px; }
+@utility p-space-1 {
+  padding: 4px;
+}
+@utility p-space-2 {
+  padding: 8px;
+}
+@utility p-space-3 {
+  padding: 12px;
+}
+@utility p-space-4 {
+  padding: 16px;
+}
+@utility p-space-5 {
+  padding: 20px;
+}
+@utility p-space-6 {
+  padding: 24px;
+}
+@utility p-space-8 {
+  padding: 32px;
+}
 
 /* Typography utilities */
 @utility type-display {
@@ -197,13 +210,26 @@
 }
 
 /* Elevation */
-@utility shadow-card { box-shadow: var(--shadow-card); }
-@utility shadow-pop { box-shadow: var(--shadow-pop); }
+@utility shadow-card {
+  box-shadow: var(--shadow-card);
+}
+@utility shadow-pop {
+  box-shadow: var(--shadow-pop);
+}
 
 /* Motion durations */
-@utility motion-fast { transition-duration: 120ms; transition-timing-function: var(--ease-seaphore); }
-@utility motion-base { transition-duration: 200ms; transition-timing-function: var(--ease-seaphore); }
-@utility motion-slow { transition-duration: 320ms; transition-timing-function: var(--ease-seaphore); }
+@utility motion-fast {
+  transition-duration: 120ms;
+  transition-timing-function: var(--ease-seaphore);
+}
+@utility motion-base {
+  transition-duration: 200ms;
+  transition-timing-function: var(--ease-seaphore);
+}
+@utility motion-slow {
+  transition-duration: 320ms;
+  transition-timing-function: var(--ease-seaphore);
+}
 
 @layer base {
   * {
@@ -303,7 +329,6 @@
     display: none;
   }
 }
-
 
 /* ---------------------------------------------------------------------------
    Sprint UX-03 — Investigation input micro-animations.
@@ -467,10 +492,8 @@
 :root {
   /* Three-step elevation scale: surface → raised → overlay */
   --elev-1: 0 1px 2px rgba(11, 31, 58, 0.05);
-  --elev-2:
-    0 1px 2px rgba(11, 31, 58, 0.05), 0 6px 16px -8px rgba(11, 31, 58, 0.14);
-  --elev-3:
-    0 2px 4px rgba(11, 31, 58, 0.06), 0 18px 40px -16px rgba(11, 31, 58, 0.26);
+  --elev-2: 0 1px 2px rgba(11, 31, 58, 0.05), 0 6px 16px -8px rgba(11, 31, 58, 0.14);
+  --elev-3: 0 2px 4px rgba(11, 31, 58, 0.06), 0 18px 40px -16px rgba(11, 31, 58, 0.26);
 
   /* Motion */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
@@ -485,9 +508,15 @@
   --elev-3: 0 2px 6px rgba(0, 0, 0, 0.4), 0 22px 48px -18px rgba(0, 0, 0, 0.7);
 }
 
-@utility elev-1 { box-shadow: var(--elev-1); }
-@utility elev-2 { box-shadow: var(--elev-2); }
-@utility elev-3 { box-shadow: var(--elev-3); }
+@utility elev-1 {
+  box-shadow: var(--elev-1);
+}
+@utility elev-2 {
+  box-shadow: var(--elev-2);
+}
+@utility elev-3 {
+  box-shadow: var(--elev-3);
+}
 
 /* Scale contrast — used for workspace titles and section leads. */
 @utility type-title {

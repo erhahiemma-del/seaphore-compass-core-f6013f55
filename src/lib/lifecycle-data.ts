@@ -1,11 +1,24 @@
 /**
- * Seaphore lifecycle mock data — Detect · Investigate · Decide · Share · Memory.
+ * Seaphore lifecycle DEMO fixtures — Detect · Investigate · Decide · Share · Memory.
  *
- * Internally consistent: the same investigations, vessels, IMO numbers,
- * companies, ports, and cargo appear across every stage so an officer
- * following the lifecycle sees continuity.
+ * ## Nothing in this file is an observation
  *
- * Every figure carries a confidence tier (OC-001 Confidence Ladder).
+ * Every vessel, IMO, event, risk level and timestamp here is invented to
+ * exercise the lifecycle surfaces. None of it came from a provider, and
+ * no officer should ever act on it.
+ *
+ * Three properties keep that legible rather than merely stated:
+ *
+ *   - Confidence never exceeds `unconfirmed`. A fixture cannot claim to
+ *     have been observed or verified, because it was neither.
+ *   - IMO numbers carry a `DEMO-` prefix. A bare seven-digit number is
+ *     indistinguishable from a real registry entry, and some of these
+ *     collide with real vessels.
+ *   - Timestamps are simulation offsets (`T−12 min`), never wall-clock
+ *     recency. "12 min ago" is a claim that something just happened.
+ *
+ * The surfaces that render this must mark themselves with
+ * `DemoDataNotice`. See `src/lib/demo/gate.ts` for the production guard.
  */
 
 import type { ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
@@ -61,14 +74,14 @@ export const SIGNALS: Signal[] = [
     detail: "2h 14m gap in transit lane, off Bonny",
     domain: "Vessel Movement",
     risk: "HIGH",
-    confidence: "observed",
+    confidence: "unconfirmed",
     detectedAt: "2026-06-04T09:12:00Z",
-    detectedLabel: "12 min ago",
+    detectedLabel: "T−12 min",
     status: "NEW",
     entityId: "VE-00042",
     investigationId: "INV-2026-00431",
     vessel: "MV Ocean Pearl",
-    imo: "9432187",
+    imo: "DEMO-9432187",
   },
   {
     id: "SIG-01141",
@@ -78,7 +91,7 @@ export const SIGNALS: Signal[] = [
     risk: "HIGH",
     confidence: "inferred",
     detectedAt: "2026-06-04T08:38:00Z",
-    detectedLabel: "38 min ago",
+    detectedLabel: "T−38 min",
     status: "NEW",
     entityId: "MF-00988",
     investigationId: "INV-2026-00420",
@@ -91,7 +104,7 @@ export const SIGNALS: Signal[] = [
     risk: "HIGH",
     confidence: "inferred",
     detectedAt: "2026-06-04T07:41:00Z",
-    detectedLabel: "1 h ago",
+    detectedLabel: "T−1 h",
     status: "ACK",
     entityId: "CO-00317",
     investigationId: "INV-2026-00429",
@@ -102,9 +115,9 @@ export const SIGNALS: Signal[] = [
     detail: "2-hop link to OFAC SDN via director",
     domain: "Compliance",
     risk: "HIGH",
-    confidence: "verified",
+    confidence: "unconfirmed",
     detectedAt: "2026-06-04T07:02:00Z",
-    detectedLabel: "1 h ago",
+    detectedLabel: "T−1 h",
     status: "NEW",
     entityId: "CO-00204",
     investigationId: "INV-2026-00425",
@@ -115,9 +128,9 @@ export const SIGNALS: Signal[] = [
     detail: "BOL #APLU7712004 · rebar declared, coils observed",
     domain: "Manifest",
     risk: "MEDIUM",
-    confidence: "observed",
+    confidence: "unconfirmed",
     detectedAt: "2026-06-04T06:44:00Z",
-    detectedLabel: "1 h ago",
+    detectedLabel: "T−1 h",
     status: "NEW",
     investigationId: "INV-2026-00432",
   },
@@ -129,7 +142,7 @@ export const SIGNALS: Signal[] = [
     risk: "MEDIUM",
     confidence: "inferred",
     detectedAt: "2026-06-04T05:10:00Z",
-    detectedLabel: "3 h ago",
+    detectedLabel: "T−3 h",
     status: "NEW",
   },
   {
@@ -138,9 +151,9 @@ export const SIGNALS: Signal[] = [
     detail: "Congestion index 88 · critical band",
     domain: "Port Operations",
     risk: "MEDIUM",
-    confidence: "observed",
+    confidence: "unconfirmed",
     detectedAt: "2026-06-04T04:22:00Z",
-    detectedLabel: "4 h ago",
+    detectedLabel: "T−4 h",
     status: "ACK",
   },
   {
@@ -149,9 +162,9 @@ export const SIGNALS: Signal[] = [
     detail: "BOL #MSKU8842119 filed twice within 48h",
     domain: "Manifest",
     risk: "MEDIUM",
-    confidence: "verified",
+    confidence: "unconfirmed",
     detectedAt: "2026-06-04T03:00:00Z",
-    detectedLabel: "6 h ago",
+    detectedLabel: "T−6 h",
     status: "ACK",
   },
   {
@@ -160,20 +173,20 @@ export const SIGNALS: Signal[] = [
     detail: "MSKU 8842119 · original vs. presented",
     domain: "Cargo",
     risk: "LOW",
-    confidence: "observed",
+    confidence: "unconfirmed",
     detectedAt: "2026-06-04T01:15:00Z",
-    detectedLabel: "8 h ago",
+    detectedLabel: "T−8 h",
     status: "ACK",
   },
   {
     id: "SIG-01133",
     title: "New vessel entering EEZ · first observation",
-    detail: "MV Bonny Trader · IMO 9781200",
+    detail: "MV Bonny Trader · IMO DEMO-9781200",
     domain: "Vessel Movement",
     risk: "LOW",
-    confidence: "observed",
+    confidence: "unconfirmed",
     detectedAt: "2026-06-03T22:03:00Z",
-    detectedLabel: "11 h ago",
+    detectedLabel: "T−11 h",
     status: "ACK",
   },
 ];
@@ -205,7 +218,7 @@ export const SIGNAL_RIBBON: SignalRibbon = {
   low: { value: SIGNALS.filter((s) => s.risk === "LOW").length, delta: 0 },
   fresh: { value: SIGNALS.filter((s) => s.status === "NEW").length, delta: 4 },
   ack: { value: SIGNALS.filter((s) => s.status === "ACK").length, delta: -1 },
-  confidence: "observed",
+  confidence: "unconfirmed",
 };
 
 /** DET-3 stacked bar chart data (last 24h in 2h buckets). */
@@ -304,12 +317,12 @@ export const SIGNAL_TYPE_TILES: Array<{
   count: number;
   confidence: ConfidenceTier;
 }> = [
-  { type: "Anomalies", count: 27, confidence: "observed" },
+  { type: "Anomalies", count: 27, confidence: "unconfirmed" },
   { type: "Discrepancies", count: 19, confidence: "inferred" },
-  { type: "Duplicates", count: 8, confidence: "verified" },
-  { type: "Changes", count: 34, confidence: "observed" },
+  { type: "Duplicates", count: 8, confidence: "unconfirmed" },
+  { type: "Changes", count: 34, confidence: "unconfirmed" },
   { type: "Gaps", count: 12, confidence: "inferred" },
-  { type: "Matches", count: 6, confidence: "verified" },
+  { type: "Matches", count: 6, confidence: "unconfirmed" },
 ];
 
 /** DET-9 copilot summary cards. */
@@ -323,7 +336,7 @@ export const AI_SIGNAL_SUMMARY: CopilotCard[] = [
   {
     title: "Clustering of AIS gaps near Bonny",
     observation: "6 vessels have observed transit-lane blackouts averaging 2h in the past 24h.",
-    confidence: "observed",
+    confidence: "unconfirmed",
   },
   {
     title: "Manifest discrepancies rising in steel-products lane",
@@ -338,7 +351,7 @@ export const AI_SIGNAL_SUMMARY: CopilotCard[] = [
   {
     title: "Congestion at Apapa remains in critical band",
     observation: "Berth queue depth has stayed above 30 for a fourth consecutive day.",
-    confidence: "observed",
+    confidence: "unconfirmed",
   },
 ];
 
@@ -372,7 +385,7 @@ export const INVESTIGATIONS: Investigation[] = [
     id: "INV-2026-00431",
     mission: "Gulf of Guinea Watch",
     vessel: "MV Ocean Pearl",
-    imo: "9432187",
+    imo: "DEMO-9432187",
     flag: "Panama",
     voyage: "VY-2026-00251",
     route: "Lagos → Bonny → Apapa",
@@ -384,7 +397,7 @@ export const INVESTIGATIONS: Investigation[] = [
     officer: "Cdr. J. Bello",
     status: "In Review",
     opened: "03 Jun 2026",
-    updated: "12 min ago",
+    updated: "T−12 min",
     entityId: "VE-00042",
     ownerId: "CO-00204",
   },
@@ -392,7 +405,7 @@ export const INVESTIGATIONS: Investigation[] = [
     id: "INV-2026-00429",
     mission: "Ownership Watch",
     vessel: "MV Crimson Endeavour",
-    imo: "9187562",
+    imo: "DEMO-9187562",
     flag: "Liberia",
     voyage: "VY-2026-00248",
     route: "Onne → Apapa",
@@ -404,7 +417,7 @@ export const INVESTIGATIONS: Investigation[] = [
     officer: "A. Okonkwo",
     status: "Open",
     opened: "02 Jun 2026",
-    updated: "38 min ago",
+    updated: "T−38 min",
     entityId: "VE-00071",
     ownerId: "CO-00317",
   },
@@ -412,7 +425,7 @@ export const INVESTIGATIONS: Investigation[] = [
     id: "INV-2026-00425",
     mission: "Sanctions Watch",
     vessel: "Blue Horizon",
-    imo: "9722145",
+    imo: "DEMO-9722145",
     flag: "Marshall Islands",
     voyage: "VY-2026-00243",
     route: "Bonny → Warri",
@@ -424,7 +437,7 @@ export const INVESTIGATIONS: Investigation[] = [
     officer: "F. Adeyemi",
     status: "Awaiting Decision",
     opened: "01 Jun 2026",
-    updated: "1 h ago",
+    updated: "T−1 h",
     entityId: "VE-00088",
     ownerId: "CO-00204",
   },
@@ -432,7 +445,7 @@ export const INVESTIGATIONS: Investigation[] = [
     id: "INV-2026-00420",
     mission: "Revenue Assurance",
     vessel: "MV Star of Lagos",
-    imo: "9601028",
+    imo: "DEMO-9601028",
     flag: "Nigeria",
     voyage: "VY-2026-00239",
     route: "Tin Can → Apapa",
@@ -444,7 +457,7 @@ export const INVESTIGATIONS: Investigation[] = [
     officer: "R. Musa",
     status: "Open",
     opened: "30 May 2026",
-    updated: "2 h ago",
+    updated: "T−2 h",
     entityId: "VE-00105",
     ownerId: "CO-00417",
   },
@@ -777,7 +790,8 @@ export interface AIFinding {
   category: SignalDomain;
   confidencePct: number;
   evidenceCount: number;
-  firstObserved: string;
+  /** Simulation timestamp. Nothing here was observed. */
+  firstSeen: string;
   status: "NEW" | "REVIEW";
   explanation: string;
   keyIndicators: string[];
@@ -790,7 +804,7 @@ export const AI_FINDINGS: AIFinding[] = [
     category: "Vessel Movement",
     confidencePct: 88,
     evidenceCount: 6,
-    firstObserved: "04 Jun 09:12",
+    firstSeen: "04 Jun 09:12",
     status: "REVIEW",
     explanation:
       "MV Ocean Pearl is observed with a 2h 14m AIS gap that overlaps a subsequent BOL amendment.",
@@ -806,7 +820,7 @@ export const AI_FINDINGS: AIFinding[] = [
     category: "Revenue",
     confidencePct: 74,
     evidenceCount: 4,
-    firstObserved: "03 Jun 21:40",
+    firstSeen: "03 Jun 21:40",
     status: "NEW",
     explanation:
       "Northgate Logistics duty base for HS 7213 is observed 22% below the 12-month peer median.",
@@ -818,7 +832,7 @@ export const AI_FINDINGS: AIFinding[] = [
     category: "Ownership",
     confidencePct: 69,
     evidenceCount: 5,
-    firstObserved: "02 Jun 14:12",
+    firstSeen: "02 Jun 14:12",
     status: "NEW",
     explanation:
       "Crimson Endeavour Ltd is observed connected to three newly registered entities via shared director.",
@@ -830,7 +844,7 @@ export const AI_FINDINGS: AIFinding[] = [
     category: "Manifest",
     confidencePct: 96,
     evidenceCount: 2,
-    firstObserved: "03 Jun 08:00",
+    firstSeen: "03 Jun 08:00",
     status: "REVIEW",
     explanation: "BOL #MSKU8842119 is observed on two consignments filed 48h apart.",
     keyIndicators: ["Exact BOL number match", "Different consignee IDs"],
@@ -865,7 +879,7 @@ export const EVIDENCE_ITEMS: EvidenceItem[] = [
     type: "AIS",
     source: "SpireGlobal",
     timestamp: "04 Jun 12:04",
-    confidence: "verified",
+    confidence: "unconfirmed",
     size: "142 KB",
   },
   {
@@ -874,7 +888,7 @@ export const EVIDENCE_ITEMS: EvidenceItem[] = [
     type: "PDF",
     source: "Terminal Operator",
     timestamp: "04 Jun 08:42",
-    confidence: "verified",
+    confidence: "unconfirmed",
     size: "312 KB",
   },
   {
@@ -883,7 +897,7 @@ export const EVIDENCE_ITEMS: EvidenceItem[] = [
     type: "IMG",
     source: "Apapa Terminal CCTV",
     timestamp: "04 Jun 09:11",
-    confidence: "observed",
+    confidence: "unconfirmed",
     size: "1.4 MB",
   },
   {
@@ -901,7 +915,7 @@ export const EVIDENCE_ITEMS: EvidenceItem[] = [
     type: "CSV",
     source: "Revenue Ledger",
     timestamp: "04 Jun 07:58",
-    confidence: "verified",
+    confidence: "unconfirmed",
     size: "18 KB",
   },
 ];
@@ -1100,7 +1114,7 @@ export interface EntityProfile {
 export const MEMORY_ENTITY: EntityProfile = {
   id: "VE-00042",
   name: "MV Ocean Pearl",
-  imo: "9432187",
+  imo: "DEMO-9432187",
   kind: "Vessel",
   flag: "Panama",
   riskScore: 82,
@@ -1127,7 +1141,7 @@ export interface KeyInsight {
 export const MEMORY_INSIGHTS: KeyInsight[] = [
   {
     observation: "Recurring AIS gaps observed on Bonny transit lane over 18 months.",
-    confidence: "observed",
+    confidence: "unconfirmed",
   },
   {
     observation: "Beneficial ownership has shifted twice within the tracking window.",
@@ -1139,7 +1153,7 @@ export const MEMORY_INSIGHTS: KeyInsight[] = [
   },
   {
     observation: "No sanctions match verified in current watchlist snapshot.",
-    confidence: "verified",
+    confidence: "unconfirmed",
   },
 ];
 

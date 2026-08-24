@@ -17,6 +17,7 @@ import {
   recordActionUsage,
   workflowForPermission,
   overrideWorkflowEngine,
+  type MissionContext,
   type Permission,
 } from "@/services/orchestration";
 import { defaultPolicyEngine, type ApprovalToken } from "@/services/policy";
@@ -33,6 +34,17 @@ interface QueryInput {
     port?: string;
     workspace?: "ownership" | "revenue" | "compliance" | "evidence" | "vessel" | "port";
   };
+  /**
+   * The canonical mission context — what the officer currently has open.
+   *
+   * Supersedes the loose `context.vessel` / `context.port` /
+   * `context.investigation_id` fields above, which named a subject
+   * without saying what kind it was. Those are retained for
+   * un-migrated callers; when both are present this one wins, because
+   * only this shape carries enough for the context policy to decide
+   * whether the subject may reach the query at all.
+   */
+  mission_context?: MissionContext | null;
 }
 
 export const copilotQueryFn = createServerFn({ method: "POST" })
@@ -71,10 +83,18 @@ export const copilotQueryFn = createServerFn({ method: "POST" })
             officer_id: context.userId,
             context: data.context,
           },
-          // Pass the authenticated server client so intel_briefings and
-          // orchestration_events persist under the officer's auth context
-          // (Sprint 2.1A — canonical UIP as system of record).
-          { supabase: context.supabase },
+          {
+            // Pass the authenticated server client so intel_briefings and
+            // orchestration_events persist under the officer's auth context
+            // (Sprint 2.1A — canonical UIP as system of record).
+            supabase: context.supabase,
+            // The canonical mission context. Offered, never imposed:
+            // `classifyIntent` applies it only when the query's own
+            // context policy resolves to `inherit`, so a fleet or company
+            // question cannot be narrowed by whatever the officer has
+            // open. Null when nothing is open, which is the normal state.
+            missionContext: data.mission_context ?? null,
+          },
         ),
       );
 

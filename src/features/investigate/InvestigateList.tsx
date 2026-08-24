@@ -7,10 +7,12 @@ import { PanelCard } from "@/components/panel-card";
 import { PanelHead } from "@/components/panel-head";
 import { RiskPill } from "@/components/intelligence/RiskPill";
 import { INVESTIGATIONS } from "@/lib/lifecycle-data";
+import { DemoDataNotice } from "@/components/intelligence/DemoDataNotice";
 
 export function InvestigateList() {
   return (
     <AppShell title="Investigate" subtitle="Case Workspace" mode="light">
+      <DemoDataNotice surface="Investigate" className="mb-3" />
       <div className="mx-auto max-w-[1400px] space-y-4 p-4 lg:p-6">
         <div className="flex items-start gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[color:var(--color-teal)]/10 text-[color:var(--color-teal)]">

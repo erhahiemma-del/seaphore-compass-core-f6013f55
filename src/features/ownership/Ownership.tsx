@@ -57,6 +57,7 @@ import {
 } from "./OwnershipNetworkGraph";
 import type { OwnershipEdge } from "@/lib/intel-centre-data";
 import { cn } from "@/lib/utils";
+import { DemoDataNotice } from "@/components/intelligence/DemoDataNotice";
 
 /* ============================================================
  * Ownership Intelligence Centre
@@ -185,7 +186,7 @@ export function OwnershipCentre() {
           kind: "Vessel",
           meta: v.type,
           country: v.flag,
-          tier: "verified" as const,
+          tier: "unconfirmed" as const,
         })),
       ];
     }
@@ -206,7 +207,7 @@ export function OwnershipCentre() {
         kind: "Vessel",
         meta: v.type,
         country: v.flag,
-        tier: "verified" as const,
+        tier: "unconfirmed" as const,
       }));
     }
     if (tab === "directors") {
@@ -272,6 +273,7 @@ export function OwnershipCentre() {
       subtitle="Uncover true ownership. Map relationships. Detect risk."
       mode="dark"
     >
+      <DemoDataNotice surface="Ownership Intelligence" className="mb-3" />
       <div className="flex min-h-[calc(100vh-8rem)] flex-col bg-background text-foreground">
         {/* Sub-header search + actions */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line/60 bg-surface/40 px-5 py-3">

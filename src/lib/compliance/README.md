@@ -12,20 +12,20 @@ Enforcement is architectural — modules cannot ship a screen that bypasses
 these primitives. Do not render figures, signals, decisions, copilot output,
 or share actions any other way.
 
-| Rule  | Primitive / helper                                             |
-|-------|----------------------------------------------------------------|
-| HR-1  | `<Metric>` (`src/components/compliance/metric.tsx`)            |
+| Rule  | Primitive / helper                                                                             |
+| ----- | ---------------------------------------------------------------------------------------------- |
+| HR-1  | `<Metric>` (`src/components/compliance/metric.tsx`)                                            |
 | HR-2  | `assertVerifiedSource()` — VERIFIED requires a registered source in `authoritative-sources.ts` |
-| HR-3  | `<SignalStatement>` + `assertObservedLanguage()`               |
-| HR-4  | `<OfficerAccountabilityNotice>` — string is hard-coded         |
-| HR-5  | `assertSanctionsTier()` — sanctions can never be INFERRED      |
-| HR-6  | `assertNeutralVesselName()` — used by every seed helper        |
-| HR-7  | `buildExportEnvelope()` — every PDF/Word/Brief/Pack renderer accepts only `ExportPackage` |
-| HR-8  | `<SendShareGate>` + `requireOfficerAuthorization()`            |
-| HR-9  | `writeAuditLog()` server fn + append-only `public.audit_log`   |
-| HR-10 | `<AppShell>` footer — governing oath is immutable              |
-| HR-11 | `<CopilotOutput>` — labels confidence, shows sources           |
-| HR-12 | `<AiConfidence>` — decomposition one click away                |
+| HR-3  | `<SignalStatement>` + `assertObservedLanguage()`                                               |
+| HR-4  | `<OfficerAccountabilityNotice>` — string is hard-coded                                         |
+| HR-5  | `assertSanctionsTier()` — sanctions can never be INFERRED                                      |
+| HR-6  | `assertNeutralVesselName()` — used by every seed helper                                        |
+| HR-7  | `buildExportEnvelope()` — every PDF/Word/Brief/Pack renderer accepts only `ExportPackage`      |
+| HR-8  | `<SendShareGate>` + `requireOfficerAuthorization()`                                            |
+| HR-9  | `writeAuditLog()` server fn + append-only `public.audit_log`                                   |
+| HR-10 | `<AppShell>` footer — governing oath is immutable                                              |
+| HR-11 | `<CopilotOutput>` — labels confidence, shows sources                                           |
+| HR-12 | `<AiConfidence>` — decomposition one click away                                                |
 
 ## Adding a new module
 
@@ -33,7 +33,7 @@ or share actions any other way.
    `@/lib/compliance/*`.
 2. Use `<Metric>` for every figure. Never render a raw number.
 3. For every data-changing action, call `writeAuditLog({ action, entity,
-   module, ruleRefs })` before returning success.
+module, ruleRefs })` before returning success.
 4. For every share/send, wrap the trigger in `<SendShareGate>`.
 5. For every exportable artefact, produce `ExportPackage` via
    `buildExportEnvelope()`.

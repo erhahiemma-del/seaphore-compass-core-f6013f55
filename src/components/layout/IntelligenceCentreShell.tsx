@@ -10,7 +10,6 @@ import { MapProviderRoot } from "@/lib/maps";
 import type { MapProviderName } from "@/lib/maps/types";
 import { cn } from "@/lib/utils";
 
-
 export interface AppShellProps {
   children: ReactNode;
   title: string;
@@ -86,7 +85,6 @@ export function AppShell({ children, title, subtitle, mode = "light" }: AppShell
             <GoToPalette />
             <GlobalCopilotLauncher />
           </SidebarInset>
-
         </div>
       </SidebarProvider>
     </MapProviderRoot>

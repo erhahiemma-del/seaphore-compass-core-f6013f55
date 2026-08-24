@@ -22,6 +22,7 @@ import { Route as NationalRiskRouteImport } from './routes/national-risk'
 import { Route as MissionsRouteImport } from './routes/missions'
 import { Route as MemoryRouteImport } from './routes/memory'
 import { Route as McpRouteImport } from './routes/mcp'
+import { Route as MaritimeRouteImport } from './routes/maritime'
 import { Route as ManifestRouteImport } from './routes/manifest'
 import { Route as KnowledgeGraphRouteImport } from './routes/knowledge-graph'
 import { Route as InvestigationsWorkflowRouteImport } from './routes/investigations-workflow'
@@ -31,6 +32,7 @@ import { Route as IntelligenceEvidenceRouteImport } from './routes/intelligence-
 import { Route as EvidenceRouteImport } from './routes/evidence'
 import { Route as DetectRouteImport } from './routes/detect'
 import { Route as DecideRouteImport } from './routes/decide'
+import { Route as DataSourcesRouteImport } from './routes/data-sources'
 import { Route as CopilotRouteImport } from './routes/copilot'
 import { Route as ComplianceRouteImport } from './routes/compliance'
 import { Route as CommandCenterRouteImport } from './routes/command-center'
@@ -143,6 +145,11 @@ const McpRoute = McpRouteImport.update({
   path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MaritimeRoute = MaritimeRouteImport.update({
+  id: '/maritime',
+  path: '/maritime',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ManifestRoute = ManifestRouteImport.update({
   id: '/manifest',
   path: '/manifest',
@@ -186,6 +193,11 @@ const DetectRoute = DetectRouteImport.update({
 const DecideRoute = DecideRouteImport.update({
   id: '/decide',
   path: '/decide',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DataSourcesRoute = DataSourcesRouteImport.update({
+  id: '/data-sources',
+  path: '/data-sources',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CopilotRoute = CopilotRouteImport.update({
@@ -432,6 +444,7 @@ export interface FileRoutesByFullPath {
   '/command-center': typeof CommandCenterRoute
   '/compliance': typeof ComplianceRoute
   '/copilot': typeof CopilotRoute
+  '/data-sources': typeof DataSourcesRoute
   '/decide': typeof DecideRouteWithChildren
   '/detect': typeof DetectRoute
   '/evidence': typeof EvidenceRoute
@@ -441,6 +454,7 @@ export interface FileRoutesByFullPath {
   '/investigations-workflow': typeof InvestigationsWorkflowRoute
   '/knowledge-graph': typeof KnowledgeGraphRoute
   '/manifest': typeof ManifestRoute
+  '/maritime': typeof MaritimeRoute
   '/mcp': typeof McpRoute
   '/memory': typeof MemoryRoute
   '/missions': typeof MissionsRoute
@@ -501,6 +515,7 @@ export interface FileRoutesByTo {
   '/command-center': typeof CommandCenterRoute
   '/compliance': typeof ComplianceRoute
   '/copilot': typeof CopilotRoute
+  '/data-sources': typeof DataSourcesRoute
   '/detect': typeof DetectRoute
   '/evidence': typeof EvidenceRoute
   '/intelligence-evidence': typeof IntelligenceEvidenceRoute
@@ -508,6 +523,7 @@ export interface FileRoutesByTo {
   '/investigations-workflow': typeof InvestigationsWorkflowRoute
   '/knowledge-graph': typeof KnowledgeGraphRoute
   '/manifest': typeof ManifestRoute
+  '/maritime': typeof MaritimeRoute
   '/mcp': typeof McpRoute
   '/memory': typeof MemoryRoute
   '/missions': typeof MissionsRoute
@@ -569,6 +585,7 @@ export interface FileRoutesById {
   '/command-center': typeof CommandCenterRoute
   '/compliance': typeof ComplianceRoute
   '/copilot': typeof CopilotRoute
+  '/data-sources': typeof DataSourcesRoute
   '/decide': typeof DecideRouteWithChildren
   '/detect': typeof DetectRoute
   '/evidence': typeof EvidenceRoute
@@ -578,6 +595,7 @@ export interface FileRoutesById {
   '/investigations-workflow': typeof InvestigationsWorkflowRoute
   '/knowledge-graph': typeof KnowledgeGraphRoute
   '/manifest': typeof ManifestRoute
+  '/maritime': typeof MaritimeRoute
   '/mcp': typeof McpRoute
   '/memory': typeof MemoryRoute
   '/missions': typeof MissionsRoute
@@ -641,6 +659,7 @@ export interface FileRouteTypes {
     | '/command-center'
     | '/compliance'
     | '/copilot'
+    | '/data-sources'
     | '/decide'
     | '/detect'
     | '/evidence'
@@ -650,6 +669,7 @@ export interface FileRouteTypes {
     | '/investigations-workflow'
     | '/knowledge-graph'
     | '/manifest'
+    | '/maritime'
     | '/mcp'
     | '/memory'
     | '/missions'
@@ -710,6 +730,7 @@ export interface FileRouteTypes {
     | '/command-center'
     | '/compliance'
     | '/copilot'
+    | '/data-sources'
     | '/detect'
     | '/evidence'
     | '/intelligence-evidence'
@@ -717,6 +738,7 @@ export interface FileRouteTypes {
     | '/investigations-workflow'
     | '/knowledge-graph'
     | '/manifest'
+    | '/maritime'
     | '/mcp'
     | '/memory'
     | '/missions'
@@ -777,6 +799,7 @@ export interface FileRouteTypes {
     | '/command-center'
     | '/compliance'
     | '/copilot'
+    | '/data-sources'
     | '/decide'
     | '/detect'
     | '/evidence'
@@ -786,6 +809,7 @@ export interface FileRouteTypes {
     | '/investigations-workflow'
     | '/knowledge-graph'
     | '/manifest'
+    | '/maritime'
     | '/mcp'
     | '/memory'
     | '/missions'
@@ -848,6 +872,7 @@ export interface RootRouteChildren {
   CommandCenterRoute: typeof CommandCenterRoute
   ComplianceRoute: typeof ComplianceRoute
   CopilotRoute: typeof CopilotRoute
+  DataSourcesRoute: typeof DataSourcesRoute
   DecideRoute: typeof DecideRouteWithChildren
   DetectRoute: typeof DetectRoute
   EvidenceRoute: typeof EvidenceRoute
@@ -857,6 +882,7 @@ export interface RootRouteChildren {
   InvestigationsWorkflowRoute: typeof InvestigationsWorkflowRoute
   KnowledgeGraphRoute: typeof KnowledgeGraphRoute
   ManifestRoute: typeof ManifestRoute
+  MaritimeRoute: typeof MaritimeRoute
   McpRoute: typeof McpRoute
   MemoryRoute: typeof MemoryRoute
   MissionsRoute: typeof MissionsRoute
@@ -991,6 +1017,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/maritime': {
+      id: '/maritime'
+      path: '/maritime'
+      fullPath: '/maritime'
+      preLoaderRoute: typeof MaritimeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/manifest': {
       id: '/manifest'
       path: '/manifest'
@@ -1052,6 +1085,13 @@ declare module '@tanstack/react-router' {
       path: '/decide'
       fullPath: '/decide'
       preLoaderRoute: typeof DecideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/data-sources': {
+      id: '/data-sources'
+      path: '/data-sources'
+      fullPath: '/data-sources'
+      preLoaderRoute: typeof DataSourcesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/copilot': {
@@ -1448,6 +1488,7 @@ const rootRouteChildren: RootRouteChildren = {
   CommandCenterRoute: CommandCenterRoute,
   ComplianceRoute: ComplianceRoute,
   CopilotRoute: CopilotRoute,
+  DataSourcesRoute: DataSourcesRoute,
   DecideRoute: DecideRouteWithChildren,
   DetectRoute: DetectRoute,
   EvidenceRoute: EvidenceRoute,
@@ -1457,6 +1498,7 @@ const rootRouteChildren: RootRouteChildren = {
   InvestigationsWorkflowRoute: InvestigationsWorkflowRoute,
   KnowledgeGraphRoute: KnowledgeGraphRoute,
   ManifestRoute: ManifestRoute,
+  MaritimeRoute: MaritimeRoute,
   McpRoute: McpRoute,
   MemoryRoute: MemoryRoute,
   MissionsRoute: MissionsRoute,

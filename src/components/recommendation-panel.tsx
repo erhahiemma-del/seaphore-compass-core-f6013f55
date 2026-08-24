@@ -56,7 +56,14 @@ export function RecommendationPanel({
         <div className="flex items-center justify-between">
           <span className="type-label text-slate">Confidence in Recommendation</span>
           <div className="flex items-center gap-2">
-            <ConfidenceChip tier="observed" size={9} />
+            {/*
+              `inferred`, not `observed`. A recommendation is derived from
+              evidence, never itself measured — and "observed" is defined
+              as "directly observed / measured". The chip was also
+              hardcoded regardless of the percentage beside it, so a weak
+              recommendation and a strong one made the same claim.
+            */}
+            <ConfidenceChip tier="inferred" size={9} />
             <span className="text-[13px] font-bold text-foreground">{confidencePct}%</span>
           </div>
         </div>

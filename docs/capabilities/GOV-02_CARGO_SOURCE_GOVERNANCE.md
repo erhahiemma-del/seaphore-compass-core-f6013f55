@@ -6,6 +6,7 @@ Scope guarantee: no changes to the Evidence Provider Framework, Provider Resolve
 Canonical UIP, OIE, MIBC, Authentication, or CAPABILITY.CARGO v1.0.
 
 Code of record:
+
 - `src/services/cargo-governance/types.ts` — governance and confidence vocabulary
 - `src/services/cargo-governance/source-registry.ts` — National Maritime Data Source Registry
 - `src/services/cargo-governance/cargo-confidence.ts` — Cargo Confidence Model
@@ -18,36 +19,36 @@ Every source is classified as Government, Commercial, Supporting or Derived, and
 authority, jurisdiction, evidence types, supported capabilities, trust level, coverage
 (breadth/depth/note), update frequency, priority, integration status and recommended usage.
 
-| Source | Class | Authority | Trust | Freq | Priority | Status |
-|---|---|---|---|---|---|---|
-| NCS Declarations (NICIS II) | Government | Nigeria Customs Service | Authority of record | Event-driven | P0 | Specified |
-| NIMASA Returns | Government | NIMASA | Authority of record | Daily | P0 | Specified |
-| ImportGenius | Commercial | ImportGenius | Verified commercial | Weekly | P1 | Not started |
-| Volza | Commercial | Volza | Aggregated | Monthly | P2 | Not started |
-| TradeMo | Commercial | TradeMo | Aggregated | Monthly | P3 | Not started |
-| MarineTraffic | Commercial | MarineTraffic | Verified commercial | Realtime | P1 | Integrated |
-| Datalastic | Commercial | Datalastic | Verified commercial | Realtime | P2 | Integrated |
-| Equasis | Supporting | EC / flag-state consortium | Regulatory | Monthly | P1 | Integrated |
-| OpenCorporates | Supporting | OpenCorporates | Aggregated | Weekly | P1 | Integrated |
-| IMO GISIS | Supporting | IMO | Regulatory | Monthly | P1 | Integrated |
-| OFAC | Supporting | US Treasury OFAC | Authority of record | Daily | P0 | Integrated |
-| UN Security Council | Supporting | UNSC | Authority of record | Weekly | P0 | Integrated |
-| Global Fishing Watch | Derived | Global Fishing Watch | Derived analytic | Daily | P2 | Credentials pending |
+| Source                      | Class      | Authority                  | Trust               | Freq         | Priority | Status              |
+| --------------------------- | ---------- | -------------------------- | ------------------- | ------------ | -------- | ------------------- |
+| NCS Declarations (NICIS II) | Government | Nigeria Customs Service    | Authority of record | Event-driven | P0       | Specified           |
+| NIMASA Returns              | Government | NIMASA                     | Authority of record | Daily        | P0       | Specified           |
+| ImportGenius                | Commercial | ImportGenius               | Verified commercial | Weekly       | P1       | Not started         |
+| Volza                       | Commercial | Volza                      | Aggregated          | Monthly      | P2       | Not started         |
+| TradeMo                     | Commercial | TradeMo                    | Aggregated          | Monthly      | P3       | Not started         |
+| MarineTraffic               | Commercial | MarineTraffic              | Verified commercial | Realtime     | P1       | Integrated          |
+| Datalastic                  | Commercial | Datalastic                 | Verified commercial | Realtime     | P2       | Integrated          |
+| Equasis                     | Supporting | EC / flag-state consortium | Regulatory          | Monthly      | P1       | Integrated          |
+| OpenCorporates              | Supporting | OpenCorporates             | Aggregated          | Weekly       | P1       | Integrated          |
+| IMO GISIS                   | Supporting | IMO                        | Regulatory          | Monthly      | P1       | Integrated          |
+| OFAC                        | Supporting | US Treasury OFAC           | Authority of record | Daily        | P0       | Integrated          |
+| UN Security Council         | Supporting | UNSC                       | Authority of record | Weekly       | P0       | Integrated          |
+| Global Fishing Watch        | Derived    | Global Fishing Watch       | Derived analytic    | Daily        | P2       | Credentials pending |
 
 ## 2. Cargo Confidence Specification
 
 `confidence = Σ (axisWeight × axisAchievement)`, expressed 0–100 and graded A–E.
 
-| Axis | Weight |
-|---|---|
-| Government declaration | 0.30 |
-| NIMASA return | 0.15 |
-| Bill of Lading | 0.13 |
-| AIS / voyage | 0.12 |
-| Company verification | 0.10 |
-| Revenue assessment | 0.09 |
-| Sanctions screening | 0.07 |
-| Supporting intelligence | 0.04 |
+| Axis                    | Weight |
+| ----------------------- | ------ |
+| Government declaration  | 0.30   |
+| NIMASA return           | 0.15   |
+| Bill of Lading          | 0.13   |
+| AIS / voyage            | 0.12   |
+| Company verification    | 0.10   |
+| Revenue assessment      | 0.09   |
+| Sanctions screening     | 0.07   |
+| Supporting intelligence | 0.04   |
 
 Achievement per axis: absent = 0; present = 0.60 baseline; +0.25 × record quality
 (completeness × freshness); +0.15 × corroboration (three or more independent sources = full);
@@ -61,14 +62,14 @@ and a one-sentence officer-facing explanation ending in "The system recommends; 
 
 ## 3. Trust Classification Matrix
 
-| Trust level | Weight ceiling | Usage rule |
-|---|---|---|
-| Authority of record | 1.00 | May stand alone for an officer decision; contradictions surfaced, never silently resolved |
-| Regulatory | 0.90 | Anchors identity and compliance; needs an authority record before revenue action |
-| Verified commercial | 0.75 | Corroboration only; never the sole basis for enforcement |
-| Aggregated | 0.60 | Context and pattern only; always labelled with retrieval date |
-| Open source | 0.45 | Lead generation only; needs independent corroboration |
-| Derived analytic | 0.40 | Always labelled INFERRED; raises questions, never answers them |
+| Trust level         | Weight ceiling | Usage rule                                                                                |
+| ------------------- | -------------- | ----------------------------------------------------------------------------------------- |
+| Authority of record | 1.00           | May stand alone for an officer decision; contradictions surfaced, never silently resolved |
+| Regulatory          | 0.90           | Anchors identity and compliance; needs an authority record before revenue action          |
+| Verified commercial | 0.75           | Corroboration only; never the sole basis for enforcement                                  |
+| Aggregated          | 0.60           | Context and pattern only; always labelled with retrieval date                             |
+| Open source         | 0.45           | Lead generation only; needs independent corroboration                                     |
+| Derived analytic    | 0.40           | Always labelled INFERRED; raises questions, never answers them                            |
 
 ## 4. Provider Priority Matrix
 

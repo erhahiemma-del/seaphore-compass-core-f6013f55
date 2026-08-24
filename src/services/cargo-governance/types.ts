@@ -128,7 +128,11 @@ export interface CargoConfidenceAssessment {
   readonly score: number;
   readonly grade: CargoConfidenceGrade;
   readonly breakdown: ReadonlyArray<CargoAxisContribution>;
-  readonly missingEvidence: ReadonlyArray<{ axis: CargoEvidenceAxis; label: string; impact: number }>;
+  readonly missingEvidence: ReadonlyArray<{
+    axis: CargoEvidenceAxis;
+    label: string;
+    impact: number;
+  }>;
   readonly conflictingEvidence: ReadonlyArray<{ axis: CargoEvidenceAxis; label: string }>;
   /** Single officer-facing sentence explaining the score. */
   readonly explanation: string;

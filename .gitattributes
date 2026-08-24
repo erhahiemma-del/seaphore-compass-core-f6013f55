@@ -1,0 +1,24 @@
+# Normalize all text files to LF in the repository AND in the working tree.
+#
+# `eol=lf` (rather than bare `text=auto`) is deliberate: Git for Windows ships
+# `core.autocrlf=true` in its system config, which would otherwise rewrite
+# checkouts to CRLF and re-dirty the tree on every machine. Pinning the working
+# tree to LF keeps Windows, the Lovable Linux sandbox, and CI byte-identical.
+* text=auto eol=lf
+
+# Binary assets — never line-ending converted, never textually merged.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.ico  binary
+*.pdf  binary
+*.woff binary
+*.woff2 binary
+
+# Generated files: keep them out of review diffs, but still mergeable.
+# Deliberately NOT marked `binary`/`merge=binary` — that would make every
+# conflict unresolvable instead of merely noisy. On conflict, regenerate.
+bun.lock             -diff linguist-generated=true
+src/routeTree.gen.ts -diff linguist-generated=true

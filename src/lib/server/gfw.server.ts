@@ -25,6 +25,10 @@ import {
   type AisMovementEvent,
 } from "@/intelligence/analyzers/AISBehaviourAnalyzer";
 import type {
+  GfwAreaDiagnostics,
+  GfwAreaQuery,
+  GfwAreaResult,
+  GfwAreaVessel,
   GfwCandidate,
   GfwEvidencePackage,
   GfwHealthPayload,
@@ -38,7 +42,14 @@ const EVENTS_PATH = "/v3/events";
 const HEALTH_TIMEOUT_MS = 4000;
 // GFW v3 requires a datasets[] param on every vessel/event call.
 const VESSEL_IDENTITY_DATASET = "public-global-vessel-identity:latest";
-const EVENTS_DATASET = "public-global-events:latest";
+/**
+ * Dataset for the per-vessel movement fetch used by `runGfwSearch`.
+ *
+ * FIXED 2026-08-06 after live probing: the previous value,
+ * `public-global-events:latest`, does not exist and returned HTTP 404 on
+ * every call, so movement history was silently always empty.
+ */
+const EVENTS_DATASET = "public-global-fishing-events:latest";
 
 /**
  * Accepted credential variables, canonical first. `GFW_API_TOKEN` is the
@@ -455,4 +466,346 @@ export async function runGfwHealthCheck(): Promise<GfwHealthPayload> {
   } finally {
     clearTimeout(timeout);
   }
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+ *  AREA / POSITIONS QUERY  (Sprint G5.5.3 · additive)
+ *
+ *  Complements runGfwSearch — which is unchanged — by answering
+ *  "which vessels were active in this box?" for the Live Command Map.
+ *
+ *  Reuses this module's existing machinery rather than duplicating it:
+ *  the same credential reader, the same buildHeaders, the same error
+ *  taxonomy, and the same defensive parsing style as parseMovementEvents.
+ *
+ *  Unlike runGfwSearch, this function does NOT throw. The map must
+ *  degrade to an explained empty state rather than crash, so every
+ *  failure is returned as a typed GfwAreaResult status.
+ * ───────────────────────────────────────────────────────────────────── */
+
+/**
+ * Event datasets queried by the area search.
+ *
+ * VERIFIED LIVE 2026-08-06. `public-global-events:latest` — the name this
+ * module previously assumed — does not exist and returns HTTP 404. These
+ * five are the real v3 event datasets, confirmed by probing each:
+ *   fishing 587,823 · gaps 23,575 · encounters 77,386 ·
+ *   loitering 778,201 · port-visits 2,415,359 (global 30-day totals).
+ *
+ * Ordered by operational value for the Nigerian picture. Querying several
+ * gives a fuller activity view than any one dataset alone.
+ */
+const AREA_EVENT_DATASETS = [
+  "public-global-fishing-events:latest",
+  "public-global-gaps-events:latest",
+  "public-global-encounters-events:latest",
+  "public-global-loitering-events:latest",
+  "public-global-port-visits-events:latest",
+] as const;
+
+/**
+ * Cache TTL for area results.
+ *
+ * Deliberately short and independent of the provider's 6-hour evidence
+ * TTL: positional activity is the one GFW product that goes stale in
+ * minutes. Matched to the map's own refresh cadence so a full refresh
+ * and a cache entry expire together.
+ */
+const AREA_CACHE_TTL_MS = 60_000;
+
+/** Hard ceiling on returned vessels, regardless of caller request. */
+const AREA_MAX_LIMIT = 2_000;
+
+/** Default activity window when the caller does not specify one. */
+const AREA_DEFAULT_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+interface AreaCacheEntry {
+  readonly expiresAt: number;
+  readonly result: GfwAreaResult;
+}
+
+/** Per-instance cache, keyed by the normalised request. */
+const areaCache = new Map<string, AreaCacheEntry>();
+
+function areaCacheKey(
+  bbox: readonly number[],
+  since: string,
+  until: string,
+  limit: number,
+): string {
+  return `${bbox.map((n) => n.toFixed(3)).join(",")}|${since}|${until}|${limit}`;
+}
+
+/**
+ * POST sibling of httpGet.
+ *
+ * The events endpoint takes a GeoJSON geometry, which cannot be expressed
+ * as a query parameter. Error mapping is identical to httpGet so both
+ * paths produce the same taxonomy.
+ */
+async function httpPostJson<T>(
+  apiKey: string,
+  path: string,
+  params: Array<[string, string]>,
+  body: unknown,
+): Promise<{ ok: true; body: T } | { ok: false; status: number; message: string }> {
+  const url = new URL(path, BASE_URL);
+  for (const [k, v] of params) url.searchParams.append(k, v);
+  let response: Response;
+  try {
+    response = await fetch(url.toString(), {
+      method: "POST",
+      headers: { ...buildHeaders(apiKey), "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch (err) {
+    return { ok: false, status: 0, message: err instanceof Error ? err.message : String(err) };
+  }
+  if (response.status === 401 || response.status === 403) {
+    return { ok: false, status: response.status, message: "Authentication Failed" };
+  }
+  if (!response.ok) {
+    let detail = "";
+    try {
+      detail = (await response.text()).slice(0, 200);
+    } catch {
+      /* ignore */
+    }
+    return {
+      ok: false,
+      status: response.status,
+      message: `HTTP ${response.status}${detail ? `: ${detail}` : ""}`,
+    };
+  }
+  try {
+    return { ok: true, body: (await response.json()) as T };
+  } catch {
+    return { ok: false, status: response.status, message: "Invalid JSON from upstream" };
+  }
+}
+
+/** Read a string field, tolerating the several shapes GFW uses. */
+function pickString(source: Record<string, unknown>, ...keys: string[]): string | null {
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === "string" && value.trim().length > 0) return value.trim();
+    if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  }
+  return null;
+}
+
+/** Read a numeric field, tolerating numeric strings. */
+function pickNumber(source: Record<string, unknown>, ...keys: string[]): number | null {
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    if (typeof value === "string" && value.trim() !== "") {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+  }
+  return null;
+}
+
+/**
+ * Normalise one upstream event entry into a GfwAreaVessel.
+ *
+ * Returns null when the entry lacks a usable position, timestamp, or
+ * vessel id — an event without coordinates cannot be placed on a map,
+ * and inventing one would be fabrication. Discards are counted in
+ * diagnostics so silent data loss is impossible.
+ */
+function parseAreaVessel(entry: unknown, retrievedAt: string): GfwAreaVessel | null {
+  if (!entry || typeof entry !== "object") return null;
+  const it = entry as Record<string, unknown>;
+
+  const position = (it.position ?? it.coordinates ?? it.location) as
+    | Record<string, unknown>
+    | undefined;
+  if (!position || typeof position !== "object") return null;
+
+  const latitude = pickNumber(position, "lat", "latitude", "y");
+  const longitude = pickNumber(position, "lon", "lng", "longitude", "x");
+  if (latitude === null || longitude === null) return null;
+  if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return null;
+
+  const timestamp = pickString(it, "start", "timestamp", "eventStart", "time");
+  if (!timestamp || Number.isNaN(Date.parse(timestamp))) return null;
+
+  const vessel = (it.vessel ?? {}) as Record<string, unknown>;
+  const vesselId = pickString(vessel, "id", "vesselId") ?? pickString(it, "vesselId", "id");
+  if (!vesselId) return null;
+
+  return {
+    vesselId,
+    imo: pickString(vessel, "imo"),
+    mmsi: pickString(vessel, "ssvid", "mmsi"),
+    name: pickString(vessel, "name", "shipname"),
+    flag: pickString(vessel, "flag"),
+    latitude,
+    longitude,
+    speedKnots: pickNumber(it, "speed", "speedKnots", "sog"),
+    courseDeg: pickNumber(it, "course", "courseDeg", "cog"),
+    timestamp,
+    eventType: pickString(it, "type", "eventType"),
+    source: "global-fishing-watch",
+    retrievedAt,
+  };
+}
+
+/** Build the closed GeoJSON ring GFW expects from a bounding box. */
+function bboxToPolygon(bbox: readonly [number, number, number, number]) {
+  const [west, south, east, north] = bbox;
+  return {
+    type: "Polygon" as const,
+    coordinates: [
+      [
+        [west, south],
+        [east, south],
+        [east, north],
+        [west, north],
+        [west, south],
+      ],
+    ],
+  };
+}
+
+function emptyAreaDiagnostics(requestedAt: string, latencyMs: number): GfwAreaDiagnostics {
+  return {
+    requestedAt,
+    latencyMs,
+    entriesReceived: 0,
+    entriesDiscarded: 0,
+    vesselsReturned: 0,
+    fromCache: false,
+  };
+}
+
+/**
+ * Fetch vessels active within a bounding box.
+ *
+ * Never throws. Every outcome — missing credentials, rejected
+ * credentials, upstream failure, or simply nothing in the box — is
+ * returned as a typed status with an officer-facing message, so the
+ * caller can state why the map is empty instead of showing a blank
+ * ocean.
+ *
+ * @param query Bounding box plus optional activity window and limit.
+ */
+export async function runGfwAreaSearch(query: GfwAreaQuery): Promise<GfwAreaResult> {
+  const requestedAt = new Date().toISOString();
+  const started = Date.now();
+
+  const bbox = query?.bbox;
+  if (
+    !Array.isArray(bbox) ||
+    bbox.length !== 4 ||
+    bbox.some((n) => typeof n !== "number" || !Number.isFinite(n))
+  ) {
+    return {
+      status: "upstream-error",
+      vessels: [],
+      message: "Invalid bounding box — expected [west, south, east, north].",
+      diagnostics: emptyAreaDiagnostics(requestedAt, 0),
+    };
+  }
+
+  const until = query.until ?? new Date().toISOString();
+  const since = query.since ?? new Date(Date.now() - AREA_DEFAULT_WINDOW_MS).toISOString();
+  const limit = Math.min(Math.max(1, query.limit ?? 500), AREA_MAX_LIMIT);
+
+  const key = areaCacheKey(bbox, since, until, limit);
+  const cached = areaCache.get(key);
+  if (cached && cached.expiresAt > Date.now()) {
+    return {
+      ...cached.result,
+      diagnostics: { ...cached.result.diagnostics, fromCache: true },
+    };
+  }
+
+  const apiKey = readApiKey();
+  if (!apiKey) {
+    return {
+      status: "credentials-missing",
+      vessels: [],
+      message: `Credentials Missing — set ${ENV_KEY} to activate Global Fishing Watch.`,
+      diagnostics: emptyAreaDiagnostics(requestedAt, Date.now() - started),
+    };
+  }
+
+  const response = await httpPostJson<{ entries?: unknown[] }>(
+    apiKey,
+    EVENTS_PATH,
+    [
+      ["limit", String(limit)],
+      ["offset", "0"],
+    ],
+    {
+      // POST with the geometry in the body is the only spatial filter v3
+      // accepts — a `bbox` query parameter is rejected with HTTP 422.
+      datasets: [...AREA_EVENT_DATASETS],
+      startDate: since,
+      endDate: until,
+      geometry: bboxToPolygon(bbox),
+    },
+  );
+
+  const latencyMs = Date.now() - started;
+
+  if (!response.ok) {
+    const authFailed = response.status === 401 || response.status === 403;
+    return {
+      status: authFailed ? "auth-failed" : "upstream-error",
+      vessels: [],
+      message: authFailed
+        ? `Credentials Invalid — Global Fishing Watch rejected ${ENV_KEY}.`
+        : `Provider Unreachable — ${response.message}`,
+      diagnostics: emptyAreaDiagnostics(requestedAt, latencyMs),
+    };
+  }
+
+  const entries = Array.isArray(response.body.entries) ? response.body.entries : [];
+
+  // De-duplicate by vessel, keeping the most recent observation. A vessel
+  // with several events in the window must appear once, at its latest
+  // known position — not once per event.
+  const latest = new Map<string, GfwAreaVessel>();
+  let discarded = 0;
+  for (const entry of entries) {
+    const vessel = parseAreaVessel(entry, requestedAt);
+    if (!vessel) {
+      discarded += 1;
+      continue;
+    }
+    const existing = latest.get(vessel.vesselId);
+    if (!existing || Date.parse(vessel.timestamp) > Date.parse(existing.timestamp)) {
+      latest.set(vessel.vesselId, vessel);
+    }
+  }
+
+  const vessels = [...latest.values()];
+  const result: GfwAreaResult = {
+    status: vessels.length === 0 ? "empty" : "ok",
+    vessels,
+    message:
+      vessels.length === 0
+        ? "No Global Fishing Watch activity recorded in this area for the requested window."
+        : null,
+    diagnostics: {
+      requestedAt,
+      latencyMs,
+      entriesReceived: entries.length,
+      entriesDiscarded: discarded,
+      vesselsReturned: vessels.length,
+      fromCache: false,
+    },
+  };
+
+  areaCache.set(key, { expiresAt: Date.now() + AREA_CACHE_TTL_MS, result });
+  return result;
+}
+
+/** Clear the area cache. Exposed for tests and operational reset. */
+export function clearGfwAreaCache(): void {
+  areaCache.clear();
 }

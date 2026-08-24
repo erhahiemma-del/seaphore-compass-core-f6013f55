@@ -14,6 +14,49 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
-    plugins: [mcpPlugin()],
-  },
+    // mcpPlugin cannot start on Windows. Its `assertContains` check compares
+    // Vite's `root` — which Vite normalises to forward slashes
+    // ("C:/Projects/seaphore") — against a `path.resolve()`d routesDir, which
+    // returns native separators ("C:\Projects\seaphore\src\routes"). The
+    // `startsWith(parent + sep)` test therefore never matches and the dev
+    // server throws before serving a single request. No plugin option avoids
+    // it: `resolve()` always returns native separators whatever is passed.
+    //
+    // On POSIX `sep` is "/", both strings are identical, and the plugin works
+    // — so this is skipped only on Windows. Lovable builds on Linux and is
+    // unaffected, keeping MCP behaviour identical in deployment.
+    plugins: process.platform === "win32" ? [] : [mcpPlugin()],
+
+    optimizeDeps: {
+      /*
+       * MapLibre must not go through the dependency optimiser.
+       *
+       * Pre-bundling rewrites maplibre-gl into `.vite/deps`, but the
+       * worker it spawns is then requested at a path the optimiser does
+       * not serve, and `maplibre-gl-worker.mjs` 404s. Without its worker
+       * the map constructs, reports `mounting`, and stops there: no style
+       * fetch, no tile requests, a live canvas painting nothing.
+       *
+       * The failure is silent, which is what made it expensive to find.
+       * The renderer reported healthy, the basemap URL was reachable by
+       * hand, and the only symptom was a black rectangle that read as
+       * "the map is just a diagram".
+       */
+      exclude: ["maplibre-gl"],
+    },
+
+    // Vitest reads this file, so the exclusions live here rather than in a
+    // second config that would have to re-declare the `@/` alias every
+    // test depends on.
+    //
+    // `.claude/worktrees/` holds full checkouts of other branches. Vitest
+    // walks into them and runs their copies of the suite, which report as
+    // ~50 failures against code that is not on this branch — phantom
+    // regressions that hide real ones. `node_modules` is excluded for the
+    // same reason; both are restored explicitly because naming `exclude`
+    // replaces Vitest's defaults rather than adding to them.
+    test: {
+      exclude: ["**/node_modules/**", "**/dist/**", "**/.claude/**"],
+    },
+  } as NonNullable<Parameters<typeof defineConfig>[0]>["vite"],
 });

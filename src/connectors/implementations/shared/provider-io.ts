@@ -77,7 +77,6 @@ export function readProviderCredential(name: string): string | null {
   return null;
 }
 
-
 /**
  * Read the first present credential from a list of accepted env names.
  *
@@ -98,7 +97,6 @@ export function readFirstProviderCredential(
   }
   return null;
 }
-
 
 /** fetch() with a hard timeout. Rejects on timeout, network error, abort. */
 export async function timedFetch(

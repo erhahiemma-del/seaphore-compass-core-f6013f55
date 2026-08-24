@@ -250,7 +250,8 @@ export class GovernmentMaritimeProvider extends BaseEvidenceProvider {
    */
   normalize(raw: unknown, _query: AcquisitionQuery): NormalizedEvidence | null {
     const record = raw as GovernmentEvidenceRecord | null;
-    if (!record || typeof record !== "object" || !record.recordType || !record.recordId) return null;
+    if (!record || typeof record !== "object" || !record.recordType || !record.recordId)
+      return null;
     const adapter = this.adapters.find((a) => a.agency === record.agency);
     const confidence = scoreGovernmentRecord(record, {
       trustWeight: adapter?.trustWeight ?? 0.9,
