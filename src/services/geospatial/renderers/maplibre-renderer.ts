@@ -29,10 +29,24 @@
  * dynamic `import()` inside {@link mount} — never at module scope. This file is
  * therefore safe to import from server-rendered code.
  */
-import { BASEMAP_STYLE, LAYER_IDS, RISK_COLORS, TIMING } from "../constants";
+import {
+  BASEMAP_STYLE,
+  LAYER_IDS,
+  MARITIME_PALETTE,
+  PIXELS_PER_KM,
+  RISK_COLORS,
+  TIMING,
+} from "../constants";
 import { FRESHNESS_COLORS, FRESHNESS_LABELS, formatAge } from "../freshness";
 import type { MapEventBus } from "../event-bus";
 import { buildVesselSprites, createPortDiamondImage } from "../icons/vessel-arrow";
+import {
+  applyMaritimeStyle,
+  COASTLINE_LAYER_ID,
+  type MaritimeStyleResult,
+  type StyleTarget,
+} from "../map-style";
+import { graticuleFeatures, graticuleOpacityExpression } from "../graticule";
 import type {
   MapCamera,
   MapRenderer,
@@ -47,9 +61,9 @@ import type { VesselFeature } from "../vessel";
 /** Source ids owned by this renderer. */
 const SOURCE_IDS = {
   vessels: "vessels",
-  vesselsClustered: "vessels-clustered",
   ports: "ports",
   eez: "nigeria-eez",
+  graticule: "graticule",
   investigationArea: "investigation-area",
 } as const;
 
@@ -62,6 +76,29 @@ const ASSETS = {
 /** Fallback basemap when the primary style fails to load. */
 const FALLBACK_BASEMAP = "https://tiles.stadiamaps.com/styles/alidade_smooth_dark.json";
 
+/**
+ * Every render layer {@link MapLibreRenderer.installSourcesAndLayers}
+ * adds, in install order.
+ *
+ * Exported because the layer registry's promise — that a layer marked
+ * `ready` actually draws — is only checkable against this list. The
+ * registry is asserted against it in the unit tests, and the renderer
+ * checks itself against it at runtime; see `verifyInstalledLayers`.
+ */
+export const INSTALLED_RENDER_LAYERS: readonly string[] = [
+  LAYER_IDS.graticule,
+  LAYER_IDS.eezFill,
+  LAYER_IDS.eezBoundary,
+  LAYER_IDS.portAnchorage,
+  LAYER_IDS.ports,
+  LAYER_IDS.portLabels,
+  LAYER_IDS.riskHeatmap,
+  LAYER_IDS.vesselSelection,
+  LAYER_IDS.vessels,
+  LAYER_IDS.vesselLabels,
+  LAYER_IDS.investigArea,
+] as const;
+
 /** Bounding box framing Nigeria and its maritime approaches. */
 export const NIGERIA_BOUNDS: BoundingBox = [
   [2.2, 1.5],
@@ -70,6 +107,38 @@ export const NIGERIA_BOUNDS: BoundingBox = [
 
 /** True once this adapter draws with a real engine. */
 export const MAPLIBRE_AVAILABLE = true;
+
+/**
+ * Development-only record of what the basemap restyling actually did.
+ *
+ * `applyMaritimeStyle` is pure and unit-tested, but whether it is
+ * correctly *wired* — and whether CARTO still ships the layers it looks
+ * for — is a runtime question, and the map instance is deliberately not
+ * reachable from the page. This publishes the outcome, never the map,
+ * so a browser check can confirm the ocean really is the colour we
+ * chose rather than inferring it from a screenshot.
+ *
+ * The same pattern and the same reasoning as `recordCameraDecision` in
+ * `MapCanvas`. `import.meta.env.DEV` compiles it out of production
+ * entirely, so nothing here widens the production surface.
+ */
+function publishStyleDiagnostics(map: MapLibreMap, result: MaritimeStyleResult): void {
+  if (!import.meta.env.DEV || typeof window === "undefined") return;
+  try {
+    const read = (layerId: string, property: string) =>
+      map.getLayer(layerId) ? map.getPaintProperty(layerId, property as never) : null;
+    (window as typeof window & { __seaphoreMapStyle?: unknown }).__seaphoreMapStyle = {
+      ...result,
+      ocean: read("water", "fill-color"),
+      land: read("background", "background-color"),
+      coastlinePresent: Boolean(map.getLayer(COASTLINE_LAYER_ID)),
+      installed: Object.values(LAYER_IDS).filter((id) => Boolean(map.getLayer(id))),
+      at: Date.now(),
+    };
+  } catch {
+    // Diagnostics must never affect the mount.
+  }
+}
 
 // Type-only imports are fully erased by TypeScript and never resolved at
 // runtime, so they are safe here. The *value* import stays dynamic, inside
@@ -252,7 +321,20 @@ export class MapLibreRenderer implements MapRenderer {
 
     await this.loadVesselIcons();
     if (token !== this.mountToken) return;
+    /*
+     * Retune the basemap before the operational layers go on.
+     *
+     * Order matters twice over: the coastline this installs must sit
+     * beneath vessels and ports, and restyling first means the
+     * operational palette is chosen against its final background rather
+     * than against CARTO's. `applyMaritimeStyle` is total and never
+     * throws, so a basemap it does not recognise costs colour, not the
+     * mount.
+     */
+    const styleResult = applyMaritimeStyle(map as unknown as StyleTarget);
     this.installSourcesAndLayers();
+    this.verifyInstalledLayers();
+    publishStyleDiagnostics(map, styleResult);
     this.installInteractionHandlers();
     this.installFrameCounter();
 
@@ -457,32 +539,101 @@ export class MapLibreRenderer implements MapRenderer {
     const map = this.map;
     if (!map) return;
 
+    // ── Graticule ──
+    // Generated arithmetic, drawn beneath everything operational. Solid
+    // and cool grey, deliberately unlike the dashed gold EEZ, so a
+    // meridian can never be misread as a claimed boundary.
+    map.addSource(SOURCE_IDS.graticule, {
+      type: "geojson",
+      data: graticuleFeatures() as never,
+    });
+    map.addLayer({
+      id: LAYER_IDS.graticule,
+      type: "line",
+      source: SOURCE_IDS.graticule,
+      paint: {
+        "line-color": MARITIME_PALETTE.graticule,
+        "line-width": ["interpolate", ["linear"], ["zoom"], 4, 0.4, 10, 0.7],
+        "line-opacity": graticuleOpacityExpression() as never,
+      },
+    });
+
     // ── Nigerian EEZ ──
     map.addSource(SOURCE_IDS.eez, { type: "geojson", data: ASSETS.eez });
+    /*
+     * A wash inside the outline, so "inside Nigerian waters" is legible
+     * at a glance rather than requiring the officer to trace a dashed
+     * line by eye.
+     *
+     * Held to a very low opacity on purpose. This polygon is twenty
+     * vertices and its own file calls it APPROXIMATE and "NOT a legal or
+     * navigational boundary"; a confident fill would present survey-grade
+     * authority the geometry does not have. The dashed edge stays, and
+     * the legend carries the caveat in words.
+     */
+    map.addLayer({
+      id: LAYER_IDS.eezFill,
+      type: "fill",
+      source: SOURCE_IDS.eez,
+      paint: {
+        "fill-color": "#B8860B",
+        // Fades out as the officer closes, where the approximation
+        // error is largest relative to what they are looking at.
+        "fill-opacity": ["interpolate", ["linear"], ["zoom"], 5, 0.05, 9, 0.03, 13, 0.015],
+      },
+    });
     map.addLayer({
       id: LAYER_IDS.eezBoundary,
       type: "line",
       source: SOURCE_IDS.eez,
       paint: {
         "line-color": "#B8860B",
-        "line-width": 1.5,
+        "line-width": ["interpolate", ["linear"], ["zoom"], 5, 1.1, 8, 1.8, 12, 2.6],
         "line-dasharray": [4, 3],
-        "line-opacity": 0.6,
+        "line-opacity": ["interpolate", ["linear"], ["zoom"], 5, 0.5, 8, 0.7, 12, 0.8],
       },
     });
 
     // ── Ports ──
     map.addSource(SOURCE_IDS.ports, { type: "geojson", data: ASSETS.ports });
+    /*
+     * Anchorage extent at its real radius.
+     *
+     * `circle-radius` is pixels, so this converts the kilometres in the
+     * data using the Mercator resolution at this latitude — see
+     * `PIXELS_PER_KM`. Base-2 exponential interpolation is exact here,
+     * because resolution halves with every zoom step.
+     *
+     * The previous fixed pixel ramp meant the ring described a different
+     * distance at every zoom, which is a drawing, not a geography. It is
+     * still dashed, and still labelled indicative in the legend: the
+     * source file calls this radius "a display hint in kilometres, not a
+     * surveyed limit", and drawing it precisely must not upgrade it.
+     *
+     * At strategic zoom a 2 km ring is under a pixel and simply is not
+     * there. That is the honest result, not a bug.
+     */
     map.addLayer({
       id: LAYER_IDS.portAnchorage,
       type: "circle",
       source: SOURCE_IDS.ports,
       paint: {
-        "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 8, 12, 40],
+        // Zoom outermost — MapLibre rejects a nested zoom expression,
+        // and rejects the whole layer with it. The per-feature radius
+        // multiplies inside each stop instead.
+        "circle-radius": [
+          "interpolate",
+          ["exponential", 2],
+          ["zoom"],
+          PIXELS_PER_KM.minZoom,
+          ["*", ["coalesce", ["get", "anchorageRadiusKm"], 0], PIXELS_PER_KM.minZoomPixels],
+          PIXELS_PER_KM.maxZoom,
+          ["*", ["coalesce", ["get", "anchorageRadiusKm"], 0], PIXELS_PER_KM.maxZoomPixels],
+        ],
         "circle-color": "transparent",
         "circle-stroke-color": "#0E7C7B",
         "circle-stroke-width": 1,
-        "circle-stroke-opacity": 0.4,
+        "circle-stroke-opacity": ["interpolate", ["linear"], ["zoom"], 8, 0.15, 11, 0.45, 14, 0.6],
       },
     });
     map.addLayer({
@@ -491,7 +642,36 @@ export class MapLibreRenderer implements MapRenderer {
       source: SOURCE_IDS.ports,
       layout: {
         "icon-image": "port-diamond",
-        "icon-size": ["interpolate", ["linear"], ["zoom"], 6, 0.6, 12, 1.1],
+        /*
+         * Scale carries berth count — a reference figure from the source
+         * file, which states it is "not live capacity". It is a static
+         * property of the estate, like a runway count, so it may inform
+         * size; it must never be read as throughput or activity, which
+         * is why the legend says so explicitly.
+         */
+        "icon-size": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          5,
+          [
+            "*",
+            0.5,
+            ["interpolate", ["linear"], ["coalesce", ["get", "berths"], 5], 5, 0.85, 14, 1.25],
+          ],
+          9,
+          [
+            "*",
+            0.85,
+            ["interpolate", ["linear"], ["coalesce", ["get", "berths"], 5], 5, 0.85, 14, 1.25],
+          ],
+          14,
+          [
+            "*",
+            1.35,
+            ["interpolate", ["linear"], ["coalesce", ["get", "berths"], 5], 5, 0.85, 14, 1.25],
+          ],
+        ],
         "icon-allow-overlap": true,
       },
     });
@@ -500,15 +680,16 @@ export class MapLibreRenderer implements MapRenderer {
       type: "symbol",
       source: SOURCE_IDS.ports,
       layout: {
-        "text-field": ["get", "shortName"],
-        "text-size": 11,
+        // Abbreviation at strategic zoom, full name once there is room.
+        "text-field": ["step", ["zoom"], ["get", "shortName"], 9, ["get", "name"]],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 5, 9.5, 9, 11, 14, 13],
         "text-anchor": "top",
-        "text-offset": [0, 0.8],
+        "text-offset": [0, 0.9],
         "text-allow-overlap": false,
       },
       paint: {
-        "text-color": "#0E7C7B",
-        "text-halo-color": "rgba(11,31,58,0.9)",
+        "text-color": "#3FBFBE",
+        "text-halo-color": MARITIME_PALETTE.labelHalo,
         "text-halo-width": 1.5,
       },
     });
@@ -549,31 +730,56 @@ export class MapLibreRenderer implements MapRenderer {
       },
     });
 
+    /*
+     * Selection ring.
+     *
+     * Beneath the vessel symbols so it reads as a halo around the hull
+     * rather than a mark on top of it. Filtered to the selected feature
+     * alone, and drawn in the selection teal — never in a risk colour
+     * and never animated, because a ring that pulsed would suggest
+     * movement or urgency the data does not support. It says "this is
+     * the one you clicked", and nothing else.
+     */
+    map.addLayer({
+      id: LAYER_IDS.vesselSelection,
+      type: "circle",
+      source: SOURCE_IDS.vessels,
+      filter: ["==", ["get", "isSelected"], true],
+      paint: {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, 9, 9, 14, 14, 22],
+        "circle-color": "#0E7C7B",
+        "circle-opacity": 0.12,
+        "circle-stroke-color": "#3FBFBE",
+        "circle-stroke-width": 1.25,
+        "circle-stroke-opacity": 0.8,
+      },
+    });
+
     map.addLayer({
       id: LAYER_IDS.vessels,
       type: "symbol",
       source: SOURCE_IDS.vessels,
       layout: {
-        "icon-image": [
-          "case",
-          ["==", ["get", "isSelected"], true],
-          "vessel-selected",
-          ["==", ["get", "isStale"], true],
-          "vessel-stale",
-          ["==", ["get", "risk"], "CRITICAL"],
-          "vessel-critical",
-          ["==", ["get", "risk"], "HIGH"],
-          "vessel-high",
-          ["==", ["get", "risk"], "MEDIUM"],
-          "vessel-medium",
-          ["==", ["get", "risk"], "LOW"],
-          "vessel-low",
-          ["==", ["get", "risk"], "CLEAN"],
-          "vessel-clean",
-          "vessel-unknown",
-        ],
+        /*
+         * The sprite the feature asked for — not one re-derived here.
+         *
+         * This used to be a `case` over risk, selection and staleness,
+         * which duplicated `vesselIconId()` and had drifted from it: the
+         * expression had no branch for the `-nodir` suffix, so every
+         * non-directional sprite was built, uploaded, and unreachable.
+         * A vessel whose course nobody reported was drawn as a pointed
+         * hull at rotation zero — indistinguishable from one steaming
+         * due north, which is precisely the fabrication the sprite set
+         * exists to prevent.
+         *
+         * `vesselIconId()` is the one place that decides, and it is
+         * enumerated by `vesselSpriteIds()`, which is what
+         * `loadVesselIcons()` registers. Reading the property keeps
+         * those three in step by construction.
+         */
+        "icon-image": ["get", "iconId"],
         // Zoom scaling: readable at national view, prominent at port view.
-        "icon-size": ["interpolate", ["linear"], ["zoom"], 5, 0.45, 9, 0.75, 14, 1.2],
+        "icon-size": ["interpolate", ["linear"], ["zoom"], 4, 0.38, 7, 0.55, 9, 0.8, 14, 1.3],
         /*
          * Rotate only a bearing someone reported.
          *
@@ -598,20 +804,23 @@ export class MapLibreRenderer implements MapRenderer {
       id: LAYER_IDS.vesselLabels,
       type: "symbol",
       source: SOURCE_IDS.vessels,
-      minzoom: 9,
+      minzoom: 8.5,
       layout: {
         "text-field": ["get", "name"],
-        "text-size": 10,
+        "text-size": ["interpolate", ["linear"], ["zoom"], 8.5, 9.5, 12, 11, 15, 12.5],
         "text-anchor": "top",
         "text-offset": [0, 1.2],
         "text-allow-overlap": false,
         "text-optional": true,
       },
       paint: {
-        "text-color": "#9CA3AF",
-        "text-halo-color": "rgba(11,31,58,0.9)",
-        "text-halo-width": 1,
-        "text-opacity": ["get", "opacity"],
+        "text-color": "#B7C4D1",
+        "text-halo-color": MARITIME_PALETTE.labelHalo,
+        "text-halo-width": 1.2,
+        // Fades in across half a zoom level rather than appearing at
+        // once, arriving at the vessel's own opacity so a stale vessel's
+        // label stays as recessive as its hull.
+        "text-opacity": ["interpolate", ["linear"], ["zoom"], 8.5, 0, 9.2, ["get", "opacity"]],
       },
     });
 
@@ -626,6 +835,31 @@ export class MapLibreRenderer implements MapRenderer {
       source: SOURCE_IDS.investigationArea,
       layout: { visibility: "none" },
       paint: { "fill-color": "#0E7C7B", "fill-opacity": 0.1 },
+    });
+  }
+
+  /**
+   * Confirm the engine actually accepted every layer we asked for.
+   *
+   * `addLayer` does not throw on an invalid paint or layout expression.
+   * It declines the layer, fires an error event, and the map carries on
+   * looking healthy — so a layer can be registered as `ready`, toggled
+   * on by an officer, and simply not exist. That is the same failure
+   * shape as an empty layer reading as "no activity": the map appears to
+   * answer a question it never asked.
+   *
+   * This turns that into a reported error. It cannot repair the layer,
+   * but a missing layer that says so is recoverable and a silent one is
+   * not.
+   */
+  private verifyInstalledLayers(): void {
+    const map = this.map;
+    if (!map) return;
+    const missing = INSTALLED_RENDER_LAYERS.filter((id) => !map.getLayer(id));
+    if (missing.length === 0) return;
+    this.bus?.emit("map:error", {
+      scope: "maplibre:layers",
+      message: `The map engine declined ${missing.length} layer(s): ${missing.join(", ")}. They are registered as available but will not draw.`,
     });
   }
 

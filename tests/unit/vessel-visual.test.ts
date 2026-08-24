@@ -9,11 +9,15 @@ import { describe, expect, it } from "vitest";
 
 import {
   SUPPORTED_CATEGORIES,
+  VESSEL_COLOR_KEYS,
+  VESSEL_SILHOUETTES,
   VESSEL_VISUALS,
   classifyVessel,
   resolveHeading,
   toVesselFeature,
   vesselIconId,
+  vesselSpriteId,
+  vesselSpriteIds,
   type Vessel,
 } from "@/services/geospatial";
 
@@ -172,7 +176,7 @@ describe("the rendered feature carries the honest state", () => {
 });
 
 describe("sprite selection", () => {
-  const withHeading = (reported: boolean) =>
+  const withHeading = (reported: boolean, overrides: Partial<Vessel> = {}) =>
     vessel({
       position: {
         lon: 3.4,
@@ -182,18 +186,118 @@ describe("sprite selection", () => {
         speed: 8,
         timestamp: new Date().toISOString(),
       },
+      ...overrides,
     });
 
   it("uses the directional sprite when a course is reported", () => {
-    expect(vesselIconId(withHeading(true))).toBe("vessel-unknown");
+    expect(vesselIconId(withHeading(true))).toBe("vessel-unknown-disc");
   });
 
   it("switches to the non-directional sprite when it is not", () => {
-    expect(vesselIconId(withHeading(false))).toBe("vessel-unknown-nodir");
+    expect(vesselIconId(withHeading(false))).toBe("vessel-unknown-disc-nodir");
   });
 
   it("keeps the suffix through selection and staleness", () => {
     const v = withHeading(false);
-    expect(vesselIconId(v, { selectedImo: v.identity.imo })).toBe("vessel-selected-nodir");
+    expect(vesselIconId(v, { selectedImo: v.identity.imo })).toBe("vessel-selected-disc-nodir");
+  });
+
+  it("varies shape by type and colour by risk, independently", () => {
+    const tanker = { imo: "9074729", name: "TEST_FIXTURE", type: "TANKER" as const };
+    const box = { imo: "9074729", name: "TEST_FIXTURE", type: "CONTAINER" as const };
+
+    // Same risk, different hull → different shape, same colour.
+    expect(vesselIconId(withHeading(true, { identity: tanker, riskLevel: "HIGH" }))).toBe(
+      "vessel-high-wedge",
+    );
+    expect(vesselIconId(withHeading(true, { identity: box, riskLevel: "HIGH" }))).toBe(
+      "vessel-high-block",
+    );
+    // Same hull, different risk → same shape, different colour.
+    expect(vesselIconId(withHeading(true, { identity: tanker, riskLevel: "LOW" }))).toBe(
+      "vessel-low-wedge",
+    );
+  });
+
+  it("keeps the reported hull type when the bearing is unknown", () => {
+    // The mirror of the heading bug: discarding a reported type because
+    // the course is missing would throw away real information.
+    expect(
+      vesselIconId(withHeading(false, { identity: { imo: "9074729", name: "T", type: "TANKER" } })),
+    ).toBe("vessel-unknown-wedge-nodir");
+  });
+});
+
+/* ═══════ Sprite registration ═══════ */
+
+describe("every sprite a vessel can ask for is registered", () => {
+  it("composes ids through the one shared function", () => {
+    expect(vesselSpriteId("critical", "wedge", true)).toBe("vessel-critical-wedge");
+    expect(vesselSpriteId("critical", "wedge", false)).toBe("vessel-critical-wedge-nodir");
+  });
+
+  it("enumerates the full colour × silhouette × direction product", () => {
+    const ids = vesselSpriteIds();
+    expect(ids.length).toBe(VESSEL_COLOR_KEYS.length * VESSEL_SILHOUETTES.length * 2);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  /*
+   * The regression guard for the defect this sprint fixed.
+   *
+   * The renderer binds `icon-image` to the feature's `iconId` and
+   * registers exactly `vesselSpriteIds()`. If `vesselIconId` can ever
+   * produce an id outside that set, MapLibre silently draws nothing —
+   * a vessel that vanishes rather than errors.
+   */
+  it("covers every id vesselIconId can produce", () => {
+    const registered = new Set(vesselSpriteIds());
+    const risks = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "CLEAN", "UNKNOWN"] as const;
+    const types = [undefined, "CONTAINER", "TANKER", "BULK", "VEHICLE", "OTHER"] as const;
+    const stale = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+
+    for (const risk of risks) {
+      for (const type of types) {
+        for (const reported of [true, false]) {
+          for (const isStale of [true, false]) {
+            for (const selected of [true, false]) {
+              const v = vessel({
+                identity: { imo: "9074729", name: "TEST_FIXTURE", ...(type ? { type } : {}) },
+                riskLevel: risk,
+                position: {
+                  lon: 3.4,
+                  lat: 6.4,
+                  heading: 90,
+                  headingReported: reported,
+                  speed: 8,
+                  timestamp: isStale ? stale : new Date().toISOString(),
+                },
+              });
+              const id = vesselIconId(v, selected ? { selectedImo: v.identity.imo } : {});
+              expect(registered, `unregistered sprite: ${id}`).toContain(id);
+            }
+          }
+        }
+      }
+    }
+  });
+
+  it("never gives a pointed sprite to a vessel with no reported course", () => {
+    // Rotation is only half the guarantee. An unrotated *pointed* hull
+    // still points north, so the sprite itself must be blunt.
+    for (const type of [undefined, "CONTAINER", "TANKER", "BULK", "VEHICLE"] as const) {
+      const v = vessel({
+        identity: { imo: "9074729", name: "TEST_FIXTURE", ...(type ? { type } : {}) },
+        position: {
+          lon: 3.4,
+          lat: 6.4,
+          heading: 0,
+          headingReported: false,
+          speed: 0,
+          timestamp: new Date().toISOString(),
+        },
+      });
+      expect(vesselIconId(v)).toMatch(/-nodir$/);
+    }
   });
 });

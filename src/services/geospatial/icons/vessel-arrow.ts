@@ -11,61 +11,133 @@
  * directly to the vessel's heading.
  */
 import { RISK_COLORS } from "../constants";
+import {
+  VESSEL_COLOR_KEYS,
+  VESSEL_SILHOUETTES,
+  vesselSpriteId,
+  type VesselColorKey,
+  type VesselSilhouette,
+} from "../vessel-visual";
 
 /** Canvas edge length for every vessel sprite, in pixels. */
 export const VESSEL_SPRITE_SIZE = 30;
 
 /**
- * Sprite ids, matching `vesselIconId()` in `vessel.ts`.
+ * Colour per sprite key — the *risk* axis of the sprite vocabulary.
  *
- * The two are asserted equal in the unit tests — a mismatch would silently
- * render nothing, because MapLibre skips features whose `icon-image` names an
+ * Keyed by `VesselColorKey` so the set of colours and the set of ids can
+ * never drift apart: `vesselSpriteIds()` is the cartesian product of
+ * these keys with the silhouettes, and `vesselIconId()` composes an id
+ * from the same two pieces. A mismatch would silently render nothing,
+ * because MapLibre skips features whose `icon-image` names an
  * unregistered sprite.
  */
-export const VESSEL_SPRITE_VARIANTS: Readonly<Record<string, string>> = {
-  "vessel-critical": RISK_COLORS.CRITICAL,
-  "vessel-high": RISK_COLORS.HIGH,
-  "vessel-medium": RISK_COLORS.MEDIUM,
-  "vessel-low": RISK_COLORS.LOW,
-  "vessel-clean": RISK_COLORS.CLEAN,
-  "vessel-unknown": RISK_COLORS.UNKNOWN,
+export const VESSEL_SPRITE_COLORS: Readonly<Record<VesselColorKey, string>> = {
+  critical: RISK_COLORS.CRITICAL,
+  high: RISK_COLORS.HIGH,
+  medium: RISK_COLORS.MEDIUM,
+  low: RISK_COLORS.LOW,
+  clean: RISK_COLORS.CLEAN,
+  unknown: RISK_COLORS.UNKNOWN,
   /** Selection overrides risk colour. */
-  "vessel-selected": "#0E7C7B",
+  selected: "#0E7C7B",
   /** Stale position — dark grey, deliberately recessive. */
-  "vessel-stale": "#2D3748",
+  stale: "#2D3748",
 } as const;
 
-/**
- * Draw a vessel silhouette pointing north.
- *
- * Returns `ImageData` ready for `map.addImage()`. Requires a DOM canvas, so
- * this is browser-only; callers must not invoke it during SSR.
- */
-export function createVesselArrowImage(color: string): ImageData {
-  const size = VESSEL_SPRITE_SIZE;
+/** Open a 2D context of the standard sprite size, or fail loudly. */
+function spriteContext(size = VESSEL_SPRITE_SIZE): CanvasRenderingContext2D {
   const canvas = document.createElement("canvas");
   canvas.width = size;
   canvas.height = size;
-
   const ctx = canvas.getContext("2d");
   if (!ctx) {
     throw new Error("Canvas 2D context unavailable — cannot build vessel sprites");
   }
-
   ctx.clearRect(0, 0, size, size);
-  ctx.beginPath();
-  ctx.moveTo(size / 2, 2); // bow (north)
-  ctx.lineTo(size - 4, size - 4); // starboard stern
-  ctx.lineTo(size / 2, size - 8); // stern notch
-  ctx.lineTo(4, size - 4); // port stern
-  ctx.closePath();
+  return ctx;
+}
 
+/** Fill and outline the current path in the house style. */
+function paint(ctx: CanvasRenderingContext2D, color: string): void {
   ctx.fillStyle = color;
   ctx.fill();
   ctx.strokeStyle = "rgba(255,255,255,0.6)";
   ctx.lineWidth = 1;
   ctx.stroke();
+}
 
+/**
+ * Trace one hull family, pointing north.
+ *
+ * `directional` decides the bow only. A directional hull comes to a
+ * point, which the renderer then rotates to the reported bearing; a
+ * non-directional one is the *same family* with a blunt, rounded bow, so
+ * the officer still reads "tanker" while nothing on the shape suggests
+ * which way it is facing.
+ *
+ * That split is why type and heading stay independent. Collapsing every
+ * unknown-heading vessel into a plain disc would have thrown away a hull
+ * type the provider did report — the mirror image of the bug that
+ * started all this.
+ */
+function traceSilhouette(
+  ctx: CanvasRenderingContext2D,
+  silhouette: VesselSilhouette,
+  directional: boolean,
+  size = VESSEL_SPRITE_SIZE,
+): void {
+  const mid = size / 2;
+  ctx.beginPath();
+
+  if (silhouette === "disc") {
+    // A disc has no bow to blunt; both variants are the same circle.
+    ctx.arc(mid, mid, size * 0.28, 0, Math.PI * 2);
+    return;
+  }
+
+  // Beam (half-width) and stern shape vary by family; the bow is shared.
+  const geometry = {
+    arrow: { beam: size * 0.43, stern: size - 4, notch: size - 8 },
+    // Long and narrow: tankers and bulk carriers read as a slender hull.
+    wedge: { beam: size * 0.3, stern: size - 3, notch: size - 7 },
+    // Boxy, near-flat stern: container and vehicle carriers.
+    block: { beam: size * 0.36, stern: size - 4, notch: size - 5 },
+  }[silhouette];
+
+  const bowY = 2;
+  const shoulderY = size * 0.38;
+
+  if (directional) {
+    ctx.moveTo(mid, bowY);
+  } else {
+    // Blunt bow: a short arc across the stem instead of a point.
+    const blunt = size * 0.16;
+    ctx.moveTo(mid - blunt, shoulderY * 0.72);
+    ctx.quadraticCurveTo(mid, bowY + blunt * 0.4, mid + blunt, shoulderY * 0.72);
+  }
+
+  ctx.lineTo(mid + geometry.beam, geometry.stern); // starboard quarter
+  ctx.lineTo(mid, geometry.notch); // stern notch
+  ctx.lineTo(mid - geometry.beam, geometry.stern); // port quarter
+  ctx.closePath();
+}
+
+/**
+ * Draw one vessel sprite.
+ *
+ * Returns `ImageData` ready for `map.addImage()`. Requires a DOM canvas, so
+ * this is browser-only; callers must not invoke it during SSR.
+ */
+export function createVesselSilhouetteImage(
+  color: string,
+  silhouette: VesselSilhouette,
+  directional: boolean,
+): ImageData {
+  const size = VESSEL_SPRITE_SIZE;
+  const ctx = spriteContext(size);
+  traceSilhouette(ctx, silhouette, directional, size);
+  paint(ctx, color);
   return ctx.getImageData(0, 0, size, size);
 }
 
@@ -106,50 +178,24 @@ export function createPortDiamondImage(color = "#0E7C7B"): ImageData {
 }
 
 /**
- * Draw a non-directional vessel marker.
- *
- * Used where no bearing was reported. A disc has no nose, so it cannot
- * be misread as pointing anywhere — which is the whole point: the arrow
- * sprite at rotation zero looks exactly like a vessel steaming north.
- */
-export function createVesselDiscImage(color: string): ImageData {
-  const size = VESSEL_SPRITE_SIZE;
-  const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
-
-  const ctx = canvas.getContext("2d");
-  if (!ctx) {
-    throw new Error("Canvas 2D context unavailable — cannot build vessel sprites");
-  }
-
-  ctx.clearRect(0, 0, size, size);
-  const centre = size / 2;
-  // Slightly smaller than the arrow's footprint so a field of unknown
-  // vessels reads as quieter than a field of tracked ones.
-  ctx.beginPath();
-  ctx.arc(centre, centre, size * 0.28, 0, Math.PI * 2);
-  ctx.fillStyle = color;
-  ctx.fill();
-  ctx.strokeStyle = "rgba(255,255,255,0.85)";
-  ctx.lineWidth = 1.25;
-  ctx.stroke();
-
-  return ctx.getImageData(0, 0, size, size);
-}
-
-/**
  * Every sprite the renderer must register, as `[id, ImageData]` pairs.
  *
- * Each risk colour gets two sprites: the directional arrow, and a
- * `-nodir` disc for vessels whose course nobody reported.
+ * The full cartesian product of colour × silhouette × directionality —
+ * 8 × 4 × 2 = 64 sprites of 30×30 RGBA, about 230 KB, built once at
+ * mount. The id for each comes from `vesselSpriteId()`, the same
+ * function `vesselIconId()` uses, so registration and lookup cannot
+ * disagree.
  */
 export function buildVesselSprites(): ReadonlyArray<readonly [string, ImageData]> {
-  return Object.entries(VESSEL_SPRITE_VARIANTS).flatMap(
-    ([id, color]) =>
-      [
-        [id, createVesselArrowImage(color)] as const,
-        [`${id}-nodir`, createVesselDiscImage(color)] as const,
-      ] as const,
+  return VESSEL_COLOR_KEYS.flatMap((colorKey) =>
+    VESSEL_SILHOUETTES.flatMap((silhouette) =>
+      [true, false].map(
+        (directional) =>
+          [
+            vesselSpriteId(colorKey, silhouette, directional),
+            createVesselSilhouetteImage(VESSEL_SPRITE_COLORS[colorKey], silhouette, directional),
+          ] as const,
+      ),
+    ),
   );
 }

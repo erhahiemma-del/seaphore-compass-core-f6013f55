@@ -181,10 +181,18 @@ describe("default layer catalogue", () => {
     }
   });
 
-  it("defaults to vessels, ports, and the EEZ boundary", () => {
+  it("defaults to vessels, ports, the EEZ boundary and the graticule", () => {
     const registry = createDefaultLayerRegistry();
 
-    expect(registry.defaultActiveLayers()).toEqual(["vessels", "ports", "eezBoundary"]);
+    // The graticule is generated arithmetic rather than an observation,
+    // so it costs nothing to have on and gives the strategic view a
+    // frame of reference.
+    expect(registry.defaultActiveLayers()).toEqual([
+      "vessels",
+      "ports",
+      "eezBoundary",
+      "graticule",
+    ]);
   });
 
   it("gives every pending-source layer a reason to show the officer", () => {

@@ -102,12 +102,31 @@ export function MapLegend({ className }: { className?: string }) {
             <Row
               label="Course reported"
               glyph={<Silhouette shape="arrow" />}
-              note="rotated to bearing"
+              note="pointed, rotated to bearing"
             />
             <Row
               label="No course reported"
-              glyph={<Silhouette shape="disc" />}
-              note="drawn without direction"
+              glyph={<Silhouette shape="arrow" blunt />}
+              note="blunt bow, unrotated"
+            />
+          </Section>
+
+          <Section title="Geography">
+            <Row
+              label="EEZ"
+              note="approximate"
+              glyph={<Swatch className="border border-dashed border-[#B8860B] bg-[#B8860B]/10" />}
+            />
+            <Row
+              label="Anchorage extent"
+              note="indicative"
+              glyph={<Swatch className="rounded-full border border-dashed border-[#0E7C7B]" />}
+            />
+            <Row label="Coastline" glyph={<Swatch className="h-0.5 bg-[#3E6E8E]" />} />
+            <Row
+              label="Graticule"
+              note="generated"
+              glyph={<Swatch className="h-0.5 bg-[#2E4356]" />}
             />
           </Section>
 
@@ -140,10 +159,28 @@ export function MapLegend({ className }: { className?: string }) {
             ))}
           </Section>
 
-          <p className="mt-2 border-t border-border/60 pt-1.5 text-[10px] leading-relaxed text-muted-foreground">
-            &ldquo;No source&rdquo; means nothing is connected to that layer or category — not that
-            none were found.
-          </p>
+          <div className="mt-2 space-y-1.5 border-t border-border/60 pt-1.5 text-[10px] leading-relaxed text-muted-foreground">
+            <p>
+              &ldquo;No source&rdquo; means nothing is connected to that layer or category — not
+              that none were found.
+            </p>
+            {/*
+              The three caveats below are the price of drawing reference
+              data as geography. Each of these is described in its own
+              source file as approximate or indicative, where no officer
+              would ever read it. Stating it here is what makes the
+              richer rendering honest rather than merely prettier.
+            */}
+            <p data-testid="legend-caveat-eez">
+              EEZ — approximate reference geometry. Not a legal or navigational boundary.
+            </p>
+            <p data-testid="legend-caveat-anchorage">
+              Anchorage extent — indicative display reference, not a surveyed limit.
+            </p>
+            <p data-testid="legend-caveat-ports">
+              Port marker scale reflects reference berth data, not live capacity or activity.
+            </p>
+          </div>
         </div>
       ) : null}
     </div>
@@ -179,6 +216,11 @@ function Row({
   );
 }
 
+/** Plain coloured mark, for the geographic encodings. */
+function Swatch({ className }: { className?: string }) {
+  return <span className={cn("inline-block h-2.5 w-2.5", className)} aria-hidden />;
+}
+
 /**
  * Miniature of the drawn silhouette.
  *
@@ -186,9 +228,21 @@ function Row({
  * `ImageData` built for MapLibre and are not addressable as DOM images.
  * The shape vocabulary is shared through `VesselSilhouette`, so a new
  * family cannot appear on the map without a case here.
+ *
+ * `blunt` mirrors the `-nodir` sprite: the same hull family with its bow
+ * squared off. The legend has to show it, because "blunt means we do not
+ * know the course" is the one visual rule an officer cannot infer.
  */
-function Silhouette({ shape }: { shape: "arrow" | "wedge" | "block" | "disc" }) {
+function Silhouette({
+  shape,
+  blunt = false,
+}: {
+  shape: "arrow" | "wedge" | "block" | "disc";
+  blunt?: boolean;
+}) {
   const fill = "currentColor";
+  const cls = "h-3 w-3 text-muted-foreground";
+
   if (shape === "disc") {
     return (
       <svg viewBox="0 0 12 12" className="h-2.5 w-2.5 text-muted-foreground" aria-hidden>
@@ -196,23 +250,25 @@ function Silhouette({ shape }: { shape: "arrow" | "wedge" | "block" | "disc" }) 
       </svg>
     );
   }
+  // Bow: a point when the course is known, a squared stem when it is not.
+  const bow = blunt ? "M4 3.4 L8 3.4" : "M6 1";
   if (shape === "block") {
     return (
-      <svg viewBox="0 0 12 12" className="h-3 w-3 text-muted-foreground" aria-hidden>
-        <path d="M6 1 L9.5 4.5 L9.5 11 L2.5 11 L2.5 4.5 Z" fill={fill} />
+      <svg viewBox="0 0 12 12" className={cls} aria-hidden>
+        <path d={`${bow} L9.5 4.5 L9.5 11 L2.5 11 L2.5 4.5 Z`} fill={fill} />
       </svg>
     );
   }
   if (shape === "wedge") {
     return (
-      <svg viewBox="0 0 12 12" className="h-3 w-3 text-muted-foreground" aria-hidden>
-        <path d="M6 1 L10 10 L6 8.5 L2 10 Z" fill={fill} />
+      <svg viewBox="0 0 12 12" className={cls} aria-hidden>
+        <path d={`${bow} L10 10 L6 8.5 L2 10 Z`} fill={fill} />
       </svg>
     );
   }
   return (
-    <svg viewBox="0 0 12 12" className="h-3 w-3 text-muted-foreground" aria-hidden>
-      <path d="M6 1 L9.5 11 L6 9 L2.5 11 Z" fill={fill} />
+    <svg viewBox="0 0 12 12" className={cls} aria-hidden>
+      <path d={`${bow} L9.5 11 L6 9 L2.5 11 Z`} fill={fill} />
     </svg>
   );
 }

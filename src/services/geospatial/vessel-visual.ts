@@ -129,6 +129,84 @@ export function classifyVessel(type: VesselType | undefined | null): VesselVisua
   return { ...VESSEL_VISUALS[category], typeReported: true };
 }
 
+/* ── Sprite vocabulary ────────────────────────────────────────── */
+
+/**
+ * The colour axis of a sprite id.
+ *
+ * Six risk bands plus the two conditions that outrank risk. Kept as its
+ * own union rather than reusing `RiskLevel` because `selected` and
+ * `stale` are presentation states, not assessments — a selected vessel
+ * has not become less risky by being clicked on.
+ */
+export type VesselColorKey =
+  | "critical"
+  | "high"
+  | "medium"
+  | "low"
+  | "clean"
+  | "unknown"
+  | "selected"
+  | "stale";
+
+export const VESSEL_COLOR_KEYS: readonly VesselColorKey[] = [
+  "critical",
+  "high",
+  "medium",
+  "low",
+  "clean",
+  "unknown",
+  "selected",
+  "stale",
+] as const;
+
+/** Every silhouette the sprite builder draws. */
+export const VESSEL_SILHOUETTES: readonly VesselSilhouette[] = [
+  "arrow",
+  "wedge",
+  "block",
+  "disc",
+] as const;
+
+/**
+ * Compose a sprite id from the two independent axes.
+ *
+ * Shape carries type, colour carries risk, and `directional` carries
+ * whether a bearing was reported. All three are inputs here so that the
+ * id is derived in exactly one place — `vesselIconId()` calls this, and
+ * so does `vesselSpriteIds()`, which is what the renderer registers.
+ * There is no second spelling of the format to fall out of step.
+ *
+ * A `-nodir` sprite is the same hull family drawn with a blunt bow, and
+ * the renderer leaves it unrotated. Both halves matter: an unrotated
+ * *pointed* sprite still points somewhere, which is the bug this whole
+ * vocabulary exists to prevent.
+ */
+export function vesselSpriteId(
+  colorKey: VesselColorKey,
+  silhouette: VesselSilhouette,
+  directional: boolean,
+): string {
+  return `vessel-${colorKey}-${silhouette}${directional ? "" : "-nodir"}`;
+}
+
+/**
+ * Every sprite id the renderer must register.
+ *
+ * The cartesian product of colour, silhouette and directionality. Pure —
+ * no canvas, no DOM — so a test can assert that everything
+ * `vesselIconId()` can produce is registered without needing a
+ * rendering context.
+ */
+export function vesselSpriteIds(): readonly string[] {
+  return VESSEL_COLOR_KEYS.flatMap((colorKey) =>
+    VESSEL_SILHOUETTES.flatMap((silhouette) => [
+      vesselSpriteId(colorKey, silhouette, true),
+      vesselSpriteId(colorKey, silhouette, false),
+    ]),
+  );
+}
+
 /* ── Heading ──────────────────────────────────────────────────── */
 
 export interface ResolvedHeading {

@@ -13,7 +13,13 @@
 import { RISK_COLORS, RISK_OPACITY, TIMING } from "./constants";
 import { freshnessBandForTimestamp, type FreshnessBand } from "./freshness";
 import type { GeoJsonFeature, GeoJsonPoint, LonLat, RiskLevel, VesselType } from "./types";
-import { classifyVessel, resolveHeading, type VesselVisualCategory } from "./vessel-visual";
+import {
+  classifyVessel,
+  resolveHeading,
+  vesselSpriteId,
+  type VesselColorKey,
+  type VesselVisualCategory,
+} from "./vessel-visual";
 
 /** Stable identity of a vessel across data sources. */
 export interface VesselIdentity {
@@ -199,9 +205,15 @@ export function vesselOpacity(vessel: Vessel, ctx: VesselRenderContext = {}): nu
 /**
  * Sprite id for a vessel, matching the icons registered with the renderer.
  *
- * Colour comes from risk (or selection/staleness, which outrank it). The
- * `-nodir` suffix switches the arrow for a disc when no course was
- * reported, so an unknown bearing is never drawn as a pointed hull.
+ * Three inputs, three independent axes:
+ *
+ *   colour      risk — or selection/staleness, which outrank it
+ *   silhouette  the reported hull type, `disc` when none was reported
+ *   direction   whether a bearing was reported at all
+ *
+ * The id is composed by `vesselSpriteId`, the same function
+ * `vesselSpriteIds()` uses to enumerate what the renderer registers, so
+ * a vessel can never ask for a sprite that does not exist.
  */
 export function vesselIconId(vessel: Vessel, ctx: VesselRenderContext = {}): string {
   const now = ctx.now ?? Date.now();
@@ -209,13 +221,16 @@ export function vesselIconId(vessel: Vessel, ctx: VesselRenderContext = {}): str
     vessel.position.heading,
     vessel.position.headingReported,
   ).known;
-  const suffix = directional ? "" : "-nodir";
+  const silhouette = classifyVessel(vessel.identity.type).silhouette;
 
-  if (ctx.selectedImo != null && ctx.selectedImo === vessel.identity.imo) {
-    return `vessel-selected${suffix}`;
-  }
-  if (isStale(vessel, now)) return `vessel-stale${suffix}`;
-  return `vessel-${vessel.riskLevel.toLowerCase()}${suffix}`;
+  const colorKey: VesselColorKey =
+    ctx.selectedImo != null && ctx.selectedImo === vessel.identity.imo
+      ? "selected"
+      : isStale(vessel, now)
+        ? "stale"
+        : (vessel.riskLevel.toLowerCase() as VesselColorKey);
+
+  return vesselSpriteId(colorKey, silhouette, directional);
 }
 
 /** Palette colour for a risk band, falling back to `UNKNOWN`. */

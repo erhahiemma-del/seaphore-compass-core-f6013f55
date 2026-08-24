@@ -442,13 +442,13 @@ export const MISSION_PRESETS: readonly MissionPreset[] = [
  */
 export const DOMAIN_PRESETS = {
   /** Where is this vessel, and what surrounds it. */
-  vessel: ["vessels", "ports", "eezBoundary"],
+  vessel: ["vessels", "ports", "eezBoundary", "graticule"],
   /** Which ports a manifest touches, inside whose waters. */
-  manifest: ["ports", "eezBoundary", "vessels"],
+  manifest: ["ports", "eezBoundary", "vessels", "graticule"],
   /** Where cargo moves through the port system. */
-  cargo: ["ports", "eezBoundary"],
+  cargo: ["ports", "eezBoundary", "graticule"],
   /** The port estate itself, and the traffic around it. */
-  ports: ["ports", "eezBoundary", "vessels"],
+  ports: ["ports", "eezBoundary", "vessels", "graticule"],
 } as const satisfies Record<string, readonly string[]>;
 
 export type MapDomain = keyof typeof DOMAIN_PRESETS;
@@ -460,10 +460,25 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     label: "Vessels",
     description: "Live vessel positions as heading-rotated arrows, coloured by risk.",
     group: "VESSELS",
-    renderLayerIds: [LAYER_IDS.vessels, LAYER_IDS.vesselHeadings, LAYER_IDS.vesselLabels],
+    // `vessel-headings-layer` used to be listed here and was never
+    // installed by any renderer. `setLayerVisibility` no-ops on a
+    // missing layer, so it failed silently — but a registry that names
+    // layers which do not exist is a registry that cannot be trusted to
+    // say what the map draws.
+    renderLayerIds: [LAYER_IDS.vesselSelection, LAYER_IDS.vessels, LAYER_IDS.vesselLabels],
     defaultVisible: true,
     status: "ready",
     order: 10,
+  },
+  {
+    id: "graticule",
+    label: "Graticule",
+    description: "Latitude and longitude reference lines. Generated, not observed.",
+    group: "MARITIME_ZONES",
+    renderLayerIds: [LAYER_IDS.graticule],
+    defaultVisible: true,
+    status: "ready",
+    order: 40,
   },
   {
     id: "ports",
@@ -480,7 +495,7 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     label: "EEZ Boundary",
     description: "Nigerian Exclusive Economic Zone, 200 nautical miles.",
     group: "MARITIME_ZONES",
-    renderLayerIds: [LAYER_IDS.eezBoundary],
+    renderLayerIds: [LAYER_IDS.eezFill, LAYER_IDS.eezBoundary],
     defaultVisible: true,
     status: "ready",
     order: 30,
@@ -536,8 +551,19 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     group: "VESSELS",
     renderLayerIds: [LAYER_IDS.vesselClusters, LAYER_IDS.clusterCount],
     defaultVisible: false,
-    status: "ready",
+    // Was `ready`, and no renderer has ever installed either layer — so
+    // the Layer Panel offered a toggle that did nothing at all.
+    //
+    // Clustering is not a small change here. MapLibre clusters at the
+    // source, and the vessel source is declared with `promoteId: "imo"`
+    // so that `updateData` can address one vessel by IMO. A clustered
+    // source cannot do that, so clustering means a second source, a
+    // second write path, and a rule for which one owns selection. That
+    // is its own sprint; until then this says so.
+    status: "pending-source",
     order: 10,
+    pendingReason:
+      "No renderer implementation. MapLibre clusters at the source, which is incompatible with the promoteId-addressed incremental updates the vessel source relies on; clustering needs a second source and a selection rule.",
   },
   {
     id: "investigArea",
