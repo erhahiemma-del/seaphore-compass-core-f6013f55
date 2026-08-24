@@ -55,4 +55,10 @@ export { aisIntegrityModule };
 // Composition point. AIS Integrity registers here rather than in
 // module-registry.ts, which it imports — registering there would close an
 // import cycle.
-riskModuleRegistry.register(aisIntegrityModule);
+//
+// Guarded: this module can be evaluated more than once (HMR, or separate
+// client/SSR module graphs sharing the same process). Re-registration is a
+// duplicate evaluation, not a duplicate module, so it is a no-op.
+if (!riskModuleRegistry.has(aisIntegrityModule.id)) {
+  riskModuleRegistry.register(aisIntegrityModule);
+}
