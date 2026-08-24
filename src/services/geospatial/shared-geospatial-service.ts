@@ -17,7 +17,7 @@
  *
  * Sprint G5.5.1 — infrastructure only.
  */
-import { MAP_DEFAULTS, ZOOM_LIMITS } from "./constants";
+import { MAP_DEFAULTS, MAP_SCOPES, ZOOM_LIMITS, type MapScopeId } from "./constants";
 import { layerRegistry, MISSION_PRESETS, type LayerRegistry } from "./layer-registry";
 import { defaultEnabledSourceIds } from "./vessel-source";
 import {
@@ -44,6 +44,22 @@ export function createDefaultMapState(registry: LayerRegistry = layerRegistry): 
   return {
     viewMode: "2D",
     operatingMode: "NATIONAL",
+    /*
+     * Global by default.
+     *
+     * The opening *view* is unchanged — `center` and `zoom` below still
+     * frame the Gulf of Guinea, which stays Seaphore's home
+     * intelligence context. What changes is that it is no longer also a
+     * boundary: an officer can now zoom out to Africa and pan to any
+     * ocean without the camera refusing.
+     *
+     * The previous `regional` default did not merely restrict panning.
+     * Its bounds were narrower than the viewport at zoom 5, so the
+     * camera froze completely: measured on the running map, every pan
+     * target returned the same coordinate, including a request to
+     * return to Nigeria's own centre.
+     */
+    scope: "global",
     center: MAP_DEFAULTS.center,
     zoom: MAP_DEFAULTS.zoom,
     pitch: 0,
@@ -83,6 +99,25 @@ export class SharedGeospatialService {
     this.registry = options.registry ?? layerRegistry;
     this.urlSync = options.urlSync ?? true;
     this.state = { ...createDefaultMapState(this.registry), ...options.initialState };
+
+    /*
+     * Hydrate from the URL here, not in a component effect.
+     *
+     * `update()` mirrors state into the address bar, and this service is
+     * a module singleton constructed before React mounts. Any early
+     * write — a camera echo, a layer toggle — therefore *overwrote* the
+     * incoming query string before the effect that was supposed to read
+     * it ever ran. A shared link's scope survived being pasted and then
+     * vanished on the next reload, which is exactly how the regression
+     * presented.
+     *
+     * Reading at construction closes that race for every parameter, not
+     * just scope. `loadFromURL` is idempotent, so the existing effect
+     * remains harmless.
+     */
+    if (this.urlSync && typeof window !== "undefined") {
+      this.loadFromURL();
+    }
   }
 
   /** Current state. Returned by value so callers cannot mutate the interior. */
@@ -235,6 +270,18 @@ export class SharedGeospatialService {
     this.update({ operatingMode });
   }
 
+  /**
+   * Change how far the camera may travel.
+   *
+   * Scope is a constructor argument to MapLibre, so the host remounts
+   * the map when this changes. That is why it belongs here rather than
+   * in a component: the remount must be driven by the same state a
+   * shared link restores.
+   */
+  setScope(scope: MapScopeId): void {
+    this.update({ scope });
+  }
+
   /** Merge a partial filter change. */
   setFilters(patch: Partial<MapFilters>): void {
     this.update({ filters: { ...this.state.filters, ...patch } });
@@ -266,6 +313,8 @@ export class SharedGeospatialService {
     }
     if (state.enabledSources.length > 0) params.set("sources", state.enabledSources.join(","));
     if (state.operatingMode !== "NATIONAL") params.set("mode", state.operatingMode);
+    // Only when it differs from the default, so the common link stays short.
+    if (state.scope !== "global") params.set("scope", state.scope);
     const encoded = encodeSelection(state.selection);
     if (encoded) params.set("sel", encoded);
     // `vessel` is retained so links shared before the selection model
@@ -366,6 +415,13 @@ export class SharedGeospatialService {
     const mode = params.get("mode");
     if (mode && (OPERATING_MODES as readonly string[]).includes(mode)) {
       patch.operatingMode = mode as OperatingMode;
+    }
+
+    // Unknown scope names are ignored rather than defaulted-to-regional:
+    // a truncated link must not silently re-cage the map.
+    const scope = params.get("scope");
+    if (scope && scope in MAP_SCOPES) {
+      patch.scope = scope as MapScopeId;
     }
 
     const mission = params.get("mission");

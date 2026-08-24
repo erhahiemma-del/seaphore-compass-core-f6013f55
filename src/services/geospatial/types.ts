@@ -10,6 +10,7 @@
  * belong to OSAE (`@/services/osae`) and are referenced here only as
  * optional, externally-populated fields.
  */
+import type { MapScopeId } from "./constants";
 import type { MapSelection, OperatingMode } from "./selection";
 
 /** A WGS84 coordinate pair in MapLibre/GeoJSON order: `[lon, lat]`. */
@@ -63,6 +64,20 @@ export interface MapState {
    * the vocabulary drift G6.0 removed from the orchestration layer.
    */
   readonly operatingMode: OperatingMode;
+  /**
+   * How far the camera may travel.
+   *
+   * Shared state rather than a component's own, because it is a property
+   * of the picture the officer is looking at: it has to survive a
+   * reload, a route change and a pasted link, exactly like `center` and
+   * `zoom`. It previously lived in one component's `useState`, which
+   * meant only that surface could leave the West African bounds and the
+   * choice was lost the moment anything remounted.
+   *
+   * Defaults to `global`. Nigeria remains the opening *view* — that is
+   * `center`/`zoom` — but it is no longer a wall.
+   */
+  readonly scope: MapScopeId;
   readonly center: LonLat;
   readonly zoom: number;
   readonly pitch: number;
