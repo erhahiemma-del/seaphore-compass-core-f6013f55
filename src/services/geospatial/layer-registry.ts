@@ -465,7 +465,17 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     // missing layer, so it failed silently — but a registry that names
     // layers which do not exist is a registry that cannot be trusted to
     // say what the map draws.
-    renderLayerIds: [LAYER_IDS.vesselSelection, LAYER_IDS.vessels, LAYER_IDS.vesselLabels],
+    renderLayerIds: [
+      // Confidence ring, selection ring, hull, intelligence badge and
+      // label are one entity drawn in five passes — they switch as a
+      // unit, because a badge or a ring surviving its own vessel would
+      // be a mark with nothing under it.
+      LAYER_IDS.vesselConfidence,
+      LAYER_IDS.vesselSelection,
+      LAYER_IDS.vessels,
+      LAYER_IDS.vesselIntelligence,
+      LAYER_IDS.vesselLabels,
+    ],
     defaultVisible: true,
     status: "ready",
     order: 10,
@@ -504,7 +514,15 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     label: "Ports",
     description: "The five NIMASA ports with anchorage extents.",
     group: "PORTS_INFRASTRUCTURE",
-    renderLayerIds: [LAYER_IDS.ports, LAYER_IDS.portLabels, LAYER_IDS.portAnchorage],
+    renderLayerIds: [
+      LAYER_IDS.ports,
+      LAYER_IDS.portLabels,
+      LAYER_IDS.portAnchorage,
+      // The interaction ring travels with the layer it belongs to: an
+      // officer who switches ports off must not be left with a teal
+      // ring floating over an empty sea.
+      LAYER_IDS.portSelection,
+    ],
     defaultVisible: true,
     status: "ready",
     order: 20,

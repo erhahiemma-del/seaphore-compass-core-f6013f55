@@ -36,7 +36,17 @@ import {
   PIXELS_PER_KM,
   RISK_COLORS,
   TIMING,
+  ZOOM_BANDS,
 } from "../constants";
+import {
+  CONFIDENCE_RING_STYLES,
+  CONFIDENCE_TIERS,
+  INTELLIGENCE_BADGE_OFFSETS,
+  INTELLIGENCE_COLORS,
+  INTERACTION_COLORS,
+  type ConfidenceTier,
+  type IntelligenceSignal,
+} from "../entity-visual";
 import { FRESHNESS_COLORS, FRESHNESS_LABELS, formatAge } from "../freshness";
 import type { MapEventBus } from "../event-bus";
 import { buildVesselSprites, createPortDiamondImage } from "../icons/vessel-arrow";
@@ -57,6 +67,56 @@ import type {
 } from "../renderer";
 import type { BoundingBox, LonLat } from "../types";
 import type { VesselFeature } from "../vessel";
+
+/**
+ * A `match` over the confidence tier carried by a feature.
+ *
+ * Generated from `CONFIDENCE_RING_STYLES` rather than written out, so a
+ * tier cannot be added to the ladder and silently omitted from the map.
+ * The fallback is the `unconfirmed` value: a feature whose tier string
+ * is unrecognised is not evidenced, and drawing it as verified would be
+ * the worst available failure.
+ */
+function confidenceMatch(
+  pick: (style: (typeof CONFIDENCE_RING_STYLES)[ConfidenceTier]) => unknown,
+) {
+  return [
+    "match",
+    ["get", "confidenceTier"],
+    ...CONFIDENCE_TIERS.flatMap((tier) => [tier, pick(CONFIDENCE_RING_STYLES[tier])]),
+    pick(CONFIDENCE_RING_STYLES.unconfirmed),
+    // Cast at the boundary, as every other generated expression in this
+    // file does: MapLibre's paint types cannot express a `match` built
+    // from a runtime-enumerated list, and widening the helper's input
+    // types to satisfy them would lose the exhaustiveness that makes
+    // this construction worth having.
+  ] as never;
+}
+
+/** The signals an intelligence badge can carry, in badge-stacking order. */
+const INTELLIGENCE_SIGNALS: readonly IntelligenceSignal[] = [
+  "investigation",
+  "risk",
+  "alert",
+] as const;
+
+/**
+ * A `match` over the intelligence signal carried by a feature.
+ *
+ * Same construction as {@link confidenceMatch}: enumerated from the
+ * signal union so a new signal cannot be added without the map gaining a
+ * branch for it. The fallback is `investigation`'s value and is
+ * unreachable in practice — the layer is filtered to features that carry
+ * a recognised signal — but MapLibre requires a `match` to be total.
+ */
+function intelligenceMatch(pick: (signal: IntelligenceSignal) => unknown) {
+  return [
+    "match",
+    ["get", "intelligenceSignal"],
+    ...INTELLIGENCE_SIGNALS.flatMap((signal) => [signal, pick(signal)]),
+    pick("investigation"),
+  ] as never;
+}
 
 /** Source ids owned by this renderer. */
 const SOURCE_IDS = {
@@ -93,11 +153,14 @@ export const INSTALLED_RENDER_LAYERS: readonly string[] = [
   LAYER_IDS.eezFill,
   LAYER_IDS.eezBoundary,
   LAYER_IDS.portAnchorage,
+  LAYER_IDS.portSelection,
   LAYER_IDS.ports,
   LAYER_IDS.portLabels,
   LAYER_IDS.riskHeatmap,
+  LAYER_IDS.vesselConfidence,
   LAYER_IDS.vesselSelection,
   LAYER_IDS.vessels,
+  LAYER_IDS.vesselIntelligence,
   LAYER_IDS.vesselLabels,
   LAYER_IDS.investigArea,
 ] as const;
@@ -179,6 +242,10 @@ export class MapLibreRenderer implements MapRenderer {
 
   private hoverTimer: ReturnType<typeof setTimeout> | null = null;
   private hoveredImo: string | null = null;
+  /** LOCODE of the port under the cursor, or null. */
+  private hoveredPortId: string | null = null;
+  /** LOCODE of the selected port, or null. */
+  private selectedPortId: string | null = null;
 
   /** Instrumentation — asserted in tests, surfaced in the status panel. */
   private fullReplacements = 0;
@@ -605,7 +672,20 @@ export class MapLibreRenderer implements MapRenderer {
       source: SOURCE_IDS.graticule,
       paint: {
         "line-color": MARITIME_PALETTE.graticule,
-        "line-width": ["interpolate", ["linear"], ["zoom"], 4, 0.4, 10, 0.7],
+        // Hairline at world zoom, where a hundred and twenty lines are
+        // in frame. The first stop was 4, and a clamped ramp drew all
+        // of them at regional weight.
+        "line-width": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          ZOOM_BANDS.worldMin,
+          0.25,
+          ZOOM_BANDS.regionalMin,
+          0.4,
+          10,
+          0.7,
+        ],
         "line-opacity": graticuleOpacityExpression() as never,
       },
     });
@@ -688,9 +768,33 @@ export class MapLibreRenderer implements MapRenderer {
       source: SOURCE_IDS.eez,
       paint: {
         "fill-color": "#B8860B",
-        // Fades out as the officer closes, where the approximation
-        // error is largest relative to what they are looking at.
-        "fill-opacity": ["interpolate", ["linear"], ["zoom"], 5, 0.05, 9, 0.03, 13, 0.015],
+        /*
+         * Absent at world zoom, faint at regional, fading again as the
+         * officer closes.
+         *
+         * Two different reasons at the two ends. Closing in, the
+         * approximation error grows relative to what is on screen.
+         * Zooming out, the problem is emphasis: this is the only
+         * jurisdictional polygon the map holds, and at world zoom a
+         * gold wash over the Gulf of Guinea marks Nigeria as
+         * permanently special on a map that now covers the whole
+         * planet. The opening location must not be the highlighted one.
+         */
+        "fill-opacity": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          ZOOM_BANDS.worldMin,
+          0,
+          ZOOM_BANDS.regionalMin,
+          0,
+          5,
+          0.05,
+          9,
+          0.03,
+          13,
+          0.015,
+        ],
       },
     });
     map.addLayer({
@@ -699,14 +803,117 @@ export class MapLibreRenderer implements MapRenderer {
       source: SOURCE_IDS.eez,
       paint: {
         "line-color": "#B8860B",
-        "line-width": ["interpolate", ["linear"], ["zoom"], 5, 1.1, 8, 1.8, 12, 2.6],
+        "line-width": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          ZOOM_BANDS.worldMin,
+          0.6,
+          ZOOM_BANDS.regionalMin,
+          0.9,
+          5,
+          1.1,
+          8,
+          1.8,
+          12,
+          2.6,
+        ],
         "line-dasharray": [4, 3],
-        "line-opacity": ["interpolate", ["linear"], ["zoom"], 5, 0.5, 8, 0.7, 12, 0.8],
+        // Reference geography at world zoom, not a highlighted zone —
+        // present enough to orient, far too quiet to read as a warning.
+        "line-opacity": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          ZOOM_BANDS.worldMin,
+          0.1,
+          ZOOM_BANDS.regionalMin,
+          0.28,
+          5,
+          0.5,
+          8,
+          0.7,
+          12,
+          0.8,
+        ],
       },
     });
 
     // ── Ports ──
-    map.addSource(SOURCE_IDS.ports, { type: "geojson", data: ASSETS.ports });
+    /*
+     * `promoteId` binds the feature id to the LOCODE, which is what lets
+     * `setFeatureState` address one port for hover and selection without
+     * refetching the static collection. The file already carries a
+     * top-level `id` per feature, so this only makes the binding
+     * explicit and survives a source file that stops doing so.
+     */
+    map.addSource(SOURCE_IDS.ports, {
+      type: "geojson",
+      data: ASSETS.ports,
+      promoteId: "locode",
+    });
+
+    /*
+     * ── Port interaction ring ──
+     *
+     * The same ring the vessels use, in the same teal, drawn beneath the
+     * port diamond. Selection and hover are one layer rather than two
+     * because they are one idea at two intensities — and because a
+     * single layer makes it structurally impossible for a port to show
+     * both marks at once.
+     *
+     * Driven by `feature-state`, so pointing at a port costs a state
+     * write and no re-parse of the collection.
+     */
+    map.addLayer({
+      id: LAYER_IDS.portSelection,
+      type: "circle",
+      source: SOURCE_IDS.ports,
+      paint: {
+        "circle-radius": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          ZOOM_BANDS.worldMin,
+          ["case", ["boolean", ["feature-state", "selected"], false], 7, 5],
+          ZOOM_BANDS.regionalMin,
+          ["case", ["boolean", ["feature-state", "selected"], false], 11, 8],
+          14,
+          ["case", ["boolean", ["feature-state", "selected"], false], 20, 14],
+        ],
+        "circle-color": INTERACTION_COLORS.selectedFill,
+        "circle-opacity": [
+          "case",
+          ["boolean", ["feature-state", "selected"], false],
+          0.14,
+          ["boolean", ["feature-state", "hover"], false],
+          0.07,
+          0,
+        ],
+        "circle-stroke-color": [
+          "case",
+          ["boolean", ["feature-state", "selected"], false],
+          INTERACTION_COLORS.selected,
+          INTERACTION_COLORS.hover,
+        ],
+        "circle-stroke-width": [
+          "case",
+          ["boolean", ["feature-state", "selected"], false],
+          1.25,
+          ["boolean", ["feature-state", "hover"], false],
+          1,
+          0,
+        ],
+        "circle-stroke-opacity": [
+          "case",
+          ["boolean", ["feature-state", "selected"], false],
+          0.85,
+          ["boolean", ["feature-state", "hover"], false],
+          0.5,
+          0,
+        ],
+      },
+    });
     /*
      * Anchorage extent at its real radius.
      *
@@ -764,6 +971,17 @@ export class MapLibreRenderer implements MapRenderer {
           "interpolate",
           ["linear"],
           ["zoom"],
+          // World stop. Without one the ramp clamped, and five Nigerian
+          // ports were drawn at regional size on a globe — a cluster of
+          // full-weight marks on West Africa and nothing anywhere else,
+          // which reads as "this is where the activity is" rather than
+          // "this is all we hold".
+          ZOOM_BANDS.worldMin,
+          [
+            "*",
+            0.3,
+            ["interpolate", ["linear"], ["coalesce", ["get", "berths"], 5], 5, 0.85, 14, 1.25],
+          ],
           5,
           [
             "*",
@@ -790,6 +1008,16 @@ export class MapLibreRenderer implements MapRenderer {
       id: LAYER_IDS.portLabels,
       type: "symbol",
       source: SOURCE_IDS.ports,
+      /*
+       * No port names on the world view.
+       *
+       * At zoom 1 the label ramp clamped to its zoom-5 size and drew
+       * "APA", "TIN", "CAL" on top of each other over a landmass a few
+       * pixels wide. The diamonds still mark where the ports are; the
+       * names arrive once the officer is close enough for them to
+       * resolve as separate places.
+       */
+      minzoom: ZOOM_BANDS.regionalMin,
       layout: {
         // Abbreviation at strategic zoom, full name once there is room.
         "text-field": ["step", ["zoom"], ["get", "shortName"], 9, ["get", "name"]],
@@ -866,6 +1094,50 @@ export class MapLibreRenderer implements MapRenderer {
       },
     });
 
+    /*
+     * ── Confidence ring ──
+     *
+     * Beneath the hull, outside the selection ring's radius, so the
+     * three axes stack without overlapping: confidence outermost,
+     * selection next, the hull itself carrying risk and type.
+     *
+     * Filtered to features that actually carry a confidence value. That
+     * filter is the whole point — an entity nobody has assessed gets no
+     * ring at all, rather than an `unconfirmed` ring that would look
+     * like an assessment. `unconfirmed` is reserved for a record that
+     * has a confidence column with nothing in it, which the data-model
+     * documents as a defect worth showing.
+     *
+     * Dash, fill and stroke alpha all vary with tier, so the ladder is
+     * legible with colour stripped out entirely.
+     */
+    map.addLayer({
+      id: LAYER_IDS.vesselConfidence,
+      type: "circle",
+      source: SOURCE_IDS.vessels,
+      filter: ["has", "confidenceTier"],
+      paint: {
+        "circle-radius": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          ZOOM_BANDS.worldMin,
+          6,
+          ZOOM_BANDS.regionalMin,
+          9,
+          9,
+          15,
+          14,
+          24,
+        ],
+        "circle-color": confidenceMatch((style) => style.color),
+        "circle-opacity": confidenceMatch((style) => style.fillOpacity),
+        "circle-stroke-color": confidenceMatch((style) => style.color),
+        "circle-stroke-width": confidenceMatch((style) => style.strokeWidth),
+        "circle-stroke-opacity": confidenceMatch((style) => style.strokeOpacity),
+      },
+    });
+
     map.addLayer({
       id: LAYER_IDS.vessels,
       type: "symbol",
@@ -890,7 +1162,25 @@ export class MapLibreRenderer implements MapRenderer {
          */
         "icon-image": ["get", "iconId"],
         // Zoom scaling: readable at national view, prominent at port view.
-        "icon-size": ["interpolate", ["linear"], ["zoom"], 4, 0.38, 7, 0.55, 9, 0.8, 14, 1.3],
+        // World stop added: the ramp began at 4, so a vessel on the
+        // globe was drawn at national-view size. Smaller, but never
+        // vanishing — a vessel is the subject of this map, and the one
+        // thing that must stay findable at every zoom.
+        "icon-size": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          ZOOM_BANDS.worldMin,
+          0.26,
+          ZOOM_BANDS.regionalMin,
+          0.36,
+          7,
+          0.55,
+          9,
+          0.8,
+          14,
+          1.3,
+        ],
         /*
          * Rotate only a bearing someone reported.
          *
@@ -908,6 +1198,61 @@ export class MapLibreRenderer implements MapRenderer {
       },
       paint: {
         "icon-opacity": ["get", "opacity"],
+      },
+    });
+
+    /*
+     * ── Intelligence badge ──
+     *
+     * A small filled dot pinned to a corner of the hull. Deliberately
+     * *additive*: the vessel keeps its own silhouette, risk colour and
+     * heading, and the badge says what is attached to it. Replacing the
+     * hull with a case-file icon would throw away the type and heading
+     * a provider did report, in order to display an administrative fact
+     * — the same class of loss as collapsing an unknown heading into a
+     * plain disc.
+     *
+     * Position is fixed per signal (see `INTELLIGENCE_BADGE_OFFSETS`),
+     * so an officer learns where to look as well as what colour to look
+     * for, and two signals on one vessel cannot land on each other.
+     *
+     * Filtered to features carrying a signal. Nothing populates
+     * `intelligenceSignal` today — no map source reports investigations,
+     * alerts, or per-entity risk events — so this layer draws nothing at
+     * present. It is installed anyway so the vocabulary exists in one
+     * place rather than being invented per-caller later, and the legend
+     * reports the category as unsourced rather than as empty.
+     */
+    map.addLayer({
+      id: LAYER_IDS.vesselIntelligence,
+      type: "symbol",
+      source: SOURCE_IDS.vessels,
+      filter: ["has", "intelligenceSignal"],
+      minzoom: ZOOM_BANDS.regionalMin,
+      layout: {
+        "text-field": "●",
+        "text-size": ["interpolate", ["linear"], ["zoom"], ZOOM_BANDS.regionalMin, 7, 12, 11],
+        /*
+         * `["literal", …]` is required around each offset.
+         *
+         * A bare `[x, y]` inside an expression is parsed as a *call* —
+         * MapLibre reads the first element as an operator name, finds a
+         * number, and rejects the layer. It rejects it the quiet way:
+         * `addLayer` does not throw, the layer simply never exists.
+         * Caught here by `verifyInstalledLayers`, which is the reason
+         * that check was added.
+         */
+        "text-offset": intelligenceMatch((signal) => [
+          "literal",
+          INTELLIGENCE_BADGE_OFFSETS[signal],
+        ]),
+        "text-allow-overlap": true,
+        "text-ignore-placement": true,
+      },
+      paint: {
+        "text-color": intelligenceMatch((signal) => INTELLIGENCE_COLORS[signal]),
+        "text-halo-color": MARITIME_PALETTE.labelHalo,
+        "text-halo-width": 1.4,
       },
     });
 
@@ -1037,11 +1382,51 @@ export class MapLibreRenderer implements MapRenderer {
       map.getCanvas().style.cursor = "";
     });
 
-    map.on("mouseenter", LAYER_IDS.ports, () => {
+    /*
+     * ── Ports are selectable ──
+     *
+     * A distinct event for the same reason voyages have one: a port is
+     * an entity in its own right, resolved through its own services,
+     * and folding it into `vessel:click` would make the drawer guess
+     * what it had been handed.
+     *
+     * The map only reports the click. Whether the selection is honoured,
+     * and what is shown for it, stays with SGS and the panels — this
+     * class still never calls into React or the shared service.
+     */
+    map.on("click", LAYER_IDS.ports, (event: MapLibreLayerMouseEvent) => {
+      const feature = event.features?.[0];
+      const locode = feature?.properties?.locode;
+      if (typeof locode !== "string" || locode === "") return;
+      this.bus?.emit("port:click", {
+        locode,
+        name: typeof feature?.properties?.name === "string" ? feature.properties.name : null,
+        position: [event.lngLat.lng, event.lngLat.lat],
+      });
+    });
+
+    /*
+     * Hover, as a feature state rather than an event.
+     *
+     * The ring is drawn by the paint expression reading
+     * `["feature-state", "hover"]`, so pointing at a port costs one
+     * state write and no re-parse of the collection. Undebounced on
+     * purpose: unlike the vessel popup, which is expensive and would
+     * flash across dense traffic, a ring appearing under the cursor is
+     * the immediate feedback that makes the port feel clickable.
+     */
+    map.on("mousemove", LAYER_IDS.ports, (event: MapLibreLayerMouseEvent) => {
       map.getCanvas().style.cursor = "pointer";
+      const id = event.features?.[0]?.id;
+      if (id === undefined || id === this.hoveredPortId) return;
+      this.setPortHover(this.hoveredPortId, false);
+      this.hoveredPortId = id as string;
+      this.setPortHover(this.hoveredPortId, true);
     });
     map.on("mouseleave", LAYER_IDS.ports, () => {
       map.getCanvas().style.cursor = "";
+      this.setPortHover(this.hoveredPortId, false);
+      this.hoveredPortId = null;
     });
 
     // Hover is debounced by TIMING.hoverDelayMs so sweeping the cursor across
@@ -1074,6 +1459,49 @@ export class MapLibreRenderer implements MapRenderer {
       }
       this.lastFrameAt = now;
     });
+  }
+
+  /**
+   * Write a port's hover flag, tolerating a missing source.
+   *
+   * `setFeatureState` throws if the source has gone — which happens
+   * during teardown, when a `mouseleave` can still arrive after the
+   * style has been torn down. A hover ring is not worth an exception
+   * escaping into the event loop.
+   */
+  private setPortHover(id: string | null, hover: boolean): void {
+    if (id === null || !this.map) return;
+    try {
+      this.map.setFeatureState({ source: SOURCE_IDS.ports, id }, { hover });
+    } catch {
+      // Source removed mid-interaction. Nothing to un-highlight.
+    }
+  }
+
+  /**
+   * Mark exactly one port as selected, clearing any previous one.
+   *
+   * Selection is a property of the map's state, not of the click that
+   * caused it, so it is driven from here rather than from the click
+   * handler — a selection restored from a URL must light the same ring
+   * as one made with the mouse.
+   */
+  setSelectedPort(locode: string | null): void {
+    if (!this.map) return;
+    const previous = this.selectedPortId;
+    if (previous === locode) return;
+    for (const [id, selected] of [
+      [previous, false],
+      [locode, true],
+    ] as const) {
+      if (id === null) continue;
+      try {
+        this.map.setFeatureState({ source: SOURCE_IDS.ports, id }, { selected });
+      } catch {
+        // As above: a torn-down source has no state to write.
+      }
+    }
+    this.selectedPortId = locode;
   }
 
   private clearHover(): void {

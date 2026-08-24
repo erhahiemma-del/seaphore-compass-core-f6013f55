@@ -92,12 +92,27 @@ export interface VoyageClickEvent {
   readonly voyageNumber: string | null;
 }
 
+/**
+ * A port was clicked.
+ *
+ * Identified by UN/LOCODE, which is the port's stable key across the
+ * gazetteer, the voyage records and the reference collection — not by a
+ * database row id, which only one of those three would recognise.
+ */
+export interface PortClickEvent {
+  readonly locode: string;
+  /** Display name as the reference collection carries it, when it does. */
+  readonly name: string | null;
+  readonly position: LonLat;
+}
+
 export interface MapEventMap {
   "map:ready": MapReadyEvent;
   "map:move": MapMoveEvent;
   "map:click": MapClickEvent;
   "vessel:click": VesselClickEvent;
   "voyage:click": VoyageClickEvent;
+  "port:click": PortClickEvent;
   "vessel:hover": VesselHoverEvent;
   "layer:visibility": LayerVisibilityEvent;
   "vessels:applied": VesselsAppliedEvent;

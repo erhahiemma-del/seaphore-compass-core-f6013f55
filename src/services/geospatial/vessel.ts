@@ -20,6 +20,8 @@ import {
   type VesselColorKey,
   type VesselVisualCategory,
 } from "./vessel-visual";
+import { confidenceTierFor, type ConfidenceTier, type IntelligenceSignal } from "./entity-visual";
+import type { ConfidenceLevel } from "@/lib/data-model/confidence";
 
 /** Stable identity of a vessel across data sources. */
 export interface VesselIdentity {
@@ -112,6 +114,17 @@ export interface Vessel {
   readonly confidence?: number;
   /** Banded form of {@link confidence}, e.g. `"CORROBORATED"`. */
   readonly confidenceLevel?: string;
+  /**
+   * Intelligence attached to this vessel by another system.
+   *
+   * Optional, and populated by nothing in this repository today: no
+   * source reports per-vessel investigations, alerts or risk events.
+   * Declared so the renderer and the legend already agree on the word
+   * when one does — the same reason `VESSEL_VISUALS` declares families
+   * no provider can currently produce. Absent means "nobody said",
+   * never "nothing attached".
+   */
+  readonly intelligenceSignal?: IntelligenceSignal;
 }
 
 /** Properties attached to each rendered vessel feature. */
@@ -148,6 +161,18 @@ export interface VesselFeatureProperties {
    * vessel steaming north that may be drifting or moored.
    */
   readonly headingKnown: boolean;
+  /**
+   * Confidence tier of this observation, or absent.
+   *
+   * Absent is the important case and is why this is optional rather
+   * than defaulted: the confidence ring layer filters on the property's
+   * *presence*, so a vessel nobody has graded draws no ring at all. A
+   * default of `"unconfirmed"` would put a grey ring on every vessel on
+   * the map and read as an assessment nobody made.
+   */
+  readonly confidenceTier?: ConfidenceTier;
+  /** Intelligence signal attached to this vessel, or absent. */
+  readonly intelligenceSignal?: IntelligenceSignal;
 }
 
 /** A vessel rendered as a GeoJSON point feature. */
@@ -253,11 +278,24 @@ export function toVesselFeature(vessel: Vessel, ctx: VesselRenderContext = {}): 
   // lookups over data already in hand — no provider call, no inference.
   const visual = classifyVessel(vessel.identity.type);
   const resolvedHeading = resolveHeading(vessel.position.heading, vessel.position.headingReported);
+  /*
+   * Both optional axes are spread in only when the vessel carries them.
+   *
+   * `undefined` would survive into the GeoJSON properties as a key that
+   * exists with no value, and MapLibre's `["has", …]` reports that as
+   * present — which would draw a ring or a badge for a vessel that has
+   * neither. Omitting the key entirely is what makes the filters honest.
+   */
+  const confidenceTier = vessel.confidenceLevel
+    ? confidenceTierFor(vessel.confidenceLevel as ConfidenceLevel)
+    : undefined;
   return {
     type: "Feature",
     id: vessel.identity.imo,
     geometry: { type: "Point", coordinates },
     properties: {
+      ...(confidenceTier ? { confidenceTier } : {}),
+      ...(vessel.intelligenceSignal ? { intelligenceSignal: vessel.intelligenceSignal } : {}),
       imo: vessel.identity.imo,
       name: vessel.identity.name,
       risk: vessel.riskLevel,

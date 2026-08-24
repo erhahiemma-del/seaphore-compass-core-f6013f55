@@ -31,7 +31,10 @@ export {
   MAP_DEFAULTS,
   MAP_SCOPES,
   MARITIME_PALETTE,
+  ZOOM_BANDS,
   ZOOM_LIMITS,
+  zoomBandFor,
+  type ZoomBand,
   type MapScopeDefinition,
   type MapScopeId,
   NIGERIA_EEZ_BBOX,
@@ -387,3 +390,32 @@ export type {
   VesselVisual,
   VesselVisualCategory,
 } from "./vessel-visual";
+
+/**
+ * The M2.5 entity visual language.
+ *
+ * Exported as a whole because the legend, the renderer and the vessel
+ * projection all read from it, and the point of the module is that they
+ * read the *same* values — a partial re-export would invite a consumer
+ * to define the missing half locally.
+ */
+export {
+  CONFIDENCE_COLORS,
+  CONFIDENCE_RING_STYLES,
+  CONFIDENCE_TIERS,
+  confidenceTierFor,
+  ENTITY_KIND_LABELS,
+  INTELLIGENCE_BADGE_OFFSETS,
+  INTELLIGENCE_COLORS,
+  INTELLIGENCE_LABELS,
+  INTERACTION_COLORS,
+  INTERACTION_RADII,
+  interactionStateFor,
+} from "./entity-visual";
+export type {
+  ConfidenceRingStyle,
+  ConfidenceTier,
+  EntityInteractionState,
+  EntityKind,
+  IntelligenceSignal,
+} from "./entity-visual";

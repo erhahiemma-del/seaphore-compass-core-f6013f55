@@ -168,6 +168,50 @@ export const MAP_SCOPES: Readonly<Record<MapScopeId, MapScopeDefinition>> = {
 export const ZOOM_LIMITS = { min: 1, max: 18 } as const;
 
 /**
+ * The three ways an officer reads this map.
+ *
+ * Named bands rather than bare numbers scattered through paint
+ * expressions, because the same three thresholds govern labels, borders,
+ * the graticule, the EEZ, port symbols and vessel symbols — and when
+ * they were written out per-layer they disagreed. Every zoom ramp added
+ * or changed in M2.5 anchors on these.
+ *
+ * The bands answer different questions:
+ *
+ *   world        Where is activity, globally?      1 → 3.5
+ *   regional     What is the pattern here?       3.5 → 8
+ *   operational  What is this individual thing?     8 → 18
+ *
+ * `worldMax` and `regionalMax` are fractional so a ramp can cross a
+ * boundary as a fade rather than a step. A layer that genuinely needs to
+ * appear at once uses `["step", …]` against the same number.
+ */
+export const ZOOM_BANDS = {
+  worldMin: 1,
+  worldMax: 3.5,
+  regionalMin: 3.5,
+  regionalMax: 8,
+  operationalMin: 8,
+  operationalMax: 18,
+} as const;
+
+/**
+ * Which band a zoom level falls in.
+ *
+ * Exported so the legend and any panel can describe the current view in
+ * the same words the paint expressions are tuned around, instead of
+ * inventing a fourth vocabulary for the same three ideas.
+ */
+export type ZoomBand = "world" | "regional" | "operational";
+
+export function zoomBandFor(zoom: number): ZoomBand {
+  if (!Number.isFinite(zoom)) return "world";
+  if (zoom < ZOOM_BANDS.worldMax) return "world";
+  if (zoom < ZOOM_BANDS.regionalMax) return "regional";
+  return "operational";
+}
+
+/**
  * Maritime figure–ground palette.
  *
  * CARTO Dark Matter paints land `#0e0e0e` and water `#2C353C` — about
@@ -366,6 +410,24 @@ export const LAYER_IDS = {
   ports: "ports-layer",
   portLabels: "port-labels-layer",
   portAnchorage: "port-anchorage-layer",
+  /**
+   * Hover and selection ring for ports.
+   *
+   * The counterpart of {@link vesselSelection}. Ports and vessels share
+   * one interaction language, so they get structurally parallel layers
+   * rather than each growing its own convention.
+   */
+  portSelection: "port-selection-layer",
+  /**
+   * Confidence ring, drawn beneath a vessel.
+   *
+   * Its own layer rather than a paint rule on the vessel symbol,
+   * because confidence and risk are independent axes and a single
+   * symbol cannot carry two rings.
+   */
+  vesselConfidence: "vessel-confidence-layer",
+  /** Intelligence badges (investigation, risk, alert) attached to a vessel. */
+  vesselIntelligence: "vessel-intelligence-layer",
   eezBoundary: "eez-boundary-layer",
   /** Jurisdictional wash inside the EEZ outline. */
   eezFill: "eez-fill-layer",

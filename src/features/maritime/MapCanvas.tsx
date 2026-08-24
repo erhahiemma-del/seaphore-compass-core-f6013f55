@@ -398,6 +398,16 @@ export function MapCanvas({
     const offVoyageClick = bus.on("voyage:click", ({ voyageId, voyageNumber }) => {
       service.select({ kind: "voyage", id: voyageId, voyageNumber });
     });
+    /*
+     * A port click selects the port.
+     *
+     * `focus` carries the clicked position so a selection restored from
+     * a URL knows where to look; `planCameraMove` still decides whether
+     * moving there is warranted, exactly as it does for a vessel.
+     */
+    const offPortClick = bus.on("port:click", ({ locode, position }) => {
+      service.select({ kind: "port", id: locode, focus: position });
+    });
     const offMapClick = bus.on("map:click", () => {
       service.clearSelection();
       onVesselSelected?.(null);
@@ -405,6 +415,7 @@ export function MapCanvas({
     return () => {
       offClick();
       offVoyageClick();
+      offPortClick();
       offMapClick();
     };
   }, [bus, service, engine, onVesselSelected]);
@@ -500,6 +511,18 @@ export function MapCanvas({
       if (key === previous) return;
       previous = key;
       engine.refreshPresentation();
+
+      /*
+       * Port selection is a feature state, not a feature property.
+       *
+       * Vessels re-project through the update engine, which rebuilds
+       * their features and carries `isSelected` with them. The ports
+       * collection is a static asset that is never re-projected, so its
+       * selection is written straight onto the renderer instead. Cleared
+       * whenever the selection is anything other than a port — including
+       * null — so a ring cannot outlive what it was ringing.
+       */
+      renderer.setSelectedPort?.(state.selection?.kind === "port" ? state.selection.id : null);
 
       // Move the camera only when the selection came from somewhere the
       // officer is not already looking. `planCameraMove` owns that rule;

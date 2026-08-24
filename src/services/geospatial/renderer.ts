@@ -154,6 +154,20 @@ export interface MapRenderer {
   setVoyageData?(endpoints: unknown): void;
 
   /**
+   * Mark one port as selected, or clear the selection with `null`.
+   *
+   * Optional and additive (M2.5), like everything else at this seam.
+   * Keyed by UN/LOCODE because that is the port's stable identity
+   * across the reference collection, the gazetteer and the voyage
+   * records — a database row id would only be recognised by one of them.
+   *
+   * Separate from a click handler on purpose: a selection restored from
+   * a shared URL never involved a click, and must light the same ring
+   * as one that did.
+   */
+  setSelectedPort?(locode: string | null): void;
+
+  /**
    * Set a render layer's opacity, 0–1.
    *
    * Optional and additive (G5.5.2): the G5.5.1 contract is unchanged, so
