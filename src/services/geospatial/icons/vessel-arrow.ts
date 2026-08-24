@@ -105,9 +105,51 @@ export function createPortDiamondImage(color = "#0E7C7B"): ImageData {
   return ctx.getImageData(0, 0, size, size);
 }
 
-/** Every sprite the renderer must register, as `[id, ImageData]` pairs. */
+/**
+ * Draw a non-directional vessel marker.
+ *
+ * Used where no bearing was reported. A disc has no nose, so it cannot
+ * be misread as pointing anywhere — which is the whole point: the arrow
+ * sprite at rotation zero looks exactly like a vessel steaming north.
+ */
+export function createVesselDiscImage(color: string): ImageData {
+  const size = VESSEL_SPRITE_SIZE;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    throw new Error("Canvas 2D context unavailable — cannot build vessel sprites");
+  }
+
+  ctx.clearRect(0, 0, size, size);
+  const centre = size / 2;
+  // Slightly smaller than the arrow's footprint so a field of unknown
+  // vessels reads as quieter than a field of tracked ones.
+  ctx.beginPath();
+  ctx.arc(centre, centre, size * 0.28, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.85)";
+  ctx.lineWidth = 1.25;
+  ctx.stroke();
+
+  return ctx.getImageData(0, 0, size, size);
+}
+
+/**
+ * Every sprite the renderer must register, as `[id, ImageData]` pairs.
+ *
+ * Each risk colour gets two sprites: the directional arrow, and a
+ * `-nodir` disc for vessels whose course nobody reported.
+ */
 export function buildVesselSprites(): ReadonlyArray<readonly [string, ImageData]> {
-  return Object.entries(VESSEL_SPRITE_VARIANTS).map(
-    ([id, color]) => [id, createVesselArrowImage(color)] as const,
+  return Object.entries(VESSEL_SPRITE_VARIANTS).flatMap(
+    ([id, color]) =>
+      [
+        [id, createVesselArrowImage(color)] as const,
+        [`${id}-nodir`, createVesselDiscImage(color)] as const,
+      ] as const,
   );
 }

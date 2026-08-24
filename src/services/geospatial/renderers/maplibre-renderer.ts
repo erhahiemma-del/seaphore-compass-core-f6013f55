@@ -574,7 +574,17 @@ export class MapLibreRenderer implements MapRenderer {
         ],
         // Zoom scaling: readable at national view, prominent at port view.
         "icon-size": ["interpolate", ["linear"], ["zoom"], 5, 0.45, 9, 0.75, 14, 1.2],
-        "icon-rotate": ["get", "heading"],
+        /*
+         * Rotate only a bearing someone reported.
+         *
+         * `heading` is a required number upstream, so a vessel with no
+         * course still arrives as 0 — which, rotated, is a vessel
+         * steaming due north. `headingKnown` is the flag that separates
+         * that from a real northerly course, and an unrotated symbol is
+         * the honest rendering of "we do not know which way this is
+         * pointing".
+         */
+        "icon-rotate": ["case", ["==", ["get", "headingKnown"], true], ["get", "heading"], 0],
         "icon-rotation-alignment": "map",
         "icon-allow-overlap": true,
         "icon-ignore-placement": true,

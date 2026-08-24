@@ -41,6 +41,7 @@ import { ContextDrawer } from "./ContextDrawer";
 import { LayerPanel } from "./LayerPanel";
 import { MapCanvas, type VesselFeedState } from "./MapCanvas";
 import { useReplayTimeline } from "./useReplayTimeline";
+import { MapLegend } from "./MapLegend";
 import { MapSearch } from "./MapSearch";
 import { NationalPicturePanel } from "./NationalPicturePanel";
 import { OperatingModeBar } from "./OperatingModeBar";
@@ -282,6 +283,17 @@ export function MaritimeCommand() {
           ) : (
             <TerrainPerspectivePlaceholder />
           )}
+
+          {/*
+            Legend overlays the map rather than taking a panel slot, and
+            starts collapsed so it costs nothing until asked for. It reads
+            the same visual config and layer registry the renderer uses.
+          */}
+          {viewMode === "2D" ? (
+            <div className="pointer-events-none absolute bottom-3 right-3 z-10 flex justify-end">
+              <MapLegend />
+            </div>
+          ) : null}
         </main>
 
         {/* ── RIGHT CONTEXT DRAWER ──────────────────────────────── */}

@@ -282,3 +282,16 @@ export {
   type MapSelectionKind,
   type OperatingMode,
 } from "./selection";
+
+export {
+  classifyVessel,
+  resolveHeading,
+  SUPPORTED_CATEGORIES,
+  VESSEL_VISUALS,
+} from "./vessel-visual";
+export type {
+  ResolvedHeading,
+  VesselSilhouette,
+  VesselVisual,
+  VesselVisualCategory,
+} from "./vessel-visual";
