@@ -86,8 +86,15 @@ export function useVoyages({ enabled: enabledOption = true, limit = 200 }: UseVo
 
   useEffect(() => {
     if (!enabled) {
-      setStatus("empty");
       setVoyages([]);
+      // Not signed in yet is not "no voyages held" — say which it is.
+      if (enabledOption && (authLoading || !session)) {
+        setStatus(authLoading ? "loading" : "unavailable");
+        setError(authLoading ? null : "No authenticated session for the voyage register.");
+      } else {
+        setStatus("empty");
+        setError(null);
+      }
       return;
     }
     let disposed = false;
