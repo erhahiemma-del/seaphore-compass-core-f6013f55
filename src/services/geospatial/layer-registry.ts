@@ -422,23 +422,33 @@ export const MISSION_PRESETS: readonly MissionPreset[] = [
  * Each names the layers one intelligence domain needs, so `/vessel`,
  * `/manifest` and `/cargo` share the engine without sharing a viewport.
  *
- * ## Only layers the renderer actually draws
+ * ## Only layers that are both drawn and sourced
  *
- * `LAYER_IDS` declares nineteen layers; `MapLibreRenderer` installs eight.
- * `aisTrack`, `revenueHeat`, `weatherOverlay` and the SAR layers are
- * declared but not yet drawn, and there is no track geometry on the vessel
- * model to feed them. Listing one here would switch on a layer that
- * renders nothing, which reads to an officer as "no activity" rather than
- * "not built". So these presets name only what draws today, and the
- * domains state the rest as unavailable in their own copy.
+ * Two filters apply, and a layer must pass both.
+ *
+ * `LAYER_IDS` declares nineteen layers; `MapLibreRenderer` installs
+ * eight — `aisTrack`, `revenueHeat` and the SAR layers are declared but
+ * never drawn, and no track geometry exists to feed them.
+ *
+ * Of the eight that are drawn, `resolveVisibility` does not consult a
+ * layer's `status`, so a `pending-source` layer switched on here would
+ * appear enabled and render nothing. `riskHeatmap` is the trap: it draws,
+ * which makes it look eligible, but its source is pending.
+ *
+ * Either way the officer sees an empty layer and reads it as "no
+ * activity" rather than "not collected". So these presets name only
+ * `ready` layers that the renderer installs, and each domain states the
+ * rest as unavailable in its own copy.
  */
 export const DOMAIN_PRESETS = {
   /** Where is this vessel, and what surrounds it. */
-  vessel: ["vessels", "ports", "eezBoundary", "riskHeatmap"],
+  vessel: ["vessels", "ports", "eezBoundary"],
   /** Which ports a manifest touches, inside whose waters. */
   manifest: ["ports", "eezBoundary", "vessels"],
   /** Where cargo moves through the port system. */
-  cargo: ["ports", "eezBoundary", "riskHeatmap"],
+  cargo: ["ports", "eezBoundary"],
+  /** The port estate itself, and the traffic around it. */
+  ports: ["ports", "eezBoundary", "vessels"],
 } as const satisfies Record<string, readonly string[]>;
 
 export type MapDomain = keyof typeof DOMAIN_PRESETS;
