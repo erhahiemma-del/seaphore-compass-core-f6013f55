@@ -128,7 +128,7 @@ export function useVoyages({ enabled: enabledOption = true, limit = 200 }: UseVo
     return () => {
       disposed = true;
     };
-  }, [enabled, limit, nonce]);
+  }, [enabled, enabledOption, authLoading, session, limit, nonce]);
 
   const coverage = useMemo(
     () => (voyages.length === 0 ? EMPTY_COVERAGE : endpointCoverage(voyages)),
