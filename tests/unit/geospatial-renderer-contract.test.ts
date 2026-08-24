@@ -3,9 +3,11 @@ import { describe, expect, it } from "vitest";
 import {
   MapEventBus,
   StubMapRenderer,
-  VESSEL_SPRITE_VARIANTS,
+  VESSEL_COLOR_KEYS,
+  VESSEL_SPRITE_COLORS,
   VesselUpdateEngine,
   vesselIconId,
+  vesselSpriteIds,
   type MapRenderer,
   type Vessel,
 } from "@/services/geospatial";
@@ -37,17 +39,20 @@ function vessel(imo: string, overrides: Partial<Vessel> = {}): Vessel {
 describe("vessel sprite registry", () => {
   const RISKS = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "CLEAN", "UNKNOWN"] as const;
 
+  const REGISTERED = new Set(vesselSpriteIds());
+
   it("registers a sprite for every risk band vesselIconId can produce", () => {
     for (const risk of RISKS) {
       const id = vesselIconId(vessel("1", { riskLevel: risk }), { now: NOW });
-      expect(VESSEL_SPRITE_VARIANTS, `missing sprite for risk ${risk}`).toHaveProperty(id);
+      expect(REGISTERED, `missing sprite for risk ${risk}`).toContain(id);
     }
   });
 
   it("registers the selected sprite", () => {
     const id = vesselIconId(vessel("1"), { now: NOW, selectedImo: "1" });
-    expect(id).toBe("vessel-selected");
-    expect(VESSEL_SPRITE_VARIANTS).toHaveProperty(id);
+    // No type reported on the fixture, so the hull family is the disc.
+    expect(id).toBe("vessel-selected-disc");
+    expect(REGISTERED).toContain(id);
   });
 
   it("registers the stale sprite", () => {
@@ -55,13 +60,19 @@ describe("vessel sprite registry", () => {
       position: { ...vessel("1").position, timestamp: new Date(NOW - 3_600_000).toISOString() },
     });
     const id = vesselIconId(stale, { now: NOW });
-    expect(id).toBe("vessel-stale");
-    expect(VESSEL_SPRITE_VARIANTS).toHaveProperty(id);
+    expect(id).toBe("vessel-stale-disc");
+    expect(REGISTERED).toContain(id);
   });
 
-  it("gives every sprite a colour", () => {
-    for (const [id, color] of Object.entries(VESSEL_SPRITE_VARIANTS)) {
-      expect(color, `sprite ${id} has no colour`).toMatch(/^#[0-9A-Fa-f]{6}$/);
+  it("gives every sprite colour a hex value", () => {
+    for (const [key, color] of Object.entries(VESSEL_SPRITE_COLORS)) {
+      expect(color, `sprite colour ${key} is not a hex value`).toMatch(/^#[0-9A-Fa-f]{6}$/);
+    }
+  });
+
+  it("covers every colour key the sprite ids use", () => {
+    for (const key of VESSEL_COLOR_KEYS) {
+      expect(VESSEL_SPRITE_COLORS, `no colour registered for ${key}`).toHaveProperty(key);
     }
   });
 });

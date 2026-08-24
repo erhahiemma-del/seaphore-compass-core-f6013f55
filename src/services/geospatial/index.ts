@@ -29,15 +29,37 @@ export {
   BASEMAP_STYLE,
   LAYER_IDS,
   MAP_DEFAULTS,
+  MARITIME_PALETTE,
   NIGERIA_EEZ_BBOX,
   NIMASA_PORTS,
+  PIXELS_PER_KM,
   RISK_COLORS,
   RISK_OPACITY,
+  SKY_TREATMENT,
   TIMING,
   VESSEL_SIZES,
   type NimasaPort,
   type NimasaPortCode,
 } from "./constants";
+
+export {
+  applyMaritimeStyle,
+  coastlineLayer,
+  planMaritimeStyle,
+  COASTLINE_LAYER_ID,
+  type MaritimeStyleResult,
+  type StyleEdit,
+  type StyleLayerSummary,
+  type StyleTarget,
+} from "./map-style";
+
+export {
+  graticuleFeatures,
+  graticuleOpacityExpression,
+  GRATICULE_STEPS,
+  type GraticuleCollection,
+  type GraticuleLine,
+} from "./graticule";
 
 export type {
   ArrivalWindow,
@@ -138,6 +160,7 @@ export type {
 } from "./renderer";
 
 export {
+  INSTALLED_RENDER_LAYERS,
   MAPLIBRE_AVAILABLE,
   MapLibreRenderer,
   NIGERIA_BOUNDS,
@@ -145,11 +168,11 @@ export {
 export { StubMapRenderer } from "./renderers/stub-renderer";
 
 export {
+  VESSEL_SPRITE_COLORS,
   VESSEL_SPRITE_SIZE,
-  VESSEL_SPRITE_VARIANTS,
   buildVesselSprites,
   createPortDiamondImage,
-  createVesselArrowImage,
+  createVesselSilhouetteImage,
 } from "./icons/vessel-arrow";
 
 export {
@@ -286,11 +309,16 @@ export {
 export {
   classifyVessel,
   resolveHeading,
+  vesselSpriteId,
+  vesselSpriteIds,
   SUPPORTED_CATEGORIES,
+  VESSEL_COLOR_KEYS,
+  VESSEL_SILHOUETTES,
   VESSEL_VISUALS,
 } from "./vessel-visual";
 export type {
   ResolvedHeading,
+  VesselColorKey,
   VesselSilhouette,
   VesselVisual,
   VesselVisualCategory,

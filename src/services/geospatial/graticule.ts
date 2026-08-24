@@ -1,0 +1,149 @@
+/**
+ * WGS84 graticule.
+ *
+ * Meridians and parallels, generated from arithmetic rather than read
+ * from a dataset. That makes this the only geometry on the map that is
+ * exact by construction: a graticule is not an observation, cannot be
+ * stale, and has no provenance to declare.
+ *
+ * ## Why it must not look like the EEZ
+ *
+ * The EEZ is drawn as a gold dashed line and is explicitly approximate.
+ * A graticule that resembled it would invite an officer to read a
+ * meridian as a claimed boundary — inventing a jurisdiction out of a
+ * coordinate line. So the two are separated on every available axis:
+ * colour (cool grey against gold), dash (solid against dashed), and
+ * weight. `docs/geospatial` treats that separation as a requirement, not
+ * a preference.
+ *
+ * ## Zoom tiering
+ *
+ * Every line carries the coarsest interval it belongs to, so one source
+ * serves all zooms: ten-degree lines anchor the strategic view, and
+ * five- then one-degree lines fade in as the officer closes. Drawing all
+ * three at once would turn the operational picture into graph paper.
+ */
+import { MAP_DEFAULTS } from "./constants";
+import type { BoundingBox } from "./types";
+
+/** Intervals drawn, coarsest first. */
+export const GRATICULE_STEPS: readonly number[] = [10, 5, 1] as const;
+
+export interface GraticuleLine {
+  readonly type: "Feature";
+  readonly geometry: { readonly type: "LineString"; readonly coordinates: number[][] };
+  readonly properties: {
+    readonly axis: "meridian" | "parallel";
+    /** The line's own coordinate, in degrees. */
+    readonly degrees: number;
+    /** Coarsest interval this line belongs to. Drives the zoom reveal. */
+    readonly step: number;
+  };
+}
+
+export interface GraticuleCollection {
+  readonly type: "FeatureCollection";
+  readonly features: readonly GraticuleLine[];
+}
+
+/** The coarsest step in `steps` that divides `value` exactly. */
+function coarsestStep(value: number, steps: readonly number[]): number {
+  for (const step of steps) {
+    // Integer arithmetic: the caller's steps and values are whole
+    // degrees, so this avoids the float residue `%` leaves on e.g. 0.1.
+    if (Math.round(value) % step === 0) return step;
+  }
+  return steps[steps.length - 1] ?? 1;
+}
+
+/**
+ * Build the graticule for a bounding box.
+ *
+ * Lines are emitted at the finest interval in `steps` and tagged with
+ * the coarsest one they satisfy, so the collection is generated once and
+ * filtered by the renderer rather than rebuilt per zoom.
+ *
+ * Meridians and parallels are both straight in Web Mercator, so two
+ * vertices each is exact — no densification needed, and the whole
+ * collection stays at roughly fifty two-point features.
+ */
+export function graticuleFeatures(
+  bounds: BoundingBox = MAP_DEFAULTS.maxBounds as unknown as BoundingBox,
+  steps: readonly number[] = GRATICULE_STEPS,
+): GraticuleCollection {
+  const [[west, south], [east, north]] = bounds;
+  const finest = steps[steps.length - 1] ?? 1;
+  const features: GraticuleLine[] = [];
+
+  for (let lon = Math.ceil(west / finest) * finest; lon <= east; lon += finest) {
+    features.push({
+      type: "Feature",
+      geometry: {
+        type: "LineString",
+        coordinates: [
+          [lon, south],
+          [lon, north],
+        ],
+      },
+      properties: { axis: "meridian", degrees: lon, step: coarsestStep(lon, steps) },
+    });
+  }
+
+  for (let lat = Math.ceil(south / finest) * finest; lat <= north; lat += finest) {
+    features.push({
+      type: "Feature",
+      geometry: {
+        type: "LineString",
+        coordinates: [
+          [west, lat],
+          [east, lat],
+        ],
+      },
+      properties: { axis: "parallel", degrees: lat, step: coarsestStep(lat, steps) },
+    });
+  }
+
+  return { type: "FeatureCollection", features };
+}
+
+/**
+ * Per-step opacity ramp.
+ *
+ * Coarse lines carry the strategic view; finer ones arrive only when
+ * there is room for them. Continuous in zoom, so intervals fade in
+ * rather than popping.
+ *
+ * ## Why zoom is the outer expression
+ *
+ * MapLibre requires a zoom expression to be the outermost element of a
+ * property value — a `["zoom"]` nested inside a `case` is rejected, and
+ * rejected quietly: `addLayer` declines the layer and the map carries on
+ * without it. So the shape here is inverted from the obvious one. Zoom
+ * interpolates on the outside, and each stop is a `case` over the
+ * feature's own `step`, which is data-driven and may be nested.
+ */
+export function graticuleOpacityExpression(): unknown {
+  /** Opacity for the 10°, 5° and 1° intervals at one zoom stop. */
+  const byStep = (coarse: number, medium: number, fine: number) => [
+    "case",
+    ["==", ["get", "step"], 10],
+    coarse,
+    ["==", ["get", "step"], 5],
+    medium,
+    fine,
+  ];
+
+  return [
+    "interpolate",
+    ["linear"],
+    ["zoom"],
+    4,
+    byStep(0.28, 0, 0),
+    7,
+    byStep(0.32, 0.24, 0),
+    9.5,
+    byStep(0.3, 0.22, 0.18),
+    13,
+    byStep(0.24, 0.2, 0.16),
+  ];
+}

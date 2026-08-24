@@ -64,12 +64,20 @@ comes to distrust the map.
 
 ### OPERATIONAL
 
-| Key           | Render layers                                                   | Default | Status                                      |
-| ------------- | --------------------------------------------------------------- | ------- | ------------------------------------------- |
-| `vessels`     | `vessels-layer`, `vessel-headings-layer`, `vessel-labels-layer` | **ON**  | ready                                       |
-| `ports`       | `ports-layer`, `port-labels-layer`, `port-anchorage-layer`      | **ON**  | ready                                       |
-| `eezBoundary` | `eez-boundary-layer`                                            | **ON**  | ready                                       |
-| `weather`     | `weather-layer`                                                 | OFF     | pending-source — awaiting weather connector |
+| Key           | Render layers                                                    | Default | Status                                      |
+| ------------- | ---------------------------------------------------------------- | ------- | ------------------------------------------- |
+| `vessels`     | `vessel-selection-layer`, `vessels-layer`, `vessel-labels-layer` | **ON**  | ready                                       |
+| `ports`       | `ports-layer`, `port-labels-layer`, `port-anchorage-layer`       | **ON**  | ready                                       |
+| `eezBoundary` | `eez-fill-layer`, `eez-boundary-layer`                           | **ON**  | ready                                       |
+| `graticule`   | `graticule-layer`                                                | **ON**  | ready                                       |
+| `weather`     | `weather-layer`                                                  | OFF     | pending-source — awaiting weather connector |
+
+`vessel-headings-layer` was listed here and never installed by any renderer.
+`setLayerVisibility` no-ops on a missing layer, so it failed silently. The
+renderer now publishes `INSTALLED_RENDER_LAYERS`, the registry is asserted
+against it in `tests/unit/layer-truth.test.ts`, and `verifyInstalledLayers`
+reports at runtime any layer the engine declines — because `addLayer` does not
+throw on a bad expression, it simply drops the layer.
 
 ### INTELLIGENCE
 
@@ -81,12 +89,18 @@ comes to distrust the map.
 
 ### ANALYSIS
 
-| Key              | Render layers                                  | Default | Status |
-| ---------------- | ---------------------------------------------- | ------- | ------ |
-| `vesselClusters` | `vessel-clusters-layer`, `cluster-count-layer` | OFF     | ready  |
-| `investigArea`   | `investigation-area-layer`                     | OFF     | ready  |
+| Key              | Render layers                                  | Default | Status                                      |
+| ---------------- | ---------------------------------------------- | ------- | ------------------------------------------- |
+| `vesselClusters` | `vessel-clusters-layer`, `cluster-count-layer` | OFF     | pending-source — no renderer implementation |
+| `investigArea`   | `investigation-area-layer`                     | OFF     | ready                                       |
 
-**Default active set:** `vessels`, `ports`, `eezBoundary`.
+`vesselClusters` was `ready` and no renderer ever drew it. Clustering is not a
+small change: MapLibre clusters at the **source**, and the vessel source is
+declared `promoteId: "imo"` so `updateData` can address one vessel by IMO. A
+clustered source cannot, so clustering needs a second source, a second write
+path, and a rule for which one owns selection.
+
+**Default active set:** `vessels`, `ports`, `eezBoundary`, `graticule`.
 
 ---
 
