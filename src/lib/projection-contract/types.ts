@@ -44,7 +44,10 @@ export interface UIProjection {
 
 /** Why an item is deliberately hidden. */
 export type InternalReason =
-  "implementation-detail" | "raw-transport" | "developer-diagnostic" | "sensitive-lineage";
+  | "implementation-detail"
+  | "raw-transport"
+  | "developer-diagnostic"
+  | "sensitive-lineage";
 
 export interface InternalFlag {
   reason: InternalReason;

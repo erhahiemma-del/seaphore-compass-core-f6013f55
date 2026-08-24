@@ -37,7 +37,12 @@ export type Severity = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
 export type CorroborationLevel = "PARTIAL" | "STRONG" | "VERIFIED";
 
 export type ConfidenceLevel =
-  "OBSERVED" | "DECLARED" | "INFERRED" | "CORROBORATED" | "VERIFIED" | "AUDITED";
+  | "OBSERVED"
+  | "DECLARED"
+  | "INFERRED"
+  | "CORROBORATED"
+  | "VERIFIED"
+  | "AUDITED";
 
 export type RiskTier = "T0" | "T1" | "T2" | "T3";
 

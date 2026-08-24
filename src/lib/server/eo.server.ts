@@ -52,7 +52,11 @@ const SENTINEL1_COLLECTION = "SENTINEL-1";
 export const SENTINEL1_REVISIT_DAYS = 6;
 
 export type EoSearchStatus =
-  "ok" | "empty" | "credentials-missing" | "auth-failed" | "upstream-error";
+  | "ok"
+  | "empty"
+  | "credentials-missing"
+  | "auth-failed"
+  | "upstream-error";
 
 export interface EoAreaQuery {
   /** Area of interest. Closed ring, [lon, lat] pairs. */

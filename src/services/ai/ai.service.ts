@@ -10,7 +10,11 @@
 import { askCopilot } from "@/lib/ai/copilot.functions";
 
 export type AiTaskKind =
-  "summarize" | "explain-signal" | "recommend-action" | "draft-briefing" | "extract-entities";
+  | "summarize"
+  | "explain-signal"
+  | "recommend-action"
+  | "draft-briefing"
+  | "extract-entities";
 
 export interface AiRequest {
   task: AiTaskKind;

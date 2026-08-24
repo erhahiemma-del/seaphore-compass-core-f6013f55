@@ -50,7 +50,10 @@ export const GFW_CREDENTIAL_ENV = ["GFW_API_TOKEN"] as const;
 
 /** Officer-facing authentication states — never a generic error string. */
 export type GfwAuthState =
-  "AUTHENTICATED" | "CREDENTIALS_MISSING" | "CREDENTIALS_INVALID" | "PROVIDER_UNREACHABLE";
+  | "AUTHENTICATED"
+  | "CREDENTIALS_MISSING"
+  | "CREDENTIALS_INVALID"
+  | "PROVIDER_UNREACHABLE";
 
 export const GFW_AUTH_MESSAGE: Record<GfwAuthState, string> = {
   AUTHENTICATED: "Authenticated with Global Fishing Watch.",

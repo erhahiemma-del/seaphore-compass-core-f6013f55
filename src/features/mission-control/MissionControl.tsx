@@ -522,7 +522,10 @@ function IntelligenceFeedPanel({ projection }: { projection: PanelProjection<Fee
                         entityId: signal.subjectId,
                         signalId: signal.id,
                         confidence: signal.confidence.toUpperCase() as
-                          "VERIFIED" | "OBSERVED" | "INFERRED" | "UNCONFIRMED",
+                          | "VERIFIED"
+                          | "OBSERVED"
+                          | "INFERRED"
+                          | "UNCONFIRMED",
                         fromStage: "Detect",
                         fromRoute: "/",
                       },
@@ -799,7 +802,10 @@ function TodaysPrioritiesPanel({
                     context: {
                       entityId: item.id,
                       confidence: item.confidence.toUpperCase() as
-                        "VERIFIED" | "OBSERVED" | "INFERRED" | "UNCONFIRMED",
+                        | "VERIFIED"
+                        | "OBSERVED"
+                        | "INFERRED"
+                        | "UNCONFIRMED",
                       fromStage: "Monitor",
                       fromRoute: "/",
                     },

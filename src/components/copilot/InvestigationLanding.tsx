@@ -396,7 +396,6 @@ export function InvestigationLanding({
             e.preventDefault();
             submit();
           }}
-
           className="mt-5"
         >
           {/* Detected intent — a courtesy echo, dismissible, never a filter. */}
@@ -452,7 +451,6 @@ export function InvestigationLanding({
                     acceptContinuation(continuations[0]);
                   }
                 }}
-
                 placeholder={
                   recording
                     ? "Listening — speak your investigation..."

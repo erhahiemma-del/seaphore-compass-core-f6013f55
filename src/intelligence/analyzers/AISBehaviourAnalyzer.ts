@@ -66,7 +66,10 @@ export interface AisDarkEvidence {
 }
 
 export type AisPatternCode =
-  "repeated-disabling" | "port-approach-disabling" | "boundary-crossing" | "offshore-loitering";
+  | "repeated-disabling"
+  | "port-approach-disabling"
+  | "boundary-crossing"
+  | "offshore-loitering";
 
 export interface AisPattern {
   code: AisPatternCode;

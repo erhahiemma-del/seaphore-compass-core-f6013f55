@@ -85,7 +85,13 @@ export type MapSelection =
  * Mode changes what the map is *for*, not how it draws.
  */
 export type OperatingMode =
-  "NATIONAL" | "PORT" | "VESSEL" | "INCIDENT" | "INVESTIGATION" | "HISTORY" | "REPLAY";
+  | "NATIONAL"
+  | "PORT"
+  | "VESSEL"
+  | "INCIDENT"
+  | "INVESTIGATION"
+  | "HISTORY"
+  | "REPLAY";
 
 export const OPERATING_MODES: readonly OperatingMode[] = [
   "NATIONAL",

@@ -39,7 +39,10 @@ export interface ProviderCandidate {
 }
 
 export type ProviderRejectionReason =
-  "disabled" | "environment-mismatch" | "unhealthy" | "not-selected";
+  | "disabled"
+  | "environment-mismatch"
+  | "unhealthy"
+  | "not-selected";
 
 export interface ProviderResolution {
   readonly capability: ConnectorCapability;

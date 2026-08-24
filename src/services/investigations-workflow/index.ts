@@ -14,7 +14,13 @@ import { create } from "zustand";
 import type { EvidenceGrade } from "@/services/ial/types";
 
 export type CaseSubjectKind =
-  "vessel" | "cargo" | "company" | "person" | "sanction" | "compliance" | "incident";
+  | "vessel"
+  | "cargo"
+  | "company"
+  | "person"
+  | "sanction"
+  | "compliance"
+  | "incident";
 
 export type CaseStage = "intake" | "evidence" | "analysis" | "decision" | "closed";
 

@@ -28,12 +28,22 @@ export type TrustLevel =
   | "DERIVED_ANALYTIC";
 
 export type IntegrationStatus =
-  "INTEGRATED" | "PILOT" | "CREDENTIALS_PENDING" | "SPECIFIED" | "NOT_STARTED";
+  | "INTEGRATED"
+  | "PILOT"
+  | "CREDENTIALS_PENDING"
+  | "SPECIFIED"
+  | "NOT_STARTED";
 
 export type Priority = "P0" | "P1" | "P2" | "P3";
 
 export type UpdateFrequency =
-  "REALTIME" | "HOURLY" | "DAILY" | "WEEKLY" | "MONTHLY" | "EVENT_DRIVEN" | "AD_HOC";
+  | "REALTIME"
+  | "HOURLY"
+  | "DAILY"
+  | "WEEKLY"
+  | "MONTHLY"
+  | "EVENT_DRIVEN"
+  | "AD_HOC";
 
 /** Coverage of the national cargo picture this source can speak to. */
 export interface SourceCoverage {

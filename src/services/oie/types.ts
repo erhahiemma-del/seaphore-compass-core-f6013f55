@@ -55,10 +55,21 @@ export type OperationalIntent =
   | "ambiguous";
 
 export type ConfidenceBadge =
-  "High Confidence" | "Medium Confidence" | "Low Confidence" | "Insufficient Evidence";
+  | "High Confidence"
+  | "Medium Confidence"
+  | "Low Confidence"
+  | "Insufficient Evidence";
 
 export type EntityKind =
-  "vessel" | "imo" | "mmsi" | "company" | "port" | "officer" | "manifest" | "voyage" | "other";
+  | "vessel"
+  | "imo"
+  | "mmsi"
+  | "company"
+  | "port"
+  | "officer"
+  | "manifest"
+  | "voyage"
+  | "other";
 
 export interface EntityMention {
   type: EntityKind;

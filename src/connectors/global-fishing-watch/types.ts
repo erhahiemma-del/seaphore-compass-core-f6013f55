@@ -132,7 +132,11 @@ export interface GfwAreaVessel {
 
 /** Outcome states. Never throws for the caller — the map must degrade, not crash. */
 export type GfwAreaStatus =
-  "ok" | "empty" | "credentials-missing" | "auth-failed" | "upstream-error";
+  | "ok"
+  | "empty"
+  | "credentials-missing"
+  | "auth-failed"
+  | "upstream-error";
 
 /** Diagnostics for the Live Feed Monitor. Contains no credential material. */
 export interface GfwAreaDiagnostics {

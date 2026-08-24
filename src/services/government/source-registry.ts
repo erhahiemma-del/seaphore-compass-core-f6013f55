@@ -92,7 +92,10 @@ export type IntegrationReadiness =
  * from this list on purpose, because it is not a production route.
  */
 export type AcquisitionRoute =
-  "PUBLIC_EXPORT" | "OFFICIAL_API" | "OFFICIAL_FEED" | "AUTHORIZED_INSTITUTIONAL_FEED";
+  | "PUBLIC_EXPORT"
+  | "OFFICIAL_API"
+  | "OFFICIAL_FEED"
+  | "AUTHORIZED_INSTITUTIONAL_FEED";
 
 export const ACQUISITION_PRIORITY: readonly AcquisitionRoute[] = [
   "PUBLIC_EXPORT",

@@ -9,7 +9,15 @@
  */
 
 export type IntentHintKey =
-  "IMO" | "VESSEL" | "COMPANY" | "MANIFEST" | "CONTAINER" | "BOL" | "VOYAGE" | "PORT" | "SANCTIONS";
+  | "IMO"
+  | "VESSEL"
+  | "COMPANY"
+  | "MANIFEST"
+  | "CONTAINER"
+  | "BOL"
+  | "VOYAGE"
+  | "PORT"
+  | "SANCTIONS";
 
 export interface IntentHint {
   key: IntentHintKey;

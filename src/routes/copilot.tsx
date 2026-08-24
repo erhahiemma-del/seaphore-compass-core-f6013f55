@@ -391,7 +391,9 @@ function CopilotOpsPage() {
       // downstream surface can resolve evidence via getUip(source_uip_id).
       if (abandoned()) throw new CancelledRun();
       const uipFromResult = (rawResult as { uip?: unknown }).uip as
-        import("@/services/ife/unified").UnifiedIntelligencePackage | null | undefined;
+        | import("@/services/ife/unified").UnifiedIntelligencePackage
+        | null
+        | undefined;
       if (uipFromResult && uipFromResult.id) {
         (await import("@/stores/uip.store")).useUipStore.getState().register(uipFromResult);
         setUipId(uipFromResult.id);
@@ -934,7 +936,6 @@ function CopilotOpsPage() {
               <div
                 ref={workspaceScrollRef}
                 data-testid="copilot-workspace-scroll"
-
                 className={cn(
                   "min-h-0 flex-1 overflow-auto overscroll-contain scroll-smooth",
                   investigationMode ? "p-4" : "flex p-0",

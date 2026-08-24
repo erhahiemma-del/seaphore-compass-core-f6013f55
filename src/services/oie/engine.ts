@@ -250,8 +250,12 @@ function patchBriefingWithHumanResponse(
       title: f.text,
       grade:
         (f.citations?.[0]?.grade as
-          "VERIFIED" | "CORROBORATED" | "OBSERVED" | "REPORTED" | "INFERRED" | "UNKNOWN") ??
-        "OBSERVED",
+          | "VERIFIED"
+          | "CORROBORATED"
+          | "OBSERVED"
+          | "REPORTED"
+          | "INFERRED"
+          | "UNKNOWN") ?? "OBSERVED",
       source: f.citations?.[0]?.source ?? plan.primarySkill.label,
       id: `${briefing.id}-kf-${i}`,
       citations: (f.citations ?? []).map((c) => ({

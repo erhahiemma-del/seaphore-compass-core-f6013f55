@@ -161,7 +161,12 @@ export type SourceType = "OSINT" | "COMMERCIAL" | "GOVERNMENT";
 
 /** Operational state of a provider, independent of any one query. */
 export type SourceStatus =
-  "ok" | "empty" | "credentials-missing" | "auth-failed" | "upstream-error" | "not-queried";
+  | "ok"
+  | "empty"
+  | "credentials-missing"
+  | "auth-failed"
+  | "upstream-error"
+  | "not-queried";
 
 /**
  * Self-description of a provider.

@@ -83,9 +83,9 @@ before a production deploy.
 
 ## Sign-off
 
-- Security lead: __________________ Date: ______
-- Ops lead: __________________ Date: ______
-- Officer lead: __________________ Date: ______
+- Security lead: **\*\*\*\***\_\_**\*\*\*\*** Date: **\_\_**
+- Ops lead: **\*\*\*\***\_\_**\*\*\*\*** Date: **\_\_**
+- Officer lead: **\*\*\*\***\_\_**\*\*\*\*** Date: **\_\_**
 
 Any Fail blocks release. Warns require a tracked mitigation ticket linked
 from the row above.

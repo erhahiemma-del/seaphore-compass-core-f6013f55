@@ -107,7 +107,8 @@ export interface IngestionFailure {
 }
 
 export type IngestionOutcome =
-  { readonly kind: "SNAPSHOT"; readonly snapshot: NpaDailySnapshot } | IngestionFailure;
+  | { readonly kind: "SNAPSHOT"; readonly snapshot: NpaDailySnapshot }
+  | IngestionFailure;
 
 /** `YYYY-MM-DD` in UTC. */
 function dayOf(iso: string): string {

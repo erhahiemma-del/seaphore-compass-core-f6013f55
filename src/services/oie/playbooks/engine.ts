@@ -40,9 +40,11 @@ export function buildPlaybookContext(
     []) as PlaybookFinding[];
   const gaps = (pickSection(sections, "intelligence_gaps")?.payload?.list ?? []) as string[];
   const impact = pickSection(sections, "decision_impact")?.payload as
-    PlaybookContext["decisionImpact"] | undefined;
+    | PlaybookContext["decisionImpact"]
+    | undefined;
   const sourcesPayload = pickSection(sections, "evidence_sources")?.payload as
-    Partial<PlaybookContext["sources"]> | undefined;
+    | Partial<PlaybookContext["sources"]>
+    | undefined;
 
   return {
     briefing,

@@ -185,7 +185,8 @@ export function buildHumanResponse(
   const sections = Array.isArray(briefing?.sections) ? briefing.sections : [];
   const underlyingCritical =
     (pickSection(sections, "critical_findings")?.payload?.findings as
-      CriticalFindingIn[] | undefined) ?? [];
+      | CriticalFindingIn[]
+      | undefined) ?? [];
   const citationIndex = new Map<string, import("./types").EvidenceCitation>();
   for (const f of underlyingCritical) {
     for (const c of f?.citations ?? []) {

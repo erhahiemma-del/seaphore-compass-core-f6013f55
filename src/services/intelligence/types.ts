@@ -70,7 +70,10 @@ export type FindingKind = string;
  * silence.
  */
 export type FindingStatus =
-  "supported" | "insufficient-evidence" | "pending-source" | "not-applicable";
+  | "supported"
+  | "insufficient-evidence"
+  | "pending-source"
+  | "not-applicable";
 
 /**
  * A reference to evidence held by its producing engine.

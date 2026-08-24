@@ -23,7 +23,12 @@
 import { credentialCandidates } from "@/connectors/implementations/shared/provider-io";
 
 export type ConnectorHealthState =
-  "healthy" | "auth_failed" | "offline" | "rate_limited" | "degraded" | "unavailable";
+  | "healthy"
+  | "auth_failed"
+  | "offline"
+  | "rate_limited"
+  | "degraded"
+  | "unavailable";
 
 export interface HealthReport {
   state: ConnectorHealthState;

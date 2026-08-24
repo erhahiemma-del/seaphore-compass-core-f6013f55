@@ -24,7 +24,13 @@ export type MissionType =
   | "escort";
 
 export type MissionStatus =
-  "draft" | "pending-approval" | "approved" | "executing" | "completed" | "rejected" | "aborted";
+  | "draft"
+  | "pending-approval"
+  | "approved"
+  | "executing"
+  | "completed"
+  | "rejected"
+  | "aborted";
 
 export interface MissionSubject {
   readonly kind: "vessel" | "port" | "company" | "person" | "cargo";
@@ -50,7 +56,12 @@ export interface MissionTask {
 
 export interface MissionResource {
   readonly kind:
-    "patrol-vessel" | "aircraft" | "inspection-team" | "analyst" | "legal" | "port-authority";
+    | "patrol-vessel"
+    | "aircraft"
+    | "inspection-team"
+    | "analyst"
+    | "legal"
+    | "port-authority";
   readonly label: string;
   readonly quantity: number;
   readonly rationale: string;

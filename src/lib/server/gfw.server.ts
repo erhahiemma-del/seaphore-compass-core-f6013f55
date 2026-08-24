@@ -76,7 +76,10 @@ function readApiKey(): string | null {
 
 /** Officer-facing credential states — never a generic error string. */
 export type GfwCredentialState =
-  "AUTHENTICATED" | "CREDENTIALS_MISSING" | "CREDENTIALS_INVALID" | "PROVIDER_UNREACHABLE";
+  | "AUTHENTICATED"
+  | "CREDENTIALS_MISSING"
+  | "CREDENTIALS_INVALID"
+  | "PROVIDER_UNREACHABLE";
 
 export interface GfwCredentialStatus {
   readonly state: GfwCredentialState;
@@ -617,7 +620,8 @@ function parseAreaVessel(entry: unknown, retrievedAt: string): GfwAreaVessel | n
   const it = entry as Record<string, unknown>;
 
   const position = (it.position ?? it.coordinates ?? it.location) as
-    Record<string, unknown> | undefined;
+    | Record<string, unknown>
+    | undefined;
   if (!position || typeof position !== "object") return null;
 
   const latitude = pickNumber(position, "lat", "latitude", "y");

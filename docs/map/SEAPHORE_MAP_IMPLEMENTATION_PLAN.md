@@ -57,7 +57,13 @@ field names encode one.
 
 ```ts
 type OperatingMode =
-  "NATIONAL" | "PORT" | "VESSEL" | "INCIDENT" | "INVESTIGATION" | "HISTORY" | "REPLAY";
+  | "NATIONAL"
+  | "PORT"
+  | "VESSEL"
+  | "INCIDENT"
+  | "INVESTIGATION"
+  | "HISTORY"
+  | "REPLAY";
 ```
 
 Reusing `ViewMode` would recreate exactly the vocabulary drift G6.0

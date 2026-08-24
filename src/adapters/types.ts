@@ -11,7 +11,12 @@
 
 /** DB-level confidence tier — mirrors public.confidence_level enum. */
 export type ConfidenceLevel =
-  "VERIFIED" | "AUDITED" | "CORROBORATED" | "DECLARED" | "OBSERVED" | "INFERRED";
+  | "VERIFIED"
+  | "AUDITED"
+  | "CORROBORATED"
+  | "DECLARED"
+  | "OBSERVED"
+  | "INFERRED";
 
 export interface ProviderMeta {
   /** Human-readable provider name (e.g. "MarineTraffic"). */

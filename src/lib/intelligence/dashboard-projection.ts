@@ -220,15 +220,17 @@ export function projectIntelligenceFeed(input: {
 
   const signals = [...findings]
     .sort((a, b) => Date.parse(b.detectedAt) - Date.parse(a.detectedAt))
-    .map((finding): FeedSignal => ({
-      id: finding.id,
-      title: finding.headline,
-      subtitle: finding.explanation,
-      subjectId: finding.subjectId,
-      // The finding's own grade, carried through rather than restated.
-      confidence: gradeToTier(finding.confidence),
-      observedAt: finding.detectedAt,
-    }));
+    .map(
+      (finding): FeedSignal => ({
+        id: finding.id,
+        title: finding.headline,
+        subtitle: finding.explanation,
+        subjectId: finding.subjectId,
+        // The finding's own grade, carried through rather than restated.
+        confidence: gradeToTier(finding.confidence),
+        observedAt: finding.detectedAt,
+      }),
+    );
 
   // Freshness of the newest signal, using the shared bands rather than a
   // staleness rule invented here.
@@ -304,14 +306,16 @@ export function projectTodaysPriorities(input: {
     .sort(
       (a, b) => (order[a.priority] ?? 9) - (order[b.priority] ?? 9) || b.magnitude - a.magnitude,
     )
-    .map((finding): PriorityItem => ({
-      id: finding.id,
-      entityName: finding.subjectLabel || finding.headline,
-      rationale: finding.headline,
-      priority: finding.priority,
-      confidence: gradeToTier(finding.confidence),
-      approved: finding.humanApproved,
-    }));
+    .map(
+      (finding): PriorityItem => ({
+        id: finding.id,
+        entityName: finding.subjectLabel || finding.headline,
+        rationale: finding.headline,
+        priority: finding.priority,
+        confidence: gradeToTier(finding.confidence),
+        approved: finding.humanApproved,
+      }),
+    );
 
   return { ...base, state, data: { items } };
 }

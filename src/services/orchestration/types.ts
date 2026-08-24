@@ -40,7 +40,12 @@ export type Workspace =
   | "decision-support";
 
 export type EvidenceGrade =
-  "VERIFIED" | "CORROBORATED" | "OBSERVED" | "REPORTED" | "INFERRED" | "UNKNOWN";
+  | "VERIFIED"
+  | "CORROBORATED"
+  | "OBSERVED"
+  | "REPORTED"
+  | "INFERRED"
+  | "UNKNOWN";
 
 export type CapabilityId =
   | "OWNERSHIP_ANALYSIS"

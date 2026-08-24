@@ -11,7 +11,10 @@ import { governmentRegistry } from "@/services/government";
 
 /** Operational availability. Deliberately not the certification vocabulary. */
 export type Availability =
-  "ACTIVE" | "AWAITING_CREDENTIALS" | "PENDING_INTEGRATION" | "UNAVAILABLE";
+  | "ACTIVE"
+  | "AWAITING_CREDENTIALS"
+  | "PENDING_INTEGRATION"
+  | "UNAVAILABLE";
 
 export interface ProviderRow {
   readonly id: string;

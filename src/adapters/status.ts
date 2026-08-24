@@ -38,7 +38,12 @@ export type SourceKind =
 export type SourceScope = "osint" | "commercial" | "internal" | "user" | "ai";
 
 export type ConfidenceLabel =
-  "VERIFIED" | "AUDITED" | "CORROBORATED" | "DECLARED" | "OBSERVED" | "INFERRED";
+  | "VERIFIED"
+  | "AUDITED"
+  | "CORROBORATED"
+  | "DECLARED"
+  | "OBSERVED"
+  | "INFERRED";
 
 export interface SourceRegistryEntry {
   /** Stable slug — matches public.data_sources.id */

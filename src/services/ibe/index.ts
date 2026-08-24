@@ -118,7 +118,12 @@ function patchBriefingSections(briefing: Briefing, hr: HumanResponse, closer: st
       priority: f.priority,
       title: f.text,
       grade: (f.citations?.[0]?.grade ?? "OBSERVED") as
-        "VERIFIED" | "CORROBORATED" | "OBSERVED" | "REPORTED" | "INFERRED" | "UNKNOWN",
+        | "VERIFIED"
+        | "CORROBORATED"
+        | "OBSERVED"
+        | "REPORTED"
+        | "INFERRED"
+        | "UNKNOWN",
       source: f.citations?.[0]?.source ?? "Copilot behavioural layer",
       id: `${briefing.id}-ibe-kf-${i}`,
       citations: (f.citations ?? []).map((c) => ({

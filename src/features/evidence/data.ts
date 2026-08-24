@@ -27,10 +27,18 @@ export type EvidenceKind =
   | "Payment Receipt";
 
 export type EvidenceCategory =
-  "Documents" | "Media" | "AIS Records" | "Manifests" | "Bills of Lading";
+  | "Documents"
+  | "Media"
+  | "AIS Records"
+  | "Manifests"
+  | "Bills of Lading";
 
 export type EvidenceClassification =
-  "Official Document" | "Field Capture" | "System Ingest" | "Third-Party Feed" | "OSINT";
+  | "Official Document"
+  | "Field Capture"
+  | "System Ingest"
+  | "Third-Party Feed"
+  | "OSINT";
 
 export interface EvidenceItem {
   id: string;

@@ -18,7 +18,12 @@
 
 /** Where a vessel is in its call. */
 export type PortCallStage =
-  "EXPECTED" | "APPROACHING" | "ARRIVED" | "AWAITING_BERTH" | "AT_BERTH" | "DEPARTED";
+  | "EXPECTED"
+  | "APPROACHING"
+  | "ARRIVED"
+  | "AWAITING_BERTH"
+  | "AT_BERTH"
+  | "DEPARTED";
 
 export const PORT_CALL_STAGES: readonly PortCallStage[] = [
   "EXPECTED",

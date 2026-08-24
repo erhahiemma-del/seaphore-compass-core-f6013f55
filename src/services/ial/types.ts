@@ -28,7 +28,12 @@ export type EntityKind = "vessel" | "company" | "person" | "port" | "cargo" | "v
 
 /** OC-001 confidence grades — kept in lockstep with the compliance rules. */
 export type EvidenceGrade =
-  "VERIFIED" | "CORROBORATED" | "OBSERVED" | "REPORTED" | "INFERRED" | "UNKNOWN";
+  | "VERIFIED"
+  | "CORROBORATED"
+  | "OBSERVED"
+  | "REPORTED"
+  | "INFERRED"
+  | "UNKNOWN";
 
 export interface CanonicalEntityRef {
   readonly kind: EntityKind;

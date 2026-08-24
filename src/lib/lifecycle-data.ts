@@ -305,7 +305,12 @@ export const RISK_HEATMAP: Array<{
 
 /** DET-6 signal-type tiles. */
 export type SignalType =
-  "Anomalies" | "Discrepancies" | "Duplicates" | "Changes" | "Gaps" | "Matches";
+  | "Anomalies"
+  | "Discrepancies"
+  | "Duplicates"
+  | "Changes"
+  | "Gaps"
+  | "Matches";
 
 export const SIGNAL_TYPE_TILES: Array<{
   type: SignalType;

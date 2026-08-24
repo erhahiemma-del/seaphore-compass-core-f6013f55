@@ -38,7 +38,11 @@
 
 /** Structured error surface shared by every authenticated connector. */
 export type ConnectorGatewayErrorCode =
-  "CREDENTIALS_MISSING" | "AUTH_FAILED" | "UPSTREAM_ERROR" | "RATE_LIMITED" | "TIMEOUT";
+  | "CREDENTIALS_MISSING"
+  | "AUTH_FAILED"
+  | "UPSTREAM_ERROR"
+  | "RATE_LIMITED"
+  | "TIMEOUT";
 
 export interface ConnectorGatewayError {
   code: ConnectorGatewayErrorCode;
