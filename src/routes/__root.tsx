@@ -11,13 +11,13 @@ import React, { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { supabase } from "@/integrations/supabase/client";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { BackendConfigurationError } from "@/components/auth/BackendConfigurationError";
 import { CopilotModal } from "@/components/copilot/CopilotModal";
 import { useCopilotShortcuts } from "@/hooks/use-copilot-shortcuts";
 import { hasBackendBrowserConfig } from "@/lib/backend-browser-config";
+import { getBackendAuthSafely } from "@/lib/backend-client-safe";
 import { installStaleChunkReload, showStaleChunkNoticeIfAny } from "@/lib/stale-chunk-reload";
 
 if (typeof window !== "undefined") {
@@ -138,9 +138,10 @@ function RootComponent() {
   }, []);
 
   useEffect(() => {
-    if (!hasBackendBrowserConfig()) return;
+    const auth = getBackendAuthSafely();
+    if (!auth) return;
 
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+    const { data: sub } = auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") {
         return;
       }

@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 
-import { supabase } from "@/integrations/supabase/client";
-import { hasBackendBrowserConfig } from "@/lib/backend-browser-config";
+import { getBackendAuthSafely } from "@/lib/backend-client-safe";
 
 export interface AuthState {
   session: Session | null;
@@ -23,17 +22,18 @@ export function useAuth(): AuthState {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!hasBackendBrowserConfig()) {
+    const auth = getBackendAuthSafely();
+    if (!auth) {
       setLoading(false);
       return;
     }
 
     let cancelled = false;
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
+    const { data: sub } = auth.onAuthStateChange((_event, next) => {
       if (!cancelled) setSession(next);
     });
 
-    supabase.auth
+    auth
       .getSession()
       .then(({ data }) => {
         if (cancelled) return;
