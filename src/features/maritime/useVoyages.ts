@@ -43,6 +43,7 @@ import {
   type VoyageRowLike,
 } from "@/services/geospatial";
 import { voyageRepository } from "@/services/repositories/voyage.repository";
+import { useAuth } from "@/hooks/use-auth";
 
 export type VoyageFeedStatus = "loading" | "unavailable" | "empty" | "ready";
 
