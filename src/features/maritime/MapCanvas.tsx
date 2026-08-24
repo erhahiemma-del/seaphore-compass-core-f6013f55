@@ -32,6 +32,8 @@ import {
   useMapSessionStore,
   planCameraMove,
   selectionKey,
+  DOMAIN_PRESETS,
+  type MapDomain,
   type CameraMovePlan,
   type MapControlOptions,
   type MapEventBus,
@@ -50,7 +52,7 @@ import {
  * furniture, because a dashboard tile with a scale bar and a compass is a
  * command surface that happens to be small.
  */
-export type MapCanvasMode = "command" | "overview";
+export type MapCanvasMode = "command" | "overview" | "context";
 
 /**
  * Development-only record of camera decisions.
@@ -84,11 +86,24 @@ const MODE_CONTROLS: Readonly<Record<MapCanvasMode, MapControlOptions>> = {
   // Zoom only. No compass — a dashboard overview is never rotated — and no
   // scale bar, which is unreadable at tile size.
   overview: { navigation: true, compass: false, scale: false },
+  // Embedded in an intelligence dashboard: zoom and a scale bar, because
+  // distance matters when reading a port approach, but no compass — the
+  // surrounding panels are the subject and the map stays oriented north.
+  context: { navigation: true, compass: false, scale: true },
 };
 
 export interface MapCanvasProps {
   /** Presentation mode. Defaults to the full command surface. */
   readonly mode?: MapCanvasMode;
+  /**
+   * Intelligence domain this map is serving.
+   *
+   * Selects a layer preset, so the same engine shows a vessel's
+   * surroundings, a manifest's ports, or a cargo corridor without three
+   * copies of the map. Absent means the officer's own layer choices in
+   * SGS stand, which is what the command and overview surfaces want.
+   */
+  readonly domain?: MapDomain;
   /** Renderer to attach. Defaults to the MapLibre adapter. */
   readonly renderer?: MapRenderer;
   /** Where vessels come from. Defaults to an empty source. */
@@ -142,6 +157,7 @@ export interface VesselFeedState {
 
 export function MapCanvas({
   mode = "command",
+  domain,
   renderer: injectedRenderer,
   vesselSource,
   service = sgs,
@@ -217,8 +233,18 @@ export function MapCanvas({
       .then(() => {
         if (cancelled) return;
         engine.attachRenderer(renderer);
-        // Apply current layer state once the style is live.
-        for (const [id, visible] of layerRegistry.resolveVisibility(service.get().activeLayers)) {
+        /*
+         * Apply layer state once the style is live.
+         *
+         * A domain lens resolves through the same `resolveVisibility` the
+         * officer's own choices go through — it only supplies a different
+         * set of active layers. Nothing bypasses the registry, so a layer
+         * that is off for a domain is off by the same mechanism as one the
+         * officer switched off, and the command surfaces are untouched
+         * because they pass no domain.
+         */
+        const active = domain ? DOMAIN_PRESETS[domain] : service.get().activeLayers;
+        for (const [id, visible] of layerRegistry.resolveVisibility(active)) {
           renderer.setLayerVisibility(id, visible);
         }
         setStatus("ready");
@@ -237,7 +263,7 @@ export function MapCanvas({
     // `mode` is read at mount because controls are attached during
     // `mount()`. Listing it here remounts on a mode change, which is
     // correct: MapLibre has no API to remove a control set afterwards.
-  }, [mode, renderer, engine, service, setRenderer, setStatus, setError]);
+  }, [mode, domain, renderer, engine, service, setRenderer, setStatus, setError]);
 
   // ── Layer visibility and opacity follow SGS ───────────────────────────
   useEffect(

@@ -29,6 +29,7 @@ import { DataTable, Section } from "@/components/intel-centre/primitives";
 import { SubjectHeader } from "@/components/intel-centre/subject-header";
 import { useCentreFocus } from "@/components/intel-centre/use-centre-focus";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
+import { MapCanvas } from "@/features/maritime/MapCanvas";
 import { PanelStateNotice } from "@/components/intelligence/PanelStateNotice";
 
 import { cargoCentreBySlug } from "@/lib/intelligence/cargo-workspace-projection";
@@ -151,6 +152,16 @@ export function CargoCentre() {
         }
         main={
           <div className="space-y-4">
+            {/*
+              The shared MapLibre engine under a cargo lens. Same
+              renderer, same SGS, same layer registry as the command
+              surfaces — only the active layers differ.
+            */}
+            <div className="relative h-[300px] overflow-hidden rounded-lg border border-line">
+              <MapCanvas mode="context" domain="cargo" />
+              <MapCoverageNote />
+            </div>
+
             {!hasData ? (
               <Section>
                 <PanelStateNotice
@@ -329,6 +340,29 @@ function Row({ label, value }: { label: string; value: string }) {
       <dd className="font-mono max-w-[60%] truncate text-right text-[11px] text-foreground/85">
         {value}
       </dd>
+    </div>
+  );
+}
+
+/**
+ * What the map shows, and what it deliberately does not draw.
+ *
+ * Ports and the EEZ are verified geography. The movement this domain
+ * cares about lives only in demonstration fixtures, so no route is
+ * rendered: drawing one would put an unobserved voyage on the map with
+ * the same visual authority as a real one.
+ */
+function MapCoverageNote() {
+  return (
+    <div className="pointer-events-none absolute bottom-2 left-2 max-w-[300px] rounded border border-line/70 bg-surface/90 px-2.5 py-1.5 backdrop-blur-sm">
+      <p className="text-[9.5px] font-semibold uppercase tracking-[0.1em] text-slate">
+        Cargo geography
+      </p>
+      <p className="mt-0.5 text-[11px] leading-relaxed text-slate">
+        Ports, EEZ and risk density shown from verified geography. Trade corridors and cargo
+        origin/destination come from demonstration fixtures, so no movement is drawn — a corridor
+        here would assert a shipment nobody observed.
+      </p>
     </div>
   );
 }

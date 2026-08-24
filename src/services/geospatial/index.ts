@@ -80,9 +80,11 @@ export {
   LayerRegistryError,
   layerRegistry,
   MISSION_PRESETS,
+  DOMAIN_PRESETS,
   type LayerDefinition,
   type LayerGroup,
   type LayerStatus,
+  type MapDomain,
   type MissionPreset,
 } from "./layer-registry";
 

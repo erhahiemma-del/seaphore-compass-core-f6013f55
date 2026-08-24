@@ -28,6 +28,7 @@ import { KpiRibbon, type KpiSpec } from "@/components/intel-centre/kpi-ribbon";
 import { CentreCopilot } from "@/components/intel-centre/centre-copilot";
 import { Section } from "@/components/intel-centre/primitives";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
+import { MapCanvas } from "@/features/maritime/MapCanvas";
 import { PanelStateNotice } from "@/components/intelligence/PanelStateNotice";
 
 import { cargoCentreBySlug } from "@/lib/intelligence/cargo-workspace-projection";
@@ -139,6 +140,16 @@ export function ManifestCentre() {
         }
         main={
           <div className="space-y-4">
+            {/*
+              The shared MapLibre engine under a manifest lens. Same
+              renderer, same SGS, same layer registry as the command
+              surfaces — only the active layers differ.
+            */}
+            <div className="relative h-[300px] overflow-hidden rounded-lg border border-line">
+              <MapCanvas mode="context" domain="manifest" />
+              <MapCoverageNote />
+            </div>
+
             {!hasData ? (
               <Section>
                 <PanelStateNotice
@@ -253,6 +264,29 @@ function Row({ label, value }: { label: string; value: string }) {
       <dd className="font-mono max-w-[60%] truncate text-right text-[11px] text-foreground/85">
         {value}
       </dd>
+    </div>
+  );
+}
+
+/**
+ * What the map shows, and what it deliberately does not draw.
+ *
+ * Ports and the EEZ are verified geography. The movement this domain
+ * cares about lives only in demonstration fixtures, so no route is
+ * rendered: drawing one would put an unobserved voyage on the map with
+ * the same visual authority as a real one.
+ */
+function MapCoverageNote() {
+  return (
+    <div className="pointer-events-none absolute bottom-2 left-2 max-w-[300px] rounded border border-line/70 bg-surface/90 px-2.5 py-1.5 backdrop-blur-sm">
+      <p className="text-[9.5px] font-semibold uppercase tracking-[0.1em] text-slate">
+        Manifest geography
+      </p>
+      <p className="mt-0.5 text-[11px] leading-relaxed text-slate">
+        Ports and Nigerian EEZ shown from verified geography. Origin, transit and destination for
+        this manifest come from demonstration fixtures, so no route is drawn — a line here would
+        assert a voyage nobody observed.
+      </p>
     </div>
   );
 }

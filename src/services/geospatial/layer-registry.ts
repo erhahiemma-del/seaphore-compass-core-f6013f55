@@ -416,6 +416,33 @@ export const MISSION_PRESETS: readonly MissionPreset[] = [
   },
 ] as const;
 
+/**
+ * Domain lenses for the contextual map.
+ *
+ * Each names the layers one intelligence domain needs, so `/vessel`,
+ * `/manifest` and `/cargo` share the engine without sharing a viewport.
+ *
+ * ## Only layers the renderer actually draws
+ *
+ * `LAYER_IDS` declares nineteen layers; `MapLibreRenderer` installs eight.
+ * `aisTrack`, `revenueHeat`, `weatherOverlay` and the SAR layers are
+ * declared but not yet drawn, and there is no track geometry on the vessel
+ * model to feed them. Listing one here would switch on a layer that
+ * renders nothing, which reads to an officer as "no activity" rather than
+ * "not built". So these presets name only what draws today, and the
+ * domains state the rest as unavailable in their own copy.
+ */
+export const DOMAIN_PRESETS = {
+  /** Where is this vessel, and what surrounds it. */
+  vessel: ["vessels", "ports", "eezBoundary", "riskHeatmap"],
+  /** Which ports a manifest touches, inside whose waters. */
+  manifest: ["ports", "eezBoundary", "vessels"],
+  /** Where cargo moves through the port system. */
+  cargo: ["ports", "eezBoundary", "riskHeatmap"],
+} as const satisfies Record<string, readonly string[]>;
+
+export type MapDomain = keyof typeof DOMAIN_PRESETS;
+
 /** The layers shipped with the Live Command Map foundation. */
 export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
   {

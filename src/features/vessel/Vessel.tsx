@@ -15,7 +15,7 @@ import { DataTable, Section, StatusBadge } from "@/components/intel-centre/primi
 import { SubjectHeader } from "@/components/intel-centre/subject-header";
 import { useCentreFocus } from "@/components/intel-centre/use-centre-focus";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
-import { NigeriaMap } from "@/components/intel-centre/nigeria-map";
+import { MapCanvas } from "@/features/maritime/MapCanvas";
 import { OwnershipGraph } from "@/components/intel-centre/ownership-graph";
 import { DemoDataNotice } from "@/components/intelligence/DemoDataNotice";
 import {
@@ -228,13 +228,16 @@ export function VesselCentre() {
 
             {/* Map + profile */}
             <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_360px]">
-              <div className="h-[340px]">
-                <NigeriaMap
-                  vessels={VESSELS}
-                  selectedVesselId={selectedId}
-                  onSelectVessel={(vv) => setSelectedId(vv.id)}
-                  className="h-full"
-                />
+              {/*
+                The shared MapLibre engine under a vessel lens, replacing a
+                hand-drawn SVG whose coastline was a `<path>` and whose
+                vessel dots were placed at "approximate" offsets. Real
+                geography, real port positions, and selection flows through
+                the same SGS the command surfaces use.
+              */}
+              <div className="relative h-[340px] overflow-hidden rounded-lg border border-line">
+                <MapCanvas mode="context" domain="vessel" />
+                <VesselMapCoverageNote />
               </div>
               <Section title="Vessel Profile (VES-1)">
                 <div className="mb-3">
@@ -430,5 +433,29 @@ export function VesselCentre() {
         }
       />
     </>
+  );
+}
+
+/**
+ * What this map cannot yet show.
+ *
+ * Vessel position, ports, anchorages, the EEZ and risk density are drawn
+ * from real geography and a live feed. Route history, port-call paths and
+ * AIS gaps are not: the canonical vessel model carries no track geometry
+ * and no source supplies one, so those layers would have nothing behind
+ * them. Saying so is the difference between "not built" and an officer
+ * reading an empty map as "this vessel went nowhere".
+ */
+function VesselMapCoverageNote() {
+  return (
+    <div className="pointer-events-none absolute bottom-2 left-2 max-w-[280px] rounded border border-line/70 bg-surface/90 px-2.5 py-1.5 backdrop-blur-sm">
+      <p className="text-[9.5px] font-semibold uppercase tracking-[0.1em] text-slate">
+        Spatial coverage
+      </p>
+      <p className="mt-0.5 text-[11px] leading-relaxed text-slate">
+        Position, ports and EEZ shown. Route history, port calls and AIS gaps are not yet collected
+        — their absence here is a gap in coverage, not an observation.
+      </p>
+    </div>
   );
 }
