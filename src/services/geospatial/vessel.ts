@@ -13,6 +13,7 @@
 import { RISK_COLORS, RISK_OPACITY, TIMING } from "./constants";
 import { freshnessBandForTimestamp, type FreshnessBand } from "./freshness";
 import type { GeoJsonFeature, GeoJsonPoint, LonLat, RiskLevel, VesselType } from "./types";
+import { classifyVessel, resolveHeading, type VesselVisualCategory } from "./vessel-visual";
 
 /** Stable identity of a vessel across data sources. */
 export interface VesselIdentity {
@@ -32,6 +33,17 @@ export interface VesselPosition {
   readonly lat: number;
   /** Course over ground in degrees, 0–359, where 0 is true north. */
   readonly heading: number;
+  /**
+   * Whether a provider actually reported the course above.
+   *
+   * `heading` is a required number, so a source with no course still
+   * yields `0` — which draws as due north and is indistinguishable from
+   * a real northerly bearing. This flag is the only thing that keeps
+   * "steaming north" apart from "nobody said". Optional so existing
+   * constructions stay valid; absent is treated as reported, since every
+   * caller predating this either supplied a real course or set the flag.
+   */
+  readonly headingReported?: boolean;
   /** Speed over ground in knots. */
   readonly speed: number;
   /** ISO-8601 timestamp of the report. */
@@ -116,6 +128,20 @@ export interface VesselFeatureProperties {
   readonly freshness: FreshnessBand;
   /** Age of the observation in milliseconds at projection time. */
   readonly ageMs: number;
+  /** Visual family, from `classifyVessel`. Shape axis, not risk. */
+  readonly category: VesselVisualCategory;
+  /** Officer-facing category name, for the popup and the legend. */
+  readonly categoryLabel: string;
+  /** False when no provider reported this vessel's type. */
+  readonly typeReported: boolean;
+  /**
+   * Whether `heading` is a bearing anyone actually reported.
+   *
+   * The renderer keys `icon-rotate` off this: false means draw the
+   * symbol unrotated, because rotating to a defaulted zero would show a
+   * vessel steaming north that may be drifting or moored.
+   */
+  readonly headingKnown: boolean;
 }
 
 /** A vessel rendered as a GeoJSON point feature. */
@@ -170,12 +196,26 @@ export function vesselOpacity(vessel: Vessel, ctx: VesselRenderContext = {}): nu
   return RISK_OPACITY.ACTIVE;
 }
 
-/** Sprite id for a vessel, matching the icons registered with the renderer. */
+/**
+ * Sprite id for a vessel, matching the icons registered with the renderer.
+ *
+ * Colour comes from risk (or selection/staleness, which outrank it). The
+ * `-nodir` suffix switches the arrow for a disc when no course was
+ * reported, so an unknown bearing is never drawn as a pointed hull.
+ */
 export function vesselIconId(vessel: Vessel, ctx: VesselRenderContext = {}): string {
   const now = ctx.now ?? Date.now();
-  if (ctx.selectedImo != null && ctx.selectedImo === vessel.identity.imo) return "vessel-selected";
-  if (isStale(vessel, now)) return "vessel-stale";
-  return `vessel-${vessel.riskLevel.toLowerCase()}`;
+  const directional = resolveHeading(
+    vessel.position.heading,
+    vessel.position.headingReported,
+  ).known;
+  const suffix = directional ? "" : "-nodir";
+
+  if (ctx.selectedImo != null && ctx.selectedImo === vessel.identity.imo) {
+    return `vessel-selected${suffix}`;
+  }
+  if (isStale(vessel, now)) return `vessel-stale${suffix}`;
+  return `vessel-${vessel.riskLevel.toLowerCase()}${suffix}`;
 }
 
 /** Palette colour for a risk band, falling back to `UNKNOWN`. */
@@ -194,6 +234,10 @@ export function toVesselFeature(vessel: Vessel, ctx: VesselRenderContext = {}): 
   const now = ctx.now ?? Date.now();
   const selected = ctx.selectedImo != null && ctx.selectedImo === vessel.identity.imo;
   const coordinates: LonLat = [vessel.position.lon, vessel.position.lat];
+  // Classification and heading resolved once per feature. Both are pure
+  // lookups over data already in hand — no provider call, no inference.
+  const visual = classifyVessel(vessel.identity.type);
+  const resolvedHeading = resolveHeading(vessel.position.heading, vessel.position.headingReported);
   return {
     type: "Feature",
     id: vessel.identity.imo,
@@ -203,7 +247,11 @@ export function toVesselFeature(vessel: Vessel, ctx: VesselRenderContext = {}): 
       name: vessel.identity.name,
       risk: vessel.riskLevel,
       speed: vessel.position.speed,
-      heading: normalizeHeading(vessel.position.heading),
+      heading: resolvedHeading.degrees,
+      headingKnown: resolvedHeading.known,
+      category: visual.category,
+      categoryLabel: visual.label,
+      typeReported: visual.typeReported,
       opacity: vesselOpacity(vessel, { ...ctx, now }),
       destination: vessel.position.destination ?? "",
       etaHours: vessel.position.etaHours ?? null,

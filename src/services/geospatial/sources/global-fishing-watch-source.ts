@@ -360,7 +360,12 @@ export class GlobalFishingWatchVesselSource implements DescribableVesselSource {
       position: {
         lon: raw.longitude,
         lat: raw.latitude,
+        // GFW reports activity events, not navigation telemetry, so a
+        // course is often absent. The `?? 0` keeps the required field
+        // satisfied; `headingReported` is what stops that zero being
+        // drawn as a vessel steaming due north.
         heading: raw.courseDeg ?? 0,
+        headingReported: raw.courseDeg != null,
         speed: raw.speedKnots ?? 0,
         timestamp: raw.timestamp,
       },
