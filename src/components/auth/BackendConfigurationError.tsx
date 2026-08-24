@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+
 export function BackendConfigurationError() {
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
@@ -9,13 +11,13 @@ export function BackendConfigurationError() {
             The browser build is missing its Lovable Cloud connection settings. No intelligence
             data was loaded, and authentication remains locked until the connection is restored.
           </p>
-          <button
+          <Button
             type="button"
             onClick={() => window.location.reload()}
-            className="mt-6 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="mt-6"
           >
             Retry connection
-          </button>
+          </Button>
         </div>
       </main>
       <footer className="border-t border-border px-6 py-4 text-center text-xs text-muted-foreground">
