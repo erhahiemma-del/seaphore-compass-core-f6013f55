@@ -14,8 +14,10 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { RequireAuth } from "@/components/auth/RequireAuth";
+import { BackendConfigurationError } from "@/components/auth/BackendConfigurationError";
 import { CopilotModal } from "@/components/copilot/CopilotModal";
 import { useCopilotShortcuts } from "@/hooks/use-copilot-shortcuts";
+import { hasBackendBrowserConfig } from "@/lib/backend-browser-config";
 import { installStaleChunkReload, showStaleChunkNoticeIfAny } from "@/lib/stale-chunk-reload";
 
 if (typeof window !== "undefined") {
@@ -136,6 +138,8 @@ function RootComponent() {
   }, []);
 
   useEffect(() => {
+    if (!hasBackendBrowserConfig()) return;
+
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") {
         return;
@@ -147,6 +151,16 @@ function RootComponent() {
     });
     return () => sub.subscription.unsubscribe();
   }, [queryClient, router]);
+
+  if (!hasBackendBrowserConfig()) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <BackendConfigurationError />
+        </ThemeProvider>
+      </QueryClientProvider>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
