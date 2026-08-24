@@ -70,6 +70,9 @@ interface SelectionMapping {
  */
 export const SELECTION_ENTITY: Readonly<Record<MapSelectionKind, SelectionMapping>> = {
   vessel: { entity: "vessel", noun: "Vessel" },
+  // `EntityKind` already carried "voyage" before the map could select
+  // one, so this is a direct mapping rather than a new concept.
+  voyage: { entity: "voyage", noun: "Voyage" },
   port: { entity: "port", noun: "Port" },
 
   // Port facilities. The officer is looking at a place within a port, and

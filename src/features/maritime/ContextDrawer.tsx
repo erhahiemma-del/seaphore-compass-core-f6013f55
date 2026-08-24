@@ -29,15 +29,30 @@ import { X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { describeSelection, type MapSelection, type Vessel } from "@/services/geospatial";
+import {
+  describeSelection,
+  type MapSelection,
+  type Vessel,
+  type Voyage,
+} from "@/services/geospatial";
 
 import { VesselIntelligenceCard } from "./VesselIntelligenceCard";
 import { VesselIntelligenceView } from "./VesselIntelligenceView";
+import { VoyagePanel } from "./VoyagePanel";
 
 export interface ContextDrawerProps {
   readonly selection: MapSelection | null;
   /** Resolved vessel, when the selection is a vessel the engine holds. */
   readonly vessel?: Vessel | null;
+  /**
+   * Resolved voyage, when the selection is a voyage.
+   *
+   * Three states, not two: `undefined` while resolving, `null` when the
+   * lookup finished and found nothing, and a `Voyage` when it did. The
+   * panel renders each differently, because "still loading" and "no
+   * connected source holds this" are not the same message.
+   */
+  readonly voyage?: Voyage | null;
   readonly onClose: () => void;
   readonly onAskCopilot?: (selection: MapSelection) => void;
   readonly className?: string;
@@ -46,6 +61,7 @@ export interface ContextDrawerProps {
 export function ContextDrawer({
   selection,
   vessel,
+  voyage,
   onClose,
   onAskCopilot,
   className,
@@ -95,7 +111,12 @@ export function ContextDrawer({
       </header>
 
       <div className="min-h-0 flex-1 overflow-auto">
-        <SelectionPanel selection={selection} vessel={vessel ?? null} onClose={onClose} />
+        <SelectionPanel
+          selection={selection}
+          vessel={vessel ?? null}
+          voyage={voyage}
+          onClose={onClose}
+        />
       </div>
     </aside>
   );
@@ -110,10 +131,13 @@ export function ContextDrawer({
 function SelectionPanel({
   selection,
   vessel,
+  voyage,
   onClose,
 }: {
   selection: MapSelection;
   vessel: Vessel | null;
+  /** `undefined` means still resolving; `null` means resolved to nothing. */
+  voyage: Voyage | null | undefined;
   onClose: () => void;
 }) {
   switch (selection.kind) {
@@ -129,6 +153,11 @@ function SelectionPanel({
           detail="This vessel is selected but is not in the currently loaded set. It may be outside the active viewport, filtered out, or from a provider that is not connected."
         />
       );
+
+    case "voyage":
+      // Resolved by the host, like the vessel above — the selection
+      // carries a reference, never the record.
+      return <VoyagePanel voyage={voyage ?? null} loading={voyage === undefined} />;
 
     case "port":
     case "terminal":

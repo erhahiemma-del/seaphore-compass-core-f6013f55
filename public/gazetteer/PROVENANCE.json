@@ -1,0 +1,18 @@
+{
+  "name": "UN/LOCODE seaports",
+  "source": "https://github.com/datasets/un-locode",
+  "sourceOrganisation": "UNECE — United Nations Economic Commission for Europe",
+  "licence": "ODC Public Domain Dedication and Licence (PDDL)",
+  "licenceUrl": "https://opendatacommons.org/licenses/pddl/1-0/",
+  "identifier": "UN/LOCODE (2-letter country + 3-letter location)",
+  "sourceVersion": "2501",
+  "sourceSha256": "014d5139df76894a89f7eeb529723417e790129a5c7ea3b3dac38c34a03455c1",
+  "sourceBytes": 7287475,
+  "generatedAt": "2026-08-24T15:05:33.518Z",
+  "generatedBy": "scripts/build-port-gazetteer.mjs",
+  "seaportCount": 17596,
+  "recordCount": 17520,
+  "locatedCount": 11829,
+  "coordinatePrecision": "degree-and-minute (~1.85 km per minute; about +/-0.9 km)",
+  "notice": "Positions are UN/LOCODE degree-and-minute centroids for the location, not surveyed berth or harbour-entrance positions. Entries without a position are retained with none: a port whose location is unpublished is not the same as an unknown port code."
+}

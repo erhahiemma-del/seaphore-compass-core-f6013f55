@@ -6,3 +6,11 @@ pnpm-lock.yaml
 package-lock.json
 bun.lock
 routeTree.gen.ts
+
+# Generated data asset, not source. Written by
+# scripts/build-port-gazetteer.mjs and committed as a reproducible
+# snapshot — formatting it breaks that: the committed file would no
+# longer byte-match what the generator produces, and pretty-printing
+# 17,520 records costs about 250 KB and turns every regeneration into a
+# 17,000-line diff.
+public/gazetteer/un-locode-ports.json

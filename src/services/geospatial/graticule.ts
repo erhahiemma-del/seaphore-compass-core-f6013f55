@@ -46,6 +46,17 @@ export interface GraticuleCollection {
   readonly features: readonly GraticuleLine[];
 }
 
+/**
+ * The smallest declared step that is at least `minimum`.
+ *
+ * Used to widen the finest interval when the extent is large, so the
+ * grid stays legible instead of collapsing into a solid wash.
+ */
+function nextStepAtLeast(minimum: number, steps: readonly number[]): number {
+  const ascending = [...steps].sort((a, b) => a - b);
+  return ascending.find((step) => step >= minimum) ?? ascending[ascending.length - 1] ?? 1;
+}
+
 /** The coarsest step in `steps` that divides `value` exactly. */
 function coarsestStep(value: number, steps: readonly number[]): number {
   for (const step of steps) {
@@ -71,8 +82,20 @@ export function graticuleFeatures(
   bounds: BoundingBox = MAP_DEFAULTS.maxBounds as unknown as BoundingBox,
   steps: readonly number[] = GRATICULE_STEPS,
 ): GraticuleCollection {
+  /*
+   * Guard against generating a grid nobody can read or afford.
+   *
+   * At the regional extent a 1° finest step is 50 lines. Across the
+   * whole globe it would be 542, drawn over an area where they are
+   * about 100 km apart on screen — graph paper, and a cost paid every
+   * frame. Callers pass a coarser step set for wide scopes (see
+   * `MAP_SCOPES`), and this is the backstop if one does not.
+   */
   const [[west, south], [east, north]] = bounds;
-  const finest = steps[steps.length - 1] ?? 1;
+  const requested = steps[steps.length - 1] ?? 1;
+  const span = Math.max(east - west, north - south);
+  // Never emit more than this many lines on either axis.
+  const finest = Math.max(requested, nextStepAtLeast(span / 40, steps));
   const features: GraticuleLine[] = [];
 
   for (let lon = Math.ceil(west / finest) * finest; lon <= east; lon += finest) {

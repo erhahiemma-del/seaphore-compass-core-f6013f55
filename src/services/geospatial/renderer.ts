@@ -59,12 +59,27 @@ export interface MapRendererMountOptions {
   readonly zoom: number;
   readonly minZoom: number;
   readonly maxZoom: number;
-  readonly maxBounds: BoundingBox;
+  /** Panning limit, or `null`/absent for unrestricted. */
+  readonly maxBounds: BoundingBox | null;
+  /**
+   * Area the graticule is generated over.
+   *
+   * Distinct from `maxBounds`, which may be null. Absent falls back to
+   * `maxBounds`, which is what every pre-M2 caller relies on.
+   */
+  readonly extent?: BoundingBox;
   /**
    * Chrome to attach. Absent means the full command set, so existing
    * callers keep their current appearance without change.
    */
   readonly controls?: MapControlOptions;
+  /**
+   * Graticule intervals for this extent, coarsest first.
+   *
+   * Scope-dependent: one-degree lines are useful across Nigerian waters
+   * and unreadable across a hemisphere. Absent keeps the regional set.
+   */
+  readonly graticuleSteps?: readonly number[];
 }
 
 /** A collection of vessel point features, ready to hand to the engine. */
@@ -118,6 +133,25 @@ export interface MapRenderer {
 
   /** Register vessel sprite variants (risk colours, selected, stale). */
   loadVesselIcons(): Promise<void>;
+
+  /**
+   * Replace the voyage overlay: resolved endpoints.
+   *
+   * Endpoints only. Nothing connects an origin to a destination,
+   * because the passage between them is not known — see
+   * `voyage-render.ts`.
+   *
+   * Optional and additive, like `setLayerOpacity` — the G5.5.1 contract
+   * is unchanged and adapters written against it stay valid. Callers
+   * feature-detect.
+   *
+   * Typed as `unknown` at this seam on purpose. The voyage collections
+   * live in `voyage-render.ts`, which imports the domain model; naming
+   * them here would pull the voyage domain into the engine contract,
+   * and the renderer's job is to draw GeoJSON, not to know what a
+   * voyage is.
+   */
+  setVoyageData?(endpoints: unknown): void;
 
   /**
    * Set a render layer's opacity, 0–1.

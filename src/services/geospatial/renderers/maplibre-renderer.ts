@@ -64,6 +64,7 @@ const SOURCE_IDS = {
   ports: "ports",
   eez: "nigeria-eez",
   graticule: "graticule",
+  voyageEndpoints: "voyage-endpoints",
   investigationArea: "investigation-area",
 } as const;
 
@@ -87,6 +88,8 @@ const FALLBACK_BASEMAP = "https://tiles.stadiamaps.com/styles/alidade_smooth_dar
  */
 export const INSTALLED_RENDER_LAYERS: readonly string[] = [
   LAYER_IDS.graticule,
+  LAYER_IDS.voyageEndpoints,
+  LAYER_IDS.voyageEndpointLabels,
   LAYER_IDS.eezFill,
   LAYER_IDS.eezBoundary,
   LAYER_IDS.portAnchorage,
@@ -170,6 +173,10 @@ export class MapLibreRenderer implements MapRenderer {
   /** Authoritative feature set, mirrored so full rebuilds stay cheap. */
   private readonly features = new Map<string, VesselFeature>();
 
+  /** Extent and graticule intervals this mount was given. */
+  private mountBounds: BoundingBox | null = null;
+  private graticuleSteps: readonly number[] | null = null;
+
   private hoverTimer: ReturnType<typeof setTimeout> | null = null;
   private hoveredImo: string | null = null;
 
@@ -210,6 +217,8 @@ export class MapLibreRenderer implements MapRenderer {
      */
     this.destroyed = false;
     this.styleFailed = false;
+    this.mountBounds = options.extent ?? options.maxBounds;
+    this.graticuleSteps = options.graticuleSteps ?? null;
     const token = ++this.mountToken;
 
     // Dynamic import keeps `window` access out of the SSR path.
@@ -222,10 +231,16 @@ export class MapLibreRenderer implements MapRenderer {
       zoom: options.zoom,
       minZoom: options.minZoom,
       maxZoom: options.maxZoom,
-      maxBounds: [
-        [options.maxBounds[0][0], options.maxBounds[0][1]],
-        [options.maxBounds[1][0], options.maxBounds[1][1]],
-      ],
+      // Null means unrestricted. See `MAP_SCOPES.global` for why a
+      // world-spanning constraint is not the same thing.
+      ...(options.maxBounds
+        ? {
+            maxBounds: [
+              [options.maxBounds[0][0], options.maxBounds[0][1]],
+              [options.maxBounds[1][0], options.maxBounds[1][1]],
+            ] as [[number, number], [number, number]],
+          }
+        : {}),
       attributionControl: false,
       // 2D operational view — pitch is reserved for the G7 Terrain Perspective.
       pitchWithRotate: false,
@@ -267,6 +282,21 @@ export class MapLibreRenderer implements MapRenderer {
 
     // A failed basemap must degrade to a usable map, not a blank canvas.
     map.on("error", (event: { error?: { message?: string } }) => {
+      /*
+       * Ignore anything from a map this renderer has moved on from.
+       *
+       * This closure captures `map`, and `destroy()` does not detach
+       * it. `map.remove()` aborts in-flight style and tile requests
+       * whose handlers may still fire, so without this check a
+       * torn-down map can report errors that surface as if they came
+       * from the live one — and a remount is exactly when that
+       * happens. The token is the same guard `mount` already uses
+       * against the same class of problem.
+       *
+       * An error from a map nobody is looking at is not something the
+       * officer can act on.
+       */
+      if (token !== this.mountToken || this.map !== map) return;
       const message = event?.error?.message ?? "Unknown map error";
       /*
        * Only a genuine style-document failure justifies swapping basemaps.
@@ -487,6 +517,25 @@ export class MapLibreRenderer implements MapRenderer {
     });
   }
 
+  /**
+   * Replace the voyage overlay.
+   *
+   * Endpoints only — see `voyage-render.ts` for why nothing connects
+   * them.
+   *
+   * Full replacement is right here. Voyages change on the scale of
+   * hours, not seconds; the incremental `updateData` path exists for
+   * vessel positions, which is a different problem.
+   */
+  setVoyageData(endpoints: unknown): void {
+    const map = this.map;
+    if (!map) return;
+    const endpointSource = map.getSource(SOURCE_IDS.voyageEndpoints);
+    if (endpointSource && endpointSource.type === "geojson") {
+      (endpointSource as MapLibreGeoJSONSource).setData(endpoints as never);
+    }
+  }
+
   async loadVesselIcons(): Promise<void> {
     const map = this.map;
     if (!map) return;
@@ -545,7 +594,10 @@ export class MapLibreRenderer implements MapRenderer {
     // meridian can never be misread as a claimed boundary.
     map.addSource(SOURCE_IDS.graticule, {
       type: "geojson",
-      data: graticuleFeatures() as never,
+      data: graticuleFeatures(
+        this.mountBounds ?? undefined,
+        this.graticuleSteps ?? undefined,
+      ) as never,
     });
     map.addLayer({
       id: LAYER_IDS.graticule,
@@ -555,6 +607,65 @@ export class MapLibreRenderer implements MapRenderer {
         "line-color": MARITIME_PALETTE.graticule,
         "line-width": ["interpolate", ["linear"], ["zoom"], 4, 0.4, 10, 0.7],
         "line-opacity": graticuleOpacityExpression() as never,
+      },
+    });
+
+    /*
+     * ── Voyage endpoints ──
+     *
+     * Points only. There is deliberately no line between an origin and
+     * a destination: we know both ports and nothing about the passage
+     * between them, and a line on a map reads as a route no matter what
+     * the legend says. See `voyage-render.ts` for the full reasoning.
+     *
+     * Drawn early so they sit beneath ports and vessels — a recorded
+     * endpoint must never occlude an observed position.
+     */
+    map.addSource(SOURCE_IDS.voyageEndpoints, {
+      type: "geojson",
+      data: { type: "FeatureCollection", features: [] },
+    });
+    map.addLayer({
+      id: LAYER_IDS.voyageEndpoints,
+      type: "circle",
+      source: SOURCE_IDS.voyageEndpoints,
+      paint: {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 1, 2.5, 4, 3.5, 10, 5.5],
+        "circle-color": [
+          "case",
+          ["==", ["get", "role"], "origin"],
+          MARITIME_PALETTE.voyageOrigin,
+          MARITIME_PALETTE.voyageDestination,
+        ],
+        /*
+         * A hollow ring for a degree-minute position, solid for a
+         * surveyed one. UN/LOCODE resolves to about a kilometre, and at
+         * port zoom that error is visible — the officer should be able
+         * to see which endpoints are approximate without opening a
+         * panel.
+         */
+        "circle-stroke-color": MARITIME_PALETTE.voyageRelationship,
+        "circle-stroke-width": 1,
+        "circle-opacity": ["case", ["==", ["get", "precision"], "surveyed"], 0.95, 0.45],
+      },
+    });
+    map.addLayer({
+      id: LAYER_IDS.voyageEndpointLabels,
+      type: "symbol",
+      source: SOURCE_IDS.voyageEndpoints,
+      minzoom: 3,
+      layout: {
+        "text-field": ["get", "portName"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 3, 9, 8, 11],
+        "text-anchor": "top",
+        "text-offset": [0, 0.7],
+        "text-allow-overlap": false,
+        "text-optional": true,
+      },
+      paint: {
+        "text-color": MARITIME_PALETTE.voyageRelationship,
+        "text-halo-color": MARITIME_PALETTE.labelHalo,
+        "text-halo-width": 1.3,
       },
     });
 
@@ -899,6 +1010,33 @@ export class MapLibreRenderer implements MapRenderer {
       map.getCanvas().style.cursor = "";
       this.clearHover();
     });
+    /*
+     * Voyage endpoints are selectable.
+     *
+     * Emitted as a distinct event rather than reusing `vessel:click` —
+     * a voyage is a record, not a vessel, and the drawer resolves them
+     * through different services.
+     */
+    map.on("click", LAYER_IDS.voyageEndpoints, (event: MapLibreLayerMouseEvent) => {
+      const feature = event.features?.[0];
+      const voyageId = feature?.properties?.voyageId;
+      if (typeof voyageId !== "string") return;
+      this.bus?.emit("voyage:click", {
+        voyageId,
+        voyageNumber:
+          typeof feature?.properties?.voyageNumber === "string" &&
+          feature.properties.voyageNumber !== ""
+            ? feature.properties.voyageNumber
+            : null,
+      });
+    });
+    map.on("mouseenter", LAYER_IDS.voyageEndpoints, () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
+    map.on("mouseleave", LAYER_IDS.voyageEndpoints, () => {
+      map.getCanvas().style.cursor = "";
+    });
+
     map.on("mouseenter", LAYER_IDS.ports, () => {
       map.getCanvas().style.cursor = "pointer";
     });

@@ -14,7 +14,14 @@
  * import from services, components, tests, and server code alike.
  */
 
-/** Map viewport defaults — Gulf of Guinea, Nigerian operational area. */
+/**
+ * Map viewport defaults — Gulf of Guinea, Nigerian operational area.
+ *
+ * Unchanged by M2. These are the `regional` scope's values, kept as
+ * their own export so every existing consumer reads exactly what it
+ * always did; see {@link MAP_SCOPES} for the scope model built around
+ * them.
+ */
 export const MAP_DEFAULTS = {
   /** [lon, lat] — Gulf of Guinea. */
   center: [3.5, 4.5] as readonly [number, number],
@@ -24,6 +31,9 @@ export const MAP_DEFAULTS = {
   /**
    * Restricts panning to the West African region so officers cannot
    * navigate away from the operational area of responsibility.
+   *
+   * Still the default everywhere. A surface that needs the world asks
+   * for the `global` scope rather than this being loosened for all.
    */
   maxBounds: [
     [-10, -4],
@@ -37,6 +47,112 @@ export const MAP_DEFAULTS = {
  *   https://tiles.stadiamaps.com/styles/alidade_smooth_dark.json
  */
 export const BASEMAP_STYLE = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
+
+/**
+ * How far the map is allowed to travel.
+ *
+ * The map was built around one area of responsibility, and `maxBounds`
+ * kept officers inside it — a real safeguard, not an accident. Global
+ * journey intelligence needs Rotterdam and Singapore on the same canvas,
+ * so the constraint becomes a *choice* rather than disappearing.
+ *
+ * `regional` reproduces the previous behaviour exactly, value for value,
+ * and remains the default everywhere. A surface has to ask for `global`,
+ * which is what keeps M1 and M1B's verified views unchanged.
+ */
+export interface MapScopeDefinition {
+  readonly id: MapScopeId;
+  readonly label: string;
+  readonly center: readonly [number, number];
+  readonly zoom: number;
+  readonly minZoom: number;
+  readonly maxZoom: number;
+  /**
+   * Panning limit, or `null` for unrestricted.
+   *
+   * `null` is not "bounded by the whole world" — it is the absence of a
+   * constraint. The difference is load-bearing: MapLibre's transform
+   * cannot satisfy a `maxBounds` spanning ±180° at low zoom and throws
+   * out of `constrainInternal` while computing its matrices, which
+   * fails the whole mount.
+   */
+  readonly maxBounds: readonly [readonly [number, number], readonly [number, number]] | null;
+  /**
+   * The geographic area this scope covers.
+   *
+   * Always present, even when panning is unrestricted, because the
+   * graticule has to be generated over something finite.
+   */
+  readonly extent: readonly [readonly [number, number], readonly [number, number]];
+  /** Graticule intervals suited to this extent, coarsest first. */
+  readonly graticuleSteps: readonly number[];
+}
+
+export type MapScopeId = "regional" | "global";
+
+export const MAP_SCOPES: Readonly<Record<MapScopeId, MapScopeDefinition>> = {
+  regional: {
+    id: "regional",
+    label: "Nigerian waters",
+    center: [3.5, 4.5],
+    zoom: 6,
+    minZoom: 4,
+    maxZoom: 18,
+    maxBounds: [
+      [-10, -4],
+      [20, 14],
+    ],
+    extent: [
+      [-10, -4],
+      [20, 14],
+    ],
+    graticuleSteps: [10, 5, 1],
+  },
+  global: {
+    id: "global",
+    label: "Global",
+    // Still centred on the Gulf of Guinea: a global map that opens on
+    // the Atlantic mid-ocean would lose the operational area for no gain.
+    center: [3.5, 4.5],
+    zoom: 2,
+    minZoom: 1,
+    maxZoom: 18,
+    /*
+     * Unrestricted, not world-bounded.
+     *
+     * A `maxBounds` of ±180°/±85° looks like the right way to say
+     * "everywhere", and it is not: MapLibre's transform tries to fit
+     * that constraint inside the viewport, fails at low zoom, and
+     * throws a null dereference out of `constrainInternal` while
+     * computing its matrices — taking the entire mount with it. Global
+     * scope means no panning constraint at all, which is also the more
+     * honest reading of the word.
+     */
+    maxBounds: null,
+    /*
+     * Latitude stops at ±85, not ±90, for the graticule's extent. Web
+     * Mercator diverges at the poles, so a parallel beyond 85.051129
+     * has no finite position to draw at.
+     */
+    extent: [
+      [-180, -85],
+      [180, 85],
+    ],
+    // One-degree lines across a whole hemisphere are graph paper.
+    graticuleSteps: [30, 10],
+  },
+} as const;
+
+/**
+ * Absolute zoom range across every scope.
+ *
+ * `MapState` is shared and serialised to the URL, so its clamp cannot
+ * depend on which surface happens to be mounted — a link captured on a
+ * global map must survive being opened anywhere. Each scope still
+ * enforces its own narrower range at the renderer, which is the layer
+ * that can actually stop a gesture.
+ */
+export const ZOOM_LIMITS = { min: 1, max: 18 } as const;
 
 /**
  * Maritime figure–ground palette.
@@ -76,6 +192,21 @@ export const MARITIME_PALETTE = {
   boundary: "#2A3948",
   /** Latitude/longitude graticule. Cool grey, never gold — see below. */
   graticule: "#2E4356",
+  /**
+   * Voyage marks.
+   *
+   * A violet used by nothing else on the map — not the gold EEZ, not the
+   * grey graticule, not any risk band, not the teal of ports and
+   * selection. Exclusivity is the point: a voyage endpoint is a record
+   * from a manifest system, not an observation of a vessel, and it must
+   * not be confusable with either the operational ports layer or a
+   * vessel position.
+   */
+  voyageRelationship: "#8B6FC7",
+  /** Voyage origin marker. */
+  voyageOrigin: "#5E8CC2",
+  /** Voyage destination marker. */
+  voyageDestination: "#B78BD9",
 } as const;
 
 /**
@@ -227,6 +358,8 @@ export const LAYER_IDS = {
   eezFill: "eez-fill-layer",
   /** Latitude/longitude reference lines. */
   graticule: "graticule-layer",
+  voyageEndpoints: "voyage-endpoints-layer",
+  voyageEndpointLabels: "voyage-endpoint-labels-layer",
   aisTrack: "ais-track-layer",
   aisTrackDark: "ais-track-dark-layer",
   riskHeatmap: "risk-heatmap-layer",

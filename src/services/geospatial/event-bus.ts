@@ -79,11 +79,25 @@ export interface MapErrorEvent {
  * Extending the map is the supported way to add new events — adding a key
  * here makes it immediately available to `on`/`emit` with full type safety.
  */
+/**
+ * A voyage endpoint was clicked.
+ *
+ * Carries the voyage's identity, never the record. The host resolves it
+ * against the voyage feed, exactly as `vessel:click` is resolved against
+ * the update engine — so the drawer can never show a staler copy than
+ * the map.
+ */
+export interface VoyageClickEvent {
+  readonly voyageId: string;
+  readonly voyageNumber: string | null;
+}
+
 export interface MapEventMap {
   "map:ready": MapReadyEvent;
   "map:move": MapMoveEvent;
   "map:click": MapClickEvent;
   "vessel:click": VesselClickEvent;
+  "voyage:click": VoyageClickEvent;
   "vessel:hover": VesselHoverEvent;
   "layer:visibility": LayerVisibilityEvent;
   "vessels:applied": VesselsAppliedEvent;

@@ -26,7 +26,9 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   MAP_DEFAULTS,
+  MAP_SCOPES,
   NIMASA_PORTS,
+  type MapScopeId,
   buildNationalPicture,
   sgs,
   useMapSelector,
@@ -37,7 +39,10 @@ import {
 } from "@/services/geospatial";
 import type { IntelligenceMapPlan } from "@/services/orchestration";
 
+import { cn } from "@/lib/utils";
+
 import { ContextDrawer } from "./ContextDrawer";
+import { useVoyages, type VoyageFeed } from "./useVoyages";
 import { LayerPanel } from "./LayerPanel";
 import { MapCanvas, type VesselFeedState } from "./MapCanvas";
 import { useReplayTimeline } from "./useReplayTimeline";
@@ -101,6 +106,28 @@ export function MaritimeCommand() {
   const enabledCsv = useMapSelector((state) => state.enabledSources.join(","));
 
   const [selectedVessel, setSelectedVessel] = useState<Vessel | null>(null);
+  /*
+   * Journey intelligence.
+   *
+   * `/maritime` is the M2 journey surface: one map, one engine, one
+   * geospatial store. The voyage overlay is an additional layer on the
+   * existing canvas, not a second map.
+   *
+   * Scope starts `regional`, so the surface opens exactly as it did
+   * before M2. The officer widens it when they want the world.
+   */
+  const [scope, setScope] = useState<MapScopeId>("regional");
+  const voyageFeed = useVoyages();
+  /*
+   * The selected voyage is resolved from the feed, never carried on the
+   * selection — the same rule as vessels. `undefined` while the feed is
+   * still loading is meaningful: it renders "loading", not "not found".
+   */
+  const selectedVoyage = useMemo(() => {
+    if (selection?.kind !== "voyage") return null;
+    if (voyageFeed.status === "loading") return undefined;
+    return voyageFeed.voyages.find((voyage) => voyage.id === selection.id) ?? null;
+  }, [selection, voyageFeed]);
   const [leftOpen, setLeftOpen] = useState(true);
   const [lastPlan, setLastPlan] = useState<IntelligenceMapPlan | null>(null);
   const shellRef = useRef<HTMLDivElement>(null);
@@ -273,6 +300,8 @@ export function MaritimeCommand() {
         <main className="relative min-w-0 flex-1">
           {viewMode === "2D" ? (
             <MapCanvas
+              scope={scope}
+              voyages={voyageFeed.voyages}
               onVesselSelected={handleSelected}
               onVesselsChanged={handleVessels}
               onRecorderReady={replay.attachRecorder}
@@ -294,10 +323,29 @@ export function MaritimeCommand() {
               <MapLegend />
             </div>
           ) : null}
+
+          {/*
+            Scope control and the voyage feed's own state, together.
+
+            They belong side by side: switching to the global scope is
+            what makes a voyage between two continents visible at all,
+            and the feed note is what explains an empty world map.
+          */}
+          {viewMode === "2D" ? (
+            <div className="absolute left-3 top-3 z-10 flex w-[19rem] max-w-[calc(100%-1.5rem)] flex-col items-start gap-1.5">
+              <ScopeToggle scope={scope} onChange={setScope} />
+              <VoyageFeedNotice feed={voyageFeed} />
+            </div>
+          ) : null}
         </main>
 
         {/* ── RIGHT CONTEXT DRAWER ──────────────────────────────── */}
-        <ContextDrawer selection={selection} vessel={selectedVessel} onClose={closeCard} />
+        <ContextDrawer
+          selection={selection}
+          vessel={selectedVessel}
+          voyage={selectedVoyage}
+          onClose={closeCard}
+        />
       </div>
 
       {/* ── TIMELINE / REPLAY ─────────────────────────────────── */}
@@ -458,5 +506,84 @@ function Stat({ label, value }: { label: string; value: string }) {
     <span>
       <span className="font-semibold text-foreground">{value}</span> {label}
     </span>
+  );
+}
+
+/**
+ * Regional / global scope switch.
+ *
+ * Remounts the map, because bounds and zoom limits are constructor
+ * arguments in MapLibre. That is why this is a deliberate two-state
+ * control rather than something the camera drifts into.
+ */
+function ScopeToggle({
+  scope,
+  onChange,
+}: {
+  scope: MapScopeId;
+  onChange: (next: MapScopeId) => void;
+}) {
+  return (
+    <div
+      data-testid="map-scope-toggle"
+      className="pointer-events-auto flex items-center gap-0.5 rounded-md border border-border/60 bg-background/92 p-0.5 backdrop-blur-sm"
+    >
+      {(Object.keys(MAP_SCOPES) as MapScopeId[]).map((id) => (
+        <button
+          key={id}
+          type="button"
+          aria-pressed={scope === id}
+          onClick={() => onChange(id)}
+          className={cn(
+            "rounded px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] transition-colors",
+            scope === id
+              ? "bg-[color:var(--color-teal)]/15 text-[color:var(--color-teal)]"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          {MAP_SCOPES[id].label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * What the voyage overlay is currently showing, and why.
+ *
+ * Rendered whenever the feed is anything but a fully mapped set. An
+ * empty map with no explanation is the failure this whole sprint has
+ * been guarding against: the officer cannot tell "no voyages held" from
+ * "could not read the register" from "voyages held, ports unresolvable",
+ * and those are three different operational situations.
+ */
+function VoyageFeedNotice({ feed }: { feed: VoyageFeed }) {
+  const { status, coverage, note } = feed;
+  const unmappable = coverage.oneResolved + coverage.neitherResolved;
+  if (status === "ready" && unmappable === 0 && !note) return null;
+
+  return (
+    <div
+      data-testid="voyage-feed-notice"
+      data-voyage-status={status}
+      className="pointer-events-auto w-full rounded-md border border-border/60 bg-background/92 px-2.5 py-1.5 backdrop-blur-sm"
+    >
+      <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+        Voyages
+      </div>
+      {status === "ready" ? (
+        <p className="text-[11px] leading-relaxed text-foreground">
+          {coverage.voyages} held · {coverage.bothResolved} with both ports mapped
+          {unmappable > 0 ? (
+            <span className="text-muted-foreground">
+              {" "}
+              · {unmappable} not mappable (port position unavailable, not a missing voyage)
+            </span>
+          ) : null}
+        </p>
+      ) : (
+        <p className="text-[11px] leading-relaxed text-muted-foreground">{note}</p>
+      )}
+    </div>
   );
 }

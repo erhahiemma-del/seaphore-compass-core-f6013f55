@@ -17,7 +17,7 @@
  *
  * Sprint G5.5.1 — infrastructure only.
  */
-import { MAP_DEFAULTS } from "./constants";
+import { MAP_DEFAULTS, ZOOM_LIMITS } from "./constants";
 import { layerRegistry, MISSION_PRESETS, type LayerRegistry } from "./layer-registry";
 import { defaultEnabledSourceIds } from "./vessel-source";
 import {
@@ -299,7 +299,19 @@ export class SharedGeospatialService {
 
     const zoom = Number.parseFloat(params.get("zoom") ?? "");
     if (Number.isFinite(zoom)) {
-      patch.zoom = clamp(zoom, MAP_DEFAULTS.minZoom, MAP_DEFAULTS.maxZoom);
+      /*
+       * Clamped to the absolute range across every scope, not to the
+       * regional one.
+       *
+       * This state is shared and serialised into links, so it cannot
+       * assume which surface will open it: a link captured on a global
+       * map at zoom 2 must survive, and clamping it to the regional
+       * minimum of 4 would silently rewrite where the sender was
+       * looking. Each scope still enforces its own narrower range at
+       * the renderer, which is the layer that can actually stop a
+       * gesture.
+       */
+      patch.zoom = clamp(zoom, ZOOM_LIMITS.min, ZOOM_LIMITS.max);
     }
 
     const layers = params.get("layers");

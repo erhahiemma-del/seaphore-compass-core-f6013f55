@@ -124,6 +124,19 @@ export function MapLegend({ className }: { className?: string }) {
             />
             <Row label="Coastline" glyph={<Swatch className="h-0.5 bg-[#3E6E8E]" />} />
             <Row
+              label="Voyage origin"
+              glyph={<Swatch className="rounded-full border border-[#8B6FC7] bg-[#5E8CC2]" />}
+            />
+            <Row
+              label="Voyage destination"
+              glyph={<Swatch className="rounded-full border border-[#8B6FC7] bg-[#B78BD9]" />}
+            />
+            <Row
+              label="Approximate position"
+              note="hollow, ±1 km"
+              glyph={<Swatch className="rounded-full border border-[#8B6FC7] bg-[#5E8CC2]/30" />}
+            />
+            <Row
               label="Graticule"
               note="generated"
               glyph={<Swatch className="h-0.5 bg-[#2E4356]" />}
@@ -179,6 +192,21 @@ export function MapLegend({ className }: { className?: string }) {
             </p>
             <p data-testid="legend-caveat-ports">
               Port marker scale reflects reference berth data, not live capacity or activity.
+            </p>
+            {/*
+              The M2 contract, in the same place as the M1B caveats. A
+              dotted violet curve is a convention; this sentence is what
+              actually stops it being read as a track.
+            */}
+            <p data-testid="legend-caveat-voyage">
+              Voyage endpoints are the recorded origin and destination only. Nothing is drawn
+              between them because the route taken is not known. No observed vessel track is
+              available.
+            </p>
+            <p data-testid="legend-caveat-gazetteer">
+              Global port positions are UN/LOCODE degree-and-minute centroids (about ±1 km), not
+              surveyed berths. Hollow markers are approximate; solid are operator reference
+              positions.
             </p>
           </div>
         </div>
