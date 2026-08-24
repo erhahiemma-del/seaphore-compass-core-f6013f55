@@ -471,6 +471,25 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     order: 10,
   },
   {
+    id: "voyages",
+    label: "Voyage endpoints",
+    description:
+      "Recorded origin and destination ports for each voyage, drawn as points. Nothing connects them: the route taken is not known, and is not an observed vessel track.",
+    group: "TRADE_LOGISTICS",
+    renderLayerIds: [LAYER_IDS.voyageEndpoints, LAYER_IDS.voyageEndpointLabels],
+    // Off by default. The overlay is meaningful when an officer is
+    // working voyages; on the national picture it is noise, and it
+    // pulls an 850 KB gazetteer that a vessel-watching session should
+    // not have to pay for.
+    defaultVisible: false,
+    // Genuinely renderable: the `voyages` table is real, the read path
+    // already exists, and the gazetteer resolves endpoints. What is
+    // absent is the *path*, and that absence is carried by
+    // `Voyage.pathKnown` rather than by this layer's status.
+    status: "ready",
+    order: 10,
+  },
+  {
     id: "graticule",
     label: "Graticule",
     description: "Latitude and longitude reference lines. Generated, not observed.",
@@ -535,8 +554,9 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
   },
   {
     id: "aisTrack",
-    label: "AIS Tracks",
-    description: "Historic track lines, with dark periods highlighted.",
+    label: "Observed tracks",
+    description:
+      "Where a vessel was actually observed to go, from AIS history. Distinct from voyage relationships, which record only origin and destination.",
     group: "VESSELS",
     renderLayerIds: [LAYER_IDS.aisTrack, LAYER_IDS.aisTrackDark],
     defaultVisible: false,

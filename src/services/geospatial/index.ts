@@ -29,7 +29,11 @@ export {
   BASEMAP_STYLE,
   LAYER_IDS,
   MAP_DEFAULTS,
+  MAP_SCOPES,
   MARITIME_PALETTE,
+  ZOOM_LIMITS,
+  type MapScopeDefinition,
+  type MapScopeId,
   NIGERIA_EEZ_BBOX,
   NIMASA_PORTS,
   PIXELS_PER_KM,
@@ -52,6 +56,66 @@ export {
   type StyleLayerSummary,
   type StyleTarget,
 } from "./map-style";
+
+export {
+  isLocated,
+  normalizePortCode,
+  portGazetteer,
+  LayeredPortGazetteer,
+  NimasaPortGazetteer,
+  UnLocodePortGazetteer,
+  GAZETTEER_ASSET_URL,
+  type GazetteerAsset,
+  type PortGazetteer,
+  type PortResolution,
+  type PortWithoutPosition,
+  type PositionPrecision,
+  type ResolvedPort,
+  type UnknownPort,
+} from "./port-gazetteer";
+
+export {
+  looksLikeDatabaseId,
+  toPortLink,
+  PORT_LINK_NOTES,
+  type JoinedPortRow,
+  type PortLink,
+  type PortLinkState,
+} from "./port-link";
+
+export {
+  arrivalState,
+  departureState,
+  setUnknownVoyageStatusReporter,
+  KNOWN_VOYAGE_STATUSES,
+  type DatabaseVoyageStatus,
+  hasDrawableRelationship,
+  journeyIntelligence,
+  scheduleProgress,
+  toVoyage,
+  toVoyageStatus,
+  withObservedTrack,
+  JOURNEY_INTELLIGENCE_LABELS,
+  JOURNEY_INTELLIGENCE_NOTES,
+  type JourneyIntelligence,
+  type MilestoneState,
+  type Voyage,
+  type VoyageEndpoint,
+  type VoyageLinks,
+  type VoyageRowLike,
+  type VoyageSchedule,
+  type VoyageStatus,
+} from "./voyage";
+
+export {
+  endpointCoverage,
+  toVoyageEndpointCollection,
+  voyageBounds,
+  type EndpointCoverage,
+  type VoyageEndpointCollection,
+  type VoyageEndpointProperties,
+  type VoyageEndpointRole,
+} from "./voyage-render";
 
 export {
   graticuleFeatures,

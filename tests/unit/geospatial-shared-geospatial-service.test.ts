@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   LayerRegistry,
   MAP_DEFAULTS,
+  ZOOM_LIMITS,
   SharedGeospatialService,
   createDefaultLayerRegistry,
   createDefaultMapState,
@@ -319,10 +320,22 @@ describe("SharedGeospatialService", () => {
       const service = createService();
 
       service.loadFromURL("?zoom=99");
-      expect(service.get().zoom).toBe(MAP_DEFAULTS.maxZoom);
+      expect(service.get().zoom).toBe(ZOOM_LIMITS.max);
 
       service.loadFromURL("?zoom=-5");
-      expect(service.get().zoom).toBe(MAP_DEFAULTS.minZoom);
+      expect(service.get().zoom).toBe(ZOOM_LIMITS.min);
+    });
+
+    it("does not clamp a global-scope zoom to the regional minimum", () => {
+      // Shared state cannot assume which surface will open a link. A
+      // link captured on a global map at zoom 2 must survive; clamping
+      // it to the regional minimum of 4 would silently rewrite where
+      // the sender was looking. Each scope still enforces its own range
+      // at the renderer.
+      const service = createService();
+      service.loadFromURL("?zoom=2");
+      expect(service.get().zoom).toBe(2);
+      expect(ZOOM_LIMITS.min).toBeLessThan(MAP_DEFAULTS.minZoom);
     });
 
     it("keeps only layers the registry knows", () => {

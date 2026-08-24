@@ -18,7 +18,8 @@ import { prefersReducedMotion } from "@/hooks/use-reduced-motion";
 import {
   BASEMAP_STYLE,
   EmptyVesselSource,
-  MAP_DEFAULTS,
+  MAP_SCOPES,
+  toVoyageEndpointCollection,
   ReplayRecorder,
   type ReplaySink,
   getVesselSource,
@@ -38,9 +39,11 @@ import {
   type MapControlOptions,
   type MapEventBus,
   type MapRenderer,
+  type MapScopeId,
   type SharedGeospatialService,
   type Vessel,
   type VesselSource,
+  type Voyage,
 } from "@/services/geospatial";
 
 /**
@@ -95,6 +98,23 @@ const MODE_CONTROLS: Readonly<Record<MapCanvasMode, MapControlOptions>> = {
 export interface MapCanvasProps {
   /** Presentation mode. Defaults to the full command surface. */
   readonly mode?: MapCanvasMode;
+  /**
+   * How far the map may travel.
+   *
+   * Defaults to `regional`, which reproduces the West African bounds,
+   * zoom range and graticule the map has always had — so every existing
+   * surface is unchanged by M2. A surface showing global voyages passes
+   * `global` and gets the world.
+   */
+  readonly scope?: MapScopeId;
+  /**
+   * Voyages to overlay.
+   *
+   * Endpoints draw where a port genuinely resolved; arcs draw only
+   * where both ends did. Absent means no voyage overlay, which is what
+   * every pre-M2 surface wants.
+   */
+  readonly voyages?: readonly Voyage[];
   /**
    * Intelligence domain this map is serving.
    *
@@ -157,6 +177,8 @@ export interface VesselFeedState {
 
 export function MapCanvas({
   mode = "command",
+  scope = "regional",
+  voyages,
   domain,
   renderer: injectedRenderer,
   vesselSource,
@@ -168,6 +190,8 @@ export function MapCanvas({
   onEngineReady,
 }: MapCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  /** Scope of the previous successful mount. Null before the first. */
+  const previousScope = useRef<MapScopeId | null>(null);
   const setRenderer = useMapSessionStore((s) => s.setRenderer);
   const setStatus = useMapSessionStore((s) => s.setStatus);
   const setVesselCount = useMapSessionStore((s) => s.setVesselCount);
@@ -213,6 +237,7 @@ export function MapCanvas({
     let cancelled = false;
 
     const state = service.get();
+    const activeScope = MAP_SCOPES[scope];
     const draws = renderer instanceof MapLibreRenderer ? renderer.isRealEngine : true;
     setRenderer(renderer.id, draws);
     setStatus("mounting");
@@ -223,9 +248,11 @@ export function MapCanvas({
         style: BASEMAP_STYLE,
         center: state.center,
         zoom: state.zoom,
-        minZoom: MAP_DEFAULTS.minZoom,
-        maxZoom: MAP_DEFAULTS.maxZoom,
-        maxBounds: MAP_DEFAULTS.maxBounds,
+        minZoom: activeScope.minZoom,
+        maxZoom: activeScope.maxZoom,
+        maxBounds: activeScope.maxBounds,
+        extent: activeScope.extent,
+        graticuleSteps: activeScope.graticuleSteps,
         // Presentation only. The overview surface reads exactly the same
         // state from the same service — it simply shows less chrome.
         controls: MODE_CONTROLS[mode],
@@ -247,6 +274,26 @@ export function MapCanvas({
         for (const [id, visible] of layerRegistry.resolveVisibility(active)) {
           renderer.setLayerVisibility(id, visible);
         }
+
+        /*
+         * Frame the new extent after a scope change.
+         *
+         * Only on a *change*, never on the first mount — an officer
+         * arriving with a zoom in their link must keep it. And only
+         * here, after the new map exists: writing the camera at the
+         * moment the toggle is clicked lands on the outgoing map, which
+         * clamps it to the old scope's range. Switching from Nigerian
+         * waters to Global that way settled at zoom 4.3 instead of 2,
+         * so the control looked broken.
+         *
+         * This is not the camera policy fighting a gesture. Choosing a
+         * scope is an explicit request for a different extent.
+         */
+        if (previousScope.current !== null && previousScope.current !== scope) {
+          service.setCamera({ zoom: activeScope.zoom });
+        }
+        previousScope.current = scope;
+
         setStatus("ready");
       })
       .catch((error: unknown) => {
@@ -263,7 +310,23 @@ export function MapCanvas({
     // `mode` is read at mount because controls are attached during
     // `mount()`. Listing it here remounts on a mode change, which is
     // correct: MapLibre has no API to remove a control set afterwards.
-  }, [mode, domain, renderer, engine, service, setRenderer, setStatus, setError]);
+    // `scope` is the same: bounds and zoom limits are constructor
+    // arguments, so changing scope means a new map.
+  }, [mode, scope, domain, renderer, engine, service, setRenderer, setStatus, setError]);
+
+  /*
+   * ── Voyage overlay ────────────────────────────────────────────────
+   *
+   * Projected here rather than in the renderer, because turning a
+   * `Voyage` into GeoJSON is a domain decision — which endpoints
+   * resolved, and whether a relationship may be drawn at all — and the
+   * renderer's job is to draw features, not to adjudicate that.
+   */
+  useEffect(() => {
+    if (!renderer.setVoyageData || !renderer.isReady()) return;
+    const list = voyages ?? [];
+    renderer.setVoyageData(toVoyageEndpointCollection(list));
+  }, [renderer, voyages, rendererDraws]);
 
   // ── Layer visibility and opacity follow SGS ───────────────────────────
   useEffect(
@@ -319,12 +382,16 @@ export function MapCanvas({
       service.select({ kind: "vessel", id: imo, imo });
       onVesselSelected?.(engine.get(imo) ?? null);
     });
+    const offVoyageClick = bus.on("voyage:click", ({ voyageId, voyageNumber }) => {
+      service.select({ kind: "voyage", id: voyageId, voyageNumber });
+    });
     const offMapClick = bus.on("map:click", () => {
       service.clearSelection();
       onVesselSelected?.(null);
     });
     return () => {
       offClick();
+      offVoyageClick();
       offMapClick();
     };
   }, [bus, service, engine, onVesselSelected]);

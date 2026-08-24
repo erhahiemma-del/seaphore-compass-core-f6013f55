@@ -27,6 +27,7 @@ import type { LonLat } from "./types";
 /** Every object kind an officer can select. */
 export type MapSelectionKind =
   | "vessel"
+  | "voyage"
   | "port"
   | "terminal"
   | "berth"
@@ -56,6 +57,11 @@ export type MapSelection =
       /** Null is ordinary: GFW publishes no IMO. */
       readonly imo: string | null;
       readonly mmsi?: string | null;
+    })
+  | (SelectionBase & {
+      readonly kind: "voyage";
+      /** Voyage number as recorded, when the row carries one. */
+      readonly voyageNumber?: string | null;
     })
   | (SelectionBase & { readonly kind: "port" })
   | (SelectionBase & { readonly kind: "terminal"; readonly portId: string })
@@ -170,6 +176,10 @@ export function describeSelection(selection: MapSelection | null): string {
   switch (selection.kind) {
     case "vessel":
       return selection.imo ? `Vessel · IMO ${selection.imo}` : `Vessel · ${selection.id}`;
+    case "voyage":
+      return selection.voyageNumber
+        ? `Voyage · ${selection.voyageNumber}`
+        : `Voyage · ${selection.id}`;
     case "sar-detection":
       return `SAR detection · scene ${selection.sceneId}`;
     case "ais-gap":

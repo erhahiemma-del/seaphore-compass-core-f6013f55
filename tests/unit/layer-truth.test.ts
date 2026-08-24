@@ -73,6 +73,24 @@ describe("declared ready equals actually renderable", () => {
     }
   });
 
+  it("keeps observed tracks separate from voyage relationships", () => {
+    // The M2 distinction, enforced. A voyage layer is renderable
+    // because the voyages table is real; an observed track is not,
+    // because no AIS history provider is connected. Marking the track
+    // layer ready would make "no track drawn" read as "the vessel did
+    // not move".
+    const voyages = layerRegistry.require("voyages");
+    expect(voyages.status).toBe("ready");
+    expect(voyages.description).toMatch(/not an observed vessel track/i);
+    // Points only. No line layer may connect two voyage endpoints —
+    // a line between two ports reads as a route whatever it is called.
+    expect(voyages.renderLayerIds).not.toContain("voyage-arcs-layer");
+
+    const tracks = layerRegistry.require("aisTrack");
+    expect(tracks.status).toBe("pending-source");
+    expect(tracks.pendingReason).toBeTruthy();
+  });
+
   it("keeps vessel clustering honest", () => {
     // It was `ready` and no renderer has ever drawn it. Clustering needs
     // a second source, because MapLibre clusters at the source and the
