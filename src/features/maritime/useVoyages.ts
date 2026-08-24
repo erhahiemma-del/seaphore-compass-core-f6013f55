@@ -71,7 +71,12 @@ export interface UseVoyagesOptions {
   readonly limit?: number;
 }
 
-export function useVoyages({ enabled = true, limit = 200 }: UseVoyagesOptions = {}): VoyageFeed {
+export function useVoyages({ enabled: enabledOption = true, limit = 200 }: UseVoyagesOptions = {}): VoyageFeed {
+  // The voyage register is a protected read: without a session the server
+  // function rejects the call before it reaches the database. Wait for the
+  // session rather than firing an unauthorized request.
+  const { session, loading: authLoading } = useAuth();
+  const enabled = enabledOption && !authLoading && Boolean(session);
   const [voyages, setVoyages] = useState<readonly Voyage[]>([]);
   const [status, setStatus] = useState<VoyageFeedStatus>(enabled ? "loading" : "empty");
   const [error, setError] = useState<string | null>(null);
