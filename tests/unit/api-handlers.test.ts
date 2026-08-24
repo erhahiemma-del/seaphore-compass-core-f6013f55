@@ -11,7 +11,12 @@ vi.mock("@/lib/api/auth", () => ({
 
 import { apiHandler } from "@/lib/api/handler";
 import { CopilotQueryBodySchema, IdParamSchema } from "@/lib/api/schemas";
-import { mockDb } from "@/lib/api/mock-dataset";
+// Moved from `@/lib/api/mock-dataset` to `@/mocks/api-dataset` — the mock
+// dataset was relocated out of the API surface when those routes moved to
+// real Supabase-backed functions. Same `mockDb` shape; this test uses it
+// only as a stand-in data source while exercising `apiHandler`'s envelope
+// and error mapping, which are the real subject here.
+import { mockDb } from "@/mocks/api-dataset";
 
 function req(url: string, init?: RequestInit) {
   return new Request(url, {

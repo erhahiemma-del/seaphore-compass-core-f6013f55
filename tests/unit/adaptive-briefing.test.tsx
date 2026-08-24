@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -28,7 +29,11 @@ describe("AdaptiveBriefing", () => {
     const { container } = render(<AdaptiveBriefing briefing={SAMPLE_BRIEFINGS[1]} />);
     for (const label of [
       /executive assessment/i,
-      /critical findings/i,
+      // The data key is `criticalFindings`; the heading the officer reads
+      // is "Key Findings". This assertion checks rendered text, so it
+      // matches the label. The mismatch went unnoticed because the file
+      // had no jsdom environment and never executed.
+      /key findings/i,
       /analytical conclusion/i,
       /decision impact/i,
       /officer actions/i,
