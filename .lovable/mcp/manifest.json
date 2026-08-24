@@ -5,9 +5,7 @@
   "auth": {
     "type": "oauth",
     "issuer": "https://wkxgohtejlbdhnfjihhe.supabase.co/auth/v1",
-    "accepted_audiences": [
-      "authenticated"
-    ]
+    "accepted_audiences": ["authenticated"]
   },
   "mcp": {
     "server": {
@@ -40,9 +38,7 @@
               "description": "Max rows (default 10)."
             }
           },
-          "required": [
-            "query"
-          ],
+          "required": ["query"],
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
@@ -66,9 +62,7 @@
               "description": "Entity UUID from search_entities."
             }
           },
-          "required": [
-            "entity_id"
-          ],
+          "required": ["entity_id"],
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
@@ -121,9 +115,7 @@
               "description": "Investigation UUID from list_investigations."
             }
           },
-          "required": [
-            "investigation_id"
-          ],
+          "required": ["investigation_id"],
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
