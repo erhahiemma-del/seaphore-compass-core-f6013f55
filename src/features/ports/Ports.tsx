@@ -233,7 +233,14 @@ export function PortOpsCentre() {
                 kind="port"
                 title={port.name}
                 descriptor={`${port.code} · ${port.city}`}
-                confidence="verified"
+                /*
+                 * `unconfirmed`: this header describes a port from the
+                 * fixture layer, and the congestion, wait and arrival rows
+                 * directly beneath it already say so. Claiming `verified`
+                 * above them asserted an authoritative source that does
+                 * not exist — Ports has no provider-backed path at all.
+                 */
+                confidence="unconfirmed"
                 evidence={[
                   {
                     label: "Congestion",
