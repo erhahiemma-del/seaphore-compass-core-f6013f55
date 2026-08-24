@@ -15,7 +15,7 @@ import { DataTable, Section, StatusBadge } from "@/components/intel-centre/primi
 import { SubjectHeader } from "@/components/intel-centre/subject-header";
 import { useCentreFocus } from "@/components/intel-centre/use-centre-focus";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
-import { IntelMap, type IntelMapEntity } from "@/components/intelligence/IntelMap";
+import { MapCanvas } from "@/features/maritime/MapCanvas";
 import { PORTS, VESSELS, sparkSeries, type Port } from "@/lib/intel-centre-data";
 import { DemoDataNotice } from "@/components/intelligence/DemoDataNotice";
 
@@ -82,59 +82,11 @@ const KPIS: KpiSpec[] = [
   },
 ];
 
-function buildMapEntities(selectedCode: Port["code"]): IntelMapEntity[] {
-  const portEntities: IntelMapEntity[] = PORTS.map((p) => ({
-    id: `port-${p.code}`,
-    kind: "port",
-    name: p.name,
-    position: { lat: p.lat, lng: p.lng },
-    risk: p.congestionIndex > 70 ? "high" : p.congestionIndex > 45 ? "medium" : "low",
-    confidence: "unconfirmed",
-    subtitle: `${p.code} · ${p.city}`,
-    meta: [
-      ["Congestion", `${p.congestionIndex}%`],
-      ["Avg wait", `${p.avgWaitHours}h`],
-      ["Arrivals", String(p.todaysEta)],
-    ],
-  }));
-
-  const vesselEntities: IntelMapEntity[] = VESSELS.flatMap((v, i) => {
-    const port = PORTS.find((p) => p.code === v.destinationPort);
-    if (!port) return [];
-    const angle = (i * 47) % 360;
-    const rad = (angle * Math.PI) / 180;
-    const offset = v.destinationPort === selectedCode ? 0.35 : 0.7;
-    const entity: IntelMapEntity = {
-      id: v.id,
-      kind: "vessel",
-      name: v.name,
-      position: {
-        lat: port.lat - Math.abs(Math.sin(rad)) * offset - 0.2,
-        lng: port.lng + Math.cos(rad) * offset,
-      },
-      risk: v.riskLevel,
-      confidence:
-        v.status === "validated" ? "unconfirmed" : v.sanctionsHit ? "inferred" : "unconfirmed",
-      subtitle: `${v.type} · ${v.flag} · IMO ${v.imo}`,
-      meta: [
-        ["Voyage", v.voyage],
-        ["ETA port", v.destinationPort],
-        ["Risk score", String(v.riskScore)],
-        ["AIS gap", `${v.aisBlackoutHours.toFixed(1)}h`],
-      ],
-    };
-    return [entity];
-  });
-
-  return [...portEntities, ...vesselEntities];
-}
-
 export function PortOpsCentre() {
   const [tab, setTab] = useState("workspace");
   const [selected, setSelected] = useState<Port["code"]>("APP");
   const port = PORTS.find((p) => p.code === selected)!;
   const arrivals = VESSELS.filter((v) => v.destinationPort === selected);
-  const mapEntities = useMemo(() => buildMapEntities(selected), [selected]);
 
   const { focused, dismiss, isReceded } = useCentreFocus(
     useMemo(
@@ -254,15 +206,17 @@ export function PortOpsCentre() {
               />
             )}
 
-            {/* Congestion map — vendor-neutral via MapProviderRoot (mock until keys land) */}
-            <Section title="Port Congestion & Vessel Map (POR-1)">
-              <IntelMap
-                entities={mapEntities}
-                onSelect={(e) => {
-                  if (e.kind === "port") setSelected(e.id.replace(/^port-/, "") as Port["code"]);
-                }}
-                height={340}
-              />
+            {/*
+              The shared MapLibre engine under a ports lens, replacing a
+              mock-provider map. Real port positions come from
+              nimasa-ports.geojson; selection flows through the same SGS
+              as every other surface.
+            */}
+            <Section title="Port Estate & Approaches (POR-1)">
+              <div className="relative h-[340px] overflow-hidden rounded-lg border border-line">
+                <MapCanvas mode="context" domain="ports" />
+                <PortMapCoverageNote />
+              </div>
             </Section>
 
             {/* Port summary + berth grid */}
@@ -475,5 +429,28 @@ function LegendDot({ colour, label }: { colour: string; label: string }) {
       <span className="h-2 w-2 rounded-sm" style={{ background: colour }} />
       {label}
     </span>
+  );
+}
+
+/**
+ * Geographic context, not port surveillance.
+ *
+ * Port positions and the EEZ come from verified geographic assets, and
+ * vessels appear when a feed is connected. Berth occupancy, live
+ * arrivals and congestion history are not collected, so nothing here
+ * animates a working port — a busy-looking map with no berth data would
+ * imply surveillance this system does not have.
+ */
+function PortMapCoverageNote() {
+  return (
+    <div className="pointer-events-none absolute bottom-2 left-2 max-w-[300px] rounded border border-line/70 bg-surface/90 px-2.5 py-1.5 backdrop-blur-sm">
+      <p className="text-[9.5px] font-semibold uppercase tracking-[0.1em] text-slate">
+        Port coverage
+      </p>
+      <p className="mt-0.5 text-[11px] leading-relaxed text-slate">
+        Port locations and EEZ from verified geography. Berth occupancy, live arrivals and
+        congestion history are not collected — their absence is a gap in coverage, not a quiet port.
+      </p>
+    </div>
   );
 }
