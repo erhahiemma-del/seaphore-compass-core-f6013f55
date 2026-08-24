@@ -107,16 +107,15 @@ export function MaritimeCommand() {
 
   const [selectedVessel, setSelectedVessel] = useState<Vessel | null>(null);
   /*
-   * Journey intelligence.
+   * Scope lives in shared state, not here.
    *
-   * `/maritime` is the M2 journey surface: one map, one engine, one
-   * geospatial store. The voyage overlay is an additional layer on the
-   * existing canvas, not a second map.
-   *
-   * Scope starts `regional`, so the surface opens exactly as it did
-   * before M2. The officer widens it when they want the world.
+   * It was local `useState`, which meant only this surface could leave
+   * the West African bounds and the choice vanished on any remount,
+   * route change or reload. Reading it from SGS makes one selection
+   * govern every map surface and survive a pasted link.
    */
-  const [scope, setScope] = useState<MapScopeId>("regional");
+  const scope = useMapSelector((state) => state.scope);
+  const setScope = useCallback((next: MapScopeId) => sgs.setScope(next), []);
   const voyageFeed = useVoyages();
   /*
    * The selected voyage is resolved from the feed, never carried on the
@@ -382,6 +381,16 @@ function CommandToolbar({
   onClearSelection,
 }: CommandToolbarProps) {
   const zoom = useMapSelector((state) => state.zoom);
+  /*
+   * Zoom limits follow the active scope, not a fixed constant.
+   *
+   * These buttons clamped to `MAP_DEFAULTS` (4–18), which is the
+   * regional range. In global scope that disabled zoom-out below 4 —
+   * the officer could scroll past it but the control refused, so the
+   * toolbar contradicted the map.
+   */
+  const scope = useMapSelector((state) => state.scope);
+  const limits = MAP_SCOPES[scope];
 
   const toggleFullscreen = useCallback(() => {
     const element = shellRef.current;
@@ -394,15 +403,15 @@ function CommandToolbar({
     <div role="toolbar" aria-label="Map commands" className="flex items-center gap-0.5">
       <ToolButton
         label="Zoom in"
-        disabled={zoom >= MAP_DEFAULTS.maxZoom}
-        onClick={() => sgs.setCamera({ zoom: Math.min(MAP_DEFAULTS.maxZoom, zoom + 1) })}
+        disabled={zoom >= limits.maxZoom}
+        onClick={() => sgs.setCamera({ zoom: Math.min(limits.maxZoom, zoom + 1) })}
       >
         <Plus className="h-3.5 w-3.5" aria-hidden />
       </ToolButton>
       <ToolButton
         label="Zoom out"
-        disabled={zoom <= MAP_DEFAULTS.minZoom}
-        onClick={() => sgs.setCamera({ zoom: Math.max(MAP_DEFAULTS.minZoom, zoom - 1) })}
+        disabled={zoom <= limits.minZoom}
+        onClick={() => sgs.setCamera({ zoom: Math.max(limits.minZoom, zoom - 1) })}
       >
         <Minus className="h-3.5 w-3.5" aria-hidden />
       </ToolButton>

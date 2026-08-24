@@ -138,8 +138,21 @@ export const MAP_SCOPES: Readonly<Record<MapScopeId, MapScopeDefinition>> = {
       [-180, -85],
       [180, 85],
     ],
-    // One-degree lines across a whole hemisphere are graph paper.
-    graticuleSteps: [30, 10],
+    /*
+     * Ten-degree lines, uniformly.
+     *
+     * One-degree lines across a hemisphere are graph paper, so the
+     * generator's span guard widens the finest interval to 10° at this
+     * extent regardless. The declared set matters anyway, because it
+     * also decides each line's *tag*, and the tag picks its opacity
+     * ramp: with `[30, 10]` every thirtieth meridian tagged 30, fell
+     * through to the finest ramp, and stayed invisible until zoom 7.5 —
+     * a world graticule with a gap every third line.
+     *
+     * `[10, 5]` makes every emitted line tag as 10 and share the
+     * coarse ramp, so the grid is continuous from zoom 1 outward.
+     */
+    graticuleSteps: [10, 5],
   },
 } as const;
 

@@ -101,10 +101,14 @@ export interface MapCanvasProps {
   /**
    * How far the map may travel.
    *
-   * Defaults to `regional`, which reproduces the West African bounds,
-   * zoom range and graticule the map has always had — so every existing
-   * surface is unchanged by M2. A surface showing global voyages passes
-   * `global` and gets the world.
+   * Absent — which is every surface — means "follow the shared map
+   * state", whose default is `global`. Nigeria remains the opening
+   * view via `center`/`zoom`; it is no longer a boundary.
+   *
+   * The prop is retained as an explicit override for a surface that
+   * genuinely needs a fixed extent, and for tests. It is not how the
+   * officer's own choice travels: that lives in `MapState.scope` so it
+   * survives reloads, route changes and shared links.
    */
   readonly scope?: MapScopeId;
   /**
@@ -177,7 +181,7 @@ export interface VesselFeedState {
 
 export function MapCanvas({
   mode = "command",
-  scope = "regional",
+  scope: scopeOverride,
   voyages,
   domain,
   renderer: injectedRenderer,
@@ -192,6 +196,15 @@ export function MapCanvas({
   const containerRef = useRef<HTMLDivElement>(null);
   /** Scope of the previous successful mount. Null before the first. */
   const previousScope = useRef<MapScopeId | null>(null);
+  /*
+   * Scope comes from shared state unless a surface pins it.
+   *
+   * Subscribing here is what makes every surface globally navigable
+   * without each one having to opt in — the five that pass no prop
+   * simply follow `MapState.scope`.
+   */
+  const sharedScope = useMapSelector((state) => state.scope, service);
+  const scope = scopeOverride ?? sharedScope;
   const setRenderer = useMapSessionStore((s) => s.setRenderer);
   const setStatus = useMapSessionStore((s) => s.setStatus);
   const setVesselCount = useMapSessionStore((s) => s.setVesselCount);
