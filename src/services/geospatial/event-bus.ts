@@ -92,12 +92,27 @@ export interface VoyageClickEvent {
   readonly voyageNumber: string | null;
 }
 
+/**
+ * A port marker was clicked.
+ *
+ * `locode` is the identifier the geojson carries — the repository key
+ * (`NGAPAPA`) for NIMASA ports, because `MaritimeCommand` narrows the
+ * fleet in PORT mode by looking the selection id up in `NIMASA_PORTS`.
+ * Emitting the real UN/LOCODE here would break that scoping silently.
+ */
+export interface PortClickEvent {
+  readonly locode: string;
+  readonly name: string | null;
+  readonly position: LonLat;
+}
+
 export interface MapEventMap {
   "map:ready": MapReadyEvent;
   "map:move": MapMoveEvent;
   "map:click": MapClickEvent;
   "vessel:click": VesselClickEvent;
   "voyage:click": VoyageClickEvent;
+  "port:click": PortClickEvent;
   "vessel:hover": VesselHoverEvent;
   "layer:visibility": LayerVisibilityEvent;
   "vessels:applied": VesselsAppliedEvent;

@@ -124,6 +124,12 @@ export function MapLegend({ className }: { className?: string }) {
             />
             <Row label="Coastline" glyph={<Swatch className="h-0.5 bg-[#3E6E8E]" />} />
             <Row
+              label="Selected port"
+              glyph={
+                <Swatch className="rounded-full border border-[#3FBFBE] bg-[color:var(--color-teal)]/15" />
+              }
+            />
+            <Row
               label="Voyage origin"
               glyph={<Swatch className="rounded-full border border-[#8B6FC7] bg-[#5E8CC2]" />}
             />

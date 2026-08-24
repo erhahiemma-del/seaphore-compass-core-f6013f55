@@ -10,6 +10,9 @@ import { OperatingModeBar } from "@/features/maritime/OperatingModeBar";
 import { TimelineBar } from "@/features/maritime/TimelineBar";
 import {
   buildNationalPicture,
+  portGazetteer,
+  portVoyageRelationships,
+  resolvePort,
   sgs,
   type MapSelection,
   type ReplayStatus,
@@ -186,10 +189,45 @@ describe("context drawer", () => {
     expect(screen.getByText(/provider that is not connected/)).toBeInTheDocument();
   });
 
-  it("shows port sections with NPA stated as pending, never fabricated", () => {
-    render(<ContextDrawer selection={{ kind: "port", id: "NGAPAPA" }} onClose={() => {}} />);
+  /*
+   * M3 replaced the port placeholder with a real `PortPanel`.
+   *
+   * The assertion that used to live here checked the placeholder's
+   * "NPA SHIPPOS integration awaiting data access" copy. Its intent —
+   * that a port never shows fabricated operations — is unchanged and is
+   * now carried by the panel itself, so the test follows the behaviour
+   * rather than being deleted with it.
+   */
+  it("shows real port intelligence, with operations stated as unavailable", () => {
+    const port = resolvePort({ id: "NGAPAPA" }, portGazetteer);
+    render(
+      <ContextDrawer
+        selection={{ kind: "port", id: "NGAPAPA" }}
+        port={port}
+        portRelationships={portVoyageRelationships(port, [], "unavailable")}
+        onClose={() => {}}
+      />,
+    );
 
-    expect(screen.getByText("Schedule")).toBeInTheDocument();
+    expect(screen.getByTestId("port-panel")).toBeInTheDocument();
+    expect(screen.getByTestId("port-operations-unavailable")).toHaveTextContent(
+      /live port operations unavailable/i,
+    );
+    // The relationship state is "cannot determine", never "there are none".
+    expect(screen.getByTestId("port-voyages-unavailable")).toHaveTextContent(
+      /not the same as there being none/i,
+    );
+  });
+
+  it("keeps port berth and terminal placeholders for facilities below port level", () => {
+    // `terminal`, `berth` and `anchorage` still have no data source and
+    // still render the honest placeholder — M3 promoted the port only.
+    render(
+      <ContextDrawer
+        selection={{ kind: "terminal", id: "t1", portId: "NGAPAPA" }}
+        onClose={() => {}}
+      />,
+    );
     expect(screen.getByText(/NPA SHIPPOS integration awaiting data access/)).toBeInTheDocument();
   });
 

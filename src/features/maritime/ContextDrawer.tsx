@@ -32,6 +32,8 @@ import { cn } from "@/lib/utils";
 import {
   describeSelection,
   type MapSelection,
+  type Port,
+  type PortVoyageRelationships,
   type Vessel,
   type Voyage,
 } from "@/services/geospatial";
@@ -39,6 +41,7 @@ import {
 import { VesselIntelligenceCard } from "./VesselIntelligenceCard";
 import { VesselIntelligenceView } from "./VesselIntelligenceView";
 import { VoyagePanel } from "./VoyagePanel";
+import { PortPanel } from "./PortPanel";
 
 export interface ContextDrawerProps {
   readonly selection: MapSelection | null;
@@ -53,6 +56,12 @@ export interface ContextDrawerProps {
    * connected source holds this" are not the same message.
    */
   readonly voyage?: Voyage | null;
+  /** Resolved port, on the same three-state contract as `voyage`. */
+  readonly port?: Port | null;
+  /** Voyages referencing the selected port, with their availability state. */
+  readonly portRelationships?: PortVoyageRelationships | null;
+  /** Opens one of the port's related voyages. */
+  readonly onSelectVoyage?: (voyage: Voyage) => void;
   readonly onClose: () => void;
   readonly onAskCopilot?: (selection: MapSelection) => void;
   readonly className?: string;
@@ -62,6 +71,9 @@ export function ContextDrawer({
   selection,
   vessel,
   voyage,
+  port,
+  portRelationships,
+  onSelectVoyage,
   onClose,
   onAskCopilot,
   className,
@@ -115,6 +127,9 @@ export function ContextDrawer({
           selection={selection}
           vessel={vessel ?? null}
           voyage={voyage}
+          port={port}
+          portRelationships={portRelationships}
+          onSelectVoyage={onSelectVoyage}
           onClose={onClose}
         />
       </div>
@@ -132,12 +147,18 @@ function SelectionPanel({
   selection,
   vessel,
   voyage,
+  port,
+  portRelationships,
+  onSelectVoyage,
   onClose,
 }: {
   selection: MapSelection;
   vessel: Vessel | null;
   /** `undefined` means still resolving; `null` means resolved to nothing. */
   voyage: Voyage | null | undefined;
+  port: Port | null | undefined;
+  portRelationships: PortVoyageRelationships | null | undefined;
+  onSelectVoyage?: (voyage: Voyage) => void;
   onClose: () => void;
 }) {
   switch (selection.kind) {
@@ -160,6 +181,17 @@ function SelectionPanel({
       return <VoyagePanel voyage={voyage ?? null} loading={voyage === undefined} />;
 
     case "port":
+      // Resolved by the host from the gazetteer and the voyage feed —
+      // a reference, never a payload, like vessel and voyage above.
+      return (
+        <PortPanel
+          port={port ?? null}
+          relationships={portRelationships ?? null}
+          loading={port === undefined}
+          onSelectVoyage={onSelectVoyage}
+        />
+      );
+
     case "terminal":
     case "berth":
     case "anchorage":

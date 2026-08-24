@@ -28,6 +28,9 @@ import {
   MAP_DEFAULTS,
   MAP_SCOPES,
   NIMASA_PORTS,
+  portGazetteer,
+  portVoyageRelationships,
+  resolvePort,
   type MapScopeId,
   buildNationalPicture,
   sgs,
@@ -123,6 +126,32 @@ export function MaritimeCommand() {
    * selection — the same rule as vessels. `undefined` while the feed is
    * still loading is meaningful: it renders "loading", not "not found".
    */
+  /*
+   * The selected port, resolved from the shared gazetteer.
+   *
+   * Resolution is synchronous once the gazetteer has loaded, so there
+   * is no second feed and no second store — `useVoyages` already warms
+   * it, and its `status` doubles as the readiness signal here.
+   */
+  const selectedPort = useMemo(() => {
+    if (selection?.kind !== "port") return null;
+    if (voyageFeed.status === "loading") return undefined;
+    return resolvePort({ id: selection.id }, portGazetteer);
+  }, [selection, voyageFeed.status]);
+
+  /**
+   * Voyages naming the selected port.
+   *
+   * Derived from the same loaded voyage set the map draws, and carries
+   * the feed's own status so `none` ("the register holds no match") is
+   * never presented as `unavailable` ("we could not read it"), or the
+   * reverse.
+   */
+  const selectedPortRelationships = useMemo(() => {
+    if (!selectedPort) return null;
+    return portVoyageRelationships(selectedPort, voyageFeed.voyages, voyageFeed.status);
+  }, [selectedPort, voyageFeed.voyages, voyageFeed.status]);
+
   const selectedVoyage = useMemo(() => {
     if (selection?.kind !== "voyage") return null;
     if (voyageFeed.status === "loading") return undefined;
@@ -344,6 +373,11 @@ export function MaritimeCommand() {
           selection={selection}
           vessel={selectedVessel}
           voyage={selectedVoyage}
+          port={selectedPort}
+          portRelationships={selectedPortRelationships}
+          onSelectVoyage={(voyage) =>
+            sgs.select({ kind: "voyage", id: voyage.id, voyageNumber: voyage.voyageNumber })
+          }
           onClose={closeCard}
         />
       </div>

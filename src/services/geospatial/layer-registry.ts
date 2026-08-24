@@ -504,7 +504,12 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     label: "Ports",
     description: "The five NIMASA ports with anchorage extents.",
     group: "PORTS_INFRASTRUCTURE",
-    renderLayerIds: [LAYER_IDS.ports, LAYER_IDS.portLabels, LAYER_IDS.portAnchorage],
+    renderLayerIds: [
+      LAYER_IDS.portSelection,
+      LAYER_IDS.ports,
+      LAYER_IDS.portLabels,
+      LAYER_IDS.portAnchorage,
+    ],
     defaultVisible: true,
     status: "ready",
     order: 20,

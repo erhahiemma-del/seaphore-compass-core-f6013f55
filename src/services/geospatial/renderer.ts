@@ -154,6 +154,15 @@ export interface MapRenderer {
   setVoyageData?(endpoints: unknown): void;
 
   /**
+   * Mark one port as selected, or clear it with `null`.
+   *
+   * Optional and additive, like the camera helpers. A renderer that
+   * cannot express selection simply omits it; the drawer still opens,
+   * because selection identity lives in SGS rather than here.
+   */
+  setPortSelection?(locode: string | null): void;
+
+  /**
    * Set a render layer's opacity, 0–1.
    *
    * Optional and additive (G5.5.2): the G5.5.1 contract is unchanged, so

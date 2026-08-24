@@ -93,6 +93,7 @@ export const INSTALLED_RENDER_LAYERS: readonly string[] = [
   LAYER_IDS.eezFill,
   LAYER_IDS.eezBoundary,
   LAYER_IDS.portAnchorage,
+  LAYER_IDS.portSelection,
   LAYER_IDS.ports,
   LAYER_IDS.portLabels,
   LAYER_IDS.riskHeatmap,
@@ -172,6 +173,9 @@ export class MapLibreRenderer implements MapRenderer {
 
   /** Authoritative feature set, mirrored so full rebuilds stay cheap. */
   private readonly features = new Map<string, VesselFeature>();
+
+  /** Locode of the port currently marked selected, if any. */
+  private selectedPortLocode: string | null = null;
 
   /** Extent and graticule intervals this mount was given. */
   private mountBounds: BoundingBox | null = null;
@@ -536,6 +540,33 @@ export class MapLibreRenderer implements MapRenderer {
     }
   }
 
+  /**
+   * Mark one port as selected, or clear the selection.
+   *
+   * Feature state rather than a data rewrite: the ports source is a
+   * static asset, and re-fetching geography on every click to flip a
+   * boolean would be absurd. Only the previously selected port is
+   * cleared, so this stays O(1) rather than walking five features —
+   * and it will stay O(1) if the source ever grows.
+   */
+  setPortSelection(locode: string | null): void {
+    const map = this.map;
+    if (!map) return;
+    const apply = (id: string, selected: boolean) => {
+      try {
+        map.setFeatureState({ source: SOURCE_IDS.ports, id }, { selected });
+      } catch {
+        // A port id the source does not carry is not an error: a global
+        // port selected from a voyage endpoint has no NIMASA feature.
+      }
+    };
+    if (this.selectedPortLocode && this.selectedPortLocode !== locode) {
+      apply(this.selectedPortLocode, false);
+    }
+    if (locode) apply(locode, true);
+    this.selectedPortLocode = locode;
+  }
+
   async loadVesselIcons(): Promise<void> {
     const map = this.map;
     if (!map) return;
@@ -706,7 +737,14 @@ export class MapLibreRenderer implements MapRenderer {
     });
 
     // ── Ports ──
-    map.addSource(SOURCE_IDS.ports, { type: "geojson", data: ASSETS.ports });
+    // `promoteId` binds MapLibre's feature id to the locode, which is
+    // what makes `setFeatureState` addressable per port — the same
+    // mechanism the vessel source uses with `imo`.
+    map.addSource(SOURCE_IDS.ports, {
+      type: "geojson",
+      data: ASSETS.ports,
+      promoteId: "locode",
+    });
     /*
      * Anchorage extent at its real radius.
      *
@@ -747,6 +785,38 @@ export class MapLibreRenderer implements MapRenderer {
         "circle-stroke-opacity": ["interpolate", ["linear"], ["zoom"], 8, 0.15, 11, 0.45, 14, 0.6],
       },
     });
+    /*
+     * Selected-port emphasis.
+     *
+     * Beneath the diamond so it reads as a halo rather than a mark on
+     * top, and filtered to the selected feature alone — the same shape
+     * as M1B's vessel selection ring. Teal, matching every other
+     * selection on this map, so it reads as "you clicked this" and not
+     * as a different class of port.
+     *
+     * `feature-state` rather than a data property: the ports source is
+     * a static asset served from disk, so rewriting it to carry a
+     * selection flag would mean re-fetching geography every click.
+     */
+    map.addLayer({
+      id: LAYER_IDS.portSelection,
+      type: "circle",
+      source: SOURCE_IDS.ports,
+      paint: {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 8, 9, 13, 14, 20],
+        "circle-color": "#0E7C7B",
+        "circle-opacity": ["case", ["boolean", ["feature-state", "selected"], false], 0.14, 0],
+        "circle-stroke-color": "#3FBFBE",
+        "circle-stroke-width": 1.25,
+        "circle-stroke-opacity": [
+          "case",
+          ["boolean", ["feature-state", "selected"], false],
+          0.85,
+          0,
+        ],
+      },
+    });
+
     map.addLayer({
       id: LAYER_IDS.ports,
       type: "symbol",
@@ -1035,6 +1105,34 @@ export class MapLibreRenderer implements MapRenderer {
     });
     map.on("mouseleave", LAYER_IDS.voyageEndpoints, () => {
       map.getCanvas().style.cursor = "";
+    });
+
+    /*
+     * Ports are selectable.
+     *
+     * Until M3 this layer had a hover cursor and no click handler, so a
+     * port could never be selected — the drawer's `port` branch existed
+     * but nothing could reach it. The cursor promised an interaction the
+     * map did not provide.
+     *
+     * `locode` rather than the feature id: the geojson carries the
+     * repository key, which is what `MaritimeCommand` looks up in
+     * `NIMASA_PORTS` to narrow the fleet in PORT mode.
+     */
+    map.on("click", LAYER_IDS.ports, (event: MapLibreLayerMouseEvent) => {
+      const feature = event.features?.[0];
+      const locode = feature?.properties?.locode;
+      if (typeof locode !== "string" || locode === "") return;
+      const geometry = feature?.geometry;
+      const coordinates =
+        geometry && geometry.type === "Point"
+          ? (geometry.coordinates as [number, number])
+          : [event.lngLat.lng, event.lngLat.lat];
+      this.bus?.emit("port:click", {
+        locode,
+        name: typeof feature?.properties?.name === "string" ? feature.properties.name : null,
+        position: [coordinates[0], coordinates[1]],
+      });
     });
 
     map.on("mouseenter", LAYER_IDS.ports, () => {

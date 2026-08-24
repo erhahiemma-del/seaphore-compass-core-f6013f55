@@ -131,7 +131,7 @@ export function normalizePortCode(code: string): string {
  * convenience layer over the global one — for four of Nigeria's five
  * ports it is the only source of a position at all.
  */
-const NIMASA_ALIASES: Readonly<Record<string, string>> = {
+export const NIMASA_ALIASES: Readonly<Record<string, string>> = {
   NGAPP: "NGAPAPA",
   NGTIN: "NGTIN",
   NGWAR: "NGWARR",

@@ -353,6 +353,8 @@ export const LAYER_IDS = {
   ports: "ports-layer",
   portLabels: "port-labels-layer",
   portAnchorage: "port-anchorage-layer",
+  /** Emphasis ring beneath the selected port's diamond. */
+  portSelection: "port-selection-layer",
   eezBoundary: "eez-boundary-layer",
   /** Jurisdictional wash inside the EEZ outline. */
   eezFill: "eez-fill-layer",

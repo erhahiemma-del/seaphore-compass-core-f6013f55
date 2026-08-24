@@ -58,8 +58,24 @@ export {
 } from "./map-style";
 
 export {
+  portCodeAliases,
+  portVoyageRelationships,
+  resolvePort,
+  type Port,
+  type PortAmbiguity,
+  type PortIdentity,
+  type PortIdentitySource,
+  type PortInput,
+  type PortReference,
+  type PortVoyageLinkState,
+  type PortVoyageRelationships,
+  type VoyageFeedStatusLike,
+} from "./port";
+
+export {
   isLocated,
   normalizePortCode,
+  NIMASA_ALIASES,
   portGazetteer,
   LayeredPortGazetteer,
   NimasaPortGazetteer,

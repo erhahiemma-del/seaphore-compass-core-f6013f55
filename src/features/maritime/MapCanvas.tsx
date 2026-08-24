@@ -385,6 +385,13 @@ export function MapCanvas({
     const offVoyageClick = bus.on("voyage:click", ({ voyageId, voyageNumber }) => {
       service.select({ kind: "voyage", id: voyageId, voyageNumber });
     });
+    const offPortClick = bus.on("port:click", ({ locode, position }) => {
+      // `focus` carries the port's own position so a restored link can
+      // centre on it before any source has loaded. Clicking is already
+      // "somewhere the officer is looking", and `planCameraMove` reads
+      // the viewport before deciding to move.
+      service.select({ kind: "port", id: locode, focus: position });
+    });
     const offMapClick = bus.on("map:click", () => {
       service.clearSelection();
       onVesselSelected?.(null);
@@ -392,6 +399,7 @@ export function MapCanvas({
     return () => {
       offClick();
       offVoyageClick();
+      offPortClick();
       offMapClick();
     };
   }, [bus, service, engine, onVesselSelected]);
@@ -487,6 +495,11 @@ export function MapCanvas({
       if (key === previous) return;
       previous = key;
       engine.refreshPresentation();
+
+      // Keep the port emphasis ring in step with SGS. Driven from the
+      // same subscription as vessel presentation, so a selection can
+      // never be visible in one place and not the other.
+      renderer.setPortSelection?.(state.selection?.kind === "port" ? state.selection.id : null);
 
       // Move the camera only when the selection came from somewhere the
       // officer is not already looking. `planCameraMove` owns that rule;

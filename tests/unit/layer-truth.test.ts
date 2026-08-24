@@ -73,6 +73,17 @@ describe("declared ready equals actually renderable", () => {
     }
   });
 
+  it("keeps ports selectable and ready", () => {
+    // M3: the `ports` layer gained a selection ring. It must be
+    // installed like every other render layer — a selection the
+    // officer cannot see is the same failure as a layer that does not
+    // draw.
+    const ports = layerRegistry.require("ports");
+    expect(ports.status).toBe("ready");
+    expect(ports.renderLayerIds).toContain(LAYER_IDS.portSelection);
+    expect(INSTALLED_RENDER_LAYERS).toContain(LAYER_IDS.portSelection);
+  });
+
   it("keeps observed tracks separate from voyage relationships", () => {
     // The M2 distinction, enforced. A voyage layer is renderable
     // because the voyages table is real; an observed track is not,
