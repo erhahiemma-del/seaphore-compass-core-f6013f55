@@ -208,7 +208,18 @@ export function VesselCentre() {
                 kind="vessel"
                 title={v.name}
                 descriptor={`IMO ${v.imo} · ${v.type} · ${v.flag} · Built ${v.yearBuilt}`}
-                confidence={v.status === "validated" ? "verified" : "observed"}
+                /*
+                 * `unconfirmed`, not a grade derived from `v.status`.
+                 *
+                 * This header sits above evidence rows that already read
+                 * `unconfirmed`, and it describes the same fixture vessel
+                 * they do — so claiming `verified` here contradicted the
+                 * rows underneath it. The ternary also conflated two
+                 * different things: `status: "validated"` is a fixture's
+                 * workflow state, not a statement about how the identity
+                 * was corroborated.
+                 */
+                confidence="unconfirmed"
                 evidence={[
                   { label: "Risk", value: String(v.riskScore), confidence: "unconfirmed" },
                   {
