@@ -6,10 +6,8 @@
  * about the numbers — it decides only which signal *leads* for the active
  * intelligence mode, and renders the rest as secondary and background rows.
  */
-import { Link } from "@tanstack/react-router";
 import {
   Activity,
-  ArrowRight,
   Container,
   FileText,
   History,
