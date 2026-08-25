@@ -419,3 +419,21 @@ export type {
   EntityKind,
   IntelligenceSignal,
 } from "./entity-visual";
+
+/**
+ * M2.6 adaptive perspective policy.
+ *
+ * Pure, like `camera.ts` beside it: this decides how far the camera
+ * tilts, that one decides whether it moves. The renderer is the only
+ * code permitted to act on either.
+ */
+export {
+  MAX_AUTOMATIC_PITCH,
+  PITCH_EPSILON,
+  PITCH_STOPS,
+  isManualPitchGesture,
+  pitchForZoom,
+  planPerspective,
+  planPerspectiveReset,
+} from "./perspective";
+export type { PerspectivePlan, PitchOwner } from "./perspective";

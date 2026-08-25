@@ -96,6 +96,7 @@ export function MapLegend({ className }: { className?: string }) {
   const voyages = shown("voyages");
   const eez = shown("eezBoundary");
   const graticule = shown("graticule");
+  const buildings = shown("buildings");
 
   return (
     <div
@@ -254,6 +255,13 @@ export function MapLegend({ className }: { className?: string }) {
               />
             ) : null}
             <Row label="Coastline" glyph={<Swatch className="h-0.5 bg-[#3E6E8E]" />} />
+            {buildings ? (
+              <Row
+                label="Buildings"
+                note="zoom 13+"
+                glyph={<Swatch className="bg-[#243447] ring-1 ring-[#3E6E8E]/40" />}
+              />
+            ) : null}
             {voyages ? (
               <>
                 <Row
@@ -334,6 +342,20 @@ export function MapLegend({ className }: { className?: string }) {
               would ever read it. Stating it here is what makes the
               richer rendering honest rather than merely prettier.
             */}
+            {/*
+              Buildings are drawn from the basemap's own heights, and the
+              basemap's coverage is uneven — Apapa returns dozens of
+              footprints where central Lagos returns a handful. Without
+              this sentence an officer could read a blank block as open
+              ground.
+            */}
+            {buildings ? (
+              <p data-testid="legend-caveat-buildings">
+                Building shapes and heights come from the basemap. Coverage is uneven and a building
+                is drawn only where the source records one — a blank area means no mapped geometry,
+                not open ground. No height is ever estimated.
+              </p>
+            ) : null}
             <p data-testid="legend-caveat-eez">
               EEZ — approximate reference geometry. Not a legal or navigational boundary.
             </p>

@@ -106,8 +106,32 @@ export interface PortClickEvent {
   readonly position: LonLat;
 }
 
+/**
+ * Pitch ownership changed.
+ *
+ * Emitted when a manual tilt latches the automatic policy out, and again
+ * when a reset hands control back. Carries the owner rather than a
+ * command, so a control can reflect the state without becoming a second
+ * camera controller.
+ */
+export interface MapPerspectiveEvent {
+  readonly owner: "automatic" | "manual";
+  readonly pitch: number;
+}
+
 export interface MapEventMap {
   "map:ready": MapReadyEvent;
+  "map:perspective": MapPerspectiveEvent;
+  /**
+   * Request that pitch return to the automatic policy.
+   *
+   * A command rather than a notification, and the only one on this bus.
+   * It exists so a control can ask for a reset without holding the
+   * renderer: the session store deliberately keeps the instance out of
+   * React state, and threading it through props to reach one button
+   * would undo that boundary for less benefit.
+   */
+  "perspective:reset": Record<string, never>;
   "map:move": MapMoveEvent;
   "map:click": MapClickEvent;
   "vessel:click": VesselClickEvent;

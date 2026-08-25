@@ -261,6 +261,12 @@ export function MapCanvas({
         style: BASEMAP_STYLE,
         center: state.center,
         zoom: state.zoom,
+        // The camera's opening pose, restored from a shared link or a
+        // reload. Read here rather than left to the camera-follow
+        // subscription below, which runs before the mount resolves and
+        // finds the renderer not ready.
+        pitch: state.pitch,
+        bearing: state.bearing,
         minZoom: activeScope.minZoom,
         maxZoom: activeScope.maxZoom,
         maxBounds: activeScope.maxBounds,

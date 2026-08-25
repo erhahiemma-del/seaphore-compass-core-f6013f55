@@ -311,6 +311,18 @@ export class SharedGeospatialService {
     if (opacityEntries.length > 0) {
       params.set("opacity", opacityEntries.map(([id, value]) => `${id}:${value}`).join(","));
     }
+    /*
+     * Pitch and bearing, only when the camera is not level.
+     *
+     * Omitted at zero so the ordinary link stays as short as it has
+     * always been, and so a shared strategic view carries no camera
+     * clutter. Both are needed: pitch because M2.6 makes it meaningful,
+     * and bearing because `dragRotate` has always been enabled, so a
+     * rotated map was already shareable in principle and silently was
+     * not.
+     */
+    if (state.pitch !== 0) params.set("pitch", state.pitch.toFixed(1));
+    if (state.bearing !== 0) params.set("bearing", state.bearing.toFixed(1));
     if (state.enabledSources.length > 0) params.set("sources", state.enabledSources.join(","));
     if (state.operatingMode !== "NATIONAL") params.set("mode", state.operatingMode);
     // Only when it differs from the default, so the common link stays short.
@@ -362,6 +374,23 @@ export class SharedGeospatialService {
        */
       patch.zoom = clamp(zoom, ZOOM_LIMITS.min, ZOOM_LIMITS.max);
     }
+
+    /*
+     * Pitch and bearing.
+     *
+     * Clamped rather than rejected, so a link carrying a value from a
+     * future scope — or a hand-edited one — opens on a usable camera
+     * instead of being silently dropped. A non-numeric value *is*
+     * dropped: there is no sensible reading of "pitch=north", and
+     * leaving the default is the safe direction. Pitch tops out at
+     * MapLibre's own 60, not the automatic policy's 50, because a
+     * manually tilted camera is entitled to be steeper than the ramp.
+     */
+    const pitch = Number.parseFloat(params.get("pitch") ?? "");
+    if (Number.isFinite(pitch)) patch.pitch = clamp(pitch, 0, 60);
+
+    const bearing = Number.parseFloat(params.get("bearing") ?? "");
+    if (Number.isFinite(bearing)) patch.bearing = ((bearing % 360) + 360) % 360;
 
     const layers = params.get("layers");
     if (layers !== null) {

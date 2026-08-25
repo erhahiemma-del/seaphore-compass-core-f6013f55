@@ -500,6 +500,21 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     order: 10,
   },
   {
+    id: "buildings",
+    label: "Buildings",
+    description: "Extruded building footprints from the basemap, where the source carries them.",
+    group: "PORTS_INFRASTRUCTURE",
+    renderLayerIds: [LAYER_IDS.buildings],
+    // Off by default. Perspective is the M2.6 headline; buildings are
+    // context an officer opts into when they are inspecting a berth, and
+    // they draw nothing at all below zoom 13 in any case.
+    defaultVisible: false,
+    // Genuinely ready: the geometry and its heights ship in the basemap
+    // tiles already being downloaded. No new source, no new licence.
+    status: "ready",
+    order: 25,
+  },
+  {
     id: "graticule",
     label: "Graticule",
     description: "Latitude and longitude reference lines. Generated, not observed.",

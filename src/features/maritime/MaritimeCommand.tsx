@@ -14,6 +14,7 @@ import {
   Crosshair,
   Maximize2,
   Minus,
+  Orbit,
   PanelLeftClose,
   PanelLeftOpen,
   Plus,
@@ -27,6 +28,7 @@ import { Button } from "@/components/ui/button";
 import {
   MAP_DEFAULTS,
   MAP_SCOPES,
+  mapEventBus,
   NIMASA_PORTS,
   type MapScopeId,
   buildNationalPicture,
@@ -392,6 +394,21 @@ function CommandToolbar({
   const scope = useMapSelector((state) => state.scope);
   const limits = MAP_SCOPES[scope];
 
+  /*
+   * Whether the officer has taken pitch over from the automatic policy.
+   *
+   * Tracked here rather than in SGS because it is a property of the
+   * *renderer's* camera controller, not of the shared map state — two
+   * surfaces reading the same SGS could not sensibly share one latch.
+   * The bus already carries the change, so this is a mirror, never a
+   * second source of truth.
+   */
+  const [pitchManual, setPitchManual] = useState(false);
+  useEffect(
+    () => mapEventBus.on("map:perspective", ({ owner }) => setPitchManual(owner === "manual")),
+    [],
+  );
+
   const toggleFullscreen = useCallback(() => {
     const element = shellRef.current;
     if (!element) return;
@@ -432,6 +449,20 @@ function CommandToolbar({
       <ToolButton label="Clear selection" disabled={!hasSelection} onClick={onClearSelection}>
         <XCircle className="h-3.5 w-3.5" aria-hidden />
       </ToolButton>
+      {/*
+        Only while the officer owns pitch.
+        A permanently visible reset would be a control for a state the
+        map is not in; appearing when the latch engages is what makes it
+        legible without a panel or a caption explaining the model.
+      */}
+      {pitchManual ? (
+        <ToolButton
+          label="Reset perspective — return tilt to automatic"
+          onClick={() => mapEventBus.emit("perspective:reset", {})}
+        >
+          <Orbit className="h-3.5 w-3.5" aria-hidden />
+        </ToolButton>
+      ) : null}
       <ToolButton label="Reset view" onClick={() => sgs.reset()}>
         <RotateCcw className="h-3.5 w-3.5" aria-hidden />
       </ToolButton>

@@ -57,6 +57,21 @@ export interface MapRendererMountOptions {
   readonly style: string;
   readonly center: LonLat;
   readonly zoom: number;
+  /**
+   * Initial camera tilt and rotation, in degrees.
+   *
+   * Part of the mount for the same reason `center` and `zoom` are: it is
+   * the pose the map opens at, and there is no later moment at which it
+   * can be applied. The camera-follow subscription cannot do it — it
+   * runs before `mount()` resolves, finds the renderer not ready, and
+   * returns; nothing writes again until the state next changes. A link
+   * carrying a tilted camera therefore opened flat until these existed.
+   *
+   * Optional, so every pre-M2.6 caller keeps the level camera it always
+   * had.
+   */
+  readonly pitch?: number;
+  readonly bearing?: number;
   readonly minZoom: number;
   readonly maxZoom: number;
   /** Panning limit, or `null`/absent for unrestricted. */
@@ -166,6 +181,18 @@ export interface MapRenderer {
    * as one that did.
    */
   setSelectedPort?(locode: string | null): void;
+
+  /**
+   * Hand pitch back to the automatic perspective policy.
+   *
+   * Optional and additive (M2.6). Derives the target from the current
+   * zoom and preserves centre, zoom and bearing — see `perspective.ts`.
+   * A renderer with no perspective model simply omits it.
+   */
+  resetPerspective?(): void;
+
+  /** Which owner currently decides pitch. Optional (M2.6). */
+  getPitchOwner?(): "automatic" | "manual";
 
   /**
    * Set a render layer's opacity, 0–1.

@@ -57,6 +57,12 @@ import {
   type StyleTarget,
 } from "../map-style";
 import { graticuleFeatures, graticuleOpacityExpression } from "../graticule";
+import {
+  isManualPitchGesture,
+  planPerspective,
+  planPerspectiveReset,
+  type PitchOwner,
+} from "../perspective";
 import type {
   MapCamera,
   MapRenderer,
@@ -128,6 +134,35 @@ const SOURCE_IDS = {
   investigationArea: "investigation-area",
 } as const;
 
+/**
+ * Source id of the basemap's own vector tiles, per its style document.
+ *
+ * The building extrusion reads from this rather than from a source of
+ * our own: the geometry and its heights are already in the tiles the map
+ * is downloading anyway, so 3D buildings cost no new dependency, no new
+ * licence, and no additional request.
+ */
+const BASEMAP_SOURCE_ID = "carto";
+
+/**
+ * Zoom at which the basemap first carries building geometry.
+ *
+ * Measured, not assumed: querying the live source at Lagos returns 0
+ * features at zooms 10–12, 4 at zoom 13, and 183 at zoom 14. Below 13
+ * the layer would render nothing whatever it was told to do.
+ */
+const BUILDING_MINZOOM = 13;
+
+/**
+ * Duration of a perspective pitch ease, in milliseconds.
+ *
+ * Long enough to read as a deliberate settling rather than a snap, short
+ * enough that it has finished before the officer's next gesture. It runs
+ * after the camera has stopped, so it never competes with a movement in
+ * progress.
+ */
+const PERSPECTIVE_EASE_MS = 280;
+
 /** Static asset paths. */
 const ASSETS = {
   eez: "/geojson/nigeria-eez.geojson",
@@ -147,6 +182,7 @@ const FALLBACK_BASEMAP = "https://tiles.stadiamaps.com/styles/alidade_smooth_dar
  * checks itself against it at runtime; see `verifyInstalledLayers`.
  */
 export const INSTALLED_RENDER_LAYERS: readonly string[] = [
+  LAYER_IDS.buildings,
   LAYER_IDS.graticule,
   LAYER_IDS.voyageEndpoints,
   LAYER_IDS.voyageEndpointLabels,
@@ -247,6 +283,27 @@ export class MapLibreRenderer implements MapRenderer {
   /** LOCODE of the selected port, or null. */
   private selectedPortId: string | null = null;
 
+  /* ── Adaptive perspective ─────────────────────────────────────── */
+
+  /**
+   * Who currently decides pitch.
+   *
+   * Latches to `manual` on a genuine tilt gesture and stays there until
+   * {@link resetPerspective}. See `perspective.ts` for why the latch is
+   * one-way.
+   */
+  private pitchOwner: PitchOwner = "automatic";
+  /**
+   * True while this class is driving the camera itself.
+   *
+   * Read by two places that must not mistake our own easing for the
+   * officer's hand: the manual-gesture test, and the `moveend` handler,
+   * which would otherwise re-enter on the very move it just issued.
+   */
+  private selfIssuedCameraMove = false;
+  /** Detaches the bus subscription for `perspective:reset`. */
+  private offPerspectiveReset: (() => void) | undefined;
+
   /** Instrumentation — asserted in tests, surfaced in the status panel. */
   private fullReplacements = 0;
   private incrementalBatches = 0;
@@ -296,6 +353,10 @@ export class MapLibreRenderer implements MapRenderer {
       style: options.style || BASEMAP_STYLE,
       center: [options.center[0], options.center[1]],
       zoom: options.zoom,
+      // Restores a shared or reloaded camera pose. Absent means level,
+      // which is what every caller predating M2.6 expects.
+      ...(options.pitch !== undefined ? { pitch: options.pitch } : {}),
+      ...(options.bearing !== undefined ? { bearing: options.bearing } : {}),
       minZoom: options.minZoom,
       maxZoom: options.maxZoom,
       // Null means unrestricted. See `MAP_SCOPES.global` for why a
@@ -309,9 +370,24 @@ export class MapLibreRenderer implements MapRenderer {
           }
         : {}),
       attributionControl: false,
-      // 2D operational view — pitch is reserved for the G7 Terrain Perspective.
-      pitchWithRotate: false,
-      // Officers read a map; they should not be able to tilt it by accident.
+      /*
+       * Tilt is reachable by hand on the desktop, not only on touch.
+       *
+       * This was `false`, with a note reserving pitch for a future
+       * terrain perspective. M2.6 supersedes that: pitch is now a
+       * first-class part of the operational picture, and the officer
+       * must be able to take it over from the automatic ramp — which is
+       * what latches the policy and reveals the reset control.
+       *
+       * Without this the latch was only reachable on a touch device
+       * (`touchPitch` has always defaulted on), so a desktop officer
+       * could be tilted automatically but never overrule it. A control
+       * the map applies and the user cannot answer is the fight
+       * `perspective.ts` exists to prevent.
+       */
+      pitchWithRotate: true,
+      // Officers read a map, and rotating it is theirs to choose. The
+      // automatic perspective policy never writes bearing.
       dragRotate: true,
       fadeDuration: 0,
     });
@@ -442,6 +518,11 @@ export class MapLibreRenderer implements MapRenderer {
   destroy(): void {
     if (this.hoverTimer) clearTimeout(this.hoverTimer);
     this.hoverTimer = null;
+    // The bus outlives this renderer — a subscription left attached
+    // would keep a destroyed instance alive and answer resets meant for
+    // its replacement.
+    this.offPerspectiveReset?.();
+    this.offPerspectiveReset = undefined;
     this.popup?.remove();
     this.popup = null;
     this.map?.remove();
@@ -654,6 +735,63 @@ export class MapLibreRenderer implements MapRenderer {
   private installSourcesAndLayers(): void {
     const map = this.map;
     if (!map) return;
+
+    /*
+     * ── Extruded buildings ──
+     *
+     * Installed first, so every layer added after it — graticule, EEZ,
+     * ports, vessels, rings, badges — sits above it in the draw order.
+     * That ordering is the contract: geographic context may never
+     * occlude an operational mark.
+     *
+     * ## Every height here is real
+     *
+     * `render_height` and `render_min_height` come from the basemap's own
+     * building tiles, which carry them on every feature — verified
+     * against the live source, where Lagos, Rotterdam and Singapore each
+     * return 50–64 *distinct* heights across ~80 features with no modal
+     * value above 8%. A defaulted field would show one dominant number;
+     * these are measurements, mostly from OSM `height` or
+     * `building:levels`.
+     *
+     * There is deliberately no `coalesce` and no fallback literal. A
+     * building whose height nobody recorded must not be drawn at an
+     * invented one — MapLibre skips a feature whose height expression
+     * yields null, which is the honest outcome. That is also why this
+     * layer carries a coverage caveat in the legend: a missing building
+     * means the basemap has no geometry there, never that the ground is
+     * empty.
+     *
+     * Below zoom 13 the source has no building geometry at all, so the
+     * `minzoom` costs nothing and states the fact.
+     */
+    map.addLayer({
+      id: LAYER_IDS.buildings,
+      type: "fill-extrusion",
+      source: BASEMAP_SOURCE_ID,
+      "source-layer": "building",
+      minzoom: BUILDING_MINZOOM,
+      layout: { visibility: "none" },
+      paint: {
+        "fill-extrusion-color": MARITIME_PALETTE.buildingExtrusion,
+        "fill-extrusion-height": ["get", "render_height"],
+        "fill-extrusion-base": ["get", "render_min_height"],
+        /*
+         * Fades in across two zoom levels rather than appearing at once.
+         * Ends well short of opaque: this is context an officer reads
+         * past, not a layer they read.
+         */
+        "fill-extrusion-opacity": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          BUILDING_MINZOOM,
+          0,
+          15,
+          0.75,
+        ],
+      },
+    });
 
     // ── Graticule ──
     // Generated arithmetic, drawn beneath everything operational. Solid
@@ -1327,6 +1465,32 @@ export class MapLibreRenderer implements MapRenderer {
       const camera = this.getCamera();
       if (!camera) return;
       this.bus?.emit("map:move", camera);
+      this.applyPerspective();
+    });
+
+    /*
+     * ── Manual tilt latches pitch away from the policy ──
+     *
+     * Bound to `pitchstart` rather than `pitchend` so the latch is set
+     * before the gesture produces its first `moveend`; latching at the
+     * end would let the policy overwrite the officer's angle in the gap.
+     *
+     * `isManualPitchGesture` is what separates a real gesture from this
+     * class's own easing — see `perspective.ts`. Rotation is deliberately
+     * *not* wired here: a bearing change is not a pitch change, and
+     * spinning the map must not silently disable the perspective ramp.
+     */
+    map.on("pitchstart", (event: { originalEvent?: unknown } | undefined) => {
+      if (!isManualPitchGesture(event, this.selfIssuedCameraMove)) return;
+      this.pitchOwner = "manual";
+      this.bus?.emit("map:perspective", { owner: "manual", pitch: map.getPitch() });
+    });
+
+    // The one command this renderer accepts on the bus. See the event's
+    // own documentation for why a control asks this way.
+    this.offPerspectiveReset?.();
+    this.offPerspectiveReset = this.bus?.on("perspective:reset", () => {
+      this.resetPerspective();
     });
 
     map.on("click", LAYER_IDS.vessels, (event: MapLibreLayerMouseEvent) => {
@@ -1502,6 +1666,109 @@ export class MapLibreRenderer implements MapRenderer {
       }
     }
     this.selectedPortId = locode;
+  }
+
+  /* ── Adaptive perspective ─────────────────────────────────────── */
+
+  /**
+   * Bring pitch into line with the zoom, once the camera has settled.
+   *
+   * Called only from `moveend`. That timing is the whole design, and it
+   * was arrived at by measuring two alternatives that do not work:
+   *
+   *   A React subscriber cannot be smooth. A 1.5s zoom fires ~74
+   *   MapLibre `zoom` events but notifies the shared service exactly
+   *   twice, because only `moveend` is wired — so pitch derived from
+   *   shared state would snap in one frame at the end of the gesture.
+   *
+   *   `setPitch()` per `zoom` event is worse: it is a camera *command*,
+   *   and it cancels whatever easing is already running. Measured, it
+   *   aborted an `easeTo` to zoom 13 at zoom 7.57 — which would break
+   *   the selection flight `planCameraMove` issues.
+   *
+   * Easing after the gesture ends competes with nothing, converges in
+   * one step, and touches pitch alone.
+   *
+   * Wrapped entirely in try/catch. An exception thrown inside a MapLibre
+   * camera event handler leaves the camera permanently wedged — every
+   * later `easeTo` silently does nothing until the page is reloaded.
+   * That was observed directly during the M2.6 audit, and no perspective
+   * nicety is worth that failure mode.
+   */
+  private applyPerspective(): void {
+    const map = this.map;
+    if (!map || this.destroyed) return;
+    // Our own pitch ease raises `moveend` again; without this the
+    // controller would answer its own movement forever.
+    if (this.selfIssuedCameraMove) return;
+
+    try {
+      const plan = planPerspective({
+        zoom: map.getZoom(),
+        currentPitch: map.getPitch(),
+        owner: this.pitchOwner,
+      });
+      if (!plan.change) return;
+
+      this.selfIssuedCameraMove = true;
+      map.easeTo(
+        // Pitch only. Centre, zoom and bearing are absent from this
+        // object by construction, so the ease cannot move the officer
+        // off what they were looking at or undo a manual rotation.
+        { pitch: plan.pitch, duration: PERSPECTIVE_EASE_MS },
+        // Tagged so the `moveend` this raises is identifiable even by a
+        // listener that cannot see `selfIssuedCameraMove`.
+        { seaphorePerspective: true },
+      );
+      map.once("moveend", () => {
+        this.selfIssuedCameraMove = false;
+      });
+      // Belt and braces: if the ease is cancelled the `moveend` above may
+      // never arrive, and a stuck flag would disable perspective for the
+      // session.
+      window.setTimeout(() => {
+        this.selfIssuedCameraMove = false;
+      }, PERSPECTIVE_EASE_MS + 400);
+    } catch {
+      // Never let a perspective decision wedge the camera.
+      this.selfIssuedCameraMove = false;
+    }
+  }
+
+  /** Which owner currently decides pitch. */
+  getPitchOwner(): PitchOwner {
+    return this.pitchOwner;
+  }
+
+  /**
+   * Hand pitch back to the automatic policy and ease to its angle.
+   *
+   * Derives the target from the current zoom, so "reset" resumes the
+   * ramp from wherever the officer is rather than undoing their session.
+   * Centre, zoom and bearing are preserved — a manual rotation survives
+   * a perspective reset, because bearing is never the policy's to hold.
+   */
+  resetPerspective(): void {
+    const map = this.map;
+    if (!map || this.destroyed) return;
+    try {
+      const plan = planPerspectiveReset(map.getZoom());
+      this.pitchOwner = plan.owner;
+      this.selfIssuedCameraMove = true;
+      map.easeTo(
+        { pitch: plan.pitch, duration: PERSPECTIVE_EASE_MS },
+        { seaphorePerspective: true },
+      );
+      map.once("moveend", () => {
+        this.selfIssuedCameraMove = false;
+      });
+      window.setTimeout(() => {
+        this.selfIssuedCameraMove = false;
+      }, PERSPECTIVE_EASE_MS + 400);
+      this.bus?.emit("map:perspective", { owner: "automatic", pitch: plan.pitch });
+    } catch {
+      this.selfIssuedCameraMove = false;
+    }
   }
 
   private clearHover(): void {

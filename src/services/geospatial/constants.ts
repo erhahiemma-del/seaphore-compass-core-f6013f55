@@ -247,6 +247,16 @@ export const MARITIME_PALETTE = {
   labelHalo: "#0A121B",
   /** Land administrative boundaries. Dimmed — they are not maritime. */
   boundary: "#2A3948",
+  /**
+   * Extruded building mass.
+   *
+   * A shade above `landUrban` so buildings separate from the ground they
+   * stand on, and no further: they are the quietest thing the map draws
+   * on purpose. Deliberately sharing the land family rather than
+   * introducing a new hue — a building is geography, not intelligence,
+   * and must never read as an entity.
+   */
+  buildingExtrusion: "#243447",
   /** Latitude/longitude graticule. Cool grey, never gold — see below. */
   graticule: "#2E4356",
   /**
@@ -431,6 +441,13 @@ export const LAYER_IDS = {
   eezBoundary: "eez-boundary-layer",
   /** Jurisdictional wash inside the EEZ outline. */
   eezFill: "eez-fill-layer",
+  /**
+   * Extruded buildings, from the basemap's own geometry.
+   *
+   * Drawn beneath every maritime layer, including the graticule, so that
+   * nothing operational can ever be occluded by geographic context.
+   */
+  buildings: "buildings-layer",
   /** Latitude/longitude reference lines. */
   graticule: "graticule-layer",
   voyageEndpoints: "voyage-endpoints-layer",
