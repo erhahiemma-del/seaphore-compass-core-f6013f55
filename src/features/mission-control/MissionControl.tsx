@@ -44,6 +44,7 @@ import { MissionModeSelector } from "./MissionModeSelector";
 import { COMPOSABLE_PANELS, orderKpis, orderPanels } from "./modes";
 import { useMissionMode } from "./useMissionMode";
 import { MapRecommendationNotice } from "./MapRecommendationNotice";
+import { useCopilotContextBinding } from "./useCopilotContextBinding";
 import { useUipStore } from "@/stores/uip.store";
 import { scanForLeakage } from "@/services/revenue-leakage";
 import {
@@ -129,6 +130,10 @@ export function MissionControl() {
   // than rendering the invented numbers these cards used to carry.
   // The active lens, shared with the ribbon through the mode store.
   const { mode } = useMissionMode();
+  // Tell the Copilot what the officer is looking at, so it opens
+  // knowing the lens and the subject rather than asking them to
+  // re-explain their own screen.
+  useCopilotContextBinding();
   const uipId = uip?.id ?? null;
   const portsProjection = projectPortOperations({ uipId });
   const complianceProjection = projectComplianceWatchlist({ uipId });
