@@ -50,7 +50,7 @@ export type VesselVisualCategory =
   | "UNKNOWN";
 
 /** Silhouettes the sprite builder knows how to draw. */
-export type VesselSilhouette = "arrow" | "wedge" | "block" | "disc";
+export type VesselSilhouette = "arrow" | "wedge" | "block" | "hull";
 
 export interface VesselVisual {
   readonly category: VesselVisualCategory;
@@ -69,9 +69,10 @@ export interface VesselVisual {
 /**
  * Visual definition per category.
  *
- * `UNKNOWN` is a disc rather than a pointed shape on purpose: a pointed
- * silhouette reads as a direction of travel, and an unknown vessel has
- * no direction we can vouch for.
+ * `UNKNOWN` is a generic ship hull, never a disc: a dot says nothing
+ * about what the object is. Direction is handled separately — the
+ * non-directional variant of the same hull has a blunt bow and is drawn
+ * unrotated, so an unreported course is never presented as a bearing.
  */
 export const VESSEL_VISUALS: Readonly<
   Record<VesselVisualCategory, Omit<VesselVisual, "typeReported">>
@@ -84,7 +85,7 @@ export const VESSEL_VISUALS: Readonly<
   FISHING: { category: "FISHING", label: "Fishing", silhouette: "arrow" },
   TUG: { category: "TUG", label: "Tug", silhouette: "arrow" },
   OFFSHORE: { category: "OFFSHORE", label: "Offshore support", silhouette: "arrow" },
-  UNKNOWN: { category: "UNKNOWN", label: "Unspecified vessel", silhouette: "disc" },
+  UNKNOWN: { category: "UNKNOWN", label: "Unspecified vessel", silhouette: "hull" },
 } as const;
 
 /**
@@ -165,7 +166,7 @@ export const VESSEL_SILHOUETTES: readonly VesselSilhouette[] = [
   "arrow",
   "wedge",
   "block",
-  "disc",
+  "hull",
 ] as const;
 
 /**

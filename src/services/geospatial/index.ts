@@ -239,9 +239,16 @@ export {
   VESSEL_SPRITE_COLORS,
   VESSEL_SPRITE_SIZE,
   buildVesselSprites,
-  createPortDiamondImage,
   createVesselSilhouetteImage,
 } from "./icons/vessel-arrow";
+
+export {
+  SYMBOL_SPRITE_KINDS,
+  SYMBOL_SPRITE_SIZE,
+  buildSymbolSprites,
+  createSymbolImage,
+  symbolSpriteId,
+} from "./icons/symbol-sprites";
 
 export {
   EmptyVesselSource,

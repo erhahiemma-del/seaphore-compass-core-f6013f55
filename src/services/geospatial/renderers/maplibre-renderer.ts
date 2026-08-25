@@ -40,7 +40,9 @@ import {
 } from "../constants";
 import { FRESHNESS_COLORS, FRESHNESS_LABELS, formatAge } from "../freshness";
 import type { MapEventBus } from "../event-bus";
-import { buildVesselSprites, createPortDiamondImage } from "../icons/vessel-arrow";
+import { buildVesselSprites } from "../icons/vessel-arrow";
+import { buildSymbolSprites, symbolSpriteId } from "../icons/symbol-sprites";
+import { MAP_SYMBOLS } from "@/lib/map-symbols";
 import {
   applyMaritimeStyle,
   COASTLINE_LAYER_ID,
@@ -545,7 +547,11 @@ export class MapLibreRenderer implements MapRenderer {
     for (const [id, image] of buildVesselSprites()) {
       if (!map.hasImage(id)) map.addImage(id, image);
     }
-    if (!map.hasImage("port-diamond")) map.addImage("port-diamond", createPortDiamondImage());
+    // Operational symbols (ports, anchorage, incidents, weather) share
+    // their geometry with the legend via `@/lib/map-symbols`.
+    for (const [id, image] of buildSymbolSprites()) {
+      if (!map.hasImage(id)) map.addImage(id, image);
+    }
     return Promise.resolve();
   }
 
@@ -745,7 +751,9 @@ export class MapLibreRenderer implements MapRenderer {
           ["*", ["coalesce", ["get", "anchorageRadiusKm"], 0], PIXELS_PER_KM.maxZoomPixels],
         ],
         "circle-color": "transparent",
-        "circle-stroke-color": "#0E7C7B",
+        // Anchorage is violet in the shared symbol vocabulary — a distinct
+        // reading from the blue port itself.
+        "circle-stroke-color": MAP_SYMBOLS.anchorage.color,
         "circle-stroke-width": 1,
         "circle-stroke-opacity": ["interpolate", ["linear"], ["zoom"], 8, 0.15, 11, 0.45, 14, 0.6],
       },
@@ -755,7 +763,7 @@ export class MapLibreRenderer implements MapRenderer {
       type: "symbol",
       source: SOURCE_IDS.ports,
       layout: {
-        "icon-image": "port-diamond",
+        "icon-image": symbolSpriteId("port"),
         /*
          * Scale carries berth count — a reference figure from the source
          * file, which states it is "not live capacity". It is a static
@@ -802,7 +810,7 @@ export class MapLibreRenderer implements MapRenderer {
         "text-allow-overlap": false,
       },
       paint: {
-        "text-color": "#3FBFBE",
+        "text-color": MAP_SYMBOLS.port.color,
         "text-halo-color": MARITIME_PALETTE.labelHalo,
         "text-halo-width": 1.5,
       },
