@@ -175,7 +175,7 @@ export function MissionCommandBar({
       });
       focusAfterPrefix(nextMode.prefix);
     },
-    [modeKey, focusAfterPrefix],
+    [modeKey, focusAfterPrefix, setPinned],
   );
 
   // Alt+1..8 shortcuts
