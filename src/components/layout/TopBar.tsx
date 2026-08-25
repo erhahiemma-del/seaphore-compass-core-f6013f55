@@ -1,10 +1,12 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link, useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { LogIn, LogOut, Search, User2 } from "lucide-react";
+import { CalendarClock, LogIn, LogOut, Search, ShieldCheck, User2 } from "lucide-react";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { useAuth } from "@/hooks/use-auth";
 import { performLogout } from "@/lib/auth/logout";
 import { useFocusSubjectStore } from "@/stores/focus-subject.store";
@@ -49,11 +51,44 @@ export function TopBar({ title, subtitle }: TopBarProps) {
       </div>
 
       <div className="flex items-center gap-2">
+        <NigeriaTime />
         <GoToHint />
         <ThemeToggle />
         <OfficerBadge />
       </div>
     </header>
+  );
+}
+
+function NigeriaTime() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(new Date()), 30_000);
+    return () => window.clearInterval(id);
+  }, []);
+  const formatted = useMemo(
+    () =>
+      new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Africa/Lagos",
+        hour: "2-digit",
+        minute: "2-digit",
+        day: "2-digit",
+        month: "short",
+      }).format(now),
+    [now],
+  );
+
+  return (
+    <div className="hidden items-center gap-2 rounded-md border border-line bg-surface-2/70 px-2.5 py-1.5 md:flex">
+      <CalendarClock className="h-3.5 w-3.5 text-slate" />
+      <div className="leading-none">
+        <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate">Nigeria time</div>
+        <div className="mt-0.5 text-[12px] font-semibold tabular-nums text-foreground">
+          {formatted} WAT
+        </div>
+      </div>
+      <ConfidenceChip tier="observed" size={9} />
+    </div>
   );
 }
 
@@ -92,6 +127,10 @@ function OfficerBadge() {
   const email = session.user.email ?? "Officer";
   return (
     <div className="flex items-center gap-2">
+      <div className="hidden items-center gap-1.5 rounded-md border border-line bg-surface-2/70 px-2.5 py-1.5 xl:flex">
+        <ShieldCheck className="h-3.5 w-3.5 text-[color:var(--ocean)]" />
+        <span className="type-small font-semibold text-foreground">NIMASA Watch</span>
+      </div>
       <div
         className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-foreground"
         title={email}

@@ -3,8 +3,8 @@
  *
  * Presentation only: the values, states and confidence all come from the
  * existing coverage model via `KpiCoverageCard`. This module decides nothing
- * about the numbers — it decides only which signal *leads* for the active
- * intelligence mode, and renders the rest as secondary and background rows.
+ * about the numbers; it renders the six approved operational signals as equal
+ * cards so Mission Control keeps its approved geometry.
  */
 import {
   Activity,
@@ -68,14 +68,12 @@ function PendingKpi({
   hint,
   icon: Icon,
   onOpen,
-  size,
 }: {
   title: string;
   descriptor: string;
   hint?: string;
   icon: LucideIcon;
   onOpen: () => void;
-  size: "lead" | "quiet";
 }) {
   return (
     <button
@@ -84,7 +82,7 @@ function PendingKpi({
       title={hint}
       className={cn(
         "group flex flex-col rounded-lg border border-line bg-surface text-left elev-1 motion-fast hover:border-[color:var(--ocean)]/60",
-        size === "lead" ? "p-4" : "p-3",
+        "p-3",
       )}
     >
       <div className="flex items-center gap-2">
@@ -112,20 +110,19 @@ export function KpiRibbon({ coverage, mode, onOpen }: KpiRibbonProps) {
   const leadKeys = LEAD_BY_MODE[mode ?? ""] ?? ["risk-intelligence", "revenue-intelligence"];
 
   type RibbonKpi = (typeof RIBBON_KPIS)[number];
-  const ordered: RibbonKpi[] = [...RIBBON_KPIS].sort((a, b) => {
-    const ai = leadKeys.indexOf(a.key);
-    const bi = leadKeys.indexOf(b.key);
-    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
-  });
-  const lead = ordered.slice(0, 2);
-  const rest = ordered.slice(2);
+  const ordered: RibbonKpi[] = [...RIBBON_KPIS];
 
-  const render = (kpi: RibbonKpi, size: "lead" | "quiet") => {
+  const render = (kpi: RibbonKpi) => {
     const Icon = RIBBON_ICONS[kpi.key] ?? Activity;
     const cov = kpiByKey.get(kpi.metricKey);
     const target = KPI_HANDOFF_OVERRIDE[kpi.key] ?? kpi.handoff;
+    const emphasized = leadKeys.includes(kpi.key);
     if (cov) {
-      return <KpiCoverageCard key={kpi.key} kpi={cov} icon={Icon} onOpen={() => onOpen(target)} />;
+      return (
+        <div key={kpi.key} className={cn(emphasized && "rounded-lg ring-2 ring-[color:var(--ocean)]/20")}>
+          <KpiCoverageCard kpi={cov} icon={Icon} onOpen={() => onOpen(target)} />
+        </div>
+      );
     }
     return (
       <PendingKpi
@@ -134,7 +131,6 @@ export function KpiRibbon({ coverage, mode, onOpen }: KpiRibbonProps) {
         descriptor={kpi.descriptor}
         hint={kpi.hint}
         icon={Icon}
-        size={size}
         onOpen={() => onOpen(target)}
       />
     );
@@ -160,14 +156,8 @@ export function KpiRibbon({ coverage, mode, onOpen }: KpiRibbonProps) {
         ) : null}
       </div>
 
-      {/* LEAD — mode-determined emphasis */}
-      <div className="grid gap-2.5 md:grid-cols-2">
-        {lead.map((k: RibbonKpi) => render(k, "lead"))}
-      </div>
-
-      {/* SECONDARY / BACKGROUND — quieter, still complete */}
-      <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {rest.map((k: RibbonKpi) => render(k, "quiet"))}
+      <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        {ordered.map((k: RibbonKpi) => render(k))}
       </div>
     </section>
   );

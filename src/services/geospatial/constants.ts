@@ -49,6 +49,13 @@ export const MAP_DEFAULTS = {
 export const BASEMAP_STYLE = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
 
 /**
+ * CARTO Positron — free, key-less light basemap for institutional overview
+ * surfaces such as Mission Control. Operational command maps keep the dark
+ * maritime default unless a caller explicitly opts into this style.
+ */
+export const LIGHT_BASEMAP_STYLE = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
+
+/**
  * How far the map is allowed to travel.
  *
  * The map was built around one area of responsibility, and `maxBounds`
@@ -184,7 +191,23 @@ export const ZOOM_LIMITS = { min: 1, max: 18 } as const;
  * would be exactly the kind of invented fact the heading contract exists
  * to prevent. Depth stays unavailable until GEBCO or EMODnet is wired.
  */
-export const MARITIME_PALETTE = {
+export interface MaritimePalette {
+  readonly ocean: string;
+  readonly land: string;
+  readonly landUrban: string;
+  readonly coastline: string;
+  readonly waterway: string;
+  readonly seaLabel: string;
+  readonly placeLabel: string;
+  readonly labelHalo: string;
+  readonly boundary: string;
+  readonly graticule: string;
+  readonly voyageRelationship: string;
+  readonly voyageOrigin: string;
+  readonly voyageDestination: string;
+}
+
+export const MARITIME_PALETTE: MaritimePalette = {
   /** Open water. Flat by design — see above. */
   ocean: "#071B2E",
   /** Landmass. Deliberately lighter than the sea so land reads as solid. */
@@ -220,6 +243,30 @@ export const MARITIME_PALETTE = {
   voyageOrigin: "#5E8CC2",
   /** Voyage destination marker. */
   voyageDestination: "#B78BD9",
+} as const;
+export type MapStylePaletteName = "maritime" | "institutional";
+
+/**
+ * Institutional light equivalent of the maritime palette.
+ *
+ * Still a flat, non-measurement basemap treatment: water, land and labels are
+ * repainted for figure-ground fidelity only. No colour encodes bathymetry,
+ * traffic density or risk.
+ */
+export const LIGHT_MARITIME_PALETTE: MaritimePalette = {
+  ocean: "#DDEEF7",
+  land: "#F6F8FA",
+  landUrban: "#E9EEF3",
+  coastline: "#8AA9B8",
+  waterway: "#B8D7E3",
+  seaLabel: "#507A8D",
+  placeLabel: "#667789",
+  labelHalo: "#FFFFFF",
+  boundary: "#CAD4DE",
+  graticule: "#B8C6D2",
+  voyageRelationship: "#7C6AA6",
+  voyageOrigin: "#317EA8",
+  voyageDestination: "#8D6DB3",
 } as const;
 
 /**

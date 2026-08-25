@@ -32,6 +32,7 @@
 import {
   BASEMAP_STYLE,
   LAYER_IDS,
+  LIGHT_MARITIME_PALETTE,
   MARITIME_PALETTE,
   PIXELS_PER_KM,
   RISK_COLORS,
@@ -361,7 +362,9 @@ export class MapLibreRenderer implements MapRenderer {
      * throws, so a basemap it does not recognise costs colour, not the
      * mount.
      */
-    const styleResult = applyMaritimeStyle(map as unknown as StyleTarget);
+    const palette =
+      options.palette === "institutional" ? LIGHT_MARITIME_PALETTE : MARITIME_PALETTE;
+    const styleResult = applyMaritimeStyle(map as unknown as StyleTarget, palette);
     this.installSourcesAndLayers();
     this.verifyInstalledLayers();
     publishStyleDiagnostics(map, styleResult);

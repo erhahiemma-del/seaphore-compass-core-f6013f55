@@ -33,6 +33,8 @@ export function PriorityQueuePanel({
   className?: string;
 }) {
   const items = projection.data?.items ?? [];
+  const rows = items.slice(0, 4);
+  const placeholders = Array.from({ length: Math.max(0, 4 - rows.length) }, (_, index) => index);
 
   return (
     <PanelCard variant="edge" className={cn("flex flex-col", className)}>
@@ -49,28 +51,15 @@ export function PriorityQueuePanel({
         </Link>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        {projection.state !== "ACTIVE" ? (
-          <div className="p-4">
-            <PanelStateNotice state={projection.state} detail={projection.stateDetail} />
-          </div>
-        ) : items.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center px-6 py-10 text-center">
-            <AlertTriangle className="mb-2 h-5 w-5 text-slate/60" aria-hidden />
-            <p className="type-h2 text-foreground">Queue clear</p>
-            <p className="mt-1 max-w-[32ch] type-small leading-relaxed text-slate">
-              The detection capability ran and surfaced nothing critical or high. This is a healthy
-              queue, not an empty one.
-            </p>
-          </div>
-        ) : (
-          <ul className="divide-y divide-line">
-            {items.map((item) => (
+      <div className="min-h-0 flex-1 overflow-hidden">
+        <ul className="grid h-full grid-rows-4 divide-y divide-line">
+          {projection.state === "ACTIVE" && rows.length > 0
+            ? rows.map((item) => (
               <li key={item.id}>
                 <button
                   type="button"
                   onClick={() => onOpen(item.id)}
-                  className="group flex w-full flex-col gap-1.5 px-4 py-3 text-left motion-fast hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ocean)]/40"
+                  className="group flex h-full w-full flex-col justify-center gap-1.5 px-4 py-3 text-left motion-fast hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ocean)]/40"
                 >
                   <span className="flex items-center gap-2">
                     <span
@@ -101,9 +90,44 @@ export function PriorityQueuePanel({
                   </span>
                 </button>
               </li>
-            ))}
-          </ul>
-        )}
+            ))
+            : null}
+          {projection.state !== "ACTIVE" ? (
+            <li className="row-span-4 p-4">
+              <PanelStateNotice state={projection.state} detail={projection.stateDetail} />
+            </li>
+          ) : null}
+          {projection.state === "ACTIVE" && rows.length === 0 ? (
+            <li className="row-span-4 flex h-full flex-col items-center justify-center px-6 py-10 text-center">
+              <AlertTriangle className="mb-2 h-5 w-5 text-slate/60" aria-hidden />
+              <p className="type-h2 text-foreground">Queue clear</p>
+              <p className="mt-1 max-w-[32ch] type-small leading-relaxed text-slate">
+                The detection capability ran and surfaced nothing critical or high.
+              </p>
+            </li>
+          ) : null}
+          {projection.state === "ACTIVE" && rows.length > 0
+            ? placeholders.map((index) => (
+                <li key={`placeholder-${index}`} className="flex h-full flex-col justify-center px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-sm border border-line bg-surface-2 px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-[0.06em] text-slate">
+                      Clear
+                    </span>
+                    <span className="min-w-0 flex-1 truncate type-h2 text-foreground">
+                      No additional priority
+                    </span>
+                  </div>
+                  <p className="mt-1 type-small leading-relaxed text-slate">
+                    No further critical or high finding is projected for this queue slot.
+                  </p>
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <span className="type-small text-slate">No officer action required</span>
+                    <ConfidenceChip tier="observed" size={9} />
+                  </div>
+                </li>
+              ))
+            : null}
+        </ul>
       </div>
     </PanelCard>
   );

@@ -19,6 +19,7 @@
  *     renderer is not reusable.
  */
 import type { MapEventBus } from "./event-bus";
+import type { MapStylePaletteName } from "./constants";
 import type { BoundingBox, GeoJsonFeatureCollection, GeoJsonPoint, LonLat } from "./types";
 import type { VesselFeature, VesselFeatureProperties } from "./vessel";
 
@@ -55,6 +56,8 @@ export interface MapRendererMountOptions {
   readonly container: HTMLElement;
   /** Basemap style URL. */
   readonly style: string;
+  /** Presentation palette applied to the basemap after it loads. */
+  readonly palette?: MapStylePaletteName;
   readonly center: LonLat;
   readonly zoom: number;
   readonly minZoom: number;
