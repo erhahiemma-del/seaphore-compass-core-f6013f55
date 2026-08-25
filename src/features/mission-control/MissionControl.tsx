@@ -40,12 +40,13 @@ import { cn } from "@/lib/utils";
 // Only the ribbon's static labels, icons and handoff targets remain —
 // UI copy, not intelligence. Every value beside them comes from coverage.
 import { RIBBON_KPIS } from "@/lib/mission-control-data";
-import { MissionModeSelector } from "./MissionModeSelector";
 import { COMPOSABLE_PANELS, orderKpis, orderPanels } from "./modes";
 import { useMissionMode } from "./useMissionMode";
 import { MapRecommendationNotice } from "./MapRecommendationNotice";
 import { useCopilotContextBinding } from "./useCopilotContextBinding";
 import { MyWorkspaceSummary } from "./MyWorkspaceSummary";
+import { OperationalOrientation } from "./OperationalOrientation";
+import { RecommendedNextActionPanel } from "./RecommendedNextActionPanel";
 import { useUipStore } from "@/stores/uip.store";
 import { scanForLeakage } from "@/services/revenue-leakage";
 import {
@@ -144,12 +145,22 @@ export function MissionControl() {
     <AppShell title="Mission Control" subtitle="National maritime operating picture" mode="light">
       <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-6 py-5">
         <MissionCommandBar />
-        <div className={recede}>
-          <Ribbon />
-        </div>
-        <div className={recede}>
-          <ConfidenceLegend />
-        </div>
+
+        {/*
+          Layer 1 — orientation. Where the officer is, in one quiet band:
+          the lens, what it is for, the subject in hand, and how complete
+          the intelligence behind it is. Deliberately not a hero section;
+          the emphasis budget belongs to the layers beneath it.
+        */}
+        <OperationalOrientation readiness={coverage?.readiness} />
+
+        {/*
+          Layer 2 — the single next action, derived from observable state
+          rather than generated. A blocked dependency outranks the lens's
+          standing advice, because sending an officer to a panel that
+          cannot answer teaches them the recommendation is decorative.
+        */}
+        <RecommendedNextActionPanel mode={mode} kpis={coverage?.kpis} />
 
         {/*
           Lovable's adaptive focus layout, driving Claude's projection
@@ -164,8 +175,30 @@ export function MissionControl() {
             focused ? "xl:grid-cols-[1.5fr_320px]" : "lg:grid-cols-[1.55fr_1fr]",
           )}
         >
-          <MaritimePicturePanel />
+          <div className="flex min-w-0 flex-col gap-2">
+            {/*
+              Advisory only, and beside the surface it affects. Appears
+              when this lens would show layers the officer does not have
+              on; applying is additive and explicit, and switching mode
+              never changes their configuration.
+            */}
+            <MapRecommendationNotice mode={mode} />
+            <MaritimePicturePanel />
+          </div>
           {focused ? <FocusRail /> : <IntelligenceFeedPanel projection={feedProjection} />}
+        </div>
+
+        {/*
+          Layer 4 — supporting intelligence. The KPI ribbon and the
+          confidence legend are reference material rather than the
+          headline, so they sit beneath the map and the priority feed
+          instead of above them. The ribbon still orders by lens.
+        */}
+        <div className={recede}>
+          <Ribbon />
+        </div>
+        <div className={recede}>
+          <ConfidenceLegend />
         </div>
 
         {/*
@@ -299,7 +332,7 @@ function Ribbon() {
    * state, and putting it in a global store would make an unrelated
    * surface able to change what an officer is reading here.
    */
-  const { modeId, setModeId, mode } = useMissionMode();
+  const { mode } = useMissionMode();
 
   const kpiByKey = new Map((coverage?.kpis ?? []).map((k) => [k.key, k]));
 
@@ -328,14 +361,6 @@ function Ribbon() {
 
   return (
     <div className="flex flex-col gap-3">
-      <MissionModeSelector value={modeId} onChange={setModeId} />
-      {/*
-        Advisory only. Appears when this lens would show layers the
-        officer does not have on, and not otherwise; applying is
-        additive and explicit. The officer's configuration is never
-        changed by switching mode.
-      */}
-      <MapRecommendationNotice mode={mode} />
       {coverage ? (
         <IntelligenceReadinessCard
           readiness={coverage.readiness}

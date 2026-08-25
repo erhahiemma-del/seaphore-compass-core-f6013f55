@@ -11,7 +11,7 @@
  * keeps switching a lens from being able to change a number.
  */
 import { cn } from "@/lib/utils";
-import { MISSION_MODES, MISSION_MODE_ORDER, type MissionMode, type MissionModeId } from "./modes";
+import { MISSION_MODES, MISSION_MODE_ORDER, type MissionModeId } from "./modes";
 
 export interface MissionModeSelectorProps {
   readonly value: MissionModeId;
@@ -20,10 +20,8 @@ export interface MissionModeSelectorProps {
 }
 
 export function MissionModeSelector({ value, onChange, className }: MissionModeSelectorProps) {
-  const active: MissionMode = MISSION_MODES[value];
-
   return (
-    <div className={cn("flex flex-col gap-1.5", className)}>
+    <div className={className}>
       <div
         role="tablist"
         aria-label="Mission mode"
@@ -56,15 +54,6 @@ export function MissionModeSelector({ value, onChange, className }: MissionModeS
           );
         })}
       </div>
-      {/*
-        One quiet line saying what the active lens is for. The officer
-        should never have to guess why the panels rearranged, and a
-        selector that changes the layout without explaining itself reads
-        as instability rather than intent.
-      */}
-      <p data-testid="mission-mode-purpose" className="px-1 text-[11px] text-muted-foreground">
-        {active.purpose}
-      </p>
     </div>
   );
 }
