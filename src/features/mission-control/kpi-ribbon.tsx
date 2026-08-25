@@ -62,6 +62,13 @@ export interface KpiRibbonProps {
   readonly onOpen: (target: string) => void;
 }
 
+/**
+ * The same KPI card, before coverage has been read.
+ *
+ * Identical geometry to `KpiCoverageCard`: title, value slot, trend slot,
+ * descriptor and footer. Nothing collapses while the coverage model is
+ * still being read — the slots simply say "—".
+ */
 function PendingKpi({
   title,
   descriptor,
@@ -81,8 +88,7 @@ function PendingKpi({
       onClick={onOpen}
       title={hint}
       className={cn(
-        "group flex flex-col rounded-lg border border-line bg-surface text-left elev-1 motion-fast hover:border-[color:var(--ocean)]/60",
-        "p-3",
+        "group flex flex-col rounded-lg border border-line bg-surface p-3 text-left elev-1 motion-fast hover:border-[color:var(--ocean)]/60",
       )}
     >
       <div className="flex items-center gap-2">
@@ -91,17 +97,21 @@ function PendingKpi({
         </span>
         <span className="type-label text-slate">{title}</span>
       </div>
-      <div className="mt-2 flex items-center gap-1.5 text-[13px] font-semibold text-slate">
-        <span
-          aria-hidden
-          className="h-1.5 w-1.5 rounded-full bg-[color:var(--status-inactive)] opacity-70"
-        />
-        Checking coverage…
+      <div className="mt-2 flex items-baseline gap-2">
+        <span className="type-mono text-[22px] font-bold tabular-nums text-foreground">—</span>
+        <span className="text-[12px] font-bold tabular-nums text-slate">—</span>
       </div>
       <div className="mt-0.5 text-[11px] font-semibold text-slate">{descriptor}</div>
+      <div className="mt-2 flex items-center gap-2">
+        <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-[color:var(--status-inactive)]">
+          Checking coverage
+        </span>
+        <span className="text-[10px] font-semibold text-slate">Coverage —</span>
+      </div>
     </button>
   );
 }
+
 
 export function KpiRibbon({ coverage, mode, onOpen }: KpiRibbonProps) {
   const kpiByKey = new Map<string, KpiCoverage>(
