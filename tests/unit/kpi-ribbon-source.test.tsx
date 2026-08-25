@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * The KPI ribbon must never invent a number or a trend.
  *
@@ -5,8 +6,10 @@
  * card can only ever say what coverage says — and re-renders with new
  * coverage the moment live data arrives.
  */
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
 
 import { KpiRibbon } from "@/features/mission-control/kpi-ribbon";
 import type { IntelligenceCoverageReport, KpiCoverage } from "@/lib/intelligence/coverage-model";
