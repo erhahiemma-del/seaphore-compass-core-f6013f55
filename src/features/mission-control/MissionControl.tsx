@@ -1,55 +1,26 @@
 import { useCallback, useMemo, useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getIntelligenceCoverage } from "@/lib/intelligence-coverage.functions";
-import {
-  Activity,
-  AlertTriangle,
-  ArrowRight,
-  BellRing,
-  ChevronRight,
-  Container,
-  FileText,
-  History,
-  Info,
-  Landmark,
-  Radar,
-  Radio,
-  Ship,
-  ShieldCheck,
-  Target,
-  type LucideIcon,
-} from "lucide-react";
+import { Radio } from "lucide-react";
 
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { useFocusSubjectStore } from "@/stores/focus-subject.store";
 
 import { PanelCard } from "@/components/panel-card";
-import { ConfidenceChip, type ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
-import { ConfidenceLegend } from "@/components/confidence-legend";
-import { RiskPill } from "@/components/intelligence/RiskPill";
 import { MapCanvas, type VesselFeedState } from "@/features/maritime/MapCanvas";
 import { resolveMapDataState, type MapDataStateResult, type Vessel } from "@/services/geospatial";
-import { MissionCommandBar } from "@/components/mission-command-bar";
+import { MissionCommandBar, MissionModeBar } from "@/components/mission-command-bar";
+import type { EntityType } from "@/lib/command-dispatch";
+import { DEFAULT_MODE } from "@/lib/intelligence-modes";
 import { useHandoffNavigate } from "@/lib/nav-context";
-import { useRenderTrace } from "@/lib/perf/hooks";
 import { cn } from "@/lib/utils";
 import { useUipStore } from "@/stores/uip.store";
 import { scanForLeakage } from "@/services/revenue-leakage";
 import {
-  projectComplianceWatchlist,
   projectIntelligenceFeed,
-  projectManifestIntelligence,
-  projectPortOperations,
-  projectRecentBriefings,
-  projectRevenueIntelligence,
   projectTodaysPriorities,
-  type FeedPanelData,
-  type FeedSignal,
-  type PanelProjection,
-  type PrioritiesPanelData,
 } from "@/lib/intelligence/dashboard-projection";
-import { PanelStateNotice } from "@/components/intelligence/PanelStateNotice";
 import { QuickActions } from "@/features/mission-control/quick-actions";
 import { NextBestAction } from "@/features/mission-control/next-best-action";
 import { PriorityQueuePanel } from "@/features/mission-control/priority-queue";
@@ -58,8 +29,6 @@ import { MyWorkspacePanel } from "@/features/mission-control/my-workspace";
 import { IntelligenceEventsStrip } from "@/features/mission-control/intelligence-events";
 import { FocusWorkspaceOverlay } from "@/features/mission-control/focus-workspace-overlay";
 import type { KpiCoverage } from "@/lib/intelligence/coverage-model";
-import { useCargoWorkspaceProjections } from "@/features/cargo-workspace/use-cargo-projection";
-import { CargoCentreStateChip } from "@/features/cargo-workspace/CargoCentreView";
 
 /** One shared coverage read for every Mission Control surface. */
 function useCoverage() {
@@ -85,11 +54,33 @@ function coverageFor(
   return (kpis ?? []).find((k) => k.key === key);
 }
 
+/**
+ * Mission Control — the national maritime operating picture.
+ *
+ * Composition, top to bottom: Maritime Command bar, Mission Mode,
+ * Next Best Action, National Maritime Picture beside the Priority Queue,
+ * operational KPI signals, one consolidated My Workspace, one
+ * Intelligence Events strip. Nothing else.
+ *
+ * Capabilities that used to occupy permanent space here (Intelligence
+ * Feed, Today's Priorities, Recent Briefings, Revenue Assurance, Manifest
+ * Intelligence, Compliance & Watchlist, Port Operations, Cargo
+ * Intelligence Workspace, Confidence Ladder) remain fully available on
+ * their own routes — they are simply not part of the operating picture.
+ */
 export function MissionControl() {
   const navigate = useNavigate();
   const handoff = useHandoffNavigate();
   const focused = useFocusSubjectStore((s) => s.subject);
   const recede = focused ? "is-receded" : undefined;
+
+  /**
+   * The mission mode the officer pinned. Local presentation state so the
+   * selector can render as its own band while the command bar keeps
+   * owning the search behaviour — no new global store.
+   */
+  const [pinnedMode, setPinnedMode] = useState<EntityType | null>(null);
+  const modeKey = pinnedMode ?? DEFAULT_MODE;
 
   // One scan, projected two ways. Both panels read the findings the
   // detection capability actually produced — neither computes its own.
@@ -109,12 +100,6 @@ export function MissionControl() {
     findings,
     coverage: coverageFor(coverage?.kpis, "risk"),
   });
-  // Three panels whose providers are not connected. Each states why rather
-  // than rendering the invented numbers these cards used to carry.
-  const uipId = uip?.id ?? null;
-  const portsProjection = projectPortOperations({ uipId });
-  const complianceProjection = projectComplianceWatchlist({ uipId });
-  const briefingsProjection = projectRecentBriefings({ uipId });
 
   const openEntity = useCallback(
     (id: string) =>
@@ -127,67 +112,58 @@ export function MissionControl() {
 
   return (
     <AppShell title="Mission Control" subtitle="National maritime operating picture" mode="light">
-      <div className="mx-auto flex max-w-[1600px] flex-col gap-5 px-6 py-5">
-        {/* SEARCH — the primary control, with secondary quick actions beside it. */}
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
-          <MissionCommandBar fromRoute="/" />
+      <div className="mx-auto flex max-w-[1760px] flex-col gap-3.5 px-5 py-4">
+        {/* MARITIME COMMAND BAR — search dominant, quick actions beside it. */}
+        <div className="grid gap-3.5 xl:grid-cols-[minmax(0,1fr)_400px] xl:items-start">
+          <MissionCommandBar
+            fromRoute="/"
+            pinnedMode={pinnedMode}
+            onPinnedModeChange={setPinnedMode}
+            hideModeChips
+          />
           <div className={recede}>
             <QuickActions />
           </div>
         </div>
 
-        {/* ACT — the strongest decision surface. */}
+        {/* MISSION MODE — the existing intelligence-mode engine, own band. */}
+        <div className={cn("rounded-lg border border-line bg-surface px-3.5 py-2.5 elev-1", recede)}>
+          <MissionModeBar
+            modeKey={modeKey}
+            onSelect={(next) => setPinnedMode(next)}
+          />
+        </div>
+
+        {/* NEXT BEST ACTION — the strongest decision surface. */}
         <NextBestAction projection={prioritiesProjection} onAct={openEntity} />
 
-        {/* ORIENT + PRIORITISE — the geographic operating surface and the queue. */}
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,2.6fr)_minmax(0,1fr)]">
+        {/* NATIONAL MARITIME PICTURE + PRIORITY QUEUE — the map is the anchor. */}
+        <div className="grid gap-3.5 xl:grid-cols-[minmax(0,3.2fr)_minmax(0,1fr)]">
           <MaritimePicturePanel />
           <PriorityQueuePanel
             projection={prioritiesProjection}
             onOpen={openEntity}
-            className="h-[560px]"
+            className="h-[620px]"
           />
         </div>
 
-        {/* UNDERSTAND — tiered signals, emphasis by capability, all still present. */}
+        {/* OPERATIONAL KPI SIGNALS — tiered emphasis by active mission mode. */}
         <div className={recede}>
           <KpiRibbon
             coverage={coverage}
+            mode={modeKey}
             onOpen={(target) =>
               handoff({ target, context: { fromStage: "Monitor", fromRoute: "/" } })
             }
           />
         </div>
 
-        <div className={recede}>
-          <ConfidenceLegend />
-        </div>
-
-        {/* WORK — what belongs to the officer. */}
+        {/* MY WORKSPACE — one consolidated officer surface. */}
         <div className={recede}>
           <MyWorkspacePanel />
         </div>
 
-        <div className={cn("grid gap-4 md:grid-cols-2 xl:grid-cols-4", recede)}>
-          <RevenueAssurancePanel />
-          <ManifestIntelligencePanel />
-          <ComplianceWatchlistPanel projection={complianceProjection} />
-          <PortOperationsPanel projection={portsProjection} />
-        </div>
-
-        <div className={recede}>
-          <CargoWorkspaceStrip />
-        </div>
-
-        <div className={cn("grid gap-4 lg:grid-cols-[1.15fr_1fr]", recede)}>
-          <IntelligenceFeedPanel projection={feedProjection} />
-          <div className="flex flex-col gap-4">
-            <TodaysPrioritiesPanel projection={prioritiesProjection} />
-            <RecentBriefingsPanel projection={briefingsProjection} />
-          </div>
-        </div>
-
-        {/* EVENTS — compact horizontal timeline of what the feed reported. */}
+        {/* INTELLIGENCE EVENTS — one compact timeline strip. */}
         <div className={recede}>
           <IntelligenceEventsStrip
             projection={feedProjection}
@@ -220,100 +196,20 @@ export function MissionControl() {
   );
 }
 
-/**
- * A panel with nothing to report.
- *
- * Deliberately not styled as an error. "Nothing was observed" is a
- * finding in its own right, and an officer who sees a warning icon every
- * time a queue is clear learns to ignore warning icons.
- */
-function EmptyPanelNote({ headline, detail }: { headline: string; detail: string }) {
-  return (
-    <div
-      data-testid="empty-panel-note"
-      className="flex flex-1 flex-col items-center justify-center px-6 py-10 text-center"
-    >
-      <ShieldCheck className="mb-2 h-5 w-5 text-slate/60" aria-hidden />
-      <p className="type-h2 text-foreground">{headline}</p>
-      <p className="mt-1 max-w-[36ch] type-small leading-relaxed text-slate">{detail}</p>
-    </div>
-  );
-}
-
-/** How current the feed is, and whether it covers everything asked. */
-const FRESHNESS_COPY: Record<string, string> = {
-  fresh: "Current",
-  recent: "Delayed — newest signal is not from the last few minutes",
-  ageing: "Delayed — newest signal is several hours old",
-  stale: "Stale — nothing recent has been observed",
-  unknown: "Currency unknown — no usable timestamp on the newest signal",
-};
+/* ---------------- National Maritime Picture ---------------- */
 
 /**
- * A one-line currency statement above the feed.
+ * Mission Control's geographic overview — the visual anchor of the page.
  *
- * Separate from the panel's availability state: a reporting capability can
- * still be reporting old news, and collapsing the two would hide exactly
- * that case. Deliberately text, not a badge — a coloured pill here would
- * compete with the confidence chips on every row.
- */
-function FeedCurrencyLine({ data }: { data: FeedPanelData | null }) {
-  if (!data) return null;
-  return (
-    <p
-      data-testid="feed-currency"
-      data-freshness={data.freshness}
-      className="border-b border-line px-4 pb-2 type-small text-slate"
-    >
-      {FRESHNESS_COPY[data.freshness] ?? FRESHNESS_COPY.unknown}
-      {data.partial ? " · partial — some signals could not be graded" : ""}
-    </p>
-  );
-}
-
-/** One observed signal, rendered from a real finding. */
-function SignalItem({ signal, onClick }: { signal: FeedSignal; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex w-full flex-col gap-1 px-4 py-3 text-left motion-fast hover:bg-surface"
-    >
-      <div className="flex items-start justify-between gap-2">
-        <span className="type-h2 min-w-0 truncate text-foreground">{signal.title}</span>
-        <ConfidenceChip tier={signal.confidence} size={9} />
-      </div>
-      <span className="type-small leading-relaxed text-slate">{signal.subtitle}</span>
-    </button>
-  );
-}
-
-/* ---------------- Maritime Picture Panel ---------------- */
-
-/**
- * Mission Control's geographic overview.
+ * Mounts the canonical `MapCanvas` in overview mode, so the geography is
+ * real even when the vessel feed is not, and the live badge is *derived*
+ * from the feed rather than asserted by a prop. When nothing is connected
+ * the map still draws Nigeria's EEZ and ports — verified static geography
+ * — and says plainly that no vessel source is connected.
  *
- * ## What changed and why
- *
- * This panel previously rendered a hand-drawn SVG over a hardcoded
- * `MAP_VESSELS` array, under a pulsing "LIVE" badge whose `live` prop
- * defaulted to `true`. Officers were shown fabricated vessels —
- * MV Ocean Pearl among them, at `x`/`y` percentages rather than
- * coordinates — presented as current maritime intelligence.
- *
- * It now mounts the canonical `MapCanvas`, so the geography is real even
- * when the vessel feed is not, and the badge is *derived* from the feed
- * rather than asserted by a prop. When nothing is connected the map still
- * draws Nigeria's EEZ and ports — verified static geography — and says
- * plainly that no vessel source is connected.
- *
- * ## Not a second Maritime Command
- *
- * Deliberately no drawer, no layer panel, no timeline, no mode bar. This
- * is a dashboard-level situational overview with one call to action:
- * open the full environment. Selection still flows through the shared
- * `sgs` singleton, so a vessel chosen here is the same selection
- * `/maritime` will open with.
+ * Deliberately no drawer, no layer panel, no timeline, no mode bar.
+ * Selection still flows through the shared `sgs` singleton, so a vessel
+ * chosen here is the same selection `/maritime` will open with.
  */
 function MaritimePicturePanel() {
   const [vessels, setVessels] = useState<readonly Vessel[]>([]);
@@ -339,17 +235,15 @@ function MaritimePicturePanel() {
   });
 
   return (
-    <PanelCard variant="edge" className="flex h-[520px] flex-col">
-      <PanelHeader
-        title="Maritime Picture"
-        subtitle="Nigerian EEZ and approaches"
-        to="/maritime"
-        toLabel="Open Maritime Command"
-      />
-
-      <div className="flex items-center gap-2 px-4 pb-2">
-        <DataStateBadge state={dataState} />
-        <span className="text-[11px] text-muted-foreground">{dataState.reason}</span>
+    <PanelCard variant="edge" className="flex h-[620px] flex-col elev-2">
+      <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-2.5">
+        <div className="flex min-w-0 items-baseline gap-2">
+          <h2 className="type-label text-slate">National Maritime Picture</h2>
+          <span className="truncate text-[11px] text-slate">Nigerian EEZ and approaches</span>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <DataStateBadge state={dataState} />
+        </div>
       </div>
 
       <div className="relative flex-1 overflow-hidden rounded-b-[inherit]">
@@ -381,7 +275,7 @@ function MaritimeDataNotice({ state }: { state: MapDataStateResult }) {
   return (
     <div
       data-testid="maritime-data-notice"
-      className="pointer-events-none absolute bottom-3 left-3 max-w-[300px] rounded border border-border/60 bg-background/92 p-2.5 shadow-sm backdrop-blur-sm"
+      className="pointer-events-none absolute bottom-3 left-3 max-w-[300px] rounded-lg border border-border/60 bg-background/92 p-2.5 shadow-card backdrop-blur-sm"
     >
       <p className="text-[9.5px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
         Maritime data
@@ -413,6 +307,7 @@ function DataStateBadge({ state }: { state: MapDataStateResult }) {
     <span
       data-testid="map-data-state"
       data-state={state.state}
+      title={state.reason}
       className={cn(
         "inline-flex shrink-0 items-center gap-1.5 rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em]",
         tone[state.state],
@@ -421,444 +316,5 @@ function DataStateBadge({ state }: { state: MapDataStateResult }) {
       <Radio className={cn("h-3 w-3", state.isLive && "animate-pulse")} aria-hidden />
       {state.label}
     </span>
-  );
-}
-
-/* ---------------- Intelligence Feed Panel ---------------- */
-
-function IntelligenceFeedPanel({ projection }: { projection: PanelProjection<FeedPanelData> }) {
-  useRenderTrace("feed.render", { surface: "mission-control" });
-  const handoff = useHandoffNavigate();
-  const signals = projection.data?.signals ?? [];
-
-  return (
-    <PanelCard variant="edge" className="flex h-[520px] flex-col">
-      <PanelHeader
-        title="Intelligence Feed"
-        subtitle="Observed signals — not findings"
-        to="/detect"
-        toLabel="Open Detect"
-      />
-      {projection.state === "ACTIVE" && signals.length > 0 ? (
-        <FeedCurrencyLine data={projection.data} />
-      ) : null}
-      <div className="flex-1 overflow-y-auto">
-        {projection.state !== "ACTIVE" ? (
-          <PanelStateNotice state={projection.state} detail={projection.stateDetail} />
-        ) : signals.length === 0 ? (
-          <EmptyPanelNote
-            headline="No verified intelligence findings"
-            detail="Nothing has been observed for the current operating picture. This is a complete answer, not a missing one."
-          />
-        ) : (
-          <ul className="divide-y divide-line">
-            {signals.map((signal) => (
-              <li key={signal.id}>
-                <SignalItem
-                  signal={signal}
-                  onClick={() =>
-                    handoff({
-                      target: `/entity/${signal.subjectId}`,
-                      context: {
-                        entityId: signal.subjectId,
-                        signalId: signal.id,
-                        confidence: signal.confidence.toUpperCase() as
-                          | "VERIFIED"
-                          | "OBSERVED"
-                          | "INFERRED"
-                          | "UNCONFIRMED",
-                        fromStage: "Detect",
-                        fromRoute: "/",
-                      },
-                    })
-                  }
-                />
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-      <div className="border-t border-line px-4 py-2 italic type-small text-slate">
-        Observations, not findings. Click any item to view evidence.
-      </div>
-    </PanelCard>
-  );
-}
-
-/* ---------------- Cargo Intelligence Workspace (CAP-02) ---------------- */
-
-function CargoWorkspaceStrip() {
-  const { projections } = useCargoWorkspaceProjections();
-  return (
-    <PanelCard>
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div>
-          <h2 className="type-h6 font-semibold text-foreground">Cargo Intelligence Workspace</h2>
-          <p className="type-small text-slate">
-            CAPABILITY.CARGO · six centres projected from the Canonical UIP
-          </p>
-        </div>
-        <Link
-          to="/cargo-workspace"
-          className="inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--ocean)] hover:underline"
-        >
-          Open workspace <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
-      </div>
-      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-        {projections.map((p) => (
-          <Link
-            key={p.centre.id}
-            to="/cargo-workspace/$centre"
-            params={{ centre: p.centre.slug }}
-            className="rounded-md border border-line bg-surface-2 p-2.5 motion-fast hover:border-[color:var(--ocean)]/50"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <span className="truncate type-small font-semibold text-foreground">
-                {p.centre.title}
-              </span>
-              <CargoCentreStateChip projection={p} />
-            </div>
-            <p className="mt-1 line-clamp-2 type-small text-slate">
-              {p.data
-                ? `${p.data.evidenceCount} evidence record${p.data.evidenceCount === 1 ? "" : "s"} projected.`
-                : p.stateDetail}
-            </p>
-          </Link>
-        ))}
-      </div>
-    </PanelCard>
-  );
-}
-
-/* ---------------- Revenue Assurance ---------------- */
-
-function fmtMoney(n: number, currency: string): string {
-  const abs = Math.abs(n);
-  const unit =
-    abs >= 1_000_000
-      ? `${(n / 1_000_000).toFixed(1)}M`
-      : abs >= 1_000
-        ? `${(n / 1_000).toFixed(1)}K`
-        : `${n}`;
-  return `${unit} ${currency}`;
-}
-
-function RevenueAssurancePanel() {
-  const handoff = useHandoffNavigate();
-  const { data: coverage } = useCoverage();
-  const uip = useLatestUip();
-  // Reuses capability.revenue-leakage-detection — no duplicated business logic.
-  const findings = useMemo(
-    () => (uip && uip.rawEvidence.length > 0 ? scanForLeakage(uip.rawEvidence) : []),
-    [uip],
-  );
-  const projection = projectRevenueIntelligence({
-    uipId: uip?.id ?? null,
-    findings,
-    coverage: coverageFor(coverage?.kpis, "revenue"),
-  });
-  const data = projection.data;
-  const openRevenue = () =>
-    handoff({ target: "/revenue-leakage", context: { fromStage: "Monitor", fromRoute: "/" } });
-
-  return (
-    <PanelCard className="flex flex-col">
-      <PanelHeader
-        title="Revenue Assurance"
-        subtitle="Canonical UIP · revenue leakage detection"
-        to="/revenue"
-        toLabel="Go to Revenue"
-        compact
-      />
-      {!data ? (
-        <PanelStateNotice
-          state={projection.state}
-          detail={projection.stateDetail}
-          href={projection.capabilityHref}
-          hrefLabel="Open Revenue Leakage"
-        />
-      ) : (
-        <>
-          <div className="grid grid-cols-3 gap-2">
-            <MicroStat label="Findings" value={`${data.findings}`} tier={data.confidence} />
-            <MicroStat
-              label="High / Critical"
-              value={`${data.criticalOrHigh}`}
-              tier={data.confidence}
-            />
-            <MicroStat label="Officer approved" value={`${data.approved}`} tier="verified" />
-          </div>
-
-          <button
-            type="button"
-            onClick={openRevenue}
-            className="mt-3 rounded-md border border-line bg-surface-2 p-3 text-left motion-fast hover:border-[color:var(--status-critical-edge)] hover:bg-[color:var(--status-critical-tint)]"
-          >
-            <div className="type-label text-slate">Estimated leakage at risk</div>
-            <div className="mt-1 flex items-baseline gap-2">
-              <span className="type-mono text-[22px] font-bold text-[color:var(--color-red)]">
-                {fmtMoney(data.estimatedLeakage, data.currency)}
-              </span>
-            </div>
-            <div className="mt-1.5">
-              <ConfidenceChip tier={data.confidence} size={9} />
-            </div>
-          </button>
-
-          <div className="mt-3">
-            <div className="type-label text-slate">Top Risk Drivers</div>
-            <ul className="mt-1.5 divide-y divide-line">
-              {data.drivers.map((d) => (
-                <li key={d.name} className="flex items-center justify-between py-1.5">
-                  <span className="truncate pr-2 type-small text-foreground/85">{d.name}</span>
-                  <span className="type-mono text-[12px] font-semibold text-foreground tabular-nums">
-                    {fmtMoney(d.amount, data.currency)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </>
-      )}
-    </PanelCard>
-  );
-}
-
-/* ---------------- Manifest Intelligence ---------------- */
-
-function ManifestIntelligencePanel() {
-  const { data: coverage } = useCoverage();
-  const uip = useLatestUip();
-  const projection = projectManifestIntelligence({
-    uipId: uip?.id ?? null,
-    evidence: uip?.rawEvidence ?? [],
-    coverage: coverageFor(coverage?.kpis, "manifest"),
-  });
-  const data = projection.data;
-  return (
-    <PanelCard className="flex flex-col">
-      <PanelHeader
-        title="Manifest Intelligence"
-        subtitle="Canonical UIP · declared vs actual"
-        to="/manifest"
-        toLabel="Go to Manifest"
-        compact
-      />
-      {!data ? (
-        <PanelStateNotice
-          state={projection.state}
-          detail={projection.stateDetail}
-          href="/admin/provider-health"
-          hrefLabel="Inspect provider coverage"
-        />
-      ) : (
-        <ul className="divide-y divide-line">
-          {data.metrics.map((m) => (
-            <li key={m.key} className="flex items-center justify-between py-2.5">
-              <span className="type-small text-foreground/85">{m.label}</span>
-              <span className="flex items-center gap-2">
-                <span className="type-mono text-[14px] font-bold text-foreground tabular-nums">
-                  {m.value}
-                </span>
-                <ConfidenceChip tier={m.confidence} size={9} />
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </PanelCard>
-  );
-}
-
-/* ---------------- Compliance & Watchlist ---------------- */
-
-function ComplianceWatchlistPanel({ projection }: { projection: PanelProjection<never> }) {
-  return (
-    <PanelCard className="flex flex-col">
-      <PanelHeader
-        title="Compliance & Watchlist"
-        subtitle="Sanctions and obligations"
-        to="/compliance"
-        toLabel="Go to Compliance"
-        compact
-      />
-      <PanelStateNotice state={projection.state} detail={projection.stateDetail} />
-    </PanelCard>
-  );
-}
-
-/* ---------------- Port Operations ---------------- */
-
-function PortOperationsPanel({ projection }: { projection: PanelProjection<never> }) {
-  return (
-    <PanelCard className="flex flex-col">
-      <PanelHeader
-        title="Port Operations"
-        subtitle="Congestion index · Nigerian ports"
-        to="/ports"
-        toLabel="Go to Ports"
-        compact
-      />
-      <PanelStateNotice state={projection.state} detail={projection.stateDetail} />
-    </PanelCard>
-  );
-}
-
-/* ---------------- Today's Priorities ---------------- */
-
-function TodaysPrioritiesPanel({
-  projection,
-}: {
-  projection: PanelProjection<PrioritiesPanelData>;
-}) {
-  const handoff = useHandoffNavigate();
-  const items = projection.data?.items ?? [];
-
-  return (
-    <PanelCard className="flex flex-col">
-      <PanelHeader
-        title="Today's Priorities"
-        subtitle="Officer queue · observed conditions"
-        to="/investigate"
-        toLabel="Open Investigate"
-        compact
-      />
-      {projection.state !== "ACTIVE" ? (
-        <PanelStateNotice state={projection.state} detail={projection.stateDetail} />
-      ) : items.length === 0 ? (
-        <EmptyPanelNote
-          headline="No high-priority actions require attention"
-          detail="The detection capability ran and surfaced nothing critical or high. This is a healthy queue, not an empty one."
-        />
-      ) : (
-        <ul className="flex flex-col gap-2.5">
-          {items.map((item) => (
-            <li key={item.id}>
-              <button
-                type="button"
-                onClick={() =>
-                  handoff({
-                    target: `/entity/${item.id}`,
-                    context: {
-                      entityId: item.id,
-                      confidence: item.confidence.toUpperCase() as
-                        | "VERIFIED"
-                        | "OBSERVED"
-                        | "INFERRED"
-                        | "UNCONFIRMED",
-                      fromStage: "Monitor",
-                      fromRoute: "/",
-                    },
-                  })
-                }
-                className="w-full rounded-md border border-line bg-surface p-3 text-left motion-fast hover:border-[color:var(--ocean)]/60"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <span className="min-w-0">
-                    <span className="type-h2 block truncate text-foreground">
-                      {item.entityName}
-                    </span>
-                  </span>
-                  <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.06em] text-foreground">
-                    {item.priority}
-                  </span>
-                </div>
-                <p className="mt-1.5 type-small text-foreground/80">{item.rationale}</p>
-                <div className="mt-2 flex items-center justify-between">
-                  <span className="type-small text-slate">
-                    {item.approved ? "Officer approved" : "Awaiting officer decision"}
-                  </span>
-                  <ConfidenceChip tier={item.confidence} size={9} />
-                </div>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </PanelCard>
-  );
-}
-/* ---------------- Recent Briefings ---------------- */
-
-function RecentBriefingsPanel({ projection }: { projection: PanelProjection<never> }) {
-  return (
-    <PanelCard className="flex flex-col">
-      <PanelHeader
-        title="Recent Intelligence Briefings"
-        subtitle="Officer-authored and AI-drafted"
-        to="/share"
-        toLabel="Open Share"
-        compact
-      />
-      <PanelStateNotice state={projection.state} detail={projection.stateDetail} />
-    </PanelCard>
-  );
-}
-
-/* ---------------- Shared bits ---------------- */
-
-function PanelHeader({
-  title,
-  subtitle,
-  to,
-  toLabel,
-  compact,
-}: {
-  title: string;
-  subtitle?: string;
-  to:
-    | "/maritime"
-    | "/detect"
-    | "/investigate"
-    | "/decide"
-    | "/share"
-    | "/memory"
-    | "/manifest"
-    | "/cargo"
-    | "/revenue"
-    | "/vessel"
-    | "/ports"
-    | "/ownership"
-    | "/compliance"
-    | "/evidence"
-    | "/alerts"
-    | "/admin";
-  toLabel: string;
-  compact?: boolean;
-}) {
-  return (
-    <div
-      className={cn(
-        "flex items-start justify-between gap-2 border-b border-line",
-        compact ? "pb-2 mb-2" : "bg-[color:var(--navy-050)] px-4 py-2.5",
-      )}
-    >
-      <div className="min-w-0">
-        <h2 className="type-h1 text-foreground">{title}</h2>
-        {subtitle && <div className="type-small text-slate">{subtitle}</div>}
-      </div>
-      <Link
-        to={to}
-        className="inline-flex shrink-0 items-center gap-1 text-[12px] font-semibold text-[color:var(--ocean)] hover:underline motion-fast"
-      >
-        {toLabel}
-        <ArrowRight className="h-3.5 w-3.5" />
-      </Link>
-    </div>
-  );
-}
-
-function MicroStat({ label, value, tier }: { label: string; value: string; tier: ConfidenceTier }) {
-  return (
-    <div className="rounded-md border border-line bg-surface-2 p-2">
-      <div className="type-label text-slate">{label}</div>
-      <div className="mt-1 type-mono text-[14px] font-bold text-foreground tabular-nums">
-        {value}
-      </div>
-      <div className="mt-1">
-        <ConfidenceChip tier={tier} size={9} />
-      </div>
-    </div>
   );
 }
