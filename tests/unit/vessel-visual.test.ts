@@ -66,7 +66,7 @@ describe("vessel type classification", () => {
   it("draws an unknown vessel without a nose", () => {
     // A pointed silhouette reads as a direction of travel, and an
     // unknown vessel has none we can vouch for.
-    expect(classifyVessel(undefined).silhouette).toBe("disc");
+    expect(classifyVessel(undefined).silhouette).toBe("hull");
   });
 
   it("only claims support for categories a provider can produce", () => {
@@ -190,16 +190,16 @@ describe("sprite selection", () => {
     });
 
   it("uses the directional sprite when a course is reported", () => {
-    expect(vesselIconId(withHeading(true))).toBe("vessel-unknown-disc");
+    expect(vesselIconId(withHeading(true))).toBe("vessel-unknown-hull");
   });
 
   it("switches to the non-directional sprite when it is not", () => {
-    expect(vesselIconId(withHeading(false))).toBe("vessel-unknown-disc-nodir");
+    expect(vesselIconId(withHeading(false))).toBe("vessel-unknown-hull-nodir");
   });
 
   it("keeps the suffix through selection and staleness", () => {
     const v = withHeading(false);
-    expect(vesselIconId(v, { selectedImo: v.identity.imo })).toBe("vessel-selected-disc-nodir");
+    expect(vesselIconId(v, { selectedImo: v.identity.imo })).toBe("vessel-selected-hull-nodir");
   });
 
   it("varies shape by type and colour by risk, independently", () => {

@@ -50,8 +50,8 @@ describe("vessel sprite registry", () => {
 
   it("registers the selected sprite", () => {
     const id = vesselIconId(vessel("1"), { now: NOW, selectedImo: "1" });
-    // No type reported on the fixture, so the hull family is the disc.
-    expect(id).toBe("vessel-selected-disc");
+    // No type reported on the fixture, so the hull family is the generic hull.
+    expect(id).toBe("vessel-selected-hull");
     expect(REGISTERED).toContain(id);
   });
 
@@ -60,7 +60,7 @@ describe("vessel sprite registry", () => {
       position: { ...vessel("1").position, timestamp: new Date(NOW - 3_600_000).toISOString() },
     });
     const id = vesselIconId(stale, { now: NOW });
-    expect(id).toBe("vessel-stale-disc");
+    expect(id).toBe("vessel-stale-hull");
     expect(REGISTERED).toContain(id);
   });
 

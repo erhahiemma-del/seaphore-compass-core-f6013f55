@@ -284,12 +284,12 @@ describe("vessel presentation", () => {
     // The sprite id carries three axes: colour from risk (or selection,
     // which outranks it), silhouette from the reported hull type, and
     // the `-nodir` suffix from whether a course was reported. These
-    // fixtures report no type, so the hull family is the disc.
+    // fixtures report no type, so the hull family is the generic hull.
     expect(
       toVesselFeature(vessel("1", { riskLevel: "CRITICAL" }), { now: NOW }).properties.iconId,
-    ).toBe("vessel-critical-disc");
+    ).toBe("vessel-critical-hull");
     expect(toVesselFeature(vessel("1"), { now: NOW, selectedImo: "1" }).properties.iconId).toBe(
-      "vessel-selected-disc",
+      "vessel-selected-hull",
     );
   });
 
