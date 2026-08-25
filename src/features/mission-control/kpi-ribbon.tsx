@@ -7,7 +7,16 @@
  * intelligence mode, and renders the rest as secondary and background rows.
  */
 import { Link } from "@tanstack/react-router";
-import { Activity, ArrowRight, Container, FileText, History, Landmark, Ship, Target } from "lucide-react";
+import {
+  Activity,
+  ArrowRight,
+  Container,
+  FileText,
+  History,
+  Landmark,
+  Ship,
+  Target,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { IntelligenceReadinessCard } from "@/components/intelligence/IntelligenceReadinessCard";
@@ -154,7 +163,9 @@ export function KpiRibbon({ coverage, mode, onOpen }: KpiRibbonProps) {
       </div>
 
       {/* LEAD — mode-determined emphasis */}
-      <div className="grid gap-3 md:grid-cols-2">{lead.map((k: RibbonKpi) => render(k, "lead"))}</div>
+      <div className="grid gap-3 md:grid-cols-2">
+        {lead.map((k: RibbonKpi) => render(k, "lead"))}
+      </div>
 
       {/* SECONDARY / BACKGROUND — quieter, still complete */}
       <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">

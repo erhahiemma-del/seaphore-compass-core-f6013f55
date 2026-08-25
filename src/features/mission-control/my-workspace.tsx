@@ -34,7 +34,9 @@ function WorkRowItem({ row }: { row: WorkRow }) {
         <row.icon className="h-4 w-4" strokeWidth={1.75} />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[13px] font-semibold text-foreground">{row.label}</span>
+        <span className="block truncate text-[13px] font-semibold text-foreground">
+          {row.label}
+        </span>
         <span className="block truncate type-small text-slate">{row.hint}</span>
       </span>
       {row.count === null ? (
