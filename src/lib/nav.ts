@@ -43,7 +43,11 @@ export interface NavGroup {
  * Navigation Map (Part 05).
  *
  * NAV-1: sidebar lifecycle order is fixed.
- * NAV-2: Intelligence Centres group appears BELOW the lifecycle group.
+ * NAV-2: superseded in Phase 2. The groups below the lifecycle are now
+ *        organised by institutional mental model — work queues, maritime
+ *        operations, risk, evidence — rather than by implementation
+ *        history. Every previously reachable route is still reachable;
+ *        see navigation-ia.test.ts. Part 05 records the older grouping.
  * NAV-3: Search is a top-bar tool, not a sidebar item.
  */
 export const NAV_GROUPS: NavGroup[] = [
