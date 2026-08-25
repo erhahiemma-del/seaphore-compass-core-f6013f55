@@ -40,6 +40,9 @@ import { cn } from "@/lib/utils";
 // Only the ribbon's static labels, icons and handoff targets remain —
 // UI copy, not intelligence. Every value beside them comes from coverage.
 import { RIBBON_KPIS } from "@/lib/mission-control-data";
+import { MissionModeSelector } from "./MissionModeSelector";
+import { COMPOSABLE_PANELS, orderKpis, orderPanels } from "./modes";
+import { useMissionMode } from "./useMissionMode";
 import { useUipStore } from "@/stores/uip.store";
 import { scanForLeakage } from "@/services/revenue-leakage";
 import {
@@ -123,6 +126,8 @@ export function MissionControl() {
   });
   // Three panels whose providers are not connected. Each states why rather
   // than rendering the invented numbers these cards used to carry.
+  // The active lens, shared with the ribbon through the mode store.
+  const { mode } = useMissionMode();
   const uipId = uip?.id ?? null;
   const portsProjection = projectPortOperations({ uipId });
   const complianceProjection = projectComplianceWatchlist({ uipId });
@@ -156,11 +161,32 @@ export function MissionControl() {
           {focused ? <FocusRail /> : <IntelligenceFeedPanel projection={feedProjection} />}
         </div>
 
-        <div className={cn("grid gap-4 md:grid-cols-2 xl:grid-cols-4", recede)}>
-          <RevenueAssurancePanel />
-          <ManifestIntelligencePanel />
-          <ComplianceWatchlistPanel projection={complianceProjection} />
-          <PortOperationsPanel projection={portsProjection} />
+        {/*
+          The operational panels, in the active lens's reading order.
+
+          Only these four reorder. They sit in a uniform grid, so
+          changing their order changes what the officer reads first and
+          nothing else — no column resizes, no reflow. The map and feed
+          row above is deliberately fixed: it is the spatial anchor, and
+          a surface whose largest element moved on every tab press would
+          read as unstable rather than adaptive.
+        */}
+        <div
+          data-testid="mission-operational-panels"
+          className={cn("grid gap-4 md:grid-cols-2 xl:grid-cols-4", recede)}
+        >
+          {orderPanels(mode, COMPOSABLE_PANELS).map((panel) => (
+            <div key={panel} data-testid={`mission-panel-${panel}`} className="contents">
+              {panel === "revenue-assurance" ? <RevenueAssurancePanel /> : null}
+              {panel === "manifest-intelligence" ? <ManifestIntelligencePanel /> : null}
+              {panel === "compliance-watchlist" ? (
+                <ComplianceWatchlistPanel projection={complianceProjection} />
+              ) : null}
+              {panel === "port-operations" ? (
+                <PortOperationsPanel projection={portsProjection} />
+              ) : null}
+            </div>
+          ))}
         </div>
 
         <div className={recede}>
@@ -249,10 +275,44 @@ function SignalItem({ signal, onClick }: { signal: FeedSignal; onClick: () => vo
 function Ribbon() {
   const handoff = useHandoffNavigate();
   const { data: coverage } = useCoverage();
+  /*
+   * The active lens.
+   *
+   * Local to Mission Control on purpose: a mode is a way of looking at
+   * this surface, not a property of the map or of the shared geospatial
+   * state, and putting it in a global store would make an unrelated
+   * surface able to change what an officer is reading here.
+   */
+  const { modeId, setModeId, mode } = useMissionMode();
 
   const kpiByKey = new Map((coverage?.kpis ?? []).map((k) => [k.key, k]));
+
+  /*
+   * Reordered, never filtered.
+   *
+   * `orderKpis` ranks the domains this lens leads with and appends the
+   * rest — so an officer in Revenue Assurance still sees that the vessel
+   * feed is down, which is the reason half their revenue picture is
+   * unverifiable. Every card keeps whatever state and root cause the
+   * coverage model gave it; the lens only decides reading order.
+   */
+  const orderedKpis = useMemo(() => {
+    const rank = new Map(
+      orderKpis(
+        mode,
+        RIBBON_KPIS.map((k) => k.metricKey),
+      ).map((key, index) => [key, index]),
+    );
+    return [...RIBBON_KPIS].sort(
+      (a, b) =>
+        (rank.get(a.metricKey) ?? Number.MAX_SAFE_INTEGER) -
+        (rank.get(b.metricKey) ?? Number.MAX_SAFE_INTEGER),
+    );
+  }, [mode]);
+
   return (
     <div className="flex flex-col gap-3">
+      <MissionModeSelector value={modeId} onChange={setModeId} />
       {coverage ? (
         <IntelligenceReadinessCard
           readiness={coverage.readiness}
@@ -260,8 +320,32 @@ function Ribbon() {
           report={coverage}
         />
       ) : null}
+      {/*
+        Recommended next steps for this lens. Every one names a route
+        that exists — asserted by test — so an action can never be a
+        dead end. What a lens is *for* does not change with the data,
+        which is why these are configuration rather than derived: an
+        officer whose AIS feed is down must not also lose the action
+        telling them to go and check provider health.
+      */}
+      <div
+        data-testid="mission-recommended-actions"
+        className="flex flex-wrap items-center gap-1.5"
+      >
+        {mode.actions.map((action) => (
+          <Link
+            key={action.id}
+            to={action.href}
+            title={action.rationale}
+            data-testid={`mission-action-${action.id}`}
+            className="rounded border border-border/60 bg-background px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+          >
+            {action.label}
+          </Link>
+        ))}
+      </div>
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-        {RIBBON_KPIS.map((kpi) => {
+        {orderedKpis.map((kpi) => {
           const Icon = RIBBON_ICONS[kpi.key] ?? Activity;
           const cov = kpiByKey.get(kpi.metricKey);
           if (cov) {

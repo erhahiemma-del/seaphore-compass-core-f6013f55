@@ -16,6 +16,9 @@
  *   The table must stay total. Eight modes, every one reachable from the
  *   tab order, every one resolvable from a URL.
  */
+import { readdirSync } from "node:fs";
+import { resolve } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import type { KpiDomainKey } from "@/lib/intelligence/coverage-model";
@@ -31,17 +34,16 @@ import {
 } from "@/features/mission-control/modes";
 
 const ALL_PANELS: readonly MissionPanelId[] = [
-  "national-map",
-  "priority-intelligence",
-  "active-workflows",
-  "revenue-overview",
-  "incidents",
-  "data-confidence",
-  "work-queue",
-  "activity-timeline",
-  "focus-lens",
-  "data-sources",
-  "system-status",
+  "maritime-picture",
+  "intelligence-feed",
+  "revenue-assurance",
+  "manifest-intelligence",
+  "compliance-watchlist",
+  "port-operations",
+  "cargo-workspace",
+  "todays-priorities",
+  "recent-briefings",
+  "focus-rail",
 ];
 
 const ALL_KPIS: readonly KpiDomainKey[] = [
@@ -72,7 +74,7 @@ describe("the mode table covers every declared mode", () => {
   });
 
   it("defaults to the national picture", () => {
-    expect(DEFAULT_MISSION_MODE).toBe("national-overview");
+    expect(DEFAULT_MISSION_MODE).toBe("national-picture");
     expect(MISSION_MODE_ORDER[0]).toBe(DEFAULT_MISSION_MODE);
   });
 });
@@ -104,7 +106,7 @@ describe("a mode demotes panels rather than hiding them", () => {
   });
 
   it("appends an unlisted panel instead of dropping it", () => {
-    const mode = MISSION_MODES["national-overview"];
+    const mode = MISSION_MODES["national-picture"];
     const withUnknown = [...ALL_PANELS, "future-panel" as MissionPanelId];
     const ordered = orderPanels(mode, withUnknown);
     expect(ordered).toHaveLength(withUnknown.length);
@@ -115,18 +117,20 @@ describe("a mode demotes panels rather than hiding them", () => {
 /* ═══════ 3. Each lens actually leads with something different ═══════ */
 
 describe("modes are genuinely distinct lenses", () => {
-  it("promotes revenue in Revenue Assurance and risk in Incident Response", () => {
+  it("promotes revenue in Revenue Assurance and risk in Decision & Coordination", () => {
     expect(MISSION_MODES["revenue-assurance"].leadKpis[0]).toBe("revenue");
-    expect(MISSION_MODES["incident-response"].leadKpis[0]).toBe("risk");
+    expect(MISSION_MODES["decision-coordination"].leadKpis[0]).toBe("risk");
   });
 
   it("gives each mode its own leading panel where the purpose differs", () => {
-    expect(orderPanels(MISSION_MODES["revenue-assurance"], ALL_PANELS)[0]).toBe("revenue-overview");
-    expect(orderPanels(MISSION_MODES["incident-response"], ALL_PANELS)[0]).toBe("incidents");
-    expect(orderPanels(MISSION_MODES["operational-pressure"], ALL_PANELS)[0]).toBe(
-      "active-workflows",
+    expect(orderPanels(MISSION_MODES["revenue-assurance"], ALL_PANELS)[0]).toBe(
+      "revenue-assurance",
     );
-    expect(orderPanels(MISSION_MODES["national-overview"], ALL_PANELS)[0]).toBe("national-map");
+    expect(orderPanels(MISSION_MODES["decision-coordination"], ALL_PANELS)[0]).toBe(
+      "todays-priorities",
+    );
+    expect(orderPanels(MISSION_MODES["port-intelligence"], ALL_PANELS)[0]).toBe("port-operations");
+    expect(orderPanels(MISSION_MODES["national-picture"], ALL_PANELS)[0]).toBe("maritime-picture");
   });
 
   it("produces more than one distinct panel ordering across the eight", () => {
@@ -139,8 +143,10 @@ describe("modes are genuinely distinct lenses", () => {
   });
 
   it("ranks a listed panel ahead of an unlisted one", () => {
-    const mode = MISSION_MODES["incident-response"];
-    expect(panelRank(mode, "incidents")).toBeLessThan(panelRank(mode, "future" as MissionPanelId));
+    const mode = MISSION_MODES["decision-coordination"];
+    expect(panelRank(mode, "todays-priorities")).toBeLessThan(
+      panelRank(mode, "future" as MissionPanelId),
+    );
   });
 });
 
@@ -207,6 +213,71 @@ describe("a mode cannot invent a value", () => {
     for (const id of MISSION_MODE_ORDER) {
       for (const key of MISSION_MODES[id].leadKpis) {
         expect(ALL_KPIS).toContain(key);
+      }
+    }
+  });
+});
+
+/* ═══════ 7. M2.10 — every recommended action leads somewhere real ═══════ */
+
+describe("recommended actions resolve to routes that exist", () => {
+  /**
+   * The router's real route files, read from disk.
+   *
+   * Asserting against the filesystem rather than a hand-copied list is
+   * the point: a route deleted in a later phase breaks this test rather
+   * than silently leaving a dead action in Mission Control.
+   */
+  const routeFiles = readdirSync(resolve(process.cwd(), "src/routes"))
+    .filter((f) => f.endsWith(".tsx"))
+    .map((f) => f.replace(/\.tsx$/, ""));
+
+  /** `/decide/queue` → `decide.queue`; `/ports` → `ports`. */
+  const toRouteId = (href: string) => href.replace(/^\//, "").replace(/\//g, ".");
+
+  it("finds a route file for every action in every mode", () => {
+    for (const id of MISSION_MODE_ORDER) {
+      for (const action of MISSION_MODES[id].actions) {
+        const routeId = toRouteId(action.href);
+        const exists =
+          routeFiles.includes(routeId) ||
+          routeFiles.includes(`${routeId}.index`) ||
+          // Nested routes may live under a parent file.
+          routeFiles.some((f) => f === routeId.split(".")[0]);
+        expect(exists, `${id}: "${action.label}" → ${action.href}`).toBe(true);
+      }
+    }
+  });
+
+  it("gives every mode at least one action", () => {
+    // A lens that suggests nothing is a tab with no purpose.
+    for (const id of MISSION_MODE_ORDER) {
+      expect(MISSION_MODES[id].actions.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("gives every action a label, an href and a stated rationale", () => {
+    for (const id of MISSION_MODE_ORDER) {
+      for (const action of MISSION_MODES[id].actions) {
+        expect(action.label.length).toBeGreaterThan(0);
+        expect(action.href.startsWith("/")).toBe(true);
+        // The rationale is why *this lens* suggests it — without one an
+        // action is a link, not a recommendation.
+        expect(action.rationale.length).toBeGreaterThan(10);
+      }
+    }
+  });
+
+  it("suggests genuinely different work in different lenses", () => {
+    const first = (id: (typeof MISSION_MODE_ORDER)[number]) => MISSION_MODES[id].actions[0].href;
+    const distinct = new Set(MISSION_MODE_ORDER.map(first));
+    expect(distinct.size).toBeGreaterThan(5);
+  });
+
+  it("never points an action at a placeholder or an anchor", () => {
+    for (const id of MISSION_MODE_ORDER) {
+      for (const action of MISSION_MODES[id].actions) {
+        expect(action.href).not.toMatch(/^#|todo|placeholder|coming-soon/i);
       }
     }
   });
