@@ -253,6 +253,8 @@ export function MissionCommandBar({
    * labels; clicking one runs the real dispatch, and Clear hides the row.
    */
   const recent = history.length > 0 ? history.slice(0, 5) : UNIFIED_RECENT;
+  /** A lens is "active" once the officer moves off the default overview. */
+  const lensActive = modeKey !== DEFAULT_MODE;
   const showRecent = unifiedSearch ? !cleared : history.length > 0 || !hideSuggestions;
 
   return (
@@ -265,14 +267,22 @@ export function MissionCommandBar({
     >
       {/* SEARCH — the dominant control on Mission Control. */}
       <form
-        className="flex h-[52px] items-center gap-3 rounded-[10px] border border-line-strong bg-surface pl-3.5 pr-2"
+        className={cn(
+          "flex h-[52px] items-center gap-3 rounded-[10px] border bg-surface pl-3.5 pr-2 motion-fast",
+          lensActive
+            ? "border-[color:var(--lens-edge)] shadow-[inset_0_0_0_1px_rgba(14,165,201,0.12)]"
+            : "border-line-strong",
+        )}
         onSubmit={(e) => {
           e.preventDefault();
           runSearch();
         }}
       >
         <Search
-          className="h-[21px] w-[21px] shrink-0 text-[color:var(--navy)]"
+          className={cn(
+            "h-[21px] w-[21px] shrink-0 motion-fast",
+            lensActive ? "text-[color:var(--lens)]" : "text-[color:var(--navy)]",
+          )}
           strokeWidth={1.75}
         />
         <input
@@ -312,6 +322,16 @@ export function MissionCommandBar({
           )}
         />
         {!unifiedSearch && <VoiceButton />}
+        {lensActive && (
+          <span
+            data-testid="mission-mode-search-cue"
+            className="hidden shrink-0 items-center gap-1.5 rounded-md border border-[color:var(--lens-edge)] bg-[color:var(--lens-tint)] px-2 py-1 text-[11px] font-semibold text-[color:var(--color-navy)] sm:inline-flex"
+            title={`Contextual emphasis: ${mode.contextDomains.join(", ")}`}
+          >
+            <Sparkles className="h-3 w-3 text-[color:var(--lens)]" strokeWidth={2} />
+            {mode.label} focus
+          </span>
+        )}
         <button
           type="submit"
           className={cn(
@@ -372,6 +392,44 @@ export function MissionCommandBar({
         </div>
       )}
 
+      {/* CONTEXTUAL EMPHASIS — mode-driven suggestions. UI only: nothing
+          here is a search result, and the universal search is unchanged. */}
+      {unifiedSearch && (
+        <div
+          data-testid="mission-mode-suggestions"
+          className="flex min-h-[28px] flex-wrap items-center gap-1.5"
+        >
+          <span className="mr-0.5 text-[11px] font-semibold text-slate">
+            {mode.label} context:
+          </span>
+          {mode.suggestions.slice(0, 4).map((sug) => (
+            <button
+              key={sug}
+              type="button"
+              onClick={() => {
+                setInput(sug);
+                runSearch(sug);
+              }}
+              className={cn(
+                "inline-flex h-[26px] items-center gap-1.5 rounded-full border px-2.5 text-[11.5px] font-medium motion-fast",
+                lensActive
+                  ? "border-[color:var(--lens-edge)] bg-[color:var(--lens-tint)] text-[color:var(--color-navy)] hover:border-[color:var(--lens)]"
+                  : "border-line bg-surface text-[color:var(--color-navy)]/80 hover:border-[color:var(--lens-edge)]",
+              )}
+            >
+              <Sparkles
+                className={cn("h-3 w-3", lensActive ? "text-[color:var(--lens)]" : "text-slate")}
+                strokeWidth={2}
+              />
+              {sug}
+            </button>
+          ))}
+          <span className="ml-1 text-[11px] text-slate">
+            Emphasis: {mode.contextDomains.slice(0, 4).join(" · ")}
+          </span>
+        </div>
+      )}
+
       {!hideModeChips && <MissionModeBar modeKey={modeKey} onSelect={selectMode} />}
     </section>
   );
@@ -417,13 +475,25 @@ export function MissionModeBar({
               title={`${m.label} · Alt+${m.shortcut}`}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[12px] font-semibold motion-fast",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--lens)]/50",
                 active
-                  ? "border-[color:var(--navy)] bg-[color:var(--navy)] text-white shadow-card"
-                  : "border-line bg-surface-2 text-slate hover:-translate-y-px hover:border-[color:var(--ocean)]/50 hover:text-foreground",
+                  ? "border-[color:var(--lens)] bg-[color:var(--lens)] text-[color:var(--lens-ink)] shadow-[var(--lens-glow)]"
+                  : "border-line-strong bg-surface text-[color:var(--color-navy)]/80 hover:-translate-y-px hover:border-[color:var(--lens-edge)] hover:bg-[color:var(--lens-tint)] hover:text-[color:var(--color-navy)]",
               )}
             >
-              <Icon className="h-3.5 w-3.5" strokeWidth={1.75} />
+              {/* Non-colour active affordance: a leading marker plus aria-selected. */}
+              {active && (
+                <span
+                  aria-hidden
+                  className="h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--lens-ink)]"
+                />
+              )}
+              <Icon
+                className={cn("h-3.5 w-3.5", active ? "opacity-95" : "text-slate")}
+                strokeWidth={1.75}
+              />
               {m.label}
+              {active && <span className="sr-only">(active lens)</span>}
             </button>
           );
         })}
