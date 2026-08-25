@@ -435,7 +435,7 @@ export function MapLegendBar({ service = sgs, className }: MapLegendBarProps) {
     <div
       data-testid="map-legend-bar"
       className={cn(
-        "pointer-events-auto flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg bg-[#0A2246] px-3 py-1.5 shadow-lg",
+        "pointer-events-auto mx-auto flex flex-wrap items-center justify-center gap-x-5 gap-y-1 rounded-xl bg-[#0B2350] px-4 py-2 shadow-[0_10px_24px_-10px_rgba(6,22,48,0.7)] ring-1 ring-white/10",
         className,
       )}
     >
