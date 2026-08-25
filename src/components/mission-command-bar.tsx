@@ -5,6 +5,8 @@ import {
   Box,
   FileText,
   LayoutGrid,
+  Locate,
+
   Mic,
   Receipt,
   Search,
