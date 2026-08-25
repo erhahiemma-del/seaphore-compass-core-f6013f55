@@ -109,7 +109,7 @@ export function NextBestAction({
             "radial-gradient(120% 180% at 12% 0%, var(--nba-surface-hi) 0%, transparent 55%), radial-gradient(90% 160% at 96% 100%, rgba(30,99,200,0.28) 0%, transparent 60%)",
         }}
       />
-      <div className="relative grid items-stretch gap-y-5 py-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,0.85fr)_minmax(0,1.05fr)_minmax(0,0.9fr)_minmax(0,0.6fr)_minmax(0,0.55fr)]">
+      <div className="relative grid items-stretch gap-y-5 py-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,0.8fr)_minmax(0,1.35fr)_minmax(0,0.85fr)_minmax(0,0.55fr)_minmax(0,0.5fr)]">
         {/* 1 — NEXT BEST ACTION */}
         <div className="min-w-0 px-5">
           <div className="flex flex-wrap items-center gap-2">
@@ -181,12 +181,12 @@ export function NextBestAction({
 
         {/* 3 — EVIDENCE SUMMARY */}
         <Column label="Evidence summary">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <div className="flex items-center gap-x-4 whitespace-nowrap">
             <EvidenceStat icon={FileText} value={records} label={records === 1 ? "Record" : "Records"} />
             <EvidenceStat icon={Layers} value={projection.uipId ? 1 : 0} label="Sources" />
             <EvidenceStat icon={GitCompareArrows} value={0} label="Conflicts" />
           </div>
-          <div className="mt-3 flex items-center gap-2">
+          <div className="mt-3 flex items-center gap-2 whitespace-nowrap">
             <span
               className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.06em]"
               style={{ color: "var(--nba-verify)" }}
