@@ -19,6 +19,7 @@ import { useMissionMode } from "@/features/mission-control/useMissionMode";
 import { useMkgStore } from "@/services/mkg/store";
 import { useRoles } from "@/hooks/use-permissions";
 import type { EntityKind } from "@/services/ial/types";
+import type { Role } from "@/lib/permissions";
 
 import { buildFocusWorkspace, type FocusWorkspaceModel } from "./model";
 import { hasDedicatedModule } from "./handoff";
@@ -66,6 +67,20 @@ export function useFocusWorkspace(): FocusWorkspaceController {
   const { roles } = useRoles();
 
   /*
+   * `useRoles` returns a fresh array on every render — it is either
+   * `[mockRole]` or `query.data ?? []`, both new literals each time. Used
+   * directly as a memo dependency that rebuilds the model on every
+   * render, which in turn calls `graph.toSnapshot()` every render. That
+   * is invisible while the graph is empty and becomes a real cost as it
+   * fills.
+   *
+   * Roles are short strings, so a joined key round-trips losslessly and
+   * gives a dependency that changes only when the roles actually do.
+   */
+  const rolesKey = roles.join(",");
+  const stableRoles = useMemo(() => (rolesKey ? (rolesKey.split(",") as Role[]) : []), [rolesKey]);
+
+  /*
    * The graph is read through its revision counter, not by subscribing
    * to the graph object. `MaritimeKnowledgeGraph` is a mutable class —
    * its identity never changes on write, so selecting it directly would
@@ -85,7 +100,7 @@ export function useFocusWorkspace(): FocusWorkspaceController {
         subject,
         mode,
         cases,
-        roles,
+        roles: stableRoles,
         hasDedicatedModule: hasDedicatedModule(subject, canonicalId),
         // Re-read whenever the graph changed; `revision` is the dependency
         // that makes that happen and is otherwise unused.
@@ -96,5 +111,5 @@ export function useFocusWorkspace(): FocusWorkspaceController {
       dismiss,
       clear,
     };
-  }, [subject, workspaceOpen, mode, cases, roles, revision, snapshotOf, dismiss, clear]);
+  }, [subject, workspaceOpen, mode, cases, stableRoles, revision, snapshotOf, dismiss, clear]);
 }

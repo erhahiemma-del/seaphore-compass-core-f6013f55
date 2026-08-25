@@ -132,6 +132,18 @@ export function useCopilotContextBinding(): void {
   const { model } = useFocusWorkspace();
   const work = model?.work.state === "present" ? model.work.data : null;
 
+  /*
+   * Depended on as primitives rather than as `work`.
+   *
+   * The model is rebuilt whenever its inputs change identity, so the
+   * work object is a new reference each time even when the case is the
+   * same. Listing it directly would re-run this effect — and rewrite the
+   * Copilot's context — on renders where nothing about the officer's
+   * situation changed.
+   */
+  const caseTitle = work?.caseTitle ?? null;
+  const stage = work?.stage ?? null;
+
   useEffect(() => {
     setContext(
       deriveCopilotContext(
@@ -139,8 +151,8 @@ export function useCopilotContextBinding(): void {
         subject
           ? { kind: subject.kind, title: subject.title, descriptor: subject.descriptor }
           : null,
-        work ? { caseTitle: work.caseTitle, stage: work.stage } : null,
+        caseTitle && stage ? { caseTitle, stage } : null,
       ),
     );
-  }, [mode, subject, work, setContext]);
+  }, [mode, subject, caseTitle, stage, setContext]);
 }
