@@ -116,12 +116,13 @@ export function NextBestAction({
           </div>
         </div>
 
-        <Field label="Evidence">
+        <Field label="Why this matters">{item.priority} priority finding</Field>
+        <Field label="Evidence summary">
           <ConfidenceChip tier={item.confidence} size={9} />
         </Field>
         <Field label="Status">{item.approved ? "Officer approved" : "Awaiting decision"}</Field>
         <Field label="Owner">Officer</Field>
-        <Field label="Required action">Review evidence</Field>
+
 
         <button
           type="button"
