@@ -9,6 +9,11 @@ import { useFocusSubjectStore } from "@/stores/focus-subject.store";
 
 import { PanelCard } from "@/components/panel-card";
 import { MapCanvas, type VesselFeedState } from "@/features/maritime/MapCanvas";
+import {
+  MapControlStack,
+  MapLayerChips,
+  MapLegendBar,
+} from "@/features/maritime/MapChrome";
 import { resolveMapDataState, type MapDataStateResult, type Vessel } from "@/services/geospatial";
 import { MissionCommandBar, MissionModeBar } from "@/components/mission-command-bar";
 import type { EntityType } from "@/lib/command-dispatch";
