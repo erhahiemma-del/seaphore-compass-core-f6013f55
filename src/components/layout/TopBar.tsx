@@ -53,9 +53,12 @@ export function TopBar({ title, subtitle }: TopBarProps) {
       <div className="flex items-center gap-2">
         <NigeriaTime />
         <GoToHint />
+        <CopilotButton />
+        <NotificationBell />
         <ThemeToggle />
         <OfficerBadge />
       </div>
+
     </header>
   );
 }
