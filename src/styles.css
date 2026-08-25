@@ -605,6 +605,13 @@
   --ocean: #0e7c7b;
   --ocean-050: #e8f2f2;
 
+  /* Operational lens (Mission Mode) — cyan / sky blue */
+  --lens: #0ea5c9;
+  --lens-ink: #ffffff;
+  --lens-tint: #e6f7fc;
+  --lens-edge: #a9dcea;
+  --lens-glow: 0 0 0 1px rgba(14, 165, 201, 0.35), 0 2px 10px -2px rgba(14, 165, 201, 0.45);
+
   /* Operational status families: ink / tint / edge */
   --status-verified: #1e6b3a;
   --status-verified-tint: #e9f3ec;
