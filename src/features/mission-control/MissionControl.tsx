@@ -596,7 +596,22 @@ function MaritimePicturePanel() {
           singleton, so a vessel chosen here is already selected when the
           officer opens Maritime Command.
         */}
-        <MapCanvas mode="overview" onVesselsChanged={handleVessels} />
+        {/*
+          The institutional palette, on the one surface that is an
+          institutional page rather than an operations room.
+
+          Mission Control sits on white with white panels; a dark
+          maritime map inside it reads as a hole in the page, and the
+          officer's eye goes to the darkest rectangle rather than to
+          whatever the map is saying. Maritime Command keeps the dark
+          palette, which is the right choice for a full-bleed operational
+          surface read for long periods.
+
+          Same renderer, same service, same layers — only the colours
+          differ. Symbol semantics are untouched: ports, vessels and
+          incidents keep their meanings and stay the loudest things here.
+        */}
+        <MapCanvas mode="overview" palette="institutional" onVesselsChanged={handleVessels} />
 
         {/*
           Map chrome adopted from main, over this branch's map.

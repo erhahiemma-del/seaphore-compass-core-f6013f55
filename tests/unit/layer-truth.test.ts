@@ -128,3 +128,71 @@ describe("domain presets name only ready, installed layers", () => {
     }
   });
 });
+
+describe("the renderer draws in the palette it was mounted with", () => {
+  /*
+   * Ten paint properties — buildings, the graticule, both voyage endpoint
+   * colours, the voyage relationship stroke and its label, and four label
+   * halos — used to read the dark `MARITIME_PALETTE` constant directly,
+   * while `mount` resolved the real palette a few lines above and passed
+   * it only to the basemap styling.
+   *
+   * Nothing caught it because nothing selected the light palette, so the
+   * bypass was invisible until Mission Control opted in: a near-white map
+   * would have drawn navy buildings, a dark graticule and dark label
+   * halos, and the first symptom would have been "the light theme looks
+   * broken" rather than "ten properties ignore their palette".
+   */
+  it("reads no palette member from the module constant", () => {
+    const direct = [...RENDERER_SOURCE.matchAll(/(?<!LIGHT_)\bMARITIME_PALETTE\.(\w+)/g)].map(
+      (m) => m[1],
+    );
+    expect(direct, `hardcoded palette reads: ${direct.join(", ")}`).toEqual([]);
+  });
+
+  it("takes the palette as a parameter rather than a field", () => {
+    // A parameter makes installing layers without a palette impossible to
+    // express; a field could be read before mount had set it.
+    expect(RENDERER_SOURCE).toMatch(/installSourcesAndLayers\(palette: MaritimePalette\)/);
+    expect(RENDERER_SOURCE).toMatch(/this\.installSourcesAndLayers\(palette\)/);
+  });
+
+  it("resolves the palette through the shared mapping", () => {
+    // One mapping, beside the palettes, so no caller can pair the
+    // institutional theme with the maritime palette.
+    expect(RENDERER_SOURCE).toContain("paletteFor(options.palette)");
+  });
+});
+
+describe("each surface gets the palette its context calls for", () => {
+  const read = (p: string) => readFileSync(resolve(process.cwd(), p), "utf8");
+
+  it("gives Mission Control the institutional palette", () => {
+    // An institutional page, not an operations room: a dark map inside a
+    // white page reads as a hole in it.
+    expect(read("src/features/mission-control/MissionControl.tsx")).toMatch(
+      /<MapCanvas[^>]*palette="institutional"/s,
+    );
+  });
+
+  it("leaves the operational surfaces on the maritime default", () => {
+    // Full-bleed surfaces read for long periods keep the dark palette.
+    for (const surface of [
+      "src/features/maritime/MaritimeCommand.tsx",
+      "src/features/ports/Ports.tsx",
+      "src/features/vessel/Vessel.tsx",
+    ]) {
+      expect(read(surface), `${surface} should not opt into a palette`).not.toContain(
+        'palette="institutional"',
+      );
+    }
+  });
+
+  it("keeps one palette interface as the source of truth", () => {
+    // Both themes satisfy MaritimePalette, so adding a token obliges
+    // every theme to answer for it rather than one silently falling back.
+    const constants = read("src/services/geospatial/constants.ts");
+    expect(constants).toContain("export const MARITIME_PALETTE: MaritimePalette");
+    expect(constants).toContain("export const LIGHT_MARITIME_PALETTE: MaritimePalette");
+  });
+});

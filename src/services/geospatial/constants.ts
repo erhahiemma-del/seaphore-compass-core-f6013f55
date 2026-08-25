@@ -587,6 +587,19 @@ export const PIXELS_PER_KM = {
   maxZoomPixels: 105.2,
 } as const;
 
+/**
+ * The palette a named theme resolves to.
+ *
+ * One mapping, beside the palettes it names, so a caller cannot pair the
+ * institutional theme with the maritime palette by writing the ternary
+ * slightly differently. Both palettes satisfy `MaritimePalette`, which
+ * stays the single source of truth for what a map colour *means* —
+ * adding a token obliges every theme to answer for it.
+ */
+export function paletteFor(name: MapStylePaletteName | undefined): MaritimePalette {
+  return name === "institutional" ? LIGHT_MARITIME_PALETTE : MARITIME_PALETTE;
+}
+
 /** Operational timings, in milliseconds. */
 export const TIMING = {
   /** Full position refresh interval. */

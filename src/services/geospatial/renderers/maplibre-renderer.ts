@@ -32,8 +32,8 @@
 import {
   BASEMAP_STYLE,
   LAYER_IDS,
-  LIGHT_MARITIME_PALETTE,
-  MARITIME_PALETTE,
+  paletteFor,
+  type MaritimePalette,
   PIXELS_PER_KM,
   RISK_COLORS,
   TIMING,
@@ -507,9 +507,9 @@ export class MapLibreRenderer implements MapRenderer {
      * throws, so a basemap it does not recognise costs colour, not the
      * mount.
      */
-    const palette = options.palette === "institutional" ? LIGHT_MARITIME_PALETTE : MARITIME_PALETTE;
+    const palette = paletteFor(options.palette);
     const styleResult = applyMaritimeStyle(map as unknown as StyleTarget, palette);
-    this.installSourcesAndLayers();
+    this.installSourcesAndLayers(palette);
     this.verifyInstalledLayers();
     publishStyleDiagnostics(map, styleResult);
     this.installInteractionHandlers();
@@ -758,7 +758,19 @@ export class MapLibreRenderer implements MapRenderer {
     });
   }
 
-  private installSourcesAndLayers(): void {
+  /**
+   * Install every source and render layer, in the active palette.
+   *
+   * The palette is a parameter rather than a field on purpose: these
+   * layers are installed exactly once per mount, immediately after it is
+   * resolved, and passing it makes installing them without one
+   * impossible to express. Ten paint properties here previously read the
+   * dark `MARITIME_PALETTE` constant directly while `mount` resolved the
+   * real palette a few lines above, so a light-themed map would have
+   * drawn navy buildings, a dark graticule and dark label halos over
+   * near-white land.
+   */
+  private installSourcesAndLayers(palette: MaritimePalette): void {
     const map = this.map;
     if (!map) return;
 
@@ -799,7 +811,7 @@ export class MapLibreRenderer implements MapRenderer {
       minzoom: BUILDING_MINZOOM,
       layout: { visibility: "none" },
       paint: {
-        "fill-extrusion-color": MARITIME_PALETTE.buildingExtrusion,
+        "fill-extrusion-color": palette.buildingExtrusion,
         "fill-extrusion-height": ["get", "render_height"],
         "fill-extrusion-base": ["get", "render_min_height"],
         /*
@@ -835,7 +847,7 @@ export class MapLibreRenderer implements MapRenderer {
       type: "line",
       source: SOURCE_IDS.graticule,
       paint: {
-        "line-color": MARITIME_PALETTE.graticule,
+        "line-color": palette.graticule,
         // Hairline at world zoom, where a hundred and twenty lines are
         // in frame. The first stop was 4, and a clamped ramp drew all
         // of them at regional weight.
@@ -878,8 +890,8 @@ export class MapLibreRenderer implements MapRenderer {
         "circle-color": [
           "case",
           ["==", ["get", "role"], "origin"],
-          MARITIME_PALETTE.voyageOrigin,
-          MARITIME_PALETTE.voyageDestination,
+          palette.voyageOrigin,
+          palette.voyageDestination,
         ],
         /*
          * A hollow ring for a degree-minute position, solid for a
@@ -888,7 +900,7 @@ export class MapLibreRenderer implements MapRenderer {
          * to see which endpoints are approximate without opening a
          * panel.
          */
-        "circle-stroke-color": MARITIME_PALETTE.voyageRelationship,
+        "circle-stroke-color": palette.voyageRelationship,
         "circle-stroke-width": 1,
         "circle-opacity": ["case", ["==", ["get", "precision"], "surveyed"], 0.95, 0.45],
       },
@@ -907,8 +919,8 @@ export class MapLibreRenderer implements MapRenderer {
         "text-optional": true,
       },
       paint: {
-        "text-color": MARITIME_PALETTE.voyageRelationship,
-        "text-halo-color": MARITIME_PALETTE.labelHalo,
+        "text-color": palette.voyageRelationship,
+        "text-halo-color": palette.labelHalo,
         "text-halo-width": 1.3,
       },
     });
@@ -1224,7 +1236,7 @@ export class MapLibreRenderer implements MapRenderer {
       },
       paint: {
         "text-color": MAP_SYMBOLS.port.color,
-        "text-halo-color": MARITIME_PALETTE.labelHalo,
+        "text-halo-color": palette.labelHalo,
         "text-halo-width": 1.5,
       },
     });
@@ -1447,7 +1459,7 @@ export class MapLibreRenderer implements MapRenderer {
       },
       paint: {
         "text-color": intelligenceMatch((signal) => INTELLIGENCE_COLORS[signal]),
-        "text-halo-color": MARITIME_PALETTE.labelHalo,
+        "text-halo-color": palette.labelHalo,
         "text-halo-width": 1.4,
       },
     });
@@ -1467,7 +1479,7 @@ export class MapLibreRenderer implements MapRenderer {
       },
       paint: {
         "text-color": "#B7C4D1",
-        "text-halo-color": MARITIME_PALETTE.labelHalo,
+        "text-halo-color": palette.labelHalo,
         "text-halo-width": 1.2,
         // Fades in across half a zoom level rather than appearing at
         // once, arriving at the vessel's own opacity so a stale vessel's
