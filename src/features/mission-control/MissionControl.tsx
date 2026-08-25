@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getIntelligenceCoverage } from "@/lib/intelligence-coverage.functions";
@@ -12,10 +12,11 @@ import { MapCanvas, type VesselFeedState } from "@/features/maritime/MapCanvas";
 import { resolveMapDataState, type MapDataStateResult, type Vessel } from "@/services/geospatial";
 import { MissionCommandBar, MissionModeBar } from "@/components/mission-command-bar";
 import type { EntityType } from "@/lib/command-dispatch";
-import { DEFAULT_MODE } from "@/lib/intelligence-modes";
+import { DEFAULT_MODE, MODE_BY_KEY } from "@/lib/intelligence-modes";
 import { useHandoffNavigate } from "@/lib/nav-context";
 import { cn } from "@/lib/utils";
 import { useUipStore } from "@/stores/uip.store";
+import { useCopilotStore } from "@/stores/copilot.store";
 import { scanForLeakage } from "@/services/revenue-leakage";
 import {
   projectIntelligenceFeed,
@@ -81,6 +82,22 @@ export function MissionControl() {
    */
   const [pinnedMode, setPinnedMode] = useState<EntityType | null>(null);
   const modeKey = pinnedMode ?? DEFAULT_MODE;
+  const mission = MODE_BY_KEY[modeKey];
+
+  /**
+   * The active lens travels with the officer into Copilot through the
+   * existing copilot context — no second store, no duplicate mode system.
+   */
+  const setCopilotContext = useCopilotStore((s) => s.setContext);
+  useEffect(() => {
+    setCopilotContext({
+      kind: "investigation",
+      label: `Mission Mode: ${mission.label}`,
+      detail: focused
+        ? `Focus: ${focused.title}${focused.descriptor ? ` · ${focused.descriptor}` : ""}`
+        : `Context: ${mission.contextDomains.join(", ")}`,
+    });
+  }, [mission, focused, setCopilotContext]);
 
   // One scan, projected two ways. Both panels read the findings the
   // detection capability actually produced — neither computes its own.
@@ -130,11 +147,11 @@ export function MissionControl() {
 
 
         {/* MISSION MODE — the existing intelligence-mode engine, own band. */}
-        <div className={cn("rounded-lg border border-line bg-surface px-3.5 py-2.5 elev-1", recede)}>
-          <MissionModeBar
-            modeKey={modeKey}
-            onSelect={(next) => setPinnedMode(next)}
-          />
+        <div
+          data-mission-mode={modeKey}
+          className={cn("rounded-lg border border-line bg-surface px-3.5 py-2.5 elev-1", recede)}
+        >
+          <MissionModeBar modeKey={modeKey} onSelect={(next) => setPinnedMode(next)} />
         </div>
 
         {/* NEXT BEST ACTION — the strongest decision surface. */}
