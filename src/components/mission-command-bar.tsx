@@ -328,42 +328,54 @@ export function MissionCommandBar({
           )}
           strokeWidth={1.75}
         />
-        <input
-          ref={inputRef}
-          type="search"
-          value={input}
-          onChange={(e) => {
-            let v = e.target.value;
-            // Allow the native search-clear (X) — and any manual empty —
-            // to fully clear the field. The prefix is re-injected on the
-            // next keystroke or on focus.
-            if (v === "") {
-              setInput("");
-              return;
-            }
-            // Never let officers erase the prefix by accident while typing.
-            if (!unifiedSearch && !v.toUpperCase().startsWith(mode.prefix.toUpperCase())) {
-              v = mode.prefix + stripPrefix(v, mode);
-            }
-            setInput(v);
-          }}
-          onFocus={() => {
-            if (!unifiedSearch && (input === "" || input === mode.prefix)) {
-              setInput(mode.prefix);
-              focusAfterPrefix(mode.prefix);
-            }
-          }}
-          placeholder={
-            unifiedSearch
-              ? "Search IMO / MMSI / Vessel / Company / Cargo / Manifest / Port / Location / Event"
-              : mode.placeholder
-          }
-          aria-label={`Search — ${mode.aiContext}`}
-          className={cn(
-            "min-w-0 flex-1 bg-transparent text-[14.5px] font-medium leading-tight text-[color:var(--color-navy)] outline-none",
-            "placeholder:font-medium placeholder:text-[color:var(--color-navy)]/45",
+        <div className="relative flex min-w-0 flex-1 items-center">
+          <input
+            ref={inputRef}
+            type="search"
+            value={input}
+            onChange={(e) => {
+              let v = e.target.value;
+              // Allow the native search-clear (X) — and any manual empty —
+              // to fully clear the field. The prefix is re-injected on the
+              // next keystroke or on focus.
+              if (v === "") {
+                setInput("");
+                return;
+              }
+              // Never let officers erase the prefix by accident while typing.
+              if (!unifiedSearch && !v.toUpperCase().startsWith(mode.prefix.toUpperCase())) {
+                v = mode.prefix + stripPrefix(v, mode);
+              }
+              setInput(v);
+            }}
+            onFocus={() => {
+              setFocused(true);
+              if (!unifiedSearch && (input === "" || input === mode.prefix)) {
+                setInput(mode.prefix);
+                focusAfterPrefix(mode.prefix);
+              }
+            }}
+            onBlur={() => setFocused(false)}
+            // The animated cue replaces the placeholder while idle; the
+            // static text remains for focus, reduced motion and SSR.
+            placeholder={idleForCue ? "" : staticPlaceholder}
+            aria-label={`Search ${staticPlaceholder ? "" : ""}IMO, MMSI, vessel, company, cargo, manifest, port, location or event — ${mode.aiContext}`}
+            className={cn(
+              "min-w-0 flex-1 bg-transparent text-[14.5px] font-medium leading-tight text-[color:var(--color-navy)] outline-none",
+              "placeholder:font-medium placeholder:text-[color:var(--color-navy)]/45",
+            )}
+          />
+          {idleForCue && (
+            <span
+              aria-hidden="true"
+              data-testid="search-typewriter-cue"
+              className="pointer-events-none absolute inset-y-0 left-0 flex items-center truncate text-[14.5px] font-medium leading-tight text-[color:var(--color-navy)]/45"
+            >
+              {typedPrompt}
+              <span className="ml-[1px] inline-block h-[15px] w-[1.5px] translate-y-[1px] bg-[color:var(--color-navy)]/35" />
+            </span>
           )}
-        />
+        </div>
         {!unifiedSearch && <VoiceButton />}
         {lensActive && (
           <span
