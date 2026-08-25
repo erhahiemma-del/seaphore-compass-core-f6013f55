@@ -28,6 +28,37 @@ import {
   type IntelligenceMode,
 } from "@/lib/intelligence-modes";
 import { cn } from "@/lib/utils";
+import { useTypewriterPlaceholder } from "@/hooks/use-typewriter-placeholder";
+
+/**
+ * Contextual search prompts per Mission Mode. Presentation only: Mission Mode
+ * never narrows what the universal search accepts (IMO / MMSI / Vessel /
+ * Company / Cargo / Manifest / Port / Location / Event) — it only changes the
+ * cue shown to the officer.
+ */
+const SEARCH_PROMPTS: Partial<Record<EntityType, string[]>> = {
+  imo: [
+    "Search a vessel, port or maritime event…",
+    "Search Nigerian maritime activity…",
+    "Search an incident or location…",
+  ],
+  vessel: ["Search IMO, MMSI or vessel name…", "Search a voyage or vessel movement…"],
+  manifest: [
+    "Search a manifest or cargo discrepancy…",
+    "Search a company, voyage or assessment…",
+  ],
+  container: [
+    "Search a vessel, company or watchlist match…",
+    "Search a compliance or risk event…",
+  ],
+  company: ["Search a vessel, case or evidence record…", "Search an investigation subject…"],
+  port: ["Search a port, anchorage or port call…", "Search congestion or arrivals…"],
+  bol: ["Search an incident, vessel or location…", "Search an operational event…"],
+  voyage: [
+    "Search a national maritime trend…",
+    "Search a strategic risk or development…",
+  ],
+};
 
 /**
  * Mission Intelligence Command Bar.
@@ -257,6 +288,18 @@ export function MissionCommandBar({
   const lensActive = modeKey !== DEFAULT_MODE;
   const showRecent = unifiedSearch ? !cleared : history.length > 0 || !hideSuggestions;
 
+  /**
+   * Attract cue only while the field is genuinely idle: empty and unfocused.
+   * The first keystroke (or focus) stops it; emptying the field restores it.
+   */
+  const [focused, setFocused] = useState(false);
+  const promptPhrases = SEARCH_PROMPTS[modeKey] ?? SEARCH_PROMPTS[DEFAULT_MODE]!;
+  const idleForCue = input === "" && !focused;
+  const typedPrompt = useTypewriterPlaceholder(promptPhrases, idleForCue);
+  const staticPlaceholder = unifiedSearch
+    ? "Search IMO / MMSI / Vessel / Company / Cargo / Manifest / Port / Location / Event"
+    : mode.placeholder;
+
   return (
     <section
       aria-label="Mission Intelligence Command Bar"
@@ -285,42 +328,54 @@ export function MissionCommandBar({
           )}
           strokeWidth={1.75}
         />
-        <input
-          ref={inputRef}
-          type="search"
-          value={input}
-          onChange={(e) => {
-            let v = e.target.value;
-            // Allow the native search-clear (X) — and any manual empty —
-            // to fully clear the field. The prefix is re-injected on the
-            // next keystroke or on focus.
-            if (v === "") {
-              setInput("");
-              return;
-            }
-            // Never let officers erase the prefix by accident while typing.
-            if (!unifiedSearch && !v.toUpperCase().startsWith(mode.prefix.toUpperCase())) {
-              v = mode.prefix + stripPrefix(v, mode);
-            }
-            setInput(v);
-          }}
-          onFocus={() => {
-            if (!unifiedSearch && (input === "" || input === mode.prefix)) {
-              setInput(mode.prefix);
-              focusAfterPrefix(mode.prefix);
-            }
-          }}
-          placeholder={
-            unifiedSearch
-              ? "Search IMO / MMSI / Vessel / Company / Cargo / Manifest / Port / Location / Event"
-              : mode.placeholder
-          }
-          aria-label={`Search — ${mode.aiContext}`}
-          className={cn(
-            "min-w-0 flex-1 bg-transparent text-[14.5px] font-medium leading-tight text-[color:var(--color-navy)] outline-none",
-            "placeholder:font-medium placeholder:text-[color:var(--color-navy)]/45",
+        <div className="relative flex min-w-0 flex-1 items-center">
+          <input
+            ref={inputRef}
+            type="search"
+            value={input}
+            onChange={(e) => {
+              let v = e.target.value;
+              // Allow the native search-clear (X) — and any manual empty —
+              // to fully clear the field. The prefix is re-injected on the
+              // next keystroke or on focus.
+              if (v === "") {
+                setInput("");
+                return;
+              }
+              // Never let officers erase the prefix by accident while typing.
+              if (!unifiedSearch && !v.toUpperCase().startsWith(mode.prefix.toUpperCase())) {
+                v = mode.prefix + stripPrefix(v, mode);
+              }
+              setInput(v);
+            }}
+            onFocus={() => {
+              setFocused(true);
+              if (!unifiedSearch && (input === "" || input === mode.prefix)) {
+                setInput(mode.prefix);
+                focusAfterPrefix(mode.prefix);
+              }
+            }}
+            onBlur={() => setFocused(false)}
+            // The animated cue replaces the placeholder while idle; the
+            // static text remains for focus, reduced motion and SSR.
+            placeholder={idleForCue ? "" : staticPlaceholder}
+            aria-label={`Search IMO, MMSI, vessel, company, cargo, manifest, port, location or event — ${mode.aiContext}`}
+            className={cn(
+              "min-w-0 flex-1 bg-transparent text-[14.5px] font-medium leading-tight text-[color:var(--color-navy)] outline-none",
+              "placeholder:font-medium placeholder:text-[color:var(--color-navy)]/45",
+            )}
+          />
+          {idleForCue && (
+            <span
+              aria-hidden="true"
+              data-testid="search-typewriter-cue"
+              className="pointer-events-none absolute inset-y-0 left-0 flex items-center truncate text-[14.5px] font-medium leading-tight text-[color:var(--color-navy)]/45"
+            >
+              {typedPrompt}
+              <span className="ml-[1px] inline-block h-[15px] w-[1.5px] translate-y-[1px] bg-[color:var(--color-navy)]/35" />
+            </span>
           )}
-        />
+        </div>
         {!unifiedSearch && <VoiceButton />}
         {lensActive && (
           <span

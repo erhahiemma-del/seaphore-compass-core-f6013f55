@@ -189,14 +189,14 @@ export function InvestigationLanding({
   const idle = !value && !recording && !transcribing && !pending;
   const showTypewriter = idle;
 
-  const typedPlaceholder = useTypewriterPlaceholder({
+  const typedPlaceholder = useTypewriterPlaceholder(
     // Only suggest investigating a subject when one is actually open.
-    phrases: [
+    [
       ...(subject ? [`Investigate ${subject}...`] : []),
       ...TYPING_EXAMPLES.map((e) => `${e}...`),
     ],
-    paused: !showTypewriter,
-  });
+    showTypewriter,
+  );
 
   function toggleDictation() {
     if (dictation.state === "idle") baselineRef.current = valueRef.current;
