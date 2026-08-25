@@ -137,11 +137,11 @@ export function MapLayerChips({ service = sgs, className }: MapLayerChipsProps) 
         icon={Globe2}
         label="All"
         active={isAll}
-        onClick={() => service.setActiveLayers(base)}
+        onClick={() => service.setActiveLayers(everything)}
       />
       {CHIPS.map((chip) => {
         const own = known(chip.layers);
-        const on = own.some((id) => active.has(id));
+        const on = !isAll && own.some((id) => active.has(id));
         const pending =
           own.length > 0 &&
           own.every((id) => layerRegistry.get(id)?.status === "pending-source");
