@@ -10,13 +10,13 @@ import { useEffect } from "react";
 
 import { ContextRail } from "@/components/layout/ContextRail";
 import { useFocusSubjectStore } from "@/stores/focus-subject.store";
-import { usePrefersReducedMotion } from "@/hooks/use-reduced-motion";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { cn } from "@/lib/utils";
 
 export function FocusWorkspaceOverlay({ onOpen }: { onOpen: (subjectId: string) => void }) {
   const subject = useFocusSubjectStore((s) => s.subject);
   const clear = useFocusSubjectStore((s) => s.clearSubject);
-  const reduced = usePrefersReducedMotion();
+  const reduced = useReducedMotion();
 
   useEffect(() => {
     if (!subject) return;
