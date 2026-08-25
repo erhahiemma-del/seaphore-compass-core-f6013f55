@@ -31,16 +31,16 @@ const TONE_CLASS: Record<string, string> = {
 };
 
 const PROVIDER_STATUS_LABEL: Record<ProviderCoverageStatus, string> = {
-  OPERATIONAL: "🟢 Operational",
-  PARTIAL: "🟡 Partial",
-  AWAITING_CREDENTIALS: "🟡 Awaiting credentials",
-  CREDENTIALS_INVALID: "🟠 Credentials invalid",
+  OPERATIONAL: "Operational",
+  PARTIAL: "Partial",
+  AWAITING_CREDENTIALS: "Awaiting credentials",
+  CREDENTIALS_INVALID: "Credentials invalid",
 
-  RATE_LIMITED: "🟠 Rate limited",
+  RATE_LIMITED: "Rate limited",
   // A provider we depend on that stopped answering. Genuine fault.
-  OFFLINE: "🔴 Offline",
+  OFFLINE: "Offline",
   // Nobody ever registered it. Not a fault, so not red.
-  NOT_REGISTERED: "○ Not registered",
+  NOT_REGISTERED: "Not registered",
 };
 
 function when(iso: string | null): string {
@@ -87,9 +87,12 @@ export function KpiCoverageCard({
               : cn("text-[14px] font-bold", tone),
           )}
         >
-          <span aria-hidden className="mr-1">
-            {meta.dot}
-          </span>
+          {isNumber ? null : (
+            <span
+              aria-hidden
+              className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full align-middle bg-current"
+            />
+          )}
           {kpi.display}
         </div>
         <div className="mt-0.5 text-[11px] font-semibold text-slate">

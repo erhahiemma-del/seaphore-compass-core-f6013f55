@@ -38,14 +38,14 @@ export function PanelStateNotice({
           TONE_CLASS[meta.tone] ?? "text-slate",
         )}
       >
-        <span aria-hidden>{meta.dot}</span>
+        <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-current" />
         {meta.label}
       </div>
       <p className="mt-1.5 type-small text-slate">{detail}</p>
       {href ? (
         <Link
           to={href}
-          className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--color-blue)] hover:underline"
+          className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--ocean)] hover:underline"
         >
           {hrefLabel ?? "Inspect capability"}
           <ArrowRight className="h-3.5 w-3.5" />
