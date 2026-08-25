@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { StatusChip, type StatusTone } from "@/components/status/operational-status";
 import { cn } from "@/lib/utils";
 
-
 /** Section container used inside every centre's main workspace. */
 export function Section({
   title,
@@ -61,7 +60,6 @@ export function StatusBadge({
   }[tone] as StatusTone;
   return <StatusChip tone={mapped} label={label} compact />;
 }
-
 
 /** Simple dense data table for centres. */
 export interface Column<T> {

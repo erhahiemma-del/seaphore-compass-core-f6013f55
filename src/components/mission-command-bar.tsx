@@ -274,9 +274,7 @@ export function MissionCommandBar({ contextMode = null, fromRoute }: MissionComm
                   aria-hidden
                   className={cn(
                     "ml-1 rounded-sm px-1 text-[10px] font-semibold leading-none",
-                    active
-                      ? "bg-white/18 text-white/90"
-                      : "bg-[color:var(--surface-3)] text-slate",
+                    active ? "bg-white/18 text-white/90" : "bg-[color:var(--surface-3)] text-slate",
                   )}
                 >
                   ⌥{m.shortcut}

@@ -125,7 +125,11 @@ export function KpiCoverageCard({
               <div key={key} className="flex items-center justify-between gap-2">
                 <span>{COVERAGE_CHECK_LABELS[key]}</span>
                 <span
-                  className={kpi.checks[key] ? "text-[color:var(--ocean)]" : "text-[color:var(--status-critical)]"}
+                  className={
+                    kpi.checks[key]
+                      ? "text-[color:var(--ocean)]"
+                      : "text-[color:var(--status-critical)]"
+                  }
                 >
                   {kpi.checks[key] ? "✓" : "✗"}
                 </span>
@@ -136,7 +140,9 @@ export function KpiCoverageCard({
           <div className="space-y-1">
             <div className="type-label text-slate">Providers</div>
             {kpi.providers.length === 0 ? (
-              <div className="text-[color:var(--status-critical)]">No provider declares this capability.</div>
+              <div className="text-[color:var(--status-critical)]">
+                No provider declares this capability.
+              </div>
             ) : (
               kpi.providers.map((p) => (
                 <div key={p.providerId} className="rounded border border-line p-1.5">
@@ -150,7 +156,9 @@ export function KpiCoverageCard({
                   {p.credentialEnv.length > 0 ? (
                     <div>Credentials: {p.credentialEnv.join(", ")}</div>
                   ) : null}
-                  {p.lastError ? <div className="text-[color:var(--status-critical)]">Error: {p.lastError}</div> : null}
+                  {p.lastError ? (
+                    <div className="text-[color:var(--status-critical)]">Error: {p.lastError}</div>
+                  ) : null}
                 </div>
               ))
             )}

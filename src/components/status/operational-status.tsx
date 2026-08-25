@@ -55,15 +55,16 @@ export const STATUS_TONE_TEXT: Record<StatusTone, string> = {
   inactive: "text-[color:var(--status-inactive)]",
 };
 
-const STATE_META: Record<OperationalState, { label: string; tone: StatusTone; icon: LucideIcon }> = {
-  VERIFIED: { label: "Verified", tone: "verified", icon: BadgeCheck },
-  PARTIAL_COVERAGE: { label: "Partial coverage", tone: "review", icon: CircleDashed },
-  PROVIDER_AVAILABLE: { label: "Provider available", tone: "active", icon: PlugZap },
-  AWAITING_CREDENTIALS: { label: "Awaiting credentials", tone: "review", icon: KeyRound },
-  SOURCE_UNAVAILABLE: { label: "Source unavailable", tone: "inactive", icon: CircleSlash },
-  NO_DATA_RECEIVED: { label: "No data received", tone: "inactive", icon: Clock },
-  VERIFICATION_REQUIRED: { label: "Verification required", tone: "review", icon: ShieldQuestion },
-};
+const STATE_META: Record<OperationalState, { label: string; tone: StatusTone; icon: LucideIcon }> =
+  {
+    VERIFIED: { label: "Verified", tone: "verified", icon: BadgeCheck },
+    PARTIAL_COVERAGE: { label: "Partial coverage", tone: "review", icon: CircleDashed },
+    PROVIDER_AVAILABLE: { label: "Provider available", tone: "active", icon: PlugZap },
+    AWAITING_CREDENTIALS: { label: "Awaiting credentials", tone: "review", icon: KeyRound },
+    SOURCE_UNAVAILABLE: { label: "Source unavailable", tone: "inactive", icon: CircleSlash },
+    NO_DATA_RECEIVED: { label: "No data received", tone: "inactive", icon: Clock },
+    VERIFICATION_REQUIRED: { label: "Verification required", tone: "review", icon: ShieldQuestion },
+  };
 
 export interface StatusChipProps {
   tone: StatusTone;

@@ -32,7 +32,6 @@ export const PanelCard = React.forwardRef<HTMLDivElement, PanelCardProps>(
         )}
         {...props}
       />
-
     );
   },
 );
