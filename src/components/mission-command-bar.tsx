@@ -36,7 +36,7 @@ import { useTypewriterPlaceholder } from "@/hooks/use-typewriter-placeholder";
  * Company / Cargo / Manifest / Port / Location / Event) — it only changes the
  * cue shown to the officer.
  */
-const SEARCH_PROMPTS: Record<EntityType, string[]> = {
+const SEARCH_PROMPTS: Partial<Record<EntityType, string[]>> = {
   imo: [
     "Search a vessel, port or maritime event…",
     "Search Nigerian maritime activity…",
