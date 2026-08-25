@@ -193,6 +193,14 @@ export const ZOOM_LIMITS = { min: 1, max: 18 } as const;
  */
 export interface MaritimePalette {
   readonly ocean: string;
+  /**
+   * Inshore water — lagoons, lakes, deltas and river polygons.
+   *
+   * A second tone, not a depth ramp. It is keyed off the basemap's own
+   * water `class`, so the variation reports a distinction the source
+   * actually makes; it never implies bathymetry, which remains unwired.
+   */
+  readonly oceanShallow: string;
   readonly land: string;
   readonly landUrban: string;
   readonly coastline: string;
@@ -210,6 +218,8 @@ export interface MaritimePalette {
 export const MARITIME_PALETTE: MaritimePalette = {
   /** Open water. Flat by design — see above. */
   ocean: "#071B2E",
+  /** Inshore water, one step off the open sea. */
+  oceanShallow: "#0B2740",
   /** Landmass. Deliberately lighter than the sea so land reads as solid. */
   land: "#16202B",
   /** Built-up land, a shade above the base so cities read at close zoom. */
@@ -259,11 +269,16 @@ export const LIGHT_MARITIME_PALETTE: MaritimePalette = {
    * land as context — still one flat tone at every location and zoom, because
    * no bathymetry source is wired and a varying sea would be read as depth.
    */
-  ocean: "#A6D4EE",
+  ocean: "#69AAE3",
+  /**
+   * Inshore water — the lighter secondary tone from the approved
+   * reference. Restrained, so the sea still reads as one body.
+   */
+  oceanShallow: "#7DB7E6",
   land: "#FAFCFD",
   landUrban: "#EFF3F7",
-  coastline: "#6E9FBE",
-  waterway: "#8CC3DE",
+  coastline: "#5A93BC",
+  waterway: "#7DB7E6",
   seaLabel: "#3C6B84",
   placeLabel: "#5C6E80",
   labelHalo: "#FFFFFF",

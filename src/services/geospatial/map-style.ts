@@ -116,7 +116,16 @@ export function planMaritimeStyle(
       // ── Water ──
       case "water":
         if (layer.type === "fill") {
-          paint(layer.id, "fill-color", palette.ocean);
+          // Open sea takes the primary tone; the basemap's inshore
+          // water classes take the lighter secondary tone, so the sea
+          // carries subtle variation without any invented bathymetry.
+          paint(layer.id, "fill-color", [
+            "match",
+            ["get", "class"],
+            ["ocean"],
+            palette.ocean,
+            palette.oceanShallow,
+          ]);
           paint(layer.id, "fill-opacity", 1);
         }
         break;
