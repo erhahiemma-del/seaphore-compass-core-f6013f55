@@ -47,12 +47,12 @@ export function QuickActions() {
     <div className="flex flex-col gap-3">
       {/* One row per action: the label must always read in full — a truncated
           instruction is not an instruction. */}
-      <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-1">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         {PRIMARY.map((a) => (
           <Link
             key={a.label}
             to={a.to}
-            className="group flex items-center gap-3 rounded-lg border border-line bg-surface p-3 elev-1 motion-fast hover:-translate-y-px hover:border-[color:var(--ocean)]/60"
+            className="group flex items-center gap-2.5 rounded-lg border border-line bg-surface p-2.5 elev-1 motion-fast hover:-translate-y-px hover:border-[color:var(--ocean)]/60 hover:shadow-card"
           >
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[color:var(--ocean-050)] text-[color:var(--ocean)]">
               <a.icon className="h-4 w-4" strokeWidth={1.75} />
