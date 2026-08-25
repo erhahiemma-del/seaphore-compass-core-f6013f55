@@ -39,7 +39,10 @@ export function Section({
   );
 }
 
-/** Compact status pills reused across centres. */
+/**
+ * Compact status pills reused across centres. Delegates to the canonical
+ * status vocabulary so the same meaning renders identically platform-wide.
+ */
 export function StatusBadge({
   label,
   tone = "neutral",
@@ -47,24 +50,16 @@ export function StatusBadge({
   label: string;
   tone?: "risk" | "warn" | "ok" | "info" | "neutral";
 }) {
-  const toneClass = {
-    risk: "bg-[color:var(--color-red)]/15 text-[color:var(--color-red)]",
-    warn: "bg-[color:var(--color-amber)]/15 text-[color:var(--color-amber)]",
-    ok: "bg-[color:var(--color-green)]/15 text-[color:var(--color-green)]",
-    info: "bg-[color:var(--color-blue)]/15 text-[color:var(--color-blue)]",
-    neutral: "bg-slate/15 text-slate",
-  }[tone];
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em]",
-        toneClass,
-      )}
-    >
-      {label}
-    </span>
-  );
+  const mapped: StatusTone = {
+    risk: "critical",
+    warn: "review",
+    ok: "verified",
+    info: "active",
+    neutral: "inactive",
+  }[tone] as StatusTone;
+  return <StatusChip tone={mapped} label={label} compact />;
 }
+
 
 /** Simple dense data table for centres. */
 export interface Column<T> {
