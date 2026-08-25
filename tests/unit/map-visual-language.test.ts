@@ -42,6 +42,7 @@ import { coastlineLayer, planMaritimeStyle } from "@/services/geospatial/map-sty
 import { graticuleOpacityExpression } from "@/services/geospatial/graticule";
 import { toVesselFeature } from "@/services/geospatial/vessel";
 import {
+  VESSEL_SILHOUETTES,
   resolveHeading,
   vesselSpriteId,
   vesselSpriteIds,
@@ -128,10 +129,21 @@ describe("vessel symbols distinguish a reported course from a defaulted one", ()
   });
 
   it("every sprite a vessel can ask for is one the renderer registers", () => {
+    /*
+     * Silhouettes come from `VESSEL_SILHOUETTES` rather than a literal
+     * list. The literal named "disc", which was later renamed "hull", so
+     * the test asked for a sprite nothing builds and reported a failure
+     * about registration when the real change was vocabulary. Deriving
+     * the asking side still catches the drift that matters — an id
+     * `vesselIconId()` can produce that the renderer never registers.
+     */
     const registered = new Set(vesselSpriteIds());
     for (const directional of [true, false]) {
-      for (const silhouette of ["arrow", "wedge", "block", "disc"] as const) {
-        expect(registered.has(vesselSpriteId("critical", silhouette, directional))).toBe(true);
+      for (const silhouette of VESSEL_SILHOUETTES) {
+        expect(
+          registered.has(vesselSpriteId("critical", silhouette, directional)),
+          `${silhouette} (${directional ? "directional" : "nodir"}) is unregistered`,
+        ).toBe(true);
       }
     }
   });

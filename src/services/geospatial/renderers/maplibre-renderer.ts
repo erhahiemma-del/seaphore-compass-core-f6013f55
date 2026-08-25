@@ -32,6 +32,7 @@
 import {
   BASEMAP_STYLE,
   LAYER_IDS,
+  LIGHT_MARITIME_PALETTE,
   MARITIME_PALETTE,
   PIXELS_PER_KM,
   RISK_COLORS,
@@ -50,6 +51,8 @@ import {
 import { FRESHNESS_COLORS, FRESHNESS_LABELS, formatAge } from "../freshness";
 import type { MapEventBus } from "../event-bus";
 import { buildVesselSprites, createPortDiamondImage } from "../icons/vessel-arrow";
+import { buildSymbolSprites, symbolSpriteId } from "../icons/symbol-sprites";
+import { MAP_SYMBOLS } from "@/lib/map-symbols";
 import {
   applyMaritimeStyle,
   COASTLINE_LAYER_ID,
@@ -504,7 +507,8 @@ export class MapLibreRenderer implements MapRenderer {
      * throws, so a basemap it does not recognise costs colour, not the
      * mount.
      */
-    const styleResult = applyMaritimeStyle(map as unknown as StyleTarget);
+    const palette = options.palette === "institutional" ? LIGHT_MARITIME_PALETTE : MARITIME_PALETTE;
+    const styleResult = applyMaritimeStyle(map as unknown as StyleTarget, palette);
     this.installSourcesAndLayers();
     this.verifyInstalledLayers();
     publishStyleDiagnostics(map, styleResult);
@@ -690,10 +694,26 @@ export class MapLibreRenderer implements MapRenderer {
     for (const [id, image] of buildVesselSprites()) {
       if (!map.hasImage(id)) map.addImage(id, image);
     }
-    if (!map.hasImage("port-diamond")) map.addImage("port-diamond", createPortDiamondImage());
-    // Hollow variant for degree-minute positions. Registered alongside
-    // the solid one so `icon-image` can switch on the feature's own
-    // declared precision rather than the renderer re-deriving it.
+    // Operational symbols (ports, anchorage, incidents, weather) share
+    // their geometry with the legend via `@/lib/map-symbols`.
+    for (const [id, image] of buildSymbolSprites()) {
+      if (!map.hasImage(id)) map.addImage(id, image);
+    }
+    /*
+     * Hollow marker for a degree-minute port centroid.
+     *
+     * The shared symbol set has one port glyph and no way to say "this
+     * position is approximate", so this stays registered alongside it.
+     * Dropping it would silently retire the precision distinction: Lekki's
+     * coordinate is good to about a kilometre, and at port zoom that error
+     * is visible on screen with nothing telling the officer so.
+     *
+     * It is deliberately a different shape rather than a different colour,
+     * so the distinction survives greyscale — but it does not yet share
+     * geometry with the port glyph beside it. An outlined variant belongs
+     * in `@/lib/map-symbols` so the legend can mirror it; until then this
+     * keeps the capability rather than trading it for consistency.
+     */
     if (!map.hasImage("port-diamond-approximate")) {
       map.addImage("port-diamond-approximate", createPortDiamondImage(undefined, false));
     }
@@ -1093,7 +1113,9 @@ export class MapLibreRenderer implements MapRenderer {
           ["*", ["coalesce", ["get", "anchorageRadiusKm"], 0], PIXELS_PER_KM.maxZoomPixels],
         ],
         "circle-color": "transparent",
-        "circle-stroke-color": "#0E7C7B",
+        // Anchorage is violet in the shared symbol vocabulary — a distinct
+        // reading from the blue port itself.
+        "circle-stroke-color": MAP_SYMBOLS.anchorage.color,
         "circle-stroke-width": 1,
         "circle-stroke-opacity": ["interpolate", ["linear"], ["zoom"], 8, 0.15, 11, 0.45, 14, 0.6],
       },
@@ -1118,7 +1140,7 @@ export class MapLibreRenderer implements MapRenderer {
           "case",
           ["==", ["get", "precision"], "degree-minute"],
           "port-diamond-approximate",
-          "port-diamond",
+          symbolSpriteId("port"),
         ],
         /*
          * Deterministic collision order.
@@ -1201,7 +1223,7 @@ export class MapLibreRenderer implements MapRenderer {
         "text-allow-overlap": false,
       },
       paint: {
-        "text-color": "#3FBFBE",
+        "text-color": MAP_SYMBOLS.port.color,
         "text-halo-color": MARITIME_PALETTE.labelHalo,
         "text-halo-width": 1.5,
       },

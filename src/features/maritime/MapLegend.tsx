@@ -530,19 +530,22 @@ function Silhouette({
   shape,
   blunt = false,
 }: {
-  shape: "arrow" | "wedge" | "block" | "disc";
+  shape: "arrow" | "wedge" | "block" | "hull";
   blunt?: boolean;
 }) {
   const fill = "currentColor";
   const cls = "h-3 w-3 text-muted-foreground";
 
-  if (shape === "disc") {
+  if (shape === "hull") {
+    // Generic ship hull — narrow beam, notched stern. Bow follows `blunt`
+    // below, so an unreported course still reads as a vessel.
     return (
-      <svg viewBox="0 0 12 12" className="h-2.5 w-2.5 text-muted-foreground" aria-hidden>
-        <circle cx="6" cy="6" r="4" fill={fill} />
+      <svg viewBox="0 0 12 12" className={cls} aria-hidden>
+        <path d={`${blunt ? "M4 3.4 L8 3.4" : "M6 1"} L8.8 10.8 L6 9.2 L3.2 10.8 Z`} fill={fill} />
       </svg>
     );
   }
+
   // Bow: a point when the course is known, a squared stem when it is not.
   const bow = blunt ? "M4 3.4 L8 3.4" : "M6 1";
   if (shape === "block") {

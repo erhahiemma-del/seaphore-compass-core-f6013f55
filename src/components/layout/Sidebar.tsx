@@ -55,7 +55,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-sidebar-border">
       <SidebarHeader className="border-b border-sidebar-border px-3 py-4">
         <Link to="/" className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[color:var(--color-teal)] text-white">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[color:var(--ocean)] text-white">
             <Anchor className="h-5 w-5" />
           </div>
           {!collapsed && (
@@ -105,8 +105,8 @@ export function AppSidebar() {
                             className={cn(
                               "h-auto py-1.5 text-sidebar-foreground/80 motion-fast",
                               "hover:bg-sidebar-accent hover:text-sidebar-foreground",
-                              "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground",
-                              "data-[active=true]:border-l-2 data-[active=true]:border-[color:var(--color-teal)]",
+                              "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-bold",
+                              "data-[active=true]:border-l-2 data-[active=true]:border-[color:var(--ocean)]",
                             )}
                           >
                             <Link to={item.url} className="flex items-center gap-2.5">

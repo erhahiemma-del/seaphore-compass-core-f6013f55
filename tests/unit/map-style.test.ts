@@ -86,19 +86,31 @@ describe("maritime style planning", () => {
       edits.find((e) => e.layerId === layerId && e.property === property)?.value;
 
     expect(at("background", "background-color")).toBe(MARITIME_PALETTE.land);
-    expect(at("water", "fill-color")).toBe(MARITIME_PALETTE.ocean);
+    expect(at("water", "fill-color")).toEqual([
+      "match",
+      ["get", "class"],
+      ["ocean"],
+      MARITIME_PALETTE.ocean,
+      MARITIME_PALETTE.oceanShallow,
+    ]);
     // The whole point of the palette: land must read as solid mass.
     expect(MARITIME_PALETTE.land).not.toBe(MARITIME_PALETTE.ocean);
   });
 
-  it("keeps the ocean one flat colour", () => {
-    // A water fill that varied with position would be read as
-    // bathymetry, and no depth data exists in this repository.
+  it("varies water only by the source's own class, never by depth", () => {
+    // Two tones, keyed off the basemap's water `class` — open sea versus
+    // inshore water. Anything keyed off zoom or coordinates would be read
+    // as bathymetry, and no depth data exists in this repository.
     const waterFill = planMaritimeStyle(CARTO_LAYERS).find(
       (e) => e.layerId === "water" && e.property === "fill-color",
     );
-    expect(typeof waterFill?.value).toBe("string");
-    expect(Array.isArray(waterFill?.value)).toBe(false);
+    const expr = waterFill?.value as unknown[];
+    expect(expr[0]).toBe("match");
+    expect(expr[1]).toEqual(["get", "class"]);
+    expect(JSON.stringify(expr)).not.toContain("zoom");
+    expect(JSON.stringify(expr)).not.toContain("interpolate");
+    // Exactly one variation: open sea plus a single inshore fallback.
+    expect(expr).toHaveLength(5);
   });
 
   it("never writes geometry — only paint, layout and zoom range", () => {

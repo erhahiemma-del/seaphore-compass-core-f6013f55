@@ -111,13 +111,13 @@ describe("surfaces agree with the shared table", () => {
 
   it("the readiness card does not paint awaiting-credentials as an outage", () => {
     const source = read("src/components/intelligence/IntelligenceReadinessCard.tsx");
-    expect(source).not.toMatch(/dot="🔴"\s+title="Awaiting Credentials"/);
-    expect(source).toMatch(/dot="🟡"\s+title="Awaiting Credentials"/);
+    expect(source).not.toMatch(/tone="critical"\s+title="Awaiting Credentials"/);
+    expect(source).toMatch(/tone="review"\s+title="Awaiting Credentials"/);
   });
 
   it("the readiness card marks a real outage red", () => {
     expect(read("src/components/intelligence/IntelligenceReadinessCard.tsx")).toMatch(
-      /dot="🔴"\s+title="Offline"/,
+      /tone="critical"\s+title="Offline"/,
     );
   });
 

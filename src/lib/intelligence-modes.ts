@@ -1,6 +1,6 @@
 /**
- * Intelligence Modes — the interactive entity chips beneath the
- * Mission Intelligence Command Bar.
+ * Intelligence Modes — workflow mission contexts for the Mission
+ * Intelligence Command Bar.
  *
  * Each mode is a self-contained intelligence context:
  *   - chip identity (label, icon key)
@@ -19,10 +19,19 @@ import type { MapSelectionKind } from "@/services/geospatial/selection";
 export interface IntelligenceMode {
   /** Canonical dispatcher entity key. */
   key: EntityType;
-  /** Chip label shown to officers. */
+  /** Mission label shown to officers. */
   label: string;
   /** Icon slot key (bound to a lucide icon in the UI). */
-  icon: "hash" | "anchor" | "building" | "manifest" | "container" | "bol" | "voyage" | "port";
+  icon:
+    | "overview"
+    | "vessel"
+    | "revenue"
+    | "risk"
+    | "investigation"
+    | "port"
+    | "incident"
+    | "briefing";
+
   /** Alt+N shortcut number (1-based, 0 = no shortcut). */
   shortcut: number;
   /** Search input placeholder. */
@@ -35,116 +44,133 @@ export interface IntelligenceMode {
   aiContext: string;
   /** Suggested one-tap intelligence queries for this mode. */
   suggestions: string[];
+  /**
+   * Contextual search domains this lens emphasises. Presentation-only —
+   * Global Search stays universal; this changes emphasis, never results.
+   */
+  contextDomains: readonly string[];
 }
 
 export const INTELLIGENCE_MODES: IntelligenceMode[] = [
   {
     key: "imo",
-    label: "IMO",
-    icon: "hash",
+    label: "National Overview",
+    icon: "overview",
     shortcut: 1,
-    placeholder: "Search IMO Number…",
-    helper: "Find vessel information using an IMO number.",
+    placeholder: "Search maritime intelligence…",
+    helper: "Search across the national maritime operating picture.",
     prefix: "IMO: ",
-    aiContext: "IMO Intelligence",
-    suggestions: [
-      "View vessel profile",
-      "Show ownership history",
-      "Last known position",
-      "Previous investigations",
-    ],
+    aiContext: "National Maritime Overview",
+    contextDomains: ["national activity", "ports", "vessels", "incidents", "routes", "zones"],
+    suggestions: ["Apapa arrivals", "High-risk vessels", "Revenue watch", "Open investigations"],
   },
   {
     key: "vessel",
-    label: "Vessel",
-    icon: "anchor",
+    label: "Vessel Operations",
+    icon: "vessel",
     shortcut: 2,
-    placeholder: "Search Vessel Name or IMO…",
-    helper: "Search vessels by name or registration.",
+    placeholder: "Search AIS anomalies…",
+    helper: "Investigate vessel movement, gaps and route behaviour.",
     prefix: "VESSEL: ",
-    aiContext: "Vessel Intelligence",
-    suggestions: ["Behavioural anomalies", "Port call history", "Flag changes", "AIS gaps"],
-  },
-  {
-    key: "company",
-    label: "Company",
-    icon: "building",
-    shortcut: 3,
-    placeholder: "Search Shipping Company…",
-    helper: "Search shipping companies and ownership records.",
-    prefix: "COMPANY: ",
-    aiContext: "Company Intelligence",
-    suggestions: [
-      "Beneficial owners",
-      "Suspicious ownership patterns",
-      "Related vessels",
-      "Sanctions exposure",
-    ],
+    aiContext: "AIS Investigation",
+    contextDomains: ["IMO", "MMSI", "vessel", "voyage", "movement", "last position"],
+    suggestions: ["AIS gaps", "Route deviations", "Dark periods", "Port call history"],
   },
   {
     key: "manifest",
-    label: "Manifest",
-    icon: "manifest",
-    shortcut: 4,
-    placeholder: "Search Manifest Number…",
-    helper: "Locate manifests and related cargo records.",
+    label: "Revenue Assurance",
+    icon: "revenue",
+    shortcut: 3,
+    placeholder: "Search revenue evidence…",
+    helper: "Review manifests, cargo declarations and leakage indicators.",
     prefix: "MANIFEST: ",
-    aiContext: "Manifest Intelligence",
+    aiContext: "Revenue Assurance",
+    contextDomains: ["manifests", "cargo", "quantity", "voyage", "company", "discrepancies"],
     suggestions: [
-      "Find duplicate manifests",
       "Revenue discrepancies",
-      "Missing documentation",
-      "Validation status",
+      "Duplicate manifests",
+      "HS code mismatch",
+      "Under-declaration",
     ],
   },
   {
     key: "container",
-    label: "Container",
-    icon: "container",
-    shortcut: 5,
-    placeholder: "Search Container Number…",
-    helper: "Track individual containers across voyages.",
+    label: "Risk & Compliance",
+    icon: "risk",
+    shortcut: 4,
+    placeholder: "Search compliance cases…",
+    helper: "Review sanctions, watchlist and inspection evidence.",
     prefix: "CONTAINER: ",
-    aiContext: "Container Intelligence",
-    suggestions: ["Track container", "Seal verification", "Cargo history", "Inspection records"],
-  },
-  {
-    key: "bol",
-    label: "BOL",
-    icon: "bol",
-    shortcut: 6,
-    placeholder: "Search Bill of Lading Number…",
-    helper: "Locate bills of lading and consignment chains.",
-    prefix: "BOL: ",
-    aiContext: "Bill of Lading Intelligence",
+    aiContext: "Compliance Review",
+    contextDomains: ["vessels", "companies", "sanctions", "watchlists", "incidents"],
     suggestions: [
-      "Consignor / consignee chain",
-      "Linked manifests",
-      "Payment terms anomalies",
-      "Endorsement history",
+      "Watchlist matches",
+      "Sanctions exposure",
+      "Inspection records",
+      "Seal verification",
     ],
   },
   {
-    key: "voyage",
-    label: "Voyage",
-    icon: "voyage",
-    shortcut: 7,
-    placeholder: "Search Voyage Reference…",
-    helper: "Explore voyages, legs, and deviations.",
-    prefix: "VOYAGE: ",
-    aiContext: "Voyage Intelligence",
-    suggestions: ["Route deviations", "STS events", "Dark periods", "ETA vs actual"],
+    key: "company",
+    label: "Investigation",
+    icon: "investigation",
+    shortcut: 5,
+    placeholder: "Search ownership networks…",
+    helper: "Investigate companies, beneficial owners and related vessels.",
+    prefix: "COMPANY: ",
+    aiContext: "Ownership Investigation",
+    contextDomains: ["vessels", "companies", "incidents", "evidence", "cases"],
+    suggestions: ["Open cases", "Linked companies", "Evidence packages", "Related vessels"],
   },
   {
     key: "port",
-    label: "Port",
+    label: "Port Intelligence",
     icon: "port",
-    shortcut: 8,
-    placeholder: "Search Port Name or UN/LOCODE…",
-    helper: "Search ports and port intelligence.",
+    shortcut: 6,
+    placeholder: "Search port operations…",
+    helper: "Review port congestion, arrivals and berth-level context.",
     prefix: "PORT: ",
-    aiContext: "Port Intelligence",
-    suggestions: ["Congestion analysis", "Risk heatmap", "Expected arrivals", "Compliance alerts"],
+    aiContext: "Port Congestion",
+    contextDomains: [
+      "ports",
+      "port calls",
+      "arrivals",
+      "congestion",
+      "anchorage",
+      "berth activity",
+    ],
+    suggestions: ["Congestion analysis", "Expected arrivals", "Anchorage queue", "Berth delays"],
+  },
+  {
+    key: "bol",
+    label: "Incident Response",
+    icon: "incident",
+    shortcut: 7,
+    placeholder: "Search incidents and disruption…",
+    helper: "Assess incidents, weather and maritime disruption signals.",
+    prefix: "BOL: ",
+    aiContext: "Environmental Risk",
+    contextDomains: ["incidents", "vessels", "locations", "events", "zones"],
+    suggestions: ["Active incidents", "Affected zones", "Vessels in area", "Recent events"],
+  },
+  {
+    key: "voyage",
+    label: "Executive Briefing",
+    icon: "briefing",
+    shortcut: 8,
+    placeholder: "Search vessel risk…",
+    helper: "Review vessel exposure, behaviour and intelligence history.",
+    prefix: "VOYAGE: ",
+    aiContext: "Vessel Risk",
+    contextDomains: [
+      "national patterns",
+      "strategic risk",
+      "revenue",
+      "compliance",
+      "major events",
+      "trends",
+    ],
+    suggestions: ["National patterns", "Strategic risk", "Revenue trend", "Major events"],
   },
 ];
 

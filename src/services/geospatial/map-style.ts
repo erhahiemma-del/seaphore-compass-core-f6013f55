@@ -26,7 +26,7 @@
  * anywhere is reported and skipped: a basemap that is merely the wrong
  * colour is recoverable, and one that threw during styling is not.
  */
-import { MARITIME_PALETTE, SKY_TREATMENT, ZOOM_BANDS } from "./constants";
+import { MARITIME_PALETTE, SKY_TREATMENT, ZOOM_BANDS, type MaritimePalette } from "./constants";
 
 /** The subset of a style layer this module needs in order to decide. */
 export interface StyleLayerSummary {
@@ -189,7 +189,10 @@ function placeLabelSize(): unknown {
  * from the writes is what lets a test assert that no rule targets a
  * layer the style does not have, and that no rule touches geometry.
  */
-export function planMaritimeStyle(layers: readonly StyleLayerSummary[]): readonly StyleEdit[] {
+export function planMaritimeStyle(
+  layers: readonly StyleLayerSummary[],
+  palette: MaritimePalette = MARITIME_PALETTE,
+): readonly StyleEdit[] {
   const edits: StyleEdit[] = [];
   const paint = (layerId: string, property: string, value: unknown) =>
     edits.push({ layerId, kind: "paint", property, value });
@@ -203,7 +206,7 @@ export function planMaritimeStyle(layers: readonly StyleLayerSummary[]): readonl
 
     // ── The ground plane ──
     if (layer.type === "background") {
-      paint(layer.id, "background-color", MARITIME_PALETTE.land);
+      paint(layer.id, "background-color", palette.land);
       continue;
     }
 
@@ -211,26 +214,35 @@ export function planMaritimeStyle(layers: readonly StyleLayerSummary[]): readonl
       // ── Land ──
       case "landcover":
       case "park":
-        if (layer.type === "fill") paint(layer.id, "fill-color", MARITIME_PALETTE.land);
+        if (layer.type === "fill") paint(layer.id, "fill-color", palette.land);
         break;
 
       case "landuse":
         // Built-up land lifts a shade so cities read as settlement rather
         // than as a hole in the landmass.
-        if (layer.type === "fill") paint(layer.id, "fill-color", MARITIME_PALETTE.landUrban);
+        if (layer.type === "fill") paint(layer.id, "fill-color", palette.landUrban);
         break;
 
       // ── Water ──
       case "water":
         if (layer.type === "fill") {
-          paint(layer.id, "fill-color", MARITIME_PALETTE.ocean);
+          // Open sea takes the primary tone; the basemap's inshore
+          // water classes take the lighter secondary tone, so the sea
+          // carries subtle variation without any invented bathymetry.
+          paint(layer.id, "fill-color", [
+            "match",
+            ["get", "class"],
+            ["ocean"],
+            palette.ocean,
+            palette.oceanShallow,
+          ]);
           paint(layer.id, "fill-opacity", 1);
         }
         break;
 
       case "waterway":
         if (layer.type === "line") {
-          paint(layer.id, "line-color", MARITIME_PALETTE.waterway);
+          paint(layer.id, "line-color", palette.waterway);
           // Estuaries and delta channels gain width with zoom rather than
           // appearing all at once.
           paint(layer.id, "line-width", [
@@ -246,8 +258,8 @@ export function planMaritimeStyle(layers: readonly StyleLayerSummary[]): readonl
           ]);
           paint(layer.id, "line-opacity", 0.85);
         } else if (layer.type === "symbol") {
-          paint(layer.id, "text-color", MARITIME_PALETTE.seaLabel);
-          paint(layer.id, "text-halo-color", MARITIME_PALETTE.labelHalo);
+          paint(layer.id, "text-color", palette.seaLabel);
+          paint(layer.id, "text-halo-color", palette.labelHalo);
         }
         break;
 
@@ -255,8 +267,8 @@ export function planMaritimeStyle(layers: readonly StyleLayerSummary[]): readonl
       case "water_name":
         // Sea and ocean names are orientation, and Dark Matter styles
         // them at #3c3c3c — effectively invisible on water.
-        paint(layer.id, "text-color", MARITIME_PALETTE.seaLabel);
-        paint(layer.id, "text-halo-color", MARITIME_PALETTE.labelHalo);
+        paint(layer.id, "text-color", palette.seaLabel);
+        paint(layer.id, "text-halo-color", palette.labelHalo);
         paint(layer.id, "text-halo-width", 1.4);
         /*
          * Let sea names in early.
@@ -271,8 +283,8 @@ export function planMaritimeStyle(layers: readonly StyleLayerSummary[]): readonl
         break;
 
       case "place":
-        paint(layer.id, "text-color", MARITIME_PALETTE.placeLabel);
-        paint(layer.id, "text-halo-color", MARITIME_PALETTE.labelHalo);
+        paint(layer.id, "text-color", palette.placeLabel);
+        paint(layer.id, "text-halo-color", palette.labelHalo);
         paint(layer.id, "text-halo-width", 1.4);
         // Zoom- and class-aware hierarchy, so the world view is read by
         // continent and the port view by settlement. See above.
@@ -283,7 +295,7 @@ export function planMaritimeStyle(layers: readonly StyleLayerSummary[]): readonl
       // ── Administrative boundaries: kept, dimmed, zoom-aware ──
       case "boundary":
         if (layer.type === "line") {
-          paint(layer.id, "line-color", MARITIME_PALETTE.boundary);
+          paint(layer.id, "line-color", palette.boundary);
           /*
            * Faint at world zoom, firmer as the officer closes.
            *
@@ -355,14 +367,16 @@ export function planMaritimeStyle(layers: readonly StyleLayerSummary[]): readonl
  * climb with zoom so the strategic view reads as a clean silhouette and
  * the close view resolves individual creeks.
  */
-export function coastlineLayer(): Record<string, unknown> {
+export function coastlineLayer(
+  palette: MaritimePalette = MARITIME_PALETTE,
+): Record<string, unknown> {
   return {
     id: COASTLINE_LAYER_ID,
     type: "line",
     source: BASEMAP_SOURCE,
     "source-layer": "water",
     paint: {
-      "line-color": MARITIME_PALETTE.coastline,
+      "line-color": palette.coastline,
       /*
        * Anchored at zoom 1, not zoom 4.
        *
@@ -425,7 +439,10 @@ export interface MaritimeStyleResult {
  * wrong colour is an inconvenience while a mount that threw is a black
  * canvas the officer cannot tell from a data outage.
  */
-export function applyMaritimeStyle(map: StyleTarget): MaritimeStyleResult {
+export function applyMaritimeStyle(
+  map: StyleTarget,
+  palette: MaritimePalette = MARITIME_PALETTE,
+): MaritimeStyleResult {
   let applied = 0;
   let skipped = 0;
 
@@ -438,7 +455,7 @@ export function applyMaritimeStyle(map: StyleTarget): MaritimeStyleResult {
     return { applied: 0, skipped: 0, coastlineAdded: false, skyApplied: false };
   }
 
-  for (const edit of planMaritimeStyle(layers)) {
+  for (const edit of planMaritimeStyle(layers, palette)) {
     try {
       // The layer may have been removed between reading the style and
       // writing to it — a style reload, or a fallback basemap swap.
@@ -477,7 +494,7 @@ export function applyMaritimeStyle(map: StyleTarget): MaritimeStyleResult {
   try {
     const hasWaterSource = layers.some((layer) => layer["source-layer"] === "water");
     if (hasWaterSource && map.addLayer && !map.getLayer(COASTLINE_LAYER_ID)) {
-      map.addLayer(coastlineLayer());
+      map.addLayer(coastlineLayer(palette));
       coastlineAdded = true;
     }
   } catch {

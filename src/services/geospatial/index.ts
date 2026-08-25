@@ -28,10 +28,14 @@
 export {
   BASEMAP_STYLE,
   LAYER_IDS,
+  LIGHT_BASEMAP_STYLE,
+  LIGHT_MARITIME_PALETTE,
   MAP_DEFAULTS,
   MAP_SCOPES,
   MARITIME_PALETTE,
   ZOOM_BANDS,
+  type MapStylePaletteName,
+  type MaritimePalette,
   ZOOM_LIMITS,
   zoomBandFor,
   type ZoomBand,
@@ -238,9 +242,16 @@ export {
   VESSEL_SPRITE_COLORS,
   VESSEL_SPRITE_SIZE,
   buildVesselSprites,
-  createPortDiamondImage,
   createVesselSilhouetteImage,
 } from "./icons/vessel-arrow";
+
+export {
+  SYMBOL_SPRITE_KINDS,
+  SYMBOL_SPRITE_SIZE,
+  buildSymbolSprites,
+  createSymbolImage,
+  symbolSpriteId,
+} from "./icons/symbol-sprites";
 
 export {
   EmptyVesselSource,

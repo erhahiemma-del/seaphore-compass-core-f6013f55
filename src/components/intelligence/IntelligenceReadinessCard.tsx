@@ -18,20 +18,22 @@ import {
 } from "@/lib/intelligence/export-readiness-report";
 
 function Group({
-  dot,
+  tone,
   title,
   names,
 }: {
-  dot: string;
+  tone: "verified" | "review" | "critical" | "inactive";
   title: string;
   names: ReadonlyArray<string>;
 }) {
   return (
     <div>
-      <div className="type-label text-slate">
-        <span aria-hidden className="mr-1">
-          {dot}
-        </span>
+      <div className="flex items-center gap-1.5 type-label text-slate">
+        <span
+          aria-hidden
+          className="h-1.5 w-1.5 rounded-full"
+          style={{ backgroundColor: `var(--status-${tone})` }}
+        />
         {title} ({names.length})
       </div>
       <ul className="mt-1 space-y-0.5 text-[11px] text-foreground">
@@ -60,11 +62,11 @@ export function IntelligenceReadinessCard({
   return (
     <section
       aria-label="Intelligence Readiness"
-      className="rounded-lg border border-line bg-surface p-4 shadow-card"
+      className="rounded-lg border border-line bg-surface p-4 elev-1"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[color:var(--color-teal)]/10 text-[color:var(--color-teal)]">
+          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[color:var(--ocean-050)] text-[color:var(--ocean)]">
             <Gauge className="h-4 w-4" />
           </span>
           <div>
@@ -84,7 +86,7 @@ export function IntelligenceReadinessCard({
             <button
               type="button"
               onClick={() => setExported(exportIntelligenceReadinessReport(report))}
-              className="inline-flex items-center gap-1.5 rounded-md border border-line px-2.5 py-1.5 text-[11px] font-semibold text-foreground transition-colors hover:bg-[color:var(--color-teal)]/10"
+              className="inline-flex items-center gap-1.5 rounded-md border border-line px-2.5 py-1.5 text-[11px] font-semibold text-foreground transition-colors hover:bg-[color:var(--ocean-050)]"
               title={`Intelligence Readiness Report v${READINESS_REPORT_VERSION} — generated from live diagnostics`}
             >
               <Download className="h-3.5 w-3.5" />
@@ -93,7 +95,7 @@ export function IntelligenceReadinessCard({
           ) : null}
           <Link
             to="/admin/provider-health"
-            className="inline-flex items-center gap-1 text-[11px] font-semibold text-[color:var(--color-teal)]"
+            className="inline-flex items-center gap-1 text-[11px] font-semibold text-[color:var(--ocean)]"
           >
             Provider Health
             <ExternalLink className="h-3 w-3" />
@@ -101,24 +103,24 @@ export function IntelligenceReadinessCard({
         </div>
       </div>
 
-      <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[color:var(--color-teal)]/10">
+      <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[color:var(--ocean-050)]">
         <div
-          className="h-full rounded-full bg-[color:var(--color-teal)]"
+          className="h-full rounded-full bg-[color:var(--ocean)]"
           style={{ width: `${readiness.overallPct}%` }}
         />
       </div>
 
       <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Group dot="🟢" title="Operational" names={readiness.operational} />
-        <Group dot="🟡" title="Partial" names={readiness.partial} />
+        <Group tone="verified" title="Operational" names={readiness.operational} />
+        <Group tone="review" title="Partial" names={readiness.partial} />
         {/*
           These two were inverted against KPI_STATE_META: awaiting
           credentials showed red while a genuinely offline provider showed
           black. Waiting on a credential is a configuration task, not an
           outage — the outage is the one that earns red.
         */}
-        <Group dot="🟡" title="Awaiting Credentials" names={readiness.awaitingConfiguration} />
-        <Group dot="🔴" title="Offline" names={readiness.offline} />
+        <Group tone="review" title="Awaiting Credentials" names={readiness.awaitingConfiguration} />
+        <Group tone="critical" title="Offline" names={readiness.offline} />
       </div>
 
       {exported ? (

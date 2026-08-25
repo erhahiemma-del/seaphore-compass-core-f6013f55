@@ -10,6 +10,8 @@
  * teardrop pointing north (0°), so MapLibre's `icon-rotate` can be bound
  * directly to the vessel's heading.
  */
+import { MAP_SYMBOLS } from "@/lib/map-symbols";
+
 import { RISK_COLORS } from "../constants";
 import {
   VESSEL_COLOR_KEYS,
@@ -38,7 +40,9 @@ export const VESSEL_SPRITE_COLORS: Readonly<Record<VesselColorKey, string>> = {
   medium: RISK_COLORS.MEDIUM,
   low: RISK_COLORS.LOW,
   clean: RISK_COLORS.CLEAN,
-  unknown: RISK_COLORS.UNKNOWN,
+  // An unassessed vessel is the baseline maritime green of the symbol
+  // vocabulary — visible and recognisable, without claiming a risk band.
+  unknown: MAP_SYMBOLS.vessel.color,
   /** Selection overrides risk colour. */
   selected: "#0E7C7B",
   /** Stale position — dark grey, deliberately recessive. */
@@ -77,7 +81,7 @@ function paint(ctx: CanvasRenderingContext2D, color: string): void {
  * which way it is facing.
  *
  * That split is why type and heading stay independent. Collapsing every
- * unknown-heading vessel into a plain disc would have thrown away a hull
+ * unknown-heading vessel into a plain dot would have thrown away a hull
  * type the provider did report — the mirror image of the bug that
  * started all this.
  */
@@ -90,12 +94,6 @@ function traceSilhouette(
   const mid = size / 2;
   ctx.beginPath();
 
-  if (silhouette === "disc") {
-    // A disc has no bow to blunt; both variants are the same circle.
-    ctx.arc(mid, mid, size * 0.28, 0, Math.PI * 2);
-    return;
-  }
-
   // Beam (half-width) and stern shape vary by family; the bow is shared.
   const geometry = {
     arrow: { beam: size * 0.43, stern: size - 4, notch: size - 8 },
@@ -103,6 +101,9 @@ function traceSilhouette(
     wedge: { beam: size * 0.3, stern: size - 3, notch: size - 7 },
     // Boxy, near-flat stern: container and vehicle carriers.
     block: { beam: size * 0.36, stern: size - 4, notch: size - 5 },
+    // Generic ship hull for a vessel whose type nobody reported. Still a
+    // recognisable craft — never a dot.
+    hull: { beam: size * 0.34, stern: size - 4, notch: size - 7 },
   }[silhouette];
 
   const bowY = 2;

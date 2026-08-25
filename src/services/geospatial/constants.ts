@@ -49,6 +49,13 @@ export const MAP_DEFAULTS = {
 export const BASEMAP_STYLE = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
 
 /**
+ * CARTO Positron — free, key-less light basemap for institutional overview
+ * surfaces such as Mission Control. Operational command maps keep the dark
+ * maritime default unless a caller explicitly opts into this style.
+ */
+export const LIGHT_BASEMAP_STYLE = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
+
+/**
  * How far the map is allowed to travel.
  *
  * The map was built around one area of responsibility, and `maxBounds`
@@ -228,9 +235,45 @@ export function zoomBandFor(zoom: number): ZoomBand {
  * would be exactly the kind of invented fact the heading contract exists
  * to prevent. Depth stays unavailable until GEBCO or EMODnet is wired.
  */
-export const MARITIME_PALETTE = {
+export interface MaritimePalette {
+  readonly ocean: string;
+  /**
+   * Inshore water — lagoons, lakes, deltas and river polygons.
+   *
+   * A second tone, not a depth ramp. It is keyed off the basemap's own
+   * water `class`, so the variation reports a distinction the source
+   * actually makes; it never implies bathymetry, which remains unwired.
+   */
+  readonly oceanShallow: string;
+  readonly land: string;
+  readonly landUrban: string;
+  /**
+   * 3D building extrusion fill.
+   *
+   * Part of the land family on purpose: a building is geography, not
+   * intelligence, and must never read as an entity. Declared on the
+   * palette interface because the map style is now palette-driven, so a
+   * theme that omitted it would fail to render extrusions rather than
+   * silently falling back.
+   */
+  readonly buildingExtrusion: string;
+  readonly coastline: string;
+  readonly waterway: string;
+  readonly seaLabel: string;
+  readonly placeLabel: string;
+  readonly labelHalo: string;
+  readonly boundary: string;
+  readonly graticule: string;
+  readonly voyageRelationship: string;
+  readonly voyageOrigin: string;
+  readonly voyageDestination: string;
+}
+
+export const MARITIME_PALETTE: MaritimePalette = {
   /** Open water. Flat by design — see above. */
   ocean: "#071B2E",
+  /** Inshore water, one step off the open sea. */
+  oceanShallow: "#0B2740",
   /** Landmass. Deliberately lighter than the sea so land reads as solid. */
   land: "#16202B",
   /** Built-up land, a shade above the base so cities read at close zoom. */
@@ -274,6 +317,49 @@ export const MARITIME_PALETTE = {
   voyageOrigin: "#5E8CC2",
   /** Voyage destination marker. */
   voyageDestination: "#B78BD9",
+} as const;
+export type MapStylePaletteName = "maritime" | "institutional";
+
+/**
+ * Institutional light equivalent of the maritime palette.
+ *
+ * Still a flat, non-measurement basemap treatment: water, land and labels are
+ * repainted for figure-ground fidelity only. No colour encodes bathymetry,
+ * traffic density or risk.
+ */
+export const LIGHT_MARITIME_PALETTE: MaritimePalette = {
+  /**
+   * Open water. A medium cyan-blue so the sea reads as the theatre and the
+   * land as context — still one flat tone at every location and zoom, because
+   * no bathymetry source is wired and a varying sea would be read as depth.
+   */
+  ocean: "#69AAE3",
+  /**
+   * Inshore water — the lighter secondary tone from the approved
+   * reference. Restrained, so the sea still reads as one body.
+   */
+  oceanShallow: "#7DB7E6",
+  land: "#FAFCFD",
+  landUrban: "#EFF3F7",
+  /*
+   * One step down from `landUrban`, not up.
+   *
+   * On the dark palette buildings sit slightly above the ground they
+   * stand on; on a light ground the same separation has to run the other
+   * way or the extrusion disappears into the page. Still inside the land
+   * family, and still the quietest thing the map draws.
+   */
+  buildingExtrusion: "#E2E9F0",
+  coastline: "#5A93BC",
+  waterway: "#7DB7E6",
+  seaLabel: "#3C6B84",
+  placeLabel: "#5C6E80",
+  labelHalo: "#FFFFFF",
+  boundary: "#C6D3DE",
+  graticule: "#7FA8C4",
+  voyageRelationship: "#7C6AA6",
+  voyageOrigin: "#317EA8",
+  voyageDestination: "#8D6DB3",
 } as const;
 
 /**

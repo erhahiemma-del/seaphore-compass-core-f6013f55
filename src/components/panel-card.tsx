@@ -21,7 +21,7 @@ export const PanelCard = React.forwardRef<HTMLDivElement, PanelCardProps>(
       <div
         ref={ref}
         className={cn(
-          "rounded-lg border shadow-card",
+          "rounded-lg border elev-1",
           variant === "dark"
             ? "bg-[color:var(--color-surface)] border-[color:var(--color-line)] text-foreground"
             : "bg-surface border-line text-foreground",

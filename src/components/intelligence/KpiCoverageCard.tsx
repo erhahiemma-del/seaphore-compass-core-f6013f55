@@ -23,24 +23,24 @@ import {
 import { cn } from "@/lib/utils";
 
 const TONE_CLASS: Record<string, string> = {
-  good: "text-[color:var(--color-teal)]",
-  warn: "text-amber-600",
-  bad: "text-red-600",
-  info: "text-sky-600",
-  neutral: "text-slate",
+  good: "text-[color:var(--status-verified)]",
+  warn: "text-[color:var(--status-review)]",
+  bad: "text-[color:var(--status-critical)]",
+  info: "text-[color:var(--status-active)]",
+  neutral: "text-[color:var(--status-inactive)]",
 };
 
 const PROVIDER_STATUS_LABEL: Record<ProviderCoverageStatus, string> = {
-  OPERATIONAL: "🟢 Operational",
-  PARTIAL: "🟡 Partial",
-  AWAITING_CREDENTIALS: "🟡 Awaiting credentials",
-  CREDENTIALS_INVALID: "🟠 Credentials invalid",
+  OPERATIONAL: "Operational",
+  PARTIAL: "Partial",
+  AWAITING_CREDENTIALS: "Awaiting credentials",
+  CREDENTIALS_INVALID: "Credentials invalid",
 
-  RATE_LIMITED: "🟠 Rate limited",
+  RATE_LIMITED: "Rate limited",
   // A provider we depend on that stopped answering. Genuine fault.
-  OFFLINE: "🔴 Offline",
+  OFFLINE: "Offline",
   // Nobody ever registered it. Not a fault, so not red.
-  NOT_REGISTERED: "○ Not registered",
+  NOT_REGISTERED: "Not registered",
 };
 
 function when(iso: string | null): string {
@@ -65,7 +65,7 @@ export function KpiCoverageCard({
   const isNumber = kpi.value !== null;
 
   return (
-    <div className="flex flex-col rounded-lg border border-line bg-surface p-3 text-left shadow-card motion-fast hover:border-[color:var(--color-teal)]">
+    <div className="flex flex-col rounded-lg border border-line bg-surface p-3 text-left elev-1 motion-fast hover:border-[color:var(--ocean)]/60">
       <button
         type="button"
         onClick={() => (onOpen ? onOpen() : setOpen((v) => !v))}
@@ -73,30 +73,40 @@ export function KpiCoverageCard({
         title={kpi.stateDetail}
       >
         <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[color:var(--color-teal)]/10 text-[color:var(--color-teal)]">
+          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[color:var(--ocean-050)] text-[color:var(--ocean)]">
             <Icon className="h-4 w-4" />
           </span>
           <span className="type-label text-slate">{kpi.title}</span>
         </div>
 
-        <div
-          className={cn(
-            "mt-2 tabular-nums",
-            isNumber
-              ? "type-mono text-[22px] font-bold text-foreground"
-              : cn("text-[14px] font-bold", tone),
-          )}
-        >
-          <span aria-hidden className="mr-1">
-            {meta.dot}
+        {/*
+          Geometry is constant. A KPI card is a KPI card whether or not a
+          provider is connected: the value slot, trend slot, descriptor and
+          footer always render. Missing data changes what the slots SAY
+          ("—" plus the named coverage state), never whether they exist.
+        */}
+        <div className="mt-2 flex items-baseline gap-2">
+          <span className="type-mono text-[22px] font-bold tabular-nums text-foreground">
+            {isNumber ? kpi.display : "—"}
           </span>
-          {kpi.display}
+          <span
+            className={cn("text-[12px] font-bold tabular-nums", isNumber ? "text-slate" : tone)}
+            title={isNumber ? "No trend series is available for this signal." : kpi.stateDetail}
+          >
+            —
+          </span>
         </div>
         <div className="mt-0.5 text-[11px] font-semibold text-slate">
           {isNumber ? kpi.descriptor : kpi.stateDetail}
         </div>
         <div className="mt-2 flex items-center gap-2">
-          {isNumber ? <ConfidenceChip tier={kpi.confidence as never} size={9} /> : null}
+          {isNumber ? (
+            <ConfidenceChip tier={kpi.confidence as never} size={9} />
+          ) : (
+            <span className={cn("text-[10px] font-bold uppercase tracking-[0.06em]", tone)}>
+              {kpi.stateLabel}
+            </span>
+          )}
           <span className="text-[10px] font-semibold text-slate">Coverage {kpi.coveragePct}%</span>
         </div>
       </button>
@@ -105,7 +115,7 @@ export function KpiCoverageCard({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="mt-2 inline-flex items-center gap-1 self-start text-[10px] font-semibold text-[color:var(--color-teal)]"
+        className="mt-2 inline-flex items-center gap-1 self-start text-[10px] font-semibold text-[color:var(--ocean)]"
       >
         Coverage details
         <ChevronDown className={cn("h-3 w-3 motion-fast", open && "rotate-180")} />
@@ -125,7 +135,11 @@ export function KpiCoverageCard({
               <div key={key} className="flex items-center justify-between gap-2">
                 <span>{COVERAGE_CHECK_LABELS[key]}</span>
                 <span
-                  className={kpi.checks[key] ? "text-[color:var(--color-teal)]" : "text-red-600"}
+                  className={
+                    kpi.checks[key]
+                      ? "text-[color:var(--ocean)]"
+                      : "text-[color:var(--status-critical)]"
+                  }
                 >
                   {kpi.checks[key] ? "✓" : "✗"}
                 </span>
@@ -136,7 +150,9 @@ export function KpiCoverageCard({
           <div className="space-y-1">
             <div className="type-label text-slate">Providers</div>
             {kpi.providers.length === 0 ? (
-              <div className="text-red-600">No provider declares this capability.</div>
+              <div className="text-[color:var(--status-critical)]">
+                No provider declares this capability.
+              </div>
             ) : (
               kpi.providers.map((p) => (
                 <div key={p.providerId} className="rounded border border-line p-1.5">
@@ -150,7 +166,9 @@ export function KpiCoverageCard({
                   {p.credentialEnv.length > 0 ? (
                     <div>Credentials: {p.credentialEnv.join(", ")}</div>
                   ) : null}
-                  {p.lastError ? <div className="text-red-600">Error: {p.lastError}</div> : null}
+                  {p.lastError ? (
+                    <div className="text-[color:var(--status-critical)]">Error: {p.lastError}</div>
+                  ) : null}
                 </div>
               ))
             )}
@@ -158,7 +176,7 @@ export function KpiCoverageCard({
 
           <Link
             to={kpi.providerCatalogHref}
-            className="inline-flex items-center gap-1 font-semibold text-[color:var(--color-teal)]"
+            className="inline-flex items-center gap-1 font-semibold text-[color:var(--ocean)]"
           >
             Open Evidence Provider Catalog
             <ExternalLink className="h-3 w-3" />

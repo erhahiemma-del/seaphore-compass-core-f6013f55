@@ -34,6 +34,7 @@ import { ConfidenceChip, type ConfidenceTier } from "@/components/intelligence/C
 import { ConfidenceLegend } from "@/components/confidence-legend";
 import { RiskPill } from "@/components/intelligence/RiskPill";
 import { MapCanvas, type VesselFeedState } from "@/features/maritime/MapCanvas";
+import { MapControlStack, MapLayerChips, MapLegendBar } from "@/features/maritime/MapChrome";
 import { resolveMapDataState, type MapDataStateResult, type Vessel } from "@/services/geospatial";
 import { CommandSurfaceHost } from "@/features/command/CommandSurfaceHost";
 import { useHandoffNavigate } from "@/lib/nav-context";
@@ -596,6 +597,24 @@ function MaritimePicturePanel() {
           officer opens Maritime Command.
         */}
         <MapCanvas mode="overview" onVesselsChanged={handleVessels} />
+
+        {/*
+          Map chrome adopted from main, over this branch's map.
+
+          Layer chips, the camera stack and the legend all drive the same
+          `sgs` singleton, so they compose with officer-layer precedence
+          rather than competing with it: the chips *are* the officer's
+          choice, which the precedence model already treats as
+          authoritative over any mode recommendation. The 3D toggle sets
+          pitch 50, the same ceiling the adaptive perspective uses, so
+          manual and automatic agree on the limit instead of fighting.
+
+          Not a second map: one canvas, one service, one camera.
+        */}
+        <MapLayerChips className="absolute left-3 top-3 z-10" />
+        <MapControlStack className="absolute right-3 top-3 z-10" />
+        <MapLegendBar className="absolute bottom-3 left-3 z-10" />
+
         {dataState.state !== "LIVE" ? <MaritimeDataNotice state={dataState} /> : null}
       </div>
     </PanelCard>
