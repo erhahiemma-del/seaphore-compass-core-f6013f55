@@ -64,23 +64,85 @@ export class RiskModuleRegistryError extends Error {
   }
 }
 
+/**
+ * What differs between two declarations of the same module id, or null
+ * when they declare the same module.
+ *
+ * Returns a description rather than a boolean so a genuine conflict says
+ * which field disagrees — "already registered" alone sends whoever hits
+ * it hunting through the whole definition.
+ */
+function describeModuleDifference(a: RiskModule, b: RiskModule): string | null {
+  if (a === b) return null;
+
+  const fields: readonly (keyof RiskModule)[] = ["label", "description", "status", "pendingReason"];
+  for (const field of fields) {
+    if (a[field] !== b[field]) {
+      return `${String(field)}: "${String(a[field])}" vs "${String(b[field])}"`;
+    }
+  }
+
+  const before = [...a.requires].join(", ");
+  const after = [...b.requires].join(", ");
+  if (before !== after) return `requires: [${before}] vs [${after}]`;
+
+  return null;
+}
+
 export class RiskModuleRegistry {
   private readonly modules = new Map<RiskModuleId, RiskModule>();
 
   /**
-   * Add a module. Throws on a duplicate id, and on a `pending-source`
-   * module with no reason — an unexplained absence is exactly what this
-   * registry exists to prevent.
+   * Add a module.
+   *
+   * Idempotent by *definition*, not by id. Registering the same module
+   * again is a no-op; registering a different module under a taken id is
+   * an error naming exactly what differs.
+   *
+   * ## Why re-registration is normal rather than a bug
+   *
+   * A module graph can be evaluated more than once in one realm — Vite
+   * replaces a module on hot update, and the client and SSR graphs can
+   * share a process. Each evaluation produces a *new object* with
+   * identical content, so object identity alone would report a conflict
+   * on every hot reload, and an id-only check would silently accept a
+   * genuinely different module that happened to reuse an id.
+   *
+   * So equality is structural, over the declarative fields only.
+   * `evaluate` is deliberately excluded: a re-evaluated module always has
+   * a new function identity, and comparing it would make every hot reload
+   * a conflict — which is the failure this replaced.
+   *
+   * The consequence worth stating plainly: this cannot detect a change
+   * confined to `evaluate`'s body. A module whose logic changed but whose
+   * declaration did not will keep the already-registered version until
+   * the page reloads. That is the correct trade for a registry whose job
+   * is to catalogue declarations, and it is a hot-reload staleness
+   * question rather than a correctness one in production, where modules
+   * are registered exactly once.
    */
   register(module: RiskModule): this {
-    if (this.modules.has(module.id)) {
-      throw new RiskModuleRegistryError(`Module "${module.id}" is already registered`);
-    }
     if (module.status === "pending-source" && !module.pendingReason) {
       throw new RiskModuleRegistryError(
         `Module "${module.id}" is pending-source and must state a pendingReason`,
       );
     }
+
+    const existing = this.modules.get(module.id);
+    if (existing) {
+      const difference = describeModuleDifference(existing, module);
+      if (difference) {
+        throw new RiskModuleRegistryError(
+          `Module "${module.id}" is already registered with a different definition (${difference}). ` +
+            `Registration is idempotent for an identical module; replacing one is not supported — ` +
+            `unregister it explicitly if that is the intent.`,
+        );
+      }
+      // Same declaration, evaluated twice. Keep the first: swapping in an
+      // identical replacement would churn identity for no gain.
+      return this;
+    }
+
     this.modules.set(module.id, module);
     return this;
   }
