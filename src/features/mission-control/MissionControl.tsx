@@ -113,8 +113,9 @@ export function MissionControl() {
   return (
     <AppShell title="Mission Control" subtitle="National maritime operating picture" mode="light">
       <div className="mx-auto flex max-w-[1760px] flex-col gap-3.5 px-5 py-4">
-        {/* MARITIME COMMAND BAR — search dominant, quick actions beside it. */}
-        <div className="grid gap-3.5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] xl:items-stretch">
+        {/* MARITIME COMMAND BAR — one horizontal command region: search left,
+            quick actions right, inside a single elevated surface. */}
+        <div className="grid gap-x-5 gap-y-3.5 rounded-[15px] border border-line bg-surface p-3.5 elev-1 xl:grid-cols-[minmax(0,53fr)_minmax(0,47fr)] xl:items-start">
           <MissionCommandBar
             fromRoute="/"
             pinnedMode={pinnedMode}
@@ -126,6 +127,7 @@ export function MissionControl() {
             <QuickActions />
           </div>
         </div>
+
 
         {/* MISSION MODE — the existing intelligence-mode engine, own band. */}
         <div className={cn("rounded-lg border border-line bg-surface px-3.5 py-2.5 elev-1", recede)}>
