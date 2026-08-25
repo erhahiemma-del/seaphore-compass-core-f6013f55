@@ -79,29 +79,37 @@ export function KpiCoverageCard({
           <span className="type-label text-slate">{kpi.title}</span>
         </div>
 
-        <div
-          className={cn(
-            "mt-2 tabular-nums",
-            isNumber
-              ? "type-mono text-[22px] font-bold text-foreground"
-              : cn("text-[14px] font-bold", tone),
-          )}
-        >
-          {isNumber ? null : (
-            <span
-              aria-hidden
-              className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full align-middle bg-current"
-            />
-          )}
-          {kpi.display}
+        {/*
+          Geometry is constant. A KPI card is a KPI card whether or not a
+          provider is connected: the value slot, trend slot, descriptor and
+          footer always render. Missing data changes what the slots SAY
+          ("—" plus the named coverage state), never whether they exist.
+        */}
+        <div className="mt-2 flex items-baseline gap-2">
+          <span className="type-mono text-[22px] font-bold tabular-nums text-foreground">
+            {isNumber ? kpi.display : "—"}
+          </span>
+          <span
+            className={cn("text-[12px] font-bold tabular-nums", isNumber ? "text-slate" : tone)}
+            title={isNumber ? "No trend series is available for this signal." : kpi.stateDetail}
+          >
+            —
+          </span>
         </div>
         <div className="mt-0.5 text-[11px] font-semibold text-slate">
           {isNumber ? kpi.descriptor : kpi.stateDetail}
         </div>
         <div className="mt-2 flex items-center gap-2">
-          {isNumber ? <ConfidenceChip tier={kpi.confidence as never} size={9} /> : null}
+          {isNumber ? (
+            <ConfidenceChip tier={kpi.confidence as never} size={9} />
+          ) : (
+            <span className={cn("text-[10px] font-bold uppercase tracking-[0.06em]", tone)}>
+              {kpi.stateLabel}
+            </span>
+          )}
           <span className="text-[10px] font-semibold text-slate">Coverage {kpi.coveragePct}%</span>
         </div>
+
       </button>
 
       <button
