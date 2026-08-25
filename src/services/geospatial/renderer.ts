@@ -171,6 +171,13 @@ export interface MapRenderer {
   flyTo?(center: LonLat, zoom?: number): void;
 
   /**
+   * Project a geographic position to container pixels, for anchoring DOM
+   * overlays (contextual popups) to map features. Optional: a renderer
+   * that cannot project causes callers to fall back to a fixed corner.
+   */
+  project?(position: LonLat): { readonly x: number; readonly y: number } | null;
+
+  /**
    * Currently visible bounds, for deciding whether a target is already on
    * screen. Optional like the other camera helpers: a renderer that
    * cannot report bounds simply causes the camera policy to fall back on

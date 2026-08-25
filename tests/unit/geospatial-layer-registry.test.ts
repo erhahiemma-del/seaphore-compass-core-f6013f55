@@ -190,6 +190,8 @@ describe("default layer catalogue", () => {
     expect(registry.defaultActiveLayers()).toEqual([
       "vessels",
       "ports",
+      // Verified anchorages are estate, like ports: on by default.
+      "anchorages",
       "eezBoundary",
       "graticule",
     ]);

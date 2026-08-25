@@ -17,7 +17,7 @@ What feeds the Live Command Map, and what does not.
 | CARTO Dark Matter (OSM-based)         | **CONNECTED**                      | basemap                |
 | Stadia Alidade Smooth Dark            | **CONNECTED** (fallback only)      | basemap on style error |
 | `public/geojson/nigeria-eez.geojson`  | **CONNECTED** (static, simplified) | `eezBoundary`          |
-| `public/geojson/nimasa-ports.geojson` | **CONNECTED** (static)             | `ports`                |
+| `src/services/geospatial/constants.ts` (port + anchorage registry) | **CONNECTED** (static reference) | `ports`, `anchorages` |
 
 ### Vessel positions — NOT CONNECTED
 

@@ -208,9 +208,9 @@ export function PortOpsCentre() {
 
             {/*
               The shared MapLibre engine under a ports lens, replacing a
-              mock-provider map. Real port positions come from
-              nimasa-ports.geojson; selection flows through the same SGS
-              as every other surface.
+              mock-provider map. Port and anchorage positions come from the
+              single geospatial asset registry; selection flows through the
+              same SGS as every other surface.
             */}
             <Section title="Port Estate & Approaches (POR-1)">
               <div className="relative h-[340px] overflow-hidden rounded-lg border border-line">

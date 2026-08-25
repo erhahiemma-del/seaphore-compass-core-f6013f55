@@ -40,6 +40,11 @@ export {
   type MapScopeId,
   NIGERIA_EEZ_BBOX,
   NIMASA_PORTS,
+  NIGERIAN_ANCHORAGES,
+  ANCHORAGE_REGISTRY_IS_EXHAUSTIVE,
+  type AnchorageArea,
+  type AssetVerification,
+  type PortTier,
   PIXELS_PER_KM,
   RISK_COLORS,
   RISK_OPACITY,
@@ -49,6 +54,16 @@ export {
   type NimasaPort,
   type NimasaPortCode,
 } from "./constants";
+
+export {
+  anchorageFeatureCollection,
+  anchoragesForPort,
+  distanceKm,
+  findAnchorage,
+  findPort,
+  portFeatureCollection,
+  type AssetFeatureCollection,
+} from "./asset-features";
 
 export {
   applyMaritimeStyle,

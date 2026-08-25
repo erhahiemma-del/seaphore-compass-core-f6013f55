@@ -448,7 +448,7 @@ export const DOMAIN_PRESETS = {
   /** Where cargo moves through the port system. */
   cargo: ["ports", "eezBoundary", "graticule"],
   /** The port estate itself, and the traffic around it. */
-  ports: ["ports", "eezBoundary", "vessels", "graticule"],
+  ports: ["ports", "anchorages", "eezBoundary", "vessels", "graticule"],
 } as const satisfies Record<string, readonly string[]>;
 
 export type MapDomain = keyof typeof DOMAIN_PRESETS;
@@ -502,11 +502,12 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
   {
     id: "ports",
     label: "Ports",
-    description: "The five NIMASA ports with anchorage extents.",
+    description: "The seven NPA port complexes, with indicative anchorage extents.",
     group: "PORTS_INFRASTRUCTURE",
     renderLayerIds: [
       LAYER_IDS.portAnchorage,
       LAYER_IDS.portAnchorageSymbol,
+      LAYER_IDS.portHalo,
       LAYER_IDS.ports,
       LAYER_IDS.portLabels,
     ],
@@ -514,6 +515,22 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     status: "ready",
     order: 20,
   },
+  {
+    id: "anchorages",
+    label: "Anchorages",
+    description:
+      "Verified anchorage and pilotage waiting areas. Not an exhaustive national list — occupancy is never asserted.",
+    group: "PORTS_INFRASTRUCTURE",
+    renderLayerIds: [
+      LAYER_IDS.anchorageExtent,
+      LAYER_IDS.anchorages,
+      LAYER_IDS.anchorageLabels,
+    ],
+    defaultVisible: true,
+    status: "ready",
+    order: 21,
+  },
+
   {
     id: "eezBoundary",
     label: "EEZ Boundary",

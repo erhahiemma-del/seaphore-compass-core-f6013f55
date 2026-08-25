@@ -43,6 +43,9 @@ import type { MapEventBus } from "../event-bus";
 import { buildVesselSprites } from "../icons/vessel-arrow";
 import { buildSymbolSprites, symbolSpriteId } from "../icons/symbol-sprites";
 import { MAP_SYMBOLS } from "@/lib/map-symbols";
+import { anchorageFeatureCollection, portFeatureCollection } from "../asset-features";
+// Type-only: erased at build, so it adds nothing to the SSR graph.
+type GeoJsonFeatureCollection = import("geojson").FeatureCollection;
 import {
   applyMaritimeStyle,
   COASTLINE_LAYER_ID,
@@ -65,6 +68,7 @@ import type { VesselFeature } from "../vessel";
 const SOURCE_IDS = {
   vessels: "vessels",
   ports: "ports",
+  anchorages: "anchorages",
   incidentReports: "incident-reports",
   weatherAlerts: "weather-alerts",
   eez: "nigeria-eez",
@@ -76,7 +80,6 @@ const SOURCE_IDS = {
 /** Static asset paths. */
 const ASSETS = {
   eez: "/geojson/nigeria-eez.geojson",
-  ports: "/geojson/nimasa-ports.geojson",
 } as const;
 
 /** Fallback basemap when the primary style fails to load. */
@@ -99,6 +102,10 @@ export const INSTALLED_RENDER_LAYERS: readonly string[] = [
   LAYER_IDS.eezBoundary,
   LAYER_IDS.portAnchorage,
   LAYER_IDS.portAnchorageSymbol,
+  LAYER_IDS.anchorageExtent,
+  LAYER_IDS.anchorages,
+  LAYER_IDS.anchorageLabels,
+  LAYER_IDS.portHalo,
   LAYER_IDS.ports,
   LAYER_IDS.portLabels,
   LAYER_IDS.riskHeatmap,
@@ -437,6 +444,17 @@ export class MapLibreRenderer implements MapRenderer {
     );
   }
 
+  /**
+   * Where a geographic position currently sits on screen, in container
+   * pixels. Null before mount — a caller must then anchor elsewhere
+   * rather than draw at (0, 0).
+   */
+  project(position: LonLat): { readonly x: number; readonly y: number } | null {
+    if (!this.map) return null;
+    const point = this.map.project([position[0], position[1]]);
+    return { x: point.x, y: point.y };
+  }
+
   getVisibleBounds(): BoundingBox | null {
     const bounds = this.map?.getBounds();
     if (!bounds) return null;
@@ -720,7 +738,18 @@ export class MapLibreRenderer implements MapRenderer {
     });
 
     // ── Ports ──
-    map.addSource(SOURCE_IDS.ports, { type: "geojson", data: ASSETS.ports });
+    map.addSource(SOURCE_IDS.ports, {
+      type: "geojson",
+      // Built from the single asset registry, never fetched: a second
+      // copy of the port estate is how two ports with one name appear.
+      data: portFeatureCollection() as unknown as GeoJsonFeatureCollection,
+      promoteId: "locode",
+    });
+    map.addSource(SOURCE_IDS.anchorages, {
+      type: "geojson",
+      data: anchorageFeatureCollection() as unknown as GeoJsonFeatureCollection,
+      promoteId: "anchorageId",
+    });
     /*
      * Anchorage extent at its real radius.
      *
@@ -767,16 +796,99 @@ export class MapLibreRenderer implements MapRenderer {
       id: LAYER_IDS.portAnchorageSymbol,
       type: "symbol",
       source: SOURCE_IDS.ports,
-      minzoom: 7,
+      minzoom: 9,
       layout: {
         "icon-image": symbolSpriteId("anchorage"),
-        "icon-size": ["interpolate", ["linear"], ["zoom"], 7, 0.48, 10, 0.7, 14, 1],
+        "icon-size": ["interpolate", ["linear"], ["zoom"], 9, 0.4, 12, 0.55, 14, 0.7],
         "icon-offset": [0, 1.35],
         "icon-allow-overlap": true,
         "icon-ignore-placement": true,
       },
       paint: {
-        "icon-opacity": ["interpolate", ["linear"], ["zoom"], 7, 0.65, 10, 0.9],
+        "icon-opacity": ["interpolate", ["linear"], ["zoom"], 9, 0.5, 12, 0.8],
+      },
+    });
+
+    /*
+     * ── Anchorages ──
+     *
+     * A distinct registry, not a property of a port: an anchorage is its
+     * own operational object with its own district and its own source
+     * state. Its extent radius is indicative — the registry says so —
+     * so it is dashed and never filled.
+     */
+    map.addLayer({
+      id: LAYER_IDS.anchorageExtent,
+      type: "circle",
+      source: SOURCE_IDS.anchorages,
+      paint: {
+        "circle-radius": [
+          "interpolate",
+          ["exponential", 2],
+          ["zoom"],
+          PIXELS_PER_KM.minZoom,
+          ["*", ["coalesce", ["get", "radiusKm"], 0], PIXELS_PER_KM.minZoomPixels],
+          PIXELS_PER_KM.maxZoom,
+          ["*", ["coalesce", ["get", "radiusKm"], 0], PIXELS_PER_KM.maxZoomPixels],
+        ],
+        "circle-color": MAP_SYMBOLS.anchorage.color,
+        "circle-opacity": 0.06,
+        "circle-stroke-color": MAP_SYMBOLS.anchorage.color,
+        "circle-stroke-width": 1,
+        "circle-stroke-opacity": ["interpolate", ["linear"], ["zoom"], 6, 0.25, 9, 0.5, 13, 0.65],
+      },
+    });
+    map.addLayer({
+      id: LAYER_IDS.anchorages,
+      type: "symbol",
+      source: SOURCE_IDS.anchorages,
+      layout: {
+        "icon-image": symbolSpriteId("anchorage"),
+        // Recognisable at national zoom, and always smaller than a major
+        // port so the hierarchy reads without a legend.
+        "icon-size": ["interpolate", ["linear"], ["zoom"], 4, 0.5, 6, 0.62, 10, 0.8, 14, 1],
+        "icon-allow-overlap": true,
+      },
+    });
+    map.addLayer({
+      id: LAYER_IDS.anchorageLabels,
+      type: "symbol",
+      source: SOURCE_IDS.anchorages,
+      minzoom: 7,
+      layout: {
+        "text-field": ["get", "name"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 7, 9.5, 12, 11.5],
+        "text-anchor": "top",
+        "text-offset": [0, 1],
+        "text-allow-overlap": false,
+        "text-optional": true,
+      },
+      paint: {
+        "text-color": MAP_SYMBOLS.anchorage.color,
+        "text-halo-color": "#FFFFFF",
+        "text-halo-width": 1.4,
+      },
+    });
+
+    /*
+     * A pale disc beneath a major port symbol.
+     *
+     * Elevation only — it lifts the seven NPA complexes off the water so
+     * they stay findable inside dense traffic. It encodes no measurement:
+     * every major port gets the same disc.
+     */
+    map.addLayer({
+      id: LAYER_IDS.portHalo,
+      type: "circle",
+      source: SOURCE_IDS.ports,
+      filter: ["==", ["get", "tier"], "major"],
+      paint: {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 9, 7, 13, 12, 18],
+        "circle-color": MAP_SYMBOLS.port.color,
+        "circle-opacity": 0.12,
+        "circle-stroke-color": MAP_SYMBOLS.port.color,
+        "circle-stroke-width": 1.1,
+        "circle-stroke-opacity": 0.55,
       },
     });
     map.addLayer({
@@ -786,36 +898,30 @@ export class MapLibreRenderer implements MapRenderer {
       layout: {
         "icon-image": symbolSpriteId("port"),
         /*
-         * Scale carries berth count — a reference figure from the source
-         * file, which states it is "not live capacity". It is a static
-         * property of the estate, like a runway count, so it may inform
-         * size; it must never be read as throughput or activity, which
-         * is why the legend says so explicitly.
+         * Size carries tier, not activity.
+         *
+         * A major NPA complex draws larger than a secondary terminal at
+         * every zoom, so the national picture keeps its hierarchy. Berth
+         * count no longer scales the symbol: it is a reference figure and
+         * a size difference read as throughput.
          */
         "icon-size": [
           "interpolate",
           ["linear"],
           ["zoom"],
-          5,
-          [
-            "*",
-            0.5,
-            ["interpolate", ["linear"], ["coalesce", ["get", "berths"], 5], 5, 0.85, 14, 1.25],
-          ],
-          9,
-          [
-            "*",
-            0.85,
-            ["interpolate", ["linear"], ["coalesce", ["get", "berths"], 5], 5, 0.85, 14, 1.25],
-          ],
+          4,
+          ["case", ["==", ["get", "tier"], "major"], 0.62, 0.42],
+          7,
+          ["case", ["==", ["get", "tier"], "major"], 0.8, 0.55],
+          10,
+          ["case", ["==", ["get", "tier"], "major"], 1, 0.7],
           14,
-          [
-            "*",
-            1.35,
-            ["interpolate", ["linear"], ["coalesce", ["get", "berths"], 5], 5, 0.85, 14, 1.25],
-          ],
+          ["case", ["==", ["get", "tier"], "major"], 1.25, 0.9],
         ],
+        // Never decluttered away: an NPA port must not disappear because
+        // vessels are dense around it.
         "icon-allow-overlap": true,
+        "icon-ignore-placement": true,
       },
     });
     map.addLayer({
@@ -825,17 +931,22 @@ export class MapLibreRenderer implements MapRenderer {
       layout: {
         // Abbreviation at strategic zoom, full name once there is room.
         "text-field": ["step", ["zoom"], ["get", "shortName"], 9, ["get", "name"]],
-        "text-size": ["interpolate", ["linear"], ["zoom"], 5, 9.5, 9, 11, 14, 13],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 5, 10, 9, 11.5, 14, 13],
         "text-anchor": "top",
-        "text-offset": [0, 0.9],
-        "text-allow-overlap": false,
+        "text-offset": [0, 1.05],
+        // Major ports keep their label under any density; secondary
+        // terminals yield, which is what decluttering is for.
+        "text-allow-overlap": ["==", ["get", "tier"], "major"],
+        "text-ignore-placement": ["==", ["get", "tier"], "major"],
+        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
       },
       paint: {
         "text-color": MAP_SYMBOLS.port.color,
-        "text-halo-color": MARITIME_PALETTE.labelHalo,
-        "text-halo-width": 1.5,
+        "text-halo-color": "#FFFFFF",
+        "text-halo-width": 1.6,
       },
     });
+
 
     // ── Vessels ──
     // `promoteId` binds MapLibre's feature id to the IMO, which is what makes
@@ -1070,7 +1181,9 @@ export class MapLibreRenderer implements MapRenderer {
     // A bare-basemap click means "deselect". Registering it after the layer
     // handler lets MapLibre deliver the layer click first.
     map.on("click", (event: MapLibreMouseEvent) => {
-      const hits = map.queryRenderedFeatures(event.point, { layers: [LAYER_IDS.vessels] });
+      const hits = map.queryRenderedFeatures(event.point, {
+        layers: [LAYER_IDS.vessels, LAYER_IDS.ports, LAYER_IDS.anchorages],
+      });
       if (hits.length > 0) return;
       this.bus?.emit("map:click", { position: [event.lngLat.lng, event.lngLat.lat] });
     });
@@ -1109,12 +1222,42 @@ export class MapLibreRenderer implements MapRenderer {
       map.getCanvas().style.cursor = "";
     });
 
-    map.on("mouseenter", LAYER_IDS.ports, () => {
-      map.getCanvas().style.cursor = "pointer";
+    /*
+     * Ports and anchorages are selectable, each on its own channel.
+     *
+     * A port and an anchorage are different objects with different
+     * registries; one event carrying a "kind" flag would be the loose
+     * tag the selection union exists to avoid.
+     */
+    map.on("click", LAYER_IDS.ports, (event: MapLibreLayerMouseEvent) => {
+      const feature = event.features?.[0];
+      const locode = feature?.properties?.locode;
+      if (typeof locode !== "string" || locode === "") return;
+      this.bus?.emit("port:click", {
+        portId: locode,
+        position: [event.lngLat.lng, event.lngLat.lat],
+      });
     });
-    map.on("mouseleave", LAYER_IDS.ports, () => {
-      map.getCanvas().style.cursor = "";
+    map.on("click", LAYER_IDS.anchorages, (event: MapLibreLayerMouseEvent) => {
+      const feature = event.features?.[0];
+      const anchorageId = feature?.properties?.anchorageId;
+      if (typeof anchorageId !== "string" || anchorageId === "") return;
+      const portId = feature?.properties?.portId;
+      this.bus?.emit("anchorage:click", {
+        anchorageId,
+        portId: typeof portId === "string" && portId !== "" ? portId : null,
+        position: [event.lngLat.lng, event.lngLat.lat],
+      });
     });
+
+    for (const layer of [LAYER_IDS.ports, LAYER_IDS.anchorages] as const) {
+      map.on("mouseenter", layer, () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", layer, () => {
+        map.getCanvas().style.cursor = "";
+      });
+    }
 
     // Hover is debounced by TIMING.hoverDelayMs so sweeping the cursor across
     // dense traffic does not flash a popup per vessel.

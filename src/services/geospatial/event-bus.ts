@@ -92,12 +92,28 @@ export interface VoyageClickEvent {
   readonly voyageNumber: string | null;
 }
 
+/** A port symbol was clicked. Carries identity, never the port record. */
+export interface PortClickEvent {
+  readonly portId: string;
+  readonly position: LonLat;
+}
+
+/** An anchorage symbol was clicked. */
+export interface AnchorageClickEvent {
+  readonly anchorageId: string;
+  /** Port the anchorage serves, when the registry records one. */
+  readonly portId: string | null;
+  readonly position: LonLat;
+}
+
 export interface MapEventMap {
   "map:ready": MapReadyEvent;
   "map:move": MapMoveEvent;
   "map:click": MapClickEvent;
   "vessel:click": VesselClickEvent;
   "voyage:click": VoyageClickEvent;
+  "port:click": PortClickEvent;
+  "anchorage:click": AnchorageClickEvent;
   "vessel:hover": VesselHoverEvent;
   "layer:visibility": LayerVisibilityEvent;
   "vessels:applied": VesselsAppliedEvent;
