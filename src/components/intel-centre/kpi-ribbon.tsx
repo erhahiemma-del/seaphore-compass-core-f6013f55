@@ -85,11 +85,16 @@ export function Sparkline({
   trend = "flat",
   width = 60,
   height = 18,
+  stroke: strokeOverride,
+  opacity = 1,
 }: {
   data: number[];
   trend?: "up" | "down" | "flat";
   width?: number;
   height?: number;
+  /** Semantic stroke colour; falls back to the trend-derived colour. */
+  stroke?: string;
+  opacity?: number;
 }) {
   const min = Math.min(...data);
   const max = Math.max(...data);
@@ -98,7 +103,9 @@ export function Sparkline({
   const points = data
     .map((v, i) => `${(i * step).toFixed(1)},${(height - ((v - min) / range) * height).toFixed(1)}`)
     .join(" ");
-  const stroke = trend === "up" ? "#C0392B" : trend === "down" ? "#1E6B3A" : "#5A6B7B";
+  const stroke =
+    strokeOverride ??
+    (trend === "up" ? "#C0392B" : trend === "down" ? "#1E6B3A" : "#5A6B7B");
   return (
     <svg width={width} height={height} className="shrink-0">
       <polyline
