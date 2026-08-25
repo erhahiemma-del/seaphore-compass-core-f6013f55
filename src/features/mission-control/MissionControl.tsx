@@ -100,6 +100,8 @@ const RIBBON_ICONS: Record<string, LucideIcon> = {
 };
 
 export function MissionControl() {
+  const navigate = useNavigate();
+  const handoff = useHandoffNavigate();
   const focused = useFocusSubjectStore((s) => s.subject);
   const recede = focused ? "is-receded" : undefined;
 
@@ -128,32 +130,56 @@ export function MissionControl() {
   const complianceProjection = projectComplianceWatchlist({ uipId });
   const briefingsProjection = projectRecentBriefings({ uipId });
 
+  const openEntity = useCallback(
+    (id: string) =>
+      handoff({
+        target: `/entity/${id}`,
+        context: { entityId: id, fromStage: "Monitor", fromRoute: "/" },
+      }),
+    [handoff],
+  );
+
   return (
     <AppShell title="Mission Control" subtitle="National maritime operating picture" mode="light">
-      <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-6 py-5">
-        <MissionCommandBar />
-        <div className={recede}>
-          <Ribbon />
+      <div className="mx-auto flex max-w-[1600px] flex-col gap-5 px-6 py-5">
+        {/* SEARCH — the primary control, with secondary quick actions beside it. */}
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
+          <MissionCommandBar fromRoute="/" />
+          <div className={recede}>
+            <QuickActions />
+          </div>
         </div>
+
+        {/* ACT — the strongest decision surface. */}
+        <NextBestAction projection={prioritiesProjection} onAct={openEntity} />
+
+        {/* ORIENT + PRIORITISE — the geographic operating surface and the queue. */}
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,2.6fr)_minmax(0,1fr)]">
+          <MaritimePicturePanel />
+          <PriorityQueuePanel
+            projection={prioritiesProjection}
+            onOpen={openEntity}
+            className="h-[560px]"
+          />
+        </div>
+
+        {/* UNDERSTAND — tiered signals, emphasis by capability, all still present. */}
+        <div className={recede}>
+          <KpiRibbon
+            coverage={coverage}
+            onOpen={(target) =>
+              handoff({ target, context: { fromStage: "Monitor", fromRoute: "/" } })
+            }
+          />
+        </div>
+
         <div className={recede}>
           <ConfidenceLegend />
         </div>
 
-        {/*
-          Lovable's adaptive focus layout, driving Claude's projection
-          panels. The grid narrows and swaps the feed for the FocusRail
-          when a subject is focused; the map and feed themselves remain
-          the truth-layer versions, so what the layout reveals is still
-          only what a provider actually reported.
-        */}
-        <div
-          className={cn(
-            "grid gap-4",
-            focused ? "xl:grid-cols-[1.5fr_320px]" : "lg:grid-cols-[1.55fr_1fr]",
-          )}
-        >
-          <MaritimePicturePanel />
-          {focused ? <FocusRail /> : <IntelligenceFeedPanel projection={feedProjection} />}
+        {/* WORK — what belongs to the officer. */}
+        <div className={recede}>
+          <MyWorkspacePanel />
         </div>
 
         <div className={cn("grid gap-4 md:grid-cols-2 xl:grid-cols-4", recede)}>
@@ -167,11 +193,43 @@ export function MissionControl() {
           <CargoWorkspaceStrip />
         </div>
 
-        <div className={cn("grid gap-4 lg:grid-cols-[1fr_1.3fr]", recede)}>
-          <TodaysPrioritiesPanel projection={prioritiesProjection} />
-          <RecentBriefingsPanel projection={briefingsProjection} />
+        <div className={cn("grid gap-4 lg:grid-cols-[1.15fr_1fr]", recede)}>
+          <IntelligenceFeedPanel projection={feedProjection} />
+          <div className="flex flex-col gap-4">
+            <TodaysPrioritiesPanel projection={prioritiesProjection} />
+            <RecentBriefingsPanel projection={briefingsProjection} />
+          </div>
+        </div>
+
+        {/* EVENTS — compact horizontal timeline of what the feed reported. */}
+        <div className={recede}>
+          <IntelligenceEventsStrip
+            projection={feedProjection}
+            onOpen={(subjectId, signalId) =>
+              handoff({
+                target: `/entity/${subjectId}`,
+                context: {
+                  entityId: subjectId,
+                  signalId,
+                  fromStage: "Detect",
+                  fromRoute: "/",
+                },
+              })
+            }
+          />
         </div>
       </div>
+
+      {/* FOCUS — the existing focus-subject model, as a contextual layer. */}
+      <FocusWorkspaceOverlay
+        onOpen={(id) =>
+          void navigate({
+            to: "/entity/$id",
+            params: { id },
+            search: { entityId: id, fromStage: "Monitor", fromRoute: "/" },
+          })
+        }
+      />
     </AppShell>
   );
 }
