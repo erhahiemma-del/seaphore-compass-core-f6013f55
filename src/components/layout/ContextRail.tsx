@@ -1,15 +1,24 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowUpRight, X } from "lucide-react";
 
-import { useFocusSubjectStore } from "@/stores/focus-subject.store";
+import { useFocusSubjectStore, type FocusSubjectKind } from "@/stores/focus-subject.store";
 import { cn } from "@/lib/utils";
 
-const KIND_LABEL: Record<string, string> = {
+/**
+ * Typed against the kind union rather than `Record<string, string>`, so
+ * adding a focus kind without a label is a compile error instead of a
+ * rail that silently reads "Subject" over a real vessel.
+ */
+const KIND_LABEL: Record<FocusSubjectKind, string> = {
   vessel: "Vessel",
   port: "Port",
   cargo: "Cargo",
   company: "Company",
   "risk-event": "Risk Event",
+  voyage: "Voyage",
+  manifest: "Manifest",
+  incident: "Incident",
+  investigation: "Investigation",
 };
 
 /**

@@ -23,6 +23,10 @@ const KIND_LABEL: Record<FocusSubjectKind, string> = {
   cargo: "Cargo",
   company: "Company",
   "risk-event": "Risk Event",
+  voyage: "Voyage",
+  manifest: "Manifest",
+  incident: "Incident",
+  investigation: "Investigation",
 };
 
 export interface EvidenceChip {
