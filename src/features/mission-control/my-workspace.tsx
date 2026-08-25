@@ -48,7 +48,14 @@ function WorkRowItem({ row }: { row: WorkRow }) {
 }
 
 export function MyWorkspacePanel() {
-  const screening = useScreeningQueueStore(selectScreeningStats);
+  // Snapshot-stable selection: `selectScreeningStats` builds a fresh object,
+  // so it is derived in a memo rather than used as the store selector.
+  const entities = useScreeningQueueStore((s) => s.entities);
+  const order = useScreeningQueueStore((s) => s.order);
+  const screening = useMemo(
+    () => selectScreeningStats({ entities, order } as Parameters<typeof selectScreeningStats>[0]),
+    [entities, order],
+  );
   const unread = useNotificationStore((s) => s.unreadCount);
   const activeCase = useInvestigationStore((s) => s.activeInvestigationId);
 
