@@ -348,8 +348,20 @@ export const LIGHT_MARITIME_PALETTE: MaritimePalette = {
    * stand on; on a light ground the same separation has to run the other
    * way or the extrusion disappears into the page. Still inside the land
    * family, and still the quietest thing the map draws.
+   *
+   * Matched to the dark palette's separation rather than chosen by eye,
+   * so both themes grant a building the same amount of presence:
+   *
+   *   dark    landUrban #1D2937 : building #243447   = 1.163
+   *   light   landUrban #EFF3F7 : building #DAE3EC   = 1.164
+   *
+   * The first light value tried, #E2E9F0, sat at 1.098 — directionally
+   * right but flatter than the house standard, which on a near-white
+   * ground is where an extrusion stops reading as a separate object.
+   * Ports remain far louder at 3.86 against this, and the coastline at
+   * 2.55, so nothing operational is competed with.
    */
-  buildingExtrusion: "#E2E9F0",
+  buildingExtrusion: "#DAE3EC",
   coastline: "#5A93BC",
   waterway: "#7DB7E6",
   seaLabel: "#3C6B84",
