@@ -56,6 +56,13 @@ import {
   type PrioritiesPanelData,
 } from "@/lib/intelligence/dashboard-projection";
 import { PanelStateNotice } from "@/components/intelligence/PanelStateNotice";
+import { QuickActions } from "@/features/mission-control/quick-actions";
+import { NextBestAction } from "@/features/mission-control/next-best-action";
+import { PriorityQueuePanel } from "@/features/mission-control/priority-queue";
+import { KpiRibbon } from "@/features/mission-control/kpi-ribbon";
+import { MyWorkspacePanel } from "@/features/mission-control/my-workspace";
+import { IntelligenceEventsStrip } from "@/features/mission-control/intelligence-events";
+import { FocusWorkspaceOverlay } from "@/features/mission-control/focus-workspace-overlay";
 import type { KpiCoverage } from "@/lib/intelligence/coverage-model";
 import { useCargoWorkspaceProjections } from "@/features/cargo-workspace/use-cargo-projection";
 import { CargoCentreStateChip } from "@/features/cargo-workspace/CargoCentreView";
@@ -299,113 +306,6 @@ function SignalItem({ signal, onClick }: { signal: FeedSignal; onClick: () => vo
       </div>
       <span className="type-small leading-relaxed text-slate">{signal.subtitle}</span>
     </button>
-  );
-}
-
-/* ---------------- Ribbon ---------------- */
-
-function Ribbon() {
-  const handoff = useHandoffNavigate();
-  const { data: coverage } = useCoverage();
-
-  const kpiByKey = new Map((coverage?.kpis ?? []).map((k) => [k.key, k]));
-  return (
-    <div className="flex flex-col gap-3">
-      {coverage ? (
-        <IntelligenceReadinessCard
-          readiness={coverage.readiness}
-          generatedAt={coverage.generatedAt}
-          report={coverage}
-        />
-      ) : null}
-      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-        {RIBBON_KPIS.map((kpi) => {
-          const Icon = RIBBON_ICONS[kpi.key] ?? Activity;
-          const cov = kpiByKey.get(kpi.metricKey);
-          if (cov) {
-            return (
-              <KpiCoverageCard
-                key={kpi.key}
-                kpi={cov}
-                icon={Icon}
-                onOpen={() =>
-                  handoff({
-                    target: KPI_HANDOFF_OVERRIDE[kpi.key] ?? kpi.handoff,
-                    context: { fromStage: "Monitor", fromRoute: "/" },
-                  })
-                }
-              />
-            );
-          }
-          return (
-            <button
-              key={kpi.key}
-              type="button"
-              onClick={() =>
-                handoff({
-                  target: kpi.handoff,
-                  context: { fromStage: "Monitor", fromRoute: "/" },
-                })
-              }
-              className="group flex flex-col rounded-lg border border-line bg-surface p-3 text-left elev-1 motion-fast hover:border-[color:var(--ocean)]/60"
-              title={kpi.hint}
-            >
-              <div className="flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[color:var(--ocean-050)] text-[color:var(--ocean)]">
-                  <Icon className="h-4 w-4" />
-                </span>
-                <span className="type-label text-slate">{kpi.title}</span>
-              </div>
-              <div className="mt-2 flex items-center gap-1.5 text-[13px] font-semibold text-slate">
-                <span
-                  aria-hidden
-                  className="h-1.5 w-1.5 animate-pulse rounded-full bg-[color:var(--status-inactive)]"
-                />
-                Checking coverage…
-              </div>
-              <div className="mt-0.5 text-[11px] font-semibold text-slate">{kpi.descriptor}</div>
-              {/*
-                No confidence chip here. Coverage has not resolved, so there
-                is no value yet — and a tier rendered beside "Checking
-                coverage…" would assert certainty about a number that does
-                not exist. The chip returns with the value, from
-                KpiCoverageCard above.
-              */}
-            </button>
-          );
-        })}
-
-        <Link
-          to="/detect"
-          className="group flex flex-col items-start justify-between rounded-lg border border-dashed border-[color:var(--ocean)]/50 bg-[color:var(--ocean-050)] p-3 motion-fast hover:border-[color:var(--ocean)]"
-        >
-          <span className="type-label text-[color:var(--ocean)]">Intelligence Feed</span>
-          <span className="mt-2 type-h1 text-foreground">View full feed</span>
-          <span className="type-small text-slate">Continuous signals across every centre</span>
-          <span className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--ocean)]">
-            Open Detect <ArrowRight className="h-3.5 w-3.5" />
-          </span>
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-/* ---------------- Focus rail ---------------- */
-
-/** Context Rail bound to Mission Control's entity route contract. */
-function FocusRail() {
-  const navigate = useNavigate();
-  return (
-    <ContextRail
-      onOpen={(id) =>
-        void navigate({
-          to: "/entity/$id",
-          params: { id },
-          search: { entityId: id, fromStage: "Monitor", fromRoute: "/" },
-        })
-      }
-    />
   );
 }
 
