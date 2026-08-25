@@ -31,16 +31,16 @@ const TONE_CLASS: Record<string, string> = {
 };
 
 const PROVIDER_STATUS_LABEL: Record<ProviderCoverageStatus, string> = {
-  OPERATIONAL: "🟢 Operational",
-  PARTIAL: "🟡 Partial",
-  AWAITING_CREDENTIALS: "🟡 Awaiting credentials",
-  CREDENTIALS_INVALID: "🟠 Credentials invalid",
+  OPERATIONAL: "Operational",
+  PARTIAL: "Partial",
+  AWAITING_CREDENTIALS: "Awaiting credentials",
+  CREDENTIALS_INVALID: "Credentials invalid",
 
-  RATE_LIMITED: "🟠 Rate limited",
+  RATE_LIMITED: "Rate limited",
   // A provider we depend on that stopped answering. Genuine fault.
-  OFFLINE: "🔴 Offline",
+  OFFLINE: "Offline",
   // Nobody ever registered it. Not a fault, so not red.
-  NOT_REGISTERED: "○ Not registered",
+  NOT_REGISTERED: "Not registered",
 };
 
 function when(iso: string | null): string {
