@@ -115,6 +115,36 @@
   --conf-inferred: #b06a00;
   --conf-unconfirmed: #8a98a6;
 
+  /*
+   * Semantic operational states.
+   *
+   * Aliases over the brand palette above — deliberately not new colours.
+   * The palette was already right; what was missing is that components
+   * referenced it by *hue* (`--green`, `--amber`), so the meaning of a
+   * colour lived at each call site and two panels could disagree about
+   * what amber signified.
+   *
+   * Naming by meaning makes the vocabulary reviewable: a component asks
+   * for `--state-attention`, and whether attention is amber stays one
+   * decision in one place. It also makes the eventual dark derivation a
+   * matter of re-pointing an alias rather than auditing every usage.
+   *
+   * Every value here is a `var()` onto an existing token. A raw hex in
+   * this block would be a second palette arriving quietly, and a test
+   * asserts it cannot happen.
+   */
+  --state-verified: var(--green);
+  --state-attention: var(--amber);
+  --state-critical: var(--red);
+  --state-active: var(--teal);
+  --state-informational: var(--blue);
+  --state-investigative: var(--purple);
+  /* Unavailable, inactive, awaiting credentials, no data. */
+  --state-neutral: var(--slate);
+  --state-unavailable: var(--conf-unconfirmed);
+  /* Institutional identity — navigation, authority, primary action. */
+  --state-authority: var(--navy);
+
   /* Light-mode surfaces */
   --background: #f7f9fb;
   --foreground: var(--ink);
@@ -144,6 +174,20 @@
   --surface-1: #151e32;
   --surface-2: #172a40;
   --line: #243247;
+
+  /*
+   * Semantic lifts for dark surfaces.
+   *
+   * Only the three hues that fail contrast against #0d1b2a are
+   * re-pointed; the rest inherit. `--state-authority` becomes the
+   * foreground rather than navy, because navy *is* the dark background —
+   * an authority colour indistinguishable from the surface behind it
+   * would make primary actions disappear.
+   */
+  --state-verified: #3fa06a;
+  --state-attention: #d99a3a;
+  --state-critical: #e5484d;
+  --state-authority: var(--foreground);
 }
 
 /* Spacing utilities (4px base) */
