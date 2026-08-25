@@ -4,6 +4,7 @@ import { LogIn, LogOut, Search, User2 } from "lucide-react";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { InstitutionalContext } from "./InstitutionalContext";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { useAuth } from "@/hooks/use-auth";
 import { performLogout } from "@/lib/auth/logout";
@@ -50,6 +51,13 @@ export function TopBar({ title, subtitle }: TopBarProps) {
 
       <div className="flex items-center gap-2">
         <GoToHint />
+        {/*
+          Authority, workspace and what is waiting — the officer's
+          standing in the institution, beside their identity rather than
+          buried in a menu. Reads existing role, notification and
+          workspace infrastructure; introduces none.
+        */}
+        <InstitutionalContext />
         <ThemeToggle />
         <OfficerBadge />
       </div>
