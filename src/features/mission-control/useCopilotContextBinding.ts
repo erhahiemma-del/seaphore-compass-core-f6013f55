@@ -6,10 +6,11 @@
  * `setContext`, so the Copilot opened knowing nothing about the work in
  * front of the officer — they had to re-explain their own screen.
  *
- * This wires the contract to the three things the application already
- * knows: the route, the Mission Mode, and the Focus Subject. It creates
- * no second Copilot state and no new store; it writes to the existing
- * one and nothing else reads it differently.
+ * This wires the contract to the things the application already knows:
+ * the route, the Mission Mode, the Focus Subject, and — since Phase 3 —
+ * the open case for that subject when there is one. It creates no second
+ * Copilot state and no new store; it writes to the existing one and
+ * nothing else reads it differently.
  *
  * ## It reports context; it does not claim capability
  *
@@ -32,6 +33,8 @@ import { useEffect } from "react";
 import { useCopilotStore, type CopilotContext } from "@/stores/copilot.store";
 import { useFocusSubjectStore, type FocusSubjectKind } from "@/stores/focus-subject.store";
 
+import { useFocusWorkspace } from "@/features/focus-workspace/useFocusWorkspace";
+
 import { useMissionMode } from "./useMissionMode";
 import type { MissionMode } from "./modes";
 
@@ -47,6 +50,13 @@ import type { MissionMode } from "./modes";
 const FOCUS_TO_COPILOT: Readonly<Partial<Record<FocusSubjectKind, CopilotContext["kind"]>>> = {
   vessel: "vessel",
   port: "port",
+  /*
+   * A focused investigation is a case, and `case` is the vocabulary
+   * member that means exactly that. Mapping it to `investigation` would
+   * be indistinguishable from the no-subject fallback below, which uses
+   * that kind for "working from this lens, on nothing in particular".
+   */
+  investigation: "case",
 };
 
 /**
@@ -58,16 +68,34 @@ const FOCUS_TO_COPILOT: Readonly<Partial<Record<FocusSubjectKind, CopilotContext
 export function deriveCopilotContext(
   mode: MissionMode,
   focus: { kind: FocusSubjectKind; title: string; descriptor?: string } | null,
+  /**
+   * The open case for the focused subject, when one exists.
+   *
+   * Passed in rather than read here, so this stays pure and so the
+   * binding cannot accidentally report a workflow that belongs to a
+   * different subject. Absent means no case is open — which is the
+   * normal state, and is reported by saying nothing about workflow
+   * rather than by claiming there is none.
+   */
+  work?: { readonly caseTitle: string; readonly stage: string } | null,
 ): CopilotContext {
   if (focus) {
     const kind = FOCUS_TO_COPILOT[focus.kind];
     if (kind) {
-      return {
-        kind,
-        label: focus.title,
-        // The lens, as secondary context — how they are reading it.
-        detail: focus.descriptor ? `${focus.descriptor} · ${mode.label}` : mode.label,
-      };
+      /*
+       * Detail is assembled only from parts that are real. The mode is
+       * always true; the descriptor exists when the calling surface
+       * projected one; the workflow line appears only when a case is
+       * genuinely open. Telling the Copilot about a workflow that does
+       * not exist would be the exact failure this binding was written to
+       * avoid.
+       */
+      const parts = [
+        focus.descriptor,
+        work ? `${work.caseTitle} · ${work.stage}` : null,
+        mode.label,
+      ].filter((p): p is string => !!p);
+      return { kind, label: focus.title, detail: parts.join(" · ") };
     }
   }
   /*
@@ -93,6 +121,17 @@ export function useCopilotContextBinding(): void {
   const subject = useFocusSubjectStore((s) => s.subject);
   const setContext = useCopilotStore((s) => s.setContext);
 
+  /*
+   * The workflow comes from the Focus Workspace model rather than a
+   * second lookup against the case store. `buildFocusWorkspace` already
+   * decides which case belongs to this subject — including refusing to
+   * match one whose kind differs — and a second copy of that rule here
+   * would eventually disagree with it about which case the officer is
+   * looking at.
+   */
+  const { model } = useFocusWorkspace();
+  const work = model?.work.state === "present" ? model.work.data : null;
+
   useEffect(() => {
     setContext(
       deriveCopilotContext(
@@ -100,7 +139,8 @@ export function useCopilotContextBinding(): void {
         subject
           ? { kind: subject.kind, title: subject.title, descriptor: subject.descriptor }
           : null,
+        work ? { caseTitle: work.caseTitle, stage: work.stage } : null,
       ),
     );
-  }, [mode, subject, setContext]);
+  }, [mode, subject, work, setContext]);
 }
