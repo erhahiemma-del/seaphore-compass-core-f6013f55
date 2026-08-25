@@ -25,6 +25,8 @@ import {
 
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
 import { ContextRail } from "@/components/layout/ContextRail";
+import { FocusWorkspaceHost } from "@/features/focus-workspace/FocusWorkspaceHost";
+import { useMapFocusBridge } from "@/features/focus-workspace/map-bridge";
 import { useFocusSubjectStore } from "@/stores/focus-subject.store";
 
 import { PanelCard } from "@/components/panel-card";
@@ -109,7 +111,19 @@ const RIBBON_ICONS: Record<string, LucideIcon> = {
 
 export function MissionControl() {
   const focused = useFocusSubjectStore((s) => s.subject);
+  const workspaceOpen = useFocusSubjectStore((s) => s.workspaceOpen);
   const recede = focused ? "is-receded" : undefined;
+
+  /*
+   * Selecting on the map establishes focus and opens the workspace.
+   *
+   * Mission Control rendered a focus rail from the day the store was
+   * written, but nothing here ever called `setSubject` — the only caller
+   * in the application was `useCentreFocus`, so this page could never
+   * enter the focused state it was already styled for. This is the
+   * connection that was missing.
+   */
+  useMapFocusBridge();
 
   // One scan, projected two ways. Both panels read the findings the
   // detection capability actually produced — neither computes its own.
@@ -186,7 +200,21 @@ export function MissionControl() {
             <MapRecommendationNotice mode={mode} />
             <MaritimePicturePanel />
           </div>
-          {focused ? <FocusRail /> : <IntelligenceFeedPanel projection={feedProjection} />}
+          {/*
+            Three states, in order of how much the officer has asked for.
+            The workspace is the contextual bridge and takes the slot
+            while it is open; dismissing it falls back to the rail, which
+            keeps the subject in view without occupying the officer; with
+            no subject at all the priority feed returns. Nothing is
+            removed — the feed is one dismissal away throughout.
+          */}
+          {workspaceOpen ? (
+            <FocusWorkspaceHost />
+          ) : focused ? (
+            <FocusRail />
+          ) : (
+            <IntelligenceFeedPanel projection={feedProjection} />
+          )}
         </div>
 
         {/*

@@ -232,6 +232,16 @@ export interface FocusWorkspaceInput {
    * others would attribute another entity's relationships to this one.
    */
   readonly canonicalId?: string | null;
+  /**
+   * Whether this subject has a dedicated module to open.
+   *
+   * Supplied by the caller for the same reason `canonicalId` is: route
+   * knowledge lives in `handoff.ts`, and importing it here would make
+   * the pure model depend on the navigation layer. Defaults to true so
+   * an omitted value never silently disables a working action — the
+   * controller passes the real answer.
+   */
+  readonly hasDedicatedModule?: boolean;
 }
 
 /**
@@ -335,10 +345,10 @@ function buildRelationships(
 }
 
 function buildActions(
-  subject: FocusSubject,
   roles: ReadonlyArray<Role> | null,
   work: FocusSection<FocusWork>,
   evidence: FocusSection<FocusEvidence>,
+  hasDedicatedModule: boolean,
 ): ReadonlyArray<FocusAction> {
   const gate = (id: FocusActionId, label: string, level: FocusLevel): FocusAction => {
     const permission = ACTION_PERMISSION[id];
@@ -354,10 +364,20 @@ function buildActions(
     return { id, label, level, enabled: true };
   };
 
-  const actions: FocusAction[] = [
-    gate("work-here", "Work here", "focus-workspace"),
-    gate("open-full-workspace", "Open full workspace", "dedicated-workflow"),
-  ];
+  const actions: FocusAction[] = [gate("work-here", "Work here", "focus-workspace")];
+
+  /*
+   * Incidents and risk events are selectable but have no module of their
+   * own. Disabled with the reason, rather than pointed at a plausible
+   * neighbour: a risk event sent to the compliance page is a link that
+   * appears to work and shows the officer something else.
+   */
+  const full = gate("open-full-workspace", "Open full workspace", "dedicated-workflow");
+  actions.push(
+    hasDedicatedModule
+      ? full
+      : { ...full, enabled: false, disabledReason: "No dedicated module for this subject" },
+  );
 
   // Investigating a subject that already has an open case is not a
   // second investigation — it is continuing the first one.
@@ -384,7 +404,7 @@ function buildActions(
  * router, a session or a mounted component.
  */
 export function buildFocusWorkspace(input: FocusWorkspaceInput): FocusWorkspaceModel {
-  const { subject, mode, cases, roles, graph, canonicalId } = input;
+  const { subject, mode, cases, roles, graph, canonicalId, hasDedicatedModule = true } = input;
   const active = findCase(cases, subject);
 
   const work = buildWork(active);
@@ -400,7 +420,7 @@ export function buildFocusWorkspace(input: FocusWorkspaceInput): FocusWorkspaceM
     work,
     evidence,
     relationships,
-    actions: buildActions(subject, roles, work, evidence),
+    actions: buildActions(roles, work, evidence, hasDedicatedModule),
     sectionOrder: prioritiseSections(mode),
   };
 }

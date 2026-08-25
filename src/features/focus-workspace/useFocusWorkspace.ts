@@ -21,6 +21,7 @@ import { useRoles } from "@/hooks/use-permissions";
 import type { EntityKind } from "@/services/ial/types";
 
 import { buildFocusWorkspace, type FocusWorkspaceModel } from "./model";
+import { hasDedicatedModule } from "./handoff";
 
 /**
  * Focus kinds the IAL can build a canonical id for.
@@ -78,16 +79,18 @@ export function useFocusWorkspace(): FocusWorkspaceController {
     if (!subject) {
       return { model: null, open: false, dismiss, clear };
     }
+    const canonicalId = canonicalIdForSubject(subject);
     return {
       model: buildFocusWorkspace({
         subject,
         mode,
         cases,
         roles,
+        hasDedicatedModule: hasDedicatedModule(subject, canonicalId),
         // Re-read whenever the graph changed; `revision` is the dependency
         // that makes that happen and is otherwise unused.
         graph: revision >= 0 ? snapshotOf() : null,
-        canonicalId: canonicalIdForSubject(subject),
+        canonicalId,
       }),
       open: workspaceOpen,
       dismiss,
