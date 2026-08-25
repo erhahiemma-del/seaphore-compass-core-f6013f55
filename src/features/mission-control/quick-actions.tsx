@@ -5,7 +5,7 @@
  * behaviour, state or data. Secondary to the search, so they render as a
  * compact strip rather than a wall of cards.
  */
-import { Link } from "@tanstack/react-router";
+import { Link, type LinkProps } from "@tanstack/react-router";
 import {
   CloudUpload,
   FileSignature,
@@ -20,7 +20,7 @@ import {
 type QuickAction = {
   readonly label: string;
   readonly hint: string;
-  readonly to: string;
+  readonly to: LinkProps["to"];
   readonly icon: LucideIcon;
 };
 
@@ -53,7 +53,7 @@ export function QuickActions() {
             className="group flex items-center gap-3 rounded-lg border border-line bg-surface p-3 elev-1 motion-fast hover:-translate-y-px hover:border-[color:var(--ocean)]/60"
           >
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[color:var(--ocean-050)] text-[color:var(--ocean)]">
-              <a.icon className="h-4.5 w-4.5" strokeWidth={1.75} />
+              <a.icon className="h-4 w-4" strokeWidth={1.75} />
             </span>
             <span className="min-w-0">
               <span className="block truncate text-[13px] font-semibold text-foreground">
