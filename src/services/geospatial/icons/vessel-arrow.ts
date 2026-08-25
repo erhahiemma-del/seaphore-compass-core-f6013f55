@@ -143,42 +143,6 @@ export function createVesselSilhouetteImage(
 }
 
 /**
- * Draw the port marker: a teal diamond.
- *
- * Ports are deliberately a different *shape* from vessels, not merely a
- * different colour — shape survives colour-blindness and greyscale printing,
- * which vessel risk colours do not.
- */
-export function createPortDiamondImage(color = "#0E7C7B"): ImageData {
-  const size = 20;
-  const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
-
-  const ctx = canvas.getContext("2d");
-  if (!ctx) {
-    throw new Error("Canvas 2D context unavailable — cannot build port sprite");
-  }
-
-  const half = size / 2;
-  ctx.clearRect(0, 0, size, size);
-  ctx.beginPath();
-  ctx.moveTo(half, 2);
-  ctx.lineTo(size - 2, half);
-  ctx.lineTo(half, size - 2);
-  ctx.lineTo(2, half);
-  ctx.closePath();
-
-  ctx.fillStyle = color;
-  ctx.fill();
-  ctx.strokeStyle = "rgba(255,255,255,0.85)";
-  ctx.lineWidth = 1.25;
-  ctx.stroke();
-
-  return ctx.getImageData(0, 0, size, size);
-}
-
-/**
  * Every sprite the renderer must register, as `[id, ImageData]` pairs.
  *
  * The full cartesian product of colour × silhouette × directionality —
