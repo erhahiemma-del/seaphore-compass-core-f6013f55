@@ -2,8 +2,6 @@ import { useCallback, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getIntelligenceCoverage } from "@/lib/intelligence-coverage.functions";
-import { IntelligenceReadinessCard } from "@/components/intelligence/IntelligenceReadinessCard";
-import { KpiCoverageCard } from "@/components/intelligence/KpiCoverageCard";
 import {
   Activity,
   AlertTriangle,
@@ -24,7 +22,6 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
-import { ContextRail } from "@/components/layout/ContextRail";
 import { useFocusSubjectStore } from "@/stores/focus-subject.store";
 
 import { PanelCard } from "@/components/panel-card";
@@ -37,9 +34,6 @@ import { MissionCommandBar } from "@/components/mission-command-bar";
 import { useHandoffNavigate } from "@/lib/nav-context";
 import { useRenderTrace } from "@/lib/perf/hooks";
 import { cn } from "@/lib/utils";
-// Only the ribbon's static labels, icons and handoff targets remain —
-// UI copy, not intelligence. Every value beside them comes from coverage.
-import { RIBBON_KPIS } from "@/lib/mission-control-data";
 import { useUipStore } from "@/stores/uip.store";
 import { scanForLeakage } from "@/services/revenue-leakage";
 import {
@@ -90,21 +84,6 @@ function coverageFor(
 ): KpiCoverage | undefined {
   return (kpis ?? []).find((k) => k.key === key);
 }
-
-/** Officer-facing capability routes reused by the ribbon (no duplicates). */
-const KPI_HANDOFF_OVERRIDE: Record<string, string> = {
-  "revenue-intelligence": "/revenue-leakage",
-  "risk-intelligence": "/national-risk",
-};
-
-const RIBBON_ICONS: Record<string, LucideIcon> = {
-  "manifest-intelligence": FileText,
-  "vessel-intelligence": Ship,
-  "container-intelligence": Container,
-  "revenue-intelligence": Landmark,
-  "risk-intelligence": Target,
-  "historical-intelligence": History,
-};
 
 export function MissionControl() {
   const navigate = useNavigate();
