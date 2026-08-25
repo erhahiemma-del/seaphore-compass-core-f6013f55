@@ -28,6 +28,37 @@ import {
   type IntelligenceMode,
 } from "@/lib/intelligence-modes";
 import { cn } from "@/lib/utils";
+import { useTypewriterPlaceholder } from "@/hooks/use-typewriter-placeholder";
+
+/**
+ * Contextual search prompts per Mission Mode. Presentation only: Mission Mode
+ * never narrows what the universal search accepts (IMO / MMSI / Vessel /
+ * Company / Cargo / Manifest / Port / Location / Event) — it only changes the
+ * cue shown to the officer.
+ */
+const SEARCH_PROMPTS: Record<EntityType, string[]> = {
+  imo: [
+    "Search a vessel, port or maritime event…",
+    "Search Nigerian maritime activity…",
+    "Search an incident or location…",
+  ],
+  vessel: ["Search IMO, MMSI or vessel name…", "Search a voyage or vessel movement…"],
+  manifest: [
+    "Search a manifest or cargo discrepancy…",
+    "Search a company, voyage or assessment…",
+  ],
+  container: [
+    "Search a vessel, company or watchlist match…",
+    "Search a compliance or risk event…",
+  ],
+  company: ["Search a vessel, case or evidence record…", "Search an investigation subject…"],
+  port: ["Search a port, anchorage or port call…", "Search congestion or arrivals…"],
+  bol: ["Search an incident, vessel or location…", "Search an operational event…"],
+  voyage: [
+    "Search a national maritime trend…",
+    "Search a strategic risk or development…",
+  ],
+};
 
 /**
  * Mission Intelligence Command Bar.
