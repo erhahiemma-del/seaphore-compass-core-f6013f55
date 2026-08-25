@@ -35,7 +35,7 @@ import { ConfidenceLegend } from "@/components/confidence-legend";
 import { RiskPill } from "@/components/intelligence/RiskPill";
 import { MapCanvas, type VesselFeedState } from "@/features/maritime/MapCanvas";
 import { resolveMapDataState, type MapDataStateResult, type Vessel } from "@/services/geospatial";
-import { MissionCommandBar } from "@/components/mission-command-bar";
+import { CommandSurfaceHost } from "@/features/command/CommandSurfaceHost";
 import { useHandoffNavigate } from "@/lib/nav-context";
 import { useRenderTrace } from "@/lib/perf/hooks";
 import { cn } from "@/lib/utils";
@@ -159,7 +159,15 @@ export function MissionControl() {
   return (
     <AppShell title="Mission Control" subtitle="National maritime operating picture" mode="light">
       <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-6 py-5">
-        <MissionCommandBar />
+        {/*
+          The command surface. Replaces the previous command bar, whose
+          search dispatched to routes that never read the query and whose
+          eight chips were an entity-type vocabulary competing visually
+          with the Mission Mode selector below. Search now resolves
+          against the entity registry and selecting a result establishes
+          focus, converging with the map on one focus subject.
+        */}
+        <CommandSurfaceHost />
 
         {/*
           Layer 1 — orientation. Where the officer is, in one quiet band:

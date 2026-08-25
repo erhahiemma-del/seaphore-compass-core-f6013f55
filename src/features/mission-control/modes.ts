@@ -171,7 +171,7 @@ export interface MissionMode {
 export const MISSION_MODES: Readonly<Record<MissionModeId, MissionMode>> = {
   "national-picture": {
     id: "national-picture",
-    label: "National Picture",
+    label: "National Overview",
     purpose: "The whole picture — what is happening across Nigerian waters now.",
     leadKpis: ["vessel", "risk", "revenue", "manifest", "container", "historical"],
     panels: [

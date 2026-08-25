@@ -59,7 +59,10 @@ describe("copilot context describes the officer's screen", () => {
     });
     expect(ctx.kind).not.toBe("vessel");
     expect(ctx.kind).not.toBe("port");
-    expect(ctx.label).toBe("National Picture");
+    // Asserted against the mode rather than a literal: the claim is that
+    // the label falls back to the lens, not that the lens is called any
+    // particular thing. A rename should not fail this test.
+    expect(ctx.label).toBe(MISSION_MODES["national-picture"].label);
   });
 
   it("never claims a capability or a data source", () => {
