@@ -87,9 +87,12 @@ export function KpiCoverageCard({
               : cn("text-[14px] font-bold", tone),
           )}
         >
-          <span aria-hidden className="mr-1">
-            {meta.dot}
-          </span>
+          {isNumber ? null : (
+            <span
+              aria-hidden
+              className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full align-middle bg-current"
+            />
+          )}
           {kpi.display}
         </div>
         <div className="mt-0.5 text-[11px] font-semibold text-slate">

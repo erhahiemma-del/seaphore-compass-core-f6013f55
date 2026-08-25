@@ -298,7 +298,11 @@ function Ribbon() {
                 </span>
                 <span className="type-label text-slate">{kpi.title}</span>
               </div>
-              <div className="mt-2 type-mono text-[22px] font-bold text-foreground tabular-nums">
+              <div className="mt-2 flex items-center gap-1.5 text-[13px] font-semibold text-slate">
+                <span
+                  aria-hidden
+                  className="h-1.5 w-1.5 animate-pulse rounded-full bg-[color:var(--status-inactive)]"
+                />
                 Checking coverage…
               </div>
               <div className="mt-0.5 text-[11px] font-semibold text-slate">{kpi.descriptor}</div>
