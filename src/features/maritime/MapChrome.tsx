@@ -102,31 +102,31 @@ export interface MapLayerChipsProps {
  */
 export function MapLayerChips({ service = sgs, className }: MapLayerChipsProps) {
   const active = useActiveLayers(service);
-  const base = known([...BASE_LAYERS]);
+  const frame = known([...FRAME_LAYERS]);
+  /** Every layer any chip governs — what "All" turns on together. */
+  const everything = [...new Set([...frame, ...CHIPS.flatMap((chip) => known(chip.layers))])];
 
   /**
-   * "All" is the overall picture: the geographic frame on, nothing
-   * specialised emphasised. A chip is *on* when any of its own layers is
-   * drawn — a family with one connected provider and one pending source is
-   * still being shown.
+   * "All" is the overall maritime view: every available layer drawn at once.
+   * A chip is *on* when any of its own layers is drawn, so a family with one
+   * connected provider and one pending source still reads as shown — but only
+   * while the officer is looking at a subset rather than the whole picture.
    */
-  const specialised = CHIPS.flatMap((chip) => known(chip.layers)).filter(
-    (id) => !base.includes(id),
-  );
-  const isAll =
-    base.every((id) => active.has(id)) && specialised.every((id) => !active.has(id));
+  const isAll = everything.every((id) => active.has(id));
 
   function emphasise(chip: ChipDefinition) {
     const own = known(chip.layers);
     if (own.length === 0) return;
-    const on = own.some((id) => active.has(id));
-    if (on) {
+    if (!isAll && own.some((id) => active.has(id))) {
       // Toggling off leaves the geographic frame standing.
-      service.setActiveLayers([...active].filter((id) => !own.includes(id)));
+      service.setActiveLayers([...new Set([...frame, ...[...active].filter((id) => !own.includes(id))])]);
       return;
     }
-    service.setActiveLayers([...new Set([...base, ...active, ...own])]);
+    // From "All", a chip narrows to that family plus the frame.
+    const from = isAll ? frame : [...frame, ...active];
+    service.setActiveLayers([...new Set([...from, ...own])]);
   }
+
 
   return (
     <div
