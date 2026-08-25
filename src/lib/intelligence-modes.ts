@@ -115,7 +115,7 @@ export const INTELLIGENCE_MODES: IntelligenceMode[] = [
     prefix: "COMPANY: ",
     aiContext: "Ownership Investigation",
     contextDomains: ["vessels", "companies", "incidents", "evidence", "cases"],
-    suggestions: ["Beneficial owners", "Shell links", "Related vessels", "Director changes"],
+    suggestions: ["Open cases", "Linked companies", "Evidence packages", "Related vessels"],
   },
   {
     key: "port",
@@ -139,7 +139,7 @@ export const INTELLIGENCE_MODES: IntelligenceMode[] = [
     prefix: "BOL: ",
     aiContext: "Environmental Risk",
     contextDomains: ["incidents", "vessels", "locations", "events", "zones"],
-    suggestions: ["Weather disruption", "Sea-state risk", "Port delay drivers", "Expected arrivals"],
+    suggestions: ["Active incidents", "Affected zones", "Vessels in area", "Recent events"],
   },
   {
     key: "voyage",
@@ -151,7 +151,7 @@ export const INTELLIGENCE_MODES: IntelligenceMode[] = [
     prefix: "VOYAGE: ",
     aiContext: "Vessel Risk",
     contextDomains: ["national patterns", "strategic risk", "revenue", "compliance", "major events", "trends"],
-    suggestions: ["Risk exposure", "Flag changes", "STS events", "Previous investigations"],
+    suggestions: ["National patterns", "Strategic risk", "Revenue trend", "Major events"],
   },
 ];
 
