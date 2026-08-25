@@ -39,12 +39,33 @@ export function IntelligenceEventsStrip({
       </div>
 
       {projection.state !== "ACTIVE" || signals.length === 0 ? (
-        <PanelStateNotice
-          state={projection.state}
-          detail={projection.stateDetail}
-          href="/detect"
-          hrefLabel="Open Detect"
-        />
+        <div className="flex flex-col gap-3">
+          <PanelStateNotice
+            state={projection.state}
+            detail={projection.stateDetail}
+            href="/detect"
+            hrefLabel="Open Detect"
+          />
+          {/* Geometry is preserved when the capability reports nothing, so the
+              strip does not collapse and shift the surfaces below it. */}
+          <div className="relative overflow-hidden pb-1" aria-hidden>
+            <div className="absolute inset-x-0 top-[10px] h-px bg-[color:var(--line-soft)]" />
+            <div className="relative flex min-w-full gap-3">
+              {[0, 1, 2, 3, 4].map((slot) => (
+                <div
+                  key={slot}
+                  className="w-[220px] shrink-0 rounded-md border border-dashed border-line bg-surface-2/40 p-2.5 pt-4"
+                >
+                  <span className="mb-2 block h-2 w-2 rounded-full bg-[color:var(--line-soft)]" />
+                  <span className="block type-h2 text-slate/70">No event reported</span>
+                  <span className="mt-1 block type-small leading-relaxed text-slate/70">
+                    This timeline slot stays empty until the detection capability reports a signal.
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       ) : (
         <div className="relative overflow-x-auto pb-1">
           <div
@@ -73,6 +94,7 @@ export function IntelligenceEventsStrip({
           </ol>
         </div>
       )}
+
     </PanelCard>
   );
 }
