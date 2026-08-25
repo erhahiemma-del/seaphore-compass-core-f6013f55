@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
+import { StatusChip, type StatusTone } from "@/components/status/operational-status";
 import { cn } from "@/lib/utils";
+
 
 /** Section container used inside every centre's main workspace. */
 export function Section({
