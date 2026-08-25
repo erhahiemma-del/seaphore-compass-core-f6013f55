@@ -5,6 +5,8 @@ import {
   Box,
   FileText,
   LayoutGrid,
+  Locate,
+
   Mic,
   Receipt,
   Search,
@@ -51,6 +53,27 @@ const ICONS: Record<IntelligenceMode["icon"], LucideIcon> = {
   briefing: FileText,
 };
 
+
+/**
+ * Recent-search chips for the unified Mission Control command bar, shown
+ * until this session records searches of its own. Presentation only —
+ * clicking one runs the normal dispatch path.
+ */
+const UNIFIED_RECENT: readonly string[] = [
+  "MV Ocean Melody",
+  "9328374",
+  "CMA CGM Tema",
+  "Apapa Port",
+  "Lagos Anchorage",
+];
+
+const RECENT_ICON: Record<string, LucideIcon> = {
+  "MV Ocean Melody": Ship,
+  "9328374": Locate,
+  "CMA CGM Tema": Ship,
+  "Apapa Port": Anchor,
+  "Lagos Anchorage": Anchor,
+};
 
 /** In-session per-mode search history. Newest first, capped at 8. */
 const HISTORY: Record<EntityType, string[]> = {
@@ -222,22 +245,36 @@ export function MissionCommandBar({
     });
   };
 
+  const [cleared, setCleared] = useState(false);
   const history = HISTORY[modeKey];
+  /**
+   * Recent searches shown before this session has any history of its own.
+   * Presentation-only seeds so the row keeps its designed geometry and
+   * labels; clicking one runs the real dispatch, and Clear hides the row.
+   */
+  const recent = history.length > 0 ? history.slice(0, 5) : UNIFIED_RECENT;
+  const showRecent = unifiedSearch ? !cleared : history.length > 0 || !hideSuggestions;
 
   return (
     <section
       aria-label="Mission Intelligence Command Bar"
-      className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-3.5 elev-1"
+      className={cn(
+        "flex flex-col gap-2.5",
+        !unifiedSearch && "rounded-lg border border-line bg-surface p-3.5 elev-1",
+      )}
     >
       {/* SEARCH — the dominant control on Mission Control. */}
       <form
-        className="flex items-center gap-3 rounded-md border border-line-strong bg-surface-2/40 px-3 py-2.5"
+        className="flex h-[52px] items-center gap-3 rounded-[10px] border border-line-strong bg-surface pl-3.5 pr-2"
         onSubmit={(e) => {
           e.preventDefault();
           runSearch();
         }}
       >
-        <Search className="h-4 w-4 shrink-0 text-slate" strokeWidth={1.75} />
+        <Search
+          className="h-[21px] w-[21px] shrink-0 text-[color:var(--navy)]"
+          strokeWidth={1.75}
+        />
         <input
           ref={inputRef}
           type="search"
@@ -265,67 +302,81 @@ export function MissionCommandBar({
           }}
           placeholder={
             unifiedSearch
-              ? "Search IMO / MMSI / vessel / company / cargo / manifest / port / location / event…"
+              ? "Search IMO / MMSI / Vessel / Company / Cargo / Manifest / Port / Location / Event"
               : mode.placeholder
           }
           aria-label={`Search — ${mode.aiContext}`}
           className={cn(
-            "min-w-0 flex-1 bg-transparent text-[15px] font-medium leading-tight text-[color:var(--color-navy)] outline-none",
+            "min-w-0 flex-1 bg-transparent text-[14.5px] font-medium leading-tight text-[color:var(--color-navy)] outline-none",
             "placeholder:font-medium placeholder:text-[color:var(--color-navy)]/45",
           )}
         />
-        <VoiceButton />
+        {!unifiedSearch && <VoiceButton />}
         <button
           type="submit"
           className={cn(
-            "inline-flex shrink-0 items-center gap-1.5 rounded-md bg-[color:var(--navy)] px-3.5 py-2 text-[13px] font-semibold text-white",
-            "transition-all duration-150 hover:-translate-y-px hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-blue)]/40",
+            "inline-flex h-[38px] shrink-0 items-center gap-2 rounded-lg bg-[color:var(--navy)] px-4 text-[13.5px] font-semibold text-white",
+            "shadow-[0_1px_2px_rgba(11,31,58,0.18)] transition-all duration-150 hover:-translate-y-px hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-blue)]/40",
           )}
         >
           Investigate
-          <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} />
+          <ArrowRight className="h-4 w-4" strokeWidth={2} />
         </button>
       </form>
 
       {/* Recent searches — compact chips beneath the search. */}
-      <div className="flex min-h-[26px] flex-wrap items-center gap-1.5">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate">
-          {history.length > 0 ? "Recent searches" : "Suggested searches"}
-        </span>
-        {history.length > 0
-          ? history.slice(0, 5).map((q) => (
-              <button
-                key={q}
-                type="button"
-                onClick={() => {
-                  const nextInput = unifiedSearch ? q : mode.prefix + q;
-                  setInput(nextInput);
-                  runSearch(nextInput);
-                }}
-                className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2/60 px-2.5 py-0.5 text-[11.5px] font-medium text-foreground/75 motion-fast hover:border-[color:var(--color-blue)]/40 hover:text-[color:var(--color-blue)]"
-              >
-                <Box className="h-3 w-3 text-slate" strokeWidth={1.75} />
-                {q}
-              </button>
-            ))
-          : !hideSuggestions &&
-            mode.suggestions.slice(0, 4).map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => runSearch(undefined, s)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-line/60 bg-surface-2/40 px-2.5 py-0.5 text-[11.5px] font-medium text-foreground/75 motion-fast hover:border-[color:var(--color-blue)]/40 hover:text-[color:var(--color-blue)]"
-              >
-                <Sparkles className="h-3 w-3 text-[color:var(--color-blue)]" strokeWidth={2} />
-                {s}
-              </button>
-            ))}
-      </div>
+      {showRecent && (
+        <div className="flex min-h-[28px] flex-wrap items-center gap-1.5">
+          <span className="mr-0.5 text-[11px] font-semibold text-slate">
+            {unifiedSearch || history.length > 0 ? "Recent Searches:" : "Suggested searches"}
+          </span>
+          {unifiedSearch || history.length > 0
+            ? recent.map((q) => {
+                const ChipIcon = RECENT_ICON[q] ?? Box;
+                return (
+                  <button
+                    key={q}
+                    type="button"
+                    onClick={() => {
+                      const nextInput = unifiedSearch ? q : mode.prefix + q;
+                      setInput(nextInput);
+                      runSearch(nextInput);
+                    }}
+                    className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-[12px] font-medium text-[color:var(--color-navy)]/85 shadow-[0_1px_1px_rgba(11,31,58,0.04)] motion-fast hover:border-[color:var(--color-blue)]/40 hover:text-[color:var(--color-blue)]"
+                  >
+                    <ChipIcon className="h-3.5 w-3.5 text-slate" strokeWidth={1.75} />
+                    {q}
+                  </button>
+                );
+              })
+            : mode.suggestions.slice(0, 4).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => runSearch(undefined, s)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-line/60 bg-surface-2/40 px-2.5 py-0.5 text-[11.5px] font-medium text-foreground/75 motion-fast hover:border-[color:var(--color-blue)]/40 hover:text-[color:var(--color-blue)]"
+                >
+                  <Sparkles className="h-3 w-3 text-[color:var(--color-blue)]" strokeWidth={2} />
+                  {s}
+                </button>
+              ))}
+          {unifiedSearch && (
+            <button
+              type="button"
+              onClick={() => setCleared(true)}
+              className="ml-1 text-[12px] font-semibold text-[color:var(--ocean)] hover:underline"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      )}
 
       {!hideModeChips && <MissionModeBar modeKey={modeKey} onSelect={selectMode} />}
     </section>
   );
 }
+
 
 /**
  * MISSION MODE — the horizontal selector band.
