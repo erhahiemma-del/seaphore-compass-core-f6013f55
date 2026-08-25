@@ -314,3 +314,92 @@ export function getTradeContext(
 ): IntelligenceResult {
   return getVesselIntelligence(imo, "trade.flow", collect);
 }
+
+/* ── Capability discovery ─────────────────────────────────────── */
+
+/**
+ * Whether one provider can answer one attribute, and if not, why.
+ *
+ * Six outcomes rather than a boolean, because "no" has five distinct
+ * meanings here and an operator needs to know which: a planned provider
+ * needs a contract, a credentials-required one needs configuration, and
+ * an unsupported one needs neither because it will never serve this
+ * attribute at all.
+ */
+export type CapabilityVerdict =
+  | "SUPPORTED_AND_READY"
+  | "SUPPORTED_BUT_NOT_CONFIGURED"
+  | "SUPPORTED_BUT_AUTH_REQUIRED"
+  | "SUPPORTED_BUT_STALE"
+  | "PLANNED"
+  | "UNSUPPORTED";
+
+export interface CapabilityAnswer {
+  readonly verdict: CapabilityVerdict;
+  /** The provider's own status, so the verdict never hides the cause. */
+  readonly providerStatus: string | null;
+  readonly reason: string;
+}
+
+/**
+ * Can this provider answer this attribute right now?
+ *
+ * Capability is *declared*, never inferred. A provider is considered
+ * able to serve an attribute only when its registered `kind` is one the
+ * attribute routes to — the same routing the broker itself uses, so a
+ * provider can never be asked something `getVesselIntelligence` would
+ * not have asked it. An unknown provider is `UNSUPPORTED` rather than
+ * optimistically assumed capable.
+ *
+ * This is what makes progressive activation checkable: a provider moves
+ * from `PLANNED` to `SUPPORTED_BUT_NOT_CONFIGURED` to
+ * `SUPPORTED_AND_READY` purely by its registry status changing, with no
+ * code in the UI, the map or the broker altering.
+ */
+export function canQuery(providerId: string, attribute: string): CapabilityAnswer {
+  const provider = getProviderAvailability().find((p) => p.providerId === providerId);
+  if (!provider) {
+    return Object.freeze({
+      verdict: "UNSUPPORTED" as const,
+      providerStatus: null,
+      reason: `No provider is registered under the id "${providerId}".`,
+    });
+  }
+
+  const kinds = kindsFor(attribute);
+  if (!kinds || !kinds.includes(provider.kind)) {
+    /*
+     * The domain boundary, enforced per provider.
+     *
+     * Trade Atlas is not a vessel tracker and OpenSanctions is not an
+     * AIS feed. Answering "unsupported" here is what stops a future
+     * caller quietly routing a position request to whichever provider
+     * happens to be connected.
+     */
+    return Object.freeze({
+      verdict: "UNSUPPORTED" as const,
+      providerStatus: provider.reading.providerStatus,
+      reason: `${provider.displayName} is a ${provider.kind} source and does not serve "${attribute}".`,
+    });
+  }
+
+  const { availability, providerStatus } = provider.reading;
+  const verdict: CapabilityVerdict =
+    availability === "available"
+      ? "SUPPORTED_AND_READY"
+      : availability === "stale"
+        ? "SUPPORTED_BUT_STALE"
+        : availability === "planned"
+          ? "PLANNED"
+          : availability === "credentials-required"
+            ? providerStatus === "AUTH_REQUIRED"
+              ? "SUPPORTED_BUT_AUTH_REQUIRED"
+              : "SUPPORTED_BUT_NOT_CONFIGURED"
+            : "SUPPORTED_BUT_NOT_CONFIGURED";
+
+  return Object.freeze({
+    verdict,
+    providerStatus,
+    reason: `${provider.displayName} serves "${attribute}"; status ${providerStatus}.`,
+  });
+}

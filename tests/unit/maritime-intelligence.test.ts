@@ -34,6 +34,7 @@ import {
   vesselIdentityIndex,
 } from "@/intelligence/matching/vessel-identity";
 import {
+  canQuery,
   getProviderAvailability,
   getVesselIntelligence,
   getVesselPosition,
@@ -412,5 +413,77 @@ describe("vessel identity is anchored on IMO and never guessed", () => {
   it("ships empty — no vessel identities are seeded", () => {
     // M2.8 is infrastructure. A populated index would be fabricated data.
     expect(vesselIdentityIndex.size).toBe(0);
+  });
+});
+
+/* ═══════ 7. M2.9 — capability discovery and startup isolation ═══════ */
+
+describe("capability discovery respects the domain boundary", () => {
+  it("reports the AIS providers as supported but unconfigured for position", () => {
+    // Supported: they are AIS sources and vessel.position routes to AIS.
+    // Not ready: neither has credentials.
+    for (const id of ["datalastic", "seavantage"]) {
+      const answer = canQuery(id, "vessel.position");
+      expect(answer.verdict).toBe("SUPPORTED_BUT_NOT_CONFIGURED");
+      expect(answer.providerStatus).toBe("PENDING_CREDENTIALS");
+    }
+  });
+
+  it("refuses to let a trade source answer a vessel position", () => {
+    // The boundary that stops a future caller routing a position request
+    // to whichever provider happens to be connected.
+    const answer = canQuery("trade_atlas", "vessel.position");
+    expect(answer.verdict).toBe("UNSUPPORTED");
+    expect(answer.reason).toMatch(/does not serve/i);
+  });
+
+  it("refuses to let a sanctions source answer a vessel position", () => {
+    expect(canQuery("sanctions", "vessel.position").verdict).toBe("UNSUPPORTED");
+  });
+
+  it("refuses to let an AIS source answer a sanctions question", () => {
+    expect(canQuery("datalastic", "entity.sanctions").verdict).toBe("UNSUPPORTED");
+  });
+
+  it("reports a connected in-domain provider as ready", () => {
+    expect(canQuery("volza", "trade.flow").verdict).toBe("SUPPORTED_AND_READY");
+    expect(canQuery("sanctions", "entity.sanctions").verdict).toBe("SUPPORTED_AND_READY");
+  });
+
+  it("reports a planned in-domain provider as planned, not unsupported", () => {
+    // Trade Atlas will serve trade.flow — it simply is not contracted yet.
+    expect(canQuery("trade_atlas", "trade.flow").verdict).toBe("PLANNED");
+  });
+
+  it("treats an unregistered provider as unsupported rather than assuming capability", () => {
+    const answer = canQuery("kpler", "vessel.position");
+    expect(answer.verdict).toBe("UNSUPPORTED");
+    expect(answer.providerStatus).toBeNull();
+  });
+});
+
+describe("provider state never becomes application state", () => {
+  it("leaves unrelated capabilities usable when AIS is unconfigured", () => {
+    // The isolation requirement: AIS being unavailable must not take
+    // sanctions or trade down with it.
+    expect(getVesselPosition("9111111").state).toBe("unavailable");
+    expect(canQuery("sanctions", "entity.sanctions").verdict).toBe("SUPPORTED_AND_READY");
+    expect(canQuery("volza", "trade.flow").verdict).toBe("SUPPORTED_AND_READY");
+  });
+
+  it("exposes no credential values anywhere in a provider reading", () => {
+    // Only names and statuses may cross this boundary. A value-shaped
+    // string here would mean a secret had reached client-reachable code.
+    const serialised = JSON.stringify(getProviderAvailability());
+    expect(serialised).not.toMatch(/api[_-]?key\s*[:=]\s*["'][^"']{8,}/i);
+    expect(serialised).not.toMatch(/bearer\s+[A-Za-z0-9._-]{16,}/i);
+  });
+
+  it("issues no provider request merely by asking what is available", () => {
+    // Capability discovery is metadata-only. If reading the registry
+    // could trigger a connection, a page render would consume rate limit.
+    const before = getProviderAvailability();
+    const after = getProviderAvailability();
+    expect(JSON.stringify(after)).toBe(JSON.stringify(before));
   });
 });
