@@ -288,6 +288,18 @@ export function MissionCommandBar({
   const lensActive = modeKey !== DEFAULT_MODE;
   const showRecent = unifiedSearch ? !cleared : history.length > 0 || !hideSuggestions;
 
+  /**
+   * Attract cue only while the field is genuinely idle: empty and unfocused.
+   * The first keystroke (or focus) stops it; emptying the field restores it.
+   */
+  const [focused, setFocused] = useState(false);
+  const promptPhrases = SEARCH_PROMPTS[modeKey] ?? SEARCH_PROMPTS[DEFAULT_MODE]!;
+  const idleForCue = input === "" && !focused;
+  const typedPrompt = useTypewriterPlaceholder(promptPhrases, idleForCue);
+  const staticPlaceholder = unifiedSearch
+    ? "Search IMO / MMSI / Vessel / Company / Cargo / Manifest / Port / Location / Event"
+    : mode.placeholder;
+
   return (
     <section
       aria-label="Mission Intelligence Command Bar"
