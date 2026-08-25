@@ -3,18 +3,19 @@ import {
   Anchor,
   ArrowRight,
   Box,
-  Building2,
   FileText,
-  Hash,
-  MapPin,
+  LayoutGrid,
   Mic,
-  Package,
   Receipt,
-  Route as RouteIcon,
   Search,
+  SearchCheck,
+  ShieldAlert,
+  Ship,
+  Siren,
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
+
 
 import { useCommandDispatch, type EntityType } from "@/lib/command-dispatch";
 import {
@@ -40,15 +41,16 @@ import { cn } from "@/lib/utils";
  */
 
 const ICONS: Record<IntelligenceMode["icon"], LucideIcon> = {
-  hash: Hash,
-  anchor: Anchor,
-  building: Building2,
-  manifest: FileText,
-  container: Package,
-  bol: Receipt,
-  voyage: RouteIcon,
-  port: MapPin,
+  overview: LayoutGrid,
+  vessel: Ship,
+  revenue: Receipt,
+  risk: ShieldAlert,
+  investigation: SearchCheck,
+  port: Anchor,
+  incident: Siren,
+  briefing: FileText,
 };
+
 
 /** In-session per-mode search history. Newest first, capped at 8. */
 const HISTORY: Record<EntityType, string[]> = {
@@ -263,7 +265,7 @@ export function MissionCommandBar({
           }}
           placeholder={
             unifiedSearch
-              ? "Search vessels, companies, manifests, containers, ports or investigations…"
+              ? "Search IMO / MMSI / vessel / company / cargo / manifest / port / location / event…"
               : mode.placeholder
           }
           aria-label={`Search — ${mode.aiContext}`}

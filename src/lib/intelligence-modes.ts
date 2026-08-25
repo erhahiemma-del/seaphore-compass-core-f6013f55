@@ -22,7 +22,16 @@ export interface IntelligenceMode {
    /** Mission label shown to officers. */
   label: string;
   /** Icon slot key (bound to a lucide icon in the UI). */
-  icon: "hash" | "anchor" | "building" | "manifest" | "container" | "bol" | "voyage" | "port";
+  icon:
+    | "overview"
+    | "vessel"
+    | "revenue"
+    | "risk"
+    | "investigation"
+    | "port"
+    | "incident"
+    | "briefing";
+
   /** Alt+N shortcut number (1-based, 0 = no shortcut). */
   shortcut: number;
   /** Search input placeholder. */
@@ -41,7 +50,7 @@ export const INTELLIGENCE_MODES: IntelligenceMode[] = [
   {
     key: "imo",
     label: "National Overview",
-    icon: "hash",
+    icon: "overview",
     shortcut: 1,
     placeholder: "Search maritime intelligence…",
     helper: "Search across the national maritime operating picture.",
@@ -51,8 +60,8 @@ export const INTELLIGENCE_MODES: IntelligenceMode[] = [
   },
   {
     key: "vessel",
-    label: "AIS Investigation",
-    icon: "anchor",
+    label: "Vessel Operations",
+    icon: "vessel",
     shortcut: 2,
     placeholder: "Search AIS anomalies…",
     helper: "Investigate vessel movement, gaps and route behaviour.",
@@ -61,32 +70,26 @@ export const INTELLIGENCE_MODES: IntelligenceMode[] = [
     suggestions: ["AIS gaps", "Route deviations", "Dark periods", "Port call history"],
   },
   {
-    key: "company",
-    label: "Ownership Investigation",
-    icon: "building",
-    shortcut: 3,
-    placeholder: "Search ownership networks…",
-    helper: "Investigate companies, beneficial owners and related vessels.",
-    prefix: "COMPANY: ",
-    aiContext: "Ownership Investigation",
-    suggestions: ["Beneficial owners", "Shell links", "Related vessels", "Director changes"],
-  },
-  {
     key: "manifest",
     label: "Revenue Assurance",
-    icon: "manifest",
-    shortcut: 4,
+    icon: "revenue",
+    shortcut: 3,
     placeholder: "Search revenue evidence…",
     helper: "Review manifests, cargo declarations and leakage indicators.",
     prefix: "MANIFEST: ",
     aiContext: "Revenue Assurance",
-    suggestions: ["Revenue discrepancies", "Duplicate manifests", "HS code mismatch", "Under-declaration"],
+    suggestions: [
+      "Revenue discrepancies",
+      "Duplicate manifests",
+      "HS code mismatch",
+      "Under-declaration",
+    ],
   },
   {
     key: "container",
-    label: "Compliance Review",
-    icon: "container",
-    shortcut: 5,
+    label: "Risk & Compliance",
+    icon: "risk",
+    shortcut: 4,
     placeholder: "Search compliance cases…",
     helper: "Review sanctions, watchlist and inspection evidence.",
     prefix: "CONTAINER: ",
@@ -94,39 +97,51 @@ export const INTELLIGENCE_MODES: IntelligenceMode[] = [
     suggestions: ["Watchlist matches", "Sanctions exposure", "Inspection records", "Seal verification"],
   },
   {
-    key: "bol",
-    label: "Environmental Risk",
-    icon: "bol",
-    shortcut: 6,
-    placeholder: "Search environmental risk…",
-    helper: "Assess weather, port conditions and maritime disruption signals.",
-    prefix: "BOL: ",
-    aiContext: "Environmental Risk",
-    suggestions: ["Weather disruption", "Sea-state risk", "Port delay drivers", "Expected arrivals"],
-  },
-  {
-    key: "voyage",
-    label: "Vessel Risk",
-    icon: "voyage",
-    shortcut: 7,
-    placeholder: "Search vessel risk…",
-    helper: "Review vessel exposure, behaviour and intelligence history.",
-    prefix: "VOYAGE: ",
-    aiContext: "Vessel Risk",
-    suggestions: ["Risk exposure", "Flag changes", "STS events", "Previous investigations"],
+    key: "company",
+    label: "Investigation",
+    icon: "investigation",
+    shortcut: 5,
+    placeholder: "Search ownership networks…",
+    helper: "Investigate companies, beneficial owners and related vessels.",
+    prefix: "COMPANY: ",
+    aiContext: "Ownership Investigation",
+    suggestions: ["Beneficial owners", "Shell links", "Related vessels", "Director changes"],
   },
   {
     key: "port",
-    label: "Port Congestion",
+    label: "Port Intelligence",
     icon: "port",
-    shortcut: 8,
+    shortcut: 6,
     placeholder: "Search port operations…",
     helper: "Review port congestion, arrivals and berth-level context.",
     prefix: "PORT: ",
     aiContext: "Port Congestion",
     suggestions: ["Congestion analysis", "Expected arrivals", "Anchorage queue", "Berth delays"],
   },
+  {
+    key: "bol",
+    label: "Incident Response",
+    icon: "incident",
+    shortcut: 7,
+    placeholder: "Search incidents and disruption…",
+    helper: "Assess incidents, weather and maritime disruption signals.",
+    prefix: "BOL: ",
+    aiContext: "Environmental Risk",
+    suggestions: ["Weather disruption", "Sea-state risk", "Port delay drivers", "Expected arrivals"],
+  },
+  {
+    key: "voyage",
+    label: "Executive Briefing",
+    icon: "briefing",
+    shortcut: 8,
+    placeholder: "Search vessel risk…",
+    helper: "Review vessel exposure, behaviour and intelligence history.",
+    prefix: "VOYAGE: ",
+    aiContext: "Vessel Risk",
+    suggestions: ["Risk exposure", "Flag changes", "STS events", "Previous investigations"],
+  },
 ];
+
 
 export const MODE_BY_KEY: Record<EntityType, IntelligenceMode> = Object.fromEntries(
   INTELLIGENCE_MODES.map((m) => [m.key, m]),

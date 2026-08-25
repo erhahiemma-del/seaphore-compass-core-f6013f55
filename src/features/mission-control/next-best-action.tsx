@@ -69,12 +69,13 @@ export function NextBestAction({
               </div>
             </div>
           </div>
-          <Field label="Evidence">
+          <Field label="Why this matters">Awaiting evidence</Field>
+          <Field label="Evidence summary">
             <ConfidenceChip tier="unconfirmed" size={9} />
           </Field>
           <Field label="Status">Awaiting evidence</Field>
           <Field label="Owner">Officer</Field>
-          <Field label="Required action">Inspect capability</Field>
+
           <a
             href={projection.capabilityHref}
             className="inline-flex shrink-0 items-center gap-2 self-start rounded-md bg-white px-4 py-2.5 text-[13px] font-semibold text-[color:var(--navy)] motion-fast hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 lg:self-center"
@@ -116,12 +117,13 @@ export function NextBestAction({
           </div>
         </div>
 
-        <Field label="Evidence">
+        <Field label="Why this matters">{item.priority} priority finding</Field>
+        <Field label="Evidence summary">
           <ConfidenceChip tier={item.confidence} size={9} />
         </Field>
         <Field label="Status">{item.approved ? "Officer approved" : "Awaiting decision"}</Field>
         <Field label="Owner">Officer</Field>
-        <Field label="Required action">Review evidence</Field>
+
 
         <button
           type="button"
