@@ -44,6 +44,11 @@ export interface IntelligenceMode {
   aiContext: string;
   /** Suggested one-tap intelligence queries for this mode. */
   suggestions: string[];
+  /**
+   * Contextual search domains this lens emphasises. Presentation-only —
+   * Global Search stays universal; this changes emphasis, never results.
+   */
+  contextDomains: readonly string[];
 }
 
 export const INTELLIGENCE_MODES: IntelligenceMode[] = [
@@ -56,6 +61,7 @@ export const INTELLIGENCE_MODES: IntelligenceMode[] = [
     helper: "Search across the national maritime operating picture.",
     prefix: "IMO: ",
     aiContext: "National Maritime Overview",
+    contextDomains: ["national activity", "ports", "vessels", "incidents", "routes", "zones"],
     suggestions: ["Apapa arrivals", "High-risk vessels", "Revenue watch", "Open investigations"],
   },
   {
@@ -67,6 +73,7 @@ export const INTELLIGENCE_MODES: IntelligenceMode[] = [
     helper: "Investigate vessel movement, gaps and route behaviour.",
     prefix: "VESSEL: ",
     aiContext: "AIS Investigation",
+    contextDomains: ["IMO", "MMSI", "vessel", "voyage", "movement", "last position"],
     suggestions: ["AIS gaps", "Route deviations", "Dark periods", "Port call history"],
   },
   {
@@ -78,6 +85,7 @@ export const INTELLIGENCE_MODES: IntelligenceMode[] = [
     helper: "Review manifests, cargo declarations and leakage indicators.",
     prefix: "MANIFEST: ",
     aiContext: "Revenue Assurance",
+    contextDomains: ["manifests", "cargo", "quantity", "voyage", "company", "discrepancies"],
     suggestions: [
       "Revenue discrepancies",
       "Duplicate manifests",
@@ -94,6 +102,7 @@ export const INTELLIGENCE_MODES: IntelligenceMode[] = [
     helper: "Review sanctions, watchlist and inspection evidence.",
     prefix: "CONTAINER: ",
     aiContext: "Compliance Review",
+    contextDomains: ["vessels", "companies", "sanctions", "watchlists", "incidents"],
     suggestions: ["Watchlist matches", "Sanctions exposure", "Inspection records", "Seal verification"],
   },
   {
@@ -105,6 +114,7 @@ export const INTELLIGENCE_MODES: IntelligenceMode[] = [
     helper: "Investigate companies, beneficial owners and related vessels.",
     prefix: "COMPANY: ",
     aiContext: "Ownership Investigation",
+    contextDomains: ["vessels", "companies", "incidents", "evidence", "cases"],
     suggestions: ["Beneficial owners", "Shell links", "Related vessels", "Director changes"],
   },
   {
@@ -116,6 +126,7 @@ export const INTELLIGENCE_MODES: IntelligenceMode[] = [
     helper: "Review port congestion, arrivals and berth-level context.",
     prefix: "PORT: ",
     aiContext: "Port Congestion",
+    contextDomains: ["ports", "port calls", "arrivals", "congestion", "anchorage", "berth activity"],
     suggestions: ["Congestion analysis", "Expected arrivals", "Anchorage queue", "Berth delays"],
   },
   {
@@ -127,6 +138,7 @@ export const INTELLIGENCE_MODES: IntelligenceMode[] = [
     helper: "Assess incidents, weather and maritime disruption signals.",
     prefix: "BOL: ",
     aiContext: "Environmental Risk",
+    contextDomains: ["incidents", "vessels", "locations", "events", "zones"],
     suggestions: ["Weather disruption", "Sea-state risk", "Port delay drivers", "Expected arrivals"],
   },
   {
@@ -138,6 +150,7 @@ export const INTELLIGENCE_MODES: IntelligenceMode[] = [
     helper: "Review vessel exposure, behaviour and intelligence history.",
     prefix: "VOYAGE: ",
     aiContext: "Vessel Risk",
+    contextDomains: ["national patterns", "strategic risk", "revenue", "compliance", "major events", "trends"],
     suggestions: ["Risk exposure", "Flag changes", "STS events", "Previous investigations"],
   },
 ];
