@@ -316,7 +316,7 @@ function MaritimeDataNotice({ state }: { state: MapDataStateResult }) {
   return (
     <div
       data-testid="maritime-data-notice"
-      className="pointer-events-none absolute bottom-3 left-3 max-w-[300px] rounded-lg border border-border/60 bg-background/92 p-2.5 shadow-card backdrop-blur-sm"
+      className="pointer-events-none absolute right-3 top-3 max-w-[280px] rounded-lg border border-border/60 bg-background/92 p-2.5 shadow-card backdrop-blur-sm"
     >
       <p className="text-[9.5px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
         Maritime data
