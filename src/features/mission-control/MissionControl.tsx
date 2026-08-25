@@ -43,6 +43,7 @@ import { RIBBON_KPIS } from "@/lib/mission-control-data";
 import { MissionModeSelector } from "./MissionModeSelector";
 import { COMPOSABLE_PANELS, orderKpis, orderPanels } from "./modes";
 import { useMissionMode } from "./useMissionMode";
+import { MapRecommendationNotice } from "./MapRecommendationNotice";
 import { useUipStore } from "@/stores/uip.store";
 import { scanForLeakage } from "@/services/revenue-leakage";
 import {
@@ -313,6 +314,13 @@ function Ribbon() {
   return (
     <div className="flex flex-col gap-3">
       <MissionModeSelector value={modeId} onChange={setModeId} />
+      {/*
+        Advisory only. Appears when this lens would show layers the
+        officer does not have on, and not otherwise; applying is
+        additive and explicit. The officer's configuration is never
+        changed by switching mode.
+      */}
+      <MapRecommendationNotice mode={mode} />
       {coverage ? (
         <IntelligenceReadinessCard
           readiness={coverage.readiness}
