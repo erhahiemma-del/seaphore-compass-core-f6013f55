@@ -52,8 +52,13 @@ interface ChipDefinition {
   readonly layers: readonly string[];
 }
 
-/** The overall maritime view — what "All" restores. */
-const BASE_LAYERS = ["vessels", "ports", "eezBoundary", "graticule"] as const;
+/**
+ * The geographic frame that never leaves.
+ *
+ * Land, sea and the national maritime space are true whether or not any
+ * intelligence feed answers, so no chip may switch them off.
+ */
+const FRAME_LAYERS = ["graticule", "eezBoundary"] as const;
 
 const CHIPS: readonly ChipDefinition[] = [
   { id: "vessels", label: "Vessels", icon: Ship, layers: ["vessels", "vesselClusters"] },
