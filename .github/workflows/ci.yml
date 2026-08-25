@@ -2,8 +2,20 @@ name: CI
 
 on:
   pull_request:
+  # Every branch, not just main.
+  #
+  # Previously `branches: [main]`, which meant a feature branch got no
+  # verification at all until a pull request was opened. Work sat on
+  # feat/* branches for entire milestones without CI ever running, and
+  # the inherited format:check and lint failures on main survived that
+  # long precisely because nothing was checking between merges.
+  #
+  # A branch with an open PR now runs twice — once for the push, once
+  # for the PR merge commit. That is the accepted cost: they test
+  # different commits, and the duplicate is cheaper than a branch that
+  # goes unverified for a week.
   push:
-    branches: [main]
+    branches: ["**"]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -31,8 +43,21 @@ jobs:
       - name: Lint
         run: bun run lint
 
+      # Via the script, not `bunx tsgo --noEmit` directly. Calling the
+      # tool bypassed the definition everyone else runs locally, so a
+      # change to the typecheck script would have silently stopped
+      # applying here.
       - name: Typecheck
-        run: bunx tsgo --noEmit
+        run: bun run typecheck
+
+      # Before the full suite, and named separately, on purpose. These
+      # are the architectural guards — composition contract, semantic
+      # tokens, navigation, no client secrets. test:unit runs them too,
+      # but buried among 93 files a contract break reads as "a test
+      # failed" rather than "the composition contract was violated".
+      # ~10s to make that distinction legible.
+      - name: Contract tests
+        run: bun run test:contracts
 
       - name: Unit tests
         run: bun run test:unit
