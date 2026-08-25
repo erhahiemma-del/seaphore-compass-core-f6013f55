@@ -79,9 +79,27 @@ export interface MissionCommandBarProps {
   readonly contextMode?: EntityType | null;
   /** Origin recorded on dispatch, so handoffs know where they came from. */
   readonly fromRoute?: string;
+  /**
+   * Externally pinned mode, when the Mission Mode selector is rendered as
+   * its own band (Mission Control). `undefined` keeps the legacy
+   * self-contained behaviour for every other caller.
+   */
+  readonly pinnedMode?: EntityType | null;
+  readonly onPinnedModeChange?: (next: EntityType) => void;
+  /** Hide the inline mode chips when the selector lives outside this bar. */
+  readonly hideModeChips?: boolean;
+  /** Hide the suggested-query row to keep the command surface compact. */
+  readonly hideSuggestions?: boolean;
 }
 
-export function MissionCommandBar({ contextMode = null, fromRoute }: MissionCommandBarProps = {}) {
+export function MissionCommandBar({
+  contextMode = null,
+  fromRoute,
+  pinnedMode,
+  onPinnedModeChange,
+  hideModeChips = false,
+  hideSuggestions = false,
+}: MissionCommandBarProps = {}) {
   /**
    * A mode the officer chose, which context must not overrule.
    *
@@ -94,11 +112,20 @@ export function MissionCommandBar({ contextMode = null, fromRoute }: MissionComm
    * The pin clears when the officer deselects, since returning to the
    * global picture is a natural end to whatever they were doing.
    */
-  const [pinned, setPinned] = useState<EntityType | null>(null);
+  const [internalPinned, setInternalPinned] = useState<EntityType | null>(null);
+  const controlled = pinnedMode !== undefined;
+  const pinned = controlled ? (pinnedMode ?? null) : internalPinned;
+  const setPinned = useCallback(
+    (next: EntityType) => {
+      if (controlled) onPinnedModeChange?.(next);
+      else setInternalPinned(next);
+    },
+    [controlled, onPinnedModeChange],
+  );
 
   useEffect(() => {
-    if (contextMode === null) setPinned(null);
-  }, [contextMode]);
+    if (!controlled && contextMode === null) setInternalPinned(null);
+  }, [contextMode, controlled]);
 
   const modeKey = pinned ?? contextMode ?? DEFAULT_MODE;
   const mode = MODE_BY_KEY[modeKey];
