@@ -97,23 +97,30 @@ export interface MapLayerChipsProps {
  */
 export function MapLayerChips({ service = sgs, className }: MapLayerChipsProps) {
   const active = useActiveLayers(service);
+  const base = known([...BASE_LAYERS]);
 
-  const isAll = CHIPS.every((chip) =>
-    chip.layers.every((id) => !layerRegistry.has(id) || active.has(id) === false),
-  )
-    ? // No specialised family on: the frame alone is "All".
-      known([...BASE_LAYERS]).every((id) => active.has(id))
-    : false;
+  /**
+   * "All" is the overall picture: the geographic frame on, nothing
+   * specialised emphasised. A chip is *on* when any of its own layers is
+   * drawn — a family with one connected provider and one pending source is
+   * still being shown.
+   */
+  const specialised = CHIPS.flatMap((chip) => known(chip.layers)).filter(
+    (id) => !base.includes(id),
+  );
+  const isAll =
+    base.every((id) => active.has(id)) && specialised.every((id) => !active.has(id));
 
   function emphasise(chip: ChipDefinition) {
     const own = known(chip.layers);
-    const allOn = own.length > 0 && own.every((id) => active.has(id));
-    if (allOn) {
+    if (own.length === 0) return;
+    const on = own.some((id) => active.has(id));
+    if (on) {
       // Toggling off leaves the geographic frame standing.
       service.setActiveLayers([...active].filter((id) => !own.includes(id)));
       return;
     }
-    service.setActiveLayers([...new Set([...known([...BASE_LAYERS, "graticule"]), ...own])]);
+    service.setActiveLayers([...new Set([...base, ...active, ...own])]);
   }
 
   return (
@@ -125,14 +132,14 @@ export function MapLayerChips({ service = sgs, className }: MapLayerChipsProps) 
         icon={Globe2}
         label="All"
         active={isAll}
-        onClick={() => service.setActiveLayers(known([...BASE_LAYERS]))}
+        onClick={() => service.setActiveLayers(base)}
       />
       {CHIPS.map((chip) => {
         const own = known(chip.layers);
-        const on = own.length > 0 && own.every((id) => active.has(id));
-        const pending = own.every(
-          (id) => layerRegistry.get(id)?.status === "pending-source",
-        );
+        const on = own.some((id) => active.has(id));
+        const pending =
+          own.length > 0 &&
+          own.every((id) => layerRegistry.get(id)?.status === "pending-source");
         return (
           <Chip
             key={chip.id}
