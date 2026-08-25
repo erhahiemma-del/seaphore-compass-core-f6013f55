@@ -65,6 +65,8 @@ import type { VesselFeature } from "../vessel";
 const SOURCE_IDS = {
   vessels: "vessels",
   ports: "ports",
+  incidentReports: "incident-reports",
+  weatherAlerts: "weather-alerts",
   eez: "nigeria-eez",
   graticule: "graticule",
   voyageEndpoints: "voyage-endpoints",
@@ -96,12 +98,15 @@ export const INSTALLED_RENDER_LAYERS: readonly string[] = [
   LAYER_IDS.eezFill,
   LAYER_IDS.eezBoundary,
   LAYER_IDS.portAnchorage,
+  LAYER_IDS.portAnchorageSymbol,
   LAYER_IDS.ports,
   LAYER_IDS.portLabels,
   LAYER_IDS.riskHeatmap,
   LAYER_IDS.vesselSelection,
   LAYER_IDS.vessels,
   LAYER_IDS.vesselLabels,
+  LAYER_IDS.incidentReports,
+  LAYER_IDS.weatherOverlay,
   LAYER_IDS.investigArea,
 ] as const;
 
@@ -759,6 +764,22 @@ export class MapLibreRenderer implements MapRenderer {
       },
     });
     map.addLayer({
+      id: LAYER_IDS.portAnchorageSymbol,
+      type: "symbol",
+      source: SOURCE_IDS.ports,
+      minzoom: 7,
+      layout: {
+        "icon-image": symbolSpriteId("anchorage"),
+        "icon-size": ["interpolate", ["linear"], ["zoom"], 7, 0.48, 10, 0.7, 14, 1],
+        "icon-offset": [0, 1.35],
+        "icon-allow-overlap": true,
+        "icon-ignore-placement": true,
+      },
+      paint: {
+        "icon-opacity": ["interpolate", ["linear"], ["zoom"], 7, 0.65, 10, 0.9],
+      },
+    });
+    map.addLayer({
       id: LAYER_IDS.ports,
       type: "symbol",
       source: SOURCE_IDS.ports,
@@ -944,6 +965,46 @@ export class MapLibreRenderer implements MapRenderer {
         // label stays as recessive as its hull.
         "text-opacity": ["interpolate", ["linear"], ["zoom"], 8.5, 0, 9.2, ["get", "opacity"]],
       },
+    });
+
+    // ── Incident and weather symbols ──
+    // Empty until their providers are connected, but the renderer still owns
+    // the layers and the icon semantics now. A future feed supplies GeoJSON;
+    // it must not invent a different marker grammar or fall back to a generic
+    // triangle/dot when the shared symbol vocabulary already says what to draw.
+    map.addSource(SOURCE_IDS.incidentReports, {
+      type: "geojson",
+      data: { type: "FeatureCollection", features: [] },
+    });
+    map.addLayer({
+      id: LAYER_IDS.incidentReports,
+      type: "symbol",
+      source: SOURCE_IDS.incidentReports,
+      layout: {
+        visibility: "none",
+        "icon-image": symbolSpriteId("incident"),
+        "icon-size": ["interpolate", ["linear"], ["zoom"], 5, 0.72, 9, 0.95, 14, 1.25],
+        "icon-allow-overlap": true,
+        "icon-ignore-placement": true,
+      },
+      paint: { "icon-opacity": 0.95 },
+    });
+    map.addSource(SOURCE_IDS.weatherAlerts, {
+      type: "geojson",
+      data: { type: "FeatureCollection", features: [] },
+    });
+    map.addLayer({
+      id: LAYER_IDS.weatherOverlay,
+      type: "symbol",
+      source: SOURCE_IDS.weatherAlerts,
+      layout: {
+        visibility: "none",
+        "icon-image": symbolSpriteId("weather-alert"),
+        "icon-size": ["interpolate", ["linear"], ["zoom"], 5, 0.72, 9, 0.95, 14, 1.2],
+        "icon-allow-overlap": true,
+        "icon-ignore-placement": true,
+      },
+      paint: { "icon-opacity": 0.9 },
     });
 
     // ── Investigation area ──

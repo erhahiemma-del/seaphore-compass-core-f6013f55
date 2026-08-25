@@ -433,6 +433,7 @@ export const LAYER_IDS = {
   ports: "ports-layer",
   portLabels: "port-labels-layer",
   portAnchorage: "port-anchorage-layer",
+  portAnchorageSymbol: "port-anchorage-symbol-layer",
   eezBoundary: "eez-boundary-layer",
   /** Jurisdictional wash inside the EEZ outline. */
   eezFill: "eez-fill-layer",
@@ -444,6 +445,7 @@ export const LAYER_IDS = {
   aisTrackDark: "ais-track-dark-layer",
   riskHeatmap: "risk-heatmap-layer",
   revenueHeat: "revenue-heatmap-layer",
+  incidentReports: "incident-reports-layer",
   investigArea: "investigation-area-layer",
   weatherOverlay: "weather-layer",
   /** Non-cooperative SAR detections, and the scene footprints they came from. */
