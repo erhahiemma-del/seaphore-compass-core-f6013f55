@@ -53,6 +53,8 @@ function report(kpis: KpiCoverage[]): IntelligenceCoverageReport {
   } as unknown as IntelligenceCoverageReport;
 }
 
+afterEach(cleanup);
+
 describe("KPI ribbon is bound to the coverage model", () => {
   it("keeps all six cards on screen with no coverage at all", () => {
     render(<KpiRibbon coverage={undefined} onOpen={() => {}} />);
