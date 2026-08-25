@@ -6,6 +6,7 @@
  * fabricated: when a store is genuinely empty the row says so in words
  * rather than parading a zero as an operational metric.
  */
+import { useMemo } from "react";
 import { Link, type LinkProps } from "@tanstack/react-router";
 import { ArrowRight, Bell, Gavel, ListChecks, Radar, Share2, type LucideIcon } from "lucide-react";
 
