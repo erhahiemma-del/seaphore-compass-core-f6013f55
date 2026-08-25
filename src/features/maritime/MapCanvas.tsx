@@ -18,6 +18,7 @@ import { prefersReducedMotion } from "@/hooks/use-reduced-motion";
 import {
   BASEMAP_STYLE,
   EmptyVesselSource,
+  LIGHT_BASEMAP_STYLE,
   MAP_SCOPES,
   toVoyageEndpointCollection,
   ReplayRecorder,
@@ -39,6 +40,7 @@ import {
   type MapControlOptions,
   type MapEventBus,
   type MapRenderer,
+  type MapStylePaletteName,
   type MapScopeId,
   type SharedGeospatialService,
   type Vessel,
@@ -128,6 +130,10 @@ export interface MapCanvasProps {
    * SGS stand, which is what the command and overview surfaces want.
    */
   readonly domain?: MapDomain;
+  /** Optional visual palette for embedded/overview map surfaces. */
+  readonly palette?: MapStylePaletteName;
+  /** Optional style URL override for tests or specialised surfaces. */
+  readonly basemapStyle?: string;
   /** Renderer to attach. Defaults to the MapLibre adapter. */
   readonly renderer?: MapRenderer;
   /** Where vessels come from. Defaults to an empty source. */
@@ -184,6 +190,8 @@ export function MapCanvas({
   scope: scopeOverride,
   voyages,
   domain,
+  palette = "maritime",
+  basemapStyle,
   renderer: injectedRenderer,
   vesselSource,
   service = sgs,
@@ -258,7 +266,8 @@ export function MapCanvas({
     void renderer
       .mount({
         container,
-        style: BASEMAP_STYLE,
+        style: basemapStyle ?? (palette === "institutional" ? LIGHT_BASEMAP_STYLE : BASEMAP_STYLE),
+        palette,
         center: state.center,
         zoom: state.zoom,
         minZoom: activeScope.minZoom,
@@ -325,7 +334,7 @@ export function MapCanvas({
     // correct: MapLibre has no API to remove a control set afterwards.
     // `scope` is the same: bounds and zoom limits are constructor
     // arguments, so changing scope means a new map.
-  }, [mode, scope, domain, renderer, engine, service, setRenderer, setStatus, setError]);
+  }, [mode, scope, domain, palette, basemapStyle, renderer, engine, service, setRenderer, setStatus, setError]);
 
   /*
    * ── Voyage overlay ────────────────────────────────────────────────
@@ -537,7 +546,7 @@ export function MapCanvas({
  */
 function RendererPendingNotice() {
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-[#0B1F3A]">
+    <div className="absolute inset-0 flex items-center justify-center bg-[color:var(--navy)]">
       <div className="max-w-md px-6 text-center">
         <MapPinOff className="mx-auto mb-3 h-8 w-8 text-muted-foreground" aria-hidden />
         <p className="text-sm font-semibold text-foreground">Rendering engine unavailable</p>

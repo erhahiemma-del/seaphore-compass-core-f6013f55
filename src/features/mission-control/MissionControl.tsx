@@ -120,6 +120,7 @@ export function MissionControl() {
             pinnedMode={pinnedMode}
             onPinnedModeChange={setPinnedMode}
             hideModeChips
+            searchVariant="unified"
           />
           <div className={recede}>
             <QuickActions />
@@ -138,12 +139,12 @@ export function MissionControl() {
         <NextBestAction projection={prioritiesProjection} onAct={openEntity} />
 
         {/* NATIONAL MARITIME PICTURE + PRIORITY QUEUE — the map is the anchor. */}
-        <div className="grid gap-3.5 xl:grid-cols-[minmax(0,3.2fr)_minmax(0,1fr)]">
+        <div className="grid gap-3.5 xl:grid-cols-[minmax(0,18fr)_minmax(320px,7fr)]">
           <MaritimePicturePanel />
           <PriorityQueuePanel
             projection={prioritiesProjection}
             onOpen={openEntity}
-            className="h-[620px]"
+            className="h-[600px]"
           />
         </div>
 
@@ -235,7 +236,7 @@ function MaritimePicturePanel() {
   });
 
   return (
-    <PanelCard variant="edge" className="flex h-[620px] flex-col elev-2">
+    <PanelCard variant="edge" className="flex h-[600px] flex-col elev-2">
       <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-2.5">
         <div className="flex min-w-0 items-baseline gap-2">
           <h2 className="type-label text-slate">National Maritime Picture</h2>
@@ -253,7 +254,22 @@ function MaritimePicturePanel() {
           singleton, so a vessel chosen here is already selected when the
           officer opens Maritime Command.
         */}
-        <MapCanvas mode="overview" onVesselsChanged={handleVessels} />
+        <MapCanvas
+          mode="overview"
+          scope="regional"
+          palette="institutional"
+          onVesselsChanged={handleVessels}
+        />
+        <div className="pointer-events-none absolute left-3 top-3 flex flex-wrap items-center gap-1.5">
+          {["EEZ", "Ports", "AIS", "Risk"].map((label) => (
+            <span
+              key={label}
+              className="rounded border border-line bg-surface/88 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-slate shadow-sm backdrop-blur"
+            >
+              {label}
+            </span>
+          ))}
+        </div>
         {dataState.state !== "LIVE" ? <MaritimeDataNotice state={dataState} /> : null}
       </div>
     </PanelCard>
@@ -297,10 +313,10 @@ function MaritimeDataNotice({ state }: { state: MapDataStateResult }) {
  */
 function DataStateBadge({ state }: { state: MapDataStateResult }) {
   const tone: Record<MapDataStateResult["state"], string> = {
-    LIVE: "border-emerald-600/40 bg-emerald-600/10 text-emerald-700",
-    DELAYED: "border-amber-600/40 bg-amber-600/10 text-amber-700",
-    DATA_UNAVAILABLE: "border-slate-500/40 bg-slate-500/10 text-slate-600",
-    DEMO: "border-violet-600/40 bg-violet-600/10 text-violet-700",
+    LIVE: "border-[color:var(--status-verified-edge)] bg-[color:var(--status-verified-tint)] text-[color:var(--status-verified)]",
+    DELAYED: "border-[color:var(--status-review-edge)] bg-[color:var(--status-review-tint)] text-[color:var(--status-review)]",
+    DATA_UNAVAILABLE: "border-line bg-surface-2 text-slate",
+    DEMO: "border-[color:var(--status-active-edge)] bg-[color:var(--status-active-tint)] text-[color:var(--status-active)]",
   };
 
   return (

@@ -1,6 +1,6 @@
 /**
- * Intelligence Modes — the interactive entity chips beneath the
- * Mission Intelligence Command Bar.
+ * Intelligence Modes — workflow mission contexts for the Mission
+ * Intelligence Command Bar.
  *
  * Each mode is a self-contained intelligence context:
  *   - chip identity (label, icon key)
@@ -19,7 +19,7 @@ import type { MapSelectionKind } from "@/services/geospatial/selection";
 export interface IntelligenceMode {
   /** Canonical dispatcher entity key. */
   key: EntityType;
-  /** Chip label shown to officers. */
+   /** Mission label shown to officers. */
   label: string;
   /** Icon slot key (bound to a lucide icon in the UI). */
   icon: "hash" | "anchor" | "building" | "manifest" | "container" | "bol" | "voyage" | "port";
@@ -40,111 +40,91 @@ export interface IntelligenceMode {
 export const INTELLIGENCE_MODES: IntelligenceMode[] = [
   {
     key: "imo",
-    label: "IMO",
+    label: "National Overview",
     icon: "hash",
     shortcut: 1,
-    placeholder: "Search IMO Number…",
-    helper: "Find vessel information using an IMO number.",
+    placeholder: "Search maritime intelligence…",
+    helper: "Search across the national maritime operating picture.",
     prefix: "IMO: ",
-    aiContext: "IMO Intelligence",
-    suggestions: [
-      "View vessel profile",
-      "Show ownership history",
-      "Last known position",
-      "Previous investigations",
-    ],
+    aiContext: "National Maritime Overview",
+    suggestions: ["Apapa arrivals", "High-risk vessels", "Revenue watch", "Open investigations"],
   },
   {
     key: "vessel",
-    label: "Vessel",
+    label: "AIS Investigation",
     icon: "anchor",
     shortcut: 2,
-    placeholder: "Search Vessel Name or IMO…",
-    helper: "Search vessels by name or registration.",
+    placeholder: "Search AIS anomalies…",
+    helper: "Investigate vessel movement, gaps and route behaviour.",
     prefix: "VESSEL: ",
-    aiContext: "Vessel Intelligence",
-    suggestions: ["Behavioural anomalies", "Port call history", "Flag changes", "AIS gaps"],
+    aiContext: "AIS Investigation",
+    suggestions: ["AIS gaps", "Route deviations", "Dark periods", "Port call history"],
   },
   {
     key: "company",
-    label: "Company",
+    label: "Ownership Investigation",
     icon: "building",
     shortcut: 3,
-    placeholder: "Search Shipping Company…",
-    helper: "Search shipping companies and ownership records.",
+    placeholder: "Search ownership networks…",
+    helper: "Investigate companies, beneficial owners and related vessels.",
     prefix: "COMPANY: ",
-    aiContext: "Company Intelligence",
-    suggestions: [
-      "Beneficial owners",
-      "Suspicious ownership patterns",
-      "Related vessels",
-      "Sanctions exposure",
-    ],
+    aiContext: "Ownership Investigation",
+    suggestions: ["Beneficial owners", "Shell links", "Related vessels", "Director changes"],
   },
   {
     key: "manifest",
-    label: "Manifest",
+    label: "Revenue Assurance",
     icon: "manifest",
     shortcut: 4,
-    placeholder: "Search Manifest Number…",
-    helper: "Locate manifests and related cargo records.",
+    placeholder: "Search revenue evidence…",
+    helper: "Review manifests, cargo declarations and leakage indicators.",
     prefix: "MANIFEST: ",
-    aiContext: "Manifest Intelligence",
-    suggestions: [
-      "Find duplicate manifests",
-      "Revenue discrepancies",
-      "Missing documentation",
-      "Validation status",
-    ],
+    aiContext: "Revenue Assurance",
+    suggestions: ["Revenue discrepancies", "Duplicate manifests", "HS code mismatch", "Under-declaration"],
   },
   {
     key: "container",
-    label: "Container",
+    label: "Compliance Review",
     icon: "container",
     shortcut: 5,
-    placeholder: "Search Container Number…",
-    helper: "Track individual containers across voyages.",
+    placeholder: "Search compliance cases…",
+    helper: "Review sanctions, watchlist and inspection evidence.",
     prefix: "CONTAINER: ",
-    aiContext: "Container Intelligence",
-    suggestions: ["Track container", "Seal verification", "Cargo history", "Inspection records"],
+    aiContext: "Compliance Review",
+    suggestions: ["Watchlist matches", "Sanctions exposure", "Inspection records", "Seal verification"],
   },
   {
     key: "bol",
-    label: "BOL",
+    label: "Environmental Risk",
     icon: "bol",
     shortcut: 6,
-    placeholder: "Search Bill of Lading Number…",
-    helper: "Locate bills of lading and consignment chains.",
+    placeholder: "Search environmental risk…",
+    helper: "Assess weather, port conditions and maritime disruption signals.",
     prefix: "BOL: ",
-    aiContext: "Bill of Lading Intelligence",
-    suggestions: [
-      "Consignor / consignee chain",
-      "Linked manifests",
-      "Payment terms anomalies",
-      "Endorsement history",
-    ],
+    aiContext: "Environmental Risk",
+    suggestions: ["Weather disruption", "Sea-state risk", "Port delay drivers", "Expected arrivals"],
   },
   {
     key: "voyage",
-    label: "Voyage",
+    label: "Vessel Risk",
     icon: "voyage",
     shortcut: 7,
-    placeholder: "Search Voyage Reference…",
-    helper: "Explore voyages, legs, and deviations.",
+    placeholder: "Search vessel risk…",
+    helper: "Review vessel exposure, behaviour and intelligence history.",
     prefix: "VOYAGE: ",
-    aiContext: "Voyage Intelligence",
-    suggestions: ["Route deviations", "STS events", "Dark periods", "ETA vs actual"],
+    aiContext: "Vessel Risk",
+    suggestions: ["Risk exposure", "Flag changes", "STS events", "Previous investigations"],
   },
   {
     key: "port",
-    label: "Port",
+    label: "Port Congestion",
     icon: "port",
     shortcut: 8,
-    placeholder: "Search Port Name or UN/LOCODE…",
-    helper: "Search ports and port intelligence.",
+    placeholder: "Search port operations…",
+    helper: "Review port congestion, arrivals and berth-level context.",
     prefix: "PORT: ",
-    aiContext: "Port Intelligence",
-    suggestions: ["Congestion analysis", "Risk heatmap", "Expected arrivals", "Compliance alerts"],
+    aiContext: "Port Congestion",
+    suggestions: ["Congestion analysis", "Expected arrivals", "Anchorage queue", "Berth delays"],
   },
 ];
 

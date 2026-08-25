@@ -89,6 +89,8 @@ export interface MissionCommandBarProps {
   readonly hideModeChips?: boolean;
   /** Hide the suggested-query row to keep the command surface compact. */
   readonly hideSuggestions?: boolean;
+  /** Mission Control uses one unified search box; other callers keep prefixes. */
+  readonly searchVariant?: "prefixed" | "unified";
 }
 
 export function MissionCommandBar({
@@ -98,7 +100,9 @@ export function MissionCommandBar({
   onPinnedModeChange,
   hideModeChips = false,
   hideSuggestions = false,
+  searchVariant = "prefixed",
 }: MissionCommandBarProps = {}) {
+  const unifiedSearch = searchVariant === "unified";
   /**
    * A mode the officer chose, which context must not overrule.
    *
@@ -131,7 +135,7 @@ export function MissionCommandBar({
   // Track the mode the input's prefix was written for, so a context-driven
   // change re-prefixes without discarding what the officer has typed.
   const prefixedFor = useRef<EntityType>(modeKey);
-  const [input, setInput] = useState(mode.prefix);
+  const [input, setInput] = useState(unifiedSearch ? "" : mode.prefix);
   const inputRef = useRef<HTMLInputElement>(null);
   const dispatch = useCommandDispatch();
 
@@ -151,20 +155,26 @@ export function MissionCommandBar({
   }, []);
 
   useEffect(() => {
+    if (unifiedSearch) return;
     if (prefixedFor.current === modeKey) return;
     const previous = MODE_BY_KEY[prefixedFor.current];
     prefixedFor.current = modeKey;
     setInput((prev) => MODE_BY_KEY[modeKey].prefix + stripPrefix(prev, previous));
-  }, [modeKey]);
+  }, [modeKey, unifiedSearch]);
 
   const selectMode = useCallback(
     (next: EntityType) => {
       const nextMode = MODE_BY_KEY[next];
       // Clicking a chip is the deliberate act that pins the mode.
       setPinned(next);
-      // This path re-prefixes the input itself, so claim the change here
-      // or the context-sync effect below would prefix it a second time.
+      // This path re-prefixes the input itself in prefixed mode, so claim
+      // the change here or the context-sync effect below would prefix it a
+      // second time.
       prefixedFor.current = next;
+      if (unifiedSearch) {
+        inputRef.current?.focus();
+        return;
+      }
       // Preserve any text the officer had typed by re-prefixing it.
       setInput((prev) => {
         const currentMode = MODE_BY_KEY[modeKey];
@@ -173,7 +183,7 @@ export function MissionCommandBar({
       });
       focusAfterPrefix(nextMode.prefix);
     },
-    [modeKey, focusAfterPrefix, setPinned],
+    [modeKey, focusAfterPrefix, setPinned, unifiedSearch],
   );
 
   // Alt+1..8 shortcuts
@@ -193,7 +203,7 @@ export function MissionCommandBar({
 
   const runSearch = (rawInput?: string, suggestion?: string) => {
     const raw = rawInput ?? input;
-    const query = suggestion ?? stripPrefix(raw, mode);
+    const query = suggestion ?? (unifiedSearch ? raw.trim() : stripPrefix(raw, mode));
     if (!query) {
       // Chip-only navigation to the intelligence centre.
       dispatch({ type: modeKey, fromRoute });
@@ -219,7 +229,7 @@ export function MissionCommandBar({
     >
       {/* SEARCH — the dominant control on Mission Control. */}
       <form
-        className="flex items-center gap-3 rounded-md border border-line bg-surface-2/40 px-3 py-2"
+        className="flex items-center gap-3 rounded-md border border-line-strong bg-surface-2/40 px-3 py-2.5"
         onSubmit={(e) => {
           e.preventDefault();
           runSearch();
@@ -240,21 +250,25 @@ export function MissionCommandBar({
               return;
             }
             // Never let officers erase the prefix by accident while typing.
-            if (!v.toUpperCase().startsWith(mode.prefix.toUpperCase())) {
+            if (!unifiedSearch && !v.toUpperCase().startsWith(mode.prefix.toUpperCase())) {
               v = mode.prefix + stripPrefix(v, mode);
             }
             setInput(v);
           }}
           onFocus={() => {
-            if (input === "" || input === mode.prefix) {
+            if (!unifiedSearch && (input === "" || input === mode.prefix)) {
               setInput(mode.prefix);
               focusAfterPrefix(mode.prefix);
             }
           }}
-          placeholder={mode.placeholder}
+          placeholder={
+            unifiedSearch
+              ? "Search vessels, companies, manifests, containers, ports or investigations…"
+              : mode.placeholder
+          }
           aria-label={`Search — ${mode.aiContext}`}
           className={cn(
-            "min-w-0 flex-1 bg-transparent text-[14px] font-medium leading-tight text-[color:var(--color-navy)] outline-none",
+            "min-w-0 flex-1 bg-transparent text-[15px] font-medium leading-tight text-[color:var(--color-navy)] outline-none",
             "placeholder:font-medium placeholder:text-[color:var(--color-navy)]/45",
           )}
         />
@@ -274,7 +288,7 @@ export function MissionCommandBar({
       {/* Recent searches — compact chips beneath the search. */}
       <div className="flex min-h-[26px] flex-wrap items-center gap-1.5">
         <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate">
-          {history.length > 0 ? `Recent · ${mode.label}` : "Suggested"}
+          {history.length > 0 ? "Recent searches" : "Suggested searches"}
         </span>
         {history.length > 0
           ? history.slice(0, 5).map((q) => (
@@ -282,8 +296,9 @@ export function MissionCommandBar({
                 key={q}
                 type="button"
                 onClick={() => {
-                  setInput(mode.prefix + q);
-                  runSearch(mode.prefix + q);
+                  const nextInput = unifiedSearch ? q : mode.prefix + q;
+                  setInput(nextInput);
+                  runSearch(nextInput);
                 }}
                 className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2/60 px-2.5 py-0.5 text-[11.5px] font-medium text-foreground/75 motion-fast hover:border-[color:var(--color-blue)]/40 hover:text-[color:var(--color-blue)]"
               >

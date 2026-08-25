@@ -28,9 +28,13 @@
 export {
   BASEMAP_STYLE,
   LAYER_IDS,
+  LIGHT_BASEMAP_STYLE,
+  LIGHT_MARITIME_PALETTE,
   MAP_DEFAULTS,
   MAP_SCOPES,
   MARITIME_PALETTE,
+  type MapStylePaletteName,
+  type MaritimePalette,
   ZOOM_LIMITS,
   type MapScopeDefinition,
   type MapScopeId,

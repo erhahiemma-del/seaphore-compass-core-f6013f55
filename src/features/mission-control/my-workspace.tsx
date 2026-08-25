@@ -182,7 +182,7 @@ export function MyWorkspacePanel() {
           Open workspace <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <SubPanel title="Workflows & decisions" rows={workflows} />
         <SubPanel title="Approvals" rows={approvals} />
         <SubPanel title="Handoffs & blockers" rows={handoffs} />
