@@ -107,7 +107,7 @@ export function Sparkline({
     strokeOverride ??
     (trend === "up" ? "#C0392B" : trend === "down" ? "#1E6B3A" : "#5A6B7B");
   return (
-    <svg width={width} height={height} className="shrink-0">
+    <svg width={width} height={height} opacity={opacity} className="shrink-0">
       <polyline
         points={points}
         fill="none"

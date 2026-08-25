@@ -187,7 +187,7 @@ function KpiCard({
 
       {/* Reserved chart area — always present, never fabricated. */}
       <div className="mt-auto flex h-[20px] items-end pt-2">
-        <Sparkline data={[1, 1]} width={112} height={14} stroke={skin.stroke} />
+        <Sparkline data={[1, 1]} width={112} height={14} stroke={skin.stroke} opacity={0.4} />
       </div>
     </button>
   );
