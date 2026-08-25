@@ -183,10 +183,11 @@ export function MyWorkspacePanel() {
         </Link>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <SubPanel title="Workflows & decisions" rows={workflows} />
-        <SubPanel title="Approvals" rows={approvals} />
+        <SubPanel title="Workflows" rows={workflows} />
+        <SubPanel title="Decisions & approvals" rows={approvals} />
         <SubPanel title="Handoffs & blockers" rows={handoffs} />
         <SubPanel title="Recent work" rows={recent} />
+
       </div>
     </PanelCard>
   );
