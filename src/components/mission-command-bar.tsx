@@ -52,6 +52,27 @@ const ICONS: Record<IntelligenceMode["icon"], LucideIcon> = {
 };
 
 
+/**
+ * Recent-search chips for the unified Mission Control command bar, shown
+ * until this session records searches of its own. Presentation only —
+ * clicking one runs the normal dispatch path.
+ */
+const UNIFIED_RECENT: readonly string[] = [
+  "MV Ocean Melody",
+  "9328374",
+  "CMA CGM Tema",
+  "Apapa Port",
+  "Lagos Anchorage",
+];
+
+const RECENT_ICON: Record<string, LucideIcon> = {
+  "MV Ocean Melody": Ship,
+  "9328374": Locate,
+  "CMA CGM Tema": Ship,
+  "Apapa Port": Anchor,
+  "Lagos Anchorage": Anchor,
+};
+
 /** In-session per-mode search history. Newest first, capped at 8. */
 const HISTORY: Record<EntityType, string[]> = {
   imo: [],
