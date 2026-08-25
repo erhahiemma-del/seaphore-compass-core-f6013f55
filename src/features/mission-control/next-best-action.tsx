@@ -251,7 +251,7 @@ export function NextBestAction({
 
         {/* 3 — EVIDENCE SUMMARY */}
         <Column label="Evidence summary" index={2}>
-          <div className="flex items-center gap-x-4 whitespace-nowrap">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
             <EvidenceStat icon={FileText} value={records} label={records === 1 ? "Record" : "Records"} />
             <EvidenceStat icon={Layers} value={sources} label={sources === 1 ? "Source" : "Sources"} />
             <EvidenceStat icon={GitCompareArrows} value={0} label="Conflicts" />
