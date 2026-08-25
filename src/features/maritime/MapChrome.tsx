@@ -11,6 +11,12 @@
  * "no source" — an officer must never read an absent feed as empty water.
  */
 import { useMemo, useState } from "react";
+
+import {
+  MAP_SYMBOLS,
+  MAP_SYMBOL_GRID,
+  type MapSymbolKind,
+} from "@/lib/map-symbols";
 import {
   AlertTriangle,
   Anchor,
