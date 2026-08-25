@@ -25,7 +25,7 @@
     "verify:bundle": "node scripts/verify-prod-bundle.mjs .output/public"
   },
   "lint-staged": {
-    "*.{ts,tsx,js,jsx}": [
+    "*.{ts,tsx,js,jsx,mjs,cjs}": [
       "eslint --fix",
       "prettier --write",
       "vitest related --run"
