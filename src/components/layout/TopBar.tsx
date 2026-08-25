@@ -29,7 +29,7 @@ export function TopBar({ title, subtitle }: TopBarProps) {
     <header
       className={cn(
         "sticky top-0 z-30 flex h-14 items-center gap-3 px-5",
-        "border-b border-line bg-surface/85 backdrop-blur-md",
+        "border-b border-line-strong bg-surface",
       )}
     >
       <SidebarTrigger className="text-slate md:hidden" />
@@ -63,7 +63,7 @@ function GoToHint() {
     <button
       type="button"
       onClick={() => window.dispatchEvent(new CustomEvent("seaphore:open-goto-palette"))}
-      className="hidden items-center gap-2 rounded-md border border-line bg-surface-2/70 px-2.5 py-1.5 text-slate hover:border-[color:var(--color-teal)]/40 hover:text-foreground motion-fast md:flex"
+      className="hidden items-center gap-2 rounded-md border border-line bg-surface-2/70 px-2.5 py-1.5 text-slate hover:border-[color:var(--ocean)]/50 hover:text-foreground motion-fast md:flex"
     >
       <Search className="h-3.5 w-3.5" />
       <span className="type-small">Go to…</span>
