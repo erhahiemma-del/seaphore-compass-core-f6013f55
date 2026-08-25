@@ -12,7 +12,7 @@ import type { LucideIcon } from "lucide-react";
 
 import { IntelligenceReadinessCard } from "@/components/intelligence/IntelligenceReadinessCard";
 import { KpiCoverageCard } from "@/components/intelligence/KpiCoverageCard";
-import type { CoverageReport, KpiCoverage } from "@/lib/intelligence/coverage-model";
+import type { IntelligenceCoverageReport, KpiCoverage } from "@/lib/intelligence/coverage-model";
 import { RIBBON_KPIS } from "@/lib/mission-control-data";
 import { cn } from "@/lib/utils";
 
@@ -49,7 +49,7 @@ const LEAD_BY_MODE: Record<string, readonly string[]> = {
 };
 
 export interface KpiRibbonProps {
-  readonly coverage: CoverageReport | undefined;
+  readonly coverage: IntelligenceCoverageReport | undefined;
   /** Active intelligence mode key — drives emphasis only. */
   readonly mode?: string;
   readonly onOpen: (target: string) => void;
@@ -104,7 +104,8 @@ export function KpiRibbon({ coverage, mode, onOpen }: KpiRibbonProps) {
   );
   const leadKeys = LEAD_BY_MODE[mode ?? ""] ?? ["risk-intelligence", "revenue-intelligence"];
 
-  const ordered = [...RIBBON_KPIS].sort((a, b) => {
+  type RibbonKpi = (typeof RIBBON_KPIS)[number];
+  const ordered: RibbonKpi[] = [...RIBBON_KPIS].sort((a, b) => {
     const ai = leadKeys.indexOf(a.key);
     const bi = leadKeys.indexOf(b.key);
     return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
@@ -112,7 +113,7 @@ export function KpiRibbon({ coverage, mode, onOpen }: KpiRibbonProps) {
   const lead = ordered.slice(0, 2);
   const rest = ordered.slice(2);
 
-  const render = (kpi: (typeof RIBBON_KPIS)[number], size: "lead" | "quiet") => {
+  const render = (kpi: RibbonKpi, size: "lead" | "quiet") => {
     const Icon = RIBBON_ICONS[kpi.key] ?? Activity;
     const cov = kpiByKey.get(kpi.metricKey);
     const target = KPI_HANDOFF_OVERRIDE[kpi.key] ?? kpi.handoff;
@@ -153,11 +154,11 @@ export function KpiRibbon({ coverage, mode, onOpen }: KpiRibbonProps) {
       </div>
 
       {/* LEAD — mode-determined emphasis */}
-      <div className="grid gap-3 md:grid-cols-2">{lead.map((k) => render(k, "lead"))}</div>
+      <div className="grid gap-3 md:grid-cols-2">{lead.map((k: RibbonKpi) => render(k, "lead"))}</div>
 
       {/* SECONDARY / BACKGROUND — quieter, still complete */}
       <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        {rest.map((k) => render(k, "quiet"))}
+        {rest.map((k: RibbonKpi) => render(k, "quiet"))}
         <Link
           to="/detect"
           className="group flex flex-col justify-between rounded-lg border border-dashed border-[color:var(--ocean)]/50 bg-[color:var(--ocean-050)] p-3 motion-fast hover:border-[color:var(--ocean)]"
