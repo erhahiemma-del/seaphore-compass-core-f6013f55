@@ -359,7 +359,7 @@ export function MissionCommandBar({
             // The animated cue replaces the placeholder while idle; the
             // static text remains for focus, reduced motion and SSR.
             placeholder={idleForCue ? "" : staticPlaceholder}
-            aria-label={`Search ${staticPlaceholder ? "" : ""}IMO, MMSI, vessel, company, cargo, manifest, port, location or event — ${mode.aiContext}`}
+            aria-label={`Search IMO, MMSI, vessel, company, cargo, manifest, port, location or event — ${mode.aiContext}`}
             className={cn(
               "min-w-0 flex-1 bg-transparent text-[14.5px] font-medium leading-tight text-[color:var(--color-navy)] outline-none",
               "placeholder:font-medium placeholder:text-[color:var(--color-navy)]/45",
