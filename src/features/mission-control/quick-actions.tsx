@@ -45,7 +45,9 @@ const SHORTCUTS: readonly QuickAction[] = [
 export function QuickActions() {
   return (
     <div className="flex flex-col gap-3">
-      <div className="grid gap-2 sm:grid-cols-3">
+      {/* One row per action: the label must always read in full — a truncated
+          instruction is not an instruction. */}
+      <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-1">
         {PRIMARY.map((a) => (
           <Link
             key={a.label}
