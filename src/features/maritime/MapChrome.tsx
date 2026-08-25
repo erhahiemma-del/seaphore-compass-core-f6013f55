@@ -184,8 +184,8 @@ function Chip({
       className={cn(
         "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11.5px] font-semibold transition-colors",
         active
-          ? "border-transparent bg-[color:var(--color-navy,#0B3B75)] text-white shadow-sm"
-          : "border-border/70 bg-background text-foreground/80 shadow-sm hover:bg-accent",
+          ? "border-transparent bg-[#2E7DF0] text-white shadow-[0_4px_10px_-3px_rgba(46,125,240,0.55)] hover:bg-[#2571e2]"
+          : "border-[#DCE4ED] bg-background text-[#334A63] shadow-sm hover:bg-accent",
       )}
     >
       <Icon className="h-3.5 w-3.5" aria-hidden />
