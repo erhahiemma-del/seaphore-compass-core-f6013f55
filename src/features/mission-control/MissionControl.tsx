@@ -317,10 +317,10 @@ function Ribbon() {
           to="/detect"
           className="group flex flex-col items-start justify-between rounded-lg border border-dashed border-[color:var(--ocean)]/50 bg-[color:var(--ocean-050)] p-3 motion-fast hover:border-[color:var(--ocean)]"
         >
-          <span className="type-label text-[color:var(--color-teal)]">Intelligence Feed</span>
+          <span className="type-label text-[color:var(--ocean)]">Intelligence Feed</span>
           <span className="mt-2 type-h1 text-foreground">View full feed</span>
           <span className="type-small text-slate">Continuous signals across every centre</span>
-          <span className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--color-teal)]">
+          <span className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--ocean)]">
             Open Detect <ArrowRight className="h-3.5 w-3.5" />
           </span>
         </Link>
@@ -559,7 +559,7 @@ function CargoWorkspaceStrip() {
         </div>
         <Link
           to="/cargo-workspace"
-          className="inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--color-blue)] hover:underline"
+          className="inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--ocean)] hover:underline"
         >
           Open workspace <ArrowRight className="h-3.5 w-3.5" />
         </Link>
