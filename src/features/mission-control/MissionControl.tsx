@@ -40,7 +40,8 @@ import { cn } from "@/lib/utils";
 // Only the ribbon's static labels, icons and handoff targets remain —
 // UI copy, not intelligence. Every value beside them comes from coverage.
 import { RIBBON_KPIS } from "@/lib/mission-control-data";
-import { COMPOSABLE_PANELS, orderKpis, orderPanels } from "./modes";
+import { tierKpis } from "./hierarchy";
+import { SupportingIntelligence } from "./SupportingIntelligence";
 import { useMissionMode } from "./useMissionMode";
 import { MapRecommendationNotice } from "./MapRecommendationNotice";
 import { useCopilotContextBinding } from "./useCopilotContextBinding";
@@ -202,31 +203,26 @@ export function MissionControl() {
         </div>
 
         {/*
-          The operational panels, in the active lens's reading order.
+          Supporting intelligence, one panel at a time.
 
-          Only these four reorder. They sit in a uniform grid, so
-          changing their order changes what the officer reads first and
-          nothing else — no column resizes, no reflow. The map and feed
-          row above is deliberately fixed: it is the spatial anchor, and
-          a surface whose largest element moved on every tab press would
-          read as unstable rather than adaptive.
+          Four stacked panels cost four panels of vertical space to show
+          one panel of attention. The lens picks which opens; the other
+          three are one click away. Nothing blocking is behind a tab —
+          orientation, the recommended action, priority intelligence and
+          the map all stay permanently above this.
         */}
-        <div
-          data-testid="mission-operational-panels"
-          className={cn("grid gap-4 md:grid-cols-2 xl:grid-cols-4", recede)}
-        >
-          {orderPanels(mode, COMPOSABLE_PANELS).map((panel) => (
-            <div key={panel} data-testid={`mission-panel-${panel}`} className="contents">
-              {panel === "revenue-assurance" ? <RevenueAssurancePanel /> : null}
-              {panel === "manifest-intelligence" ? <ManifestIntelligencePanel /> : null}
-              {panel === "compliance-watchlist" ? (
+        <div className={recede}>
+          <SupportingIntelligence
+            mode={mode}
+            panels={{
+              "revenue-assurance": <RevenueAssurancePanel />,
+              "manifest-intelligence": <ManifestIntelligencePanel />,
+              "compliance-watchlist": (
                 <ComplianceWatchlistPanel projection={complianceProjection} />
-              ) : null}
-              {panel === "port-operations" ? (
-                <PortOperationsPanel projection={portsProjection} />
-              ) : null}
-            </div>
-          ))}
+              ),
+              "port-operations": <PortOperationsPanel projection={portsProjection} />,
+            }}
+          />
         </div>
 
         <div className={recede}>
@@ -345,19 +341,7 @@ function Ribbon() {
    * unverifiable. Every card keeps whatever state and root cause the
    * coverage model gave it; the lens only decides reading order.
    */
-  const orderedKpis = useMemo(() => {
-    const rank = new Map(
-      orderKpis(
-        mode,
-        RIBBON_KPIS.map((k) => k.metricKey),
-      ).map((key, index) => [key, index]),
-    );
-    return [...RIBBON_KPIS].sort(
-      (a, b) =>
-        (rank.get(a.metricKey) ?? Number.MAX_SAFE_INTEGER) -
-        (rank.get(b.metricKey) ?? Number.MAX_SAFE_INTEGER),
-    );
-  }, [mode]);
+  const tiered = useMemo(() => tierKpis(mode, RIBBON_KPIS, (k) => k.metricKey), [mode]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -392,23 +376,48 @@ function Ribbon() {
           </Link>
         ))}
       </div>
-      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-        {orderedKpis.map((kpi) => {
+      {/*
+        Tiered rather than seven equal cards.
+
+        The lens's leading domain spans two columns and the rest recede,
+        so an officer reads which domain this perspective is about
+        before reading any individual number. Every KPI is still
+        rendered — a demoted card keeps whatever state and root cause
+        the coverage model gave it, because a blocked provider must stay
+        visible even when the lens does not lead with it.
+      */}
+      <div
+        data-testid="mission-kpi-ribbon"
+        className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8"
+      >
+        {tiered.map(({ item: kpi, tier }) => {
           const Icon = RIBBON_ICONS[kpi.key] ?? Activity;
           const cov = kpiByKey.get(kpi.metricKey);
+          // Lead takes two columns; everything else takes one and the
+          // background tier dims slightly. Emphasis by size and weight,
+          // not by adding colour to a card.
+          const span = tier === "lead" ? "md:col-span-2 xl:col-span-3" : "xl:col-span-1";
+          const dim = tier === "background" ? "opacity-[0.72]" : undefined;
           if (cov) {
             return (
-              <KpiCoverageCard
+              <div
                 key={kpi.key}
-                kpi={cov}
-                icon={Icon}
-                onOpen={() =>
-                  handoff({
-                    target: KPI_HANDOFF_OVERRIDE[kpi.key] ?? kpi.handoff,
-                    context: { fromStage: "Monitor", fromRoute: "/" },
-                  })
-                }
-              />
+                data-testid={`kpi-${kpi.metricKey}`}
+                data-tier={tier}
+                className={cn(span, dim)}
+              >
+                <KpiCoverageCard
+                  key={kpi.key}
+                  kpi={cov}
+                  icon={Icon}
+                  onOpen={() =>
+                    handoff({
+                      target: KPI_HANDOFF_OVERRIDE[kpi.key] ?? kpi.handoff,
+                      context: { fromStage: "Monitor", fromRoute: "/" },
+                    })
+                  }
+                />
+              </div>
             );
           }
           return (
