@@ -612,6 +612,23 @@
   --lens-edge: #a9dcea;
   --lens-glow: 0 0 0 1px rgba(14, 165, 201, 0.35), 0 2px 10px -2px rgba(14, 165, 201, 0.45);
 
+  /* Next Best Action operational banner (deep navy command surface) */
+  --nba-surface: #001638;
+  --nba-surface-hi: #06265a;
+  --nba-edge: rgba(96, 150, 220, 0.28);
+  --nba-divider: rgba(140, 180, 230, 0.18);
+  --nba-shadow: 0 12px 30px -12px rgba(0, 12, 34, 0.6);
+  --nba-amber: #a66a16;
+  --nba-oxblood: #67192b;
+  --nba-exposure: #dc2828;
+  --nba-verify: #ffa50e;
+  --nba-operational: #0268ca;
+  --nba-operational-soft: #7fb6ec;
+  --nba-cta: #1e63c8;
+  --nba-track: rgba(255, 255, 255, 0.12);
+
+
+
   /* Operational status families: ink / tint / edge */
   --status-verified: #1e6b3a;
   --status-verified-tint: #e9f3ec;
