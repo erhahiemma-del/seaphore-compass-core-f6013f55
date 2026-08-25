@@ -9,6 +9,11 @@ import { useFocusSubjectStore } from "@/stores/focus-subject.store";
 
 import { PanelCard } from "@/components/panel-card";
 import { MapCanvas, type VesselFeedState } from "@/features/maritime/MapCanvas";
+import {
+  MapControlStack,
+  MapLayerChips,
+  MapLegendBar,
+} from "@/features/maritime/MapChrome";
 import { resolveMapDataState, type MapDataStateResult, type Vessel } from "@/services/geospatial";
 import { MissionCommandBar, MissionModeBar } from "@/components/mission-command-bar";
 import type { EntityType } from "@/lib/command-dispatch";
@@ -266,6 +271,11 @@ function MaritimePicturePanel() {
         </div>
       </div>
 
+      {/* Layer/filter row: functional, writing to the shared layer state. */}
+      <div className="border-b border-line px-4 py-2">
+        <MapLayerChips />
+      </div>
+
       <div className="relative flex-1 overflow-hidden rounded-b-[inherit]">
         {/*
           Overview mode: the same engine, same service, same layers as
@@ -279,15 +289,11 @@ function MaritimePicturePanel() {
           palette="institutional"
           onVesselsChanged={handleVessels}
         />
-        <div className="pointer-events-none absolute left-3 top-3 flex flex-wrap items-center gap-1.5">
-          {["EEZ", "Ports", "AIS", "Risk"].map((label) => (
-            <span
-              key={label}
-              className="rounded border border-line bg-surface/88 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-slate shadow-sm backdrop-blur"
-            >
-              {label}
-            </span>
-          ))}
+        <div className="pointer-events-none absolute left-3 top-3">
+          <MapControlStack scope="regional" />
+        </div>
+        <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center px-14">
+          <MapLegendBar className="max-w-full" />
         </div>
         {dataState.state !== "LIVE" ? <MaritimeDataNotice state={dataState} /> : null}
       </div>
@@ -310,7 +316,7 @@ function MaritimeDataNotice({ state }: { state: MapDataStateResult }) {
   return (
     <div
       data-testid="maritime-data-notice"
-      className="pointer-events-none absolute bottom-3 left-3 max-w-[300px] rounded-lg border border-border/60 bg-background/92 p-2.5 shadow-card backdrop-blur-sm"
+      className="pointer-events-none absolute right-3 top-3 max-w-[280px] rounded-lg border border-border/60 bg-background/92 p-2.5 shadow-card backdrop-blur-sm"
     >
       <p className="text-[9.5px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
         Maritime data

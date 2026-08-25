@@ -88,9 +88,10 @@ function recordCameraDecision(
 
 const MODE_CONTROLS: Readonly<Record<MapCanvasMode, MapControlOptions>> = {
   command: { navigation: true, compass: true, scale: true },
-  // Zoom only. No compass — a dashboard overview is never rotated — and no
-  // scale bar, which is unreadable at tile size.
-  overview: { navigation: true, compass: false, scale: false },
+  // No built-in chrome at all: the overview surface supplies its own
+  // control stack (`MapChrome`), which drives the same camera through SGS.
+  // Two zoom widgets on one tile is a duplicated control, not a choice.
+  overview: { navigation: false, compass: false, scale: false },
   // Embedded in an intelligence dashboard: zoom and a scale bar, because
   // distance matters when reading a port approach, but no compass — the
   // surrounding panels are the subject and the map stays oriented north.
