@@ -15,6 +15,19 @@ import {
 /** Canvas edge length for operational symbol sprites, in pixels. */
 export const SYMBOL_SPRITE_SIZE = 26;
 
+/**
+ * Per-kind sprite resolution.
+ *
+ * Ports and anchorages are drawn larger than the shared default because
+ * they must stay identifiable at national zoom, where a 26 px sprite
+ * scaled down to half reads as a dot. A dot is exactly what the symbol
+ * vocabulary exists to avoid.
+ */
+export const SYMBOL_SPRITE_SIZES: Readonly<Partial<Record<MapSymbolKind, number>>> = {
+  port: 44,
+  anchorage: 36,
+};
+
 /** MapLibre image id for a symbol kind. */
 export function symbolSpriteId(kind: MapSymbolKind): string {
   return `symbol-${kind}`;
@@ -28,6 +41,7 @@ export const SYMBOL_SPRITE_KINDS: readonly MapSymbolKind[] = [
   "weather-alert",
 ] as const;
 
+
 /**
  * Draw one operational symbol.
  *
@@ -36,7 +50,7 @@ export const SYMBOL_SPRITE_KINDS: readonly MapSymbolKind[] = [
  */
 export function createSymbolImage(
   kind: MapSymbolKind,
-  size = SYMBOL_SPRITE_SIZE,
+  size = SYMBOL_SPRITE_SIZES[kind] ?? SYMBOL_SPRITE_SIZE,
   colorOverride?: string,
 ): ImageData {
   const token = MAP_SYMBOLS[kind];
