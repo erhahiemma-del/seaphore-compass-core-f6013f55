@@ -71,8 +71,8 @@ grep -rn "create<.*MapState" src/
 | Id    | Step                             | Pass                                                    |
 | ----- | -------------------------------- | ------------------------------------------------------- |
 | M2.01 | Observe at zoom 6                | Gold dashed EEZ boundary visible                        |
-| M2.02 | Observe at zoom 6                | Five port diamonds with APA/TIN/WAR/CAL/ONN             |
-| M2.03 | Zoom 6 → 11                      | Anchorage circles visibly grow                          |
+| M2.02 | Observe at zoom 6                | Five blue port anchor symbols with APA/TIN/WAR/CAL/ONN  |
+| M2.03 | Zoom 6 → 11                      | Anchorage extent rings grow and purple anchorage symbols appear |
 | M2.04 | Toggle "Ports" off               | Diamonds **and** labels **and** anchorage all disappear |
 | M2.05 | Search "eez" in the layer panel  | Only the EEZ layer listed                               |
 | M2.06 | Set EEZ opacity to 20 %          | Boundary visibly fades; URL gains `opacity=`            |
@@ -88,7 +88,7 @@ grep -rn "create<.*MapState" src/
 | M3.01 | Load with vessels                 | Arrows render, risk-coloured                                                         |
 | M3.02 | Vessel with heading 48°           | Arrow points north-east                                                              |
 | M3.03 | Zoom 8 → 10                       | Vessel name labels appear at 9                                                       |
-| M3.04 | Vessel with position > 10 min old | Rendered at ~50 % opacity, grey sprite                                               |
+| M3.04 | Vessel with position > 10 min old | Keeps its semantic hull colour and renders at ~50 % opacity                           |
 | M3.05 | Hover a vessel, wait 500 ms       | Quick Assessment popup appears                                                       |
 | M3.06 | Move cursor off                   | Popup dismissed immediately                                                          |
 | M3.07 | Click a vessel                    | Marker turns teal; Intelligence Card opens                                           |

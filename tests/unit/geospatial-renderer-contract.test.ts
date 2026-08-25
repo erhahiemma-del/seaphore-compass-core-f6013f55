@@ -55,12 +55,12 @@ describe("vessel sprite registry", () => {
     expect(REGISTERED).toContain(id);
   });
 
-  it("registers the stale sprite", () => {
+  it("keeps stale vessels on their semantic risk sprite", () => {
     const stale = vessel("1", {
       position: { ...vessel("1").position, timestamp: new Date(NOW - 3_600_000).toISOString() },
     });
     const id = vesselIconId(stale, { now: NOW });
-    expect(id).toBe("vessel-stale-hull");
+    expect(id).toBe("vessel-low-hull");
     expect(REGISTERED).toContain(id);
   });
 
