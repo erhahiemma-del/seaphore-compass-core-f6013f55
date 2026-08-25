@@ -655,6 +655,11 @@
   --navy-050: #16273c;
   --ocean-050: #102b33;
 
+  --lens: #22b8dd;
+  --lens-ink: #06212b;
+  --lens-tint: #0d2f3b;
+  --lens-edge: #1d5266;
+
   --status-verified: #4fbe7f;
   --status-verified-tint: #122a1e;
   --status-verified-edge: #24503a;
@@ -685,6 +690,9 @@
   --color-navy-050: var(--navy-050);
   --color-ocean: var(--ocean);
   --color-ocean-050: var(--ocean-050);
+  --color-lens: var(--lens);
+  --color-lens-tint: var(--lens-tint);
+  --color-lens-edge: var(--lens-edge);
 
   --color-status-verified: var(--status-verified);
   --color-status-verified-tint: var(--status-verified-tint);
