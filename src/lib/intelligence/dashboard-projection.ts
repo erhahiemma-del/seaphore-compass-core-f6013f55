@@ -254,6 +254,20 @@ export function projectIntelligenceFeed(input: {
 
 /* ── Today's Priorities ─────────────────────────────────────────────── */
 
+/**
+ * Officer response windows, in hours, per priority band.
+ *
+ * A declared operational policy — not a derived measurement. It is the only
+ * thing that turns "detected at" into "due in", so it lives beside the
+ * projection where it can be read and changed in one place.
+ */
+export const RESPONSE_WINDOW_HOURS: Record<LeakageFinding["priority"], number> = {
+  critical: 4,
+  high: 24,
+  elevated: 72,
+  watch: 168,
+};
+
 export interface PriorityItem {
   readonly id: string;
   readonly entityName: string;
@@ -262,11 +276,23 @@ export interface PriorityItem {
   readonly confidence: PanelConfidence;
   /** True when an officer has already signed off. */
   readonly approved: boolean;
+  /** Estimated exposure the detector computed, in `exposureCurrency` units. */
+  readonly exposure: number;
+  readonly exposureCurrency: string;
+  /** Distinct evidence sources cited by this finding. */
+  readonly sources: number;
+  /** Individual evidence records cited by this finding. */
+  readonly records: number;
+  /** ISO timestamp the detector produced the finding. */
+  readonly detectedAt: string;
+  /** Response window for this priority band, from `RESPONSE_WINDOW_HOURS`. */
+  readonly responseWindowHours: number;
 }
 
 export interface PrioritiesPanelData {
   readonly items: readonly PriorityItem[];
 }
+
 
 /**
  * Today's Priorities → findings that actually warrant attention.
@@ -314,6 +340,13 @@ export function projectTodaysPriorities(input: {
         priority: finding.priority,
         confidence: gradeToTier(finding.confidence),
         approved: finding.humanApproved,
+        // Straight passthrough: the detector owns magnitude and citations.
+        exposure: finding.magnitude,
+        exposureCurrency: finding.magnitudeCurrency,
+        sources: new Set(finding.citations.map((citation) => citation.source)).size,
+        records: new Set(finding.citations.map((citation) => citation.evidenceId)).size,
+        detectedAt: finding.detectedAt,
+        responseWindowHours: RESPONSE_WINDOW_HOURS[finding.priority],
       }),
     );
 
