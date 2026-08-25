@@ -6,18 +6,19 @@ describe("navigation model", () => {
 
   it("declares the fixed group order", () => {
     /*
-     * Regrouped in Phase 2, deliberately.
+     * Six environments, consolidated deliberately.
      *
-     * NAV-1 is unchanged and still asserted below: the lifecycle order
-     * is fixed, and Intelligence Lifecycle still sits directly beneath
-     * Mission. What changed is the groups under it. "Intelligence
-     * Centres" and "Command & Risk" grouped routes by implementation
-     * history rather than by how an officer thinks, so vessels sat
-     * beside knowledge graphs and the decision queue had no home.
+     * NAV-1 is unchanged and still asserted below: the lifecycle order is
+     * fixed, and Intelligence Lifecycle still sits directly beneath
+     * Mission. What changed is everything under it. "Workflows & Queues"
+     * and "Evidence & Knowledge" still grouped routes by implementation
+     * shape rather than by how an officer works, and eleven entries were
+     * really sub-surfaces of a larger environment.
      *
-     * Every route those groups contained is still reachable — asserted
-     * against the full previous list in navigation-ia.test.ts. This is a
-     * reorganisation, not a removal.
+     * Every route those groups contained still exists and is still
+     * reachable — asserted route-by-route in navigation-ia.test.ts, which
+     * now also requires each consolidated route to declare the
+     * environment that owns it. This is a consolidation, not a removal.
      *
      * Screen Inventory & Navigation Map (Part 05) records the older
      * grouping and needs updating to match.
@@ -25,21 +26,28 @@ describe("navigation model", () => {
     expect(NAV_GROUPS.map((g) => g.label)).toEqual([
       "Mission",
       "Intelligence Lifecycle",
-      "Workflows & Queues",
       "Maritime Operations",
+      "Intelligence & Evidence",
       "Risk & Compliance",
-      "Evidence & Knowledge",
       "System",
     ]);
   });
 
-  it("includes the five lifecycle workspaces", () => {
+  it("includes the five lifecycle stages in order", () => {
+    /*
+     * Detect → Understand → Investigate → Decide & Coordinate → Memory.
+     *
+     * `/share` is no longer a stage of its own: sharing is part of
+     * deciding and coordinating, and it now sits behind that environment
+     * (see CONSOLIDATED_ROUTES). `/ownership` became Understand, which is
+     * what building entity context actually is.
+     */
     const lifecycle = NAV_GROUPS.find((g) => g.label === "Intelligence Lifecycle")!;
     expect(lifecycle.items.map((i) => i.url)).toEqual([
       "/detect",
+      "/ownership",
       "/investigate",
       "/decide",
-      "/share",
       "/memory",
     ]);
   });

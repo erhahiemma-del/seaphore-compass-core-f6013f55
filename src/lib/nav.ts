@@ -1,28 +1,27 @@
 import {
+  Anchor,
+  BellRing,
+  Boxes,
+  Building2,
   Database,
+  DollarSign,
+  FolderArchive,
+  Gauge,
+  Gavel,
   LayoutDashboard,
+  Library,
   Map,
+  Network,
+  Plug,
   Radar,
   Search,
-  Gavel,
-  Share2,
-  Library,
-  FileText,
-  Package,
-  DollarSign,
-  Ship,
-  Anchor,
   ShieldCheck,
-  Building2,
-  FolderArchive,
-  FileSearch,
-  BellRing,
-  Settings,
+  Ship,
   Sparkles,
-  Target,
-  ClipboardList,
-  Coins,
-  Gauge,
+  TrendingUp,
+  Users,
+  Activity,
+  Briefcase,
   type LucideIcon,
 } from "lucide-react";
 
@@ -39,26 +38,41 @@ export interface NavGroup {
 }
 
 /**
- * Seaphore navigation model — canonical routes per Screen Inventory &
- * Navigation Map (Part 05).
+ * Seaphore navigation — six environments, not a list of modules.
  *
- * NAV-1: sidebar lifecycle order is fixed.
- * NAV-2: superseded in Phase 2. The groups below the lifecycle are now
- *        organised by institutional mental model — work queues, maritime
- *        operations, risk, evidence — rather than by implementation
- *        history. Every previously reachable route is still reachable;
- *        see navigation-ia.test.ts. Part 05 records the older grouping.
- * NAV-3: Search is a top-bar tool, not a sidebar item.
+ * NAV-1: Mission first, then the intelligence lifecycle. Unchanged.
+ * NAV-3: Search is a command-surface tool, not a sidebar item. Unchanged.
+ * NAV-4: the groups are an operating model. An officer moves
+ *        Mission → Lifecycle → Operations → Evidence → Risk → System,
+ *        and each entry opens a working environment rather than a CRUD
+ *        page. Groups that named implementation history — "Intelligence
+ *        Centres", "Command & Risk", "Workflows & Queues" — are gone; the
+ *        routes they held are consolidated behind the environment that
+ *        owns them, recorded in {@link CONSOLIDATED_ROUTES}.
+ *
+ * ## Nothing here is aspirational
+ *
+ * Every item resolves to a route that exists and works. Five items named
+ * in the target model — Assess, Verification & Inspection, Clearance &
+ * Approvals, Enforcement Cases, Settings — have no environment behind
+ * them: the concepts appear inside Compliance, DecideCase, Ports, Vessel
+ * and investigations-workflow, but none has a route of its own. They are
+ * deliberately absent rather than pointed at an approximation, because a
+ * sidebar entry that lands somewhere other than its label teaches
+ * officers the menu is decorative. See `navigation-ia.test.ts`.
  */
 export const NAV_GROUPS: NavGroup[] = [
   {
     label: "Mission",
     items: [
+      // Three environments, three different questions. Mission Control
+      // asks what matters nationally, Maritime Command what is happening
+      // operationally, Command Center what requires coordinated action.
       { title: "Mission Control", subtitle: "National Overview", url: "/", icon: LayoutDashboard },
       { title: "Maritime Command", subtitle: "Live Operational Map", url: "/maritime", icon: Map },
       {
         title: "Command Center",
-        subtitle: "Mission Control AI",
+        subtitle: "Coordinated Command Action",
         url: "/command-center",
         icon: Sparkles,
       },
@@ -68,132 +82,120 @@ export const NAV_GROUPS: NavGroup[] = [
         url: "/copilot",
         icon: Sparkles,
       },
-      {
-        title: "Mission Planning",
-        subtitle: "Operational Missions",
-        url: "/missions",
-        icon: Target,
-      },
     ],
   },
   {
     label: "Intelligence Lifecycle",
     items: [
-      { title: "Detect", subtitle: "Intelligence Feed", url: "/detect", icon: Radar },
-      { title: "Investigate", subtitle: "Case Workspace", url: "/investigate", icon: Search },
-      { title: "Decision Support", subtitle: "Recommendations", url: "/decide", icon: Gavel },
-      { title: "Share", subtitle: "Briefings & Collaboration", url: "/share", icon: Share2 },
+      { title: "Detect", subtitle: "Signals & Anomalies", url: "/detect", icon: Radar },
+      // Understand is the ownership and relationship picture — building
+      // entity context is what that environment already does.
+      {
+        title: "Understand",
+        subtitle: "Entities & Relationships",
+        url: "/ownership",
+        icon: Building2,
+      },
+      { title: "Investigate", subtitle: "Cases & Evidence", url: "/investigate", icon: Search },
+      {
+        title: "Decide & Coordinate",
+        subtitle: "Decisions, Approvals & Handoffs",
+        url: "/decide",
+        icon: Gavel,
+      },
       {
         title: "Institutional Memory",
-        subtitle: "Knowledge & Learning",
+        subtitle: "History & Outcomes",
         url: "/memory",
         icon: Library,
       },
     ],
   },
   {
-    label: "Workflows & Queues",
-    items: [
-      {
-        title: "Active Workflows",
-        subtitle: "Stage Progression",
-        url: "/investigations-workflow",
-        icon: ClipboardList,
-      },
-      { title: "My Queue", subtitle: "Awaiting My Decision", url: "/decide/queue", icon: Gavel },
-      {
-        title: "Investigations",
-        subtitle: "Case Dashboard",
-        url: "/investigations",
-        icon: FileSearch,
-      },
-      { title: "Sharing Queue", subtitle: "Awaiting Release", url: "/share/queue", icon: Share2 },
-    ],
-  },
-  {
     label: "Maritime Operations",
     items: [
-      { title: "Vessels", subtitle: "Identity & Particulars", url: "/vessel", icon: Ship },
-      { title: "Ports", subtitle: "Nigerian Port Estate", url: "/ports", icon: Anchor },
-      { title: "Manifests", subtitle: "Declared Cargo", url: "/manifest", icon: FileText },
-      { title: "Cargo", subtitle: "Movement & Containers", url: "/cargo", icon: Package },
       {
-        title: "Cargo Workspace",
-        subtitle: "Working Surface",
-        url: "/cargo-workspace",
-        icon: Package,
+        title: "Vessel & Voyage Operations",
+        subtitle: "Identity, Movement & Calls",
+        url: "/vessel",
+        icon: Ship,
+      },
+      { title: "Port Operations", subtitle: "Nigerian Port Estate", url: "/ports", icon: Anchor },
+      {
+        title: "Manifests & Cargo",
+        subtitle: "Declarations, Cargo & Containers",
+        url: "/manifest",
+        icon: Boxes,
       },
       {
-        title: "Companies & Ownership",
-        subtitle: "Corporate Control",
-        url: "/ownership",
-        icon: Building2,
-      },
-    ],
-  },
-  {
-    label: "Risk & Compliance",
-    items: [
-      { title: "Alerts", subtitle: "Signals Requiring Review", url: "/alerts", icon: BellRing },
-      {
-        title: "Compliance",
-        subtitle: "Requirements & Exceptions",
-        url: "/compliance",
-        icon: ShieldCheck,
-      },
-      { title: "Revenue", subtitle: "Assessment & Collection", url: "/revenue", icon: DollarSign },
-      {
-        title: "Revenue Assurance",
-        subtitle: "Leakage & Discrepancy",
-        url: "/revenue-leakage",
-        icon: Coins,
-      },
-      {
-        title: "National Risk",
-        subtitle: "Aggregated Exposure",
-        url: "/national-risk",
-        icon: Gauge,
+        title: "Revenue & Receipts",
+        subtitle: "Assessment & Collection",
+        url: "/revenue",
+        icon: DollarSign,
       },
     ],
   },
   {
-    label: "Evidence & Knowledge",
+    label: "Intelligence & Evidence",
     items: [
       {
-        title: "Evidence Library",
-        subtitle: "Collected Records",
+        title: "Intelligence Workspace",
+        subtitle: "Cross-Domain Working Surface",
+        url: "/workspace",
+        icon: Briefcase,
+      },
+      {
+        title: "Evidence & Documents",
+        subtitle: "Records, Lineage & Packages",
         url: "/evidence",
-        icon: FolderArchive,
-      },
-      {
-        title: "Intelligence Evidence",
-        subtitle: "Lineage & Verification",
-        url: "/intelligence-evidence",
         icon: FolderArchive,
       },
       {
         title: "Knowledge Graph",
         subtitle: "Entity Relationships",
         url: "/knowledge-graph",
-        icon: Database,
-      },
-      {
-        title: "Operational Knowledge",
-        subtitle: "Patterns & Lessons",
-        url: "/operational-knowledge",
-        icon: Library,
-      },
-      {
-        title: "Briefing Centre",
-        subtitle: "Executive Summaries",
-        url: "/briefing-centre",
-        icon: FileText,
+        icon: Network,
       },
       {
         title: "Predictive Intelligence",
         subtitle: "Forward Signals",
         url: "/predictions",
+        icon: TrendingUp,
+      },
+      {
+        title: "Operational Intelligence",
+        subtitle: "Patterns & Lessons",
+        url: "/operational-knowledge",
+        icon: Library,
+      },
+    ],
+  },
+  {
+    label: "Risk & Compliance",
+    items: [
+      {
+        title: "Risk Intelligence",
+        subtitle: "Aggregated National Exposure",
+        url: "/national-risk",
         icon: Gauge,
+      },
+      {
+        title: "Compliance Monitoring",
+        subtitle: "Obligations & Exceptions",
+        url: "/compliance",
+        icon: ShieldCheck,
+      },
+      {
+        title: "Watchlists",
+        subtitle: "Watched Entities & Matches",
+        url: "/alerts",
+        icon: BellRing,
+      },
+      {
+        title: "Revenue Assurance",
+        subtitle: "Leakage & Discrepancy",
+        url: "/revenue-leakage",
+        icon: DollarSign,
       },
     ],
   },
@@ -201,12 +203,63 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "System",
     items: [
       {
-        title: "Intelligence Sources",
+        title: "Data Sources",
         subtitle: "Provider Coverage",
         url: "/data-sources",
         icon: Database,
       },
-      { title: "Administration", subtitle: "System Management", url: "/admin", icon: Settings },
+      {
+        title: "Integrations",
+        subtitle: "Connectors & Credentials",
+        url: "/admin/connectors",
+        icon: Plug,
+      },
+      { title: "Users & Roles", subtitle: "Access & Permissions", url: "/admin", icon: Users },
+      {
+        title: "System Health",
+        subtitle: "Runtime & Observability",
+        url: "/observability",
+        icon: Activity,
+      },
     ],
   },
 ];
+
+/**
+ * Where a route went when it lost its own sidebar entry.
+ *
+ * Consolidation is not deletion. Each route below still exists, still
+ * works, and is still linked from the environment that now owns it — this
+ * records which one, so a capability cannot quietly become unreachable
+ * because a menu item was removed.
+ *
+ * `navigation-ia.test.ts` asserts that every route reachable before this
+ * change is either a sidebar item or listed here with a parent that is
+ * itself a sidebar item. That is what makes "nothing is lost" checkable
+ * rather than merely claimed.
+ */
+export const CONSOLIDATED_ROUTES: Readonly<Record<string, string>> = {
+  // Investigate owns the case surfaces.
+  "/investigations": "/investigate",
+  "/investigations-workflow": "/investigate",
+  // Decide & Coordinate owns queues, sharing and mission planning.
+  "/decide/queue": "/decide",
+  "/share": "/decide",
+  "/share/queue": "/decide",
+  "/missions": "/decide",
+  // Manifests & Cargo owns the cargo surfaces.
+  "/cargo": "/manifest",
+  "/cargo-workspace": "/manifest",
+  // Evidence & Documents owns evidence lineage.
+  "/intelligence-evidence": "/evidence",
+  // Institutional Memory owns briefings.
+  "/briefing-centre": "/memory",
+};
+
+/** Every url an officer can reach from the sidebar, directly or after one hop. */
+export function reachableRoutes(): readonly string[] {
+  return [
+    ...NAV_GROUPS.flatMap((g) => g.items.map((i) => i.url)),
+    ...Object.keys(CONSOLIDATED_ROUTES),
+  ];
+}
