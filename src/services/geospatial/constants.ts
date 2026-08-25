@@ -254,16 +254,21 @@ export type MapStylePaletteName = "maritime" | "institutional";
  * traffic density or risk.
  */
 export const LIGHT_MARITIME_PALETTE: MaritimePalette = {
-  ocean: "#DDEEF7",
-  land: "#F6F8FA",
-  landUrban: "#E9EEF3",
-  coastline: "#8AA9B8",
-  waterway: "#B8D7E3",
-  seaLabel: "#507A8D",
-  placeLabel: "#667789",
+  /**
+   * Open water. A medium cyan-blue so the sea reads as the theatre and the
+   * land as context — still one flat tone at every location and zoom, because
+   * no bathymetry source is wired and a varying sea would be read as depth.
+   */
+  ocean: "#A6D4EE",
+  land: "#FAFCFD",
+  landUrban: "#EFF3F7",
+  coastline: "#6E9FBE",
+  waterway: "#8CC3DE",
+  seaLabel: "#3C6B84",
+  placeLabel: "#5C6E80",
   labelHalo: "#FFFFFF",
-  boundary: "#CAD4DE",
-  graticule: "#B8C6D2",
+  boundary: "#C6D3DE",
+  graticule: "#7FA8C4",
   voyageRelationship: "#7C6AA6",
   voyageOrigin: "#317EA8",
   voyageDestination: "#8D6DB3",

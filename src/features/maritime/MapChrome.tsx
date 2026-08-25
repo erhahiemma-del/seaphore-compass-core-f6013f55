@@ -184,8 +184,8 @@ function Chip({
       className={cn(
         "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11.5px] font-semibold transition-colors",
         active
-          ? "border-transparent bg-[color:var(--color-navy,#0B3B75)] text-white shadow-sm"
-          : "border-border/70 bg-background text-foreground/80 shadow-sm hover:bg-accent",
+          ? "border-transparent bg-[#2E7DF0] text-white shadow-[0_4px_10px_-3px_rgba(46,125,240,0.55)] hover:bg-[#2571e2]"
+          : "border-[#DCE4ED] bg-background text-[#334A63] shadow-sm hover:bg-accent",
       )}
     >
       <Icon className="h-3.5 w-3.5" aria-hidden />
@@ -435,7 +435,7 @@ export function MapLegendBar({ service = sgs, className }: MapLegendBarProps) {
     <div
       data-testid="map-legend-bar"
       className={cn(
-        "pointer-events-auto flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg bg-[#0A2246] px-3 py-1.5 shadow-lg",
+        "pointer-events-auto mx-auto flex flex-wrap items-center justify-center gap-x-5 gap-y-1 rounded-xl bg-[#0B2350] px-4 py-2 shadow-[0_10px_24px_-10px_rgba(6,22,48,0.7)] ring-1 ring-white/10",
         className,
       )}
     >
