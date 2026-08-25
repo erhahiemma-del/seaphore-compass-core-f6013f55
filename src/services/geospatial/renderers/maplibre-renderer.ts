@@ -691,6 +691,12 @@ export class MapLibreRenderer implements MapRenderer {
       if (!map.hasImage(id)) map.addImage(id, image);
     }
     if (!map.hasImage("port-diamond")) map.addImage("port-diamond", createPortDiamondImage());
+    // Hollow variant for degree-minute positions. Registered alongside
+    // the solid one so `icon-image` can switch on the feature's own
+    // declared precision rather than the renderer re-deriving it.
+    if (!map.hasImage("port-diamond-approximate")) {
+      map.addImage("port-diamond-approximate", createPortDiamondImage(undefined, false));
+    }
     return Promise.resolve();
   }
 
@@ -1097,7 +1103,34 @@ export class MapLibreRenderer implements MapRenderer {
       type: "symbol",
       source: SOURCE_IDS.ports,
       layout: {
-        "icon-image": "port-diamond",
+        /*
+         * Hollow for a degree-minute centroid, solid for an operator
+         * reference position.
+         *
+         * The same convention the voyage endpoints already use, and for
+         * the same reason: Lekki's coordinate is good to about a
+         * kilometre, and at port zoom that error is visible. An officer
+         * should be able to see which marks are approximate without
+         * opening a panel — and shape, not colour, is what carries it,
+         * so the distinction survives greyscale.
+         */
+        "icon-image": [
+          "case",
+          ["==", ["get", "precision"], "degree-minute"],
+          "port-diamond-approximate",
+          "port-diamond",
+        ],
+        /*
+         * Deterministic collision order.
+         *
+         * Lagos, Tin Can and Lekki sit within ~65 km, so at regional
+         * zoom their labels contend for the same pixels. MapLibre
+         * resolves ties by whichever it reaches first, which varies
+         * with viewport and reads as flicker. Sorting by the canonical
+         * model's `labelPriority` makes the same port win every time:
+         * lower sorts first, and first wins placement.
+         */
+        "symbol-sort-key": ["coalesce", ["get", "labelPriority"], 9],
         /*
          * Scale carries berth count — a reference figure from the source
          * file, which states it is "not live capacity". It is a static
@@ -1157,6 +1190,9 @@ export class MapLibreRenderer implements MapRenderer {
        */
       minzoom: ZOOM_BANDS.regionalMin,
       layout: {
+        // Same priority the markers sort by, so a port's label and its
+        // diamond can never disagree about which of them matters most.
+        "symbol-sort-key": ["coalesce", ["get", "labelPriority"], 9],
         // Abbreviation at strategic zoom, full name once there is room.
         "text-field": ["step", ["zoom"], ["get", "shortName"], 9, ["get", "name"]],
         "text-size": ["interpolate", ["linear"], ["zoom"], 5, 9.5, 9, 11, 14, 13],

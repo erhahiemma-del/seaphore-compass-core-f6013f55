@@ -1,8 +1,15 @@
 {
   "type": "FeatureCollection",
   "metadata": {
-    "name": "NIMASA ports",
-    "notice": "Port reference positions for operational display. Berth counts are reference figures, not live capacity. Anchorage radius is a display hint in kilometres, not a surveyed limit.",
+    "name": "Nigerian port estate",
+    "notice": "Canonical identity is UN/LOCODE; see src/services/geospatial/nigerian-ports.ts. Berth counts are reference figures, not live capacity. Anchorage radius is a display hint in kilometres, not a surveyed limit. `precision` states how far each coordinate may be trusted: `surveyed` is an operator reference position, `degree-minute` is a UN/LOCODE centroid good to roughly a kilometre.",
+    "positionUnavailable": [
+      {
+        "locode": "NGPHC",
+        "name": "Rivers Port Complex (Port Harcourt)",
+        "reason": "UN/LOCODE lists this port and publishes no coordinate. No other source in this repository holds one, so it is carried in the canonical model and deliberately not drawn."
+      }
+    ],
     "crs": "EPSG:4326"
   },
   "features": [
@@ -11,60 +18,100 @@
       "id": "NGAPAPA",
       "properties": {
         "locode": "NGAPAPA",
-        "name": "Apapa (Lagos)",
+        "name": "Lagos Port Complex (Apapa)",
         "shortName": "APA",
+        "precision": "surveyed",
+        "labelPriority": 1,
         "berths": 14,
         "anchorageRadiusKm": 3
       },
-      "geometry": { "type": "Point", "coordinates": [3.4219, 6.4281] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [3.4219, 6.4281]
+      }
     },
     {
       "type": "Feature",
       "id": "NGTIN",
       "properties": {
         "locode": "NGTIN",
-        "name": "Tin Can Island",
+        "name": "Tin Can Island Port Complex",
         "shortName": "TIN",
+        "precision": "surveyed",
+        "labelPriority": 2,
         "berths": 10,
         "anchorageRadiusKm": 2
       },
-      "geometry": { "type": "Point", "coordinates": [3.3167, 6.4333] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [3.3167, 6.4333]
+      }
     },
     {
       "type": "Feature",
-      "id": "NGWARR",
+      "id": "NGLKK",
       "properties": {
-        "locode": "NGWARR",
-        "name": "Warri",
-        "shortName": "WAR",
-        "berths": 6,
-        "anchorageRadiusKm": 2
+        "locode": "NGLKK",
+        "name": "Lekki Deep Sea Port",
+        "shortName": "LEK",
+        "precision": "degree-minute",
+        "labelPriority": 3
       },
-      "geometry": { "type": "Point", "coordinates": [5.75, 5.5167] }
-    },
-    {
-      "type": "Feature",
-      "id": "NGCBQ",
-      "properties": {
-        "locode": "NGCBQ",
-        "name": "Calabar",
-        "shortName": "CAL",
-        "berths": 5,
-        "anchorageRadiusKm": 1.5
-      },
-      "geometry": { "type": "Point", "coordinates": [8.3167, 4.95] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.0, 6.4333]
+      }
     },
     {
       "type": "Feature",
       "id": "NGONNE",
       "properties": {
         "locode": "NGONNE",
-        "name": "Onne",
+        "name": "Onne Port Complex",
         "shortName": "ONN",
+        "precision": "surveyed",
+        "labelPriority": 2,
         "berths": 8,
         "anchorageRadiusKm": 2
       },
-      "geometry": { "type": "Point", "coordinates": [7.15, 4.7167] }
+      "geometry": {
+        "type": "Point",
+        "coordinates": [7.15, 4.7167]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "NGWARR",
+      "properties": {
+        "locode": "NGWARR",
+        "name": "Delta Port Complex (Warri)",
+        "shortName": "WAR",
+        "precision": "surveyed",
+        "labelPriority": 2,
+        "berths": 6,
+        "anchorageRadiusKm": 2
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [5.75, 5.5167]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "NGCBQ",
+      "properties": {
+        "locode": "NGCBQ",
+        "name": "Calabar Port",
+        "shortName": "CAL",
+        "precision": "surveyed",
+        "labelPriority": 2,
+        "berths": 5,
+        "anchorageRadiusKm": 1.5
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [8.3167, 4.95]
+      }
     }
   ]
 }

@@ -437,3 +437,19 @@ export {
   planPerspectiveReset,
 } from "./perspective";
 export type { PerspectivePlan, PitchOwner } from "./perspective";
+
+/**
+ * Nigeria's canonical port estate.
+ *
+ * One identity per port, keyed by UN/LOCODE, shared by the map source,
+ * the Port Locations cards, SGS selection and the context drawer.
+ */
+export {
+  NIGERIAN_PORTS,
+  NIGERIAN_PORT_LIST,
+  canonicalPortId,
+  findNigerianPort,
+  hasDrawablePosition,
+  positionUnavailableReason,
+} from "./nigerian-ports";
+export type { CanonicalPort, PortPositionStatus, PortProvenance } from "./nigerian-ports";

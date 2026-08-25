@@ -34,6 +34,9 @@ import {
   type MapSelection,
   type Vessel,
   type Voyage,
+  findNigerianPort,
+  hasDrawablePosition,
+  positionUnavailableReason,
 } from "@/services/geospatial";
 
 import { VesselIntelligenceCard } from "./VesselIntelligenceCard";
@@ -162,12 +165,35 @@ function SelectionPanel({
     case "port":
     case "terminal":
     case "berth":
-    case "anchorage":
+    case "anchorage": {
+      /*
+       * Resolved through the canonical model, never by display name.
+       *
+       * The selection carries a UN/LOCODE; this turns it into the port's
+       * identity and its geographic status. A port the model does not
+       * recognise still renders the pending panel — it is a real
+       * selection of something we simply hold no estate record for.
+       */
+      const canonical = selection.kind === "port" ? findNigerianPort(selection.id) : null;
       return (
         <PendingPanel
-          title="Port intelligence"
+          title={canonical ? canonical.name : "Port intelligence"}
           sections={["Overview", "Activity", "Vessels", "Schedule", "Intelligence"]}
           pending={[
+            /*
+             * A port with no coordinate says so here, first.
+             * Otherwise an officer who selected Rivers from the card
+             * list and saw nothing appear on the map would be left to
+             * conclude the selection failed.
+             */
+            ...(canonical && !hasDrawablePosition(canonical)
+              ? [
+                  {
+                    label: "Geographic position",
+                    reason: positionUnavailableReason(canonical),
+                  },
+                ]
+              : []),
             {
               label: "Expected vessels & schedule",
               reason: "NPA SHIPPOS integration awaiting data access.",
@@ -179,6 +205,7 @@ function SelectionPanel({
           ]}
         />
       );
+    }
 
     case "sar-detection":
       return (

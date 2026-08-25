@@ -139,7 +139,18 @@ export function MapLegend({ className }: { className?: string }) {
                   />
                 </>
               ) : null}
-              {ports ? <Row label="Port" glyph={<PortGlyph />} note="reference position" /> : null}
+              {ports ? (
+                <>
+                  <Row label="Port" glyph={<PortGlyph />} note="operator reference" />
+                  {/*
+                    Hollow means the coordinate is a UN/LOCODE centroid,
+                    not an operator berth. Same convention the voyage
+                    endpoints use, and carried by shape rather than
+                    colour so it survives greyscale.
+                  */}
+                  <Row label="Port — approximate" glyph={<PortGlyph hollow />} note="±1 km" />
+                </>
+              ) : null}
               {clusters ? <Row label="Entity cluster" glyph={<ClusterGlyph />} /> : null}
             </Section>
           ) : null}
@@ -480,14 +491,14 @@ function RingGlyph({
  * because a port must differ from a vessel in *shape* and not only in
  * colour.
  */
-function PortGlyph() {
+function PortGlyph({ hollow = false }: { hollow?: boolean }) {
   return (
     <svg viewBox="0 0 12 12" className="h-3 w-3" aria-hidden>
       <path
         d="M6 1.2 L10.8 6 L6 10.8 L1.2 6 Z"
-        fill="#0E7C7B"
-        stroke="rgba(255,255,255,0.85)"
-        strokeWidth="0.9"
+        fill={hollow ? "rgba(14,124,123,0.22)" : "#0E7C7B"}
+        stroke={hollow ? "#0E7C7B" : "rgba(255,255,255,0.85)"}
+        strokeWidth={hollow ? 1.3 : 0.9}
       />
     </svg>
   );
