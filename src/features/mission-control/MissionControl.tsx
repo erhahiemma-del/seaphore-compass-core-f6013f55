@@ -45,6 +45,7 @@ import { COMPOSABLE_PANELS, orderKpis, orderPanels } from "./modes";
 import { useMissionMode } from "./useMissionMode";
 import { MapRecommendationNotice } from "./MapRecommendationNotice";
 import { useCopilotContextBinding } from "./useCopilotContextBinding";
+import { MyWorkspaceSummary } from "./MyWorkspaceSummary";
 import { useUipStore } from "@/stores/uip.store";
 import { scanForLeakage } from "@/services/revenue-leakage";
 import {
@@ -202,6 +203,15 @@ export function MissionControl() {
         <div className={cn("grid gap-4 lg:grid-cols-[1fr_1.3fr]", recede)}>
           <TodaysPrioritiesPanel projection={prioritiesProjection} />
           <RecentBriefingsPanel projection={briefingsProjection} />
+        </div>
+
+        {/*
+          What this officer owns, read-only, over stores that already
+          exist. Placed last: personalisation changes emphasis and must
+          never precede the institutional picture.
+        */}
+        <div className={recede}>
+          <MyWorkspaceSummary />
         </div>
       </div>
     </AppShell>
