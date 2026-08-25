@@ -1,14 +1,27 @@
 /**
- * My Workspace — one compact answer to "what belongs to me?".
+ * My Workspace — one consolidated officer surface.
  *
- * Presentation only. Every count is read from an existing client store
- * (screening queue, investigation selection, notification tray). Nothing is
- * fabricated: when a store is genuinely empty the row says so in words
- * rather than parading a zero as an operational metric.
+ * Presentation only. Active workflows, decisions, approvals, handoffs,
+ * blockers and recent work are grouped as compact sub-panels inside a
+ * single card rather than several full-width dashboard sections. Every
+ * count is read from an existing client store; when a store is genuinely
+ * empty the row says so in words rather than parading a zero as an
+ * operational metric.
  */
 import { useMemo } from "react";
 import { Link, type LinkProps } from "@tanstack/react-router";
-import { ArrowRight, Bell, Gavel, ListChecks, Radar, Share2, type LucideIcon } from "lucide-react";
+import {
+  ArrowRight,
+  Bell,
+  CircleSlash,
+  Gavel,
+  ListChecks,
+  Radar,
+  Share2,
+  Users,
+  Workflow,
+  type LucideIcon,
+} from "lucide-react";
 
 import { PanelCard } from "@/components/panel-card";
 import { selectScreeningStats, useScreeningQueueStore } from "@/stores/screening-queue.store";
@@ -28,25 +41,46 @@ function WorkRowItem({ row }: { row: WorkRow }) {
   return (
     <Link
       to={row.to}
-      className="group flex items-center gap-3 rounded-md border border-line bg-surface px-3 py-2.5 motion-fast hover:border-[color:var(--ocean)]/60 hover:bg-surface-2"
+      className="group flex items-center gap-2.5 rounded-md border border-line bg-surface px-2.5 py-2 motion-fast hover:-translate-y-px hover:border-[color:var(--ocean)]/60 hover:bg-surface-2 hover:shadow-card"
     >
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[color:var(--ocean-050)] text-[color:var(--ocean)]">
-        <row.icon className="h-4 w-4" strokeWidth={1.75} />
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[color:var(--ocean-050)] text-[color:var(--ocean)]">
+        <row.icon className="h-3.5 w-3.5" strokeWidth={1.75} />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[13px] font-semibold text-foreground">
+        <span className="block truncate text-[12.5px] font-semibold text-foreground">
           {row.label}
         </span>
-        <span className="block truncate type-small text-slate">{row.hint}</span>
+        <span className="block truncate text-[11px] text-slate">{row.hint}</span>
       </span>
       {row.count === null ? (
-        <span className="shrink-0 type-small text-slate">None open</span>
+        <span className="shrink-0 text-[11px] text-slate">None</span>
       ) : (
-        <span className="type-mono shrink-0 text-[15px] font-bold text-foreground tabular-nums">
+        <span className="type-mono shrink-0 text-[14px] font-bold text-foreground tabular-nums">
           {row.count}
         </span>
       )}
     </Link>
+  );
+}
+
+function SubPanel({
+  title,
+  rows,
+}: {
+  readonly title: string;
+  readonly rows: readonly WorkRow[];
+}) {
+  return (
+    <div className="min-w-0">
+      <div className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-slate">
+        {title}
+      </div>
+      <div className="flex flex-col gap-1.5">
+        {rows.map((row) => (
+          <WorkRowItem key={row.label} row={row} />
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -62,28 +96,58 @@ export function MyWorkspacePanel() {
   const unread = useNotificationStore((s) => s.unreadCount);
   const activeCase = useInvestigationStore((s) => s.activeInvestigationId);
 
-  const rows: readonly WorkRow[] = [
+  const workflows: readonly WorkRow[] = [
+    {
+      label: "Active workflows",
+      hint: "Cases in progress",
+      to: "/investigate",
+      icon: Workflow,
+      count: activeCase ? 1 : null,
+    },
     {
       label: "Awaiting my decision",
-      hint: "Screening entries flagged for review",
+      hint: "Screening flagged for review",
       to: "/decide",
       icon: Gavel,
       count: screening.counts.REVIEW > 0 ? screening.counts.REVIEW : null,
     },
+  ];
+
+  const approvals: readonly WorkRow[] = [
     {
       label: "Approvals pending",
-      hint: "Queued screening awaiting a run",
+      hint: "Queued awaiting a run",
       to: "/decide/queue",
       icon: ListChecks,
       count: screening.counts.PENDING > 0 ? screening.counts.PENDING : null,
     },
     {
       label: "Confirmed matches",
-      hint: "Screening hits requiring action",
+      hint: "Screening hits to action",
       to: "/compliance",
       icon: Radar,
       count: screening.counts.HIT > 0 ? screening.counts.HIT : null,
     },
+  ];
+
+  const handoffs: readonly WorkRow[] = [
+    {
+      label: "Handoffs",
+      hint: "Ready to assign",
+      to: "/share/queue",
+      icon: Users,
+      count: null,
+    },
+    {
+      label: "Blockers",
+      hint: "Blocked by dependencies",
+      to: "/decide/queue",
+      icon: CircleSlash,
+      count: null,
+    },
+  ];
+
+  const recent: readonly WorkRow[] = [
     {
       label: "Unread notifications",
       hint: "Alerts routed to you",
@@ -118,10 +182,11 @@ export function MyWorkspacePanel() {
           Open workspace <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>
-      <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-        {rows.map((row) => (
-          <WorkRowItem key={row.label} row={row} />
-        ))}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <SubPanel title="Workflows & decisions" rows={workflows} />
+        <SubPanel title="Approvals" rows={approvals} />
+        <SubPanel title="Handoffs & blockers" rows={handoffs} />
+        <SubPanel title="Recent work" rows={recent} />
       </div>
     </PanelCard>
   );
