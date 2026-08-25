@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Anchor,
+  ArrowRight,
   Box,
   Building2,
-  ChevronDown,
-  CloudUpload,
   FileText,
   Hash,
   MapPin,
@@ -134,7 +133,6 @@ export function MissionCommandBar({
   const prefixedFor = useRef<EntityType>(modeKey);
   const [input, setInput] = useState(mode.prefix);
   const inputRef = useRef<HTMLInputElement>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
   const dispatch = useCommandDispatch();
 
   const focusAfterPrefix = useCallback((prefix: string) => {
@@ -379,25 +377,6 @@ function VoiceButton() {
       )}
     >
       <Mic className="h-5 w-5" strokeWidth={1.75} />
-    </button>
-  );
-}
-
-function CopilotButton() {
-  return (
-    <button
-      type="button"
-      className={cn(
-        "group inline-flex h-12 items-center gap-2 rounded-full border px-4",
-        "border-[color:var(--color-blue)]/25 bg-[color:var(--color-blue)]/5",
-        "text-[13px] font-semibold text-[color:var(--color-navy)] transition-all duration-200",
-        "hover:-translate-y-px hover:border-[color:var(--color-blue)]/50 hover:bg-[color:var(--color-blue)]/10 hover:shadow-[0_0_0_4px_rgba(59,130,246,0.08)]",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-blue)]/40",
-      )}
-    >
-      <Sparkles className="h-4 w-4 text-[color:var(--color-blue)]" strokeWidth={2} />
-      AI Copilot
-      <ChevronDown className="h-3.5 w-3.5 text-slate" strokeWidth={2} />
     </button>
   );
 }
