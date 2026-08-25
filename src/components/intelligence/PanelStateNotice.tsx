@@ -11,11 +11,11 @@ import { KPI_STATE_META, type KpiStateCode } from "@/lib/intelligence/coverage-m
 import { cn } from "@/lib/utils";
 
 const TONE_CLASS: Record<string, string> = {
-  good: "text-[color:var(--color-teal)]",
-  warn: "text-amber-600",
-  bad: "text-red-600",
-  info: "text-sky-600",
-  neutral: "text-slate",
+  good: "text-[color:var(--status-verified)]",
+  warn: "text-[color:var(--status-review)]",
+  bad: "text-[color:var(--status-critical)]",
+  info: "text-[color:var(--status-active)]",
+  neutral: "text-[color:var(--status-inactive)]",
 };
 
 export function PanelStateNotice({

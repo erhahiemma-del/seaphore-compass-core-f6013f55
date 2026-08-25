@@ -190,7 +190,7 @@ export function MissionCommandBar({ contextMode = null, fromRoute }: MissionComm
   return (
     <section
       aria-label="Mission Intelligence Command Bar"
-      className="grid gap-5 rounded-2xl border border-line bg-surface p-7 shadow-card lg:grid-cols-[minmax(0,1fr)_auto]"
+      className="grid gap-5 rounded-lg border border-line bg-surface p-5 elev-1 lg:grid-cols-[minmax(0,1fr)_auto]"
     >
       {/* Search + chips column */}
       <div className="flex min-w-0 flex-col gap-5">
@@ -262,11 +262,10 @@ export function MissionCommandBar({ contextMode = null, fromRoute }: MissionComm
                 onClick={() => selectMode(m.key)}
                 title={`${m.label} · Alt+${m.shortcut}`}
                 className={cn(
-                  "group inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-[12px] font-medium",
-                  "transition-all duration-200 ease-out",
+                  "group inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-[12px] font-semibold motion-fast",
                   active
-                    ? "border-[color:var(--color-blue)] bg-[color:var(--color-blue)] text-white shadow-[0_4px_10px_-4px_rgba(37,99,235,0.5)] -translate-y-px"
-                    : "border-line/70 bg-surface text-foreground/70 hover:-translate-y-px hover:border-[color:var(--color-blue)]/40 hover:bg-[color:var(--color-blue)]/5 hover:text-[color:var(--color-blue)]",
+                    ? "border-[color:var(--navy)] bg-[color:var(--navy)] text-white"
+                    : "border-line bg-surface-2 text-slate hover:border-[color:var(--ocean)]/50 hover:bg-surface-3 hover:text-foreground",
                 )}
               >
                 <Icon className="h-3.5 w-3.5" strokeWidth={1.75} />
@@ -275,9 +274,7 @@ export function MissionCommandBar({ contextMode = null, fromRoute }: MissionComm
                   aria-hidden
                   className={cn(
                     "ml-1 rounded-sm px-1 text-[10px] font-semibold leading-none",
-                    active
-                      ? "bg-white/20 text-white/90"
-                      : "bg-[color:var(--color-navy)]/6 text-slate group-hover:bg-[color:var(--color-blue)]/10",
+                    active ? "bg-white/18 text-white/90" : "bg-[color:var(--surface-3)] text-slate",
                   )}
                 >
                   ⌥{m.shortcut}

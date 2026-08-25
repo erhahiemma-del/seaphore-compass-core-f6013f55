@@ -23,11 +23,11 @@ import {
 import { cn } from "@/lib/utils";
 
 const TONE_CLASS: Record<string, string> = {
-  good: "text-[color:var(--color-teal)]",
-  warn: "text-amber-600",
-  bad: "text-red-600",
-  info: "text-sky-600",
-  neutral: "text-slate",
+  good: "text-[color:var(--status-verified)]",
+  warn: "text-[color:var(--status-review)]",
+  bad: "text-[color:var(--status-critical)]",
+  info: "text-[color:var(--status-active)]",
+  neutral: "text-[color:var(--status-inactive)]",
 };
 
 const PROVIDER_STATUS_LABEL: Record<ProviderCoverageStatus, string> = {
@@ -65,7 +65,7 @@ export function KpiCoverageCard({
   const isNumber = kpi.value !== null;
 
   return (
-    <div className="flex flex-col rounded-lg border border-line bg-surface p-3 text-left shadow-card motion-fast hover:border-[color:var(--color-teal)]">
+    <div className="flex flex-col rounded-lg border border-line bg-surface p-3 text-left elev-1 motion-fast hover:border-[color:var(--ocean)]/60">
       <button
         type="button"
         onClick={() => (onOpen ? onOpen() : setOpen((v) => !v))}
@@ -73,7 +73,7 @@ export function KpiCoverageCard({
         title={kpi.stateDetail}
       >
         <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[color:var(--color-teal)]/10 text-[color:var(--color-teal)]">
+          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[color:var(--ocean-050)] text-[color:var(--ocean)]">
             <Icon className="h-4 w-4" />
           </span>
           <span className="type-label text-slate">{kpi.title}</span>
@@ -105,7 +105,7 @@ export function KpiCoverageCard({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="mt-2 inline-flex items-center gap-1 self-start text-[10px] font-semibold text-[color:var(--color-teal)]"
+        className="mt-2 inline-flex items-center gap-1 self-start text-[10px] font-semibold text-[color:var(--ocean)]"
       >
         Coverage details
         <ChevronDown className={cn("h-3 w-3 motion-fast", open && "rotate-180")} />
@@ -125,7 +125,11 @@ export function KpiCoverageCard({
               <div key={key} className="flex items-center justify-between gap-2">
                 <span>{COVERAGE_CHECK_LABELS[key]}</span>
                 <span
-                  className={kpi.checks[key] ? "text-[color:var(--color-teal)]" : "text-red-600"}
+                  className={
+                    kpi.checks[key]
+                      ? "text-[color:var(--ocean)]"
+                      : "text-[color:var(--status-critical)]"
+                  }
                 >
                   {kpi.checks[key] ? "✓" : "✗"}
                 </span>
@@ -136,7 +140,9 @@ export function KpiCoverageCard({
           <div className="space-y-1">
             <div className="type-label text-slate">Providers</div>
             {kpi.providers.length === 0 ? (
-              <div className="text-red-600">No provider declares this capability.</div>
+              <div className="text-[color:var(--status-critical)]">
+                No provider declares this capability.
+              </div>
             ) : (
               kpi.providers.map((p) => (
                 <div key={p.providerId} className="rounded border border-line p-1.5">
@@ -150,7 +156,9 @@ export function KpiCoverageCard({
                   {p.credentialEnv.length > 0 ? (
                     <div>Credentials: {p.credentialEnv.join(", ")}</div>
                   ) : null}
-                  {p.lastError ? <div className="text-red-600">Error: {p.lastError}</div> : null}
+                  {p.lastError ? (
+                    <div className="text-[color:var(--status-critical)]">Error: {p.lastError}</div>
+                  ) : null}
                 </div>
               ))
             )}
@@ -158,7 +166,7 @@ export function KpiCoverageCard({
 
           <Link
             to={kpi.providerCatalogHref}
-            className="inline-flex items-center gap-1 font-semibold text-[color:var(--color-teal)]"
+            className="inline-flex items-center gap-1 font-semibold text-[color:var(--ocean)]"
           >
             Open Evidence Provider Catalog
             <ExternalLink className="h-3 w-3" />

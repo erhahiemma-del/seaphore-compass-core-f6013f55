@@ -289,11 +289,11 @@ function Ribbon() {
                   context: { fromStage: "Monitor", fromRoute: "/" },
                 })
               }
-              className="group flex flex-col rounded-lg border border-line bg-surface p-3 text-left shadow-card motion-fast hover:border-[color:var(--color-teal)] hover:shadow-pop"
+              className="group flex flex-col rounded-lg border border-line bg-surface p-3 text-left elev-1 motion-fast hover:border-[color:var(--ocean)]/60"
               title={kpi.hint}
             >
               <div className="flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[color:var(--color-teal)]/10 text-[color:var(--color-teal)]">
+                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[color:var(--ocean-050)] text-[color:var(--ocean)]">
                   <Icon className="h-4 w-4" />
                 </span>
                 <span className="type-label text-slate">{kpi.title}</span>
@@ -315,12 +315,12 @@ function Ribbon() {
 
         <Link
           to="/detect"
-          className="group flex flex-col items-start justify-between rounded-lg border border-dashed border-[color:var(--color-teal)]/60 bg-[color:var(--color-teal)]/5 p-3 motion-fast hover:bg-[color:var(--color-teal)]/10"
+          className="group flex flex-col items-start justify-between rounded-lg border border-dashed border-[color:var(--ocean)]/50 bg-[color:var(--ocean-050)] p-3 motion-fast hover:border-[color:var(--ocean)]"
         >
-          <span className="type-label text-[color:var(--color-teal)]">Intelligence Feed</span>
+          <span className="type-label text-[color:var(--ocean)]">Intelligence Feed</span>
           <span className="mt-2 type-h1 text-foreground">View full feed</span>
           <span className="type-small text-slate">Continuous signals across every centre</span>
-          <span className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--color-teal)]">
+          <span className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--ocean)]">
             Open Detect <ArrowRight className="h-3.5 w-3.5" />
           </span>
         </Link>
@@ -559,7 +559,7 @@ function CargoWorkspaceStrip() {
         </div>
         <Link
           to="/cargo-workspace"
-          className="inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--color-blue)] hover:underline"
+          className="inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--ocean)] hover:underline"
         >
           Open workspace <ArrowRight className="h-3.5 w-3.5" />
         </Link>
@@ -570,7 +570,7 @@ function CargoWorkspaceStrip() {
             key={p.centre.id}
             to="/cargo-workspace/$centre"
             params={{ centre: p.centre.slug }}
-            className="rounded-md border border-line bg-surface-2 p-2.5 motion-fast hover:border-[color:var(--color-blue)]/40"
+            className="rounded-md border border-line bg-surface-2 p-2.5 motion-fast hover:border-[color:var(--ocean)]/50"
           >
             <div className="flex items-center justify-between gap-2">
               <span className="truncate type-small font-semibold text-foreground">
@@ -652,7 +652,7 @@ function RevenueAssurancePanel() {
           <button
             type="button"
             onClick={openRevenue}
-            className="mt-3 rounded-md border border-line bg-surface-2 p-3 text-left motion-fast hover:border-[color:var(--color-red)]/40 hover:bg-[color:var(--color-red)]/5"
+            className="mt-3 rounded-md border border-line bg-surface-2 p-3 text-left motion-fast hover:border-[color:var(--status-critical-edge)] hover:bg-[color:var(--status-critical-tint)]"
           >
             <div className="type-label text-slate">Estimated leakage at risk</div>
             <div className="mt-1 flex items-baseline gap-2">
@@ -811,7 +811,7 @@ function TodaysPrioritiesPanel({
                     },
                   })
                 }
-                className="w-full rounded-md border border-line bg-surface p-3 text-left motion-fast hover:border-[color:var(--color-teal)] hover:shadow-card"
+                className="w-full rounded-md border border-line bg-surface p-3 text-left motion-fast hover:border-[color:var(--ocean)]/60"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0">
@@ -890,7 +890,7 @@ function PanelHeader({
     <div
       className={cn(
         "flex items-start justify-between gap-2 border-b border-line",
-        compact ? "pb-2 mb-2" : "px-4 py-3",
+        compact ? "pb-2 mb-2" : "bg-[color:var(--navy-050)] px-4 py-2.5",
       )}
     >
       <div className="min-w-0">
@@ -899,7 +899,7 @@ function PanelHeader({
       </div>
       <Link
         to={to}
-        className="inline-flex shrink-0 items-center gap-1 text-[12px] font-semibold text-[color:var(--color-blue)] hover:underline motion-fast"
+        className="inline-flex shrink-0 items-center gap-1 text-[12px] font-semibold text-[color:var(--ocean)] hover:underline motion-fast"
       >
         {toLabel}
         <ArrowRight className="h-3.5 w-3.5" />

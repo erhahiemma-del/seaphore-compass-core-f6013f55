@@ -3,17 +3,28 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
+/**
+ * Institutional badge. Semantic variants match the platform's status tones so
+ * the same operational meaning looks identical on every surface.
+ */
 const badgeVariants = cva(
-  "inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 text-[10.5px] font-bold uppercase tracking-[0.06em] whitespace-nowrap",
   {
     variants: {
       variant: {
-        default: "border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80",
-        secondary:
-          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        default: "border-[color:var(--navy)] bg-[color:var(--navy)] text-white",
+        secondary: "border-line bg-surface-2 text-slate",
         destructive:
-          "border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80",
-        outline: "text-foreground",
+          "border-[color:var(--status-critical-edge)] bg-[color:var(--status-critical-tint)] text-[color:var(--status-critical)]",
+        outline: "border-line-strong bg-transparent text-foreground",
+        verified:
+          "border-[color:var(--status-verified-edge)] bg-[color:var(--status-verified-tint)] text-[color:var(--status-verified)]",
+        active:
+          "border-[color:var(--status-active-edge)] bg-[color:var(--status-active-tint)] text-[color:var(--status-active)]",
+        review:
+          "border-[color:var(--status-review-edge)] bg-[color:var(--status-review-tint)] text-[color:var(--status-review)]",
+        inactive:
+          "border-[color:var(--status-inactive-edge)] bg-[color:var(--status-inactive-tint)] text-[color:var(--status-inactive)]",
       },
     },
     defaultVariants: {
