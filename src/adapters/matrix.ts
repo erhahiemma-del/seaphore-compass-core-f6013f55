@@ -102,6 +102,55 @@ export const DATA_SOURCE_MATRIX: readonly SourceRegistryEntry[] = [
     notes: "Cross-border comparison for manifest validation.",
   },
   {
+    /*
+     * Trade Atlas — a second, independent trade intelligence provider.
+     *
+     * Deliberately not a replacement for Volza and not a fallback behind
+     * it. Both are `trade` kind and both may contribute evidence for the
+     * same claim; which one wins a given contradiction is decided
+     * per-claim by freshness and grade, through `ATTRIBUTE_AUTHORITY`
+     * under `trade.flow`, where the two sit at equal weight. Encoding a
+     * primary/backup relationship here would bake a procurement choice
+     * into the scoring layer.
+     *
+     * PLANNED, not ACTIVE: no adapter is connected, and `PlannedSourceError`
+     * is what feature code will receive until one is.
+     */
+    id: "trade_atlas",
+    dataType: "Trade intelligence (import/export flows, trade relationships)",
+    provider: "Trade Atlas",
+    status: "PLANNED",
+    kind: "trade",
+    defaultConfidence: "CORROBORATED",
+    citation: "Trade Atlas global trade intelligence dataset",
+    scope: "commercial",
+    notes:
+      "Infrastructure registered in M2.8; no credentials and no adapter implementation. " +
+      "Coexists with Volza as an independent trade source — neither is primary.",
+  },
+  {
+    /*
+     * SeaVantage — vessel tracking and historical movement.
+     *
+     * The AIS registry (`services/eo/ais-providers.ts`) already carries
+     * this provider as PENDING_CREDENTIALS with its capability matrix.
+     * This entry exists so the *data source matrix* — which is what the
+     * source-availability surfaces read — agrees with the AIS registry
+     * rather than omitting a provider the rest of the system knows about.
+     */
+    id: "seavantage",
+    dataType: "AIS positions and historical vessel tracks",
+    provider: "SeaVantage",
+    status: "PLANNED",
+    kind: "ais_history",
+    defaultConfidence: "OBSERVED",
+    citation: "SeaVantage vessel tracking platform",
+    scope: "commercial",
+    notes:
+      "Registered in services/eo/ais-providers.ts as PENDING_CREDENTIALS. " +
+      "No adapter implementation; awaiting credentials and API documentation.",
+  },
+  {
     id: "port_congestion",
     dataType: "Port congestion",
     provider: "NPA / internal model",

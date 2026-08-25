@@ -8,6 +8,7 @@ import { DATA_SOURCE_MATRIX } from "./matrix";
 
 import { spire } from "./ais/spire.adapter";
 import { datalastic } from "./ais/datalastic.adapter";
+import { seavantage } from "./ais/seavantage.adapter";
 import { imoGisis } from "./reference/imo-gisis.adapter";
 import { cacNigeria } from "./registries/cac-nigeria.adapter";
 import { ofacUn } from "./registries/ofac-un.adapter";
@@ -15,6 +16,7 @@ import { flagRegistry } from "./registries/flag-registry.adapter";
 import { companiesHouse } from "./registries/companies-house.adapter";
 import { manifestUpload, bolUpload } from "./uploads/user-uploads.adapter";
 import { volza } from "./trade/volza.adapter";
+import { tradeAtlas } from "./trade/trade-atlas.adapter";
 import { portCongestion } from "./models/port-congestion.adapter";
 import { nimasaLevy } from "./internal/nimasa-levy.adapter";
 import { platts } from "./market/platts.adapter";
@@ -26,12 +28,14 @@ import { gemini } from "./ai/gemini.adapter";
 const MATRIX_ADAPTERS: Record<string, BaseAdapter> = {
   spire,
   datalastic,
+  seavantage,
   imo_gisis: imoGisis,
   cac_nigeria: cacNigeria,
   sanctions: ofacUn,
   manifest_upload: manifestUpload,
   bol_upload: bolUpload,
   volza,
+  trade_atlas: tradeAtlas,
   port_congestion: portCongestion,
   nimasa_levy: nimasaLevy,
   platts,

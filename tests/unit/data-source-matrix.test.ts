@@ -8,8 +8,18 @@ import { getAdapter, listAdapters } from "@/adapters/matrix-registry";
 import { OutOfScopeSourceError, PlannedSourceError } from "@/adapters/status";
 
 describe("Data Source Matrix", () => {
-  it("registers exactly the 17 rows defined in Part H v1.0", () => {
-    expect(DATA_SOURCE_MATRIX).toHaveLength(17);
+  it("registers the Part H v1.0 rows plus M2.8's two planned providers", () => {
+    /*
+     * 17 in Part H v1.0; 19 from M2.8.
+     *
+     * The count is pinned rather than loosened, because the point of
+     * this assertion is that rows arrive deliberately. M2.8 added
+     * SeaVantage and Trade Atlas — both PLANNED, both with adapters that
+     * throw rather than fabricate, and both required so the matrix
+     * agrees with the AIS provider registry instead of omitting
+     * providers the rest of the system already knows about.
+     */
+    expect(DATA_SOURCE_MATRIX).toHaveLength(19);
   });
 
   it("has an adapter for every matrix id", () => {

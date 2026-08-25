@@ -50,6 +50,78 @@ export const AUTHORITY_WEIGHT: Readonly<Record<string, number>> = Object.freeze(
 export const DEFAULT_AUTHORITY = 0.7;
 
 /**
+ * Authority that depends on *what* is being claimed, not only who claims it.
+ *
+ * {@link AUTHORITY_WEIGHT} ranks a source once, globally. That is the
+ * right shape for a document store and the wrong shape for a maritime
+ * picture, where the question "how much do we trust this source" has no
+ * single answer: OpenSanctions is authoritative about a designation and
+ * knows nothing about where a ship is; an AIS feed is the reverse.
+ * Ranking them on one scale makes a sanctions provider compete with a
+ * position provider for a position, which neither would claim to win.
+ *
+ * Keyed by attribute *prefix*, so `vessel.position` also governs
+ * `vessel.position.lat` without an entry per leaf. The longest matching
+ * prefix wins, and anything unmatched falls through to the global table —
+ * so this is purely additive and every existing score is unchanged until
+ * an attribute is deliberately listed here.
+ *
+ * Absence is meaningful: a source with no entry under an attribute is
+ * not being demoted, it simply has no property-specific opinion recorded
+ * and keeps its global weight.
+ */
+export const ATTRIBUTE_AUTHORITY: Readonly<Record<string, Readonly<Record<string, number>>>> =
+  Object.freeze({
+    /** Where a vessel is. AIS providers lead; nobody else has standing. */
+    "vessel.position": Object.freeze({
+      AIS_STREAM: 0.9,
+      Datalastic: 0.88,
+      SeaVantage: 0.88,
+      // A sanctions or trade source reporting a position is repeating
+      // something it was told, not observing it.
+      OpenSanctions: 0.3,
+      TradeAtlas: 0.25,
+      Volza: 0.25,
+    }),
+    /** Historical track. Same providers, and provenance matters more. */
+    "vessel.track": Object.freeze({
+      Datalastic: 0.88,
+      SeaVantage: 0.88,
+      AIS_STREAM: 0.8,
+      HISTORICAL_DB: 0.7,
+    }),
+    /** Designation and watchlist status. */
+    "entity.sanctions": Object.freeze({
+      OpenSanctions: 0.97,
+      CAC: 0.6,
+      // An AIS provider has no standing on whether an entity is listed.
+      Datalastic: 0.2,
+      SeaVantage: 0.2,
+    }),
+    /** Beneficial ownership and corporate control. */
+    "entity.ownership": Object.freeze({
+      CAC: 1.0,
+      IMO_GISIS: 0.9,
+      OpenSanctions: 0.85,
+      Datalastic: 0.4,
+    }),
+    /**
+     * Trade and cargo flows.
+     *
+     * Trade Atlas and Volza sit deliberately level. They are independent
+     * providers of the same intelligence, and declaring either the primary
+     * would bake a procurement decision into the scoring layer — the
+     * evidence should decide, per claim, on freshness and grade.
+     */
+    "trade.flow": Object.freeze({
+      TradeAtlas: 0.85,
+      Volza: 0.85,
+      CUSTOMS_DB: 0.95,
+      MANIFEST_DB: 0.9,
+    }),
+  });
+
+/**
  * Normalised evidence atom consumed by the fusion layers.
  * `raw` preserves the original agent-emitted value verbatim.
  */
