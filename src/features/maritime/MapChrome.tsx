@@ -402,19 +402,23 @@ function ControlButton({
 /* ------------------------------------------------------------------ */
 
 interface LegendEntry {
-  readonly label: string;
-  readonly color: string;
-  readonly shape: "dot" | "square" | "triangle";
+  readonly kind: MapSymbolKind;
   readonly layers: readonly string[];
 }
 
+/**
+ * Legend entries, in operational order.
+ *
+ * Shape and colour come from `MAP_SYMBOLS` — the same tokens the map
+ * sprites are drawn from — so the legend is never styled independently.
+ */
 const LEGEND: readonly LegendEntry[] = [
-  { label: "Vessels", color: "#25B36B", shape: "dot", layers: ["vessels"] },
-  { label: "Ports", color: "#2E8FE0", shape: "dot", layers: ["ports"] },
-  { label: "Anchorage", color: "#8B6FC7", shape: "dot", layers: ["ports"] },
-  { label: "Incidents", color: "#E0453A", shape: "dot", layers: ["darkContactAreas"] },
-  { label: "Restricted Zone", color: "#E9A93B", shape: "square", layers: ["investigArea"] },
-  { label: "Weather Alert", color: "#E9EEF3", shape: "triangle", layers: ["weather"] },
+  { kind: "vessel", layers: ["vessels"] },
+  { kind: "port", layers: ["ports"] },
+  { kind: "anchorage", layers: ["ports"] },
+  { kind: "incident", layers: ["darkContactAreas"] },
+  { kind: "restricted-zone", layers: ["investigArea"] },
+  { kind: "weather-alert", layers: ["weather"] },
 ];
 
 export interface MapLegendBarProps {
@@ -435,24 +439,25 @@ export function MapLegendBar({ service = sgs, className }: MapLegendBarProps) {
     <div
       data-testid="map-legend-bar"
       className={cn(
-        "pointer-events-auto mx-auto flex flex-wrap items-center justify-center gap-x-5 gap-y-1 rounded-xl bg-[#0B2350] px-4 py-2 shadow-[0_10px_24px_-10px_rgba(6,22,48,0.7)] ring-1 ring-white/10",
+        "pointer-events-auto flex flex-wrap items-center gap-x-5 gap-y-1 rounded-xl bg-[#0B2350] px-4 py-2 shadow-[0_10px_24px_-10px_rgba(6,22,48,0.7)] ring-1 ring-white/10",
         className,
       )}
     >
       {LEGEND.map((entry) => {
+        const token = MAP_SYMBOLS[entry.kind];
         const own = known(entry.layers);
         const on = own.length > 0 && own.every((id) => active.has(id));
         const pending = own.every((id) => layerRegistry.get(id)?.status === "pending-source");
         return (
           <button
-            key={entry.label}
+            key={entry.kind}
             type="button"
             aria-pressed={on}
-            data-legend-item={entry.label}
+            data-legend-item={token.label}
             title={
               pending
-                ? `${entry.label} — no source connected`
-                : `${on ? "Hide" : "Show"} ${entry.label}`
+                ? `${token.label} — no source connected`
+                : `${on ? "Hide" : "Show"} ${token.label}`
             }
             onClick={() => {
               if (own.length === 0) return;
@@ -464,8 +469,8 @@ export function MapLegendBar({ service = sgs, className }: MapLegendBarProps) {
               on ? "text-white" : "text-white/55",
             )}
           >
-            <LegendGlyph shape={entry.shape} color={entry.color} />
-            <span className="whitespace-nowrap">{entry.label}</span>
+            <LegendGlyph kind={entry.kind} />
+            <span className="whitespace-nowrap">{token.label}</span>
           </button>
         );
       })}
@@ -473,28 +478,36 @@ export function MapLegendBar({ service = sgs, className }: MapLegendBarProps) {
   );
 }
 
-function LegendGlyph({ shape, color }: { shape: LegendEntry["shape"]; color: string }) {
-  if (shape === "square") {
-    return (
-      <span
-        className="inline-block h-2.5 w-3.5 rounded-[2px] border border-dashed"
-        style={{ borderColor: color }}
-        aria-hidden
-      />
-    );
-  }
-  if (shape === "triangle") {
-    return (
-      <svg viewBox="0 0 10 9" className="h-2.5 w-3" aria-hidden>
-        <path d="M5 0 L10 9 L0 9 Z" fill="none" stroke={color} strokeWidth="1.4" />
-      </svg>
-    );
-  }
+/**
+ * Legend glyph — the map symbol, redrawn as inline SVG.
+ *
+ * The map sprites are `ImageData` built for MapLibre and cannot be used
+ * as DOM images, so the geometry is shared through `MAP_SYMBOLS` instead
+ * of duplicated here.
+ */
+function LegendGlyph({ kind }: { kind: MapSymbolKind }) {
+  const token = MAP_SYMBOLS[kind];
   return (
-    <span
-      className="inline-block h-2.5 w-2.5 rounded-full"
-      style={{ backgroundColor: color }}
+    <svg
+      viewBox={`0 0 ${MAP_SYMBOL_GRID} ${MAP_SYMBOL_GRID}`}
+      className="h-3.5 w-3.5 shrink-0"
+      data-legend-glyph={kind}
       aria-hidden
-    />
+    >
+      {token.outlined ? (
+        <path
+          d={token.path}
+          fill="none"
+          stroke={token.color}
+          strokeWidth={1.8}
+          strokeLinejoin="round"
+          {...(token.dashed ? { strokeDasharray: "3 2" } : {})}
+        />
+      ) : (
+        <path d={token.path} fill={token.color} />
+      )}
+      {token.detail ? <path d={token.detail} fill={token.detailColor ?? "#FFFFFF"} /> : null}
+    </svg>
   );
 }
+
