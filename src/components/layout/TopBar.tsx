@@ -95,7 +95,41 @@ function NigeriaTime() {
   );
 }
 
-/** Discoverability affordance for the go-to palette (⌘J / Ctrl+J). */
+/** Copilot entry point — opens the existing Copilot surface, adds no logic. */
+function CopilotButton() {
+  const openCopilot = useCopilotStore((s) => s.openCopilot);
+  return (
+    <button
+      type="button"
+      onClick={() => openCopilot()}
+      className="hidden items-center gap-1.5 rounded-md border border-line bg-surface-2/70 px-2.5 py-1.5 text-slate hover:border-[color:var(--ocean)]/50 hover:text-foreground motion-fast md:flex"
+    >
+      <Sparkles className="h-3.5 w-3.5 text-[color:var(--ocean)]" />
+      <span className="type-small font-semibold">Copilot</span>
+    </button>
+  );
+}
+
+/** Unread alert count, read from the existing notification store. */
+function NotificationBell() {
+  const unread = useNotificationStore((s) => s.unreadCount);
+  return (
+    <Link
+      to="/alerts"
+      aria-label={unread > 0 ? `Alerts — ${unread} unread` : "Alerts"}
+      className="relative flex h-8 w-8 items-center justify-center rounded-md border border-line bg-surface-2/70 text-slate hover:border-[color:var(--ocean)]/50 hover:text-foreground motion-fast"
+    >
+      <Bell className="h-4 w-4" />
+      {unread > 0 && (
+        <span className="absolute -right-1 -top-1 min-w-[16px] rounded-full bg-[color:var(--status-critical)] px-1 text-[10px] font-bold leading-4 text-white">
+          {unread > 9 ? "9+" : unread}
+        </span>
+      )}
+    </Link>
+  );
+}
+
+
 function GoToHint() {
   return (
     <button
