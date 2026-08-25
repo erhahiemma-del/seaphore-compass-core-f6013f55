@@ -143,9 +143,9 @@ export function KpiRibbon({ coverage, mode, onOpen }: KpiRibbonProps) {
   };
 
   return (
-    <section aria-label="Operational signals" className="flex flex-col gap-3">
+    <section aria-label="Operational KPI signals" className="flex flex-col gap-2.5">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="type-label text-slate">Operational signals</h2>
+        <h2 className="type-label text-slate">Operational KPI signals</h2>
         {coverage ? (
           <details className="group">
             <summary className="cursor-pointer list-none text-[12px] font-semibold text-[color:var(--ocean)] hover:underline">
@@ -163,23 +163,13 @@ export function KpiRibbon({ coverage, mode, onOpen }: KpiRibbonProps) {
       </div>
 
       {/* LEAD — mode-determined emphasis */}
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid gap-2.5 md:grid-cols-2">
         {lead.map((k: RibbonKpi) => render(k, "lead"))}
       </div>
 
       {/* SECONDARY / BACKGROUND — quieter, still complete */}
-      <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {rest.map((k: RibbonKpi) => render(k, "quiet"))}
-        <Link
-          to="/detect"
-          className="group flex flex-col justify-between rounded-lg border border-dashed border-[color:var(--ocean)]/50 bg-[color:var(--ocean-050)] p-3 motion-fast hover:border-[color:var(--ocean)]"
-        >
-          <span className="type-label text-[color:var(--ocean)]">Intelligence feed</span>
-          <span className="mt-2 type-h1 text-foreground">View full feed</span>
-          <span className="mt-1 inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--ocean)]">
-            Open Detect <ArrowRight className="h-3.5 w-3.5" />
-          </span>
-        </Link>
       </div>
     </section>
   );
