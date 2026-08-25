@@ -292,8 +292,8 @@ function MaritimePicturePanel() {
         <div className="pointer-events-none absolute left-3 top-3">
           <MapControlStack scope="regional" />
         </div>
-        <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2">
-          <MapLegendBar />
+        <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center px-14">
+          <MapLegendBar className="max-w-full" />
         </div>
         {dataState.state !== "LIVE" ? <MaritimeDataNotice state={dataState} /> : null}
       </div>
