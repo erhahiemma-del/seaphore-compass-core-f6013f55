@@ -1,0 +1,115 @@
+/**
+ * Next Best Action — the strongest decision surface on Mission Control.
+ *
+ * Presentation only. It renders the highest-priority item the existing
+ * `projectTodaysPriorities` projection produced; it does not re-rank, score
+ * or invent anything. When the projection has no data the panel states the
+ * operational reason instead of a fabricated recommendation.
+ */
+import { ArrowRight, ClipboardCheck } from "lucide-react";
+
+import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
+import { PanelStateNotice } from "@/components/intelligence/PanelStateNotice";
+import type { PanelProjection, PrioritiesPanelData } from "@/lib/intelligence/dashboard-projection";
+import { cn } from "@/lib/utils";
+
+function Field({
+  label,
+  children,
+  className,
+}: {
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("min-w-0", className)}>
+      <div className="type-label text-white/55">{label}</div>
+      <div className="mt-1 min-w-0 text-[13px] font-semibold leading-snug text-white/90">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+export function NextBestAction({
+  projection,
+  onAct,
+}: {
+  projection: PanelProjection<PrioritiesPanelData>;
+  onAct: (subjectId: string) => void;
+}) {
+  const item = projection.data?.items[0] ?? null;
+
+  if (!item) {
+    return (
+      <section
+        aria-label="Next best action"
+        data-testid="next-best-action"
+        className="rounded-lg border border-line bg-surface p-4 elev-1"
+      >
+        <div className="type-label text-slate">Next best action</div>
+        <div className="mt-2">
+          <PanelStateNotice
+            state={projection.state}
+            detail={projection.stateDetail}
+            href={projection.capabilityHref}
+            hrefLabel="Inspect capability"
+          />
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section
+      aria-label="Next best action"
+      data-testid="next-best-action"
+      className="overflow-hidden rounded-lg border border-[color:var(--navy)] bg-[color:var(--navy)] elev-2"
+    >
+      <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_auto] lg:items-start">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="type-label text-white/55">Next best action</span>
+            <span className="rounded-sm bg-[color:var(--status-review-tint)] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-[color:var(--status-review)]">
+              {item.priority}
+            </span>
+          </div>
+          <div className="mt-2 flex min-w-0 items-start gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white/10 text-white">
+              <ClipboardCheck className="h-4 w-4" strokeWidth={1.75} />
+            </span>
+            <div className="min-w-0">
+              <h2 className="truncate text-[18px] font-semibold tracking-tight text-white">
+                {item.entityName}
+              </h2>
+              <p className="mt-1 max-w-[52ch] text-[13px] leading-relaxed text-white/70">
+                {item.rationale}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Evidence">
+            <span className="inline-flex items-center gap-2">
+              <ConfidenceChip tier={item.confidence} size={9} />
+            </span>
+          </Field>
+          <Field label="Status">
+            {item.approved ? "Officer approved" : "Awaiting officer decision"}
+          </Field>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => onAct(item.id)}
+          className="inline-flex shrink-0 items-center gap-2 self-start rounded-md bg-white px-4 py-2.5 text-[13px] font-semibold text-[color:var(--navy)] motion-fast hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+        >
+          Review evidence
+          <ArrowRight className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </section>
+  );
+}

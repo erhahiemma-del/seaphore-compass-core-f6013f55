@@ -2,8 +2,6 @@ import { useCallback, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getIntelligenceCoverage } from "@/lib/intelligence-coverage.functions";
-import { IntelligenceReadinessCard } from "@/components/intelligence/IntelligenceReadinessCard";
-import { KpiCoverageCard } from "@/components/intelligence/KpiCoverageCard";
 import {
   Activity,
   AlertTriangle,
@@ -24,7 +22,6 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/layout/IntelligenceCentreShell";
-import { ContextRail } from "@/components/layout/ContextRail";
 import { useFocusSubjectStore } from "@/stores/focus-subject.store";
 
 import { PanelCard } from "@/components/panel-card";
@@ -37,9 +34,6 @@ import { MissionCommandBar } from "@/components/mission-command-bar";
 import { useHandoffNavigate } from "@/lib/nav-context";
 import { useRenderTrace } from "@/lib/perf/hooks";
 import { cn } from "@/lib/utils";
-// Only the ribbon's static labels, icons and handoff targets remain —
-// UI copy, not intelligence. Every value beside them comes from coverage.
-import { RIBBON_KPIS } from "@/lib/mission-control-data";
 import { useUipStore } from "@/stores/uip.store";
 import { scanForLeakage } from "@/services/revenue-leakage";
 import {
@@ -56,6 +50,13 @@ import {
   type PrioritiesPanelData,
 } from "@/lib/intelligence/dashboard-projection";
 import { PanelStateNotice } from "@/components/intelligence/PanelStateNotice";
+import { QuickActions } from "@/features/mission-control/quick-actions";
+import { NextBestAction } from "@/features/mission-control/next-best-action";
+import { PriorityQueuePanel } from "@/features/mission-control/priority-queue";
+import { KpiRibbon } from "@/features/mission-control/kpi-ribbon";
+import { MyWorkspacePanel } from "@/features/mission-control/my-workspace";
+import { IntelligenceEventsStrip } from "@/features/mission-control/intelligence-events";
+import { FocusWorkspaceOverlay } from "@/features/mission-control/focus-workspace-overlay";
 import type { KpiCoverage } from "@/lib/intelligence/coverage-model";
 import { useCargoWorkspaceProjections } from "@/features/cargo-workspace/use-cargo-projection";
 import { CargoCentreStateChip } from "@/features/cargo-workspace/CargoCentreView";
@@ -84,22 +85,9 @@ function coverageFor(
   return (kpis ?? []).find((k) => k.key === key);
 }
 
-/** Officer-facing capability routes reused by the ribbon (no duplicates). */
-const KPI_HANDOFF_OVERRIDE: Record<string, string> = {
-  "revenue-intelligence": "/revenue-leakage",
-  "risk-intelligence": "/national-risk",
-};
-
-const RIBBON_ICONS: Record<string, LucideIcon> = {
-  "manifest-intelligence": FileText,
-  "vessel-intelligence": Ship,
-  "container-intelligence": Container,
-  "revenue-intelligence": Landmark,
-  "risk-intelligence": Target,
-  "historical-intelligence": History,
-};
-
 export function MissionControl() {
+  const navigate = useNavigate();
+  const handoff = useHandoffNavigate();
   const focused = useFocusSubjectStore((s) => s.subject);
   const recede = focused ? "is-receded" : undefined;
 
@@ -128,32 +116,56 @@ export function MissionControl() {
   const complianceProjection = projectComplianceWatchlist({ uipId });
   const briefingsProjection = projectRecentBriefings({ uipId });
 
+  const openEntity = useCallback(
+    (id: string) =>
+      handoff({
+        target: `/entity/${id}`,
+        context: { entityId: id, fromStage: "Monitor", fromRoute: "/" },
+      }),
+    [handoff],
+  );
+
   return (
     <AppShell title="Mission Control" subtitle="National maritime operating picture" mode="light">
-      <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-6 py-5">
-        <MissionCommandBar />
-        <div className={recede}>
-          <Ribbon />
+      <div className="mx-auto flex max-w-[1600px] flex-col gap-5 px-6 py-5">
+        {/* SEARCH — the primary control, with secondary quick actions beside it. */}
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
+          <MissionCommandBar fromRoute="/" />
+          <div className={recede}>
+            <QuickActions />
+          </div>
         </div>
+
+        {/* ACT — the strongest decision surface. */}
+        <NextBestAction projection={prioritiesProjection} onAct={openEntity} />
+
+        {/* ORIENT + PRIORITISE — the geographic operating surface and the queue. */}
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,2.6fr)_minmax(0,1fr)]">
+          <MaritimePicturePanel />
+          <PriorityQueuePanel
+            projection={prioritiesProjection}
+            onOpen={openEntity}
+            className="h-[560px]"
+          />
+        </div>
+
+        {/* UNDERSTAND — tiered signals, emphasis by capability, all still present. */}
+        <div className={recede}>
+          <KpiRibbon
+            coverage={coverage}
+            onOpen={(target) =>
+              handoff({ target, context: { fromStage: "Monitor", fromRoute: "/" } })
+            }
+          />
+        </div>
+
         <div className={recede}>
           <ConfidenceLegend />
         </div>
 
-        {/*
-          Lovable's adaptive focus layout, driving Claude's projection
-          panels. The grid narrows and swaps the feed for the FocusRail
-          when a subject is focused; the map and feed themselves remain
-          the truth-layer versions, so what the layout reveals is still
-          only what a provider actually reported.
-        */}
-        <div
-          className={cn(
-            "grid gap-4",
-            focused ? "xl:grid-cols-[1.5fr_320px]" : "lg:grid-cols-[1.55fr_1fr]",
-          )}
-        >
-          <MaritimePicturePanel />
-          {focused ? <FocusRail /> : <IntelligenceFeedPanel projection={feedProjection} />}
+        {/* WORK — what belongs to the officer. */}
+        <div className={recede}>
+          <MyWorkspacePanel />
         </div>
 
         <div className={cn("grid gap-4 md:grid-cols-2 xl:grid-cols-4", recede)}>
@@ -167,11 +179,43 @@ export function MissionControl() {
           <CargoWorkspaceStrip />
         </div>
 
-        <div className={cn("grid gap-4 lg:grid-cols-[1fr_1.3fr]", recede)}>
-          <TodaysPrioritiesPanel projection={prioritiesProjection} />
-          <RecentBriefingsPanel projection={briefingsProjection} />
+        <div className={cn("grid gap-4 lg:grid-cols-[1.15fr_1fr]", recede)}>
+          <IntelligenceFeedPanel projection={feedProjection} />
+          <div className="flex flex-col gap-4">
+            <TodaysPrioritiesPanel projection={prioritiesProjection} />
+            <RecentBriefingsPanel projection={briefingsProjection} />
+          </div>
+        </div>
+
+        {/* EVENTS — compact horizontal timeline of what the feed reported. */}
+        <div className={recede}>
+          <IntelligenceEventsStrip
+            projection={feedProjection}
+            onOpen={(subjectId, signalId) =>
+              handoff({
+                target: `/entity/${subjectId}`,
+                context: {
+                  entityId: subjectId,
+                  signalId,
+                  fromStage: "Detect",
+                  fromRoute: "/",
+                },
+              })
+            }
+          />
         </div>
       </div>
+
+      {/* FOCUS — the existing focus-subject model, as a contextual layer. */}
+      <FocusWorkspaceOverlay
+        onOpen={(id) =>
+          void navigate({
+            to: "/entity/$id",
+            params: { id },
+            search: { entityId: id, fromStage: "Monitor", fromRoute: "/" },
+          })
+        }
+      />
     </AppShell>
   );
 }
@@ -241,113 +285,6 @@ function SignalItem({ signal, onClick }: { signal: FeedSignal; onClick: () => vo
       </div>
       <span className="type-small leading-relaxed text-slate">{signal.subtitle}</span>
     </button>
-  );
-}
-
-/* ---------------- Ribbon ---------------- */
-
-function Ribbon() {
-  const handoff = useHandoffNavigate();
-  const { data: coverage } = useCoverage();
-
-  const kpiByKey = new Map((coverage?.kpis ?? []).map((k) => [k.key, k]));
-  return (
-    <div className="flex flex-col gap-3">
-      {coverage ? (
-        <IntelligenceReadinessCard
-          readiness={coverage.readiness}
-          generatedAt={coverage.generatedAt}
-          report={coverage}
-        />
-      ) : null}
-      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-        {RIBBON_KPIS.map((kpi) => {
-          const Icon = RIBBON_ICONS[kpi.key] ?? Activity;
-          const cov = kpiByKey.get(kpi.metricKey);
-          if (cov) {
-            return (
-              <KpiCoverageCard
-                key={kpi.key}
-                kpi={cov}
-                icon={Icon}
-                onOpen={() =>
-                  handoff({
-                    target: KPI_HANDOFF_OVERRIDE[kpi.key] ?? kpi.handoff,
-                    context: { fromStage: "Monitor", fromRoute: "/" },
-                  })
-                }
-              />
-            );
-          }
-          return (
-            <button
-              key={kpi.key}
-              type="button"
-              onClick={() =>
-                handoff({
-                  target: kpi.handoff,
-                  context: { fromStage: "Monitor", fromRoute: "/" },
-                })
-              }
-              className="group flex flex-col rounded-lg border border-line bg-surface p-3 text-left elev-1 motion-fast hover:border-[color:var(--ocean)]/60"
-              title={kpi.hint}
-            >
-              <div className="flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[color:var(--ocean-050)] text-[color:var(--ocean)]">
-                  <Icon className="h-4 w-4" />
-                </span>
-                <span className="type-label text-slate">{kpi.title}</span>
-              </div>
-              <div className="mt-2 flex items-center gap-1.5 text-[13px] font-semibold text-slate">
-                <span
-                  aria-hidden
-                  className="h-1.5 w-1.5 animate-pulse rounded-full bg-[color:var(--status-inactive)]"
-                />
-                Checking coverage…
-              </div>
-              <div className="mt-0.5 text-[11px] font-semibold text-slate">{kpi.descriptor}</div>
-              {/*
-                No confidence chip here. Coverage has not resolved, so there
-                is no value yet — and a tier rendered beside "Checking
-                coverage…" would assert certainty about a number that does
-                not exist. The chip returns with the value, from
-                KpiCoverageCard above.
-              */}
-            </button>
-          );
-        })}
-
-        <Link
-          to="/detect"
-          className="group flex flex-col items-start justify-between rounded-lg border border-dashed border-[color:var(--ocean)]/50 bg-[color:var(--ocean-050)] p-3 motion-fast hover:border-[color:var(--ocean)]"
-        >
-          <span className="type-label text-[color:var(--ocean)]">Intelligence Feed</span>
-          <span className="mt-2 type-h1 text-foreground">View full feed</span>
-          <span className="type-small text-slate">Continuous signals across every centre</span>
-          <span className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--ocean)]">
-            Open Detect <ArrowRight className="h-3.5 w-3.5" />
-          </span>
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-/* ---------------- Focus rail ---------------- */
-
-/** Context Rail bound to Mission Control's entity route contract. */
-function FocusRail() {
-  const navigate = useNavigate();
-  return (
-    <ContextRail
-      onOpen={(id) =>
-        void navigate({
-          to: "/entity/$id",
-          params: { id },
-          search: { entityId: id, fromStage: "Monitor", fromRoute: "/" },
-        })
-      }
-    />
   );
 }
 
