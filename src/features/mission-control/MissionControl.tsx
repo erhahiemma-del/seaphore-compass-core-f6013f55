@@ -114,7 +114,7 @@ export function MissionControl() {
     <AppShell title="Mission Control" subtitle="National maritime operating picture" mode="light">
       <div className="mx-auto flex max-w-[1760px] flex-col gap-3.5 px-5 py-4">
         {/* MARITIME COMMAND BAR — search dominant, quick actions beside it. */}
-        <div className="grid gap-3.5 xl:grid-cols-[minmax(0,1fr)_400px] xl:items-start">
+        <div className="grid gap-3.5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] xl:items-stretch">
           <MissionCommandBar
             fromRoute="/"
             pinnedMode={pinnedMode}
