@@ -43,3 +43,16 @@ dist-ssr
 .env.local
 .env.*.local
 !.env.example
+
+# Reports the application generates into the repository root.
+#
+# Exporting an ownership or compliance report writes the PDF beside the
+# source tree, so a working session leaves artifacts behind that look
+# like untracked files and get swept up by `git add -A`. Fifteen of them
+# reached a commit that way.
+#
+# The four `seaphore-compliance-report-*.pdf` already tracked on main are
+# deliberately left alone — ignoring a path does not untrack it, and
+# removing someone else's committed files is not this rule's job.
+Ownership_Evidence_Report_*.pdf
+seaphore-compliance-report-*.pdf
