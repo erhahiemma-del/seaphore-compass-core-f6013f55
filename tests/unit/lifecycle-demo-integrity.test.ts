@@ -138,7 +138,10 @@ describe("intel-centre fixtures cannot claim observation either", () => {
     "src/features/ownership/ownership-data.ts",
     "src/features/ownership/Ownership.tsx",
     "src/features/evidence/data.ts",
-    "src/features/evidence/Evidence.tsx",
+    // Was `Evidence.tsx`, an unrouted duplicate of this screen that was
+    // removed in Phase 5. The guard follows the surface an officer can
+    // actually reach.
+    "src/features/evidence/EvidenceLibrary.tsx",
     "src/features/compliance/Compliance.tsx",
   ])("%s carries no fixture-backed observed/verified claim", (path) => {
     const code = read(path).replace(/\/\*[\s\S]*?\*\//g, "");
@@ -151,7 +154,17 @@ describe("intel-centre fixtures cannot claim observation either", () => {
   it.each([
     "src/features/vessel/Vessel.tsx",
     "src/features/ports/Ports.tsx",
-    "src/features/evidence/Evidence.tsx",
+    /*
+     * `Evidence.tsx` sat here and was removed in Phase 5: it was an
+     * unrouted duplicate of `EvidenceLibrary.tsx`, so this line was
+     * guarding a screen no officer could open.
+     *
+     * It is deliberately not repointed at `EvidenceLibrary.tsx`.
+     * That surface runs a real query with `EVIDENCE_LIBRARY` only as
+     * `initialData`, so whether it is "simulated" is a product judgement
+     * about what it shows before the query resolves — not something to
+     * settle by making a test pass.
+     */
     "src/features/ownership/Ownership.tsx",
     "src/features/compliance/Compliance.tsx",
     "src/features/mission-control/CommandCenter.tsx",

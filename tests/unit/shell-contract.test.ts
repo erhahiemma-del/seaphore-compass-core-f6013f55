@@ -203,3 +203,67 @@ describe("capabilities are enabled where they mean something", () => {
     }
   });
 });
+
+describe("the intelligence centres use a layout, not a second shell", () => {
+  /*
+   * `IntelCentreShell` wrapped `AppShell` and added a second layout on
+   * top of it. That made it a competing shell: the five centres using it
+   * could not be light, could not opt out of the filter rail, and
+   * carried a centre header strip repeating the name the top bar was
+   * already showing.
+   */
+  const LAYOUT = read("src/components/intel-centre/shell.tsx");
+  const centres = [
+    "src/features/cargo/Cargo.tsx",
+    "src/features/manifest/Manifest.tsx",
+    "src/features/ports/Ports.tsx",
+    "src/features/revenue/Revenue.tsx",
+    "src/features/vessel/Vessel.tsx",
+  ];
+
+  it("renders no shell of its own", () => {
+    expect(LAYOUT).not.toContain("<AppShell");
+    expect(LAYOUT).not.toContain("IntelCentreShell");
+    expect(LAYOUT).toContain("export function IntelCentreLayout(");
+  });
+
+  it("takes no title, because the navigation model owns the name", () => {
+    expect(LAYOUT).not.toMatch(/^\s*title: string;/m);
+    expect(LAYOUT).not.toMatch(/^\s*subtitle: string;/m);
+    // The strip that printed the name a second time, under the top bar.
+    expect(LAYOUT).not.toContain("Centre header strip");
+  });
+
+  it("drops the controls that did nothing", () => {
+    // Each rendered as an ordinary affordance and had no handler and no
+    // state behind it. A control that does nothing teaches officers the
+    // surface is decorative.
+    expect(LAYOUT).not.toContain("Save Current View");
+    expect(LAYOUT).not.toContain("View Full Audit Trail");
+    expect(LAYOUT).not.toContain("export function FilterSearch");
+    for (const path of centres) {
+      expect(`${path}: ${read(path)}`).not.toContain("<FilterSearch");
+    }
+  });
+
+  it("has each centre compose the layout inside the one shell", () => {
+    for (const path of centres) {
+      const source = read(path);
+      expect(`${path}`).toBeTruthy();
+      expect(source).toContain("<IntelCentreLayout");
+      expect(source).toContain("<AppShell");
+      // One shell per screen, not one per component.
+      expect(source.split("<AppShell").length - 1).toBe(1);
+    }
+  });
+
+  it("gives the centres the search and rail they already had subjects for", () => {
+    // They set a focus subject through `useCentreFocus` and had no rail
+    // to show it in, because the old layout did not render one.
+    for (const path of centres) {
+      const declared = /capabilities=\{\{([^}]*)\}\}/.exec(read(path))?.[1] ?? "";
+      expect(`${path}: ${declared}`).toContain("focus: true");
+      expect(`${path}: ${declared}`).toContain("commandSurface: true");
+    }
+  });
+});
