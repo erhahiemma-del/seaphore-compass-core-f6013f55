@@ -191,6 +191,15 @@ const FALLBACK_BASEMAP = "https://tiles.stadiamaps.com/styles/alidade_smooth_dar
  * registry is asserted against it in the unit tests, and the renderer
  * checks itself against it at runtime; see `verifyInstalledLayers`.
  */
+/**
+ * How long a style may take before the mount says it is stuck.
+ *
+ * Long enough that a slow connection on a cold cache is not accused of
+ * failing; short enough that nobody stares at an empty canvas wondering
+ * whether the data is simply sparse.
+ */
+const STYLE_LOAD_STALL_MS = 12_000;
+
 export const INSTALLED_RENDER_LAYERS: readonly string[] = [
   LAYER_IDS.buildings,
   LAYER_IDS.graticule,
@@ -366,6 +375,18 @@ export class MapLibreRenderer implements MapRenderer {
     // Dynamic import keeps `window` access out of the SSR path.
     const maplibre = await import("maplibre-gl");
 
+    /*
+     * Bail before building anything if this mount was already superseded.
+     *
+     * Two mounts can be waiting on this import at once — React remounts
+     * the canvas, and both calls resume in whatever order the module
+     * graph settles. Without this check the stale call goes on to
+     * construct a second map and then assign it over `this.map`, so the
+     * renderer's idea of "the map" becomes whichever mount resumed last
+     * rather than whichever one is live.
+     */
+    if (token !== this.mountToken) return;
+
     const map = new maplibre.Map({
       container: options.container,
       style: options.style || BASEMAP_STYLE,
@@ -410,6 +431,23 @@ export class MapLibreRenderer implements MapRenderer {
       fadeDuration: 0,
     });
 
+    /*
+     * Claim the instance only while this mount is still the live one.
+     *
+     * This assignment used to be unconditional, which is how the map
+     * intermittently came up with the basemap styled and no operational
+     * layers on it: a superseded mount would overwrite `this.map` with
+     * its own doomed map, the live mount would then style its own local
+     * map correctly, and `installSourcesAndLayers` — which read
+     * `this.map` — would install every source and layer onto the wrong
+     * instance. The officer saw a styled sea with no ports, no vessels,
+     * no EEZ and no graticule, and nothing logged, because from each
+     * call's own point of view it had succeeded.
+     */
+    if (token !== this.mountToken) {
+      map.remove();
+      return;
+    }
     this.map = map;
 
     // Chrome. Defaults preserve the command-surface appearance exactly, so
@@ -485,13 +523,7 @@ export class MapLibreRenderer implements MapRenderer {
       this.bus?.emit("map:error", { scope: "maplibre", message });
     });
 
-    await new Promise<void>((resolve) => {
-      if (map.loaded()) {
-        resolve();
-        return;
-      }
-      map.once("load", () => resolve());
-    });
+    await this.awaitStyleLoad(map);
 
     /*
      * Bail if this mount was superseded while awaiting the style.
@@ -524,8 +556,8 @@ export class MapLibreRenderer implements MapRenderer {
      */
     const palette = paletteFor(options.palette);
     const styleResult = applyMaritimeStyle(map as unknown as StyleTarget, palette);
-    this.installSourcesAndLayers(palette);
-    this.verifyInstalledLayers();
+    this.installLayersWithRetry(map, palette);
+    this.verifyInstalledLayers(map);
     publishStyleDiagnostics(map, styleResult);
     this.installInteractionHandlers();
     this.installFrameCounter();
@@ -796,9 +828,80 @@ export class MapLibreRenderer implements MapRenderer {
    * drawn navy buildings, a dark graticule and dark label halos over
    * near-white land.
    */
-  private installSourcesAndLayers(palette: MaritimePalette): void {
-    const map = this.map;
-    if (!map) return;
+  /** True once this map already carries the operational layer set. */
+  private hasInstalledLayers(map: MapLibreMap): boolean {
+    return Boolean(map.getLayer(LAYER_IDS.ports));
+  }
+
+  /**
+   * Install the operational layers, and prove that they arrived.
+   *
+   * Installation is not merely attempted here — it is checked. The
+   * failure this replaces was silent in both directions: a stale-map race
+   * meant the layers went somewhere invisible, and nothing downstream
+   * distinguished "installed nothing" from "installed everything", so
+   * Mission Control presented a styled basemap as a working map.
+   *
+   * A style that is not finished loading is the one failure worth
+   * retrying: it is a readiness race, and the map says so. Anything else
+   * is a real defect and is reported rather than retried, because
+   * retrying a genuine error just fails twice and hides the first
+   * message.
+   */
+  private installLayersWithRetry(map: MapLibreMap, palette: MaritimePalette, attempt = 1): void {
+    try {
+      this.installSourcesAndLayers(map, palette);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const readinessRace = /style is not done loading|is not done loading/i.test(message);
+
+      if (readinessRace && attempt === 1) {
+        /*
+         * Retry once, when the map says it is ready.
+         *
+         * `installSourcesAndLayers` returns early when the layers are
+         * already present, so this cannot duplicate a source or a layer
+         * even if the first attempt partly succeeded before throwing.
+         */
+        this.bus?.emit("map:error", {
+          scope: "maplibre:layers",
+          message: `Layer installation hit a readiness race (${message}) — retrying when the style is idle.`,
+        });
+        map.once("idle", () => {
+          if (this.destroyed || this.map !== map) return;
+          this.installLayersWithRetry(map, palette, attempt + 1);
+          this.verifyInstalledLayers(map);
+        });
+        return;
+      }
+
+      console.error("[Seaphore map] Layer installation failed:", error);
+      this.bus?.emit("map:error", {
+        scope: "maplibre:layers",
+        message: `Layer installation failed after ${attempt} attempt(s): ${message}. The map is showing the basemap only.`,
+      });
+    }
+  }
+
+  private installSourcesAndLayers(map: MapLibreMap, palette: MaritimePalette): void {
+    /*
+     * The map is a parameter, not `this.map`.
+     *
+     * Reading the instance field here was the defect: a superseded mount
+     * could replace `this.map` between the live mount styling its own map
+     * and installing onto it, so every source and layer went onto an
+     * instance nobody was looking at. Taking the map explicitly makes the
+     * two impossible to diverge — the caller styles and installs onto one
+     * value it holds for the whole sequence.
+     */
+    if (this.hasInstalledLayers(map)) {
+      /*
+       * Already installed on this map. Re-running would throw on the
+       * first duplicate id and abort the rest, so a retry that arrives
+       * after a success must be a no-op rather than a corruption.
+       */
+      return;
+    }
 
     /*
      * ── Extruded buildings ──
@@ -1339,10 +1442,21 @@ export class MapLibreRenderer implements MapRenderer {
         "text-size": ["interpolate", ["linear"], ["zoom"], 5, 10, 9, 11.5, 14, 13],
         "text-anchor": "top",
         "text-offset": [0, 1.05],
-        // Major ports keep their label under any density; secondary
-        // terminals yield, which is what decluttering is for.
-        "text-allow-overlap": ["==", ["get", "tier"], "major"],
-        "text-ignore-placement": ["==", ["get", "tier"], "major"],
+        /*
+         * Major ports win the placement contest; secondary terminals
+         * yield, which is what decluttering is for.
+         *
+         * Expressed through `symbol-sort-key` above rather than through
+         * `text-allow-overlap`. Both overlap properties are
+         * `data-constant` in the style spec — zoom may vary them, a
+         * feature may not — so the `["==", ["get", "tier"], "major"]`
+         * that used to sit here was not a rule MapLibre could apply. It
+         * declined the whole layer, silently, and no port has drawn its
+         * name since. Sorting achieves the same precedence with the
+         * engine's own placement pass, which is what the sort key is
+         * for; the only thing given up is a major label overlapping a
+         * neighbour outright, which was never desirable.
+         */
         "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
       },
       paint: {
@@ -1732,15 +1846,70 @@ export class MapLibreRenderer implements MapRenderer {
    * but a missing layer that says so is recoverable and a silent one is
    * not.
    */
-  private verifyInstalledLayers(): void {
-    const map = this.map;
-    if (!map) return;
+  /**
+   * Wait for the style, but never in silence.
+   *
+   * Every operational layer needs a loaded style, so `mount` cannot do
+   * anything until `load` fires. When the basemap is unreachable it never
+   * fires: MapLibre emits one style error, the handler swaps to the
+   * fallback basemap, that fails too, and `styleFailed` suppresses the
+   * second report. `mount` then sits on this promise forever. What the
+   * officer sees is a blank canvas, correctly sized and correctly
+   * coloured, with no ports, no vessels and nothing in the console — the
+   * zero-layer mount that looked intermittent because it tracked whether
+   * the basemap host happened to answer.
+   *
+   * The stall is not repairable here; a map with no style has nothing to
+   * install onto. What is fixable is the silence. After
+   * `STYLE_LOAD_STALL_MS` this reports that the map is stuck and why,
+   * then keeps waiting — a slow network still recovers on its own, and a
+   * mount that eventually succeeds is worth more than one abandoned on a
+   * timer.
+   */
+  private awaitStyleLoad(map: MapLibreMap): Promise<void> {
+    return new Promise<void>((resolve) => {
+      if (map.loaded()) {
+        resolve();
+        return;
+      }
+      const stall = setTimeout(() => {
+        // Not `styleFailed`-gated: that flag tracks the basemap swap, and
+        // the whole point here is to speak when that path has gone quiet.
+        const message =
+          `The basemap style has not finished loading after ${STYLE_LOAD_STALL_MS / 1000}s. ` +
+          `No operational layer has been installed — the map is showing an empty canvas. ` +
+          `This is usually the basemap host being unreachable.`;
+        console.error(`[Seaphore map] ${message}`);
+        this.bus?.emit("map:error", { scope: "maplibre:style", message });
+      }, STYLE_LOAD_STALL_MS);
+      map.once("load", () => {
+        clearTimeout(stall);
+        resolve();
+      });
+    });
+  }
+
+  private verifyInstalledLayers(map: MapLibreMap): void {
     const missing = INSTALLED_RENDER_LAYERS.filter((id) => !map.getLayer(id));
     if (missing.length === 0) return;
-    this.bus?.emit("map:error", {
-      scope: "maplibre:layers",
-      message: `The map engine declined ${missing.length} layer(s): ${missing.join(", ")}. They are registered as available but will not draw.`,
-    });
+
+    const message =
+      missing.length === INSTALLED_RENDER_LAYERS.length
+        ? `No operational layer installed (${missing.length} expected). Mission Control is showing the basemap only.`
+        : `The map engine declined ${missing.length} layer(s): ${missing.join(", ")}. They are registered as available but will not draw.`;
+
+    /*
+     * Logged as well as emitted.
+     *
+     * This used to emit to the event bus alone, and nothing subscribes to
+     * `map:error` for logging, so the total-failure case — every layer
+     * missing — was invisible in the console while the map looked merely
+     * empty. A map with no operational layers is not a quiet degradation;
+     * it is the difference between "no vessels are reporting" and "we did
+     * not draw anything", and an officer cannot tell those apart.
+     */
+    console.error(`[Seaphore map] ${message}`);
+    this.bus?.emit("map:error", { scope: "maplibre:layers", message });
   }
 
   private installInteractionHandlers(): void {
