@@ -220,3 +220,85 @@ describe("there is one map state owner", () => {
     expect(CHROME).not.toMatch(/\bcreate\(/);
   });
 });
+
+/* ═══════ 5. What "All" means ═══════ */
+
+describe("the All chip means the standard picture, not everything", () => {
+  const CHROME_SRC = read("src/features/maritime/MapChrome.tsx");
+
+  it("derives the standard bundle rather than declaring it twice", () => {
+    /*
+     * A layer is standard when it is `ready` and on by default — which
+     * is already the definition of "the normal picture". A second list
+     * would let the two drift and give an officer an All chip that
+     * disagreed with what the map opened on.
+     */
+    expect(registry.standardLayerIds()).toEqual(
+      registry
+        .list()
+        .filter((l) => l.status === "ready" && l.defaultVisible)
+        .map((l) => l.id),
+    );
+  });
+
+  it("opens with All selected, because All is what it opened with", () => {
+    // The two sets are the same by construction, so the chip cannot be
+    // unselected on a map nobody has touched.
+    const standard = new Set(registry.standardLayerIds());
+    for (const id of registry.defaultActiveLayers()) {
+      expect(standard.has(id), `${id} is on by default but not standard`).toBe(true);
+    }
+  });
+
+  it("leaves the voyage gazetteer out of the standard bundle", () => {
+    /*
+     * The overlay pulls an 850 KB gazetteer. It is meaningful when an
+     * officer is working voyages and is noise on the national picture,
+     * so a control promising "the usual layers" must not fetch it.
+     */
+    expect(registry.standardLayerIds()).not.toContain("voyages");
+    expect(registry.get("voyages")?.defaultVisible).toBe(false);
+  });
+
+  it("leaves every other heavy or optional layer out too", () => {
+    const standard = new Set(registry.standardLayerIds());
+    // Buildings draw nothing below zoom 13; investigation areas are
+    // drawn by an officer for a case, not shown by default.
+    for (const id of ["buildings", "investigation-areas"]) {
+      expect(standard.has(id), `${id} joined the standard bundle`).toBe(false);
+    }
+  });
+
+  it("never switches on a layer with no source", () => {
+    /*
+     * Turning on Weather when no provider is connected would light a
+     * chip that draws nothing and tell the officer the opposite of the
+     * truth. "All" can only mean all of what actually reports.
+     */
+    for (const id of registry.standardLayerIds()) {
+      expect(registry.get(id)?.status, `${id} is standard but not ready`).toBe("ready");
+    }
+  });
+
+  it("asks the registry what standard means", () => {
+    // Not a hard-coded list in the chip row, which would drift from the
+    // catalogue the moment a layer changed status.
+    expect(CHROME_SRC).toContain("layerRegistry.standardLayerIds()");
+    expect(CHROME_SRC).not.toMatch(/CHIPS\.flatMap\(\(chip\) => known\(chip\.layers\)\)/);
+  });
+
+  it("gives every chip logical layer ids the registry recognises", () => {
+    /*
+     * The chips named render-layer ids — "eezBoundary", "aisTrack",
+     * "riskHeatmap" — which `known()` filters out, so several chips
+     * governed an empty set. A chip that toggles nothing looks like a
+     * broken control.
+     */
+    const referenced = [...CHROME_SRC.matchAll(/layers: \[([^\]]*)\]/g)]
+      .flatMap((m) => m[1]!.split(","))
+      .map((s) => s.trim().replace(/^"|"$/g, ""))
+      .filter(Boolean);
+    const unknown = referenced.filter((id) => !registry.has(id));
+    expect(unknown).toEqual([]);
+  });
+});

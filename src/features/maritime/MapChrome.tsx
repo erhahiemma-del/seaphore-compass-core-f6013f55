@@ -62,21 +62,29 @@ interface ChipDefinition {
  * Land, sea and the national maritime space are true whether or not any
  * intelligence feed answers, so no chip may switch them off.
  */
-const FRAME_LAYERS = ["graticule", "eezBoundary"] as const;
+/*
+ * The frame stays whatever else is on.
+ *
+ * Logical ids, like everything else a chip names. `known()` filters to
+ * what the registry recognises, and these were render-layer ids — so
+ * "eezBoundary" was silently dropped and several chips governed nothing
+ * at all. A chip that toggles an empty set looks like a broken control.
+ */
+const FRAME_LAYERS = ["graticule", "nigeria-eez"] as const;
 
 const CHIPS: readonly ChipDefinition[] = [
   { id: "vessels", label: "Vessels", icon: Ship, layers: ["vessels", "vesselClusters"] },
   { id: "ports", label: "Ports", icon: Anchor, layers: ["ports"] },
-  { id: "routes", label: "Routes", icon: Route, layers: ["voyages", "aisTrack"] },
-  { id: "zones", label: "Zones", icon: Box, layers: ["eezBoundary", "investigArea"] },
+  { id: "routes", label: "Routes", icon: Route, layers: ["routes", "voyages"] },
+  { id: "zones", label: "Zones", icon: Box, layers: ["nigeria-eez", "investigation-areas"] },
   {
     id: "incidents",
     label: "Incidents",
     icon: AlertTriangle,
-    layers: ["incidents", "darkContactAreas", "sarDetections"],
+    layers: ["incidents", "ais-gaps"],
   },
   { id: "weather", label: "Weather", icon: Cloud, layers: ["weather"] },
-  { id: "traffic", label: "Traffic Density", icon: Boxes, layers: ["riskHeatmap", "revenueHeat"] },
+  { id: "traffic", label: "Traffic Density", icon: Boxes, layers: ["traffic-density"] },
 ];
 
 /** Layers not surfaced by a chip, offered through the overflow control. */
@@ -107,8 +115,19 @@ export interface MapLayerChipsProps {
 export function MapLayerChips({ service = sgs, className }: MapLayerChipsProps) {
   const active = useActiveLayers(service);
   const frame = known([...FRAME_LAYERS]);
-  /** Every layer any chip governs — what "All" turns on together. */
-  const everything = [...new Set([...frame, ...CHIPS.flatMap((chip) => known(chip.layers))])];
+  /*
+   * "All" is the standard operational picture, not every registered layer.
+   *
+   * It used to be the union of every chip's layers, which after the
+   * catalogue grew to fifty-five would have switched on layers with no
+   * source — chips lit for data that does not exist — and pulled the
+   * 850 KB voyage gazetteer on every load.
+   *
+   * The registry decides what "standard" means, from what it already
+   * knows: `ready` and on by default. So All and the map's opening state
+   * are the same set by construction and cannot drift apart.
+   */
+  const everything = [...new Set([...frame, ...known(layerRegistry.standardLayerIds())])];
 
   /**
    * "All" is the overall maritime view: every available layer drawn at once.

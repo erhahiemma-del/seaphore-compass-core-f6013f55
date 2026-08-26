@@ -202,6 +202,32 @@ export class LayerRegistry {
     return this;
   }
 
+  /**
+   * The standard operational bundle — what "All" means.
+   *
+   * Derived, not declared: a layer is standard when it is `ready` and on
+   * by default. That is already the definition of "the normal picture",
+   * so expressing it as a second list would let the two drift and give
+   * an officer an All chip that disagreed with what the map opened on.
+   *
+   * Heavy and optional layers are excluded by construction rather than by
+   * a denylist. The voyage overlay pulls an 850 KB gazetteer and is
+   * `defaultVisible: false`; extruded buildings draw nothing below zoom
+   * 13 and are off; investigation areas are officer-drawn. None of them
+   * is part of the normal picture, so none is switched on by a control
+   * whose promise is "the usual layers".
+   *
+   * Layers with no source are excluded too, and that is the honest
+   * reading of "all": turning on Weather when no provider is connected
+   * would light a chip that draws nothing and tell the officer the
+   * opposite of the truth.
+   */
+  standardLayerIds(): readonly string[] {
+    return this.list()
+      .filter((layer) => layer.status === "ready" && layer.defaultVisible)
+      .map((layer) => layer.id);
+  }
+
   /** Register many layers, in order. */
   registerAll(definitions: readonly LayerDefinition[]): this {
     for (const definition of definitions) this.register(definition);
