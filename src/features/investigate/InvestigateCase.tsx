@@ -16,7 +16,7 @@ import {
   User,
 } from "lucide-react";
 
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { AuditTimeline } from "@/components/intelligence/AuditTimeline";
 import { CopilotPanel } from "@/components/intelligence/CopilotPanel";
 import { DomainFilterTabs } from "@/components/domain-filter-tabs";
@@ -112,7 +112,7 @@ function Workspace({ inv }: { inv: Investigation }) {
   ];
 
   return (
-    <AppShell title="Investigate" subtitle="Voyage Workspace" mode="light">
+    <AppShell mode="light" capabilities={{ commandSurface: true, focus: true }}>
       <DemoDataNotice surface="This case workspace" className="mb-3" />
       <div className="mx-auto max-w-[1600px] space-y-4 p-4 lg:p-6">
         {/* INV-1 Case Header Bar */}

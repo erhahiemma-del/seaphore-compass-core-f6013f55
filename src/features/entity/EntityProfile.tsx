@@ -23,7 +23,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { GraphView } from "@/components/mkg/GraphView";
 import type { MkgEdge, MkgNode } from "@/services/mkg/types";
 import { ProvenancePanel } from "@/components/ipef/ProvenancePanel";

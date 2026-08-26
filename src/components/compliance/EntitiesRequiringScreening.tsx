@@ -100,7 +100,21 @@ export function EntitiesRequiringScreening({
   const retry = useScreeningQueueStore((s) => s.retry);
   const runAllPending = useScreeningQueueStore((s) => s.runAllPending);
   const clearCompleted = useScreeningQueueStore((s) => s.clearCompleted);
-  const stats = useScreeningQueueStore(selectScreeningStats);
+  /*
+   * Derived here, not selected from the store.
+   *
+   * `selectScreeningStats` builds a fresh object on every call, and
+   * zustand compares snapshots by reference through
+   * `useSyncExternalStore`. Passing it as a selector therefore reported a
+   * change on every render, and Compliance looped until React gave up
+   * with "Maximum update depth exceeded" — the screen rendered nothing
+   * but the error boundary.
+   *
+   * `entities` and `order` are already selected above and are stable
+   * between real store updates, so memoising on them gives the same
+   * numbers with a reference that only changes when the queue does.
+   */
+  const stats = useMemo(() => selectScreeningStats({ entities, order }), [entities, order]);
 
   const activeId = useWorkspaceStore((s) => s.activeId);
   const workspaces = useWorkspaceStore((s) => s.investigations);

@@ -13,7 +13,7 @@ import {
   ThumbsUp,
 } from "lucide-react";
 
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { ConfidenceLegend } from "@/components/confidence-legend";
 import { CopilotCards } from "@/components/copilot-cards";
 import { DomainDonutChart } from "@/components/domain-donut-chart";
@@ -92,7 +92,7 @@ export function DetectPage() {
   if (authState === "out") return <Navigate to="/auth" search={{} as { redirect: string }} />;
 
   return (
-    <AppShell title="Detect" subtitle="Intelligence Feed" mode="light">
+    <AppShell mode="light" capabilities={{ commandSurface: true, focus: true }}>
       <DemoDataNotice surface="Detect" className="mb-3" />
       <div className="mx-auto max-w-[1500px] space-y-4 p-4 lg:p-6">
         {/* DET-1 */}

@@ -283,7 +283,16 @@ export const useScreeningQueueStore = create<ScreeningQueueState>()(
 );
 
 /** Convenience selector: derive live counts by status. */
-export function selectScreeningStats(s: ScreeningQueueState) {
+/**
+ * Queue totals.
+ *
+ * Takes only the two fields it reads so a caller can memoise on them.
+ * It builds a fresh object per call, and zustand compares snapshots by
+ * reference — passing it straight to `useScreeningQueueStore` reports a
+ * change on every render and loops until React aborts. Narrowing the
+ * parameter makes deriving it with `useMemo` the natural thing to do.
+ */
+export function selectScreeningStats(s: Pick<ScreeningQueueState, "entities" | "order">) {
   const counts: Record<ScreeningStatus, number> = {
     PENDING: 0,
     RUNNING: 0,

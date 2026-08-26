@@ -14,7 +14,7 @@ import {
   UploadCloud,
 } from "lucide-react";
 
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { DemoDataNotice } from "@/components/intelligence/DemoDataNotice";
 import {
   AUDIT_TRAIL,
@@ -87,7 +87,7 @@ function DecisionWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
   );
 
   return (
-    <AppShell title="Decision Support" subtitle="Officer Decision Workspace" mode="light">
+    <AppShell mode="light" capabilities={{ commandSurface: true, focus: true }}>
       <DemoDataNotice surface="This decision workspace" className="mb-3" />
       <div className="mx-auto max-w-[1600px] space-y-4 p-4 lg:p-6">
         {/* ── Header ─────────────────────────────────────────────────── */}

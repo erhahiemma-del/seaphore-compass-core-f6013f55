@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Search } from "lucide-react";
 
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { PanelCard } from "@/components/panel-card";
 import { PanelHead } from "@/components/panel-head";
@@ -11,7 +11,7 @@ import { DemoDataNotice } from "@/components/intelligence/DemoDataNotice";
 
 export function InvestigateList() {
   return (
-    <AppShell title="Investigate" subtitle="Case Workspace" mode="light">
+    <AppShell mode="light" capabilities={{ commandSurface: true, focus: true }}>
       <DemoDataNotice surface="Investigate" className="mb-3" />
       <div className="mx-auto max-w-[1400px] space-y-4 p-4 lg:p-6">
         <div className="flex items-start gap-3">

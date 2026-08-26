@@ -21,7 +21,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { IntelligenceEvidenceExplorer } from "@/components/intelligence/IntelligenceEvidenceExplorer";
 import { UipCanonicalPanel } from "@/components/intelligence/UipCanonicalPanel";
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { analyzeOperationalKnowledge } from "@/services/okl";
 import { useUipStore } from "@/stores/uip.store";
 import { useWorkspaceStore } from "@/stores/workspace.store";

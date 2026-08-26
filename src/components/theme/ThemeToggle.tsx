@@ -1,9 +1,13 @@
 import { Moon, Sun } from "lucide-react";
-import { useThemeStore } from "@/stores/theme.store";
+import { useResolvedTheme, useThemeStore } from "@/stores/theme.store";
 import { cn } from "@/lib/utils";
 
 export function ThemeToggle({ className }: { className?: string }) {
-  const { theme, toggleTheme } = useThemeStore();
+  // The resolved theme, not the stored preference: on an environment the
+  // officer has never overridden, the control has to describe what is
+  // actually on screen or it offers to switch to the theme already shown.
+  const theme = useResolvedTheme();
+  const toggleTheme = useThemeStore((s) => s.toggleTheme);
   const isDark = theme === "dark";
   return (
     <button

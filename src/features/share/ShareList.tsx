@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Share2 } from "lucide-react";
 
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { PanelCard } from "@/components/panel-card";
 import { PanelHead } from "@/components/panel-head";
 import { INVESTIGATIONS, RECENT_SHARES } from "@/lib/lifecycle-data";
@@ -9,7 +9,7 @@ import { DemoDataNotice } from "@/components/intelligence/DemoDataNotice";
 
 export function ShareList() {
   return (
-    <AppShell title="Share" subtitle="Briefings & Collaboration" mode="light">
+    <AppShell mode="light" capabilities={{ commandSurface: true, focus: true }}>
       <DemoDataNotice surface="Share" className="mb-3" />
       <div className="mx-auto max-w-[1400px] space-y-4 p-4 lg:p-6">
         <div className="flex items-start gap-3">

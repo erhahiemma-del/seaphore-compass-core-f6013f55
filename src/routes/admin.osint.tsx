@@ -19,7 +19,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useDevModeStore } from "@/stores/dev-mode.store";
 import { DEV_MODE_AVAILABLE } from "@/lib/dev/dev-mode";

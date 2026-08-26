@@ -28,7 +28,7 @@ import {
   ClipboardCheck,
 } from "lucide-react";
 
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { AskCopilotDialog } from "@/components/ai/ask-copilot-dialog";
 import { COMPANIES, OWNERSHIP_EDGES, VESSELS, companyById } from "@/lib/intel-centre-data";

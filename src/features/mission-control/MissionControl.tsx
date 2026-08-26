@@ -23,7 +23,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { ContextRail } from "@/components/layout/ContextRail";
 import { FocusWorkspaceHost } from "@/features/focus-workspace/FocusWorkspaceHost";
 import { useMapFocusBridge } from "@/features/focus-workspace/map-bridge";
@@ -47,7 +47,6 @@ import { tierKpis } from "./hierarchy";
 import { SupportingIntelligence } from "./SupportingIntelligence";
 import { useMissionMode } from "./useMissionMode";
 import { MapRecommendationNotice } from "./MapRecommendationNotice";
-import { useCopilotContextBinding } from "./useCopilotContextBinding";
 import { MyWorkspaceSummary } from "./MyWorkspaceSummary";
 import { OperationalOrientation } from "./OperationalOrientation";
 import { RecommendedNextActionPanel } from "./RecommendedNextActionPanel";
@@ -156,17 +155,30 @@ export function MissionControl() {
   // than rendering the invented numbers these cards used to carry.
   // The active lens, shared with the ribbon through the mode store.
   const { mode } = useMissionMode();
-  // Tell the Copilot what the officer is looking at, so it opens
-  // knowing the lens and the subject rather than asking them to
-  // re-explain their own screen.
-  useCopilotContextBinding();
   const uipId = uip?.id ?? null;
   const portsProjection = projectPortOperations({ uipId });
   const complianceProjection = projectComplianceWatchlist({ uipId });
   const briefingsProjection = projectRecentBriefings({ uipId });
 
   return (
-    <AppShell title="Mission Control" subtitle="National maritime operating picture" mode="light">
+    /*
+      Mission Control takes the Copilot binding from the shell and keeps
+      composing the rest itself.
+
+      That is the shell contract working as intended, not an exception to
+      it: one shell, optional capabilities, environment-specific content.
+      The command surface belongs above the orientation band and below
+      nothing, and the lens belongs inside `OperationalOrientation`
+      beside the sentence explaining what it is for — placements this
+      screen argues for in the comments below. Hoisting them into generic
+      shell strips would move them for the sake of uniformity and lose
+      the composition.
+
+      `copilotContext` is different only because it renders nothing, so
+      the shell's version and this screen's are the same thing. It moves;
+      the visual composition does not.
+    */
+    <AppShell mode="light" capabilities={{ copilotContext: true }}>
       <div className="mx-auto flex max-w-[1600px] flex-col gap-4 px-6 py-5">
         {/*
           The command surface. Replaces the previous command bar, whose

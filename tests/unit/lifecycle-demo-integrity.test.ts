@@ -138,7 +138,10 @@ describe("intel-centre fixtures cannot claim observation either", () => {
     "src/features/ownership/ownership-data.ts",
     "src/features/ownership/Ownership.tsx",
     "src/features/evidence/data.ts",
-    "src/features/evidence/Evidence.tsx",
+    // Was `Evidence.tsx`, an unrouted duplicate of this screen that was
+    // removed in Phase 5. The guard follows the surface an officer can
+    // actually reach.
+    "src/features/evidence/EvidenceLibrary.tsx",
     "src/features/compliance/Compliance.tsx",
   ])("%s carries no fixture-backed observed/verified claim", (path) => {
     const code = read(path).replace(/\/\*[\s\S]*?\*\//g, "");
@@ -151,7 +154,19 @@ describe("intel-centre fixtures cannot claim observation either", () => {
   it.each([
     "src/features/vessel/Vessel.tsx",
     "src/features/ports/Ports.tsx",
-    "src/features/evidence/Evidence.tsx",
+    /*
+     * `Evidence.tsx` sat here and was removed in Phase 5 as an unrouted
+     * duplicate. The guard follows the surface an officer can open.
+     *
+     * It differs from its neighbours in one way that matters: this one
+     * shows the seed *conditionally*, because `listEvidence()` reports
+     * whether its rows came from the backend or from the fixture. So the
+     * notice must be bound to that fact rather than rendered outright —
+     * labelling real evidence "simulated" would make officers distrust
+     * genuine records. `evidence-provenance.test.ts` pins both
+     * directions; this line pins that the notice exists at all.
+     */
+    "src/features/evidence/EvidenceLibrary.tsx",
     "src/features/ownership/Ownership.tsx",
     "src/features/compliance/Compliance.tsx",
     "src/features/mission-control/CommandCenter.tsx",

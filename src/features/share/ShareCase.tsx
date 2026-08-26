@@ -21,7 +21,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { SendShareGate } from "@/components/compliance/send-share-gate";
 import { DemoDataNotice } from "@/components/intelligence/DemoDataNotice";
 import {
@@ -163,7 +163,7 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
   );
 
   return (
-    <AppShell title="Share" subtitle="Intelligence Briefing Workspace" mode="light">
+    <AppShell mode="light" capabilities={{ commandSurface: true, focus: true }}>
       <DemoDataNotice surface="This briefing workspace" className="mb-3" />
       <div className="mx-auto max-w-[1600px] space-y-4 p-4 lg:p-6">
         <HeaderBar

@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { IntelMap, type IntelMapEntity } from "@/components/intelligence/IntelMap";
 import { EntitiesRequiringScreening } from "@/components/compliance/EntitiesRequiringScreening";
@@ -825,11 +825,7 @@ export function ComplianceCentre() {
   const layerOn = (k: LayerKey) => (layerMask & LAYER_BIT[k]) !== 0;
 
   return (
-    <AppShell
-      title="Compliance Intelligence Centre"
-      subtitle="Regulatory compliance. Detect violations. Reduce risk. Protect revenue."
-      mode="dark"
-    >
+    <AppShell mode="dark" capabilities={{ commandSurface: true, focus: true }}>
       <DemoDataNotice surface="Compliance Intelligence" className="mb-3" />
       <div className="space-y-3 p-4">
         {/* Search bar */}

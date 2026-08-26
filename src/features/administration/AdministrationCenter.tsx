@@ -72,7 +72,7 @@ import {
   YAxis,
 } from "recharts";
 
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { useRoles } from "@/hooks/use-permissions";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";

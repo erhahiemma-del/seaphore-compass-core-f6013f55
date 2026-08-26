@@ -53,9 +53,10 @@ import {
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
+import { DemoDataNotice } from "@/components/intelligence/DemoDataNotice";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
-import { listEvidence } from "@/services/evidence.service";
+import { FIXTURE_EVIDENCE_LISTING, listEvidence } from "@/services/evidence.service";
 import { QUERY_KEYS } from "@/lib/query-keys";
 import {
   EVIDENCE_LIBRARY,
@@ -129,15 +130,38 @@ export function EvidenceCentre() {
   }, [filters]);
 
   const {
-    data: allEvidence = EVIDENCE_LIBRARY,
+    data: listing,
     isLoading,
     error,
   } = useQuery({
     queryKey: QUERY_KEYS.evidenceLibrary(),
     queryFn: listEvidence,
-    initialData: EVIDENCE_LIBRARY,
+    /*
+     * Populated immediately, and immediately stale.
+     *
+     * `initialData` alone is treated as fresh, so with `staleTime` the
+     * backend was not asked at all for the first 30 seconds — the
+     * Library simply showed fixtures and called them evidence.
+     * `initialDataUpdatedAt: 0` keeps the list populated on arrival
+     * while marking it old enough to refetch at once, so the seed is
+     * what an officer sees only until the real answer lands.
+     */
+    initialData: FIXTURE_EVIDENCE_LISTING,
+    initialDataUpdatedAt: 0,
     staleTime: 30_000,
   });
+
+  const allEvidence = listing.items;
+  /*
+   * Say so when these are fixtures.
+   *
+   * The service reports where its rows came from, so this is a fact
+   * rather than an inference. Real evidence is never labelled demo, and
+   * demonstration rows are never presented as authoritative — in an
+   * application whose first principle is "evidence first", showing the
+   * seed unmarked is the more serious of the two failures.
+   */
+  const showingFixtures = listing.source === "fixture";
 
   // Debounce free-text search so rapid keystrokes don't re-filter on every char.
   const debouncedQuery = useDebouncedValue(query, 250);
@@ -166,11 +190,8 @@ export function EvidenceCentre() {
   }, [filtered, selectedId]);
 
   return (
-    <AppShell
-      title="Evidence Library"
-      subtitle="Trusted evidence. Provenance. Intelligence."
-      mode="dark"
-    >
+    <AppShell mode="dark" capabilities={{ commandSurface: true, focus: true }}>
+      {showingFixtures && <DemoDataNotice surface="Evidence Library" className="mx-4 mt-4" />}
       <div className="flex flex-col gap-4">
         {/* Search + toolbar */}
         <TopSearch query={query} onQuery={setQuery} onUpload={() => setUploadOpen(true)} />
@@ -258,10 +279,6 @@ export function EvidenceCentre() {
             <EvidenceStatistics evidence={allEvidence} />
           </div>
         </div>
-
-        <footer className="mt-6 border-t border-line/60 pt-3 text-center text-[10.5px] uppercase tracking-[0.12em] text-slate">
-          Evidence first. Explainable always. Officer decides.
-        </footer>
       </div>
 
       {uploadOpen && <UploadEvidenceModal onClose={() => setUploadOpen(false)} />}

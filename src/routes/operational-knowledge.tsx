@@ -13,7 +13,7 @@
  */
 import { useMemo } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { OperationalInsights } from "@/components/intelligence/OperationalInsights";
 import { analyzeOperationalKnowledge } from "@/services/okl";
 import { useUipStore } from "@/stores/uip.store";

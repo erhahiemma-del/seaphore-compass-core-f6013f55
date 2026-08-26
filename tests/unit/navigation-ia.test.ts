@@ -25,12 +25,18 @@
  * route AND declares which environment owns it, and that owner must
  * itself be reachable.
  */
-import { readdirSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { CONSOLIDATED_ROUTES, NAV_GROUPS, reachableRoutes } from "@/lib/nav";
+import {
+  CONSOLIDATED_ROUTES,
+  NAV_GROUPS,
+  reachableRoutes,
+  routeIdentity,
+  routeIdentityOrThrow,
+} from "@/lib/nav";
 
 const allItems = NAV_GROUPS.flatMap((g) => g.items);
 const sidebarUrls = new Set(allItems.map((i) => i.url));
@@ -218,5 +224,87 @@ describe("the groups are an operating model", () => {
     for (const group of NAV_GROUPS) {
       expect(group.items.length, `${group.label} is empty`).toBeGreaterThan(0);
     }
+  });
+});
+
+/* ═══════ Route identity ═══════ */
+
+describe("a screen is named by the navigation model", () => {
+  /*
+   * Roughly thirty screens passed their own title and subtitle into the
+   * shell, and they had drifted from the sidebar that already stored
+   * both. The menu said Detect · "Signals & Anomalies"; the header said
+   * "Intelligence Feed". It said "Identity, Movement & Calls"; the
+   * header said "Vessel Intelligence". An officer reading one and then
+   * the other was told two different things about where they were.
+   */
+  it("names every environment from its sidebar entry", () => {
+    expect(routeIdentity("/")).toEqual({
+      title: "Mission Control",
+      subtitle: "National Overview",
+    });
+    expect(routeIdentity("/vessel")?.title).toBe("Vessel & Voyage Operations");
+    expect(routeIdentity("/evidence")?.title).toBe("Evidence & Documents");
+  });
+
+  it("gives a consolidated route its owner's identity", () => {
+    // `/share` is deliberately not a sidebar environment — Decide &
+    // Coordinate owns it. It must present as that, not as a page with no
+    // identity of its own.
+    expect(routeIdentity("/share")).toEqual(routeIdentity("/decide"));
+    expect(routeIdentity("/share")?.title).toBe("Decide & Coordinate");
+    expect(routeIdentity("/share/queue")?.title).toBe("Decide & Coordinate");
+    expect(routeIdentity("/cargo")?.title).toBe("Manifests & Cargo");
+  });
+
+  it("lets a nested route inherit its environment", () => {
+    expect(routeIdentity("/investigate/INV-2026-00431")?.title).toBe("Investigate");
+    expect(routeIdentity("/decide/DEC-1")?.title).toBe("Decide & Coordinate");
+  });
+
+  it("does not let Mission Control absorb the application", () => {
+    // Every path starts with "/", so prefix matching must exclude it or
+    // an unknown route would silently inherit the national overview.
+    expect(routeIdentity("/not-a-route")).toBeNull();
+  });
+
+  it("ignores a trailing slash, which is a routing detail", () => {
+    expect(routeIdentity("/vessel/")).toEqual(routeIdentity("/vessel"));
+  });
+
+  it("fails loudly rather than rendering blank chrome", () => {
+    // A screen the model does not know about is a defect in the model.
+    expect(() => routeIdentityOrThrow("/not-a-route")).toThrow(/No navigation identity/);
+    // The message has to say what to do about it.
+    expect(() => routeIdentityOrThrow("/not-a-route")).toThrow(/NAV_GROUPS|CONSOLIDATED_ROUTES/);
+  });
+
+  it("resolves every route an officer can reach", () => {
+    // The guard that keeps the throw above from ever reaching an officer.
+    const unresolved = reachableRoutes().filter((url) => routeIdentity(url) === null);
+    expect(unresolved).toEqual([]);
+  });
+});
+
+describe("environments stop passing their own titles", () => {
+  const screens = [
+    "src/features/mission-control/MissionControl.tsx",
+    "src/features/detect/Detect.tsx",
+    "src/features/memory/Memory.tsx",
+    "src/features/investigate/InvestigateList.tsx",
+    "src/features/decision-support/DecideList.tsx",
+    "src/features/share/ShareList.tsx",
+    "src/features/compliance/Compliance.tsx",
+    "src/features/evidence/EvidenceLibrary.tsx",
+    "src/features/investigate/InvestigateCase.tsx",
+    "src/features/decision-support/DecideCase.tsx",
+    "src/features/share/ShareCase.tsx",
+  ];
+
+  it("leaves identity to the model on every migrated environment", () => {
+    const offenders = screens.filter((path) =>
+      /<AppShell[^>]*\stitle=/.test(readFileSync(resolve(process.cwd(), path), "utf8")),
+    );
+    expect(offenders).toEqual([]);
   });
 });

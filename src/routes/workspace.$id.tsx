@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
