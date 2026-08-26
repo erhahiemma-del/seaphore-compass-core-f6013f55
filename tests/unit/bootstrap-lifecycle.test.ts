@@ -21,7 +21,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   RiskModuleRegistry,
@@ -36,6 +36,39 @@ import {
   subscribeToAuth,
   whenAuthResolved,
 } from "@/lib/auth/auth-controller";
+
+/*
+ * The backend client is supplied, never inherited from the environment.
+ *
+ * `startAuth()` asks `getBackendAuthSafely()` for a client, and that
+ * answer depends on whether `VITE_SUPABASE_URL` and
+ * `VITE_SUPABASE_PUBLISHABLE_KEY` are present. A developer with a
+ * `.env.local` has them; CI, where that file is gitignored, does not. So
+ * the same assertions ran against two different controllers — a real one
+ * locally, and one that reported `error` for a missing client in CI —
+ * and "resolves waiters once" failed only on GitHub Actions.
+ *
+ * Every state-machine test below now states which client it is testing
+ * against. What the machine does with a client is the contract; whether
+ * the machine on this particular machine can find one is not.
+ */
+type FakeSession = { readonly user: { readonly id: string } };
+type FakeAuthClient = {
+  onAuthStateChange: (cb: (event: string, session: FakeSession | null) => void) => void;
+  getSession: () => Promise<{ data: { session: FakeSession | null } }>;
+};
+
+const backend = vi.hoisted(() => ({ client: null as FakeAuthClient | null }));
+
+vi.mock("@/lib/backend-client-safe", () => ({
+  getBackendAuthSafely: () => backend.client,
+}));
+
+/** A reachable backend holding no session — the ordinary signed-out case. */
+const clientWithNoSession = (): FakeAuthClient => ({
+  onAuthStateChange: () => {},
+  getSession: async () => ({ data: { session: null } }),
+});
 
 const mod = (over: Partial<RiskModule> & { id: RiskModule["id"] }): RiskModule => ({
   label: over.id,
@@ -108,7 +141,15 @@ describe("module registration survives repeated evaluation", () => {
 /* ═══════ 2. One shared auth restoration ═══════ */
 
 describe("auth restoration is shared and ordered", () => {
-  beforeEach(() => __resetAuthForTests());
+  beforeEach(() => {
+    // Signed out against a reachable backend, in every environment.
+    backend.client = clientWithNoSession();
+    __resetAuthForTests();
+  });
+
+  afterEach(() => {
+    backend.client = null;
+  });
 
   it("starts unresolved so protected work cannot begin", () => {
     expect(getAuthSnapshot().phase).toBe("initializing");
@@ -150,14 +191,83 @@ describe("auth restoration is shared and ordered", () => {
   });
 
   it("always reaches a terminal phase rather than hanging", async () => {
-    // No browser bindings in this environment, so restoration cannot run.
-    // It must settle as `error` — a startup that never resolves is the
-    // permanent "Verifying session…" spinner this work exists to remove.
+    /*
+     * Reaching *a* terminal phase is the contract; which one is decided
+     * by the client, and the cases are pinned individually below.
+     *
+     * This used to say the environment had no bindings so restoration
+     * could not run and had to settle as `error`. That was only ever
+     * true on machines without a `.env.local`, which is what made the
+     * suite disagree with itself between here and CI.
+     *
+     * A restoration that never settles is the permanent "Verifying
+     * session…" spinner this work exists to remove.
+     */
     const snapshot = await whenAuthResolved();
-    // Which terminal phase depends on the environment; that it reaches one
-    // is the contract. A restoration that never settles is the permanent
-    // "Verifying session…" spinner this work exists to remove.
     expect(snapshot.phase).not.toBe("initializing");
+  });
+
+  /*
+   * The three outcomes of a real restoration, pinned separately.
+   *
+   * The distinction they defend is the one the old `useAuth` could not
+   * express: `loading = false` with a null session meant both "signed
+   * out" and "we could not tell", so an officer whose session failed to
+   * load was shown the sign-in screen as though they had logged out.
+   *
+   * Each drives `startAuth()` through a real client rather than the
+   * `__emitAuthForTests` seam, so these test the restoration path itself
+   * and not merely the emitter.
+   */
+  it("classifies an absent session as unauthenticated, not as an error", async () => {
+    backend.client = clientWithNoSession();
+    __resetAuthForTests();
+
+    const snapshot = await whenAuthResolved();
+
+    expect(snapshot.phase).toBe("unauthenticated");
+    expect(snapshot.session).toBeNull();
+    // The whole point: no session is a normal answer and carries no error.
+    expect(snapshot.error).toBeNull();
+  });
+
+  it("classifies a restored session as authenticated", async () => {
+    const session = { user: { id: "officer-1" } };
+    backend.client = {
+      onAuthStateChange: () => {},
+      getSession: async () => ({ data: { session } }),
+    };
+    __resetAuthForTests();
+
+    const snapshot = await whenAuthResolved();
+
+    expect(snapshot.phase).toBe("authenticated");
+    expect(snapshot.session).toBe(session);
+    expect(snapshot.error).toBeNull();
+  });
+
+  it("classifies an unexpected restoration failure as an error", async () => {
+    // Not swallowed into `unauthenticated`. A backend that is failing must
+    // not read as an officer who is signed out, or the UI invites a
+    // sign-in that cannot succeed and the retry loop hammers a sick
+    // backend.
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+    backend.client = {
+      onAuthStateChange: () => {},
+      getSession: async () => {
+        throw new Error("network unreachable");
+      },
+    };
+    __resetAuthForTests();
+
+    const snapshot = await whenAuthResolved();
+
+    expect(snapshot.phase).toBe("error");
+    expect(snapshot.session).toBeNull();
+    expect(snapshot.error).toBe("network unreachable");
+    // A failure nobody can see is the one that gets misdiagnosed.
+    expect(logged).toHaveBeenCalled();
+    logged.mockRestore();
   });
 
   it("stops notifying after unsubscribe", () => {
