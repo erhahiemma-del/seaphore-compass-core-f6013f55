@@ -23,8 +23,24 @@
  * them.
  */
 export const MAP_DEFAULTS = {
-  /** [lon, lat] — Gulf of Guinea. */
-  center: [3.5, 4.5] as readonly [number, number],
+  /**
+   * [lon, lat] — the Nigerian port estate, with the Gulf beneath it.
+   *
+   * Was [3.5, 4.5], which framed open water south-west of Lagos. On
+   * Mission Control's map panel — wide and short at roughly 619×434 —
+   * that put Onne and Calabar outside the eastern edge entirely and left
+   * Apapa, Tin Can and Lekki about 40px from the top, underneath the
+   * layer-chip overlay. Four of the six major ports were unreachable at
+   * the opening view, which read as "the ports are missing" rather than
+   * "the camera is looking somewhere else".
+   *
+   * This centres the estate itself: it spans lon 3.32–8.32, lat
+   * 4.72–6.43, and at zoom 6 all six sit inside the frame on both the
+   * Mission Control panel and the full-bleed Maritime Command surface,
+   * with the Lagos cluster clear of the chrome. The Gulf still occupies
+   * the lower half, so the sea remains the theatre.
+   */
+  center: [5.8, 5.5] as readonly [number, number],
   zoom: 6,
   minZoom: 4,
   maxZoom: 18,
@@ -101,7 +117,9 @@ export const MAP_SCOPES: Readonly<Record<MapScopeId, MapScopeDefinition>> = {
   regional: {
     id: "regional",
     label: "Nigerian waters",
-    center: [3.5, 4.5],
+    // Mirrors MAP_DEFAULTS.center — see the note there for why the port
+    // estate rather than the water south-west of it.
+    center: [5.8, 5.5],
     zoom: 6,
     minZoom: 4,
     maxZoom: 18,
@@ -508,6 +526,27 @@ export const NIGERIA_EEZ_BBOX = {
  * registry can reorganise, group, or rename logical layers without changing
  * what the renderer draws. See `layer-registry.ts`.
  */
+/**
+ * Geographic sea labels drawn by Seaphore rather than the basemap.
+ *
+ * Orientation, not intelligence. The basemap's own `water_name` layer is
+ * restyled and let in early (see `map-style.ts`), but it does not carry
+ * the Gulf of Guinea at the zooms this map is read at, and the officer
+ * needs to know which water they are looking at.
+ *
+ * The position is a label anchor over open water, not a feature centroid:
+ * it names an area, so it is placed where the text reads clearly rather
+ * than at any computed centre. Offshore of the Bight of Bonny, roughly
+ * 80 km out, so the word never sits over Nigerian land — and east of
+ * centre, because the map panel's own data-state card occupies the lower
+ * left and a label behind it is a label nobody reads.
+ */
+export const SEA_LABELS: readonly {
+  readonly id: string;
+  readonly name: string;
+  readonly position: readonly [number, number];
+}[] = [{ id: "gulf-of-guinea", name: "Gulf of Guinea", position: [7.0, 3.8] }];
+
 export const LAYER_IDS = {
   vessels: "vessels-layer",
   /** Selection ring drawn beneath the vessel symbols. */
@@ -526,6 +565,7 @@ export const LAYER_IDS = {
    * rather than each growing its own convention.
    */
   portSelection: "port-selection-layer",
+  seaLabels: "sea-labels-layer",
   /**
    * Confidence ring, drawn beneath a vessel.
    *

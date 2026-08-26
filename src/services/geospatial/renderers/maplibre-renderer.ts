@@ -32,6 +32,7 @@
 import {
   BASEMAP_STYLE,
   LAYER_IDS,
+  SEA_LABELS,
   paletteFor,
   type MaritimePalette,
   PIXELS_PER_KM,
@@ -133,6 +134,7 @@ const SOURCE_IDS = {
   ports: "ports",
   eez: "nigeria-eez",
   graticule: "graticule",
+  seaLabels: "sea-labels",
   voyageEndpoints: "voyage-endpoints",
   investigationArea: "investigation-area",
 } as const;
@@ -187,6 +189,7 @@ const FALLBACK_BASEMAP = "https://tiles.stadiamaps.com/styles/alidade_smooth_dar
 export const INSTALLED_RENDER_LAYERS: readonly string[] = [
   LAYER_IDS.buildings,
   LAYER_IDS.graticule,
+  LAYER_IDS.seaLabels,
   LAYER_IDS.voyageEndpoints,
   LAYER_IDS.voyageEndpointLabels,
   LAYER_IDS.eezFill,
@@ -866,17 +869,6 @@ export class MapLibreRenderer implements MapRenderer {
       },
     });
 
-    /*
-     * ── Voyage endpoints ──
-     *
-     * Points only. There is deliberately no line between an origin and
-     * a destination: we know both ports and nothing about the passage
-     * between them, and a line on a map reads as a route no matter what
-     * the legend says. See `voyage-render.ts` for the full reasoning.
-     *
-     * Drawn early so they sit beneath ports and vessels — a recorded
-     * endpoint must never occlude an observed position.
-     */
     map.addSource(SOURCE_IDS.voyageEndpoints, {
       type: "geojson",
       data: { type: "FeatureCollection", features: [] },
@@ -1500,6 +1492,68 @@ export class MapLibreRenderer implements MapRenderer {
       layout: { visibility: "none" },
       paint: { "fill-color": "#0E7C7B", "fill-opacity": 0.1 },
     });
+
+    /*
+     * ── Sea labels ──
+     *
+     * Geographic orientation: the name of the water the officer is
+     * looking at. The basemap's own `water_name` layer is restyled and
+     * let in early, but it does not carry the Gulf of Guinea at the zooms
+     * this map is read at.
+     *
+     * Added last and placed with `beforeId` rather than added early.
+     * Position in this function decides two different things — draw order
+     * *and* what a failure takes down with it — and conflating them is
+     * expensive: while this sat mid-chain, anything it threw aborted the
+     * install before ports, vessels and the EEZ were ever added, which
+     * presents as an unstyled basemap with no maritime data at all. Draw
+     * order is now stated explicitly and the operational layers are
+     * installed before this can affect them.
+     *
+     * Deliberately not an entity: no feature id, no feature-state, no
+     * click target. Its `symbol-sort-key` is high so a port label always
+     * wins a collision — an orientation cue must never cost the officer
+     * the name of a port. It also stops at regional zoom, because once
+     * the view is about a berth, naming the gulf is noise.
+     */
+    map.addSource(SOURCE_IDS.seaLabels, {
+      type: "geojson",
+      data: {
+        type: "FeatureCollection",
+        features: SEA_LABELS.map((label) => ({
+          type: "Feature",
+          properties: { name: label.name },
+          geometry: { type: "Point", coordinates: [...label.position] },
+        })),
+      } as never,
+    });
+    map.addLayer(
+      {
+        id: LAYER_IDS.seaLabels,
+        type: "symbol",
+        source: SOURCE_IDS.seaLabels,
+        minzoom: 4,
+        maxzoom: 9,
+        layout: {
+          "text-field": ["get", "name"],
+          "text-transform": "uppercase",
+          // Larger than an ordinary place label and tracked out, the
+          // cartographic convention for an area rather than a point.
+          "text-size": ["interpolate", ["linear"], ["zoom"], 4, 11, 6, 14, 9, 18],
+          "text-letter-spacing": 0.28,
+          "symbol-sort-key": 99,
+        },
+        paint: {
+          "text-color": palette.seaLabel,
+          "text-halo-color": palette.labelHalo,
+          "text-halo-width": 1.2,
+          // Present but recessive: context the officer reads past.
+          "text-opacity": ["interpolate", ["linear"], ["zoom"], 4, 0.4, 6, 0.55, 9, 0.35],
+        },
+      },
+      // Beneath everything operational, above the graticule.
+      map.getLayer(LAYER_IDS.voyageEndpoints) ? LAYER_IDS.voyageEndpoints : undefined,
+    );
   }
 
   /**
