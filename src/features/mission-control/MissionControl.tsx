@@ -47,6 +47,7 @@ import { useMissionMode } from "./useMissionMode";
 import { MapRecommendationNotice } from "./MapRecommendationNotice";
 import { OperationalOrientation } from "./OperationalOrientation";
 import { RecommendedNextActionPanel } from "./RecommendedNextActionPanel";
+import { MissionKpiCard, type KpiToneKey } from "./mission-kpi-card";
 import { PriorityQueuePanel } from "./priority-queue";
 import { IntelligenceEventsStrip } from "./intelligence-events";
 import {
@@ -109,6 +110,23 @@ function coverageFor(
 const KPI_HANDOFF_OVERRIDE: Record<string, string> = {
   "revenue-intelligence": "/revenue-leakage",
   "risk-intelligence": "/national-risk",
+};
+
+/**
+ * What each measure means, in the semantic palette.
+ *
+ * Red for loss and exposure, amber for work awaiting attention, blue for
+ * information, green for a healthy operating count. The colour follows
+ * the domain, not the card's position, so the same measure reads the
+ * same way wherever it appears.
+ */
+const RIBBON_TONES: Record<string, KpiToneKey> = {
+  "revenue-intelligence": "critical", // revenue at risk — exposure
+  "manifest-intelligence": "attention", // exceptions awaiting review
+  "risk-intelligence": "attention", // assessments pending
+  "vessel-intelligence": "healthy", // vessels at sea — an operating count
+  "container-intelligence": "healthy", // ports active
+  "historical-intelligence": "information", // investigations in scope
 };
 
 const RIBBON_ICONS: Record<string, LucideIcon> = {
@@ -449,90 +467,42 @@ function Ribbon() {
           const Icon = RIBBON_ICONS[kpi.key] ?? Activity;
           const cov = kpiByKey.get(kpi.metricKey);
           /*
-           * Six equal cards. The lens still ranks them — `tierKpis`
-           * decides reading order, and `data-tier` still records what it
-           * decided — but rank no longer changes a card's size.
+           * One card, whether or not a provider answered.
            *
-           * It used to: the lead KPI spanned three columns and
-           * background cards were dimmed. Comparing revenue exposure
-           * against manifest exceptions then meant comparing two numbers
-           * drawn at different sizes, which reads as a claim about
-           * importance that the coverage model never made. Order is the
-           * honest way to express a lens; area is not.
+           * This forked in two directions before, and both branches
+           * rendered provider diagnostics where the national picture
+           * should have been: `KpiCoverageCard` with "Awaiting
+           * credentials for Nigeria Customs Service" and "Coverage 33%"
+           * when coverage resolved, a "Checking coverage…" button when
+           * it had not. That reporting is real and still lives on Data
+           * Sources and Provider Health. It was answering a question
+           * nobody asks on this page.
            */
-          if (cov) {
-            return (
-              <div key={kpi.key} data-testid={`kpi-${kpi.metricKey}`} data-tier={tier}>
-                <KpiCoverageCard
-                  key={kpi.key}
-                  /*
-                   * The approved title, over the coverage model's own.
-                   *
-                   * Coverage names its domains "Vessel Intelligence",
-                   * "Risk Intelligence" and so on — a taxonomy of
-                   * capabilities. The approved ribbon names what an
-                   * officer is actually looking at: Vessels at Sea,
-                   * Pending Assessments. Same measure, same state, same
-                   * root cause; only the label an officer reads changes,
-                   * and `RIBBON_KPIS` has held these titles all along.
-                   */
-                  kpi={{ ...cov, title: kpi.title }}
-                  icon={Icon}
-                  onOpen={() =>
-                    handoff({
-                      target: KPI_HANDOFF_OVERRIDE[kpi.key] ?? kpi.handoff,
-                      context: { fromStage: "Monitor", fromRoute: "/" },
-                    })
-                  }
-                />
-              </div>
-            );
-          }
           return (
-            <button
-              key={kpi.key}
-              type="button"
-              onClick={() =>
-                handoff({
-                  target: kpi.handoff,
-                  context: { fromStage: "Monitor", fromRoute: "/" },
-                })
-              }
-              className="group flex flex-col rounded-lg border border-line bg-surface p-3 text-left shadow-card motion-fast hover:border-[color:var(--color-teal)] hover:shadow-pop"
-              title={kpi.hint}
-            >
-              <div className="flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[color:var(--color-teal)]/10 text-[color:var(--color-teal)]">
-                  <Icon className="h-4 w-4" />
-                </span>
-                <span className="type-label text-slate">{kpi.title}</span>
-              </div>
-              <div className="mt-2 type-mono text-[22px] font-bold text-foreground tabular-nums">
-                Checking coverage…
-              </div>
-              <div className="mt-0.5 text-[11px] font-semibold text-slate">{kpi.descriptor}</div>
-              {/*
-                No confidence chip here. Coverage has not resolved, so there
-                is no value yet — and a tier rendered beside "Checking
-                coverage…" would assert certainty about a number that does
-                not exist. The chip returns with the value, from
-                KpiCoverageCard above.
-              */}
-            </button>
+            <div key={kpi.key} data-testid={`kpi-${kpi.metricKey}`} data-tier={tier}>
+              <MissionKpiCard
+                title={kpi.title}
+                icon={Icon}
+                tone={RIBBON_TONES[kpi.key] ?? "information"}
+                coverage={cov}
+                onOpen={() =>
+                  handoff({
+                    target: KPI_HANDOFF_OVERRIDE[kpi.key] ?? kpi.handoff,
+                    context: { fromStage: "Monitor", fromRoute: "/" },
+                  })
+                }
+              />
+            </div>
           );
         })}
-
-        <Link
-          to="/detect"
-          className="group flex flex-col items-start justify-between rounded-lg border border-dashed border-[color:var(--color-teal)]/60 bg-[color:var(--color-teal)]/5 p-3 motion-fast hover:bg-[color:var(--color-teal)]/10"
-        >
-          <span className="type-label text-[color:var(--color-teal)]">Intelligence Feed</span>
-          <span className="mt-2 type-h1 text-foreground">View full feed</span>
-          <span className="type-small text-slate">Continuous signals across every centre</span>
-          <span className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--color-teal)]">
-            Open Detect <ArrowRight className="h-3.5 w-3.5" />
-          </span>
-        </Link>
+        {/*
+          Six cards, and only six.
+          
+          A seventh tile linking to the Intelligence Feed used to sit at
+          the end of this row, which made the ribbon a row of six
+          measures plus an advertisement and broke the equal-card
+          reading. Detect is in the sidebar; the ribbon is for measures.
+        */}
       </div>
     </div>
   );

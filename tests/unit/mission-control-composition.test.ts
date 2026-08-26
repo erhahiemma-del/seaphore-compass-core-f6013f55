@@ -166,7 +166,15 @@ describe("six equal KPI cards", () => {
      * state and the root cause from coverage and the label from
      * `RIBBON_KPIS`, which has held the approved titles all along.
      */
-    expect(MISSION_CONTROL).toContain("kpi={{ ...cov, title: kpi.title }}");
+    /*
+     * The ribbon renders `MissionKpiCard`, which takes the approved
+     * title as a prop. `KpiCoverageCard` — the provider-readiness card
+     * that was rendering "Awaiting credentials" and "Coverage 33%" in
+     * this row — is untouched and still used where it belongs.
+     */
+    expect(MISSION_CONTROL).toContain("<MissionKpiCard");
+    expect(MISSION_CONTROL).toContain("title={kpi.title}");
+    expect(MISSION_CONTROL).not.toContain("<KpiCoverageCard");
   });
 
   it("heads the map with the approved name", () => {
@@ -209,7 +217,6 @@ describe("the next best action is a navy banner", () => {
      */
     expect(BANNER).toContain('const UNAVAILABLE = "—"');
     expect(BANNER).toContain("impact not quantified");
-    expect(BANNER).toContain("No evidence package linked");
     expect(BANNER).toContain("Unassigned");
   });
 
@@ -222,8 +229,34 @@ describe("the next best action is a navy banner", () => {
   });
 
   it("carries urgency in words as well as colour", () => {
-    expect(BANNER).toContain("Dependency blocked");
+    // The badge and the Status column both say it, so the distinction
+    // survives greyscale and colour-blindness.
+    expect(BANNER).toContain("Verification Required");
     expect(BANNER).toContain("action-priority-badge");
+  });
+
+  it("keeps the Evidence Summary whole at zero", () => {
+    /*
+     * Three counts, a verification state, a bar and a percentage — all
+     * rendered at zero rather than collapsed. An officer scanning for
+     * verification progress must find the bar in the same place whether
+     * it is empty or full; a bar that disappears when empty cannot be
+     * told apart from one that failed to render.
+     */
+    expect(BANNER).toContain("<EvidenceSummary records={0} sources={0} conflicts={0}");
+    expect(BANNER).toContain('data-testid="evidence-progress"');
+    expect(BANNER).toContain('data-testid="evidence-percent"');
+    expect(BANNER).toContain('role="progressbar"');
+    // The counts are counts, not em dashes: none is a number.
+    expect(BANNER).toContain("{value}");
+  });
+
+  it("uses the approved semantic colours", () => {
+    expect(BANNER).toContain('oxblood: "#992D2D"');
+    expect(BANNER).toContain('critical: "#DC3545"');
+    expect(BANNER).toContain('attention: "#F59E0B"');
+    expect(BANNER).toContain('information: "#2563EB"');
+    expect(BANNER).toContain('track: "#425269"');
   });
 });
 

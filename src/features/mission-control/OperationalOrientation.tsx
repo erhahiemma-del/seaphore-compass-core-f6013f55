@@ -52,43 +52,16 @@ export function OperationalOrientation({
   const coverage = coverageLabel(readiness);
 
   return (
-    <div data-testid="operational-orientation" className={cn("flex flex-col gap-2", className)}>
+    <div
+      data-testid="operational-orientation"
+      className={cn("flex flex-wrap items-center gap-x-4 gap-y-2", className)}
+    >
+      {/*
+        The label the approved composition puts beside the lenses, so the
+        row reads as one control rather than eight loose chips.
+      */}
+      <span className="type-label shrink-0 text-slate">Mission Mode</span>
       <MissionModeSelector value={modeId} onChange={setModeId} />
-
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-[11px]">
-        <span data-testid="orientation-purpose" className="text-slate">
-          {mode.purpose}
-        </span>
-
-        <span className="flex items-center gap-1.5">
-          <span className="text-slate">Focus</span>
-          {/*
-            "None" stated rather than the row disappearing. An officer
-            scanning for their subject should find the answer in the
-            same place whether or not one is set.
-          */}
-          <span data-testid="orientation-focus" className="font-medium text-foreground">
-            {subject ? subject.title : "None"}
-          </span>
-          {subject?.descriptor ? <span className="text-slate">· {subject.descriptor}</span> : null}
-        </span>
-
-        <span className="flex items-center gap-1.5">
-          <span
-            aria-hidden
-            className="inline-block h-1.5 w-1.5 rounded-full"
-            style={{ backgroundColor: coverage.tone }}
-          />
-          {/*
-            Colour carries the tone, the word carries the meaning.
-            A dot alone would make the state unreadable in greyscale or
-            to a colour-blind officer.
-          */}
-          <span data-testid="orientation-coverage" className="text-foreground">
-            {coverage.label}
-          </span>
-        </span>
-      </div>
     </div>
   );
 }

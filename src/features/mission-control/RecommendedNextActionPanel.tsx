@@ -26,7 +26,16 @@
  * officer would plan a shift around.
  */
 import { Link } from "@tanstack/react-router";
-import { AlertTriangle, ArrowRight, ClipboardCheck, Clock, UserRound } from "lucide-react";
+import {
+  ArrowRight,
+  ClipboardCheck,
+  Clock,
+  Database,
+  FileText,
+  GitCompareArrows,
+  ShieldAlert,
+  UserRound,
+} from "lucide-react";
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
@@ -43,23 +52,165 @@ import type { MissionMode } from "./modes";
  * the state of the work — and both are derived, never chosen for effect.
  */
 const URGENCY_TONE: Readonly<
-  Record<ActionUrgency, { badge: string | null; badgeTone: string; status: string }>
+  Record<
+    ActionUrgency,
+    {
+      badge: string | null;
+      badgeTone: string;
+      badgeColor: string;
+      status: string;
+      consequence: string;
+    }
+  >
 > = {
   blocked: {
     badge: "High priority",
-    badgeTone: "bg-[color:var(--status-critical)] text-white",
-    status: "Dependency blocked",
+    // Oxblood, from the reference — a deeper red than the critical
+    // figure it sits beside, so the badge reads as a label and the
+    // number reads as the alarm.
+    badgeTone: "text-white",
+    badgeColor: "#992D2D",
+    status: "Verification Required",
+    consequence:
+      "Intelligence in this domain is incomplete while the dependency is unresolved, so any figure derived from it understates the real position.",
   },
   routine: {
     badge: "Recommended",
-    badgeTone: "bg-white/15 text-white",
+    badgeTone: "text-white",
+    badgeColor: "rgba(255,255,255,0.15)",
     status: "Ready to action",
+    consequence:
+      "Standing work for this lens. Nothing is blocked; this is the next thing to pick up.",
   },
-  none: { badge: null, badgeTone: "", status: "Nothing outstanding" },
+  none: {
+    badge: null,
+    badgeTone: "",
+    badgeColor: "transparent",
+    status: "Nothing outstanding",
+    consequence: "No dependency is blocked and no queue is waiting on this officer.",
+  },
 };
 
 /** What an officer sees where the application holds no fact. */
 const UNAVAILABLE = "—";
+
+/**
+ * The banner's palette, from the approved reference.
+ *
+ *   red    critical risk, loss, failure
+ *   amber  verification or attention required
+ *   blue   information, evidence, assignment
+ *
+ * Literal values rather than tokens: these are the reference's exact
+ * colours for this one surface, and routing them through the theme would
+ * let a palette change silently redefine what "critical" looks like on
+ * the page an officer reads first.
+ */
+const BANNER = {
+  oxblood: "#992D2D",
+  critical: "#DC3545",
+  attention: "#F59E0B",
+  information: "#2563EB",
+  track: "#425269",
+} as const;
+
+/**
+ * Evidence behind the recommendation.
+ *
+ * Always three counts, a verification state and a bar — even at zero,
+ * and especially at zero.
+ *
+ * The counts render `0` rather than an em dash because they are counts:
+ * no evidence package is linked to a coverage-derived recommendation, so
+ * the true number of records, sources and conflicts is none. The bar
+ * stays at 0% rather than collapsing, because an officer scanning for
+ * verification progress must find the bar in the same place whether it
+ * is empty or full. A bar that disappears when empty cannot be
+ * distinguished from one that failed to render.
+ *
+ * `deriveRecommendedAction` reads coverage state and links no evidence,
+ * so every value here is currently zero. They are wired as values rather
+ * than hard-coded text so the day a recommendation carries an evidence
+ * package, the region fills without a redesign.
+ */
+function EvidenceSummary({
+  records,
+  sources,
+  conflicts,
+  verifiedPct,
+}: {
+  readonly records: number;
+  readonly sources: number;
+  readonly conflicts: number;
+  readonly verifiedPct: number;
+}) {
+  const counts = [
+    { label: "Records", value: records, Icon: FileText },
+    { label: "Sources", value: sources, Icon: Database },
+    { label: "Conflicts", value: conflicts, Icon: GitCompareArrows },
+  ];
+
+  return (
+    <div data-testid="action-evidence">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+        {counts.map(({ label, value, Icon }) => (
+          <span key={label} className="flex items-center gap-1.5 text-[11.5px] text-white/80">
+            <Icon
+              className="h-3.5 w-3.5 shrink-0"
+              style={{ color: BANNER.information }}
+              aria-hidden
+            />
+            <span
+              data-testid={`evidence-${label.toLowerCase()}`}
+              className="font-semibold tabular-nums text-white"
+            >
+              {value}
+            </span>
+            {label}
+          </span>
+        ))}
+      </div>
+
+      <p
+        data-testid="evidence-verification"
+        className="mt-2 flex items-center gap-1.5 text-[11.5px] font-semibold"
+        style={{ color: BANNER.attention }}
+      >
+        <ShieldAlert className="h-3.5 w-3.5 shrink-0" aria-hidden />
+        Verification Required
+      </p>
+
+      {/*
+        Linear, horizontal, and always the same height. The track is
+        drawn even at 0% so the row never changes shape.
+      */}
+      <div className="mt-1.5 flex items-center gap-2">
+        <div
+          data-testid="evidence-progress"
+          role="progressbar"
+          aria-valuenow={verifiedPct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Verification progress"
+          className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full"
+          style={{ backgroundColor: BANNER.track }}
+        >
+          <div
+            className="h-full rounded-full"
+            style={{ width: `${verifiedPct}%`, backgroundColor: BANNER.attention }}
+          />
+        </div>
+        <span
+          data-testid="evidence-percent"
+          className="shrink-0 text-[11px] font-semibold tabular-nums"
+          style={{ color: BANNER.attention }}
+        >
+          {verifiedPct}%
+        </span>
+      </div>
+    </div>
+  );
+}
 
 function BannerField({
   label,
@@ -107,9 +258,10 @@ export function RecommendedNextActionPanel({
       <div className="flex min-w-0 items-start gap-3 px-5 py-4">
         <div
           aria-hidden
-          className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white/10"
+          className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+          style={{ backgroundColor: "rgba(245,158,11,0.15)" }}
         >
-          <ClipboardCheck className="h-4 w-4 text-white" />
+          <ClipboardCheck className="h-4 w-4" style={{ color: BANNER.attention }} />
         </div>
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -123,6 +275,7 @@ export function RecommendedNextActionPanel({
                   "rounded px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-[0.08em]",
                   tone.badgeTone,
                 )}
+                style={{ backgroundColor: tone.badgeColor }}
               >
                 {tone.badge}
               </span>
@@ -152,8 +305,16 @@ export function RecommendedNextActionPanel({
 
       {/* ── Why this matters ── */}
       <BannerField label="Why this matters">
+        {/*
+          The consequence, not the reason again.
+          
+          This column repeated `action.reason` word for word, so the
+          banner said the same sentence twice side by side and the second
+          column earned none of its width. The reason explains what is
+          wrong; this explains what it costs if nobody acts.
+        */}
         <p data-testid="action-impact" className="text-[11.5px] leading-relaxed text-white/80">
-          {action.reason}
+          {tone.consequence}
         </p>
         <p
           data-testid="action-impact-value"
@@ -166,25 +327,22 @@ export function RecommendedNextActionPanel({
 
       {/* ── Evidence summary ── */}
       <BannerField label="Evidence summary">
-        <div data-testid="action-evidence" className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          {["Records", "Sources", "Conflicts"].map((field) => (
-            <span key={field} className="text-[11.5px] text-white/80">
-              <span className="font-semibold text-white/45">{UNAVAILABLE}</span> {field}
-            </span>
-          ))}
-        </div>
-        <p className="mt-1.5 text-[10.5px] text-white/45">
-          No evidence package linked to this recommendation
-        </p>
+        {/*
+          Zero, not absent. `deriveRecommendedAction` reads coverage
+          state and links no evidence package, so the true count of
+          records, sources and conflicts is none — and none is a number.
+        */}
+        <EvidenceSummary records={0} sources={0} conflicts={0} verifiedPct={0} />
       </BannerField>
 
       {/* ── Status ── */}
       <BannerField label="Status">
         <p
           data-testid="action-status"
-          className="flex items-center gap-1.5 text-[12px] font-semibold text-white"
+          className="flex items-center gap-1.5 text-[12px] font-semibold"
+          style={{ color: BANNER.attention }}
         >
-          <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-white/70" aria-hidden />
+          <ShieldAlert className="h-3.5 w-3.5 shrink-0" aria-hidden />
           {tone.status}
         </p>
       </BannerField>
@@ -195,7 +353,11 @@ export function RecommendedNextActionPanel({
           data-testid="action-owner"
           className="flex items-center gap-1.5 text-[12px] text-white/80"
         >
-          <UserRound className="h-3.5 w-3.5 shrink-0 text-white/55" aria-hidden />
+          <UserRound
+            className="h-3.5 w-3.5 shrink-0"
+            style={{ color: BANNER.information }}
+            aria-hidden
+          />
           <span className="text-white/45">Unassigned</span>
         </p>
       </BannerField>
@@ -203,7 +365,11 @@ export function RecommendedNextActionPanel({
       {/* ── Due in ── */}
       <BannerField label="Due in" className="lg:whitespace-nowrap">
         <p data-testid="action-due" className="flex items-center gap-1.5 text-[12px] text-white/80">
-          <Clock className="h-3.5 w-3.5 shrink-0 text-white/55" aria-hidden />
+          <Clock
+            className="h-3.5 w-3.5 shrink-0"
+            style={{ color: BANNER.information }}
+            aria-hidden
+          />
           <span className="text-white/45">{UNAVAILABLE}</span>
         </p>
       </BannerField>
