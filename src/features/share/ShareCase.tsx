@@ -21,7 +21,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { SendShareGate } from "@/components/compliance/send-share-gate";
 import { DemoDataNotice } from "@/components/intelligence/DemoDataNotice";
 import {

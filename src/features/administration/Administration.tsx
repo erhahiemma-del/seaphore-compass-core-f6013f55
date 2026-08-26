@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useServerFn as useSF } from "@tanstack/react-start";
 
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { RequirePermission } from "@/components/require-permission";
 import { usePermission } from "@/hooks/use-permissions";
 import { useAuth } from "@/hooks/use-auth";

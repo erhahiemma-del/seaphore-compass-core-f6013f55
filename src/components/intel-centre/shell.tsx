@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import { ChevronDown, Save, Search, Bookmark, Filter } from "lucide-react";
 
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { ConfidenceChip, type ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
 import { cn } from "@/lib/utils";
 

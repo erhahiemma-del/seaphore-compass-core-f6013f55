@@ -7,7 +7,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FolderOpen, Plus, Trash2 } from "lucide-react";
 
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import { useWorkspaceStore } from "@/stores/workspace.store";
 

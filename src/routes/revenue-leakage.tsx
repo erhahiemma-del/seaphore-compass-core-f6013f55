@@ -6,7 +6,7 @@
  */
 import { useEffect } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

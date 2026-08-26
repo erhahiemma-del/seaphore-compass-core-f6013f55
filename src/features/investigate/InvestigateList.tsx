@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Search } from "lucide-react";
 
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { PanelCard } from "@/components/panel-card";
 import { PanelHead } from "@/components/panel-head";

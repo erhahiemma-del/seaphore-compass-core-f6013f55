@@ -14,7 +14,7 @@ import {
   UploadCloud,
 } from "lucide-react";
 
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { DemoDataNotice } from "@/components/intelligence/DemoDataNotice";
 import {
   AUDIT_TRAIL,

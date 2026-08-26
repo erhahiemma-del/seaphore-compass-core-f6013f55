@@ -20,7 +20,7 @@ import { resolveTheme, useThemeStore } from "@/stores/theme.store";
 
 const read = (p: string) => readFileSync(resolve(process.cwd(), p), "utf8");
 
-const SHELL = "src/components/layout/IntelligenceCentreShell.tsx";
+const SHELL = "src/components/layout/AppShell.tsx";
 const PROVIDER = "src/components/theme/ThemeProvider.tsx";
 
 describe("only ThemeProvider writes the dark class", () => {

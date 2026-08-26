@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { IntelMap, type IntelMapEntity } from "@/components/intelligence/IntelMap";
 import { EntitiesRequiringScreening } from "@/components/compliance/EntitiesRequiringScreening";

@@ -23,7 +23,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { ContextRail } from "@/components/layout/ContextRail";
 import { FocusWorkspaceHost } from "@/features/focus-workspace/FocusWorkspaceHost";
 import { useMapFocusBridge } from "@/features/focus-workspace/map-bridge";

@@ -1,6 +1,6 @@
 /**
  * Global immutable footer — Evidence first. Explainable always. Officer decides.
- * Rendered by IntelligenceCentreShell on every screen. Text is fixed and
+ * Rendered by AppShell on every screen. Text is fixed and
  * MUST NOT be overridden.
  */
 export function Footer() {

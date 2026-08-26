@@ -16,7 +16,7 @@ import {
   User,
 } from "lucide-react";
 
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { AuditTimeline } from "@/components/intelligence/AuditTimeline";
 import { CopilotPanel } from "@/components/intelligence/CopilotPanel";
 import { DomainFilterTabs } from "@/components/domain-filter-tabs";

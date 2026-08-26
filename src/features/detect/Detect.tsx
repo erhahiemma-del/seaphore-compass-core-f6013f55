@@ -13,7 +13,7 @@ import {
   ThumbsUp,
 } from "lucide-react";
 
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { ConfidenceLegend } from "@/components/confidence-legend";
 import { CopilotCards } from "@/components/copilot-cards";
 import { DomainDonutChart } from "@/components/domain-donut-chart";

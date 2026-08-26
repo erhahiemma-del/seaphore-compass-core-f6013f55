@@ -14,7 +14,7 @@ import {
   RotateCw,
 } from "lucide-react";
 
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { PanelCard } from "@/components/panel-card";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { RiskPill } from "@/components/intelligence/RiskPill";

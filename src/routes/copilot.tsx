@@ -58,7 +58,7 @@ import { StreamingStages } from "@/components/copilot/StreamingStages";
 import { InvestigationLanding } from "@/components/copilot/InvestigationLanding";
 import { describeAttachments, type OfficerAttachment } from "@/hooks/use-officer-attachments";
 
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import { adaptBriefing, type CopilotQueryResponse } from "@/lib/copilot/adapt-briefing";
 import { exportBriefingToPdf } from "@/lib/copilot/export-briefing-pdf";

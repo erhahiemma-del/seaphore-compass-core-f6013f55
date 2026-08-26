@@ -7,7 +7,7 @@
  */
 import { Link } from "@tanstack/react-router";
 
-import { AppShell } from "@/components/layout/IntelligenceCentreShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { PanelCard } from "@/components/panel-card";
 import {
   CARGO_CENTRES,
