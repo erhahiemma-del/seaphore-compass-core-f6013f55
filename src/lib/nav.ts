@@ -256,6 +256,91 @@ export const CONSOLIDATED_ROUTES: Readonly<Record<string, string>> = {
   "/briefing-centre": "/memory",
 };
 
+/**
+ * What a screen is called, resolved from the navigation model.
+ *
+ * The sidebar already stores a title and a subtitle for every
+ * environment, yet roughly thirty screens passed their own literals into
+ * the shell — and the two had drifted. The sidebar said Detect ·
+ * "Signals & Anomalies" while the screen said "Intelligence Feed"; it
+ * said "Identity, Movement & Calls" while the screen said "Vessel
+ * Intelligence". An officer reading the menu and then the header was
+ * told two different things about where they were.
+ *
+ * Resolution order, and why each step exists:
+ *
+ *   1. the sidebar entry itself
+ *   2. the environment that owns a consolidated route, so `/share`
+ *      presents as Decide & Coordinate rather than as a page with no
+ *      identity — it is deliberately not a sidebar environment
+ *   3. the nearest ancestor, so `/investigate/INV-2026-00431` inherits
+ *      Investigate rather than falling off the model
+ *
+ * Returns `null` rather than a placeholder. A screen with no identity is
+ * a screen missing from the navigation model, and
+ * {@link routeIdentityOrThrow} makes that loud instead of rendering
+ * chrome with a blank title.
+ */
+export interface RouteIdentity {
+  readonly title: string;
+  readonly subtitle?: string;
+}
+
+export function routeIdentity(pathname: string): RouteIdentity | null {
+  const path = normalisePath(pathname);
+  const items = NAV_GROUPS.flatMap((g) => g.items);
+
+  const exact = items.find((i) => normalisePath(i.url) === path);
+  if (exact) return { title: exact.title, subtitle: exact.subtitle };
+
+  const owner = CONSOLIDATED_ROUTES[path];
+  if (owner) {
+    const ownerItem = items.find((i) => normalisePath(i.url) === normalisePath(owner));
+    if (ownerItem) return { title: ownerItem.title, subtitle: ownerItem.subtitle };
+  }
+
+  /*
+   * Longest ancestor wins, so a nested route cannot be claimed by a
+   * shorter, unrelated prefix. "/" is excluded from prefix matching for
+   * exactly that reason — every path starts with it, and Mission Control
+   * would otherwise absorb the entire application.
+   */
+  const ancestors = [...items.map((i) => i.url), ...Object.keys(CONSOLIDATED_ROUTES)]
+    .map(normalisePath)
+    .filter((url) => url !== "/" && path.startsWith(`${url}/`))
+    .sort((a, b) => b.length - a.length);
+
+  for (const ancestor of ancestors) {
+    const identity = routeIdentity(ancestor);
+    if (identity) return identity;
+  }
+
+  return null;
+}
+
+/**
+ * The same resolution, but a missing entry is a failure.
+ *
+ * A screen the navigation model does not know about is a defect in the
+ * model, not something to paper over: blank chrome would ship it
+ * silently. `navigation-ia.test.ts` asserts every reachable route
+ * resolves, so this fires for a developer long before an officer.
+ */
+export function routeIdentityOrThrow(pathname: string): RouteIdentity {
+  const identity = routeIdentity(pathname);
+  if (identity) return identity;
+  throw new Error(
+    `No navigation identity for "${pathname}". Add it to NAV_GROUPS, or record its owner in ` +
+      `CONSOLIDATED_ROUTES, so the sidebar and the screen header agree on what this environment is called.`,
+  );
+}
+
+/** Trailing slashes are a routing detail, not an identity difference. */
+function normalisePath(pathname: string): string {
+  if (!pathname.startsWith("/")) return `/${pathname}`;
+  return pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
+}
+
 /** Every url an officer can reach from the sidebar, directly or after one hop. */
 export function reachableRoutes(): readonly string[] {
   return [

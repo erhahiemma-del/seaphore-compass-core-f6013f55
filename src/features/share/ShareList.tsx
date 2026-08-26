@@ -9,7 +9,7 @@ import { DemoDataNotice } from "@/components/intelligence/DemoDataNotice";
 
 export function ShareList() {
   return (
-    <AppShell title="Share" subtitle="Briefings & Collaboration" mode="light">
+    <AppShell mode="light">
       <DemoDataNotice surface="Share" className="mb-3" />
       <div className="mx-auto max-w-[1400px] space-y-4 p-4 lg:p-6">
         <div className="flex items-start gap-3">

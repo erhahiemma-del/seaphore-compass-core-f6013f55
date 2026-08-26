@@ -825,11 +825,7 @@ export function ComplianceCentre() {
   const layerOn = (k: LayerKey) => (layerMask & LAYER_BIT[k]) !== 0;
 
   return (
-    <AppShell
-      title="Compliance Intelligence Centre"
-      subtitle="Regulatory compliance. Detect violations. Reduce risk. Protect revenue."
-      mode="dark"
-    >
+    <AppShell mode="dark">
       <DemoDataNotice surface="Compliance Intelligence" className="mb-3" />
       <div className="space-y-3 p-4">
         {/* Search bar */}

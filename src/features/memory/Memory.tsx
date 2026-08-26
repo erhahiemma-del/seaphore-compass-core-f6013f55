@@ -576,7 +576,7 @@ export function MemoryPage() {
   const openRow = (r: BottomRow) => setDrill(rowDrilldown(r, bottom.primaryHeader, sub));
 
   return (
-    <AppShell title="Institutional Memory" subtitle="Knowledge & Learning" mode="light">
+    <AppShell mode="light">
       <DemoDataNotice surface="Institutional Memory" className="mb-3" />
       <div className="mx-auto max-w-[1600px] space-y-4 p-4 lg:p-6">
         {/* Page title + search */}

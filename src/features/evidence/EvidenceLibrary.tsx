@@ -166,11 +166,7 @@ export function EvidenceCentre() {
   }, [filtered, selectedId]);
 
   return (
-    <AppShell
-      title="Evidence Library"
-      subtitle="Trusted evidence. Provenance. Intelligence."
-      mode="dark"
-    >
+    <AppShell mode="dark">
       <div className="flex flex-col gap-4">
         {/* Search + toolbar */}
         <TopSearch query={query} onQuery={setQuery} onUpload={() => setUploadOpen(true)} />

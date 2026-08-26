@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useEffect } from "react";
+import { useRouterState } from "@tanstack/react-router";
 
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/Sidebar";
@@ -9,6 +10,7 @@ import { GlobalCopilotLauncher } from "@/components/ai/global-copilot-launcher";
 import { MapProviderRoot } from "@/lib/maps";
 import type { MapProviderName } from "@/lib/maps/types";
 import { useThemeStore } from "@/stores/theme.store";
+import { routeIdentityOrThrow } from "@/lib/nav";
 import { ContextRail } from "@/components/layout/ContextRail";
 import { CommandSurfaceHost } from "@/features/command/CommandSurfaceHost";
 import { MissionModeSelector } from "@/features/mission-control/MissionModeSelector";
@@ -55,7 +57,18 @@ export interface ShellCapabilities {
 
 export interface AppShellProps {
   children: ReactNode;
-  title: string;
+  /**
+   * What this screen is called.
+   *
+   * Optional because the navigation model already knows: omit both and
+   * the shell resolves title and subtitle from `NAV_GROUPS` for the
+   * current route. Roughly thirty screens used to pass their own
+   * literals, and they had drifted from the sidebar — the menu said one
+   * thing, the header another. Passing a title now means deliberately
+   * overriding the model, which is what a case or entity screen with a
+   * subject in its name legitimately does.
+   */
+  title?: string;
   subtitle?: string;
   /**
    * The tone this environment is designed in. Light for Mission Control,
@@ -93,6 +106,17 @@ export function AppShell({
   capabilities,
   pageActions,
 }: AppShellProps) {
+  /*
+   * Identity comes from the navigation model unless the screen overrides
+   * it. `routeIdentityOrThrow` refuses to invent one: a route the model
+   * does not know about is a defect in the model, and blank chrome would
+   * ship it silently.
+   */
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const identity = title === undefined ? routeIdentityOrThrow(pathname) : null;
+  const resolvedTitle = title ?? identity?.title ?? "";
+  const resolvedSubtitle = subtitle ?? identity?.subtitle;
+
   const {
     commandSurface = false,
     missionMode = false,
@@ -154,7 +178,7 @@ export function AppShell({
         <div className="flex min-h-screen w-full bg-background text-foreground">
           <AppSidebar />
           <SidebarInset className="flex min-w-0 flex-1 flex-col bg-background">
-            <TopBar title={title} subtitle={subtitle} />
+            <TopBar title={resolvedTitle} subtitle={resolvedSubtitle} />
 
             {/*
               The header strip exists only when something asked for it.
