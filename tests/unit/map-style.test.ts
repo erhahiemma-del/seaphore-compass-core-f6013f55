@@ -42,11 +42,13 @@ const CARTO_LAYERS: readonly StyleLayerSummary[] = [
 function fakeMap(overrides: Partial<StyleTarget> = {}): StyleTarget & {
   paint: Map<string, unknown>;
   layout: Map<string, unknown>;
+  zoomRanges: Map<string, number>;
   added: string[];
   sky: Record<string, unknown> | null;
 } {
   const paint = new Map<string, unknown>();
   const layout = new Map<string, unknown>();
+  const zoomRanges = new Map<string, number>();
   const added: string[] = [];
   let sky: Record<string, unknown> | null = null;
   const known = new Set(CARTO_LAYERS.map((l) => l.id));
@@ -54,6 +56,7 @@ function fakeMap(overrides: Partial<StyleTarget> = {}): StyleTarget & {
   return {
     paint,
     layout,
+    zoomRanges,
     added,
     get sky() {
       return sky;
@@ -62,6 +65,7 @@ function fakeMap(overrides: Partial<StyleTarget> = {}): StyleTarget & {
     getLayer: (id: string) => (known.has(id) ? { id } : undefined),
     setPaintProperty: (id, property, value) => paint.set(`${id}.${property}`, value),
     setLayoutProperty: (id, property, value) => layout.set(`${id}.${property}`, value),
+    setLayerZoomRange: (id: string, minzoom: number) => zoomRanges.set(id, minzoom),
     addLayer: (layer: Record<string, unknown>) => {
       added.push(String(layer.id));
       known.add(String(layer.id));
@@ -109,9 +113,13 @@ describe("maritime style planning", () => {
     expect(expr).toHaveLength(5);
   });
 
-  it("never writes geometry, only paint and layout", () => {
+  it("never writes geometry — only paint, layout and zoom range", () => {
+    // `minzoom` joined the vocabulary in M2.5 so sea names can be
+    // revealed at the zooms where they orient. It decides *when* an
+    // existing layer draws, never what it draws or where, so it belongs
+    // on the same side of this line as paint and layout.
     for (const edit of planMaritimeStyle(CARTO_LAYERS)) {
-      expect(["paint", "layout"]).toContain(edit.kind);
+      expect(["paint", "layout", "minzoom"]).toContain(edit.kind);
       expect(edit.property).not.toMatch(/source|filter|coordinates/i);
     }
   });
@@ -150,6 +158,8 @@ describe("applying the maritime style", () => {
 
     expect(result.applied).toBeGreaterThan(0);
     expect(result.skipped).toBe(0);
+    // The sea-label threshold is genuinely lowered, not merely planned.
+    expect(map.zoomRanges.get("watername_sea")).toBeLessThan(5);
     expect(result.coastlineAdded).toBe(true);
     expect(map.added).toContain(COASTLINE_LAYER_ID);
     expect(result.skyApplied).toBe(true);

@@ -16,16 +16,19 @@
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
     "test:e2e": "playwright test",
-    "validate": "bun run lint && bun run typecheck && bun run test:unit && bun run build && bun run verify:bundle",
+    "test:contracts": "node scripts/contract-tests.mjs",
+    "check": "bun run format:check && bun run lint && bun run typecheck && bun run test:unit",
+    "validate": "bun run format:check && bun run lint && bun run typecheck && bun run test:unit && bun run build && bun run verify:bundle",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "prepare": "husky || true",
     "verify:bundle": "node scripts/verify-prod-bundle.mjs .output/public"
   },
   "lint-staged": {
-    "*.{ts,tsx,js,jsx}": [
+    "*.{ts,tsx,js,jsx,mjs,cjs}": [
       "eslint --fix",
-      "prettier --write"
+      "prettier --write",
+      "vitest related --run"
     ],
     "*.{json,md,css,yml,yaml}": [
       "prettier --write"

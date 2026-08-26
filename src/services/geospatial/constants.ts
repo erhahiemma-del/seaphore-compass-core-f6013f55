@@ -23,8 +23,24 @@
  * them.
  */
 export const MAP_DEFAULTS = {
-  /** [lon, lat] — Gulf of Guinea. */
-  center: [3.5, 4.5] as readonly [number, number],
+  /**
+   * [lon, lat] — the Nigerian port estate, with the Gulf beneath it.
+   *
+   * Was [3.5, 4.5], which framed open water south-west of Lagos. On
+   * Mission Control's map panel — wide and short at roughly 619×434 —
+   * that put Onne and Calabar outside the eastern edge entirely and left
+   * Apapa, Tin Can and Lekki about 40px from the top, underneath the
+   * layer-chip overlay. Four of the six major ports were unreachable at
+   * the opening view, which read as "the ports are missing" rather than
+   * "the camera is looking somewhere else".
+   *
+   * This centres the estate itself: it spans lon 3.32–8.32, lat
+   * 4.72–6.43, and at zoom 6 all six sit inside the frame on both the
+   * Mission Control panel and the full-bleed Maritime Command surface,
+   * with the Lagos cluster clear of the chrome. The Gulf still occupies
+   * the lower half, so the sea remains the theatre.
+   */
+  center: [5.8, 5.5] as readonly [number, number],
   zoom: 6,
   minZoom: 4,
   maxZoom: 18,
@@ -101,7 +117,9 @@ export const MAP_SCOPES: Readonly<Record<MapScopeId, MapScopeDefinition>> = {
   regional: {
     id: "regional",
     label: "Nigerian waters",
-    center: [3.5, 4.5],
+    // Mirrors MAP_DEFAULTS.center — see the note there for why the port
+    // estate rather than the water south-west of it.
+    center: [5.8, 5.5],
     zoom: 6,
     minZoom: 4,
     maxZoom: 18,
@@ -175,6 +193,50 @@ export const MAP_SCOPES: Readonly<Record<MapScopeId, MapScopeDefinition>> = {
 export const ZOOM_LIMITS = { min: 1, max: 18 } as const;
 
 /**
+ * The three ways an officer reads this map.
+ *
+ * Named bands rather than bare numbers scattered through paint
+ * expressions, because the same three thresholds govern labels, borders,
+ * the graticule, the EEZ, port symbols and vessel symbols — and when
+ * they were written out per-layer they disagreed. Every zoom ramp added
+ * or changed in M2.5 anchors on these.
+ *
+ * The bands answer different questions:
+ *
+ *   world        Where is activity, globally?      1 → 3.5
+ *   regional     What is the pattern here?       3.5 → 8
+ *   operational  What is this individual thing?     8 → 18
+ *
+ * `worldMax` and `regionalMax` are fractional so a ramp can cross a
+ * boundary as a fade rather than a step. A layer that genuinely needs to
+ * appear at once uses `["step", …]` against the same number.
+ */
+export const ZOOM_BANDS = {
+  worldMin: 1,
+  worldMax: 3.5,
+  regionalMin: 3.5,
+  regionalMax: 8,
+  operationalMin: 8,
+  operationalMax: 18,
+} as const;
+
+/**
+ * Which band a zoom level falls in.
+ *
+ * Exported so the legend and any panel can describe the current view in
+ * the same words the paint expressions are tuned around, instead of
+ * inventing a fourth vocabulary for the same three ideas.
+ */
+export type ZoomBand = "world" | "regional" | "operational";
+
+export function zoomBandFor(zoom: number): ZoomBand {
+  if (!Number.isFinite(zoom)) return "world";
+  if (zoom < ZOOM_BANDS.worldMax) return "world";
+  if (zoom < ZOOM_BANDS.regionalMax) return "regional";
+  return "operational";
+}
+
+/**
  * Maritime figure–ground palette.
  *
  * CARTO Dark Matter paints land `#0e0e0e` and water `#2C353C` — about
@@ -203,6 +265,16 @@ export interface MaritimePalette {
   readonly oceanShallow: string;
   readonly land: string;
   readonly landUrban: string;
+  /**
+   * 3D building extrusion fill.
+   *
+   * Part of the land family on purpose: a building is geography, not
+   * intelligence, and must never read as an entity. Declared on the
+   * palette interface because the map style is now palette-driven, so a
+   * theme that omitted it would fail to render extrusions rather than
+   * silently falling back.
+   */
+  readonly buildingExtrusion: string;
   readonly coastline: string;
   readonly waterway: string;
   readonly seaLabel: string;
@@ -236,6 +308,16 @@ export const MARITIME_PALETTE: MaritimePalette = {
   labelHalo: "#0A121B",
   /** Land administrative boundaries. Dimmed — they are not maritime. */
   boundary: "#2A3948",
+  /**
+   * Extruded building mass.
+   *
+   * A shade above `landUrban` so buildings separate from the ground they
+   * stand on, and no further: they are the quietest thing the map draws
+   * on purpose. Deliberately sharing the land family rather than
+   * introducing a new hue — a building is geography, not intelligence,
+   * and must never read as an entity.
+   */
+  buildingExtrusion: "#243447",
   /** Latitude/longitude graticule. Cool grey, never gold — see below. */
   graticule: "#2E4356",
   /**
@@ -277,6 +359,27 @@ export const LIGHT_MARITIME_PALETTE: MaritimePalette = {
   oceanShallow: "#7DB7E6",
   land: "#FAFCFD",
   landUrban: "#EFF3F7",
+  /*
+   * One step down from `landUrban`, not up.
+   *
+   * On the dark palette buildings sit slightly above the ground they
+   * stand on; on a light ground the same separation has to run the other
+   * way or the extrusion disappears into the page. Still inside the land
+   * family, and still the quietest thing the map draws.
+   *
+   * Matched to the dark palette's separation rather than chosen by eye,
+   * so both themes grant a building the same amount of presence:
+   *
+   *   dark    landUrban #1D2937 : building #243447   = 1.163
+   *   light   landUrban #EFF3F7 : building #DAE3EC   = 1.164
+   *
+   * The first light value tried, #E2E9F0, sat at 1.098 — directionally
+   * right but flatter than the house standard, which on a near-white
+   * ground is where an extrusion stops reading as a separate object.
+   * Ports remain far louder at 3.86 against this, and the coastline at
+   * 2.55, so nothing operational is competed with.
+   */
+  buildingExtrusion: "#DAE3EC",
   coastline: "#5A93BC",
   waterway: "#7DB7E6",
   seaLabel: "#3C6B84",
@@ -574,7 +677,6 @@ export const ANCHORAGE_REGISTRY_IS_EXHAUSTIVE = false;
 /** Valid NIMASA port LOCODEs. */
 export type NimasaPortCode = keyof typeof NIMASA_PORTS;
 
-
 /**
  * Simplified Nigerian EEZ bounding box, for fast containment checks only.
  * The full 200-nautical-mile polygon is loaded separately as GeoJSON.
@@ -594,6 +696,27 @@ export const NIGERIA_EEZ_BBOX = {
  * registry can reorganise, group, or rename logical layers without changing
  * what the renderer draws. See `layer-registry.ts`.
  */
+/**
+ * Geographic sea labels drawn by Seaphore rather than the basemap.
+ *
+ * Orientation, not intelligence. The basemap's own `water_name` layer is
+ * restyled and let in early (see `map-style.ts`), but it does not carry
+ * the Gulf of Guinea at the zooms this map is read at, and the officer
+ * needs to know which water they are looking at.
+ *
+ * The position is a label anchor over open water, not a feature centroid:
+ * it names an area, so it is placed where the text reads clearly rather
+ * than at any computed centre. Offshore of the Bight of Bonny, roughly
+ * 80 km out, so the word never sits over Nigerian land — and east of
+ * centre, because the map panel's own data-state card occupies the lower
+ * left and a label behind it is a label nobody reads.
+ */
+export const SEA_LABELS: readonly {
+  readonly id: string;
+  readonly name: string;
+  readonly position: readonly [number, number];
+}[] = [{ id: "gulf-of-guinea", name: "Gulf of Guinea", position: [7.0, 3.8] }];
+
 export const LAYER_IDS = {
   vessels: "vessels-layer",
   /** Selection ring drawn beneath the vessel symbols. */
@@ -604,6 +727,25 @@ export const LAYER_IDS = {
   ports: "ports-layer",
   portLabels: "port-labels-layer",
   portAnchorage: "port-anchorage-layer",
+  /**
+   * Hover and selection ring for ports.
+   *
+   * The counterpart of {@link vesselSelection}. Ports and vessels share
+   * one interaction language, so they get structurally parallel layers
+   * rather than each growing its own convention.
+   */
+  portSelection: "port-selection-layer",
+  seaLabels: "sea-labels-layer",
+  /**
+   * Confidence ring, drawn beneath a vessel.
+   *
+   * Its own layer rather than a paint rule on the vessel symbol,
+   * because confidence and risk are independent axes and a single
+   * symbol cannot carry two rings.
+   */
+  vesselConfidence: "vessel-confidence-layer",
+  /** Intelligence badges (investigation, risk, alert) attached to a vessel. */
+  vesselIntelligence: "vessel-intelligence-layer",
   portAnchorageSymbol: "port-anchorage-symbol-layer",
   /** Elevation halo drawn beneath a major port symbol. */
   portHalo: "port-halo-layer",
@@ -611,10 +753,16 @@ export const LAYER_IDS = {
   anchorageExtent: "anchorage-extent-layer",
   anchorages: "anchorages-layer",
   anchorageLabels: "anchorage-labels-layer",
-
   eezBoundary: "eez-boundary-layer",
   /** Jurisdictional wash inside the EEZ outline. */
   eezFill: "eez-fill-layer",
+  /**
+   * Extruded buildings, from the basemap's own geometry.
+   *
+   * Drawn beneath every maritime layer, including the graticule, so that
+   * nothing operational can ever be occluded by geographic context.
+   */
+  buildings: "buildings-layer",
   /** Latitude/longitude reference lines. */
   graticule: "graticule-layer",
   voyageEndpoints: "voyage-endpoints-layer",
@@ -656,6 +804,19 @@ export const PIXELS_PER_KM = {
   maxZoom: 14,
   maxZoomPixels: 105.2,
 } as const;
+
+/**
+ * The palette a named theme resolves to.
+ *
+ * One mapping, beside the palettes it names, so a caller cannot pair the
+ * institutional theme with the maritime palette by writing the ternary
+ * slightly differently. Both palettes satisfy `MaritimePalette`, which
+ * stays the single source of truth for what a map colour *means* —
+ * adding a token obliges every theme to answer for it.
+ */
+export function paletteFor(name: MapStylePaletteName | undefined): MaritimePalette {
+  return name === "institutional" ? LIGHT_MARITIME_PALETTE : MARITIME_PALETTE;
+}
 
 /** Operational timings, in milliseconds. */
 export const TIMING = {

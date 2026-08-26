@@ -17,6 +17,7 @@ import {
   type AnchorageArea,
   type NimasaPort,
 } from "./constants";
+import { findNigerianPort } from "./nigerian-ports";
 
 export interface AssetFeatureCollection {
   readonly type: "FeatureCollection";
@@ -28,26 +29,46 @@ export interface AssetFeatureCollection {
   }[];
 }
 
-/** Every port complex, as drawable points. */
+/**
+ * Every port complex that has a position, as drawable points.
+ *
+ * Filtered against the canonical model rather than emitting the whole
+ * registry. `NIMASA_PORTS` carries an `npa-reference` lat/lon for Rivers
+ * Port (NGPHC), but UN/LOCODE publishes no coordinate for it and no other
+ * source corroborates one, so the canonical model records it as
+ * `position-unavailable`. Mapping the registry unfiltered would draw a
+ * confident dot on an unverified position — the officer would have no way
+ * to tell it apart from Onne or Warri, which are surveyed.
+ *
+ * Rivers is not lost: it stays in the canonical port model and in the
+ * port intelligence surfaces, carrying the reason it cannot be drawn.
+ */
 export function portFeatureCollection(): AssetFeatureCollection {
   return {
     type: "FeatureCollection",
-    features: Object.values(NIMASA_PORTS).map((port) => ({
-      type: "Feature" as const,
-      id: port.locode,
-      properties: {
-        assetKind: "port",
-        locode: port.locode,
-        name: port.name,
-        shortName: port.shortName,
-        berths: port.berths,
-        anchorageRadiusKm: port.anchorageRadius,
-        tier: port.tier,
-        state: port.state,
-        verification: port.verification,
-      },
-      geometry: { type: "Point" as const, coordinates: [port.lon, port.lat] as const },
-    })),
+    features: Object.values(NIMASA_PORTS)
+      // Fails open on purpose. A port is dropped only when the canonical
+      // model *says* its position is unavailable — not merely because the
+      // lookup missed. The two registries key Lekki differently (NGLEK
+      // here, NGLKK there), and an unknown key must leave a real port on
+      // the map rather than silently erase it.
+      .filter((port) => findNigerianPort(port.locode)?.positionStatus !== "position-unavailable")
+      .map((port) => ({
+        type: "Feature" as const,
+        id: port.locode,
+        properties: {
+          assetKind: "port",
+          locode: port.locode,
+          name: port.name,
+          shortName: port.shortName,
+          berths: port.berths,
+          anchorageRadiusKm: port.anchorageRadius,
+          tier: port.tier,
+          state: port.state,
+          verification: port.verification,
+        },
+        geometry: { type: "Point" as const, coordinates: [port.lon, port.lat] as const },
+      })),
   };
 }
 
@@ -90,10 +111,7 @@ export function anchoragesForPort(portId: string): readonly AnchorageArea[] {
 }
 
 /** Great-circle distance in kilometres, for "vessels near this asset". */
-export function distanceKm(
-  a: readonly [number, number],
-  b: readonly [number, number],
-): number {
+export function distanceKm(a: readonly [number, number], b: readonly [number, number]): number {
   const toRad = (deg: number) => (deg * Math.PI) / 180;
   const [lon1, lat1] = a;
   const [lon2, lat2] = b;

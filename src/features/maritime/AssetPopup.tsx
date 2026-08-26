@@ -206,7 +206,10 @@ function vesselCard(selection: MapSelection, vessels: readonly Vessel[]): CardMo
       row("Flag", vessel.identity.flag),
       row("Last known position", coords(vessel.position.lon, vessel.position.lat)),
       row("Speed", vessel.position.speed > 0 ? `${vessel.position.speed.toFixed(1)} kn` : null),
-      row("Heading", Number.isFinite(vessel.position.heading) ? `${Math.round(vessel.position.heading)}°` : null),
+      row(
+        "Heading",
+        Number.isFinite(vessel.position.heading) ? `${Math.round(vessel.position.heading)}°` : null,
+      ),
       row("Destination", vessel.position.destination ?? null),
       // Berth/port association needs a port-call feed; none is connected.
       row("Associated port", null),
@@ -238,13 +241,7 @@ function cardFor(selection: MapSelection, vessels: readonly Vessel[]): CardModel
   }
 }
 
-export function AssetPopup({
-  selection,
-  vessels,
-  point,
-  onClose,
-  fullMapHref,
-}: AssetPopupProps) {
+export function AssetPopup({ selection, vessels, point, onClose, fullMapHref }: AssetPopupProps) {
   const card = cardFor(selection, vessels);
   if (!card) return null;
 
@@ -319,8 +316,16 @@ export function AssetPopup({
 
       <div className="mt-2 flex flex-wrap gap-1.5">
         {actions.map((action) => (
-          <Button key={action.label} asChild size="sm" variant="outline" className="h-7 text-[11px]">
-            <Link to={action.label === "Open full map" ? (fullMapHref ?? action.href) : action.href}>
+          <Button
+            key={action.label}
+            asChild
+            size="sm"
+            variant="outline"
+            className="h-7 text-[11px]"
+          >
+            <Link
+              to={action.label === "Open full map" ? (fullMapHref ?? action.href) : action.href}
+            >
               {action.label} →
             </Link>
           </Button>

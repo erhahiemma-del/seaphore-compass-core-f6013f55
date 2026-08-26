@@ -191,10 +191,7 @@ export function InvestigationLanding({
 
   const typedPlaceholder = useTypewriterPlaceholder(
     // Only suggest investigating a subject when one is actually open.
-    [
-      ...(subject ? [`Investigate ${subject}...`] : []),
-      ...TYPING_EXAMPLES.map((e) => `${e}...`),
-    ],
+    [...(subject ? [`Investigate ${subject}...`] : []), ...TYPING_EXAMPLES.map((e) => `${e}...`)],
     showTypewriter,
   );
 

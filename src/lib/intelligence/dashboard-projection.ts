@@ -293,7 +293,6 @@ export interface PrioritiesPanelData {
   readonly items: readonly PriorityItem[];
 }
 
-
 /**
  * Today's Priorities → findings that actually warrant attention.
  *

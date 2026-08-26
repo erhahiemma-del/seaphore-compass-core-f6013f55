@@ -143,6 +143,58 @@ export function createVesselSilhouetteImage(
 }
 
 /**
+ * Draw the port marker: a teal diamond.
+ *
+ * Ports are deliberately a different *shape* from vessels, not merely a
+ * different colour — shape survives colour-blindness and greyscale printing,
+ * which vessel risk colours do not.
+ */
+export function createPortDiamondImage(color = "#0E7C7B", filled = true): ImageData {
+  const size = 20;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    throw new Error("Canvas 2D context unavailable — cannot build port sprite");
+  }
+
+  const half = size / 2;
+  ctx.clearRect(0, 0, size, size);
+  ctx.beginPath();
+  ctx.moveTo(half, 2);
+  ctx.lineTo(size - 2, half);
+  ctx.lineTo(half, size - 2);
+  ctx.lineTo(2, half);
+  ctx.closePath();
+
+  /*
+   * Hollow means "we know roughly where this is".
+   *
+   * The same convention the voyage endpoints use for a degree-minute
+   * position: solid is an operator reference, hollow is a centroid good
+   * to about a kilometre. It is the *shape* that carries the claim, not
+   * a colour shift, so an officer reading a greyscale export still sees
+   * which marks are approximate.
+   */
+  if (filled) {
+    ctx.fillStyle = color;
+    ctx.fill();
+  } else {
+    // A faint wash so the mark still reads as a target at small sizes,
+    // well below the solid fill it must be distinguishable from.
+    ctx.fillStyle = "rgba(14,124,123,0.22)";
+    ctx.fill();
+  }
+  ctx.strokeStyle = filled ? "rgba(255,255,255,0.85)" : color;
+  ctx.lineWidth = filled ? 1.25 : 1.75;
+  ctx.stroke();
+
+  return ctx.getImageData(0, 0, size, size);
+}
+
+/**
  * Every sprite the renderer must register, as `[id, ImageData]` pairs.
  *
  * The full cartesian product of colour × silhouette × directionality —

@@ -85,7 +85,6 @@ export const RIBBON_KPIS: RibbonKpi[] = [
   },
 ];
 
-
 export interface FeedRow {
   id: string;
   title: string;

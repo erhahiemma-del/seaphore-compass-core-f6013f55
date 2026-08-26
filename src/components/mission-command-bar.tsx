@@ -6,7 +6,6 @@ import {
   FileText,
   LayoutGrid,
   Locate,
-
   Mic,
   Receipt,
   Search,
@@ -17,7 +16,6 @@ import {
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
-
 
 import { useCommandDispatch, type EntityType } from "@/lib/command-dispatch";
 import {
@@ -43,21 +41,12 @@ const SEARCH_PROMPTS: Partial<Record<EntityType, string[]>> = {
     "Search an incident or location…",
   ],
   vessel: ["Search IMO, MMSI or vessel name…", "Search a voyage or vessel movement…"],
-  manifest: [
-    "Search a manifest or cargo discrepancy…",
-    "Search a company, voyage or assessment…",
-  ],
-  container: [
-    "Search a vessel, company or watchlist match…",
-    "Search a compliance or risk event…",
-  ],
+  manifest: ["Search a manifest or cargo discrepancy…", "Search a company, voyage or assessment…"],
+  container: ["Search a vessel, company or watchlist match…", "Search a compliance or risk event…"],
   company: ["Search a vessel, case or evidence record…", "Search an investigation subject…"],
   port: ["Search a port, anchorage or port call…", "Search congestion or arrivals…"],
   bol: ["Search an incident, vessel or location…", "Search an operational event…"],
-  voyage: [
-    "Search a national maritime trend…",
-    "Search a strategic risk or development…",
-  ],
+  voyage: ["Search a national maritime trend…", "Search a strategic risk or development…"],
 };
 
 /**
@@ -83,7 +72,6 @@ const ICONS: Record<IntelligenceMode["icon"], LucideIcon> = {
   incident: Siren,
   briefing: FileText,
 };
-
 
 /**
  * Recent-search chips for the unified Mission Control command bar, shown
@@ -454,9 +442,7 @@ export function MissionCommandBar({
           data-testid="mission-mode-suggestions"
           className="flex min-h-[28px] flex-wrap items-center gap-1.5"
         >
-          <span className="mr-0.5 text-[11px] font-semibold text-slate">
-            {mode.label} context:
-          </span>
+          <span className="mr-0.5 text-[11px] font-semibold text-slate">{mode.label} context:</span>
           {mode.suggestions.slice(0, 4).map((sug) => (
             <button
               key={sug}
@@ -489,7 +475,6 @@ export function MissionCommandBar({
     </section>
   );
 }
-
 
 /**
  * MISSION MODE — the horizontal selector band.

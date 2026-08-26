@@ -193,11 +193,49 @@ describe("RiskModuleRegistry", () => {
     expect(registry.has("ais-integrity")).toBe(true);
   });
 
-  it("rejects a duplicate id", () => {
+  /*
+   * Registration is idempotent by definition rather than by id.
+   *
+   * This replaced a single "rejects a duplicate id" assertion. That rule
+   * made a re-evaluated module graph — a Vite hot update, or a client and
+   * SSR graph sharing one process — throw
+   * `Module 'ais-integrity' is already registered` during bootstrap, which
+   * is what took the application down. The three cases below are what the
+   * registry must distinguish instead.
+   */
+  it("treats re-registering the same declaration as a no-op", () => {
     const registry = new RiskModuleRegistry().register(testModule({ id: "ownership" }));
-    expect(() => registry.register(testModule({ id: "ownership" }))).toThrow(
-      RiskModuleRegistryError,
+    // A distinct object with identical content, exactly as a second
+    // evaluation of the same source file produces.
+    expect(() => registry.register(testModule({ id: "ownership" }))).not.toThrow();
+    expect(registry.list()).toHaveLength(1);
+  });
+
+  it("still rejects a genuinely different module under a taken id", () => {
+    const registry = new RiskModuleRegistry().register(testModule({ id: "ownership" }));
+    expect(() =>
+      registry.register(testModule({ id: "ownership", label: "Something else" })),
+    ).toThrow(RiskModuleRegistryError);
+  });
+
+  it("names the field that conflicts", () => {
+    // "already registered" alone sends whoever hits it hunting.
+    const registry = new RiskModuleRegistry().register(testModule({ id: "ownership" }));
+    expect(() =>
+      registry.register(testModule({ id: "ownership", label: "Something else" })),
+    ).toThrow(/label/);
+  });
+
+  it("never silently overwrites a registered module", () => {
+    const registry = new RiskModuleRegistry().register(
+      testModule({ id: "ownership", label: "Original" }),
     );
+    try {
+      registry.register(testModule({ id: "ownership", label: "Replacement" }));
+    } catch {
+      /* expected */
+    }
+    expect(registry.get("ownership")?.label).toBe("Original");
   });
 
   it("refuses a pending-source module with no reason", () => {

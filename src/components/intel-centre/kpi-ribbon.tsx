@@ -104,8 +104,7 @@ export function Sparkline({
     .map((v, i) => `${(i * step).toFixed(1)},${(height - ((v - min) / range) * height).toFixed(1)}`)
     .join(" ");
   const stroke =
-    strokeOverride ??
-    (trend === "up" ? "#C0392B" : trend === "down" ? "#1E6B3A" : "#5A6B7B");
+    strokeOverride ?? (trend === "up" ? "#C0392B" : trend === "down" ? "#1E6B3A" : "#5A6B7B");
   return (
     <svg width={width} height={height} opacity={opacity} className="shrink-0">
       <polyline

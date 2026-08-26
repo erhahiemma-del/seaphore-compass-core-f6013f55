@@ -19,7 +19,7 @@ import type { MapSelectionKind } from "@/services/geospatial/selection";
 export interface IntelligenceMode {
   /** Canonical dispatcher entity key. */
   key: EntityType;
-   /** Mission label shown to officers. */
+  /** Mission label shown to officers. */
   label: string;
   /** Icon slot key (bound to a lucide icon in the UI). */
   icon:
@@ -103,7 +103,12 @@ export const INTELLIGENCE_MODES: IntelligenceMode[] = [
     prefix: "CONTAINER: ",
     aiContext: "Compliance Review",
     contextDomains: ["vessels", "companies", "sanctions", "watchlists", "incidents"],
-    suggestions: ["Watchlist matches", "Sanctions exposure", "Inspection records", "Seal verification"],
+    suggestions: [
+      "Watchlist matches",
+      "Sanctions exposure",
+      "Inspection records",
+      "Seal verification",
+    ],
   },
   {
     key: "company",
@@ -126,7 +131,14 @@ export const INTELLIGENCE_MODES: IntelligenceMode[] = [
     helper: "Review port congestion, arrivals and berth-level context.",
     prefix: "PORT: ",
     aiContext: "Port Congestion",
-    contextDomains: ["ports", "port calls", "arrivals", "congestion", "anchorage", "berth activity"],
+    contextDomains: [
+      "ports",
+      "port calls",
+      "arrivals",
+      "congestion",
+      "anchorage",
+      "berth activity",
+    ],
     suggestions: ["Congestion analysis", "Expected arrivals", "Anchorage queue", "Berth delays"],
   },
   {
@@ -150,11 +162,17 @@ export const INTELLIGENCE_MODES: IntelligenceMode[] = [
     helper: "Review vessel exposure, behaviour and intelligence history.",
     prefix: "VOYAGE: ",
     aiContext: "Vessel Risk",
-    contextDomains: ["national patterns", "strategic risk", "revenue", "compliance", "major events", "trends"],
+    contextDomains: [
+      "national patterns",
+      "strategic risk",
+      "revenue",
+      "compliance",
+      "major events",
+      "trends",
+    ],
     suggestions: ["National patterns", "Strategic risk", "Revenue trend", "Major events"],
   },
 ];
-
 
 export const MODE_BY_KEY: Record<EntityType, IntelligenceMode> = Object.fromEntries(
   INTELLIGENCE_MODES.map((m) => [m.key, m]),

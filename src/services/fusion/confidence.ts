@@ -10,6 +10,7 @@
  * All outputs are frozen and rounded to 3 decimals for stable comparisons.
  */
 import {
+  ATTRIBUTE_AUTHORITY,
   AUTHORITY_WEIGHT,
   DEFAULT_AUTHORITY,
   GRADE_WEIGHT,
@@ -39,10 +40,61 @@ export function recencyScore(collectedAt: string, opts: ConfidenceOptions = {}):
   return Math.min(1, Math.max(0, score));
 }
 
-export function authorityScore(sourceSystem: string, opts: ConfidenceOptions = {}): number {
-  const table = opts.authorityOverrides ?? AUTHORITY_WEIGHT;
-  const key = sourceSystem;
-  return table[key] ?? AUTHORITY_WEIGHT[key] ?? DEFAULT_AUTHORITY;
+/**
+ * Longest attribute prefix in {@link ATTRIBUTE_AUTHORITY} matching `attribute`.
+ *
+ * Longest wins so a future `vessel.position.satellite` entry can override
+ * `vessel.position` without disturbing it. Returns null when the
+ * attribute has no property-specific opinion recorded at all.
+ */
+function attributeAuthorityFor(sourceSystem: string, attribute: string): number | null {
+  let best: { length: number; weight: number } | null = null;
+  for (const [prefix, table] of Object.entries(ATTRIBUTE_AUTHORITY)) {
+    if (attribute !== prefix && !attribute.startsWith(`${prefix}.`)) continue;
+    const weight = table[sourceSystem];
+    if (weight === undefined) continue;
+    if (!best || prefix.length > best.length) best = { length: prefix.length, weight };
+  }
+  return best?.weight ?? null;
+}
+
+/**
+ * How much weight a source's claim carries.
+ *
+ * `attribute` is optional, and omitting it reproduces the original global
+ * behaviour exactly — every existing caller is unchanged. Supplying it
+ * lets a source be authoritative about one thing and unqualified about
+ * another, which is the whole reason M2.8 touched this function: a
+ * sanctions provider should not out-rank an AIS feed on a position, and
+ * a single global table cannot express that.
+ *
+ * Precedence, highest first:
+ *
+ *   1. an explicit `authorityOverrides` entry — the caller's own decision
+ *   2. the attribute-specific table, longest matching prefix
+ *   3. the global table
+ *   4. `DEFAULT_AUTHORITY`
+ *
+ * Overrides stay on top so a test or a one-off reconciliation can still
+ * pin a value without editing the tables.
+ */
+export function authorityScore(
+  sourceSystem: string,
+  attributeOrOpts?: string | ConfidenceOptions,
+  maybeOpts: ConfidenceOptions = {},
+): number {
+  const attribute = typeof attributeOrOpts === "string" ? attributeOrOpts : undefined;
+  const opts = typeof attributeOrOpts === "string" ? maybeOpts : (attributeOrOpts ?? {});
+
+  const override = opts.authorityOverrides?.[sourceSystem];
+  if (override !== undefined) return override;
+
+  if (attribute) {
+    const specific = attributeAuthorityFor(sourceSystem, attribute);
+    if (specific !== null) return specific;
+  }
+
+  return AUTHORITY_WEIGHT[sourceSystem] ?? DEFAULT_AUTHORITY;
 }
 
 function round3(n: number): number {
@@ -51,7 +103,9 @@ function round3(n: number): number {
 
 export function score(item: NormalizedEvidence, opts: ConfidenceOptions = {}): ScoredEvidence {
   const gradeWeight = GRADE_WEIGHT[item.grade];
-  const authority = authorityScore(item.sourceSystem, opts);
+  // The attribute is passed through, so a source is weighed on what it
+  // is actually claiming rather than on a single global reputation.
+  const authority = authorityScore(item.sourceSystem, item.attribute, opts);
   const recency = recencyScore(item.collectedAt, opts);
   const confidence = round3(gradeWeight * authority * recency);
   const scored: ScoredEvidence = {

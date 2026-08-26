@@ -156,12 +156,30 @@ export function graticuleOpacityExpression(): unknown {
     fine,
   ];
 
+  /*
+   * Anchored at zoom 1.
+   *
+   * The ramp used to begin at 4, and MapLibre clamps below a first
+   * stop rather than extrapolating — so the entire world view drew the
+   * grid at its regional weight, over the one extent where a hundred
+   * and twenty meridians are in frame at once. The world stop is
+   * therefore *lower* than the regional one, which inverts the usual
+   * intuition but is what keeps the count and the weight in balance:
+   * many lines, drawn faintly, read as orientation; the same lines at
+   * regional weight read as a cage.
+   *
+   * It is never zero. The graticule's whole value at world zoom is
+   * telling the officer which hemisphere they have drifted into, and
+   * that is exactly the view where no coastline is nearby to say so.
+   */
   return [
     "interpolate",
     ["linear"],
     ["zoom"],
-    4,
-    byStep(0.28, 0, 0),
+    1,
+    byStep(0.16, 0.12, 0),
+    3.5,
+    byStep(0.24, 0.18, 0),
     7,
     byStep(0.32, 0.24, 0),
     9.5,

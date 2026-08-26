@@ -22,17 +22,38 @@ const MISSION_DATA = "src/lib/mission-control-data.ts";
 describe("MapCanvas exposes two modes over one renderer", () => {
   const source = read(MAP_CANVAS);
 
-  it("declares exactly the two modes", () => {
-    expect(source).toContain('export type MapCanvasMode = "command" | "overview"');
+  it("declares the presentation modes", () => {
+    // `context` joined command and overview for map panels embedded in an
+    // intelligence dashboard. Asserted as the whole declaration rather
+    // than a prefix: the old substring assertion still passed after a
+    // third mode was added, so it had stopped meaning what it said.
+    expect(source).toContain('export type MapCanvasMode = "command" | "overview" | "context"');
   });
 
-  it("overview suppresses command-only chrome but keeps zoom", () => {
+  it("suppresses command-only chrome outside the command surface", () => {
     const table = /const MODE_CONTROLS[\s\S]*?\n};/.exec(source)?.[0] ?? "";
     expect(table).toMatch(/command:\s*\{\s*navigation:\s*true,\s*compass:\s*true,\s*scale:\s*true/);
-    // Zoom stays — an overview the officer cannot zoom is a picture.
-    expect(table).toMatch(
-      /overview:\s*\{\s*navigation:\s*true,\s*compass:\s*false,\s*scale:\s*false/,
-    );
+    expect(table).toMatch(/overview:\s*\{\s*navigation:\s*false/);
+  });
+
+  it("still lets the officer zoom the overview, through MapChrome", () => {
+    /*
+     * The rule is unchanged — an overview the officer cannot zoom is a
+     * picture — but the widget providing it moved. The overview surface
+     * now renders `MapControlStack`, which drives the same camera through
+     * SGS, so MapCanvas suppresses its own navigation control rather than
+     * stacking two zoom widgets on one tile.
+     *
+     * Asserted end to end, so the capability cannot be lost by removing
+     * either half on its own.
+     */
+    const missionControl = read("src/features/mission-control/MissionControl.tsx");
+    expect(missionControl).toContain("<MapControlStack");
+    expect(missionControl).toMatch(/<MapCanvas\s+mode="overview"/);
+
+    const chrome = read("src/features/maritime/MapChrome.tsx");
+    expect(chrome).toMatch(/zoom \+ 0\.75/);
+    expect(chrome).toMatch(/zoom - 0\.75/);
   });
 
   it("defaults to command, so existing callers are unchanged", () => {

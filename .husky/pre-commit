@@ -1,1 +1,45 @@
+# Regression protection before a commit is allowed to land.
+#
+# This hook previously ran lint-staged alone. lint-staged formats and
+# lints the staged files, which catches style but says nothing about
+# whether the code still works — so a commit that broke a test, or that
+# did not typecheck, was accepted without complaint. That is not
+# hypothetical: nav.test.ts was broken and committed in exactly this way,
+# and the break was only noticed later.
+#
+# Four gates, cheapest first, so an obvious mistake fails in seconds
+# rather than after the slowest step.
+
+# Without this, a failing gate in the middle would print its error and
+# the hook would still exit on the status of the last command — the
+# quietest possible way to lose the whole point of the hook.
+set -e
+
+# 1 + 2. Format and lint the staged files, then run the tests that
+#        import them (`vitest related`, configured in lint-staged).
+#
+# lint-staged stashes unstaged work first, so these run against exactly
+# what is being committed rather than what happens to be in the tree.
 bun x lint-staged
+
+# 3. Types across the whole project.
+#
+# Not restricted to staged files on purpose: changing an exported type
+# breaks its consumers, and those are the files the commit does *not*
+# touch. ~10s.
+bun run typecheck
+
+# 4. The architectural guard tests.
+#
+# Always, whatever was staged. These read source rather than importing
+# it, so `vitest related` cannot see them and reports "No test files
+# found, exiting with code 0" for a change to MissionControl.tsx. See
+# scripts/contract-tests.mjs. ~10s.
+bun run test:contracts
+
+# Deliberately NOT here: the full unit suite. It takes ~48s and includes
+# ownership-graph-perf, whose 1000ms wall-clock budget fails only under
+# full-suite CPU contention and passes in isolation. A hook that blocks
+# commits at random is a hook everyone learns to pass --no-verify to,
+# which costs more protection than the suite would add. CI runs it in
+# full, on a quiet machine, where a real failure is meaningful.

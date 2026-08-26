@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Anchor, Columns3, Download, LineChart } from "lucide-react";
 
 import {
@@ -16,6 +16,15 @@ import { SubjectHeader } from "@/components/intel-centre/subject-header";
 import { useCentreFocus } from "@/components/intel-centre/use-centre-focus";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { MapCanvas } from "@/features/maritime/MapCanvas";
+import {
+  NIGERIAN_PORT_LIST,
+  canonicalPortId,
+  findNigerianPort,
+  hasDrawablePosition,
+  positionUnavailableReason,
+  sgs,
+  useMapSelector,
+} from "@/services/geospatial";
 import { PORTS, VESSELS, sparkSeries, type Port } from "@/lib/intel-centre-data";
 import { DemoDataNotice } from "@/components/intelligence/DemoDataNotice";
 
@@ -84,17 +93,54 @@ const KPIS: KpiSpec[] = [
 
 export function PortOpsCentre() {
   const [tab, setTab] = useState("workspace");
-  const [selected, setSelected] = useState<Port["code"]>("APP");
-  const port = PORTS.find((p) => p.code === selected)!;
-  const arrivals = VESSELS.filter((v) => v.destinationPort === selected);
+  /*
+   * Port selection lives in SGS, not here.
+   *
+   * It was `useState<Port["code"]>("APP")`, keyed by a three-letter code
+   * nothing outside this file recognised — so clicking a card and
+   * clicking the map marker for the same quay produced two unrelated
+   * selections, and neither could see the other. The map embedded below
+   * is the same MapCanvas every other surface uses; reading the shared
+   * selection is what makes the two one system.
+   *
+   * Canonical identity is UN/LOCODE. `canonicalPortId` maps the legacy
+   * card codes onto it, so the demo rows keep working without becoming
+   * a competing identity namespace.
+   */
+  const selection = useMapSelector((state) => state.selection);
+  const selectedLocode =
+    selection?.kind === "port" ? canonicalPortId(selection.id) : canonicalPortId("NGAPAPA");
+  const selectPort = useCallback((locode: string) => {
+    const canonical = findNigerianPort(locode);
+    if (!canonical) return;
+    /*
+     * A focus point only when one genuinely exists.
+     *
+     * Rivers Port has no published coordinate, so its selection carries
+     * no focus and `planCameraMove` leaves the viewport alone — rather
+     * than flying to a fallback, a guessed point, or 0,0.
+     */
+    sgs.select({
+      kind: "port",
+      id: canonical.locode,
+      ...(hasDrawablePosition(canonical) ? { focus: canonical.position } : {}),
+    });
+  }, []);
+
+  /** The demo metrics row for the selected port, when one exists. */
+  const port = PORTS.find((p) => canonicalPortId(p.code) === selectedLocode) ?? PORTS[0];
+  const canonical = findNigerianPort(selectedLocode) ?? NIGERIAN_PORT_LIST[0];
+  const arrivals = VESSELS.filter((v) => v.destinationPort === port.code);
 
   const { focused, dismiss, isReceded } = useCentreFocus(
     useMemo(
       () => ({
         kind: "port" as const,
-        id: `port-${port.code}`,
-        title: port.name,
-        descriptor: `${port.code} · ${port.city}`,
+        // Canonical identity, so the focus banner, the map marker and
+        // the context drawer are all describing the same record.
+        id: `port-${canonical.locode}`,
+        title: canonical.name,
+        descriptor: `${canonical.locode} · ${port.city}`,
         facts: [
           {
             label: "Congestion",
@@ -105,7 +151,7 @@ export function PortOpsCentre() {
           { label: "Arrivals today", value: String(port.todaysEta), confidence: "unconfirmed" },
         ],
       }),
-      [port],
+      [canonical, port],
     ),
   );
 
@@ -141,23 +187,56 @@ export function PortOpsCentre() {
           <>
             <FilterSearch placeholder="Search port, berth, vessel…" />
             <FilterBlock label="Ports">
-              <ul className="space-y-0.5">
-                {PORTS.map((p) => (
-                  <li key={p.code}>
-                    <button
-                      onClick={() => setSelected(p.code)}
-                      className={
-                        "flex w-full items-center justify-between rounded px-1.5 py-1 text-left text-[12px] " +
-                        (p.code === selected
-                          ? "bg-[color:var(--color-blue)]/15 text-[color:var(--color-blue)]"
-                          : "text-foreground/80 hover:bg-surface-2/50")
-                      }
-                    >
-                      <span className="truncate">{p.name}</span>
-                      <span className="ml-2 text-[10px] text-slate">{p.congestionIndex}%</span>
-                    </button>
-                  </li>
-                ))}
+              {/*
+                Driven by the canonical model, not by the demo rows.
+                All seven of Nigeria's ports belong on this list —
+                including Rivers, which has no coordinate and so appears
+                on no map. Listing only the ports the map can draw would
+                let an officer read "not on the map" as "not a port".
+              */}
+              <ul className="space-y-0.5" data-testid="port-locations-list">
+                {NIGERIAN_PORT_LIST.map((p) => {
+                  const isSelected = p.locode === selectedLocode;
+                  const positioned = hasDrawablePosition(p);
+                  return (
+                    <li key={p.locode}>
+                      <button
+                        data-testid={`port-card-${p.locode}`}
+                        aria-pressed={isSelected}
+                        onClick={() => selectPort(p.locode)}
+                        className={
+                          "flex w-full items-center justify-between rounded px-1.5 py-1 text-left text-[12px] " +
+                          (isSelected
+                            ? "bg-[color:var(--color-blue)]/15 text-[color:var(--color-blue)]"
+                            : "text-foreground/80 hover:bg-surface-2/50")
+                        }
+                      >
+                        <span className="truncate">{p.name}</span>
+                        {/*
+                          Says why a port is absent from the map, in the
+                          place the officer would otherwise wonder.
+                          Never a congestion figure — those are demo
+                          values and are stated as such elsewhere.
+                        */}
+                        {!positioned ? (
+                          <span
+                            className="ml-2 shrink-0 text-[9.5px] text-amber-400/80"
+                            title={positionUnavailableReason(p)}
+                          >
+                            no position
+                          </span>
+                        ) : p.precision === "degree-minute" ? (
+                          <span
+                            className="ml-2 shrink-0 text-[9.5px] text-slate"
+                            title={p.provenance.note}
+                          >
+                            ±1 km
+                          </span>
+                        ) : null}
+                      </button>
+                    </li>
+                  );
+                })}
               </ul>
             </FilterBlock>
             <FilterBlock label="Saved views">

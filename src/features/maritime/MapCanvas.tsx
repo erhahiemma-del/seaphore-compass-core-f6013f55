@@ -272,6 +272,12 @@ export function MapCanvas({
         palette,
         center: state.center,
         zoom: state.zoom,
+        // The camera's opening pose, restored from a shared link or a
+        // reload. Read here rather than left to the camera-follow
+        // subscription below, which runs before the mount resolves and
+        // finds the renderer not ready.
+        pitch: state.pitch,
+        bearing: state.bearing,
         minZoom: activeScope.minZoom,
         maxZoom: activeScope.maxZoom,
         maxBounds: activeScope.maxBounds,
@@ -336,7 +342,19 @@ export function MapCanvas({
     // correct: MapLibre has no API to remove a control set afterwards.
     // `scope` is the same: bounds and zoom limits are constructor
     // arguments, so changing scope means a new map.
-  }, [mode, scope, domain, palette, basemapStyle, renderer, engine, service, setRenderer, setStatus, setError]);
+  }, [
+    mode,
+    scope,
+    domain,
+    palette,
+    basemapStyle,
+    renderer,
+    engine,
+    service,
+    setRenderer,
+    setStatus,
+    setError,
+  ]);
 
   /*
    * ── Voyage overlay ────────────────────────────────────────────────
@@ -415,9 +433,16 @@ export function MapCanvas({
      * The typed union keeps a port id from ever being read as a vessel
      * id, and there is still exactly one selection: SGS. The contextual
      * card below is a projection of that state, not a second store.
+     *
+     * The port is identified by UN/LOCODE rather than main's generic
+     * `portId`: it is the key the source already promotes, and the one
+     * the gazetteer, the voyage records and the canonical port model all
+     * share. `focus` carries the clicked position so a selection restored
+     * from a URL knows where to look; `planCameraMove` still decides
+     * whether moving there is warranted.
      */
-    const offPortClick = bus.on("port:click", ({ portId, position }) => {
-      service.select({ kind: "port", id: portId, focus: position });
+    const offPortClick = bus.on("port:click", ({ locode, position }) => {
+      service.select({ kind: "port", id: locode, focus: position });
     });
     const offAnchorageClick = bus.on("anchorage:click", ({ anchorageId, portId, position }) => {
       service.select({
@@ -531,6 +556,18 @@ export function MapCanvas({
       if (key === previous) return;
       previous = key;
       engine.refreshPresentation();
+
+      /*
+       * Port selection is a feature state, not a feature property.
+       *
+       * Vessels re-project through the update engine, which rebuilds
+       * their features and carries `isSelected` with them. The ports
+       * collection is a static asset that is never re-projected, so its
+       * selection is written straight onto the renderer instead. Cleared
+       * whenever the selection is anything other than a port — including
+       * null — so a ring cannot outlive what it was ringing.
+       */
+      renderer.setSelectedPort?.(state.selection?.kind === "port" ? state.selection.id : null);
 
       // Move the camera only when the selection came from somewhere the
       // officer is not already looking. `planCameraMove` owns that rule;

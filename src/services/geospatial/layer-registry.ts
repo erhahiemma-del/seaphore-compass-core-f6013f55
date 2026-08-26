@@ -465,7 +465,17 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     // missing layer, so it failed silently — but a registry that names
     // layers which do not exist is a registry that cannot be trusted to
     // say what the map draws.
-    renderLayerIds: [LAYER_IDS.vesselSelection, LAYER_IDS.vessels, LAYER_IDS.vesselLabels],
+    renderLayerIds: [
+      // Confidence ring, selection ring, hull, intelligence badge and
+      // label are one entity drawn in five passes — they switch as a
+      // unit, because a badge or a ring surviving its own vessel would
+      // be a mark with nothing under it.
+      LAYER_IDS.vesselConfidence,
+      LAYER_IDS.vesselSelection,
+      LAYER_IDS.vessels,
+      LAYER_IDS.vesselIntelligence,
+      LAYER_IDS.vesselLabels,
+    ],
     defaultVisible: true,
     status: "ready",
     order: 10,
@@ -490,6 +500,21 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     order: 10,
   },
   {
+    id: "buildings",
+    label: "Buildings",
+    description: "Extruded building footprints from the basemap, where the source carries them.",
+    group: "PORTS_INFRASTRUCTURE",
+    renderLayerIds: [LAYER_IDS.buildings],
+    // Off by default. Perspective is the M2.6 headline; buildings are
+    // context an officer opts into when they are inspecting a berth, and
+    // they draw nothing at all below zoom 13 in any case.
+    defaultVisible: false,
+    // Genuinely ready: the geometry and its heights ship in the basemap
+    // tiles already being downloaded. No new source, no new licence.
+    status: "ready",
+    order: 25,
+  },
+  {
     id: "graticule",
     label: "Graticule",
     description: "Latitude and longitude reference lines. Generated, not observed.",
@@ -510,6 +535,10 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
       LAYER_IDS.portHalo,
       LAYER_IDS.ports,
       LAYER_IDS.portLabels,
+      // The interaction ring travels with the layer it belongs to: an
+      // officer who switches ports off must not be left with a teal
+      // ring floating over an empty sea.
+      LAYER_IDS.portSelection,
     ],
     defaultVisible: true,
     status: "ready",
@@ -521,11 +550,7 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     description:
       "Verified anchorage and pilotage waiting areas. Not an exhaustive national list — occupancy is never asserted.",
     group: "PORTS_INFRASTRUCTURE",
-    renderLayerIds: [
-      LAYER_IDS.anchorageExtent,
-      LAYER_IDS.anchorages,
-      LAYER_IDS.anchorageLabels,
-    ],
+    renderLayerIds: [LAYER_IDS.anchorageExtent, LAYER_IDS.anchorages, LAYER_IDS.anchorageLabels],
     defaultVisible: true,
     status: "ready",
     order: 21,

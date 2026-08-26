@@ -33,9 +33,12 @@ export {
   MAP_DEFAULTS,
   MAP_SCOPES,
   MARITIME_PALETTE,
+  ZOOM_BANDS,
   type MapStylePaletteName,
   type MaritimePalette,
   ZOOM_LIMITS,
+  zoomBandFor,
+  type ZoomBand,
   type MapScopeDefinition,
   type MapScopeId,
   NIGERIA_EEZ_BBOX,
@@ -413,3 +416,66 @@ export type {
   VesselVisual,
   VesselVisualCategory,
 } from "./vessel-visual";
+
+/**
+ * The M2.5 entity visual language.
+ *
+ * Exported as a whole because the legend, the renderer and the vessel
+ * projection all read from it, and the point of the module is that they
+ * read the *same* values — a partial re-export would invite a consumer
+ * to define the missing half locally.
+ */
+export {
+  CONFIDENCE_COLORS,
+  CONFIDENCE_RING_STYLES,
+  CONFIDENCE_TIERS,
+  confidenceTierFor,
+  ENTITY_KIND_LABELS,
+  INTELLIGENCE_BADGE_OFFSETS,
+  INTELLIGENCE_COLORS,
+  INTELLIGENCE_LABELS,
+  INTERACTION_COLORS,
+  INTERACTION_RADII,
+  interactionStateFor,
+} from "./entity-visual";
+export type {
+  ConfidenceRingStyle,
+  ConfidenceTier,
+  EntityInteractionState,
+  EntityKind,
+  IntelligenceSignal,
+} from "./entity-visual";
+
+/**
+ * M2.6 adaptive perspective policy.
+ *
+ * Pure, like `camera.ts` beside it: this decides how far the camera
+ * tilts, that one decides whether it moves. The renderer is the only
+ * code permitted to act on either.
+ */
+export {
+  MAX_AUTOMATIC_PITCH,
+  PITCH_EPSILON,
+  PITCH_STOPS,
+  isManualPitchGesture,
+  pitchForZoom,
+  planPerspective,
+  planPerspectiveReset,
+} from "./perspective";
+export type { PerspectivePlan, PitchOwner } from "./perspective";
+
+/**
+ * Nigeria's canonical port estate.
+ *
+ * One identity per port, keyed by UN/LOCODE, shared by the map source,
+ * the Port Locations cards, SGS selection and the context drawer.
+ */
+export {
+  NIGERIAN_PORTS,
+  NIGERIAN_PORT_LIST,
+  canonicalPortId,
+  findNigerianPort,
+  hasDrawablePosition,
+  positionUnavailableReason,
+} from "./nigerian-ports";
+export type { CanonicalPort, PortPositionStatus, PortProvenance } from "./nigerian-ports";

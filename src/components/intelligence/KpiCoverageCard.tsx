@@ -109,7 +109,6 @@ export function KpiCoverageCard({
           )}
           <span className="text-[10px] font-semibold text-slate">Coverage {kpi.coveragePct}%</span>
         </div>
-
       </button>
 
       <button

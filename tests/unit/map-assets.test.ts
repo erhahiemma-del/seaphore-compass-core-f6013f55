@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { findNigerianPort } from "@/services/geospatial/nigerian-ports";
+
 import {
   ANCHORAGE_REGISTRY_IS_EXHAUSTIVE,
   NIGERIAN_ANCHORAGES,
@@ -79,12 +81,40 @@ describe("anchorage registry", () => {
 });
 
 describe("drawn features come from the registry", () => {
-  it("draws one feature per registered port, with its tier", () => {
+  it("draws one feature per port that has a position, with its tier", () => {
+    /*
+     * Not one per *registered* port, which is what this asserted before.
+     *
+     * `NIMASA_PORTS` carries an `npa-reference` lat/lon for Rivers Port
+     * (NGPHC), but UN/LOCODE publishes no coordinate for it and nothing
+     * else corroborates one, so the canonical model records it as
+     * `position-unavailable`. Drawing the registry unfiltered puts a
+     * confident dot on an unverified position that an officer cannot
+     * tell apart from Onne or Warri, which are surveyed.
+     */
     const collection = portFeatureCollection();
-    expect(collection.features).toHaveLength(Object.keys(NIMASA_PORTS).length);
+    const drawable = Object.values(NIMASA_PORTS).filter(
+      (port) => findNigerianPort(port.locode)?.positionStatus !== "position-unavailable",
+    );
+    expect(collection.features).toHaveLength(drawable.length);
     for (const feature of collection.features) {
       expect(feature.properties["assetKind"]).toBe("port");
       expect(["major", "secondary"]).toContain(feature.properties["tier"]);
+    }
+  });
+
+  it("draws no feature for a port whose position is unavailable", () => {
+    // Rivers stays in the canonical model and the port intelligence
+    // surfaces; it simply must not receive a map position.
+    const drawn = portFeatureCollection().features.map((f) => f.properties["locode"]);
+    expect(drawn).not.toContain("NGPHC");
+    expect(findNigerianPort("NGPHC")?.positionStatus).toBe("position-unavailable");
+  });
+
+  it("still draws every major port that does have a position", () => {
+    const drawn = portFeatureCollection().features.map((f) => f.properties["locode"]);
+    for (const locode of ["NGAPAPA", "NGTIN", "NGLEK", "NGONNE", "NGWARR", "NGCBQ"]) {
+      expect(drawn, `${locode} must be drawable`).toContain(locode);
     }
   });
 

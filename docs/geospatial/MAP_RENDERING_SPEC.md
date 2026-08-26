@@ -44,15 +44,15 @@ Sprites are drawn with the Canvas API at mount and registered via
 Geometry: 30×30 px, drawn pointing north. 8 colours × 4 silhouettes × 2
 directionalities = **64 sprites**, about 230 KB, built once at mount.
 
-| Colour key | Colour    | Used for                 |
-| ---------- | --------- | ------------------------ |
-| `critical` | `#C0392B` | risk CRITICAL            |
-| `high`     | `#C0392B` | risk HIGH                |
-| `medium`   | `#D4890A` | risk MEDIUM              |
-| `low`      | `#1A6B3A` | risk LOW                 |
-| `clean`    | `#1A6B3A` | risk CLEAN               |
-| `unknown`  | `#25B36B` | risk UNKNOWN             |
-| `selected` | `#0E7C7B` | any risk, selected       |
+| Colour key | Colour    | Used for                             |
+| ---------- | --------- | ------------------------------------ |
+| `critical` | `#C0392B` | risk CRITICAL                        |
+| `high`     | `#C0392B` | risk HIGH                            |
+| `medium`   | `#D4890A` | risk MEDIUM                          |
+| `low`      | `#1A6B3A` | risk LOW                             |
+| `clean`    | `#1A6B3A` | risk CLEAN                           |
+| `unknown`  | `#25B36B` | risk UNKNOWN                         |
+| `selected` | `#0E7C7B` | any risk, selected                   |
 | `stale`    | `#25B36B` | legacy id only; staleness is opacity |
 
 The table above is the **colour** axis only. A full sprite id also carries a
@@ -164,22 +164,22 @@ itself against that list at mount (`verifyInstalledLayers`) and reports any
 layer the engine declined — `addLayer` does not throw on an invalid expression,
 it drops the layer and carries on looking healthy.
 
-| Render layer id            | Type    | Source               |
-| -------------------------- | ------- | -------------------- |
-| `graticule-layer`          | line    | `graticule`          |
-| `eez-fill-layer`           | fill    | `nigeria-eez`        |
-| `eez-boundary-layer`       | line    | `nigeria-eez`        |
-| `port-anchorage-layer`     | circle  | `ports`              |
-| `port-anchorage-symbol-layer` | symbol | `ports`              |
-| `ports-layer`              | symbol  | `ports`              |
-| `port-labels-layer`        | symbol  | `ports`              |
-| `risk-heatmap-layer`       | heatmap | `vessels`            |
-| `vessel-selection-layer`   | circle  | `vessels`            |
-| `vessels-layer`            | symbol  | `vessels`            |
-| `vessel-labels-layer`      | symbol  | `vessels`            |
-| `incident-reports-layer`   | symbol  | `incident-reports`   |
-| `weather-layer`            | symbol  | `weather-alerts`     |
-| `investigation-area-layer` | fill    | `investigation-area` |
+| Render layer id               | Type    | Source               |
+| ----------------------------- | ------- | -------------------- |
+| `graticule-layer`             | line    | `graticule`          |
+| `eez-fill-layer`              | fill    | `nigeria-eez`        |
+| `eez-boundary-layer`          | line    | `nigeria-eez`        |
+| `port-anchorage-layer`        | circle  | `ports`              |
+| `port-anchorage-symbol-layer` | symbol  | `ports`              |
+| `ports-layer`                 | symbol  | `ports`              |
+| `port-labels-layer`           | symbol  | `ports`              |
+| `risk-heatmap-layer`          | heatmap | `vessels`            |
+| `vessel-selection-layer`      | circle  | `vessels`            |
+| `vessels-layer`               | symbol  | `vessels`            |
+| `vessel-labels-layer`         | symbol  | `vessels`            |
+| `incident-reports-layer`      | symbol  | `incident-reports`   |
+| `weather-layer`               | symbol  | `weather-alerts`     |
+| `investigation-area-layer`    | fill    | `investigation-area` |
 
 Before these go on, `applyMaritimeStyle()` retunes the basemap — land as a
 solid mass, ocean as the subject, an explicit coastline, street furniture

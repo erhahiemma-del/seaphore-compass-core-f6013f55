@@ -6,11 +6,7 @@
  * SVG. One geometry source means a legend glyph and its map symbol can
  * never disagree.
  */
-import {
-  MAP_SYMBOLS,
-  MAP_SYMBOL_GRID,
-  type MapSymbolKind,
-} from "@/lib/map-symbols";
+import { MAP_SYMBOLS, MAP_SYMBOL_GRID, type MapSymbolKind } from "@/lib/map-symbols";
 
 /** Canvas edge length for operational symbol sprites, in pixels. */
 export const SYMBOL_SPRITE_SIZE = 26;
@@ -40,7 +36,6 @@ export const SYMBOL_SPRITE_KINDS: readonly MapSymbolKind[] = [
   "incident",
   "weather-alert",
 ] as const;
-
 
 /**
  * Draw one operational symbol.

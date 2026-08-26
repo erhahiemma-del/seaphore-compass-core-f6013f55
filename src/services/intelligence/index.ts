@@ -56,9 +56,13 @@ export { aisIntegrityModule };
 // module-registry.ts, which it imports — registering there would close an
 // import cycle.
 //
-// Guarded: this module can be evaluated more than once (HMR, or separate
-// client/SSR module graphs sharing the same process). Re-registration is a
-// duplicate evaluation, not a duplicate module, so it is a no-op.
-if (!riskModuleRegistry.has(aisIntegrityModule.id)) {
-  riskModuleRegistry.register(aisIntegrityModule);
-}
+// This module can be evaluated more than once — Vite hot updates, or a
+// client and SSR graph sharing one process. `register` is idempotent by
+// definition, so a repeat evaluation is a no-op while a genuinely
+// different module under this id still raises a diagnostic error.
+//
+// The previous `if (!has(id))` guard prevented the crash but could not
+// tell those two cases apart: it would silently keep the old module even
+// when a conflicting one was registered. Owning the rule in the registry
+// means every caller gets it, not just this one.
+riskModuleRegistry.register(aisIntegrityModule);

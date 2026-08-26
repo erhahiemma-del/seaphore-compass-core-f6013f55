@@ -12,11 +12,7 @@
  */
 import { useMemo, useState } from "react";
 
-import {
-  MAP_SYMBOLS,
-  MAP_SYMBOL_GRID,
-  type MapSymbolKind,
-} from "@/lib/map-symbols";
+import { MAP_SYMBOLS, MAP_SYMBOL_GRID, type MapSymbolKind } from "@/lib/map-symbols";
 import {
   AlertTriangle,
   Anchor,
@@ -125,14 +121,15 @@ export function MapLayerChips({ service = sgs, className }: MapLayerChipsProps) 
     if (own.length === 0) return;
     if (!isAll && own.some((id) => active.has(id))) {
       // Toggling off leaves the geographic frame standing.
-      service.setActiveLayers([...new Set([...frame, ...[...active].filter((id) => !own.includes(id))])]);
+      service.setActiveLayers([
+        ...new Set([...frame, ...[...active].filter((id) => !own.includes(id))]),
+      ]);
       return;
     }
     // From "All", a chip narrows to that family plus the frame.
     const from = isAll ? frame : [...frame, ...active];
     service.setActiveLayers([...new Set([...from, ...own])]);
   }
-
 
   return (
     <div
@@ -149,8 +146,7 @@ export function MapLayerChips({ service = sgs, className }: MapLayerChipsProps) 
         const own = known(chip.layers);
         const on = !isAll && own.some((id) => active.has(id));
         const pending =
-          own.length > 0 &&
-          own.every((id) => layerRegistry.get(id)?.status === "pending-source");
+          own.length > 0 && own.every((id) => layerRegistry.get(id)?.status === "pending-source");
         return (
           <Chip
             key={chip.id}
@@ -310,17 +306,13 @@ export function MapControlStack({
         <ControlButton
           label="Zoom in"
           icon={Plus}
-          onClick={() =>
-            service.setCamera({ zoom: Math.min(definition.maxZoom, zoom + 0.75) })
-          }
+          onClick={() => service.setCamera({ zoom: Math.min(definition.maxZoom, zoom + 0.75) })}
         />
         <div className="h-px bg-border/70" />
         <ControlButton
           label="Zoom out"
           icon={Minus}
-          onClick={() =>
-            service.setCamera({ zoom: Math.max(definition.minZoom, zoom - 0.75) })
-          }
+          onClick={() => service.setCamera({ zoom: Math.max(definition.minZoom, zoom - 0.75) })}
         />
       </div>
 
@@ -335,7 +327,11 @@ export function MapControlStack({
             <Layers className="h-4 w-4" aria-hidden />
           </button>
         </PopoverTrigger>
-        <PopoverContent align="start" side="right" className="max-h-[60vh] w-72 overflow-y-auto p-2">
+        <PopoverContent
+          align="start"
+          side="right"
+          className="max-h-[60vh] w-72 overflow-y-auto p-2"
+        >
           <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
             Layers
           </p>
@@ -516,4 +512,3 @@ function LegendGlyph({ kind }: { kind: MapSymbolKind }) {
     </svg>
   );
 }
-

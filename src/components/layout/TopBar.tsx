@@ -1,25 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  Bell,
-  CalendarClock,
-  LogIn,
-  LogOut,
-  Search,
-  ShieldCheck,
-  Sparkles,
-  User2,
-} from "lucide-react";
+import { CalendarClock, LogIn, LogOut, Search, ShieldCheck, Sparkles, User2 } from "lucide-react";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { InstitutionalContext } from "./InstitutionalContext";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { ConfidenceChip } from "@/components/intelligence/ConfidenceChip";
 import { useAuth } from "@/hooks/use-auth";
 import { performLogout } from "@/lib/auth/logout";
 import { useCopilotStore } from "@/stores/copilot.store";
-import { useNotificationStore } from "@/stores/notification.store";
 import { useFocusSubjectStore } from "@/stores/focus-subject.store";
 
 import { cn } from "@/lib/utils";
@@ -66,11 +57,22 @@ export function TopBar({ title, subtitle }: TopBarProps) {
         <NigeriaTime />
         <GoToHint />
         <CopilotButton />
-        <NotificationBell />
+        {/*
+          Authority, workspace and what is waiting — the officer's
+          standing in the institution, beside their identity rather than
+          buried in a menu. Reads existing role, notification and
+          workspace infrastructure; introduces none.
+
+          This carries the unread alert count, which is why main's
+          separate NotificationBell was removed rather than placed beside
+          it: both read `notification.store`, so the strip would print the
+          same number twice. It was a local, unexported component, so
+          keeping an unused copy would only leave a decoy.
+        */}
+        <InstitutionalContext />
         <ThemeToggle />
         <OfficerBadge />
       </div>
-
     </header>
   );
 }
@@ -97,7 +99,9 @@ function NigeriaTime() {
     <div className="hidden items-center gap-2 rounded-md border border-line bg-surface-2/70 px-2.5 py-1.5 md:flex">
       <CalendarClock className="h-3.5 w-3.5 text-slate" />
       <div className="leading-none">
-        <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate">Nigeria time</div>
+        <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate">
+          Nigeria time
+        </div>
         <div className="mt-0.5 text-[12px] font-semibold tabular-nums text-foreground">
           {formatted} WAT
         </div>
@@ -121,26 +125,6 @@ function CopilotButton() {
     </button>
   );
 }
-
-/** Unread alert count, read from the existing notification store. */
-function NotificationBell() {
-  const unread = useNotificationStore((s) => s.unreadCount);
-  return (
-    <Link
-      to="/alerts"
-      aria-label={unread > 0 ? `Alerts — ${unread} unread` : "Alerts"}
-      className="relative flex h-8 w-8 items-center justify-center rounded-md border border-line bg-surface-2/70 text-slate hover:border-[color:var(--ocean)]/50 hover:text-foreground motion-fast"
-    >
-      <Bell className="h-4 w-4" />
-      {unread > 0 && (
-        <span className="absolute -right-1 -top-1 min-w-[16px] rounded-full bg-[color:var(--status-critical)] px-1 text-[10px] font-bold leading-4 text-white">
-          {unread > 9 ? "9+" : unread}
-        </span>
-      )}
-    </Link>
-  );
-}
-
 
 function GoToHint() {
   return (
