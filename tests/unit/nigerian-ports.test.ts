@@ -110,11 +110,26 @@ describe("position status is never collapsed", () => {
     expect(lekki.provenance.note).toMatch(/±1 km|1 km/);
   });
 
-  it("marks the five NIMASA positions as surveyed operator references", () => {
+  it("marks every surveyed position as an operator reference", () => {
+    /*
+     * The claim being guarded is that a `surveyed` position names the
+     * authority that published it — never that it came from one
+     * particular authority. Tin Can now cites the NPA handbook directly,
+     * which is the primary source the NIMASA reference was standing in
+     * for; four still carry the shared NIMASA provenance. Both are
+     * operator references, and an officer can tell which is which.
+     */
     for (const locode of ["NGAPAPA", "NGTIN", "NGONNE", "NGWARR", "NGCBQ"]) {
       expect(NIGERIAN_PORTS[locode].precision).toBe("surveyed");
-      expect(NIGERIAN_PORTS[locode].provenance.source).toMatch(/NIMASA/);
+      expect(NIGERIAN_PORTS[locode].provenance.source).toMatch(/NIMASA|Nigerian Ports Authority/);
     }
+  });
+
+  it("cites the NPA handbook for Tin Can specifically", () => {
+    // The position an officer is most likely to question, because it sits
+    // 8.8 km from Apapa on the same approach.
+    expect(NIGERIAN_PORTS.NGTIN.provenance.source).toMatch(/Nigerian Ports Authority/);
+    expect(NIGERIAN_PORTS.NGTIN.provenance.note).toMatch(/06°25\.7|25\.7/);
   });
 
   it("gives every port a provenance, positioned or not", () => {

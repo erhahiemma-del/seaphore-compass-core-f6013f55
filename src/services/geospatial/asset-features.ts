@@ -49,26 +49,68 @@ export function portFeatureCollection(): AssetFeatureCollection {
     features: Object.values(NIMASA_PORTS)
       // Fails open on purpose. A port is dropped only when the canonical
       // model *says* its position is unavailable — not merely because the
-      // lookup missed. The two registries key Lekki differently (NGLEK
-      // here, NGLKK there), and an unknown key must leave a real port on
-      // the map rather than silently erase it.
+      // lookup missed. An unknown key must leave a real port on the map
+      // rather than silently erase it.
       .filter((port) => findNigerianPort(port.locode)?.positionStatus !== "position-unavailable")
-      .map((port) => ({
-        type: "Feature" as const,
-        id: port.locode,
-        properties: {
-          assetKind: "port",
-          locode: port.locode,
-          name: port.name,
-          shortName: port.shortName,
-          berths: port.berths,
-          anchorageRadiusKm: port.anchorageRadius,
-          tier: port.tier,
-          state: port.state,
-          verification: port.verification,
-        },
-        geometry: { type: "Point" as const, coordinates: [port.lon, port.lat] as const },
-      })),
+      .map((port) => {
+        const canonical = findNigerianPort(port.locode);
+        /*
+         * The canonical position wins where there is one.
+         *
+         * For five of the six drawn ports the two are the same value —
+         * the canonical record references `NIMASA_PORTS` precisely so
+         * there is one place a coordinate is written down. Lekki is the
+         * exception, and it is the reason this matters: the canonical
+         * model holds a UN/LOCODE centroid and declares it
+         * `degree-minute`, while this registry holds a different,
+         * finer-looking coordinate. Drawing the second while claiming the
+         * first would put a mark on screen more precise than the
+         * provenance beside it, which is the failure the precision axis
+         * exists to prevent. Geometry and the claim about geometry come
+         * from the same record.
+         */
+        const coordinates = (canonical?.position ?? [port.lon, port.lat]) as readonly [
+          number,
+          number,
+        ];
+        return {
+          type: "Feature" as const,
+          id: port.locode,
+          properties: {
+            assetKind: "port",
+            locode: port.locode,
+            /*
+             * The canonical id, carried alongside the registry key.
+             *
+             * They differ for Lekki (`NGLEK` here, `NGLKK` there). A
+             * click resolves through this so selection cannot depend on
+             * which registry the caller happened to read.
+             */
+            canonicalId: canonical?.locode ?? port.locode,
+            name: port.name,
+            shortName: port.shortName,
+            berths: port.berths,
+            anchorageRadiusKm: port.anchorageRadius,
+            tier: port.tier,
+            state: port.state,
+            verification: port.verification,
+            /*
+             * Both of these are read by the renderer and, until now,
+             * never written by anything.
+             *
+             * `symbol-sort-key` coalesced every port to a constant, so
+             * the declared collision order was inert and placement fell
+             * back to source order — which is how Tin Can lost its label
+             * to Apapa. `precision` selects the hollow glyph that marks
+             * an approximate position, so without it every port claimed
+             * to be surveyed.
+             */
+            labelPriority: canonical?.labelPriority ?? 9,
+            precision: canonical?.precision ?? null,
+          },
+          geometry: { type: "Point" as const, coordinates },
+        };
+      }),
   };
 }
 

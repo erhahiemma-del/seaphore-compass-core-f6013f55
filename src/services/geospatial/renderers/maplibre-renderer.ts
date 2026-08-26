@@ -1440,8 +1440,40 @@ export class MapLibreRenderer implements MapRenderer {
         // Abbreviation at strategic zoom, full name once there is room.
         "text-field": ["step", ["zoom"], ["get", "shortName"], 9, ["get", "name"]],
         "text-size": ["interpolate", ["linear"], ["zoom"], 5, 10, 9, 11.5, 14, 13],
-        "text-anchor": "top",
-        "text-offset": [0, 1.05],
+        /*
+         * Both Lagos labels get placed, rather than the better one
+         * winning.
+         *
+         * Apapa and Tin Can are 8.8 km apart — about 7px at the opening
+         * zoom, against labels 40-50px wide. With a single anchor they
+         * compete for one strip of pixels and the sort key decides which
+         * survives; that is the whole reason Tin Can drew a symbol and no
+         * name. Sorting cannot fix it, because sorting picks a winner and
+         * what was needed was for neither to lose.
+         *
+         * Variable anchoring gives the placement engine eight candidate
+         * positions per label. Vertical alternatives lead deliberately:
+         * for two ports on the same latitude the useful escape is one
+         * label above its mark and the other below, which buys ~30px of
+         * separation from 7px of geography. The diagonals are the
+         * fallback for the eastern ports, which are further apart and
+         * rarely need them.
+         *
+         * `text-offset` cannot be used with this — MapLibre takes the
+         * distance from `text-radial-offset` instead.
+         */
+        "text-variable-anchor": [
+          "top",
+          "bottom",
+          "left",
+          "right",
+          "top-left",
+          "top-right",
+          "bottom-left",
+          "bottom-right",
+        ],
+        "text-radial-offset": 1.05,
+        "text-justify": "auto",
         /*
          * Major ports win the placement contest; secondary terminals
          * yield, which is what decluttering is for.

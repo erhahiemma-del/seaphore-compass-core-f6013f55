@@ -127,20 +127,41 @@ export const NIGERIAN_PORTS: Readonly<Record<string, CanonicalPort>> = {
   },
   NGTIN: {
     locode: "NGTIN",
-    name: "Tin Can Island Port Complex",
-    shortName: "TIN",
-    aliases: ["TCT", "TIN"],
+    name: "Tin Can Island Port",
+    shortName: "TIN CAN",
+    aliases: ["TCT", "TIN", "TINCAN", "TIN CAN"],
     positionStatus: "resolved",
     position: [NIMASA_PORTS.NGTIN.lon, NIMASA_PORTS.NGTIN.lat],
     precision: "surveyed",
-    provenance: NIMASA_PROVENANCE,
+    provenance: {
+      source: "Nigerian Ports Authority handbook — Tin-Can Island Port Complex",
+      note: "NPA-published position, 06°25.7'N 003°20.530'E. Complex reference, not a berth coordinate.",
+    },
+    /*
+     * Second only to Apapa, and the gap matters.
+     *
+     * The two sit 8.8 km apart on the same harbour approach — about 7px
+     * at the opening zoom — so they contend for the same pixels at every
+     * strategic zoom. Priority alone cannot settle that: it decides who
+     * wins, and what was needed was for both to be placed. See the
+     * variable anchoring on the label layer.
+     */
     labelPriority: 2,
   },
   NGLKK: {
     locode: "NGLKK",
     name: "Lekki Deep Sea Port",
     shortName: "LEK",
-    aliases: ["LKK", "LEK", "IBEJU-LEKKI"],
+    /*
+     * `NGLEK` is the key `constants.ts` uses for the same port.
+     *
+     * Without it here the canonical lookup missed, and the feature
+     * pipeline fell through to its fail-open branch — Lekki stayed on the
+     * map, but carrying none of the canonical model's properties. Two
+     * keys for one quay is exactly the drift this module exists to end,
+     * so the internal key becomes an alias rather than a second port.
+     */
+    aliases: ["NGLEK", "LKK", "LEK", "IBEJU-LEKKI"],
     positionStatus: "resolved",
     /*
      * UN/LOCODE's own centroid for "Ibeju - Lekki", to the minute.

@@ -501,8 +501,20 @@ export const NIMASA_PORTS: Readonly<Record<string, NimasaPort>> = {
     locode: "NGTIN",
     name: "Tin Can Island Port Complex",
     shortName: "TIN CAN",
-    lat: 6.4333,
-    lon: 3.3167,
+    /*
+     * NPA handbook, transcribed from degrees and decimal minutes:
+     * 06°25.7'N → 6.428333, 003°20.530'E → 3.342167.
+     *
+     * Replaces [3.3167, 6.4333], which was a coarser reference carried
+     * since M1. The handbook position sits about 2.8 km east of it, which
+     * moves Tin Can *closer* to Apapa — 8.8 km rather than 11.6 — and
+     * that is the correct direction: the two complexes genuinely share
+     * the Lagos harbour approach. The label placement strategy has to
+     * absorb the proximity rather than the coordinate being loosened to
+     * make room for it.
+     */
+    lat: 6.428333,
+    lon: 3.342167,
     berths: 10,
     anchorageRadius: 2,
     tier: "major",
