@@ -39,8 +39,8 @@ export type MissionModeId =
   | "risk-compliance"
   | "port-intelligence"
   | "investigation"
-  | "decision-coordination"
-  | "strategic-intelligence";
+  | "incident-response"
+  | "executive-briefing";
 
 /**
  * The regions Mission Control renders, as logical ids.
@@ -51,14 +51,13 @@ export type MissionModeId =
  */
 export type MissionPanelId =
   | "maritime-picture"
-  | "intelligence-feed"
-  | "revenue-assurance"
-  | "manifest-intelligence"
-  | "compliance-watchlist"
-  | "port-operations"
-  | "cargo-workspace"
-  | "todays-priorities"
-  | "recent-briefings"
+  | "priority-queue"
+  | "my-workspace"
+  | "decisions-approvals"
+  | "handoffs-blockers"
+  | "recent-work"
+  | "intelligence-events"
+  | "focus-rail"
   | "focus-rail";
 
 /**
@@ -76,10 +75,10 @@ export type MissionPanelId =
  * officer left it.
  */
 export const COMPOSABLE_PANELS: readonly MissionPanelId[] = [
-  "revenue-assurance",
-  "manifest-intelligence",
-  "compliance-watchlist",
-  "port-operations",
+  "my-workspace",
+  "decisions-approvals",
+  "handoffs-blockers",
+  "recent-work",
 ] as const;
 
 /**
@@ -97,7 +96,15 @@ export type MissionMapLayerKey =
   | "eezBoundary"
   | "graticule"
   | "buildings"
-  | "investigArea";
+  | "investigArea"
+  /*
+   * Both are registered `pending-source`, and recommending them is still
+   * honest: a lens says what it would want to see, the layer says
+   * whether anything is behind it, and the officer sees both. Leaving
+   * them out of the vocabulary would hide the gap instead.
+   */
+  | "incidents"
+  | "weather";
 
 /** Which intelligence categories a mode promotes in the priority panel. */
 export type IntelligenceCategory = "critical" | "requires-review" | "monitor" | "informational";
@@ -173,17 +180,29 @@ export const MISSION_MODES: Readonly<Record<MissionModeId, MissionMode>> = {
     id: "national-picture",
     label: "National Overview",
     purpose: "The whole picture — what is happening across Nigerian waters now.",
-    leadKpis: ["vessel", "risk", "revenue", "manifest", "container", "historical"],
+    /*
+     * The approved ribbon order, and the reason it starts with revenue.
+     *
+     * This is the lens Mission Control opens on, so its ordering is the
+     * one an officer sees before choosing anything — which makes it the
+     * page's default reading order rather than one lens's preference.
+     * The approved composition reads Revenue at Risk, Manifest
+     * Exceptions, Pending Assessments, Vessels at Sea, Ports Active,
+     * Investigations: exposure first, activity second.
+     *
+     * `container` and `historical` are the metric keys behind Ports
+     * Active and Investigations — the domain names predate the approved
+     * titles and are the coverage model's, not the ribbon's.
+     */
+    leadKpis: ["revenue", "manifest", "risk", "vessel", "container", "historical"],
     panels: [
       "maritime-picture",
-      "intelligence-feed",
-      "port-operations",
-      "revenue-assurance",
-      "compliance-watchlist",
-      "manifest-intelligence",
-      "cargo-workspace",
-      "todays-priorities",
-      "recent-briefings",
+      "priority-queue",
+      "intelligence-events",
+      "my-workspace",
+      "decisions-approvals",
+      "handoffs-blockers",
+      "recent-work",
       "focus-rail",
     ],
     mapLayers: ["vessels", "ports", "eezBoundary", "graticule"],
@@ -217,15 +236,13 @@ export const MISSION_MODES: Readonly<Record<MissionModeId, MissionMode>> = {
     leadKpis: ["vessel", "container", "manifest", "risk", "revenue", "historical"],
     panels: [
       "maritime-picture",
-      "port-operations",
-      "intelligence-feed",
-      "manifest-intelligence",
-      "compliance-watchlist",
-      "revenue-assurance",
-      "cargo-workspace",
-      "todays-priorities",
-      "recent-briefings",
+      "priority-queue",
+      "intelligence-events",
       "focus-rail",
+      "my-workspace",
+      "handoffs-blockers",
+      "decisions-approvals",
+      "recent-work",
     ],
     mapLayers: ["vessels", "voyages", "ports", "graticule"],
     intelligence: ["requires-review", "critical", "monitor", "informational"],
@@ -257,15 +274,13 @@ export const MISSION_MODES: Readonly<Record<MissionModeId, MissionMode>> = {
     purpose: "Assessed against collected — discrepancies, leakage and exposure.",
     leadKpis: ["revenue", "manifest", "container", "vessel", "risk", "historical"],
     panels: [
-      "revenue-assurance",
-      "manifest-intelligence",
+      "priority-queue",
+      "my-workspace",
+      "decisions-approvals",
       "maritime-picture",
-      "intelligence-feed",
-      "port-operations",
-      "compliance-watchlist",
-      "cargo-workspace",
-      "todays-priorities",
-      "recent-briefings",
+      "intelligence-events",
+      "recent-work",
+      "handoffs-blockers",
       "focus-rail",
     ],
     mapLayers: ["ports", "voyages", "vessels"],
@@ -298,15 +313,13 @@ export const MISSION_MODES: Readonly<Record<MissionModeId, MissionMode>> = {
     purpose: "Requirements, exceptions and the risk signals behind them.",
     leadKpis: ["risk", "manifest", "vessel", "container", "revenue", "historical"],
     panels: [
-      "compliance-watchlist",
-      "intelligence-feed",
+      "priority-queue",
+      "intelligence-events",
       "maritime-picture",
-      "revenue-assurance",
-      "manifest-intelligence",
-      "port-operations",
-      "todays-priorities",
-      "cargo-workspace",
-      "recent-briefings",
+      "decisions-approvals",
+      "my-workspace",
+      "handoffs-blockers",
+      "recent-work",
       "focus-rail",
     ],
     mapLayers: ["vessels", "ports", "eezBoundary"],
@@ -339,15 +352,13 @@ export const MISSION_MODES: Readonly<Record<MissionModeId, MissionMode>> = {
     purpose: "The estate — approaches, calls and activity at each port.",
     leadKpis: ["container", "manifest", "vessel", "revenue", "risk", "historical"],
     panels: [
-      "port-operations",
       "maritime-picture",
-      "manifest-intelligence",
-      "intelligence-feed",
-      "compliance-watchlist",
-      "revenue-assurance",
-      "cargo-workspace",
-      "todays-priorities",
-      "recent-briefings",
+      "priority-queue",
+      "my-workspace",
+      "intelligence-events",
+      "handoffs-blockers",
+      "decisions-approvals",
+      "recent-work",
       "focus-rail",
     ],
     // Buildings only earn their place here: they draw nothing below zoom
@@ -382,16 +393,14 @@ export const MISSION_MODES: Readonly<Record<MissionModeId, MissionMode>> = {
     purpose: "Open cases, the evidence behind them and what they are waiting on.",
     leadKpis: ["risk", "vessel", "manifest", "historical", "revenue", "container"],
     panels: [
-      "intelligence-feed",
       "focus-rail",
-      "compliance-watchlist",
+      "priority-queue",
+      "intelligence-events",
       "maritime-picture",
-      "manifest-intelligence",
-      "revenue-assurance",
-      "port-operations",
-      "recent-briefings",
-      "todays-priorities",
-      "cargo-workspace",
+      "my-workspace",
+      "recent-work",
+      "decisions-approvals",
+      "handoffs-blockers",
     ],
     // The officer-drawn investigation area is the point of this lens.
     mapLayers: ["investigArea", "vessels", "ports", "graticule"],
@@ -418,41 +427,48 @@ export const MISSION_MODES: Readonly<Record<MissionModeId, MissionMode>> = {
     ],
   },
 
-  "decision-coordination": {
-    id: "decision-coordination",
-    label: "Decision & Coordination",
+  "incident-response": {
+    id: "incident-response",
+    label: "Incident Response",
     /*
-     * Not incident response.
+     * Restored to Incident Response, deliberately.
      *
-     * This lens inherited an incident-first ordering from an earlier
-     * taxonomy where it was "Incident Response". The two are different
-     * institutional questions: incident response asks "what is
-     * happening", this asks "what is waiting on a decision, and who owes
-     * it". So the work queue leads, and incidents appear because they
-     * *inform* a decision rather than because they are the subject.
+     * This lens was previously renamed to "Decision & Coordination" on
+     * the reasoning that incident response asks "what is happening"
+     * while a decision queue asks "what is waiting on a decision, and
+     * who owes it" — two different institutional questions. That
+     * reasoning was sound, and the approved composition still names this
+     * lens Incident Response, so the behaviour follows the label rather
+     * than the label following the behaviour.
+     *
+     * The decision work it used to lead with is not lost: it is a
+     * standing region of the page now, in Decisions & Approvals and
+     * Handoffs & Blockers, where it is visible under every lens instead
+     * of only under one.
      */
-    purpose: "What is waiting on a decision, and who owes it.",
-    leadKpis: ["risk", "revenue", "manifest", "vessel", "container", "historical"],
+    purpose: "What is happening now — incidents, the events behind them, and the replay.",
+    // Risk leads because an incident is a risk event before it is
+    // anything else; vessel follows because it is usually the subject.
+    leadKpis: ["risk", "vessel", "revenue", "manifest", "container", "historical"],
     panels: [
-      "todays-priorities",
-      "intelligence-feed",
-      "compliance-watchlist",
+      "priority-queue",
       "maritime-picture",
-      "revenue-assurance",
-      "manifest-intelligence",
-      "port-operations",
-      "recent-briefings",
-      "cargo-workspace",
+      "intelligence-events",
+      "handoffs-blockers",
+      "my-workspace",
+      "decisions-approvals",
+      "recent-work",
       "focus-rail",
     ],
-    mapLayers: ["vessels", "ports", "investigArea"],
-    intelligence: ["requires-review", "critical", "monitor", "informational"],
+    // Incidents are the subject, so the layers that show them lead.
+    mapLayers: ["incidents", "vessels", "ports", "weather"],
+    intelligence: ["critical", "requires-review", "monitor", "informational"],
     actions: [
       {
-        id: "decide-queue",
-        label: "Open the decision queue",
-        href: "/decide/queue",
-        rationale: "What is waiting on an officer's decision.",
+        id: "alerts",
+        label: "Open the alerts centre",
+        href: "/alerts",
+        rationale: "What has been raised and not yet acknowledged.",
       },
       {
         id: "workflow",
@@ -469,21 +485,25 @@ export const MISSION_MODES: Readonly<Record<MissionModeId, MissionMode>> = {
     ],
   },
 
-  "strategic-intelligence": {
-    id: "strategic-intelligence",
-    label: "Strategic Intelligence",
+  "executive-briefing": {
+    id: "executive-briefing",
+    label: "Executive Briefing",
+    /*
+     * Relabelled, not reconfigured. The lens already answered the
+     * question the approved label names — the strategic position across
+     * risk, revenue and compliance, with its confidence attached — so
+     * only the name moved.
+     */
     purpose: "The summary position — what leadership needs, and how sure we are.",
     leadKpis: ["historical", "risk", "revenue", "vessel", "manifest", "container"],
     panels: [
-      "recent-briefings",
-      "intelligence-feed",
+      "priority-queue",
       "maritime-picture",
-      "revenue-assurance",
-      "compliance-watchlist",
-      "manifest-intelligence",
-      "port-operations",
-      "cargo-workspace",
-      "todays-priorities",
+      "intelligence-events",
+      "recent-work",
+      "decisions-approvals",
+      "my-workspace",
+      "handoffs-blockers",
       "focus-rail",
     ],
     mapLayers: ["vessels", "ports", "eezBoundary"],
@@ -513,14 +533,15 @@ export const MISSION_MODES: Readonly<Record<MissionModeId, MissionMode>> = {
 
 /** Tab order. Explicit, because object key order is not a design decision. */
 export const MISSION_MODE_ORDER: readonly MissionModeId[] = [
+  // The order the approved Mission Control composition shows them in.
   "national-picture",
   "vessel-operations",
   "revenue-assurance",
   "risk-compliance",
-  "port-intelligence",
   "investigation",
-  "decision-coordination",
-  "strategic-intelligence",
+  "port-intelligence",
+  "incident-response",
+  "executive-briefing",
 ] as const;
 
 /** The mode an officer lands on. The whole picture, before any lens. */

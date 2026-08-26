@@ -115,11 +115,17 @@ describe("only panels that can move safely are composable", () => {
     }
   });
 
-  it("leads the operational grid with the lens's own domain", () => {
+  it("leads the operational grid with the column the lens works from", () => {
+    /*
+     * The composable panels are now the four lower-workspace columns.
+     * They previously named the supporting-intelligence panels, which
+     * left Mission Control with the approved composition — so the lens
+     * ranks what is actually on the page.
+     */
     const lead = (id: ModeId) => orderPanels(MISSION_MODES[id], COMPOSABLE_PANELS)[0];
-    expect(lead("revenue-assurance")).toBe("revenue-assurance");
-    expect(lead("port-intelligence")).toBe("port-operations");
-    expect(lead("risk-compliance")).toBe("compliance-watchlist");
+    expect(lead("revenue-assurance")).toBe("my-workspace");
+    expect(lead("incident-response")).toBe("handoffs-blockers");
+    expect(lead("executive-briefing")).toBe("recent-work");
   });
 
   it("uses logical panel ids, never JSX or routes", () => {
@@ -133,26 +139,47 @@ describe("only panels that can move safely are composable", () => {
 
 /* ═══════ 3. Decision & Coordination is not Incident Response ═══════ */
 
-describe("Decision and Coordination leads with decisions", () => {
-  const mode = MISSION_MODES["decision-coordination"];
+describe("Incident Response leads with incidents", () => {
+  const mode = MISSION_MODES["incident-response"];
 
-  it("puts the work queue first, not incidents", () => {
-    expect(mode.panels[0]).toBe("todays-priorities");
+  /*
+   * This lens was previously "Decision & Coordination", and this block
+   * asserted the opposite of what it asserts now — that the work queue
+   * led and that the purpose named no incident. That reasoning was
+   * sound on its own terms: incident response asks "what is happening",
+   * a decision queue asks "what is waiting on a decision, and who owes
+   * it".
+   *
+   * The approved composition names this lens Incident Response, so the
+   * behaviour follows the label. The decision work it used to lead with
+   * is not lost — it is a standing region of the page now, in Decisions
+   * & Approvals and Handoffs & Blockers, visible under every lens
+   * instead of only under one.
+   */
+  it("puts what is happening first", () => {
+    expect(mode.panels[0]).toBe("priority-queue");
+    expect(mode.panels).toContain("maritime-picture");
   });
 
-  it("states a decision-shaped purpose", () => {
-    expect(mode.purpose).toMatch(/decision/i);
-    expect(mode.purpose).not.toMatch(/incident/i);
+  it("states an incident-shaped purpose", () => {
+    expect(mode.purpose).toMatch(/incident/i);
   });
 
-  it("points its first action at the decision queue", () => {
-    expect(mode.actions[0].href).toBe("/decide/queue");
+  it("leads with risk, then the subject the incident is usually about", () => {
+    expect(mode.leadKpis[0]).toBe("risk");
+    expect(mode.leadKpis[1]).toBe("vessel");
   });
 
-  it("still surfaces supporting intelligence rather than hiding it", () => {
-    // Incidents inform a decision; they are simply not the subject.
-    expect(mode.panels).toContain("intelligence-feed");
-    expect(mode.panels).toContain("compliance-watchlist");
+  it("recommends the layers that show incidents", () => {
+    // Both are registered `pending-source`. Recommending them is still
+    // honest: the lens says what it wants to see and the layer says
+    // whether anything is behind it.
+    expect(mode.mapLayers).toContain("incidents");
+    expect(mode.mapLayers).toContain("weather");
+  });
+
+  it("points its first action at what has been raised", () => {
+    expect(mode.actions[0].href).toBe("/alerts");
   });
 });
 

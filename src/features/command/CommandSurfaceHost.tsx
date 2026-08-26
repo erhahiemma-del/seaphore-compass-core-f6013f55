@@ -42,7 +42,27 @@ function audit(action: string, entity: string, metadata?: Record<string, unknown
   });
 }
 
-export function CommandSurfaceHost({ className }: { readonly className?: string }) {
+export function CommandSurfaceHost({
+  className,
+  showCues = true,
+}: {
+  readonly className?: string;
+  /**
+   * The lens's search cues — "national activity · ports · vessels" and
+   * the suggestion chips beneath the search box.
+   *
+   * Off in Mission Control. The cues are an entity-type vocabulary, and
+   * on that page they sit directly above the Mission Mode selector,
+   * which is a different vocabulary for the same surface. Two rows of
+   * chips one above the other teach an officer that neither is the real
+   * control — the reason the previous command bar's eight chips were
+   * removed in the first place.
+   *
+   * Left on everywhere else, where there is no lens selector beneath
+   * them and the cues are the only thing saying what search will favour.
+   */
+  readonly showCues?: boolean;
+}) {
   const navigate = useNavigate();
   const { mode } = useMissionMode();
   const { roles } = useRoles();
@@ -66,7 +86,8 @@ export function CommandSurfaceHost({ className }: { readonly className?: string 
     [mode, rolesKey],
   );
 
-  const cues = useMemo(() => searchCuesFor(mode), [mode]);
+  const modeCues = useMemo(() => searchCuesFor(mode), [mode]);
+  const cues = showCues ? modeCues : { ...modeCues, cues: [] };
 
   /** The open case for whatever is focused, so Investigate can continue it. */
   const openCaseId = useMemo(() => {

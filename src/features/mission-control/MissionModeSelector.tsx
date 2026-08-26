@@ -43,9 +43,21 @@ export function MissionModeSelector({ value, onChange, className }: MissionModeS
               title={mode.purpose}
               onClick={() => onChange(id)}
               className={cn(
-                "rounded px-2.5 py-1 text-[11.5px] font-medium transition-colors",
+                "rounded px-3 py-1.5 text-[11.5px] font-medium motion-fast",
+                /*
+                 * The selected lens is filled in Seaphore's sky blue
+                 * (`--color-blue`, #2563EB) — the same blue the command
+                 * surface uses for its primary action, not the teal
+                 * accent, which reads as a different kind of control.
+                 *
+                 * It was previously a white chip on grey, which at a
+                 * glance read as the disabled one rather than the active
+                 * one. `aria-selected` already carries the state for
+                 * assistive technology; the fill is what carries it
+                 * across a command-centre display at arm's length.
+                 */
                 selected
-                  ? "bg-background text-foreground shadow-sm"
+                  ? "bg-[color:var(--color-blue)] text-white shadow-sm"
                   : "text-muted-foreground hover:bg-background/60 hover:text-foreground",
               )}
             >

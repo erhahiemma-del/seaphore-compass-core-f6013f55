@@ -35,14 +35,12 @@ import {
 
 const ALL_PANELS: readonly MissionPanelId[] = [
   "maritime-picture",
-  "intelligence-feed",
-  "revenue-assurance",
-  "manifest-intelligence",
-  "compliance-watchlist",
-  "port-operations",
-  "cargo-workspace",
-  "todays-priorities",
-  "recent-briefings",
+  "priority-queue",
+  "my-workspace",
+  "decisions-approvals",
+  "handoffs-blockers",
+  "recent-work",
+  "intelligence-events",
   "focus-rail",
 ];
 
@@ -117,19 +115,16 @@ describe("a mode demotes panels rather than hiding them", () => {
 /* ═══════ 3. Each lens actually leads with something different ═══════ */
 
 describe("modes are genuinely distinct lenses", () => {
-  it("promotes revenue in Revenue Assurance and risk in Decision & Coordination", () => {
+  it("promotes revenue in Revenue Assurance and risk in Incident Response", () => {
     expect(MISSION_MODES["revenue-assurance"].leadKpis[0]).toBe("revenue");
-    expect(MISSION_MODES["decision-coordination"].leadKpis[0]).toBe("risk");
+    expect(MISSION_MODES["incident-response"].leadKpis[0]).toBe("risk");
   });
 
   it("gives each mode its own leading panel where the purpose differs", () => {
-    expect(orderPanels(MISSION_MODES["revenue-assurance"], ALL_PANELS)[0]).toBe(
-      "revenue-assurance",
-    );
-    expect(orderPanels(MISSION_MODES["decision-coordination"], ALL_PANELS)[0]).toBe(
-      "todays-priorities",
-    );
-    expect(orderPanels(MISSION_MODES["port-intelligence"], ALL_PANELS)[0]).toBe("port-operations");
+    // The panels are the approved composition's regions now, so a lens
+    // leads with the region an officer in that lens reads first.
+    expect(orderPanels(MISSION_MODES["revenue-assurance"], ALL_PANELS)[0]).toBe("priority-queue");
+    expect(orderPanels(MISSION_MODES["investigation"], ALL_PANELS)[0]).toBe("focus-rail");
     expect(orderPanels(MISSION_MODES["national-picture"], ALL_PANELS)[0]).toBe("maritime-picture");
   });
 
@@ -143,8 +138,8 @@ describe("modes are genuinely distinct lenses", () => {
   });
 
   it("ranks a listed panel ahead of an unlisted one", () => {
-    const mode = MISSION_MODES["decision-coordination"];
-    expect(panelRank(mode, "todays-priorities")).toBeLessThan(
+    const mode = MISSION_MODES["incident-response"];
+    expect(panelRank(mode, "priority-queue")).toBeLessThan(
       panelRank(mode, "future" as MissionPanelId),
     );
   });

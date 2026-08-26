@@ -71,19 +71,65 @@ function readableText(source: string): string {
 /* ═══════ 1. Every region survives ═══════ */
 
 describe("all Mission Control regions remain composed", () => {
+  /*
+   * The approved Mission Control composition, in order.
+   *
+   * Intelligence Feed, Supporting Intelligence, the cargo strip,
+   * Today's Priorities, Recent Briefings and Intelligence Readiness are
+   * deliberately absent — each capability lives in the environment that
+   * owns it, and a Mission Control that renders all of them is the
+   * drifted composition this list exists to prevent returning.
+   */
   const REQUIRED_REGIONS = [
     "OperationalOrientation",
     "RecommendedNextActionPanel",
+    "MapRecommendationNotice",
     "MaritimePicturePanel",
+    "PriorityQueuePanel",
+    "MyWorkspacePanel",
+    "DecisionsApprovalsPanel",
+    "HandoffsBlockersPanel",
+    "RecentWorkPanel",
+    "IntelligenceEventsStrip",
+  ] as const;
+
+  /** Sections whose capability moved to a dedicated environment. */
+  const EXCLUDED_REGIONS = [
     "IntelligenceFeedPanel",
     "SupportingIntelligence",
-    "MyWorkspaceSummary",
-    "MapRecommendationNotice",
+    "CargoWorkspaceStrip",
+    "TodaysPrioritiesPanel",
+    "RecentBriefingsPanel",
+    "IntelligenceReadinessCard",
   ] as const;
 
   it("renders every required region", () => {
     for (const region of REQUIRED_REGIONS) {
       expect(MISSION_CONTROL, `${region} is no longer rendered`).toContain(`<${region}`);
+    }
+  });
+
+  it("renders none of the sections that moved to their environments", () => {
+    for (const region of EXCLUDED_REGIONS) {
+      expect(MISSION_CONTROL, `${region} returned to Mission Control`).not.toContain(`<${region}`);
+    }
+  });
+
+  it("puts the priority queue beside the map, not below the page", () => {
+    // The queue and the map answer one question between them. The queue
+    // used to sit far below as "Today's Priorities" while an
+    // observations feed held this slot.
+    const grid = MISSION_CONTROL.slice(
+      MISSION_CONTROL.indexOf("<MaritimePicturePanel"),
+      MISSION_CONTROL.indexOf("<MaritimePicturePanel") + 900,
+    );
+    expect(grid).toContain("<PriorityQueuePanel");
+  });
+
+  it("keeps the four workspace columns together", () => {
+    const workspace = MISSION_CONTROL.slice(MISSION_CONTROL.indexOf("<MyWorkspacePanel"));
+    for (const panel of ["DecisionsApprovalsPanel", "HandoffsBlockersPanel", "RecentWorkPanel"]) {
+      expect(workspace.slice(0, 500), `${panel} left the workspace row`).toContain(panel);
     }
   });
 
@@ -97,8 +143,10 @@ describe("all Mission Control regions remain composed", () => {
       "recommended-next-action",
       "mission-mode-selector",
       "mission-kpi-ribbon",
-      "supporting-intelligence",
-      "my-workspace-summary",
+      "panel-my-workspace",
+      "panel-decisions-approvals",
+      "panel-handoffs-blockers",
+      "panel-recent-work",
       "map-recommendation",
     ]) {
       expect(all, `data-testid="${testid}" was removed`).toContain(`data-testid="${testid}"`);
@@ -179,43 +227,47 @@ describe("map layers stay under officer control", () => {
 
 /* ═══════ 4. Progressive disclosure ═══════ */
 
-describe("supporting intelligence stays progressively disclosed", () => {
-  it("renders one panel through the switcher, not a stack", () => {
-    expect(MISSION_CONTROL).toContain("<SupportingIntelligence");
-    // The four panels must reach the page as switcher inputs. Rendering
-    // them directly in a grid would be the flattening this guards.
-    const composition = MISSION_CONTROL.slice(
-      MISSION_CONTROL.indexOf("<SupportingIntelligence"),
-      MISSION_CONTROL.indexOf("<SupportingIntelligence") + 1200,
-    );
-    for (const panel of [
-      "RevenueAssurancePanel",
-      "ManifestIntelligencePanel",
-      "ComplianceWatchlistPanel",
-      "PortOperationsPanel",
-    ]) {
-      expect(composition, `${panel} left the switcher`).toContain(panel);
+describe("the lower workspace shows four columns, not a switcher", () => {
+  /*
+   * This block previously guarded progressive disclosure of the four
+   * supporting-intelligence panels: one open, three a click away. Those
+   * panels left Mission Control for the environments that own them, and
+   * the four columns that replaced them are all visible at once because
+   * they are short summaries rather than full panels — showing one and
+   * hiding three would cost a click to learn a number.
+   */
+  const COLUMNS = [
+    "MyWorkspacePanel",
+    "DecisionsApprovalsPanel",
+    "HandoffsBlockersPanel",
+    "RecentWorkPanel",
+  ] as const;
+
+  it("renders each column exactly once", () => {
+    // Twice would mean a row was duplicated rather than moved.
+    for (const panel of COLUMNS) {
+      const uses = MISSION_CONTROL.split(`<${panel}`).length - 1;
+      expect(uses, `${panel} rendered ${uses} times`).toBe(1);
     }
   });
 
-  it("renders each supporting panel exactly once", () => {
-    // Twice would mean the switcher was kept and a stack added beside
-    // it, which is the most likely way this regresses.
-    for (const panel of [
-      "RevenueAssurancePanel",
-      "ManifestIntelligencePanel",
-      "ComplianceWatchlistPanel",
-      "PortOperationsPanel",
-    ]) {
-      const uses = MISSION_CONTROL.match(new RegExp(`<${panel}[\\s/>]`, "g")) ?? [];
-      expect(uses, `${panel} rendered ${uses.length} times`).toHaveLength(1);
-    }
+  it("keeps every column honest when it has nothing to show", () => {
+    // An empty queue is a fact. A panel that vanishes when empty cannot
+    // be distinguished from one that failed to load.
+    const workspace = sourceOf("lower-workspace.tsx");
+    expect(workspace).toContain('data-testid="workspace-empty-note"');
+    // Rendered strings only — the file's own docstring discusses the
+    // congratulatory phrasing it forbids, and would match itself.
+    const rendered = readableText(workspace);
+    expect(rendered).not.toMatch(/All clear|Nothing to do!|Great job/i);
   });
 
-  it("keeps selection local and per lens", () => {
-    const switcher = sourceOf("SupportingIntelligence.tsx");
-    expect(switcher).toContain("useState");
-    expect(switcher).toContain("resolveSupportingPanel");
+  it("derives every figure from the workspace store, inventing none", () => {
+    const workspace = sourceOf("lower-workspace.tsx");
+    expect(workspace).toContain("useWorkspaceStore");
+    // No second store, and no fabricated deadline model.
+    expect(workspace).not.toMatch(/\bcreate\(/);
+    expect(workspace).not.toMatch(/Math\.random|faker|MOCK_/i);
   });
 });
 
@@ -261,9 +313,16 @@ describe("the composition layer fabricates no intelligence", () => {
 /* ═══════ 6. Modes stay dynamic ═══════ */
 
 describe("mode-driven behaviour is not flattened", () => {
-  it("orders KPIs and panels through the mode engine", () => {
+  it("orders KPIs through the mode engine", () => {
+    /*
+     * `orderPanels` was asserted against SupportingIntelligence, which
+     * has left Mission Control. The ranking mechanism itself is
+     * unchanged and still tested in `mission-hierarchy.test.ts`; what
+     * this file guards is that the ribbon goes through it rather than
+     * sorting KPIs by hand.
+     */
     expect(MISSION_CONTROL).toContain("tierKpis");
-    expect(sourceOf("SupportingIntelligence.tsx")).toContain("orderPanels");
+    expect(MISSION_CONTROL).not.toMatch(/\.sort\(\s*\(\s*a\s*,\s*b\s*\)\s*=>[^)]*kpi/i);
   });
 
   it("keeps the selector wired to the mode store, not local state", () => {

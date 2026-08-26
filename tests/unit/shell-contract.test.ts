@@ -144,7 +144,10 @@ describe("an environment never mounts a capability twice", () => {
 
   it("keeps the composition Mission Control argues for", () => {
     // The point of the migration was the binding, not a redesign.
-    expect(MISSION_CONTROL).toContain("<CommandSurfaceHost />");
+    // Composed here rather than taken from the shell. The `showCues`
+    // opt-out is a Mission-Control decision about a second chip row, not
+    // a change of owner.
+    expect(MISSION_CONTROL).toContain("<CommandSurfaceHost showCues={false} />");
     expect(MISSION_CONTROL).toContain("<OperationalOrientation");
     expect(MISSION_CONTROL).toContain("<FocusWorkspaceHost />");
   });

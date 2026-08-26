@@ -65,7 +65,7 @@ describe("KPI tiering keeps every KPI on screen", () => {
     expect(lead("revenue-assurance")).toBe("revenue");
     expect(lead("risk-compliance")).toBe("risk");
     expect(lead("port-intelligence")).toBe("container");
-    expect(lead("strategic-intelligence")).toBe("historical");
+    expect(lead("executive-briefing")).toBe("historical");
   });
 
   it("changes the lead when the lens changes", () => {
@@ -103,9 +103,16 @@ describe("KPI tiering keeps every KPI on screen", () => {
 
 describe("supporting panel selection respects both lens and officer", () => {
   it("opens each lens on its own leading panel", () => {
-    expect(defaultSupportingPanel(MISSION_MODES["revenue-assurance"])).toBe("revenue-assurance");
-    expect(defaultSupportingPanel(MISSION_MODES["port-intelligence"])).toBe("port-operations");
-    expect(defaultSupportingPanel(MISSION_MODES["risk-compliance"])).toBe("compliance-watchlist");
+    /*
+     * These name the four lower-workspace columns now. The mechanism is
+     * unchanged — a lens leads with one of the composable panels — but
+     * the panels themselves are the approved composition's regions
+     * rather than the supporting-intelligence panels that left Mission
+     * Control.
+     */
+    expect(defaultSupportingPanel(MISSION_MODES["revenue-assurance"])).toBe("my-workspace");
+    expect(defaultSupportingPanel(MISSION_MODES["incident-response"])).toBe("handoffs-blockers");
+    expect(defaultSupportingPanel(MISSION_MODES["executive-briefing"])).toBe("recent-work");
   });
 
   it("always resolves to a composable panel", () => {
@@ -116,30 +123,26 @@ describe("supporting panel selection respects both lens and officer", () => {
 
   it("lets the officer's choice win within a lens", () => {
     const mode = MISSION_MODES["revenue-assurance"];
-    expect(resolveSupportingPanel(mode, { [mode.id]: "port-operations" })).toBe("port-operations");
+    expect(resolveSupportingPanel(mode, { [mode.id]: "recent-work" })).toBe("recent-work");
   });
 
   it("remembers choices per lens rather than globally", () => {
     // One global choice would mean switching to Revenue Assurance and
     // still staring at ports — the lens change would do nothing.
-    const choices = { "revenue-assurance": "port-operations" as MissionPanelId };
-    expect(resolveSupportingPanel(MISSION_MODES["revenue-assurance"], choices)).toBe(
-      "port-operations",
-    );
+    const choices = { "revenue-assurance": "recent-work" as MissionPanelId };
+    expect(resolveSupportingPanel(MISSION_MODES["revenue-assurance"], choices)).toBe("recent-work");
     expect(resolveSupportingPanel(MISSION_MODES["risk-compliance"], choices)).toBe(
-      "compliance-watchlist",
+      "decisions-approvals",
     );
   });
 
   it("restores the officer's choice on returning to that lens", () => {
-    const choices = { "port-intelligence": "revenue-assurance" as MissionPanelId };
+    const choices = { "port-intelligence": "recent-work" as MissionPanelId };
     // Away and back — the deliberate selection survives.
     expect(resolveSupportingPanel(MISSION_MODES["investigation"], choices)).toBe(
       defaultSupportingPanel(MISSION_MODES["investigation"]),
     );
-    expect(resolveSupportingPanel(MISSION_MODES["port-intelligence"], choices)).toBe(
-      "revenue-assurance",
-    );
+    expect(resolveSupportingPanel(MISSION_MODES["port-intelligence"], choices)).toBe("recent-work");
   });
 
   it("falls back when a remembered choice is no longer composable", () => {
