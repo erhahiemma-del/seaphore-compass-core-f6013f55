@@ -4,6 +4,7 @@ import {
   Boxes,
   Building2,
   Database,
+  FileText,
   DollarSign,
   FolderArchive,
   Gauge,
@@ -150,6 +151,26 @@ export const NAV_GROUPS: NavGroup[] = [
         url: "/evidence",
         icon: FolderArchive,
       },
+      /*
+       * Reachable, at last.
+       *
+       * The Briefing Centre is a complete environment — reports assembled
+       * from Canonical UIP snapshots — and it was consolidated behind
+       * Institutional Memory, whose label says nothing about producing a
+       * report. An officer could reach it only from the `generate-report`
+       * command action or by knowing the URL.
+       *
+       * Consolidation was the right instinct and the wrong target: the
+       * capability is materially distinct from "history and outcomes",
+       * and it has a real destination, so it gets its own entry rather
+       * than a hop through a label that does not describe it.
+       */
+      {
+        title: "Briefing Centre",
+        subtitle: "Reports & Packages",
+        url: "/briefing-centre",
+        icon: FileText,
+      },
       {
         title: "Knowledge Graph",
         subtitle: "Entity Relationships",
@@ -252,8 +273,6 @@ export const CONSOLIDATED_ROUTES: Readonly<Record<string, string>> = {
   "/cargo-workspace": "/manifest",
   // Evidence & Documents owns evidence lineage.
   "/intelligence-evidence": "/evidence",
-  // Institutional Memory owns briefings.
-  "/briefing-centre": "/memory",
 };
 
 /**

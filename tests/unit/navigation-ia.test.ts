@@ -308,3 +308,68 @@ describe("environments stop passing their own titles", () => {
     expect(offenders).toEqual([]);
   });
 });
+
+/* ═══════ Briefing Centre ═══════ */
+
+describe("the Briefing Centre is reachable", () => {
+  /*
+   * It is a complete environment — reports assembled from Canonical UIP
+   * snapshots — and it was consolidated behind Institutional Memory,
+   * whose label says nothing about producing a report. An officer could
+   * reach it only from the `generate-report` command action or by
+   * knowing the URL.
+   *
+   * The reconciliation audit put it in one category on its own:
+   * materially distinct, not reasonably reachable, and backed by a real
+   * environment. Everything else the older sidebar named either has an
+   * owner already or has nothing behind it.
+   */
+  const items = NAV_GROUPS.flatMap((g) => g.items);
+
+  it("appears in the sidebar exactly once", () => {
+    const entries = items.filter((i) => i.url === "/briefing-centre");
+    expect(entries).toHaveLength(1);
+    expect(entries[0]!.title).toBe("Briefing Centre");
+    expect(entries[0]!.subtitle).toBe("Reports & Packages");
+  });
+
+  it("sits with the evidence it packages", () => {
+    const group = NAV_GROUPS.find((g) => g.items.some((i) => i.url === "/briefing-centre"));
+    expect(group?.label).toBe("Intelligence & Evidence");
+  });
+
+  it("is a destination, not a consolidated route", () => {
+    // Listing it in both places would make it reachable twice by two
+    // different names, which is the drift consolidation exists to stop.
+    expect(Object.keys(CONSOLIDATED_ROUTES)).not.toContain("/briefing-centre");
+  });
+
+  it("leaves Institutional Memory a destination in its own right", () => {
+    // De-consolidating briefings must not take history and outcomes with
+    // it — they were always the thing `/memory` is named for.
+    expect(items.some((i) => i.url === "/memory")).toBe(true);
+    expect(Object.keys(CONSOLIDATED_ROUTES)).not.toContain("/memory");
+  });
+
+  it("restores nothing else the older sidebar named", () => {
+    /*
+     * Assess, Verification & Inspection, Clearance & Approvals,
+     * Enforcement Cases and Settings stay out: each is either a fragment
+     * inside another environment or a concept with nothing behind it.
+     * Audit Trail stays contextual to a case or an evidence package,
+     * where it has a subject in hand.
+     */
+    const titles = items.map((i) => i.title.toLowerCase()).join(" | ");
+    for (const absent of [
+      "assess",
+      "verification",
+      "inspection",
+      "clearance",
+      "enforcement",
+      "audit trail",
+      "settings",
+    ]) {
+      expect(titles, `"${absent}" was restored without an environment`).not.toContain(absent);
+    }
+  });
+});
