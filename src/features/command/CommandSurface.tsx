@@ -320,23 +320,45 @@ function ActionButton({
   readonly onAction: (id: CommandActionId) => void;
 }) {
   const ready = action.availability.state === "ready";
+  /*
+   * Investigate carries the primary weight.
+   *
+   * Presentation only, and deliberately not a field on the action model:
+   * which action leads is a question about this surface, not about what
+   * the action is. The model still decides availability and order, and
+   * the lens still reorders — a promoted action simply renders filled
+   * when it is the one Investigate.
+   *
+   * Without this every action rendered byte-identically — same
+   * background, border, weight and size — so the row read as four equal
+   * options and the officer's most common next step had no more presence
+   * than "Generate Report". Filled navy is the same primary treatment the
+   * reference uses.
+   */
+  const primary = ready && action.id === "investigate";
   return (
     <button
       type="button"
       data-testid={`command-action-${action.id}`}
       data-availability={action.availability.state}
+      data-emphasis={primary ? "primary" : "default"}
       disabled={!ready}
       title={availabilityTitle(action)}
       onClick={() => onAction(action.id)}
       className={cn(
         "rounded border px-2 py-1 text-left text-[11px] font-semibold motion-fast",
-        ready
-          ? "border-line bg-surface-2 text-foreground hover:border-[color:var(--color-teal)]/45"
-          : "cursor-not-allowed border-transparent text-slate opacity-60",
+        primary &&
+          "border-[color:var(--color-navy)] bg-[color:var(--color-navy)] text-white hover:bg-[color:var(--color-navy)]/90",
+        ready &&
+          !primary &&
+          "border-line bg-surface-2 text-foreground hover:border-[color:var(--color-teal)]/45",
+        !ready && "cursor-not-allowed border-transparent text-slate opacity-60",
       )}
     >
       {action.label}
-      <span className="block text-[10px] font-normal text-slate">
+      <span
+        className={cn("block text-[10px] font-normal", primary ? "text-white/70" : "text-slate")}
+      >
         {ready ? action.caption : availabilityTitle(action)}
       </span>
     </button>
