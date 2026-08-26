@@ -80,18 +80,39 @@ export function focusSubjectFromMapSelection(selection: MapSelection | null): Fo
 }
 
 /**
- * Open the Focus Workspace when the officer selects on the map.
+ * How a map surface reacts to the officer selecting something.
  *
- * Mounted by Mission Control alongside the map. Subscribes to the
- * service the map already writes to, so no map interaction changes and
- * the officer's layer state is never touched.
+ * `workspace` focuses the subject and opens the Focus Workspace drawer —
+ * Mission Control, where the map is one panel among several and the
+ * drawer has room to sit beside it.
+ *
+ * `focus-only` focuses the subject and opens nothing. Maritime Command
+ * is map-dominant: a drawer there would cover the surface the officer
+ * came for, and its own contextual popup is what answers "what is this".
+ * The subject is still established, so the Context Rail, the Copilot and
+ * environment routing all know what is in hand — which is the point of
+ * establishing it at all.
+ */
+export type MapFocusSurface = "workspace" | "focus-only";
+
+/**
+ * Establish focus when the officer selects on the map.
+ *
+ * Subscribes to the service the map already writes to, so no map
+ * interaction changes and the officer's layer state is never touched.
+ * This is a one-way translation: nothing here writes back to
+ * `MapSelection`.
  *
  * A selection that translates to nothing leaves focus exactly as it was:
  * clicking a geofence is not a reason to discard the vessel the officer
  * was working on.
  */
-export function useMapFocusBridge(service: SharedGeospatialService = sgs): void {
+export function useMapFocusBridge(
+  service: SharedGeospatialService = sgs,
+  surface: MapFocusSurface = "workspace",
+): void {
   const openWorkspace = useFocusSubjectStore((s) => s.openWorkspace);
+  const setSubject = useFocusSubjectStore((s) => s.setSubject);
 
   useEffect(() => {
     let previousKey: string | null = null;
@@ -105,10 +126,12 @@ export function useMapFocusBridge(service: SharedGeospatialService = sgs): void 
       previousKey = key;
 
       const subject = focusSubjectFromMapSelection(selection);
-      if (subject) openWorkspace(subject);
+      if (!subject) return;
+      if (surface === "workspace") openWorkspace(subject);
+      else setSubject(subject);
     };
 
     handle(service.get().selection);
     return service.subscribe((state) => handle(state.selection));
-  }, [service, openWorkspace]);
+  }, [service, surface, openWorkspace, setSubject]);
 }

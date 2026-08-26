@@ -24,6 +24,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
+import { useMapFocusBridge } from "@/features/focus-workspace/map-bridge";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -103,6 +104,24 @@ function vesselCapabilities(enabledSources: readonly string[]) {
 }
 
 export function MaritimeCommand() {
+  /*
+   * Selecting on the full map establishes focus.
+   *
+   * Until now this environment wrote only to `MapSelection`, so an
+   * officer who clicked a vessel here had selected it on the map and
+   * nowhere else: the Context Rail, the Copilot and every environment
+   * hand-off still believed nothing was in hand. Mission Control had the
+   * bridge mounted and the map environment did not, which meant the same
+   * click meant two different things depending on which screen it
+   * happened on.
+   *
+   * `focus-only` because this surface is map-dominant: the Focus
+   * Workspace drawer would cover the thing the officer came for. The
+   * subject is established all the same, which is what the rest of the
+   * application reads.
+   */
+  useMapFocusBridge(undefined, "focus-only");
+
   const viewMode = useMapSelector((state) => state.viewMode);
   const operatingMode = useMapSelector((state) => state.operatingMode);
   const selection = useMapSelector((state) => state.selection);
