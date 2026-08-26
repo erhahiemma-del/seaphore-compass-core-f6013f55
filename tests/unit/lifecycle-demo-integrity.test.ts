@@ -155,16 +155,18 @@ describe("intel-centre fixtures cannot claim observation either", () => {
     "src/features/vessel/Vessel.tsx",
     "src/features/ports/Ports.tsx",
     /*
-     * `Evidence.tsx` sat here and was removed in Phase 5: it was an
-     * unrouted duplicate of `EvidenceLibrary.tsx`, so this line was
-     * guarding a screen no officer could open.
+     * `Evidence.tsx` sat here and was removed in Phase 5 as an unrouted
+     * duplicate. The guard follows the surface an officer can open.
      *
-     * It is deliberately not repointed at `EvidenceLibrary.tsx`.
-     * That surface runs a real query with `EVIDENCE_LIBRARY` only as
-     * `initialData`, so whether it is "simulated" is a product judgement
-     * about what it shows before the query resolves — not something to
-     * settle by making a test pass.
+     * It differs from its neighbours in one way that matters: this one
+     * shows the seed *conditionally*, because `listEvidence()` reports
+     * whether its rows came from the backend or from the fixture. So the
+     * notice must be bound to that fact rather than rendered outright —
+     * labelling real evidence "simulated" would make officers distrust
+     * genuine records. `evidence-provenance.test.ts` pins both
+     * directions; this line pins that the notice exists at all.
      */
+    "src/features/evidence/EvidenceLibrary.tsx",
     "src/features/ownership/Ownership.tsx",
     "src/features/compliance/Compliance.tsx",
     "src/features/mission-control/CommandCenter.tsx",
