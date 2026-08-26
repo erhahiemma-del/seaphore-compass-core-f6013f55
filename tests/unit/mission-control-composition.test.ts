@@ -362,3 +362,108 @@ describe("the drifted sections do not return", () => {
     expect(MISSION_CONTROL).toContain("projection={feedProjection}");
   });
 });
+
+/* ═══════ 7. The composition cannot regress ═══════ */
+
+describe("Mission Control renders the approved composition and nothing else", () => {
+  /*
+   * This block exists because the composition appeared to regress once,
+   * and the cause turned out to be absence rather than reintroduction:
+   * the approved KPI work sat on a branch that a later branch was not
+   * built from, so the page rendered provider-readiness cards again. No
+   * commit brought the legacy sections back — one simply never carried
+   * the fix forward.
+   *
+   * Membership assertions catch that. A section is either in the render
+   * path or it is not, whatever route the code took to get there.
+   */
+  const PRESENT = [
+    "CommandSurfaceHost",
+    "OperationalOrientation",
+    "RecommendedNextActionPanel",
+    "MaritimePicturePanel",
+    "PriorityQueuePanel",
+    "MissionKpiCard",
+    "MyWorkspacePanel",
+    "DecisionsApprovalsPanel",
+    "HandoffsBlockersPanel",
+    "RecentWorkPanel",
+    "IntelligenceEventsStrip",
+  ] as const;
+
+  /** Removed from this page. Every one still lives somewhere else. */
+  const ABSENT = [
+    "IntelligenceReadinessCard",
+    "IntelligenceFeedPanel",
+    "SupportingIntelligence",
+    "CargoWorkspaceStrip",
+    "TodaysPrioritiesPanel",
+    "RecentBriefingsPanel",
+    "ConfidenceLegend",
+    "KpiCoverageCard",
+  ] as const;
+
+  it("renders every approved section", () => {
+    for (const section of PRESENT) {
+      expect(MISSION_CONTROL, `${section} is missing`).toContain(`<${section}`);
+    }
+  });
+
+  it("renders no excluded section", () => {
+    for (const section of ABSENT) {
+      expect(MISSION_CONTROL, `${section} is rendering again`).not.toContain(`<${section}`);
+    }
+  });
+
+  it("imports no excluded section either", () => {
+    // An unused import is how a removed section finds its way back.
+    const importLines = MISSION_CONTROL.split("\n").filter((line) => line.startsWith("import "));
+    for (const section of ABSENT) {
+      const offenders = importLines.filter((line) => line.includes(section));
+      expect(offenders, `${section} is still imported`).toEqual([]);
+    }
+  });
+
+  it("shows no provider-readiness diagnostics", () => {
+    /*
+     * Mission Control answers "what is happening"; Data Sources and
+     * Provider Health answer "why is a feed quiet". Those are different
+     * questions for different moments, and the six cards were answering
+     * the second one six times over.
+     */
+    // Comments here discuss the phrases they forbid, so this reads the
+    // code only — otherwise the guard matches its own explanation.
+    const rendered = MISSION_CONTROL.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+    for (const phrase of ["Waiting for Credentials", "PROVIDER OFFLINE", "Coverage details"]) {
+      expect(rendered, `"${phrase}" is rendered here`).not.toContain(phrase);
+    }
+    expect(rendered).not.toMatch(/Coverage \{|coveragePct/);
+  });
+
+  it("keeps a home for everything it stopped rendering", () => {
+    /*
+     * Removed from the composition, not from the application. This fails
+     * if a destination environment disappears, which would turn a move
+     * into a loss.
+     */
+    const homes: Readonly<Record<string, string>> = {
+      IntelligenceFeedPanel: "src/routes/detect.tsx",
+      ConfidenceLegend: "src/features/detect/Detect.tsx",
+      IntelligenceReadinessCard: "src/routes/data-sources.tsx",
+      CargoWorkspaceStrip: "src/routes/manifest.tsx",
+      RecentBriefingsPanel: "src/routes/briefing-centre.tsx",
+      SupportingIntelligence: "src/routes/compliance.tsx",
+    };
+    for (const [section, home] of Object.entries(homes)) {
+      expect(() => read(home), `${section} has no home at ${home}`).not.toThrow();
+    }
+    // The provider-readiness card itself must still exist, unchanged.
+    expect(() => read("src/components/intelligence/KpiCoverageCard.tsx")).not.toThrow();
+  });
+
+  it("uses the approved KPI card, and only that", () => {
+    // One card component in the ribbon. Two would let the fork that
+    // rendered diagnostics grow back beside the one that does not.
+    expect(MISSION_CONTROL.split("<MissionKpiCard").length - 1).toBe(1);
+  });
+});

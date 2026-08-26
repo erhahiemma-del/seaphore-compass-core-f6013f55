@@ -2,7 +2,6 @@ import { useCallback, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getIntelligenceCoverage } from "@/lib/intelligence-coverage.functions";
-import { KpiCoverageCard } from "@/components/intelligence/KpiCoverageCard";
 import {
   Activity,
   AlertTriangle,
@@ -30,7 +29,6 @@ import { useFocusSubjectStore } from "@/stores/focus-subject.store";
 
 import { PanelCard } from "@/components/panel-card";
 import { ConfidenceChip, type ConfidenceTier } from "@/components/intelligence/ConfidenceChip";
-import { ConfidenceLegend } from "@/components/confidence-legend";
 import { RiskPill } from "@/components/intelligence/RiskPill";
 import { MapCanvas, type VesselFeedState } from "@/features/maritime/MapCanvas";
 import { MapControlStack, MapLayerChips, MapLegendBar } from "@/features/maritime/MapChrome";
@@ -295,9 +293,16 @@ export function MissionControl() {
           importance that the coverage model never made.
         */}
         <Ribbon />
-        <div className={recede}>
-          <ConfidenceLegend />
-        </div>
+        {/*
+          No confidence ladder here.
+
+          The legend explains the vocabulary — verified, observed,
+          inferred, unconfirmed — which is reference material for someone
+          reading gradings, not part of the national picture. It lives in
+          Detect, beside the signals it grades, and in the intelligence
+          centres' audit bar. On Mission Control it sat between the
+          measures and the officer's work and explained neither.
+        */}
 
         {/*
           Layer 5 — the officer's own work, in four columns.
