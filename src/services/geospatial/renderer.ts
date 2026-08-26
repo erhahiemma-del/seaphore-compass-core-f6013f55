@@ -18,6 +18,7 @@
  *   - `destroy` must release the GL context and all listeners; a destroyed
  *     renderer is not reusable.
  */
+import type { ViewMode } from "./types";
 import type { MapEventBus } from "./event-bus";
 import type { MapStylePaletteName } from "./constants";
 import type { BoundingBox, GeoJsonFeatureCollection, GeoJsonPoint, LonLat } from "./types";
@@ -127,6 +128,21 @@ export interface MapRenderer {
 
   /** Move the camera. Partial poses leave the other axes untouched. */
   setCamera(camera: Partial<MapCamera>): void;
+
+  /**
+   * Switch how the world is projected.
+   *
+   * `GLOBE` is a projection on the same map instance, not a second map.
+   * Everything the officer has established — camera, selection, layers,
+   * filters, focus — is state this renderer never owned, so none of it
+   * is touched by the switch.
+   *
+   * A renderer with no projection support implements this as a no-op
+   * rather than throwing: the officer's choice is recorded in `MapState`
+   * either way, and a stub that refused would make the control appear
+   * broken rather than unsupported.
+   */
+  setProjection(view: ViewMode): void;
 
   /** Current camera pose, or null before mount. */
   getCamera(): MapCamera | null;

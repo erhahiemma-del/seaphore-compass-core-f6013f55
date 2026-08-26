@@ -26,7 +26,54 @@ export type BoundingBox = readonly [LonLat, LonLat];
  * "Operational View" (2D) and "Terrain Perspective" (3D) — never "MapLibre"
  * or "Cesium", which are implementation details.
  */
-export type ViewMode = "2D" | "3D";
+/**
+ * How the map draws. Not what it is for — see `OperatingMode` for that,
+ * and `MapInteractionMode` for how the officer is working.
+ *
+ * `GLOBE` is a projection, not a third map. It runs on the same MapLibre
+ * instance through `setProjection`, so the camera, the selection, the
+ * layers and the focused subject all survive the switch — an officer who
+ * spins out to see a long-range approach comes back to the same picture
+ * they left.
+ */
+export type ViewMode = "2D" | "3D" | "GLOBE";
+
+/**
+ * How the officer is working the map.
+ *
+ * A third axis, deliberately separate from both `ViewMode` (how it
+ * draws) and `OperatingMode` (what it is for). The three answer
+ * different questions and vary independently: an officer can be in the
+ * PORT lens, in 3D, filtering — and none of those choices implies
+ * either of the others.
+ *
+ * Merging any two would recreate the vocabulary drift this codebase has
+ * already paid for once, where one name carried two meanings and a
+ * consumer could not tell which it had.
+ *
+ *   LIVE          the current picture, as it is reporting
+ *   FILTER        narrowing that picture to a question
+ *   ANALYSIS      density, patterns and comparison over a period
+ *   REPLAY        historical playback
+ *   INTELLIGENCE  evidence, relationships and investigation context
+ */
+export type MapInteractionMode = "LIVE" | "FILTER" | "ANALYSIS" | "REPLAY" | "INTELLIGENCE";
+
+export const MAP_INTERACTION_MODES: readonly MapInteractionMode[] = [
+  "LIVE",
+  "FILTER",
+  "ANALYSIS",
+  "REPLAY",
+  "INTELLIGENCE",
+] as const;
+
+export const MAP_INTERACTION_MODE_LABELS: Readonly<Record<MapInteractionMode, string>> = {
+  LIVE: "Live",
+  FILTER: "Filter",
+  ANALYSIS: "Analysis",
+  REPLAY: "Replay",
+  INTELLIGENCE: "Intelligence",
+};
 
 /** Risk bands recognised by the map. Mirrors the keys of `RISK_COLORS`. */
 export type RiskLevel = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | "UNKNOWN" | "CLEAN";
@@ -64,6 +111,8 @@ export interface MapState {
    * the vocabulary drift G6.0 removed from the orchestration layer.
    */
   readonly operatingMode: OperatingMode;
+  /** How the officer is working the map. Independent of lens and view. */
+  readonly interactionMode: MapInteractionMode;
   /**
    * How far the camera may travel.
    *

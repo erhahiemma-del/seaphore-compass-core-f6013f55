@@ -192,6 +192,15 @@ describe("default layer catalogue", () => {
       "ports",
       // Verified anchorages are estate, like ports: on by default.
       "anchorages",
+      /*
+       * The EEZ is a logical layer now, not only a render id.
+       *
+       * `eezBoundary` was drawn from the start and had no catalogue
+       * entry, so an officer could see the boundary and had no way to
+       * turn it off. Both appear here because the render id remains in
+       * the default set and the logical layer that governs it is on.
+       */
+      "nigeria-eez",
       "eezBoundary",
       "graticule",
     ]);

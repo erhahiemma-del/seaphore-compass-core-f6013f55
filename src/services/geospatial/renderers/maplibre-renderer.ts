@@ -78,7 +78,7 @@ import type {
   VesselFeatureCollection,
   VesselRenderBatch,
 } from "../renderer";
-import type { BoundingBox, LonLat } from "../types";
+import type { BoundingBox, LonLat, ViewMode } from "../types";
 import type { VesselFeature } from "../vessel";
 
 /**
@@ -2174,6 +2174,45 @@ export class MapLibreRenderer implements MapRenderer {
    * That was observed directly during the M2.6 audit, and no perspective
    * nicety is worth that failure mode.
    */
+  /**
+   * Switch the projection on the map already mounted.
+   *
+   * Globe is a MapLibre projection, so this is one call on the live
+   * instance — no second map, no remount, and nothing that would put the
+   * mount-reliability work back at risk. The camera, the installed
+   * layers, the feature-state selection and the officer's focus all
+   * survive because none of them is re-created here.
+   *
+   * Pitch is left alone deliberately. An officer who tilted to read a
+   * berth approach and then spun out to the globe should find their tilt
+   * where they left it, and `applyPerspective` remains the one place
+   * that decides pitch.
+   */
+  setProjection(view: ViewMode): void {
+    const map = this.map;
+    if (!map || this.destroyed) return;
+
+    const type = view === "GLOBE" ? "globe" : "mercator";
+    try {
+      (map as unknown as { setProjection: (spec: { type: string }) => void }).setProjection({
+        type,
+      });
+    } catch (error) {
+      /*
+       * Reported, never silent. A projection the engine declines leaves
+       * the map drawing correctly in the previous one, and an officer
+       * who pressed Globe and saw no change needs to know the engine
+       * refused rather than that their click was lost.
+       */
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`[Seaphore map] Projection "${type}" was declined: ${message}`);
+      this.bus?.emit("map:error", {
+        scope: "maplibre:projection",
+        message: `The map engine declined the ${type} projection: ${message}`,
+      });
+    }
+  }
+
   private applyPerspective(): void {
     const map = this.map;
     if (!map || this.destroyed) return;

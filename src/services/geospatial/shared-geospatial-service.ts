@@ -29,7 +29,15 @@ import {
   type MapSelection,
   type OperatingMode,
 } from "./selection";
-import type { LonLat, MapFilters, MapState, Unsubscribe, ViewMode } from "./types";
+import { MAP_INTERACTION_MODES } from "./types";
+import type {
+  LonLat,
+  MapFilters,
+  MapInteractionMode,
+  MapState,
+  Unsubscribe,
+  ViewMode,
+} from "./types";
 
 /** Default filter state — everything unfiltered. */
 export const DEFAULT_FILTERS: MapFilters = {
@@ -44,6 +52,9 @@ export function createDefaultMapState(registry: LayerRegistry = layerRegistry): 
   return {
     viewMode: "2D",
     operatingMode: "NATIONAL",
+    // The current picture, as it is reporting. Every other interaction
+    // mode is something the officer chooses to do to it.
+    interactionMode: "LIVE",
     /*
      * Global by default.
      *
@@ -266,6 +277,18 @@ export class SharedGeospatialService {
    *
    * Distinct from {@link switchView}, which changes 2D/3D rendering.
    */
+  /**
+   * How the officer is working the map.
+   *
+   * Separate from `setOperatingMode` and `switchView` on purpose: the
+   * lens, the projection and the interaction are three independent
+   * choices, and a setter that quietly moved another axis would make one
+   * control answer for two.
+   */
+  setInteractionMode(interactionMode: MapInteractionMode): void {
+    this.update({ interactionMode });
+  }
+
   setOperatingMode(operatingMode: OperatingMode): void {
     this.update({ operatingMode });
   }
@@ -325,6 +348,8 @@ export class SharedGeospatialService {
     if (state.bearing !== 0) params.set("bearing", state.bearing.toFixed(1));
     if (state.enabledSources.length > 0) params.set("sources", state.enabledSources.join(","));
     if (state.operatingMode !== "NATIONAL") params.set("mode", state.operatingMode);
+    // `imode`, not `mode` — the two axes must not collide in one key.
+    if (state.interactionMode !== "LIVE") params.set("imode", state.interactionMode);
     // Only when it differs from the default, so the common link stays short.
     if (state.scope !== "global") params.set("scope", state.scope);
     const encoded = encodeSelection(state.selection);
@@ -446,6 +471,17 @@ export class SharedGeospatialService {
       patch.operatingMode = mode as OperatingMode;
     }
 
+    /*
+     * Validated against its own vocabulary, like every other restored
+     * value. A URL is untrusted input even when it is only naming a
+     * mode, and an unrecognised name leaves the axis at its default
+     * rather than putting the map into a state that does not exist.
+     */
+    const interaction = params.get("imode");
+    if (interaction && (MAP_INTERACTION_MODES as readonly string[]).includes(interaction)) {
+      patch.interactionMode = interaction as MapInteractionMode;
+    }
+
     // Unknown scope names are ignored rather than defaulted-to-regional:
     // a truncated link must not silently re-cage the map.
     const scope = params.get("scope");
@@ -457,7 +493,7 @@ export class SharedGeospatialService {
     if (mission) patch.missionId = mission;
 
     const view = params.get("view");
-    if (view === "2D" || view === "3D") patch.viewMode = view;
+    if (view === "2D" || view === "3D" || view === "GLOBE") patch.viewMode = view;
 
     if (Object.keys(patch).length > 0) this.update(patch);
   }

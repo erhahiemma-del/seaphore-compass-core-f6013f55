@@ -370,6 +370,20 @@ export function MapCanvas({
     renderer.setVoyageData(toVoyageEndpointCollection(list));
   }, [renderer, voyages, rendererDraws]);
 
+  /*
+   * ── Projection follows the officer's view mode ────────────────────
+   *
+   * One call on the mounted map, not a remount. Globe is a MapLibre
+   * projection, so switching costs nothing the officer has established:
+   * the camera, the installed layers, the selection and the focused
+   * subject are all state this effect never touches.
+   */
+  const viewMode = useMapSelector((state) => state.viewMode, service);
+  useEffect(() => {
+    if (!renderer.isReady()) return;
+    renderer.setProjection(viewMode);
+  }, [renderer, viewMode, rendererDraws]);
+
   // ── Layer visibility and opacity follow SGS ───────────────────────────
   useEffect(
     () =>

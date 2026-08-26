@@ -16,22 +16,24 @@ import { MAP_SYMBOLS, MAP_SYMBOL_GRID, type MapSymbolKind } from "@/lib/map-symb
 import {
   AlertTriangle,
   Anchor,
+  Box,
+  Boxes,
   Cloud,
   Crosshair,
+  Globe2,
   Layers,
-  Boxes,
   Minus,
+  MoreHorizontal,
+  Orbit,
   Plus,
   Route,
   Ship,
-  Box,
-  MoreHorizontal,
-  Globe2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
+import type { ViewMode } from "@/services/geospatial";
 import { cn } from "@/lib/utils";
 import {
   MAP_SCOPES,
@@ -287,6 +289,25 @@ export interface MapControlStackProps {
  * Perspective drives the existing 2D/3D view mode and the existing camera
  * pitch — MapLibre moves the actual camera; nothing here fakes depth.
  */
+/**
+ * The perspective cycle, and what each step is called.
+ *
+ * The label names where the control *goes*, not where it is: a button
+ * reading "Globe" while the map is already a globe tells an officer
+ * nothing about what pressing it will do.
+ */
+const NEXT_PERSPECTIVE: Readonly<Record<ViewMode, ViewMode>> = {
+  "2D": "3D",
+  "3D": "GLOBE",
+  GLOBE: "2D",
+};
+
+const PERSPECTIVE_LABELS: Readonly<Record<ViewMode, string>> = {
+  "2D": "Terrain perspective (3D)",
+  "3D": "Global view (globe)",
+  GLOBE: "Return to 2D operational view",
+};
+
 export function MapControlStack({
   service = sgs,
   scope = "regional",
@@ -353,14 +374,30 @@ export function MapControlStack({
           }
         />
         <div className="h-px bg-border/70" />
+        {/*
+          Three perspectives on one control, cycled in the order an
+          officer widens their view: the flat operational picture, the
+          tilted one for approaches and berths, then the globe for
+          long-range context.
+
+          Deliberately one button rather than three. The perspective is a
+          single choice with three values, and three separate toggles
+          would let an officer press one while another is lit and have to
+          work out which won.
+        */}
         <ControlButton
-          label={viewMode === "3D" ? "Return to 2D operational view" : "Terrain perspective (3D)"}
-          icon={Globe2}
-          pressed={viewMode === "3D"}
+          label={PERSPECTIVE_LABELS[viewMode]}
+          icon={viewMode === "GLOBE" ? Orbit : Globe2}
+          pressed={viewMode !== "2D"}
           onClick={() => {
-            const next = viewMode === "3D" ? "2D" : "3D";
+            const next = NEXT_PERSPECTIVE[viewMode];
             service.switchView(next);
-            // The real MapLibre camera — the existing pitch pathway, not CSS.
+            /*
+             * Pitch belongs to the tilt, not to the globe. 3D asks for
+             * the real MapLibre camera pitch — the existing pathway, not
+             * CSS — and both 2D and the globe sit level, so an officer
+             * spinning out does not find the world tilted as well.
+             */
             service.setCamera({ pitch: next === "3D" ? 50 : 0 });
           }}
         />

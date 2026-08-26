@@ -124,7 +124,24 @@ export interface LayerRuntimeState {
  * rather than silently rendering nothing. This is how G5.5.1 declares its own
  * integration points instead of hiding them.
  */
-export type LayerStatus = "ready" | "pending-source";
+/**
+ * Whether a layer can draw, and if not, why not.
+ *
+ *   ready           a connected source; the layer draws what it observes
+ *   pending-source  the capability is modelled, no provider is connected
+ *   unavailable     the capability cannot be offered here at all — a
+ *                   licence Seaphore does not hold, or data that does not
+ *                   exist in a machine-readable form
+ *
+ * The last two are deliberately different. "Nobody has wired this yet" is
+ * a backlog item an officer can expect to see resolved; "this is not
+ * something we can obtain" is a permanent answer, and collapsing them
+ * would leave officers waiting for a layer that is never coming.
+ *
+ * Neither draws anything. A catalogue entry with no source is a statement
+ * about Seaphore's collection, never about the sea.
+ */
+export type LayerStatus = "ready" | "pending-source" | "unavailable";
 
 /** A logical layer an officer can switch on or off. */
 export interface LayerDefinition {
@@ -163,8 +180,23 @@ export class LayerRegistry {
     if (this.layers.has(definition.id)) {
       throw new LayerRegistryError(`Layer "${definition.id}" is already registered`);
     }
-    if (definition.renderLayerIds.length === 0) {
-      throw new LayerRegistryError(`Layer "${definition.id}" declares no render layer ids`);
+    /*
+     * A `ready` layer must name something to draw.
+     *
+     * The invariant exists so a connected layer cannot become a toggle
+     * that controls nothing — an officer switching it on and seeing no
+     * change would reasonably conclude the map is broken.
+     *
+     * It does not apply to a layer with no source. Those are catalogue
+     * entries: they declare that Seaphore models the capability and
+     * states why it cannot draw it yet. Requiring a render id would
+     * force each one to point at a layer that does not exist, which is
+     * the fake renderer this whole catalogue exists to avoid.
+     */
+    if (definition.status === "ready" && definition.renderLayerIds.length === 0) {
+      throw new LayerRegistryError(
+        `Layer "${definition.id}" is ready but declares no render layer ids`,
+      );
     }
     this.layers.set(definition.id, definition);
     return this;
@@ -315,6 +347,21 @@ export function resolveLayerState(
   }
 
   // 2. No connector. Absence of features here says nothing about the world.
+  /*
+   * Not obtainable. Reported separately from "pending" so the officer is
+   * not left expecting a source that will never arrive.
+   */
+  if (definition.status === "unavailable") {
+    return {
+      ...base,
+      freshness: "PENDING",
+      ageMs: null,
+      note:
+        definition.pendingReason ??
+        "This layer is not available to Seaphore. It is listed so the gap is visible, not because it is coming.",
+    };
+  }
+
   if (definition.status === "pending-source") {
     return {
       ...base,
@@ -693,6 +740,452 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     order: 40,
     pendingReason:
       "Requires an AIS history source; Datalastic is registered but not wired, and SeaVantage is not implemented.",
+  },
+
+  /*
+   * The rest of the catalogue, registered without a renderer.
+   *
+   * The capability model was eight layers wide while the product
+   * describes about forty. That gap was invisible: an officer could not
+   * tell whether "Restricted Zones" was absent because Seaphore cannot
+   * draw them or because nobody had asked for them. Listing every layer
+   * with a status and a reason makes the gap a fact on the screen
+   * rather than a backlog item nobody outside the team can see.
+   *
+   * None of these draws anything. An empty renderLayerIds is the honest
+   * expression of that: there is no renderer to point at, so no fake one
+   * can appear behind the toggle.
+   */
+  {
+    id: "nigeria-eez",
+    label: "Nigeria EEZ",
+    description: "The declared Exclusive Economic Zone boundary and its fill.",
+    group: "MARITIME_ZONES",
+    renderLayerIds: [LAYER_IDS.eezBoundary, LAYER_IDS.eezFill],
+    defaultVisible: true,
+    status: "ready",
+    order: 5,
+  },
+  {
+    id: "terminals",
+    label: "Terminals",
+    description: "Terminal footprints inside each port complex.",
+    group: "PORTS_INFRASTRUCTURE",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 12,
+    pendingReason:
+      "The ports table records terminal names as text; no geometry exists to draw them from.",
+  },
+  {
+    id: "berths",
+    label: "Berths",
+    description: "Individual berths and their occupancy.",
+    group: "PORTS_INFRASTRUCTURE",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 13,
+    pendingReason:
+      "No berth register with positions is connected. Occupancy would have to be observed, and nothing observes it.",
+  },
+  {
+    id: "aids-to-navigation",
+    label: "Aids to Navigation",
+    description: "Buoys, beacons and lights.",
+    group: "PORTS_INFRASTRUCTURE",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 14,
+    pendingReason:
+      "Requires an aids-to-navigation register. NIMASA holds one; it is not machine-readable here.",
+  },
+  {
+    id: "offshore-infrastructure",
+    label: "Offshore Infrastructure",
+    description: "Platforms, terminals and subsea assets offshore.",
+    group: "PORTS_INFRASTRUCTURE",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 15,
+    pendingReason: "No offshore asset register is connected.",
+  },
+  {
+    id: "routes",
+    label: "Routes",
+    description: "The path a vessel actually took between calls.",
+    group: "OPERATIONAL",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 20,
+    pendingReason:
+      "Requires AIS track history. Voyage endpoints are known; the path between them is not, and each voyage says so through pathKnown.",
+  },
+  {
+    id: "port-calls",
+    label: "Port Calls",
+    description: "Arrivals and departures at each port.",
+    group: "OPERATIONAL",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 21,
+    pendingReason:
+      "No port-call feed is connected. NPA SHIPPOS is the Tier 1 source and has no machine-readable route configured.",
+  },
+  {
+    id: "traffic-density",
+    label: "Traffic Density",
+    description: "Where traffic concentrates, over a chosen period.",
+    group: "OPERATIONAL",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 22,
+    pendingReason:
+      "Requires AIS history to aggregate. The live source publishes recent events, not a track archive.",
+  },
+  {
+    id: "anchorage-activity",
+    label: "Anchorage Activity",
+    description: "Dwell and turnover at each anchorage.",
+    group: "OPERATIONAL",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 23,
+    pendingReason: "Requires position history to derive dwell. Nothing records it.",
+  },
+  {
+    id: "expected-arrivals",
+    label: "Expected Arrivals",
+    description: "Vessels declared inbound, and when.",
+    group: "OPERATIONAL",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 24,
+    pendingReason:
+      "Declared arrival times exist on voyages; no feed publishes them as an arrival board.",
+  },
+  {
+    id: "port-congestion",
+    label: "Port Congestion",
+    description: "Queue length and waiting time by port.",
+    group: "OPERATIONAL",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 25,
+    pendingReason:
+      "No port operations provider is connected, so berth occupancy and congestion cannot be observed.",
+  },
+  {
+    id: "cargo-activity",
+    label: "Cargo Activity",
+    description: "Declared cargo moving through each port.",
+    group: "TRADE_LOGISTICS",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 30,
+    pendingReason:
+      "Cargo records exist per manifest; none carries a position, so there is nothing to place on a map.",
+  },
+  {
+    id: "container-activity",
+    label: "Container Activity",
+    description: "Container movements, aggregated by port.",
+    group: "TRADE_LOGISTICS",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 31,
+    pendingReason:
+      "Containers are recorded against voyages, not positions. Individual containers are not map objects.",
+  },
+  {
+    id: "manifest-exceptions",
+    label: "Manifest Exceptions",
+    description: "Declared against observed, where they disagree.",
+    group: "TRADE_LOGISTICS",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 32,
+    pendingReason: "Requires both a manifest feed and an observation to compare it against.",
+  },
+  {
+    id: "cargo-density",
+    label: "Cargo Density",
+    description: "Where declared cargo concentrates.",
+    group: "TRADE_LOGISTICS",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 33,
+    pendingReason: "Aggregation needs positioned cargo records. None exist.",
+  },
+  {
+    id: "revenue-risk",
+    label: "Revenue Risk",
+    description: "Assessed exposure, placed where it arose.",
+    group: "TRADE_LOGISTICS",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 34,
+    pendingReason: "Leakage findings are computed per manifest and carry no position.",
+  },
+  {
+    id: "restricted-zones",
+    label: "Restricted Zones",
+    description: "Areas closed to traffic, and the order that closed them.",
+    group: "RISK_INTELLIGENCE",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 41,
+    pendingReason:
+      "No zone register is connected. Drawing a restriction that is not current would be worse than drawing none.",
+  },
+  {
+    id: "security-zones",
+    label: "Security Zones",
+    description: "Port facility security areas.",
+    group: "RISK_INTELLIGENCE",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 42,
+    pendingReason: "Requires a security zone register with geometry.",
+  },
+  {
+    id: "ais-gaps",
+    label: "AIS Gaps",
+    description: "Where a vessel stopped transmitting, and for how long.",
+    group: "RISK_INTELLIGENCE",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 43,
+    pendingReason:
+      "A gap is the absence of a signal over time. Deriving one requires track history, which is not collected.",
+  },
+  {
+    id: "watch-zones",
+    label: "Watch Zones",
+    description: "Areas an officer has asked to be told about.",
+    group: "RISK_INTELLIGENCE",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 44,
+    pendingReason: "No watch-zone store exists. Zones would have to persist per officer.",
+  },
+  {
+    id: "piracy",
+    label: "Piracy and Armed Robbery",
+    description: "Reported attacks and attempted boardings.",
+    group: "RISK_INTELLIGENCE",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "unavailable",
+    order: 45,
+    pendingReason:
+      "The IMB Piracy Reporting Centre feed is licensed and Seaphore holds no licence. Listed so the gap is visible, not because it is coming.",
+  },
+  {
+    id: "territorial-waters",
+    label: "Territorial Waters",
+    description: "The 12-nautical-mile limit.",
+    group: "MARITIME_ZONES",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 50,
+    pendingReason:
+      "Requires the declared baseline. The EEZ geometry ships with Seaphore; this does not.",
+  },
+  {
+    id: "port-limits",
+    label: "Port Limits",
+    description: "The legal limits of each port.",
+    group: "MARITIME_ZONES",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 51,
+    pendingReason: "NPA publishes port limits on paper; no machine-readable geometry is available.",
+  },
+  {
+    id: "marpol",
+    label: "MARPOL Areas",
+    description: "Special areas under MARPOL.",
+    group: "MARITIME_ZONES",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 52,
+    pendingReason: "Requires IMO special-area geometry.",
+  },
+  {
+    id: "sar-zones",
+    label: "SAR Zones",
+    description: "Search and rescue regions.",
+    group: "MARITIME_ZONES",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 53,
+    pendingReason: "Requires the search and rescue region geometry NIMASA coordinates under.",
+  },
+  {
+    id: "protected-areas",
+    label: "Protected Areas",
+    description: "Marine protected and conservation areas.",
+    group: "MARITIME_ZONES",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 54,
+    pendingReason: "No protected-area register is connected.",
+  },
+  {
+    id: "regulatory-zones",
+    label: "Regulatory Zones",
+    description: "Other declared regulatory areas.",
+    group: "MARITIME_ZONES",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 55,
+    pendingReason: "A catalogue entry for zones declared case by case. None is connected.",
+  },
+  {
+    id: "wind",
+    label: "Wind",
+    description: "Wind speed and direction.",
+    group: "ENVIRONMENT",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 61,
+    pendingReason: "No meteorological provider is connected.",
+  },
+  {
+    id: "waves",
+    label: "Wave Height",
+    description: "Significant wave height.",
+    group: "ENVIRONMENT",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 62,
+    pendingReason: "No sea-state provider is connected.",
+  },
+  {
+    id: "currents",
+    label: "Currents",
+    description: "Surface current set and drift.",
+    group: "ENVIRONMENT",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 63,
+    pendingReason: "No oceanographic provider is connected.",
+  },
+  {
+    id: "storms",
+    label: "Storms",
+    description: "Tracked storm systems.",
+    group: "ENVIRONMENT",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 64,
+    pendingReason: "No storm-track provider is connected.",
+  },
+  {
+    id: "visibility",
+    label: "Visibility",
+    description: "Reported visibility.",
+    group: "ENVIRONMENT",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 65,
+    pendingReason: "No meteorological provider is connected.",
+  },
+  {
+    id: "pollution",
+    label: "Pollution and Oil Spill",
+    description: "Reported discharges and slicks.",
+    group: "ENVIRONMENT",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 66,
+    pendingReason: "NOSDRA reports incidents; no positioned spill feed is wired.",
+  },
+  {
+    id: "investigation-areas",
+    label: "Investigation Areas",
+    description: "Areas an officer has drawn for a case.",
+    group: "INVESTIGATIONS",
+    renderLayerIds: [LAYER_IDS.investigArea],
+    defaultVisible: false,
+    status: "ready",
+    order: 70,
+  },
+  {
+    id: "compliance-hotspots",
+    label: "Compliance Hotspots",
+    description: "Where exceptions cluster.",
+    group: "INVESTIGATIONS",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 71,
+    pendingReason:
+      "Compliance findings carry no position, so there is nothing to cluster geographically.",
+  },
+  {
+    id: "revenue-risk-areas",
+    label: "Revenue Risk Areas",
+    description: "Where assessed exposure concentrates.",
+    group: "INVESTIGATIONS",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 72,
+    pendingReason: "Requires positioned revenue findings.",
+  },
+  {
+    id: "historical-activity",
+    label: "Historical Activity",
+    description: "What happened here before.",
+    group: "INVESTIGATIONS",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 73,
+    pendingReason: "Requires an activity archive. Nothing retains historical positions.",
+  },
+  {
+    id: "anomaly-density",
+    label: "Anomaly Density",
+    description: "Where anomalies concentrate.",
+    group: "INVESTIGATIONS",
+    renderLayerIds: [],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 74,
+    pendingReason: "Requires both positioned anomalies and a period to aggregate over.",
   },
 ] as const;
 
