@@ -92,7 +92,7 @@ export function DetectPage() {
   if (authState === "out") return <Navigate to="/auth" search={{} as { redirect: string }} />;
 
   return (
-    <AppShell mode="light">
+    <AppShell mode="light" capabilities={{ commandSurface: true, focus: true }}>
       <DemoDataNotice surface="Detect" className="mb-3" />
       <div className="mx-auto max-w-[1500px] space-y-4 p-4 lg:p-6">
         {/* DET-1 */}

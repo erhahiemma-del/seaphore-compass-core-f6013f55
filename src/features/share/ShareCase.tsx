@@ -163,7 +163,7 @@ function ShareWorkspace({ fallbackId }: { fallbackId?: string } = {}) {
   );
 
   return (
-    <AppShell title="Share" subtitle="Intelligence Briefing Workspace" mode="light">
+    <AppShell mode="light" capabilities={{ commandSurface: true, focus: true }}>
       <DemoDataNotice surface="This briefing workspace" className="mb-3" />
       <div className="mx-auto max-w-[1600px] space-y-4 p-4 lg:p-6">
         <HeaderBar

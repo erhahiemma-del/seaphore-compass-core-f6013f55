@@ -10,7 +10,7 @@ import { DemoDataNotice } from "@/components/intelligence/DemoDataNotice";
 
 export function DecideList() {
   return (
-    <AppShell mode="light">
+    <AppShell mode="light" capabilities={{ commandSurface: true, focus: true }}>
       <DemoDataNotice surface="Decision Support" className="mb-3" />
       <div className="mx-auto max-w-[1400px] space-y-4 p-4 lg:p-6">
         <div className="flex items-start gap-3">

@@ -296,6 +296,9 @@ describe("environments stop passing their own titles", () => {
     "src/features/share/ShareList.tsx",
     "src/features/compliance/Compliance.tsx",
     "src/features/evidence/EvidenceLibrary.tsx",
+    "src/features/investigate/InvestigateCase.tsx",
+    "src/features/decision-support/DecideCase.tsx",
+    "src/features/share/ShareCase.tsx",
   ];
 
   it("leaves identity to the model on every migrated environment", () => {

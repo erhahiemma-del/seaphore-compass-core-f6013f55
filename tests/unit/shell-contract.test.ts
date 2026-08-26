@@ -149,3 +149,57 @@ describe("an environment never mounts a capability twice", () => {
     expect(MISSION_CONTROL).toContain("<FocusWorkspaceHost />");
   });
 });
+
+describe("capabilities are enabled where they mean something", () => {
+  /*
+   * `commandSurface` and `focus` are only useful together on these
+   * screens. Selecting a search result is what establishes a focus
+   * subject, so the rail has something to show; turning the rail on
+   * alone would render nothing on a screen that never sets a subject,
+   * and turning search on alone would establish focus with nowhere to
+   * display it.
+   *
+   * `copilotContext` is deliberately absent from all of them.
+   * `useCopilotContextBinding` infers context from the mission lens and
+   * the focused subject, and its own docstring records why it is not
+   * mounted globally: these surfaces know more about their case than it
+   * could infer, and a broader binding would overwrite them.
+   */
+  const environments = [
+    "src/features/detect/Detect.tsx",
+    "src/features/memory/Memory.tsx",
+    "src/features/investigate/InvestigateList.tsx",
+    "src/features/decision-support/DecideList.tsx",
+    "src/features/share/ShareList.tsx",
+    // The screens an officer actually lands on: /investigate, /decide
+    // and /share render these, not the list variants above.
+    "src/features/investigate/InvestigateCase.tsx",
+    "src/features/decision-support/DecideCase.tsx",
+    "src/features/share/ShareCase.tsx",
+    "src/features/compliance/Compliance.tsx",
+    "src/features/evidence/EvidenceLibrary.tsx",
+  ];
+
+  it("pairs search with the rail that displays what it focuses", () => {
+    for (const path of environments) {
+      const declared = /capabilities=\{\{([^}]*)\}\}/.exec(read(path))?.[1] ?? "";
+      expect(`${path}: ${declared}`).toContain("commandSurface: true");
+      expect(`${path}: ${declared}`).toContain("focus: true");
+    }
+  });
+
+  it("leaves the Copilot binding to the surfaces that know their own case", () => {
+    for (const path of environments) {
+      expect(`${path}: ${read(path)}`).not.toContain("copilotContext");
+    }
+  });
+
+  it("mounts no capability the shell already provides", () => {
+    // Declaring `commandSurface` and also rendering CommandSurfaceHost
+    // would put two search boxes on one screen.
+    for (const path of environments) {
+      expect(`${path}: ${read(path)}`).not.toContain("<CommandSurfaceHost");
+      expect(`${path}: ${read(path)}`).not.toContain("<ContextRail");
+    }
+  });
+});

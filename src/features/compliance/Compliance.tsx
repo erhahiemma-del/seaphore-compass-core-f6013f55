@@ -825,7 +825,7 @@ export function ComplianceCentre() {
   const layerOn = (k: LayerKey) => (layerMask & LAYER_BIT[k]) !== 0;
 
   return (
-    <AppShell mode="dark">
+    <AppShell mode="dark" capabilities={{ commandSurface: true, focus: true }}>
       <DemoDataNotice surface="Compliance Intelligence" className="mb-3" />
       <div className="space-y-3 p-4">
         {/* Search bar */}

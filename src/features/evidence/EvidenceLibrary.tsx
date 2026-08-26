@@ -166,7 +166,7 @@ export function EvidenceCentre() {
   }, [filtered, selectedId]);
 
   return (
-    <AppShell mode="dark">
+    <AppShell mode="dark" capabilities={{ commandSurface: true, focus: true }}>
       <div className="flex flex-col gap-4">
         {/* Search + toolbar */}
         <TopSearch query={query} onQuery={setQuery} onUpload={() => setUploadOpen(true)} />
@@ -254,10 +254,6 @@ export function EvidenceCentre() {
             <EvidenceStatistics evidence={allEvidence} />
           </div>
         </div>
-
-        <footer className="mt-6 border-t border-line/60 pt-3 text-center text-[10.5px] uppercase tracking-[0.12em] text-slate">
-          Evidence first. Explainable always. Officer decides.
-        </footer>
       </div>
 
       {uploadOpen && <UploadEvidenceModal onClose={() => setUploadOpen(false)} />}
