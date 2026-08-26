@@ -21,7 +21,7 @@ import type { Role } from "@/lib/permissions";
 import { CommandSurface } from "./CommandSurface";
 import { buildCommandActions, commandDestination, type CommandActionId } from "./actions";
 import { focusSubjectFromResult } from "./focus-bridge";
-import { searchCuesFor } from "./suggestions";
+import { searchCuesFor, searchPromptsFor, staticPromptFor } from "./suggestions";
 import { useCommandSearch } from "./useCommandSearch";
 import { useRecentSearchStore } from "./recent-searches";
 import type { CommandResult } from "./results";
@@ -87,6 +87,13 @@ export function CommandSurfaceHost({
   );
 
   const modeCues = useMemo(() => searchCuesFor(mode), [mode]);
+  /*
+   * Prompts follow the lens, and the universal set always follows them.
+   * Mission Mode changes what the box suggests looking for; it never
+   * changes what the box accepts.
+   */
+  const prompts = useMemo(() => searchPromptsFor(mode), [mode]);
+  const staticPrompt = useMemo(() => staticPromptFor(mode), [mode]);
   const cues = showCues ? modeCues : { ...modeCues, cues: [] };
 
   /** The open case for whatever is focused, so Investigate can continue it. */
@@ -171,6 +178,8 @@ export function CommandSurfaceHost({
       state={search.state}
       actions={actions}
       cues={cues}
+      prompts={prompts}
+      staticPrompt={staticPrompt}
       recent={recent}
       onRun={onRun}
       onClear={search.clear}

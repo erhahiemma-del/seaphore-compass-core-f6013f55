@@ -25,7 +25,9 @@
  * There is no `can()` call here, no fetch, and no fallback that could
  * turn an unavailable state into an empty one.
  */
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
+
+import { useTypewriterPrompt } from "./useTypewriterPrompt";
 
 import { cn } from "@/lib/utils";
 
@@ -54,6 +56,21 @@ function flatten(state: CommandSearchState): readonly CommandResult[] {
   return state.state === "results" ? state.groups.flatMap((g) => g.results) : [];
 }
 
+/**
+ * A restrained accent per action, so three cards in a row do not read as
+ * one control repeated.
+ *
+ * Semantic rather than decorative: operational green for taking a
+ * document in, intelligence purple for opening a case, report amber for
+ * producing one. They tint a border and an icon on hover and nothing
+ * else — the cards still belong to one visual system.
+ */
+const ACTION_ACCENT: Readonly<Partial<Record<CommandActionId, string>>> = {
+  "upload-manifest": "#0E7C7B",
+  "create-investigation": "#7C3AED",
+  "generate-report": "#F59E0B",
+};
+
 function availabilityTitle(action: CommandAction): string | undefined {
   switch (action.availability.state) {
     case "ready":
@@ -72,6 +89,16 @@ export interface CommandSurfaceProps {
   readonly state: CommandSearchState;
   readonly actions: readonly CommandAction[];
   readonly cues: ModeSearchCues;
+  /**
+   * Rotating placeholder phrases for the active lens.
+   *
+   * Optional, and empty means no rotation. The prompt is presentation:
+   * a caller that supplies none gets the plain static label, which is
+   * what this surface showed before the cycle existed.
+   */
+  readonly prompts?: readonly string[];
+  /** Shown when motion is reduced, or while the officer is typing. */
+  readonly staticPrompt?: string;
   readonly recent: readonly string[];
   readonly onRun: (value?: string) => void;
   readonly onClear: () => void;
@@ -87,6 +114,8 @@ export function CommandSurface({
   state,
   actions,
   cues,
+  prompts = [],
+  staticPrompt = COMMAND_STATE_LABELS.idle,
   recent,
   onRun,
   onClear,
@@ -98,6 +127,30 @@ export function CommandSurface({
   const listId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [active, setActive] = useState(0);
+  /*
+   * Whether the *input* has DOM focus — not the officer's focus subject,
+   * which lives in `focus-subject.store` and is a different idea
+   * entirely. Named in full because the short form collides with that
+   * vocabulary, and a guard exists precisely to stop this surface
+   * growing a second notion of "focus".
+   */
+  const [inputFocused, setInputFocused] = useState(false);
+
+  /*
+   * The prompt cycles only while the box is genuinely idle.
+   *
+   * Focus or a single character switches it off, and the hook tears its
+   * timer down rather than pausing it — so no scheduled tick can land
+   * after the officer has started typing. The animation never writes to
+   * the input; it only supplies a placeholder, which is the strongest
+   * form of "the officer has priority" available here.
+   */
+  const idle = !inputFocused && input.length === 0;
+  const promptText = useTypewriterPrompt({
+    phrases: prompts,
+    fallback: staticPrompt,
+    enabled: idle,
+  });
 
   const results = useMemo(() => flatten(state), [state]);
   const open = state.state === "results" && results.length > 0;
@@ -174,8 +227,23 @@ export function CommandSurface({
             value={input}
             onChange={(e) => onInput(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder={COMMAND_STATE_LABELS.idle}
-            className="w-full rounded border border-line bg-surface-2 px-3 py-2 type-small text-foreground outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-teal)]/40"
+            placeholder={promptText}
+            onFocus={() => setInputFocused(true)}
+            onBlur={() => setInputFocused(false)}
+            /*
+             * The placeholder changes while idle, so it is announced
+             * once as a stable label instead. A live-updating
+             * placeholder read aloud on every keystroke would be
+             * unusable with a screen reader.
+             */
+            title={staticPrompt}
+            className={cn(
+              "w-full rounded-md border bg-surface px-3 py-2 type-small text-foreground outline-none",
+              "border-line motion-fast placeholder:text-slate/70",
+              "hover:border-slate/45",
+              "focus-visible:border-[color:var(--color-blue)] focus-visible:ring-2",
+              "focus-visible:ring-[color:var(--color-blue)]/25",
+            )}
           />
 
           {/*
@@ -269,7 +337,15 @@ export function CommandSurface({
                 type="button"
                 data-testid="command-recent"
                 onClick={() => onRun(q)}
-                className="rounded border border-line px-2 py-0.5 text-[11px] text-foreground hover:bg-surface-2"
+                title={`Search again: ${q}`}
+                className={cn(
+                  "rounded-full border border-line px-2.5 py-0.5 text-[11px] text-foreground",
+                  "transition-[transform,border-color,background-color] duration-150 ease-out",
+                  "hover:-translate-y-px hover:border-[color:var(--color-blue)]",
+                  "hover:bg-[color:var(--color-blue)]/[0.06]",
+                  "focus-visible:outline-none focus-visible:ring-2",
+                  "focus-visible:ring-[color:var(--color-blue)]/40",
+                )}
               >
                 {q}
               </button>
@@ -278,7 +354,17 @@ export function CommandSurface({
               type="button"
               data-testid="command-recent-clear"
               onClick={onClearRecent}
-              className="text-[11px] font-semibold text-slate underline"
+              /*
+               * No confirmation. Recent searches are a convenience, not a
+               * record — losing them costs a retype, and a dialog for
+               * that teaches officers to dismiss dialogs.
+               */
+              className={cn(
+                "rounded text-[11px] font-semibold text-slate underline underline-offset-2",
+                "transition-colors duration-150 ease-out hover:text-foreground",
+                "focus-visible:outline-none focus-visible:ring-2",
+                "focus-visible:ring-[color:var(--color-blue)]/40",
+              )}
             >
               Clear
             </button>
@@ -301,7 +387,13 @@ export function CommandSurface({
               type="button"
               data-testid="command-cue"
               onClick={() => onRun(c)}
-              className="rounded-full border border-line px-2 py-0.5 text-[11px] text-slate hover:bg-surface-2 hover:text-foreground"
+              className={cn(
+                "rounded-full border border-line px-2.5 py-0.5 text-[11px] text-slate",
+                "transition-[transform,border-color,color] duration-150 ease-out",
+                "hover:-translate-y-px hover:border-[color:var(--color-blue)] hover:text-foreground",
+                "focus-visible:outline-none focus-visible:ring-2",
+                "focus-visible:ring-[color:var(--color-blue)]/40",
+              )}
             >
               {c}
             </button>
@@ -336,6 +428,7 @@ function ActionButton({
    * reference uses.
    */
   const primary = ready && action.id === "investigate";
+  const accent = ACTION_ACCENT[action.id];
   return (
     <button
       type="button"
@@ -345,13 +438,35 @@ function ActionButton({
       disabled={!ready}
       title={availabilityTitle(action)}
       onClick={() => onAction(action.id)}
+      style={
+        accent && ready && !primary ? ({ "--action-accent": accent } as CSSProperties) : undefined
+      }
       className={cn(
-        "rounded border px-2 py-1 text-left text-[11px] font-semibold motion-fast",
-        primary &&
-          "border-[color:var(--color-navy)] bg-[color:var(--color-navy)] text-white hover:bg-[color:var(--color-navy)]/90",
+        "group rounded-md border px-2.5 py-1.5 text-left text-[11px] font-semibold",
+        // One motion language: 180ms out, a short press, no bounce.
+        "transition-[transform,box-shadow,border-color,background-color] duration-[180ms] ease-out",
+        "active:translate-y-0 active:duration-[100ms]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-blue)]/40",
+        primary && [
+          "border-[color:var(--color-navy)] bg-[color:var(--color-navy)] text-white",
+          "hover:-translate-y-px hover:bg-[color:var(--color-blue)] hover:shadow-pop",
+        ],
         ready &&
-          !primary &&
-          "border-line bg-surface-2 text-foreground hover:border-[color:var(--color-teal)]/45",
+          !primary && [
+            "border-line bg-surface text-foreground",
+            // The accent is per action, so the three cards do not read as
+            // one repeated control. Restrained: it moves the border and
+            // the icon, never the whole card.
+            "hover:-translate-y-px hover:shadow-pop",
+            accent
+              ? "hover:border-[color:var(--action-accent)]"
+              : "hover:border-[color:var(--color-blue)]",
+          ],
+        /*
+         * Unavailable must not look pressable. No lift, no shadow, no
+         * pointer — a control that animates under the cursor and then
+         * does nothing is worse than one that plainly cannot be used.
+         */
         !ready && "cursor-not-allowed border-transparent text-slate opacity-60",
       )}
     >
