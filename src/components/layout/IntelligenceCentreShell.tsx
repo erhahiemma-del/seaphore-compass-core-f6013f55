@@ -8,17 +8,20 @@ import { GoToPalette } from "@/components/layout/GoToPalette";
 import { GlobalCopilotLauncher } from "@/components/ai/global-copilot-launcher";
 import { MapProviderRoot } from "@/lib/maps";
 import type { MapProviderName } from "@/lib/maps/types";
-import { cn } from "@/lib/utils";
+import { useThemeStore } from "@/stores/theme.store";
 
 export interface AppShellProps {
   children: ReactNode;
   title: string;
   subtitle?: string;
   /**
-   * Per-section mode. Light for Mission Control, Decision Support, Share,
-   * Institutional Memory. Dark for the Intelligence Centres. The mode is
-   * per-section, not user-toggled — the visual change signals the shift
-   * from monitoring to operational work.
+   * The tone this environment is designed in. Light for Mission Control,
+   * Decision Support and Institutional Memory; dark for the intelligence
+   * centres — the shift in tone signals the move from monitoring to
+   * operational work.
+   *
+   * A default, not a lock. It decides the appearance until the officer
+   * uses the theme toggle, after which their choice holds everywhere.
    */
   mode?: "light" | "dark";
 }
@@ -32,14 +35,25 @@ const SIDEBAR_STYLE = { "--sidebar-width": "230px" } as React.CSSProperties;
  *   Evidence first. Explainable always. Officer decides.
  */
 export function AppShell({ children, title, subtitle, mode = "light" }: AppShellProps) {
-  // Toggle document-level dark class so shadcn dark tokens apply everywhere,
-  // including popovers/portals that render outside the shell tree.
+  /*
+   * Declare the tone; do not impose it.
+   *
+   * This used to write `.dark` onto the document itself, which made the
+   * shell a second writer of a class `ThemeProvider` already owned. The
+   * two raced on effect order, the shell ran second and won, and the
+   * theme toggle in the top bar silently did nothing on every screen
+   * that declared a mode. The cleanup was worse: removing `.dark` on
+   * unmount wiped a preference the officer had actually chosen, so
+   * leaving a dark screen reset them to light.
+   *
+   * The mode is now what it always described itself as — the tone this
+   * environment is designed in — and it applies only until the officer
+   * says otherwise.
+   */
+  const setEnvironmentDefault = useThemeStore((s) => s.setEnvironmentDefault);
   useEffect(() => {
-    const root = document.documentElement;
-    if (mode === "dark") root.classList.add("dark");
-    else root.classList.remove("dark");
-    return () => root.classList.remove("dark");
-  }, [mode]);
+    setEnvironmentDefault(mode);
+  }, [mode, setEnvironmentDefault]);
 
   // Provider name will come from a workspace setting once map keys are provisioned.
   // Until then, MockMapProvider satisfies every feature via useMapProvider().
@@ -56,12 +70,7 @@ export function AppShell({ children, title, subtitle, mode = "light" }: AppShell
   if (isEmbedded) {
     return (
       <MapProviderRoot provider={mapProvider}>
-        <div
-          className={cn(
-            "min-h-screen w-full bg-background text-foreground",
-            mode === "dark" && "dark",
-          )}
-        >
+        <div className="min-h-screen w-full bg-background text-foreground">
           <main className="flex-1">{children}</main>
         </div>
       </MapProviderRoot>
@@ -71,12 +80,13 @@ export function AppShell({ children, title, subtitle, mode = "light" }: AppShell
   return (
     <MapProviderRoot provider={mapProvider}>
       <SidebarProvider style={SIDEBAR_STYLE}>
-        <div
-          className={cn(
-            "flex min-h-screen w-full bg-background text-foreground",
-            mode === "dark" && "dark",
-          )}
-        >
+        {/*
+          No `dark` class here either. A class scoped to this wrapper
+          cannot reach the portals shadcn renders outside it, which is
+          how popovers on a dark screen ended up styled for light.
+          `ThemeProvider` writes the resolved theme once, at the document.
+        */}
+        <div className="flex min-h-screen w-full bg-background text-foreground">
           <AppSidebar />
           <SidebarInset className="flex min-w-0 flex-1 flex-col bg-background">
             <TopBar title={title} subtitle={subtitle} />
