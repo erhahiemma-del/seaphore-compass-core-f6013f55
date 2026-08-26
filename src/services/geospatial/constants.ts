@@ -443,7 +443,25 @@ export const VESSEL_SIZES = {
   cluster: 18,
 } as const;
 
-/** A NIMASA port of interest. */
+/**
+ * How much weight a port carries in the national picture.
+ *
+ * `major` is one of the NPA port complexes; `secondary` is a terminal or
+ * lesser facility. It decides symbol size and label priority, nothing
+ * about activity — a quiet major port is still major.
+ */
+export type PortTier = "major" | "secondary";
+
+/**
+ * Where a position came from, carried rather than assumed.
+ *
+ * `npa-reference` — position published by the operator / NPA reference lists.
+ * `chart-reference` — taken from published chart or pilotage reference text.
+ * There is no `estimated` tier: an asset without a position is not listed.
+ */
+export type AssetVerification = "npa-reference" | "chart-reference";
+
+/** A Nigerian port of interest. */
 export interface NimasaPort {
   readonly locode: string;
   readonly name: string;
@@ -453,56 +471,208 @@ export interface NimasaPort {
   readonly berths: number;
   /** Anchorage radius in kilometres. */
   readonly anchorageRadius: number;
+  readonly tier: PortTier;
+  /** Nigerian state the complex sits in. */
+  readonly state: string;
+  readonly verification: AssetVerification;
 }
 
-/** The five NIMASA ports, WGS84. */
+/**
+ * The Nigerian port complexes this map can represent, WGS84.
+ *
+ * The seven NPA port complexes. Positions are operator reference
+ * positions, not surveyed berth coordinates, and `berths` is a reference
+ * figure — never live capacity. Nothing here is geocoded from a name.
+ */
 export const NIMASA_PORTS: Readonly<Record<string, NimasaPort>> = {
   NGAPAPA: {
     locode: "NGAPAPA",
-    name: "Apapa (Lagos)",
-    shortName: "APA",
+    name: "Lagos Port Complex — Apapa",
+    shortName: "APAPA",
     lat: 6.4281,
     lon: 3.4219,
     berths: 14,
     anchorageRadius: 3,
+    tier: "major",
+    state: "Lagos",
+    verification: "npa-reference",
   },
   NGTIN: {
     locode: "NGTIN",
-    name: "Tin Can Island",
-    shortName: "TIN",
+    name: "Tin Can Island Port Complex",
+    shortName: "TIN CAN",
     lat: 6.4333,
     lon: 3.3167,
     berths: 10,
     anchorageRadius: 2,
+    tier: "major",
+    state: "Lagos",
+    verification: "npa-reference",
   },
-  NGWARR: {
-    locode: "NGWARR",
-    name: "Warri",
-    shortName: "WAR",
-    lat: 5.5167,
-    lon: 5.75,
-    berths: 6,
+  NGLEK: {
+    locode: "NGLEK",
+    name: "Lekki Deep Sea Port",
+    shortName: "LEKKI",
+    lat: 6.4247,
+    lon: 4.0197,
+    berths: 3,
     anchorageRadius: 2,
+    tier: "major",
+    state: "Lagos",
+    verification: "npa-reference",
   },
-  NGCBQ: {
-    locode: "NGCBQ",
-    name: "Calabar",
-    shortName: "CAL",
-    lat: 4.95,
-    lon: 8.3167,
-    berths: 5,
-    anchorageRadius: 1.5,
+  NGPHC: {
+    locode: "NGPHC",
+    name: "Rivers Port Complex — Port Harcourt",
+    shortName: "RIVERS",
+    lat: 4.7566,
+    lon: 7.0125,
+    berths: 9,
+    anchorageRadius: 2,
+    tier: "major",
+    state: "Rivers",
+    verification: "npa-reference",
   },
   NGONNE: {
     locode: "NGONNE",
-    name: "Onne",
-    shortName: "ONN",
+    name: "Onne Port Complex",
+    shortName: "ONNE",
     lat: 4.7167,
     lon: 7.15,
     berths: 8,
     anchorageRadius: 2,
+    tier: "major",
+    state: "Rivers",
+    verification: "npa-reference",
+  },
+  NGWARR: {
+    locode: "NGWARR",
+    name: "Delta Port Complex — Warri",
+    shortName: "WARRI",
+    lat: 5.5167,
+    lon: 5.75,
+    berths: 6,
+    anchorageRadius: 2,
+    tier: "major",
+    state: "Delta",
+    verification: "npa-reference",
+  },
+  NGCBQ: {
+    locode: "NGCBQ",
+    name: "Calabar Port Complex",
+    shortName: "CALABAR",
+    lat: 4.95,
+    lon: 8.3167,
+    berths: 5,
+    anchorageRadius: 1.5,
+    tier: "major",
+    state: "Cross River",
+    verification: "npa-reference",
   },
 } as const;
+
+/**
+ * A verified anchorage or pilotage waiting area.
+ *
+ * Reference positions for display and association only. Occupancy,
+ * congestion and vessel counts are *not* properties of an anchorage —
+ * they are observations, and they come from a connected feed or not at
+ * all.
+ */
+export interface AnchorageArea {
+  /** Canonical id, `NG-ANCH-…`. */
+  readonly id: string;
+  readonly name: string;
+  readonly lat: number;
+  readonly lon: number;
+  /** Indicative display radius in kilometres, never a surveyed limit. */
+  readonly radiusKm: number;
+  /** Port LOCODE this anchorage serves, when known. */
+  readonly portId: string | null;
+  /** Pilotage district, as published. */
+  readonly district: string;
+  readonly verification: AssetVerification;
+  readonly source: string;
+}
+
+/**
+ * Anchorage areas Seaphore can currently represent.
+ *
+ * Explicitly **not** an exhaustive national list — no source in the
+ * repository claims completeness, so neither does this. Each entry
+ * carries the district it belongs to and where the position came from.
+ */
+export const NIGERIAN_ANCHORAGES: Readonly<Record<string, AnchorageArea>> = {
+  "NG-ANCH-LAGOS-INNER": {
+    id: "NG-ANCH-LAGOS-INNER",
+    name: "Lagos Inner Anchorage",
+    lat: 6.4,
+    lon: 3.3958,
+    radiusKm: 2,
+    portId: "NGAPAPA",
+    district: "Lagos pilotage district",
+    verification: "chart-reference",
+    source: "NPA / published pilotage reference",
+  },
+  "NG-ANCH-LAGOS-FAIRWAY": {
+    id: "NG-ANCH-LAGOS-FAIRWAY",
+    name: "Lagos Fairway Anchorage",
+    lat: 6.3167,
+    lon: 3.3667,
+    radiusKm: 4,
+    portId: "NGAPAPA",
+    district: "Lagos pilotage district",
+    verification: "chart-reference",
+    source: "NPA / published pilotage reference",
+  },
+  "NG-ANCH-BONNY": {
+    id: "NG-ANCH-BONNY",
+    name: "Bonny Anchorage",
+    lat: 4.3667,
+    lon: 7.1667,
+    radiusKm: 5,
+    portId: "NGPHC",
+    district: "Bonny / Port Harcourt pilotage district",
+    verification: "chart-reference",
+    source: "NPA / published pilotage reference",
+  },
+  "NG-ANCH-ONNE": {
+    id: "NG-ANCH-ONNE",
+    name: "Onne Waiting Anchorage",
+    lat: 4.5833,
+    lon: 7.1583,
+    radiusKm: 3,
+    portId: "NGONNE",
+    district: "Bonny / Port Harcourt pilotage district",
+    verification: "chart-reference",
+    source: "NPA / published pilotage reference",
+  },
+  "NG-ANCH-WARRI-ESCRAVOS": {
+    id: "NG-ANCH-WARRI-ESCRAVOS",
+    name: "Escravos Approach Anchorage (Warri)",
+    lat: 5.5333,
+    lon: 5.1,
+    radiusKm: 4,
+    portId: "NGWARR",
+    district: "Warri pilotage district",
+    verification: "chart-reference",
+    source: "NPA / published pilotage reference",
+  },
+  "NG-ANCH-CALABAR": {
+    id: "NG-ANCH-CALABAR",
+    name: "Calabar Fairway Anchorage",
+    lat: 4.5333,
+    lon: 8.3167,
+    radiusKm: 3,
+    portId: "NGCBQ",
+    district: "Calabar pilotage district",
+    verification: "chart-reference",
+    source: "NPA / published pilotage reference",
+  },
+};
+
+/** Whether the anchorage registry claims national completeness. It does not. */
+export const ANCHORAGE_REGISTRY_IS_EXHAUSTIVE = false;
 
 /** Valid NIMASA port LOCODEs. */
 export type NimasaPortCode = keyof typeof NIMASA_PORTS;
@@ -576,6 +746,13 @@ export const LAYER_IDS = {
   vesselConfidence: "vessel-confidence-layer",
   /** Intelligence badges (investigation, risk, alert) attached to a vessel. */
   vesselIntelligence: "vessel-intelligence-layer",
+  portAnchorageSymbol: "port-anchorage-symbol-layer",
+  /** Elevation halo drawn beneath a major port symbol. */
+  portHalo: "port-halo-layer",
+  /** Verified anchorage areas: indicative extent, symbol and label. */
+  anchorageExtent: "anchorage-extent-layer",
+  anchorages: "anchorages-layer",
+  anchorageLabels: "anchorage-labels-layer",
   eezBoundary: "eez-boundary-layer",
   /** Jurisdictional wash inside the EEZ outline. */
   eezFill: "eez-fill-layer",
@@ -594,6 +771,7 @@ export const LAYER_IDS = {
   aisTrackDark: "ais-track-dark-layer",
   riskHeatmap: "risk-heatmap-layer",
   revenueHeat: "revenue-heatmap-layer",
+  incidentReports: "incident-reports-layer",
   investigArea: "investigation-area-layer",
   weatherOverlay: "weather-layer",
   /** Non-cooperative SAR detections, and the scene footprints they came from. */

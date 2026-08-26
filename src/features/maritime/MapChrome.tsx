@@ -71,7 +71,7 @@ const CHIPS: readonly ChipDefinition[] = [
     id: "incidents",
     label: "Incidents",
     icon: AlertTriangle,
-    layers: ["darkContactAreas", "sarDetections"],
+    layers: ["incidents", "darkContactAreas", "sarDetections"],
   },
   { id: "weather", label: "Weather", icon: Cloud, layers: ["weather"] },
   { id: "traffic", label: "Traffic Density", icon: Boxes, layers: ["riskHeatmap", "revenueHeat"] },
@@ -418,7 +418,7 @@ const LEGEND: readonly LegendEntry[] = [
   { kind: "vessel", layers: ["vessels"] },
   { kind: "port", layers: ["ports"] },
   { kind: "anchorage", layers: ["ports"] },
-  { kind: "incident", layers: ["darkContactAreas"] },
+  { kind: "incident", layers: ["incidents"] },
   { kind: "restricted-zone", layers: ["investigArea"] },
   { kind: "weather-alert", layers: ["weather"] },
 ];

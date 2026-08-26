@@ -37,6 +37,21 @@ export interface MapSymbolToken {
 /** Generic ship hull, bow to the north. Never a disc. */
 const HULL_PATH = "M12 1.8 16.6 11.4 16.6 20.4 12 18 7.4 20.4 7.4 11.4Z";
 
+/**
+ * Port / harbour: a quay with a container crane above it.
+ *
+ * Deliberately not an anchor. Port and anchorage are different objects,
+ * so they must not share a silhouette — the anchor belongs to the
+ * anchorage alone.
+ */
+const PORT_PATH =
+  "M2.4 18.4h19.2v3.2H2.4Z" +
+  "M6.4 2.4h1.9v14.4H6.4Z" +
+  "M6.4 2.4h13.2v1.9H6.4Z" +
+  "M17.7 4.3h1.9v5.1h-1.9Z" +
+  "M11.4 6.6h6.3v1.7h-6.3Z" +
+  "M10.6 6.6h1.7v10.2h-1.7Z";
+
 /** Anchor: ring, shank, stock and curved arms. */
 const ANCHOR_PATH =
   "M12 1.6a2.6 2.6 0 1 0 0 5.2 2.6 2.6 0 0 0 0-5.2Zm0 1.7a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8ZM11 7.4h2v13.1h-2Z" +
@@ -60,13 +75,16 @@ export const MAP_SYMBOLS: Readonly<Record<MapSymbolKind, MapSymbolToken>> = {
   port: {
     kind: "port",
     label: "Ports",
-    color: "#2E8FE0",
-    path: ANCHOR_PATH,
+    // Seaphore cyan/blue. Ports are estate, not observation — this blue
+    // is used by no risk band and no vessel state.
+    color: "#0268CA",
+    path: PORT_PATH,
   },
   anchorage: {
     kind: "anchorage",
     label: "Anchorage",
-    color: "#8B6FC7",
+    // Violet, one clear step away from the port blue.
+    color: "#7C5CD6",
     path: ANCHOR_PATH,
   },
   incident: {

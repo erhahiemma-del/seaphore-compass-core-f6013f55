@@ -448,7 +448,7 @@ export const DOMAIN_PRESETS = {
   /** Where cargo moves through the port system. */
   cargo: ["ports", "eezBoundary", "graticule"],
   /** The port estate itself, and the traffic around it. */
-  ports: ["ports", "eezBoundary", "vessels", "graticule"],
+  ports: ["ports", "anchorages", "eezBoundary", "vessels", "graticule"],
 } as const satisfies Record<string, readonly string[]>;
 
 export type MapDomain = keyof typeof DOMAIN_PRESETS;
@@ -527,12 +527,14 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
   {
     id: "ports",
     label: "Ports",
-    description: "The five NIMASA ports with anchorage extents.",
+    description: "The seven NPA port complexes, with indicative anchorage extents.",
     group: "PORTS_INFRASTRUCTURE",
     renderLayerIds: [
+      LAYER_IDS.portAnchorage,
+      LAYER_IDS.portAnchorageSymbol,
+      LAYER_IDS.portHalo,
       LAYER_IDS.ports,
       LAYER_IDS.portLabels,
-      LAYER_IDS.portAnchorage,
       // The interaction ring travels with the layer it belongs to: an
       // officer who switches ports off must not be left with a teal
       // ring floating over an empty sea.
@@ -542,6 +544,18 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     status: "ready",
     order: 20,
   },
+  {
+    id: "anchorages",
+    label: "Anchorages",
+    description:
+      "Verified anchorage and pilotage waiting areas. Not an exhaustive national list — occupancy is never asserted.",
+    group: "PORTS_INFRASTRUCTURE",
+    renderLayerIds: [LAYER_IDS.anchorageExtent, LAYER_IDS.anchorages, LAYER_IDS.anchorageLabels],
+    defaultVisible: true,
+    status: "ready",
+    order: 21,
+  },
+
   {
     id: "eezBoundary",
     label: "EEZ Boundary",
@@ -562,6 +576,17 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     status: "pending-source",
     order: 40,
     pendingReason: "Awaiting weather connector (post-G5.5.1).",
+  },
+  {
+    id: "incidents",
+    label: "Incidents",
+    description: "Environmental and maritime incident reports as warning symbols.",
+    group: "RISK_INTELLIGENCE",
+    renderLayerIds: [LAYER_IDS.incidentReports],
+    defaultVisible: false,
+    status: "pending-source",
+    order: 5,
+    pendingReason: "NOSDRA and public maritime incident feeds are not connected.",
   },
   {
     id: "riskHeatmap",

@@ -71,12 +71,20 @@ import type { KpiCoverage } from "@/lib/intelligence/coverage-model";
 import { useCargoWorkspaceProjections } from "@/features/cargo-workspace/use-cargo-projection";
 import { CargoCentreStateChip } from "@/features/cargo-workspace/CargoCentreView";
 
-/** One shared coverage read for every Mission Control surface. */
+/**
+ * One shared coverage read for every Mission Control surface.
+ *
+ * Polled and refetched on focus so a KPI moves from "pending" to a measured
+ * number as soon as a provider starts answering — the officer never has to
+ * reload the page to learn that coverage arrived.
+ */
 function useCoverage() {
   return useQuery({
     queryKey: ["intelligence-coverage"],
     queryFn: () => getIntelligenceCoverage(),
     staleTime: 60_000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
   });
 }
 

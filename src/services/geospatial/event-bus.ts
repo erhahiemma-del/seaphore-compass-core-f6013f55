@@ -119,6 +119,22 @@ export interface MapPerspectiveEvent {
   readonly pitch: number;
 }
 
+/**
+ * An anchorage symbol was clicked.
+ *
+ * From main, alongside the port event rather than replacing it: main's
+ * `PortClickEvent` keyed on a generic `portId`, and this branch keys on
+ * UN/LOCODE, which is the identity the source already promotes
+ * (`promoteId: "locode"`) and the one the gazetteer, the voyage records
+ * and the canonical port model all share.
+ */
+export interface AnchorageClickEvent {
+  readonly anchorageId: string;
+  /** Port the anchorage serves, when the registry records one. */
+  readonly portId: string | null;
+  readonly position: LonLat;
+}
+
 export interface MapEventMap {
   "map:ready": MapReadyEvent;
   "map:perspective": MapPerspectiveEvent;
@@ -137,6 +153,7 @@ export interface MapEventMap {
   "vessel:click": VesselClickEvent;
   "voyage:click": VoyageClickEvent;
   "port:click": PortClickEvent;
+  "anchorage:click": AnchorageClickEvent;
   "vessel:hover": VesselHoverEvent;
   "layer:visibility": LayerVisibilityEvent;
   "vessels:applied": VesselsAppliedEvent;

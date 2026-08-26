@@ -45,8 +45,8 @@ export const VESSEL_SPRITE_COLORS: Readonly<Record<VesselColorKey, string>> = {
   unknown: MAP_SYMBOLS.vessel.color,
   /** Selection overrides risk colour. */
   selected: "#0E7C7B",
-  /** Stale position — dark grey, deliberately recessive. */
-  stale: "#2D3748",
+  /** Stale position keeps the vessel silhouette colour; opacity carries age. */
+  stale: MAP_SYMBOLS.vessel.color,
 } as const;
 
 /** Open a 2D context of the standard sprite size, or fail loudly. */

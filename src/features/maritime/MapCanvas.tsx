@@ -10,10 +10,11 @@
  * looks the selected vessel's data up from the update engine and hands it to
  * the parent for display.
  */
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MapPinOff } from "lucide-react";
 
 import { prefersReducedMotion } from "@/hooks/use-reduced-motion";
+import { AssetPopup } from "./AssetPopup";
 
 import {
   BASEMAP_STYLE,
@@ -427,14 +428,29 @@ export function MapCanvas({
       service.select({ kind: "voyage", id: voyageId, voyageNumber });
     });
     /*
-     * A port click selects the port.
+     * Ports and anchorages select through the same path as vessels.
      *
-     * `focus` carries the clicked position so a selection restored from
-     * a URL knows where to look; `planCameraMove` still decides whether
-     * moving there is warranted, exactly as it does for a vessel.
+     * The typed union keeps a port id from ever being read as a vessel
+     * id, and there is still exactly one selection: SGS. The contextual
+     * card below is a projection of that state, not a second store.
+     *
+     * The port is identified by UN/LOCODE rather than main's generic
+     * `portId`: it is the key the source already promotes, and the one
+     * the gazetteer, the voyage records and the canonical port model all
+     * share. `focus` carries the clicked position so a selection restored
+     * from a URL knows where to look; `planCameraMove` still decides
+     * whether moving there is warranted.
      */
     const offPortClick = bus.on("port:click", ({ locode, position }) => {
       service.select({ kind: "port", id: locode, focus: position });
+    });
+    const offAnchorageClick = bus.on("anchorage:click", ({ anchorageId, portId, position }) => {
+      service.select({
+        kind: "anchorage",
+        id: anchorageId,
+        portId: portId ?? "",
+        focus: position,
+      });
     });
     const offMapClick = bus.on("map:click", () => {
       service.clearSelection();
@@ -444,6 +460,7 @@ export function MapCanvas({
       offClick();
       offVoyageClick();
       offPortClick();
+      offAnchorageClick();
       offMapClick();
     };
   }, [bus, service, engine, onVesselSelected]);
@@ -572,10 +589,51 @@ export function MapCanvas({
     });
   }, [engine, service, renderer]);
 
+  /*
+   * ── Contextual card anchoring ─────────────────────────────────────
+   *
+   * The card follows the object it describes, so its screen position is
+   * re-projected whenever the camera moves. Selection itself still lives
+   * in SGS — this is pixels only.
+   */
+  const selection = useMapSelector((state) => state.selection, service);
+  const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    const focus = selection?.focus;
+    if (!focus) {
+      setAnchor(null);
+      return;
+    }
+    const reproject = () => setAnchor(renderer.project?.(focus) ?? null);
+    reproject();
+    const offMove = bus.on("map:move", reproject);
+    return offMove;
+  }, [selection, renderer, bus]);
+
+  const popupVessels = useMemo(
+    () => (selection ? engine.snapshot() : []),
+    // Re-derived on selection change only: the card is a snapshot read,
+    // and re-rendering it on every position tick would fight the officer.
+    [selection, engine],
+  );
+
   return (
     <div className="relative h-full w-full">
       <div ref={containerRef} data-testid="map-canvas" className="absolute inset-0" />
       {!rendererDraws ? <RendererPendingNotice /> : null}
+      {selection ? (
+        <AssetPopup
+          selection={selection}
+          vessels={popupVessels}
+          point={anchor}
+          onClose={() => {
+            service.clearSelection();
+            onVesselSelected?.(null);
+          }}
+          fullMapHref={mode === "command" ? undefined : "/maritime"}
+        />
+      ) : null}
     </div>
   );
 }

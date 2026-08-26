@@ -232,7 +232,7 @@ export function vesselOpacity(vessel: Vessel, ctx: VesselRenderContext = {}): nu
  *
  * Three inputs, three independent axes:
  *
- *   colour      risk — or selection/staleness, which outrank it
+ *   colour      risk — or selection, which outranks it
  *   silhouette  the reported hull type, `disc` when none was reported
  *   direction   whether a bearing was reported at all
  *
@@ -251,9 +251,7 @@ export function vesselIconId(vessel: Vessel, ctx: VesselRenderContext = {}): str
   const colorKey: VesselColorKey =
     ctx.selectedImo != null && ctx.selectedImo === vessel.identity.imo
       ? "selected"
-      : isStale(vessel, now)
-        ? "stale"
-        : (vessel.riskLevel.toLowerCase() as VesselColorKey);
+      : (vessel.riskLevel.toLowerCase() as VesselColorKey);
 
   return vesselSpriteId(colorKey, silhouette, directional);
 }
