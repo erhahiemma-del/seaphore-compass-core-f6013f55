@@ -113,3 +113,39 @@ function sourceFiles(): string[] {
   walk("tests");
   return out;
 }
+
+describe("an environment never mounts a capability twice", () => {
+  /*
+   * The failure this prevents is two search boxes, or two lens
+   * selectors, on one screen — one from the shell and one from the
+   * environment that composed its own before the shell offered it.
+   *
+   * Mission Control is the case that matters: it keeps composing the
+   * command surface and the lens itself, because it argues for their
+   * placement, so it must NOT also switch those capabilities on. It
+   * takes `copilotContext`, which renders nothing and is therefore the
+   * same thing wherever it is mounted.
+   */
+  const MISSION_CONTROL = read("src/features/mission-control/MissionControl.tsx");
+
+  it("has Mission Control declare only the invisible capability", () => {
+    const declared = /capabilities=\{\{([^}]*)\}\}/.exec(MISSION_CONTROL)?.[1] ?? "";
+    expect(declared).toContain("copilotContext: true");
+    for (const visible of ["commandSurface", "missionMode", "focus", "chromeless"]) {
+      expect(declared).not.toContain(visible);
+    }
+  });
+
+  it("stops Mission Control calling the moved binding directly", () => {
+    // Declared and called would bind twice, publishing the context on
+    // every render of either.
+    expect(MISSION_CONTROL).not.toContain("useCopilotContextBinding");
+  });
+
+  it("keeps the composition Mission Control argues for", () => {
+    // The point of the migration was the binding, not a redesign.
+    expect(MISSION_CONTROL).toContain("<CommandSurfaceHost />");
+    expect(MISSION_CONTROL).toContain("<OperationalOrientation");
+    expect(MISSION_CONTROL).toContain("<FocusWorkspaceHost />");
+  });
+});

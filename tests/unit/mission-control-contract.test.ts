@@ -106,7 +106,20 @@ describe("all Mission Control regions remain composed", () => {
   });
 
   it("still binds the Copilot to real application context", () => {
-    expect(MISSION_CONTROL).toContain("useCopilotContextBinding");
+    /*
+     * The binding moved into the shell as an opt-in capability, so the
+     * assertion follows what it is rather than where it lived. Mission
+     * Control declares it; the shell mounts it. Asserting the hook name
+     * in this file would now fail for a screen that is correctly bound,
+     * and pass for one that imported the hook and never called it.
+     */
+    expect(MISSION_CONTROL).toMatch(/capabilities=\{\{[^}]*copilotContext:\s*true/);
+    const shell = readFileSync(
+      resolve(process.cwd(), "src/components/layout/AppShell.tsx"),
+      "utf8",
+    );
+    expect(shell).toContain("useCopilotContextBinding()");
+    expect(shell).toMatch(/\{copilotContext && <CopilotContextBinding \/>\}/);
   });
 });
 
