@@ -23,6 +23,7 @@ import {
   Camera as ScreenshotIcon,
   XCircle,
 } from "lucide-react";
+import { AppShell } from "@/components/layout/AppShell";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -206,166 +207,188 @@ export function MaritimeCommand() {
   }, [enabledCsv, scopedVessels, feed.loading, feed.error]);
 
   return (
-    // `h-dvh`, not `h-full`. `h-full` is `height: 100%`, which resolves
-    // against <body> — and <body> has no viewport-bound height here, so it
-    // grew to content height (1930px on a 900px screen). The map inherited
-    // that and rendered as a tall narrow sliver: at zoom 6 the officer saw
-    // a vertical strip of ocean with the coastline off-frame, which read
-    // as "the basemap is broken" when the basemap was fine.
-    //
-    // Fixed on this shell rather than by giving html/body a height
-    // globally, which would change every other route.
-    <div ref={shellRef} className="flex h-dvh flex-col overflow-hidden bg-background">
-      {/* ── TOP COMMAND BAR ─────────────────────────────────────── */}
-      <header className="flex shrink-0 items-center gap-3 border-b border-border px-3 py-2">
-        <h1 className="shrink-0 text-sm font-semibold tracking-wide">Seaphore</h1>
+    /*
+     * Chromeless: the shell keeps navigation and the top bar, and hands
+     * the rest of the area to the map.
+     *
+     * Maritime Command was the one environment with no shell at all — it
+     * drew its own full-viewport layout, so an officer here had no
+     * sidebar and no way back except the browser. It takes the shell now
+     * without giving up the map: `chromeless` drops the footer and the
+     * scroll container, which is what would otherwise cost the map the
+     * space it exists to fill.
+     */
+    <AppShell capabilities={{ chromeless: true }}>
+      {/*
+       * `min-h-0 flex-1`, not `h-dvh`.
+       *
+       * The height problem this replaces is worth keeping in view: `h-full`
+       * resolved against a <body> with no viewport-bound height, so the
+       * shell grew to content height and the map rendered as a tall narrow
+       * sliver — a vertical strip of ocean with the coastline off-frame,
+       * which reads as "the basemap is broken" when the basemap is fine.
+       * `h-dvh` fixed that by pinning to the viewport, which is now wrong
+       * for the opposite reason: inside the shell the viewport is no longer
+       * this element's box, and pinning to it would push the map down past
+       * the bottom edge by exactly the height of the top bar. Filling the
+       * shell's flex area is the same fix expressed against the right
+       * parent.
+       */}
+      <div ref={shellRef} className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
+        {/* ── TOP COMMAND BAR ─────────────────────────────────────── */}
+        <header className="flex shrink-0 items-center gap-3 border-b border-border px-3 py-2">
+          {/*
+            No product name here any more — the shell's top bar names the
+            screen from the navigation model. What stays is what acts on
+            the map.
+          */}
+          <MapSearch onApplied={setLastPlan} className="max-w-md" />
 
-        <MapSearch onApplied={setLastPlan} className="max-w-md" />
+          <OperatingModeBar />
 
-        <OperatingModeBar />
+          <CommandToolbar
+            shellRef={shellRef}
+            hasSelection={selectedVessel !== null}
+            onFitSelection={() => {
+              if (!selectedVessel) return;
+              sgs.setCamera({
+                center: [selectedVessel.position.lon, selectedVessel.position.lat],
+                zoom: 10,
+              });
+            }}
+            onClearSelection={closeCard}
+          />
 
-        <CommandToolbar
-          shellRef={shellRef}
-          hasSelection={selectedVessel !== null}
-          onFitSelection={() => {
-            if (!selectedVessel) return;
-            sgs.setCamera({
-              center: [selectedVessel.position.lon, selectedVessel.position.lat],
-              zoom: 10,
-            });
-          }}
-          onClearSelection={closeCard}
-        />
-
-        <div
-          role="group"
-          aria-label="View mode"
-          className="flex shrink-0 items-center gap-1 rounded-md bg-muted p-1"
-        >
-          {VIEW_MODES.map(({ mode, label, title }) => (
-            <Button
-              key={mode}
-              size="sm"
-              variant={viewMode === mode ? "default" : "ghost"}
-              title={title}
-              aria-pressed={viewMode === mode}
-              onClick={() => sgs.switchView(mode)}
-              className="h-7 text-xs"
-            >
-              {label}
-            </Button>
-          ))}
-        </div>
-      </header>
-
-      {/* One quiet line saying what a search just did. Not a toast: the
-          officer should be able to read it at leisure, or ignore it. */}
-      {lastPlan ? (
-        <div
-          data-testid="map-explanation"
-          className="shrink-0 border-b border-border/60 bg-muted/30 px-3 py-1 text-[11px] text-muted-foreground"
-        >
-          {lastPlan.explanation}
-        </div>
-      ) : null}
-
-      <div className="flex min-h-0 flex-1">
-        {/* ── LEFT INTELLIGENCE DRAWER ──────────────────────────── */}
-        {leftOpen ? (
-          <aside
-            aria-label="Layers and national picture"
-            data-testid="left-drawer"
-            className="flex w-[300px] shrink-0 flex-col overflow-auto border-r border-border"
+          <div
+            role="group"
+            aria-label="View mode"
+            className="flex shrink-0 items-center gap-1 rounded-md bg-muted p-1"
           >
-            <NationalPicturePanel picture={picture} />
-            <LayerPanel />
-          </aside>
+            {VIEW_MODES.map(({ mode, label, title }) => (
+              <Button
+                key={mode}
+                size="sm"
+                variant={viewMode === mode ? "default" : "ghost"}
+                title={title}
+                aria-pressed={viewMode === mode}
+                onClick={() => sgs.switchView(mode)}
+                className="h-7 text-xs"
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
+        </header>
+
+        {/* One quiet line saying what a search just did. Not a toast: the
+          officer should be able to read it at leisure, or ignore it. */}
+        {lastPlan ? (
+          <div
+            data-testid="map-explanation"
+            className="shrink-0 border-b border-border/60 bg-muted/30 px-3 py-1 text-[11px] text-muted-foreground"
+          >
+            {lastPlan.explanation}
+          </div>
         ) : null}
 
-        <Button
-          size="icon"
-          variant="ghost"
-          className="h-7 w-7 self-start"
-          aria-label={leftOpen ? "Collapse layers panel" : "Expand layers panel"}
-          aria-expanded={leftOpen}
-          onClick={() => setLeftOpen((open) => !open)}
-        >
+        <div className="flex min-h-0 flex-1">
+          {/* ── LEFT INTELLIGENCE DRAWER ──────────────────────────── */}
           {leftOpen ? (
-            <PanelLeftClose className="h-3.5 w-3.5" aria-hidden />
-          ) : (
-            <PanelLeftOpen className="h-3.5 w-3.5" aria-hidden />
-          )}
-        </Button>
+            <aside
+              aria-label="Layers and national picture"
+              data-testid="left-drawer"
+              className="flex w-[300px] shrink-0 flex-col overflow-auto border-r border-border"
+            >
+              <NationalPicturePanel picture={picture} />
+              <LayerPanel />
+            </aside>
+          ) : null}
 
-        {/* ── MAP CANVAS — the dominant surface ─────────────────── */}
-        <main className="relative min-w-0 flex-1">
-          {viewMode === "2D" ? (
-            <MapCanvas
-              scope={scope}
-              voyages={voyageFeed.voyages}
-              onVesselSelected={handleSelected}
-              onVesselsChanged={handleVessels}
-              onRecorderReady={replay.attachRecorder}
-              onEngineReady={(engine) => {
-                engineRef.current = engine;
-              }}
-            />
-          ) : (
-            <TerrainPerspectivePlaceholder />
-          )}
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7 self-start"
+            aria-label={leftOpen ? "Collapse layers panel" : "Expand layers panel"}
+            aria-expanded={leftOpen}
+            onClick={() => setLeftOpen((open) => !open)}
+          >
+            {leftOpen ? (
+              <PanelLeftClose className="h-3.5 w-3.5" aria-hidden />
+            ) : (
+              <PanelLeftOpen className="h-3.5 w-3.5" aria-hidden />
+            )}
+          </Button>
 
-          {/*
+          {/* ── MAP CANVAS — the dominant surface ─────────────────── */}
+          <main className="relative min-w-0 flex-1">
+            {viewMode === "2D" ? (
+              <MapCanvas
+                scope={scope}
+                voyages={voyageFeed.voyages}
+                onVesselSelected={handleSelected}
+                onVesselsChanged={handleVessels}
+                onRecorderReady={replay.attachRecorder}
+                onEngineReady={(engine) => {
+                  engineRef.current = engine;
+                }}
+              />
+            ) : (
+              <TerrainPerspectivePlaceholder />
+            )}
+
+            {/*
             Legend overlays the map rather than taking a panel slot, and
             starts collapsed so it costs nothing until asked for. It reads
             the same visual config and layer registry the renderer uses.
           */}
-          {viewMode === "2D" ? (
-            <div className="pointer-events-none absolute bottom-3 right-3 z-10 flex justify-end">
-              <MapLegend />
-            </div>
-          ) : null}
+            {viewMode === "2D" ? (
+              <div className="pointer-events-none absolute bottom-3 right-3 z-10 flex justify-end">
+                <MapLegend />
+              </div>
+            ) : null}
 
-          {/*
+            {/*
             Scope control and the voyage feed's own state, together.
 
             They belong side by side: switching to the global scope is
             what makes a voyage between two continents visible at all,
             and the feed note is what explains an empty world map.
           */}
-          {viewMode === "2D" ? (
-            <div className="absolute left-3 top-3 z-10 flex w-[19rem] max-w-[calc(100%-1.5rem)] flex-col items-start gap-1.5">
-              <ScopeToggle scope={scope} onChange={setScope} />
-              <VoyageFeedNotice feed={voyageFeed} />
-            </div>
-          ) : null}
-        </main>
+            {viewMode === "2D" ? (
+              <div className="absolute left-3 top-3 z-10 flex w-[19rem] max-w-[calc(100%-1.5rem)] flex-col items-start gap-1.5">
+                <ScopeToggle scope={scope} onChange={setScope} />
+                <VoyageFeedNotice feed={voyageFeed} />
+              </div>
+            ) : null}
+          </main>
 
-        {/* ── RIGHT CONTEXT DRAWER ──────────────────────────────── */}
-        <ContextDrawer
-          selection={selection}
-          vessel={selectedVessel}
-          voyage={selectedVoyage}
-          onClose={closeCard}
+          {/* ── RIGHT CONTEXT DRAWER ──────────────────────────────── */}
+          <ContextDrawer
+            selection={selection}
+            vessel={selectedVessel}
+            voyage={selectedVoyage}
+            onClose={closeCard}
+          />
+        </div>
+
+        {/* ── TIMELINE / REPLAY ─────────────────────────────────── */}
+        <TimelineBar
+          status={replay.status}
+          unavailableReason={replay.unavailableReason}
+          windowLabel={
+            operatingMode === "REPLAY" || operatingMode === "HISTORY" ? "historical" : "live"
+          }
+          onPlay={replay.play}
+          onPause={replay.pause}
+          onStep={replay.step}
+          onRestart={replay.restart}
+          onSpeed={replay.setSpeed}
+          onScrub={replay.scrub}
         />
+
+        <MapStatusBar />
       </div>
-
-      {/* ── TIMELINE / REPLAY ─────────────────────────────────── */}
-      <TimelineBar
-        status={replay.status}
-        unavailableReason={replay.unavailableReason}
-        windowLabel={
-          operatingMode === "REPLAY" || operatingMode === "HISTORY" ? "historical" : "live"
-        }
-        onPlay={replay.play}
-        onPause={replay.pause}
-        onStep={replay.step}
-        onRestart={replay.restart}
-        onSpeed={replay.setSpeed}
-        onScrub={replay.scrub}
-      />
-
-      <MapStatusBar />
-    </div>
+    </AppShell>
   );
 }
 

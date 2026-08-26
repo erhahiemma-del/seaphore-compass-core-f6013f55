@@ -175,9 +175,27 @@ export function AppShell({
           how popovers on a dark screen ended up styled for light.
           `ThemeProvider` writes the resolved theme once, at the document.
         */}
-        <div className="flex min-h-screen w-full bg-background text-foreground">
+        {/*
+          Chromeless needs a *definite* height, not a minimum.
+          `min-h-screen` sets `min-height`, which leaves the flex chain
+          free to grow to content height — so a `flex-1` map below it
+          resolves against nothing and stretches to its own content,
+          rendering as a tall narrow sliver of ocean with the coastline
+          off-frame. `h-dvh` bounds the column so the map can fill it.
+        */}
+        <div
+          className={cn(
+            "flex w-full bg-background text-foreground",
+            chromeless ? "h-dvh overflow-hidden" : "min-h-screen",
+          )}
+        >
           <AppSidebar />
-          <SidebarInset className="flex min-w-0 flex-1 flex-col bg-background">
+          <SidebarInset
+            className={cn(
+              "flex min-w-0 flex-1 flex-col bg-background",
+              chromeless && "min-h-0 overflow-hidden",
+            )}
+          >
             <TopBar title={resolvedTitle} subtitle={resolvedSubtitle} />
 
             {/*

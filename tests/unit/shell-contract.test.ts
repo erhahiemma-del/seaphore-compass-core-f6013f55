@@ -267,3 +267,54 @@ describe("the intelligence centres use a layout, not a second shell", () => {
     }
   });
 });
+
+describe("Maritime Command keeps its map inside the shell", () => {
+  /*
+   * It was the one environment with no shell at all: it drew its own
+   * full-viewport layout, so an officer there had no sidebar and no way
+   * back except the browser.
+   */
+  const MARITIME = read("src/features/maritime/MaritimeCommand.tsx");
+  const SHELL = read("src/components/layout/AppShell.tsx");
+
+  it("adopts the shell chromelessly", () => {
+    expect(MARITIME).toMatch(/capabilities=\{\{ chromeless: true \}\}/);
+  });
+
+  it("sizes against the shell, not the viewport", () => {
+    /*
+     * `h-dvh` on the content pinned it to the viewport, which inside the
+     * shell overshoots by exactly the height of the top bar. Filling the
+     * shell's flex area is the same fix expressed against the right
+     * parent.
+     */
+    // Comments here still discuss `h-dvh` — the history is the point —
+    // so this looks at class names rather than the file's prose.
+    const classNames = MARITIME.match(/className="[^"]*"/g) ?? [];
+    expect(classNames.filter((c) => c.includes("h-dvh"))).toEqual([]);
+    expect(MARITIME).toContain("flex min-h-0 flex-1 flex-col overflow-hidden");
+  });
+
+  it("gives the chromeless column a definite height", () => {
+    /*
+     * The regression this catches: `min-h-screen` sets a *minimum*, so a
+     * `flex-1` map resolves against nothing and grows to its own content
+     * — observed as a 337x2298 canvas in a 1250px viewport, a tall narrow
+     * sliver of ocean with the coastline off-frame.
+     */
+    expect(SHELL).toMatch(/chromeless \? "h-dvh overflow-hidden" : "min-h-screen"/);
+    expect(SHELL).toMatch(/chromeless && "min-h-0 overflow-hidden"/);
+  });
+
+  it("stops naming the product where the shell names the screen", () => {
+    // Its own header printed "Seaphore" beside the top bar that now
+    // carries "Maritime Command" from the navigation model.
+    expect(MARITIME).not.toMatch(/<h1[^>]*>\s*Seaphore\s*<\/h1>/);
+  });
+
+  it("keeps the controls that act on the map", () => {
+    for (const control of ["<MapSearch", "<OperatingModeBar", "<CommandToolbar", "<MapCanvas"]) {
+      expect(MARITIME).toContain(control);
+    }
+  });
+});
