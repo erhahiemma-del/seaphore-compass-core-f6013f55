@@ -73,25 +73,27 @@ async function openMap(
     );
   }
   await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded" });
-  if (storageKey && sessionJson) {
-    await page.evaluate(
-      ([key, value]) => window.localStorage.setItem(key as string, value as string),
-      [storageKey, sessionJson],
-    );
-  }
+  await page.evaluate(
+    ([key, value]) => {
+      if (key && value) window.localStorage.setItem(key, value);
+      /*
+       * Preview role access, written directly rather than clicked.
+       *
+       * The role selector navigates to a dashboard, and following that
+       * chain makes the health check depend on landing-page markup it has
+       * no business asserting about. The store is persisted and
+       * `DEV_AUTH_ENABLED`-gated, so this key is inert in a production
+       * build — where the injected session above is the only way in.
+       */
+      window.localStorage.setItem(
+        "seaphore.dev-mode.v2",
+        JSON.stringify({ state: { bypassAuth: true, mockRole: "officer" }, version: 0 }),
+      );
+    },
+    [storageKey, sessionJson] as [string | undefined, string | undefined],
+  );
 
   await page.goto(HEALTH_URL, { waitUntil: "domcontentloaded" });
-  const canvas = page.getByTestId("map-canvas");
-  if (await canvas.isVisible().catch(() => false)) return;
-
-  // Preview builds offer one-click role access; production does not, and
-  // there the injected session above is the only way through.
-  const officer = page.getByRole("button", { name: /Intelligence Officer/i }).first();
-  if (await officer.isVisible({ timeout: 8_000 }).catch(() => false)) {
-    await officer.click();
-    await page.waitForLoadState("domcontentloaded");
-    await page.goto(HEALTH_URL, { waitUntil: "domcontentloaded" });
-  }
 }
 
 test.describe("deployment health · Live Command Map", () => {
