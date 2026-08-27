@@ -21,6 +21,7 @@ import {
   type VesselVisualCategory,
 } from "./vessel-visual";
 import { confidenceTierFor, type ConfidenceTier, type IntelligenceSignal } from "./entity-visual";
+import type { PositionKind } from "./position-provenance";
 import type { ConfidenceLevel } from "@/lib/data-model/confidence";
 
 /** Stable identity of a vessel across data sources. */
@@ -56,6 +57,20 @@ export interface VesselPosition {
   readonly speed: number;
   /** ISO-8601 timestamp of the report. */
   readonly timestamp: string;
+  /**
+   * How this coordinate was arrived at.
+   *
+   * Absent means observed, which is what every position predating this
+   * field was: nothing in the codebase generated positions, so the
+   * default preserves the meaning existing callers already had.
+   *
+   * It exists because the moment the interface interpolates between two
+   * reports for smoothness, every drawn position becomes a claim the
+   * data does not support unless the distinction travels with the
+   * coordinate. Remembering it in whichever component happens to draw
+   * next is not a mechanism.
+   */
+  readonly kind?: PositionKind;
   readonly destination?: string;
   /** Hours until estimated arrival, when derivable upstream. */
   readonly etaHours?: number | null;

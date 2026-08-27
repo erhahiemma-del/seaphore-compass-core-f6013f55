@@ -30,6 +30,7 @@
  */
 import type { RiskLevel, Unsubscribe } from "./types";
 import type { Vessel } from "./vessel";
+import type { VesselHistory, VesselHistoryQuery } from "./vessel-history";
 
 /** Narrowing applied at the source, before data reaches the map. */
 export interface VesselQuery {
@@ -66,6 +67,38 @@ export interface VesselSource {
    * polling `list` on `TIMING.positionRefreshMs`.
    */
   subscribe?(onVessel: (vessel: Vessel) => void): Unsubscribe;
+
+  /**
+   * Where this vessel has been, when the source keeps an archive.
+   *
+   * Optional, and the optionality is the point: most sources publish a
+   * present position and keep nothing. A source that omits this is
+   * saying "I hold no history", which the interface reports as history
+   * being unavailable — a different statement from a vessel that did not
+   * move, and one the officer must be able to tell apart.
+   *
+   * Implementations return {@link VesselHistory}, not an array, so
+   * "nothing held" and "nothing happened" stay distinguishable at the
+   * boundary rather than being flattened into an empty list that some
+   * component later draws as a stationary ship.
+   */
+  history?(imo: string, query?: VesselHistoryQuery): Promise<VesselHistory>;
+}
+
+/** A source that keeps an archive. Narrow with {@link hasHistory}. */
+export interface HistoricalVesselSource extends VesselSource {
+  history(imo: string, query?: VesselHistoryQuery): Promise<VesselHistory>;
+}
+
+/**
+ * Whether a source can answer a question about the past.
+ *
+ * Asked before offering Replay for a vessel, so the control reflects what
+ * the connected source can actually do rather than appearing and then
+ * failing.
+ */
+export function hasHistory(source: VesselSource): source is HistoricalVesselSource {
+  return typeof (source as HistoricalVesselSource).history === "function";
 }
 
 /**
