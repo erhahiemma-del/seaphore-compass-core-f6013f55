@@ -288,6 +288,26 @@ export function MapCanvas({
     [bus, service],
   );
 
+  /*
+   * ── Post-deploy health probe ──────────────────────────────────────
+   *
+   * Reads live, on demand, rather than pushing a cached snapshot: the
+   * answer must describe the map as it is when asked, not as it was
+   * when a render last happened.
+   */
+  useEffect(
+    () =>
+      installMapHealthProbe(() => ({
+        rendererDraws,
+        zoom: service.get().zoom,
+        vesselCount: engine.snapshot().length,
+        sources: service.get().enabledSources,
+      })),
+    [engine, service, rendererDraws],
+  );
+
+
+
   // ── Renderer lifecycle ────────────────────────────────────────────────
   useEffect(() => {
     const container = containerRef.current;
