@@ -1,4 +1,21 @@
+import { existsSync } from "node:fs";
+
 import { defineConfig, devices } from "@playwright/test";
+
+/**
+ * Which Chromium to launch.
+ *
+ * The sandbox ships one at a fixed path, so tests run there without an
+ * install step. Returning `undefined` — rather than that path — when it
+ * does not exist is what lets a CI runner use the browser it downloaded
+ * itself; naming a missing binary fails the launch outright.
+ */
+function resolveChromium(): string | undefined {
+  const explicit = process.env.SEAPHORE_CHROMIUM;
+  if (explicit) return existsSync(explicit) ? explicit : undefined;
+  const sandbox = "/chromium-1194/chrome-linux/chrome";
+  return existsSync(sandbox) ? sandbox : undefined;
+}
 
 /**
  * Playwright config for Seaphore UI regression tests.
