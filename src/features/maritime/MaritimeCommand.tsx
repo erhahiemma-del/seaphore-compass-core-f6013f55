@@ -57,6 +57,7 @@ import { MapSearch } from "./MapSearch";
 import { OperatingModeBar } from "./OperatingModeBar";
 import { TimelineBar } from "./TimelineBar";
 import { replayPresentation } from "./replay-presentation";
+import { framingCentreFor } from "./selected-vessel-framing";
 import { navigateToCoordinates } from "@/services/geospatial/navigation";
 import { hasHistory } from "@/services/geospatial/vessel-source";
 
@@ -97,6 +98,15 @@ const VIEW_MODES: ReadonlyArray<{ mode: ViewMode; label: string; title: string }
 function pitchForView(mode: ViewMode): number {
   return mode === "3D" ? 50 : 0;
 }
+
+/**
+ * Width the rail and the context column occupy on the left.
+ *
+ * The rail is 44px at left-3 and the context column beside it is 19rem;
+ * together they cover roughly this much of the map. Declared here rather
+ * than measured because both are fixed by the zone table.
+ */
+const LEFT_CONTEXT_WIDTH_PX = 360;
 
 /** Centre and zoom that frame Nigeria and its maritime approaches. */
 const NIGERIA_VIEW = { center: [5.7, 4.35] as const, zoom: 6 };
@@ -203,6 +213,64 @@ export function MaritimeCommand() {
   const handleSelected = useCallback((vessel: Vessel | null) => {
     setSelectedVessel(vessel);
   }, []);
+
+  /*
+   * Keep the chosen vessel where the officer can see it.
+   *
+   * Selecting opens a 380px drawer. The camera does not change, so the
+   * canvas is the same size and the *visible* map is narrower — a vessel
+   * that was in view can end up behind the panel describing it, leaving
+   * the officer reading intelligence about a ship they cannot see.
+   *
+   * Keyed on the selected vessel's id, not on its position, so this fires
+   * once per selection. Keying it on position would re-centre on every
+   * update and take the map away from an officer who had panned
+   * deliberately — a camera that fights its user.
+   *
+   * `framingCentreFor` returns null when the vessel is already
+   * comfortably visible, so an unnecessary jump never happens, and the
+   * move goes through `navigateToCoordinates` like every other camera
+   * change rather than reaching for the renderer.
+   */
+  const framedFor = useRef<string | null>(null);
+  useEffect(() => {
+    const imo = selection?.kind === "vessel" ? selection.id : null;
+    if (!imo || !selectedVessel || selectedVessel.identity.imo !== imo) {
+      if (!imo) framedFor.current = null;
+      return;
+    }
+    if (framedFor.current === imo) return;
+    framedFor.current = imo;
+
+    /*
+     * Measured after the drawer has laid out, not before.
+     *
+     * Reading the container in the same tick returns the pre-drawer
+     * width, which is precisely the stale geometry that would compute a
+     * correction for a map that no longer exists.
+     */
+    const frame = requestAnimationFrame(() => {
+      const container = document.querySelector<HTMLElement>(".maplibregl-map");
+      const drawer = document.querySelector<HTMLElement>("[data-testid='context-drawer']");
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
+      const camera = sgs.get();
+      const centre = framingCentreFor(
+        [selectedVessel.position.lon, selectedVessel.position.lat],
+        { center: camera.center, zoom: camera.zoom, width: rect.width, height: rect.height },
+        {
+          // The drawer sits beside the map rather than over it on this
+          // surface, so it is only an obstruction when it overlaps.
+          right: drawer ? Math.max(0, rect.right - drawer.getBoundingClientRect().left) : 0,
+          left: LEFT_CONTEXT_WIDTH_PX,
+          top: 0,
+          bottom: 0,
+        },
+      );
+      if (centre) navigateToCoordinates(centre, { zoom: camera.zoom, source: "selection" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [selection, selectedVessel]);
 
   const closeCard = useCallback(() => {
     sgs.clearSelection();

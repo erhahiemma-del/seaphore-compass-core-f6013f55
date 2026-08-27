@@ -89,6 +89,54 @@ export function screenToLngLat(
 }
 
 /**
+ * Where a geographic point falls on the container, in pixels.
+ *
+ * The inverse of {@link screenToLngLat}, sharing its projection so the two
+ * cannot disagree. Added for selection framing: deciding whether a
+ * selected vessel is hidden behind the drawer means knowing where on the
+ * canvas it is, and asking MapLibre would make this a second thing
+ * reading the camera.
+ */
+export function lngLatToScreen(
+  position: LonLat,
+  viewport: Viewport,
+): { readonly x: number; readonly y: number } | null {
+  if (viewport.width <= 0 || viewport.height <= 0) return null;
+  if (!Number.isFinite(viewport.zoom)) return null;
+
+  const size = worldSize(viewport.zoom);
+  const centreX = lonToX(viewport.center[0]) * size;
+  const centreY = latToY(viewport.center[1]) * size;
+
+  /*
+   * Longitude is taken by the shorter way round.
+   *
+   * Without this a vessel just east of the antimeridian, viewed from just
+   * west of it, projects most of a world away and is judged off-screen
+   * when it is in fact beside the camera.
+   */
+  let deltaX = lonToX(position[0]) * size - centreX;
+  const half = size / 2;
+  if (deltaX > half) deltaX -= size;
+  if (deltaX < -half) deltaX += size;
+
+  return {
+    x: viewport.width / 2 + deltaX,
+    y: viewport.height / 2 + (latToY(position[1]) * size - centreY),
+  };
+}
+
+/**
+ * Degrees of longitude spanned by one pixel at a given zoom.
+ *
+ * Used to convert a pixel offset — half a drawer's width, say — into the
+ * camera movement that produces it.
+ */
+export function degreesPerPixel(zoom: number): number {
+  return 360 / worldSize(zoom);
+}
+
+/**
  * Degrees and decimal minutes, as a maritime officer reads a position.
  *
  * Not decimal degrees: charts, NPA publications and the handbook that
