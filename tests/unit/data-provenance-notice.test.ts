@@ -114,3 +114,42 @@ describe("it costs no new position on the map", () => {
     expect(CODE).toContain('state.enabledSources.join(",")');
   });
 });
+
+describe("simulated positions are never called observed", () => {
+  const POPUP = readFileSync(
+    resolve(process.cwd(), "src/features/maritime/AssetPopup.tsx"),
+    "utf8",
+  );
+  const popupCode = stripComments(POPUP);
+
+  it("derives the phrase from the source type and the position's provenance", () => {
+    /*
+     * The card read `provider · observed 13s ago` for every vessel,
+     * including the simulation — which generates positions and observes
+     * nothing. "Observed" is the strongest claim a position line makes,
+     * and spending it on synthetic traffic devalues it everywhere it is
+     * true.
+     */
+    expect(popupCode).toContain("positionPhrase");
+    expect(popupCode).toContain('describe().type === "SIMULATED"');
+    expect(popupCode).toContain("isObserved(vessel.position.kind)");
+  });
+
+  it("keys off the source, never a vessel id", () => {
+    // So a provider added later gets correct wording by declaring what
+    // it is, rather than by anyone remembering to add a case.
+    expect(popupCode).not.toMatch(/SIM-\d/);
+    expect(popupCode).not.toContain('imo.startsWith("SIM');
+  });
+
+  it("says what a between-reports position actually is", () => {
+    expect(POPUP).toContain("position drawn between reports");
+    expect(POPUP).toContain("simulated position");
+  });
+
+  it("no longer claims nearby vessels were observed", () => {
+    // A count from a partial feed is what was reported to it.
+    expect(popupCode).not.toContain("Vessels observed nearby");
+    expect(popupCode).not.toContain("Vessels observed inside");
+  });
+});

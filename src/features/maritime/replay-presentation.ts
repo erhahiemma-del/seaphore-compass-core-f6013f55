@@ -48,6 +48,7 @@ export type ReplayPresentationState =
   | "VESSEL_SELECTED_NO_HISTORY"
   | "REPLAY_LOADING"
   | "REPLAY_ERROR"
+  /** The source keeps an archive for this vessel. */
   | "HISTORY_AVAILABLE"
   | "REPLAY_READY"
   | "REPLAY_PLAYING"
@@ -88,6 +89,14 @@ export interface ReplayPresentationInput {
    * source rather than one vessel's history.
    */
   readonly historyLoading?: boolean;
+  /**
+   * Whether the active source can answer questions about the past.
+   *
+   * Read from `hasHistory(source)` rather than inferred from a selection
+   * existing. Without it this layer declared an absence it had never
+   * checked.
+   */
+  readonly sourceSupportsHistory?: boolean;
 }
 
 /** Whether the selection is a vessel, which is the only kind with a track. */
@@ -96,7 +105,14 @@ function vesselSelected(selection: MapSelection | null): boolean {
 }
 
 export function replayPresentation(input: ReplayPresentationInput): ReplayPresentation {
-  const { selection, availability, status, unavailableReason, historyLoading } = input;
+  const {
+    selection,
+    availability,
+    status,
+    unavailableReason,
+    historyLoading,
+    sourceSupportsHistory,
+  } = input;
 
   /*
    * A playable recording outranks everything else.
@@ -144,10 +160,34 @@ export function replayPresentation(input: ReplayPresentationInput): ReplayPresen
   }
 
   if (vesselSelected(selection)) {
+    /*
+     * Ask the source before declaring an absence.
+     *
+     * This branch used to be reached for every selected vessel, so a
+     * source that implements `history()` and holds a full track still
+     * produced "historical movement data is not currently available".
+     * A capability nobody consulted is a capability the officer does not
+     * have: the feature worked and the interface said it did not, which
+     * is worse than the feature being missing, because there is nothing
+     * to investigate.
+     *
+     * Capability and data are still two questions. A source may keep an
+     * archive and hold nothing for this hull, and the officer needs to
+     * tell "this source does not do history" from "this vessel has no
+     * recorded movement".
+     */
+    if (sourceSupportsHistory) {
+      return {
+        state: "HISTORY_AVAILABLE",
+        controlsLive: false,
+        message: "Movement history is available for this vessel from the connected source.",
+        actions: ["view-position", "open-intelligence"],
+      };
+    }
     return {
       state: "VESSEL_SELECTED_NO_HISTORY",
       controlsLive: false,
-      message: "Historical movement data is not currently available for this vessel.",
+      message: "The connected source does not hold movement history for this vessel.",
       /*
        * What is still worth doing. The vessel's present position and its
        * intelligence are both reachable and both useful — an officer who

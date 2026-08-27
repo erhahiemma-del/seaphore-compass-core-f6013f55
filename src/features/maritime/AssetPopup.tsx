@@ -29,9 +29,11 @@ import {
   formatAge,
   freshnessBandForTimestamp,
   freshnessLabel,
+  getVesselSource,
   type MapSelection,
   type Vessel,
 } from "@/services/geospatial";
+import { isObserved } from "@/services/geospatial/position-provenance";
 
 /** Radius within which a vessel is counted as "at" a port or anchorage. */
 const NEARBY_RADIUS_KM = 12;
@@ -71,7 +73,27 @@ function coords(lon: number, lat: number): string {
   }`;
 }
 
-/** Vessels currently observed within {@link NEARBY_RADIUS_KM} of a point. */
+/**
+ * How a position line should describe where the vessel is.
+ *
+ * Two independent facts decide it. A simulated source never observes
+ * anything, whatever the position says about itself; and a position the
+ * interface drew between two reports was not observed either, even from a
+ * real feed. Either one is enough to retire the word.
+ *
+ * Derived from the source's declared type and the position's own
+ * provenance, so a provider added later gets the right wording by
+ * declaring what it is rather than by anyone remembering to add a case.
+ */
+function positionPhrase(vessel: Vessel): string {
+  const sourceId = vessel.provenance?.source;
+  const simulated = sourceId ? getVesselSource(sourceId)?.describe().type === "SIMULATED" : false;
+  if (simulated) return "simulated position ·";
+  if (!isObserved(vessel.position.kind)) return "position drawn between reports ·";
+  return "observed";
+}
+
+/** Vessels currently reported within {@link NEARBY_RADIUS_KM} of a point. */
 function nearbyVessels(
   vessels: readonly Vessel[],
   at: readonly [number, number],
@@ -114,8 +136,8 @@ function portCard(id: string, vessels: readonly Vessel[]): CardModel | null {
       // A count of what the connected feed shows, never a claim about the
       // whole port: the sentence names the observation, not the truth.
       observed
-        ? row("Vessels observed nearby", `${near.length} within ${NEARBY_RADIUS_KM} km`)
-        : row("Vessels observed nearby", null),
+        ? row("Vessels reported nearby", `${near.length} within ${NEARBY_RADIUS_KM} km`)
+        : row("Vessels reported nearby", null),
       row("Anchorage", anchorages.length > 0 ? anchorages.map((a) => a.name).join(", ") : null),
       // Deliberately unanswerable today. No connected source publishes
       // NPA operational status, port calls or congestion.
@@ -151,8 +173,8 @@ function anchorageCard(id: string, vessels: readonly Vessel[]): CardModel | null
       row("Associated port", port?.name ?? null),
       row("Indicative radius", `${area.radiusKm} km (display hint)`),
       observed
-        ? row("Vessels observed inside", `${near.length} within ${NEARBY_RADIUS_KM} km`)
-        : row("Vessels observed inside", null),
+        ? row("Vessels reported inside", `${near.length} within ${NEARBY_RADIUS_KM} km`)
+        : row("Vessels reported inside", null),
       // Occupancy is a measurement of a defined area against a complete
       // feed. Seaphore has neither, so it stays unanswered.
       row("Occupancy", null),
@@ -222,8 +244,20 @@ function vesselCard(selection: MapSelection, vessels: readonly Vessel[]): CardMo
       { label: "Investigate", href: `/investigate/open?subject=${vessel.identity.imo}` },
       { label: "Open full map", href: "/maritime" },
     ],
+    /*
+     * "Observed" only where something was.
+     *
+     * This read `provider · observed 13s ago` for every vessel, including
+     * the simulation — which generates positions and observes nothing.
+     * The word is the strongest claim a position line can make, and
+     * spending it on synthetic traffic devalues it everywhere it is true.
+     *
+     * The wording is derived from the source's declared type and the
+     * position's own provenance, never from the vessel's id: a future
+     * provider gets correct wording by declaring what it is.
+     */
     source: vessel.provenance
-      ? `${vessel.provenance.provider} · observed ${formatAge(age)} ago`
+      ? `${vessel.provenance.provider} · ${positionPhrase(vessel)} ${formatAge(age)} ago`
       : "Source unattributed",
   };
 }

@@ -81,14 +81,37 @@ describe("the state names what is missing", () => {
     expect(result.message).toBe("Select a vessel to inspect movement history.");
   });
 
-  it("says the vessel has no history once one is chosen", () => {
-    const result = replayPresentation(
-      input({ selection: { kind: "vessel", id: "v1", imo: "9999999" } }),
+  it("declares an absence only after asking the source", () => {
+    /*
+     * The false negative this replaces. Every selected vessel reached
+     * this branch, so a source implementing `history()` and holding a
+     * full track still produced "historical movement data is not
+     * currently available" — the feature worked and the interface said
+     * it did not, which is worse than it being missing, because there is
+     * nothing to investigate.
+     */
+    const vessel = { kind: "vessel", id: "v1", imo: "9999999" } as const;
+
+    const withArchive = replayPresentation(
+      input({ selection: vessel, sourceSupportsHistory: true }),
     );
-    expect(result.state).toBe("VESSEL_SELECTED_NO_HISTORY");
-    expect(result.message).toBe(
-      "Historical movement data is not currently available for this vessel.",
+    expect(withArchive.state).toBe("HISTORY_AVAILABLE");
+    expect(withArchive.message).not.toMatch(/not currently available/i);
+
+    const withoutArchive = replayPresentation(
+      input({ selection: vessel, sourceSupportsHistory: false }),
     );
+    expect(withoutArchive.state).toBe("VESSEL_SELECTED_NO_HISTORY");
+    // Names the source as the reason rather than implying the vessel
+    // has no movement to show.
+    expect(withoutArchive.message).toContain("connected source does not hold");
+  });
+
+  it("reads the capability from the source, not from the selection", () => {
+    // The specific regression: a selected vessel is not evidence about
+    // what the provider can do.
+    expect(SHELL).toContain("sourceSupportsHistory");
+    expect(SHELL).toContain("hasHistory(source)");
   });
 
   it("offers what is still worth doing for that vessel", () => {

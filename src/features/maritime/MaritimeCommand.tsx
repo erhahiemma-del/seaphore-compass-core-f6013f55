@@ -28,6 +28,7 @@ import { Button } from "@/components/ui/button";
 import {
   MAP_DEFAULTS,
   MAP_SCOPES,
+  getVesselSource,
   mapEventBus,
   type MapScopeId,
   sgs,
@@ -57,6 +58,7 @@ import { OperatingModeBar } from "./OperatingModeBar";
 import { TimelineBar } from "./TimelineBar";
 import { replayPresentation } from "./replay-presentation";
 import { navigateToCoordinates } from "@/services/geospatial/navigation";
+import { hasHistory } from "@/services/geospatial/vessel-source";
 
 /**
  * The three perspectives, named for what an officer is looking at.
@@ -133,6 +135,25 @@ export function MaritimeCommand() {
    * route change or reload. Reading it from SGS makes one selection
    * govern every map surface and survive a pasted link.
    */
+  /*
+   * Whether the active vessel source keeps an archive.
+   *
+   * Resolved through the same registry `MapCanvas` reads, so the answer
+   * describes the provider actually feeding the map rather than one this
+   * component assumed.
+   */
+  const sourceSupportsHistory = useMemo(
+    () =>
+      enabledCsv
+        .split(",")
+        .filter(Boolean)
+        .some((id) => {
+          const source = getVesselSource(id);
+          return source ? hasHistory(source) : false;
+        }),
+    [enabledCsv],
+  );
+
   const scope = useMapSelector((state) => state.scope);
   const setScope = useCallback((next: MapScopeId) => sgs.setScope(next), []);
   const voyageFeed = useVoyages();
@@ -420,6 +441,12 @@ export function MaritimeCommand() {
             availability: replay.availability,
             status: replay.status,
             unavailableReason: replay.unavailableReason,
+            /*
+              Asked of the source, not assumed from a selection existing.
+              Without this the bar told an officer that a source holding a
+              full archive had no history for the vessel they had open.
+            */
+            sourceSupportsHistory,
           })}
           onAction={(action) => {
             /*

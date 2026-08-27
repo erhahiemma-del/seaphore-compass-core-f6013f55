@@ -16,6 +16,26 @@ import { MapPinOff } from "lucide-react";
 import { prefersReducedMotion } from "@/hooks/use-reduced-motion";
 import { AssetPopup } from "./AssetPopup";
 
+/**
+ * Selection kinds the contextual drawer renders in full.
+ *
+ * Kept beside the popup's mount rather than imported from the drawer so
+ * this file states its own rule: these are the kinds for which a second
+ * card would be a duplicate.
+ */
+const DRAWER_OWNED_KINDS = new Set(["vessel", "voyage"]);
+
+/**
+ * Whether the drawer is the authoritative surface for this selection.
+ *
+ * Only in `command` mode: Maritime Command mounts `ContextDrawer`, and
+ * the compact surfaces do not — on those the card is the entire story
+ * and suppressing it would leave a click with no response at all.
+ */
+function drawerOwns(kind: string, mode: MapCanvasMode | undefined): boolean {
+  return mode === "command" && DRAWER_OWNED_KINDS.has(kind);
+}
+
 import {
   BASEMAP_STYLE,
   EmptyVesselSource,
@@ -697,7 +717,21 @@ export function MapCanvas({
     <div className="relative h-full w-full">
       <div ref={containerRef} data-testid="map-canvas" className="absolute inset-0" />
       {!rendererDraws ? <RendererPendingNotice /> : null}
-      {selection ? (
+      {/*
+        One authoritative surface per selection.
+
+        Maritime Command mounts `ContextDrawer`, which renders the full
+        vessel intelligence panel. This card was rendering the same vessel
+        at the same time, so an officer selecting a ship got two panels
+        stating the same identity and position — overlapping, and each
+        implying the other was incomplete.
+
+        The drawer wins where it has a renderer for the kind. The card
+        stays for everything the drawer does not answer, and remains the
+        whole story on surfaces that mount no drawer at all, which is why
+        this is scoped by `mode` rather than deleted.
+      */}
+      {selection && !drawerOwns(selection.kind, mode) ? (
         <AssetPopup
           selection={selection}
           vessels={popupVessels}
