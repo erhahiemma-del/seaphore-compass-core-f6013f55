@@ -31,9 +31,7 @@ import {
   MAP_DEFAULTS,
   MAP_SCOPES,
   mapEventBus,
-  NIMASA_PORTS,
   type MapScopeId,
-  buildNationalPicture,
   sgs,
   useMapSelector,
   useMapSessionStore,
@@ -51,9 +49,8 @@ import { useVoyages, type VoyageFeed } from "./useVoyages";
 import { LayerPanel } from "./LayerPanel";
 import { MapCanvas, type VesselFeedState } from "./MapCanvas";
 import { useReplayTimeline } from "./useReplayTimeline";
-import { MapLegend } from "./MapLegend";
+import { OperationalLegend } from "./OperationalLegend";
 import { MapSearch } from "./MapSearch";
-import { NationalPicturePanel } from "./NationalPicturePanel";
 import { OperatingModeBar } from "./OperatingModeBar";
 import { TimelineBar } from "./TimelineBar";
 
@@ -97,41 +94,6 @@ function pitchForView(mode: ViewMode): number {
 
 /** Centre and zoom that frame Nigeria and its maritime approaches. */
 const NIGERIA_VIEW = { center: [5.7, 4.35] as const, zoom: 6 };
-
-/**
- * Radius around a selected port that counts as its approaches.
- *
- * 50 km is roughly the outer anchorage and approach channel for the
- * Nigerian ports — wide enough to include vessels waiting, tight enough
- * that a passing coastal transit is not counted as port activity.
- */
-const PORT_SCOPE_KM = 50;
-
-/** Great-circle distance in kilometres. */
-function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const toRad = (deg: number) => (deg * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  return 2 * 6371 * Math.asin(Math.min(1, Math.sqrt(a)));
-}
-
-/**
- * Vessel-source capability.
- *
- * GFW is the only connected provider and publishes no speed on its event
- * datasets, so the anchored metric stays unanswerable. Declared here
- * rather than inferred, because a fleet with no speed data looks
- * identical to a fleet that is stopped.
- */
-function vesselCapabilities(enabledSources: readonly string[]) {
-  return {
-    connected: enabledSources.length > 0,
-    reportsSpeed: enabledSources.some((id) => id !== "global-fishing-watch"),
-  };
-}
 
 export function MaritimeCommand() {
   /*
@@ -221,39 +183,6 @@ export function MaritimeCommand() {
     sgs.clearSelection();
     setSelectedVessel(null);
   }, []);
-
-  /**
-   * Vessels in scope for the current mode.
-   *
-   * In PORT mode the picture is about that port, so the fleet is narrowed
-   * to its approaches. In HISTORY and REPLAY the vessels *are* historical
-   * — the replay player applies frames to the same engine MapCanvas
-   * draws from — so the counts follow the playhead with no separate
-   * historical path and no risk of a live count being labelled historical.
-   */
-  const scopedVessels = useMemo(() => {
-    if (operatingMode !== "PORT" || selection?.kind !== "port") return vessels;
-    const port = NIMASA_PORTS[selection.id];
-    if (!port) return vessels;
-    return vessels.filter(
-      (vessel) =>
-        haversineKm(vessel.position.lat, vessel.position.lon, port.lat, port.lon) <= PORT_SCOPE_KM,
-    );
-  }, [vessels, operatingMode, selection]);
-
-  // Built from the canonical fleet plus declared provider capability.
-  // Every metric with no connected source reports pending, never zero.
-  const picture = useMemo(() => {
-    const enabled = enabledCsv.length > 0 ? enabledCsv.split(",") : [];
-    const capability = vesselCapabilities(enabled);
-    return buildNationalPicture({
-      vessels: scopedVessels,
-      vesselSourceConnected: capability.connected,
-      providerReportsSpeed: capability.reportsSpeed,
-      vesselsLoading: feed.loading,
-      vesselFeedError: feed.error,
-    });
-  }, [enabledCsv, scopedVessels, feed.loading, feed.error]);
 
   return (
     /*
@@ -347,11 +276,20 @@ export function MaritimeCommand() {
           {/* ── LEFT INTELLIGENCE DRAWER ──────────────────────────── */}
           {leftOpen ? (
             <aside
-              aria-label="Layers and national picture"
+              aria-label="Layers"
               data-testid="left-drawer"
               className="flex w-[300px] shrink-0 flex-col overflow-auto border-r border-border"
             >
-              <NationalPicturePanel picture={picture} />
+              {/*
+                Layers, and nothing above them.
+
+                This drawer used to open with the national picture's
+                answerability ratio and the provider health summary, so the
+                first thing on the map surface was a status report about
+                Seaphore's collection rather than the sea. Both are real
+                and both belong in Data Sources, where an officer goes to
+                ask why a feed is quiet.
+              */}
               <LayerPanel />
             </aside>
           ) : null}
@@ -407,8 +345,8 @@ export function MaritimeCommand() {
             starts collapsed so it costs nothing until asked for. It reads
             the same visual config and layer registry the renderer uses.
           */}
-            <div className="pointer-events-none absolute bottom-3 right-3 z-10 flex justify-end">
-              <MapLegend />
+            <div className="absolute bottom-3 right-3 z-10 flex justify-end">
+              <OperationalLegend />
             </div>
 
             {/*
@@ -426,7 +364,7 @@ export function MaritimeCommand() {
               reaches for repeatedly belongs under the hand rather than
               across the panel they are reading.
             */}
-            <ControlRail className="absolute right-3 top-3 z-20" />
+            <ControlRail className="absolute left-3 top-3 z-20" />
 
             <div className="absolute left-3 top-3 z-10 flex w-[19rem] max-w-[calc(100%-1.5rem)] flex-col items-start gap-1.5">
               <ScopeToggle scope={scope} onChange={setScope} />

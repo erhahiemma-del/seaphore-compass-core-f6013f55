@@ -26,8 +26,6 @@ import {
   type SharedGeospatialService,
 } from "@/services/geospatial";
 
-import { SourcesSection } from "./SourcesSection";
-
 export interface LayerPanelProps {
   readonly service?: SharedGeospatialService;
   readonly registry?: LayerRegistry;
@@ -97,8 +95,17 @@ export function LayerPanel({ service = sgs, registry = layerRegistry }: LayerPan
       </header>
 
       <div className="flex-1 overflow-y-auto">
-        {/* Providers first: what is feeding the map precedes how it is drawn. */}
-        <SourcesSection service={service} />
+        {/*
+          Providers are not on this panel.
+
+          They led it — "what is feeding the map precedes how it is
+          drawn" — which put provider counts, average freshness and
+          credential state above the officer's layers on the primary map
+          surface. The reasoning was sound and the placement was not: an
+          officer opening Layers wants to choose what is drawn, and a
+          feed's health is a question they ask in Data Sources. The
+          section itself is unchanged and still serves that environment.
+        */}
         {visibleGroups.length === 0 ? (
           <p className="px-4 py-6 text-center text-xs text-muted-foreground">
             No layers match “{query}”.

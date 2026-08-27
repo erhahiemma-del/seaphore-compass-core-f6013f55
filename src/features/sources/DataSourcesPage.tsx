@@ -22,6 +22,7 @@ import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 
 import { collectProviders, type Availability } from "./providers";
+import { SourcesSection } from "@/features/maritime/SourcesSection";
 
 const GROUPS: readonly {
   readonly key: Availability;
@@ -62,6 +63,17 @@ export function DataSourcesPage() {
 
   return (
     <div className="flex h-full flex-col gap-4 overflow-auto p-4">
+      {/*
+        The map's provider controls, in the environment that owns them.
+
+        These used to sit at the top of Maritime Command's layer drawer,
+        which put provider counts, average freshness and credential state
+        above the officer's layers on the primary map surface. Moving the
+        section rather than deleting it keeps the one place a vessel
+        provider can actually be switched on — the capability is
+        relocated, not lost.
+      */}
+      <SourcesSection />
       <header className="flex flex-col gap-1">
         <h1 className="text-sm font-semibold tracking-wide">Data Sources & Evidence Providers</h1>
         <p className="text-[12px] text-muted-foreground">
