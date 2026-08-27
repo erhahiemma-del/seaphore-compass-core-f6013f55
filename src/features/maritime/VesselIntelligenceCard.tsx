@@ -15,6 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RISK_COLORS, riskColor, type Vessel } from "@/services/geospatial";
 
+import { VesselImageHeader } from "./VesselImageHeader";
+
 export interface VesselIntelligenceCardProps {
   readonly vessel: Vessel;
   readonly onClose: () => void;
@@ -64,58 +66,68 @@ export function VesselIntelligenceCard({
         </Button>
       </header>
 
-      <div className="flex-1 space-y-4 overflow-y-auto px-4 py-3">
-        <Section title="Identity">
-          <Field label="Name" value={identity.name} />
-          <Field label="IMO" value={identity.imo} mono />
-          <Field label="MMSI" value={identity.mmsi} mono reason="Not in current AIS report" />
-          <Field
-            label="Call sign"
-            value={identity.callSign}
-            mono
-            reason="Not in current AIS report"
-          />
-          <Field label="Flag" value={identity.flag} reason="Requires vessel registry lookup" />
-          <Field label="Type" value={identity.type} reason="Not classified" />
-        </Section>
+      <div className="flex-1 overflow-y-auto">
+        {/*
+          The picture first, because an officer identifies a ship by
+          looking at it faster than by reading a table. What it is
+          entitled to claim is stated on it, so a class reference can
+          never be mistaken for a photograph of this hull.
+        */}
+        <VesselImageHeader identity={identity} />
 
-        <Section title="Ownership">
-          {/* Ownership resolution is an Intelligence Orchestrator concern and is
+        <div className="space-y-4 px-4 py-3">
+          <Section title="Identity">
+            <Field label="Name" value={identity.name} />
+            <Field label="IMO" value={identity.imo} mono />
+            <Field label="MMSI" value={identity.mmsi} mono reason="Not in current AIS report" />
+            <Field
+              label="Call sign"
+              value={identity.callSign}
+              mono
+              reason="Not in current AIS report"
+            />
+            <Field label="Flag" value={identity.flag} reason="Requires vessel registry lookup" />
+            <Field label="Type" value={identity.type} reason="Not classified" />
+          </Section>
+
+          <Section title="Ownership">
+            {/* Ownership resolution is an Intelligence Orchestrator concern and is
               not wired to the map in this sprint — say so rather than blank. */}
-          <Field label="Owner" value={undefined} reason="Awaiting ownership intelligence" />
-          <Field label="Operator" value={undefined} reason="Awaiting ownership intelligence" />
-        </Section>
+            <Field label="Owner" value={undefined} reason="Awaiting ownership intelligence" />
+            <Field label="Operator" value={undefined} reason="Awaiting ownership intelligence" />
+          </Section>
 
-        <Section title="Position">
-          <Field
-            label="Coordinates"
-            value={`${position.lat.toFixed(4)}°, ${position.lon.toFixed(4)}°`}
-            mono
-          />
-          <Field label="Heading" value={`${Math.round(position.heading)}°`} mono />
-          <Field label="Speed" value={`${position.speed.toFixed(1)} kn`} mono />
-          <Field label="Destination" value={position.destination} reason="Not declared" />
-          <Field
-            label="ETA"
-            value={position.etaHours != null ? `${position.etaHours} h` : undefined}
-            reason="Not derivable"
-          />
-          <Field label="Last AIS" value={formatTimestamp(position.timestamp)} mono />
-        </Section>
+          <Section title="Position">
+            <Field
+              label="Coordinates"
+              value={`${position.lat.toFixed(4)}°, ${position.lon.toFixed(4)}°`}
+              mono
+            />
+            <Field label="Heading" value={`${Math.round(position.heading)}°`} mono />
+            <Field label="Speed" value={`${position.speed.toFixed(1)} kn`} mono />
+            <Field label="Destination" value={position.destination} reason="Not declared" />
+            <Field
+              label="ETA"
+              value={position.etaHours != null ? `${position.etaHours} h` : undefined}
+              reason="Not derivable"
+            />
+            <Field label="Last AIS" value={formatTimestamp(position.timestamp)} mono />
+          </Section>
 
-        <Section title="Assessment">
-          <Field label="Risk" value={vessel.riskLevel} />
-          <Field
-            label="Attention score"
-            value={vessel.attentionScore > 0 ? String(vessel.attentionScore) : undefined}
-            reason="Not ranked by OSAE"
-          />
-          <Field
-            label="Confidence"
-            value={undefined}
-            reason="Requires a resolved UIP for this vessel"
-          />
-        </Section>
+          <Section title="Assessment">
+            <Field label="Risk" value={vessel.riskLevel} />
+            <Field
+              label="Attention score"
+              value={vessel.attentionScore > 0 ? String(vessel.attentionScore) : undefined}
+              reason="Not ranked by OSAE"
+            />
+            <Field
+              label="Confidence"
+              value={undefined}
+              reason="Requires a resolved UIP for this vessel"
+            />
+          </Section>
+        </div>
       </div>
 
       <footer className="grid grid-cols-2 gap-2 border-t border-border px-4 py-3">
