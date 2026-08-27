@@ -15,6 +15,42 @@
  */
 
 /**
+ * The deepest zoom the imagery service is asked for.
+ *
+ * Coverage is not uniform and cannot be: it is photography, and it ends
+ * at different depths in different places. Measured across the Nigerian
+ * ports and Rotterdam, real tiles run to 18–20 depending on location.
+ *
+ * Past this the source is overzoomed rather than queried — MapLibre
+ * stretches the deepest tile it holds instead of requesting one that may
+ * not exist. That keeps the ground continuous at tactical zoom, and it
+ * is a property of the service rather than of any port, so no location
+ * is special-cased.
+ *
+ * Declared here, above the viewport defaults, because the camera ceiling
+ * is derived from it and a constant cannot be read before it exists.
+ */
+export const GEOGRAPHIC_CONTEXT_MAX_ZOOM = 19;
+
+/**
+ * How deep the camera is allowed to go.
+ *
+ * Derived from what the ground can actually show rather than chosen. The
+ * imagery service is queried to {@link GEOGRAPHIC_CONTEXT_MAX_ZOOM} and
+ * overzoomed past it — MapLibre stretches the deepest real tile — so one
+ * level beyond the query ceiling still shows the place rather than an
+ * empty frame.
+ *
+ * It had been 18 since the map was first built and had never been
+ * anything else — a level shallower than the imagery could already
+ * serve, so an officer inspecting a berth hit a wall the ground had not
+ * reached. Deriving it means the two cannot drift apart: raising the
+ * imagery ceiling raises the camera with it, and neither can be changed
+ * in ignorance of the other.
+ */
+export const MAX_CAMERA_ZOOM = GEOGRAPHIC_CONTEXT_MAX_ZOOM + 1;
+
+/**
  * Map viewport defaults — Gulf of Guinea, Nigerian operational area.
  *
  * Unchanged by M2. These are the `regional` scope's values, kept as
@@ -43,7 +79,7 @@ export const MAP_DEFAULTS = {
   center: [5.8, 5.5] as readonly [number, number],
   zoom: 6,
   minZoom: 4,
-  maxZoom: 18,
+  maxZoom: MAX_CAMERA_ZOOM,
   /**
    * Restricts panning to the West African region so officers cannot
    * navigate away from the operational area of responsibility.
@@ -128,8 +164,6 @@ export const GEOGRAPHIC_CONTEXT_ATTRIBUTION = "Imagery © Esri";
  * is a property of the service rather than of any port, so no location
  * is special-cased.
  */
-export const GEOGRAPHIC_CONTEXT_MAX_ZOOM = 19;
-
 /**
  * Where the vector source stops carrying new geometry.
  *
@@ -191,7 +225,7 @@ export const MAP_SCOPES: Readonly<Record<MapScopeId, MapScopeDefinition>> = {
     center: [5.8, 5.5],
     zoom: 6,
     minZoom: 4,
-    maxZoom: 18,
+    maxZoom: MAX_CAMERA_ZOOM,
     maxBounds: [
       [-10, -4],
       [20, 14],
@@ -210,7 +244,7 @@ export const MAP_SCOPES: Readonly<Record<MapScopeId, MapScopeDefinition>> = {
     center: [3.5, 4.5],
     zoom: 2,
     minZoom: 1,
-    maxZoom: 18,
+    maxZoom: MAX_CAMERA_ZOOM,
     /*
      * Unrestricted, not world-bounded.
      *
@@ -259,7 +293,20 @@ export const MAP_SCOPES: Readonly<Record<MapScopeId, MapScopeDefinition>> = {
  * enforces its own narrower range at the renderer, which is the layer
  * that can actually stop a gesture.
  */
-export const ZOOM_LIMITS = { min: 1, max: 18 } as const;
+/**
+ * What the canonical camera writer will accept.
+ *
+ * This is the real ceiling. `setCamera` clamps every request against it,
+ * so a scope's own `maxZoom` only governs the wheel — anything arriving
+ * through `navigateTo`, a URL, a coordinate or a control was silently
+ * cut to 18 here regardless of what the map instance allowed.
+ *
+ * Derived from {@link MAX_CAMERA_ZOOM} so the clamp and the map cannot
+ * disagree. They already had: the ceiling sat a level below what the
+ * imagery could serve, and an officer asking for zoom 20 over Apapa was
+ * given 18 with no indication that the request had been altered.
+ */
+export const ZOOM_LIMITS = { min: 1, max: MAX_CAMERA_ZOOM } as const;
 
 /**
  * The three ways an officer reads this map.
@@ -286,7 +333,15 @@ export const ZOOM_BANDS = {
   regionalMin: 3.5,
   regionalMax: 8,
   operationalMin: 8,
-  operationalMax: 18,
+  /*
+   * Follows the camera ceiling.
+   *
+   * The bands have to span the whole navigable range or the deepest
+   * stretch of a descent is styled by a ramp that ended before the
+   * officer did — labels, borders and symbols all holding values chosen
+   * for a shallower map.
+   */
+  operationalMax: MAX_CAMERA_ZOOM,
 } as const;
 
 /**

@@ -55,6 +55,8 @@ export type PitchOwner = "automatic" | "manual";
  * A manual tilt may still go beyond this — the officer is entitled to
  * look however they like. The ceiling binds the automatic policy only.
  */
+import { MAX_CAMERA_ZOOM } from "./constants";
+
 export const MAX_AUTOMATIC_PITCH = 50;
 
 /**
@@ -79,6 +81,17 @@ export const PITCH_STOPS: readonly { readonly zoom: number; readonly pitch: numb
   { zoom: 10, pitch: 20 },
   { zoom: 13, pitch: 40 },
   { zoom: 18, pitch: MAX_AUTOMATIC_PITCH },
+  /*
+   * A flat final stop, carrying the ramp to the camera's ceiling.
+   *
+   * The tilt still reaches its maximum at 18 exactly as before — moving
+   * that stop would have re-pitched the whole 13-to-18 descent, which is
+   * verified behaviour and not what raising the zoom ceiling was for.
+   * This extends the ramp's *domain* to the deepest zoom an officer can
+   * reach and holds the pitch level across the new stretch, so the last
+   * two levels are not governed by a ramp that ended before they did.
+   */
+  { zoom: MAX_CAMERA_ZOOM, pitch: MAX_AUTOMATIC_PITCH },
 ] as const;
 
 /**
