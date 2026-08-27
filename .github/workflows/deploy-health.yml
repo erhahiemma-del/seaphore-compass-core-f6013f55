@@ -1,0 +1,78 @@
+name: Deploy Health
+
+# Runs *after* a deployment, against the deployed origin — not against a
+# fresh local server. The two things it checks (the camera reaching zoom
+# 20, and simulated vessels actually being drawn) both pass locally in
+# builds where the deployed bundle is wrong, which is the entire reason
+# this is a separate workflow rather than another job in CI.
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Origin to check (defaults to the published site)"
+        required: false
+        default: "https://seaphore-compass-core.lovable.app"
+  # Fires when a GitHub deployment reports its outcome, so a successful
+  # deploy is verified without anyone remembering to.
+  deployment_status:
+  # A daily probe catches breakage that arrives from outside a deploy —
+  # an expired basemap key, a provider that changed its response shape.
+  schedule:
+    - cron: "17 6 * * *"
+
+concurrency:
+  group: deploy-health-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  map-health:
+    name: Map deep zoom · simulated vessels
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    # `deployment_status` fires for every state; only a live deployment is
+    # worth probing.
+    if: >
+      github.event_name != 'deployment_status' ||
+      github.event.deployment_status.state == 'success'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Chromium
+        run: bunx playwright install --with-deps chromium
+
+      - name: Resolve target origin
+        id: target
+        run: |
+          URL="${{ github.event.inputs.url }}"
+          if [ -z "$URL" ]; then
+            URL="${{ github.event.deployment_status.environment_url }}"
+          fi
+          if [ -z "$URL" ]; then
+            URL="https://seaphore-compass-core.lovable.app"
+          fi
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Probing $URL"
+
+      - name: Map health checks
+        env:
+          SEAPHORE_HEALTH_URL: ${{ steps.target.outputs.url }}
+          # Use the Chromium installed above rather than the sandbox path
+          # baked into playwright.config.ts.
+          SEAPHORE_CHROMIUM: ""
+        run: bun run health:deploy
+
+      - name: Upload failure trace
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-health-trace
+          path: test-results/
+          if-no-files-found: ignore
