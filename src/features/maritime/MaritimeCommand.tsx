@@ -46,6 +46,7 @@ import type { IntelligenceMapPlan } from "@/services/orchestration";
 import { cn } from "@/lib/utils";
 
 import { ContextDrawer } from "./ContextDrawer";
+import { ControlRail } from "./ControlRail";
 import { useVoyages, type VoyageFeed } from "./useVoyages";
 import { LayerPanel } from "./LayerPanel";
 import { MapCanvas, type VesselFeedState } from "./MapCanvas";
@@ -417,6 +418,16 @@ export function MaritimeCommand() {
             what makes a voyage between two continents visible at all,
             and the feed note is what explains an empty world map.
           */}
+            {/*
+              The officer's instrument for the map, on the map.
+
+              Right-hand side because the left already carries scope and
+              the voyage feed's own state, and because a rail an officer
+              reaches for repeatedly belongs under the hand rather than
+              across the panel they are reading.
+            */}
+            <ControlRail className="absolute right-3 top-3 z-20" />
+
             <div className="absolute left-3 top-3 z-10 flex w-[19rem] max-w-[calc(100%-1.5rem)] flex-col items-start gap-1.5">
               <ScopeToggle scope={scope} onChange={setScope} />
               <VoyageFeedNotice feed={voyageFeed} />

@@ -30,6 +30,7 @@ import {
   type OperatingMode,
 } from "./selection";
 import { MAP_INTERACTION_MODES } from "./types";
+import { EMPTY_FILTERS } from "./vessel-filter";
 import type {
   LonLat,
   MapFilters,
@@ -39,13 +40,14 @@ import type {
   ViewMode,
 } from "./types";
 
-/** Default filter state — everything unfiltered. */
-export const DEFAULT_FILTERS: MapFilters = {
-  riskLevel: "ALL",
-  vesselType: "ALL",
-  destination: "ALL",
-  arrivalWindow: "ALL",
-};
+/**
+ * Default filter state — everything unfiltered.
+ *
+ * Re-exported from the filter module rather than restated, so a new
+ * dimension cannot be added to the predicate and forgotten here, leaving
+ * the map to start in a state the predicate does not recognise.
+ */
+export const DEFAULT_FILTERS: MapFilters = EMPTY_FILTERS;
 
 /** Build the initial map state. */
 export function createDefaultMapState(registry: LayerRegistry = layerRegistry): MapState {

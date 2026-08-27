@@ -48,6 +48,7 @@ import {
   type VesselSource,
   type Voyage,
 } from "@/services/geospatial";
+import { matchesFilters } from "@/services/geospatial/vessel-filter";
 
 /**
  * How much of the map's chrome to show.
@@ -249,6 +250,19 @@ export function MapCanvas({
       new VesselUpdateEngine({
         bus,
         renderContext: () => ({ selectedImo: service.get().selectedEntityImo }),
+        /*
+         * Read from shared state at apply time rather than captured.
+         *
+         * The officer changes filters while vessels are arriving, and a
+         * predicate frozen when the engine was built would keep drawing
+         * the set they last excluded. One instant per pass, so every
+         * vessel in a batch is measured against the same clock.
+         */
+        vesselFilter: () => {
+          const filters = service.get().filters;
+          const now = Date.now();
+          return (vessel) => matchesFilters(vessel, filters, now);
+        },
       }),
     [bus, service],
   );
@@ -561,6 +575,29 @@ export function MapCanvas({
       setFps(null);
     };
   }, [renderer, setFps]);
+
+  /*
+   * A filter change re-projects the vessels already held.
+   *
+   * Nothing is re-fetched: the engine still has every vessel the source
+   * reported, and narrowing is a question about which of them qualify to
+   * be drawn. Re-projecting is also what makes clearing a filter
+   * instant — the excluded vessels never left.
+   *
+   * Keyed on a serialisation of the filter state rather than its
+   * identity, because the object is rebuilt on every state update and
+   * comparing references would re-render the whole vessel source on any
+   * camera move.
+   */
+  useEffect(() => {
+    let previous = JSON.stringify(service.get().filters);
+    return service.subscribe((state) => {
+      const key = JSON.stringify(state.filters);
+      if (key === previous) return;
+      previous = key;
+      engine.refreshPresentation();
+    });
+  }, [engine, service]);
 
   // ── Selection changes re-derive presentation, not data ────────────────
   useEffect(() => {

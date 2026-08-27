@@ -96,6 +96,20 @@ export interface VesselUpdateEngineOptions {
   readonly bus?: MapEventBus | null;
   /** Presentation context supplier, re-read on every apply. */
   readonly renderContext?: () => VesselRenderContext;
+  /**
+   * Which vessels currently qualify to be drawn.
+   *
+   * A supplier rather than a value, for the same reason as
+   * `renderContext`: the officer changes filters while vessels are
+   * arriving, and the engine must read the current answer on every apply
+   * rather than one captured at construction.
+   *
+   * Filtering happens on the way *out*. The engine keeps every vessel a
+   * source reported, so the national counts stay honest while the map
+   * shows the narrowed set — "3 of 12", not a picture pretending 3 is
+   * everything.
+   */
+  readonly vesselFilter?: () => (vessel: Vessel) => boolean;
 }
 
 export class VesselUpdateEngine {
@@ -103,11 +117,13 @@ export class VesselUpdateEngine {
   private renderer: MapRenderer | null;
   private readonly bus: MapEventBus | null;
   private readonly renderContext: () => VesselRenderContext;
+  private readonly vesselFilter: () => (vessel: Vessel) => boolean;
 
   constructor(options: VesselUpdateEngineOptions = {}) {
     this.renderer = options.renderer ?? null;
     this.bus = options.bus ?? null;
     this.renderContext = options.renderContext ?? (() => ({}));
+    this.vesselFilter = options.vesselFilter ?? (() => () => true);
   }
 
   /**
@@ -193,10 +209,23 @@ export class VesselUpdateEngine {
   /** Project the full set to a feature collection. */
   toFeatureCollection(): VesselFeatureCollection {
     const ctx = this.renderContext();
+    const qualifies = this.vesselFilter();
     return {
       type: "FeatureCollection",
-      features: this.snapshot().map((vessel) => toVesselFeature(vessel, ctx)),
+      features: this.snapshot()
+        .filter(qualifies)
+        .map((vessel) => toVesselFeature(vessel, ctx)),
     };
+  }
+
+  /**
+   * Vessels currently drawn, as opposed to currently held.
+   *
+   * The pair a surface needs to say "3 of 12 shown" without deriving the
+   * filtered count itself and risking a different answer from the map.
+   */
+  visibleCount(): number {
+    return this.snapshot().filter(this.vesselFilter()).length;
   }
 
   /**
@@ -215,10 +244,24 @@ export class VesselUpdateEngine {
     if (isEmptyDiff(diff)) return;
     if (this.renderer) {
       const ctx = this.renderContext();
+      const qualifies = this.vesselFilter();
+      /*
+       * The delta path has to respect the filter too, or it becomes the
+       * hole in it: a vessel arriving by `applyPatch` while a filter is
+       * active would be drawn regardless, and the map would slowly fill
+       * with exactly what the officer asked to exclude.
+       *
+       * A vessel that no longer qualifies is pushed as a removal rather
+       * than dropped, because it may already be on the map from before
+       * the filter was applied.
+       */
+      const excluded = [...diff.added, ...diff.updated]
+        .filter((vessel) => !qualifies(vessel))
+        .map(vesselKey);
       const batch: VesselRenderBatch = {
-        added: diff.added.map((vessel) => toVesselFeature(vessel, ctx)),
-        updated: diff.updated.map((vessel) => toVesselFeature(vessel, ctx)),
-        removed: diff.removed,
+        added: diff.added.filter(qualifies).map((vessel) => toVesselFeature(vessel, ctx)),
+        updated: diff.updated.filter(qualifies).map((vessel) => toVesselFeature(vessel, ctx)),
+        removed: [...diff.removed, ...excluded],
       };
       this.renderer.patchVessels(batch);
     }

@@ -12,6 +12,7 @@
  */
 import type { MapScopeId } from "./constants";
 import type { MapSelection, OperatingMode } from "./selection";
+import type { MapFilters } from "./vessel-filter";
 
 /** A WGS84 coordinate pair in MapLibre/GeoJSON order: `[lon, lat]`. */
 export type LonLat = readonly [number, number];
@@ -81,16 +82,15 @@ export type RiskLevel = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | "UNKNOWN" | "CL
 /** Vessel classifications used for filtering. */
 export type VesselType = "CONTAINER" | "TANKER" | "BULK" | "VEHICLE" | "OTHER";
 
-/** Arrival windows offered by the filter panel. */
-export type ArrivalWindow = "ALL" | "TODAY" | "24H" | "48H" | "WEEK";
-
-/** Filter state applied to the operational picture. */
-export interface MapFilters {
-  readonly riskLevel: "ALL" | Exclude<RiskLevel, "UNKNOWN" | "CLEAN">;
-  readonly vesselType: "ALL" | VesselType;
-  readonly destination: "ALL" | string;
-  readonly arrivalWindow: ArrivalWindow;
-}
+/*
+ * Filter state lives with the predicate that reads it.
+ *
+ * It was declared here and evaluated nowhere, which is how it came to
+ * describe four dimensions with no reader for any of them. Keeping the
+ * shape next to `matchesFilters` means a dimension cannot be added to the
+ * type without landing in front of the code that has to honour it.
+ */
+export type { ArrivalWindow, MapFilters, PositionAgeWindow } from "./vessel-filter";
 
 /**
  * The complete, serialisable state of the operational map.
