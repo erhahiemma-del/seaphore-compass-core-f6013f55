@@ -236,6 +236,26 @@ describe("the Nigerian estate is complete and separable", () => {
     expect(features).toHaveLength(drawable.length);
   });
 
+  it("records why Rivers Port has no position, not merely that it has none", () => {
+    /*
+     * The NPA source supplied to settle this — the Port Process Manual
+     * 2020 — is a procedures document. It carries no port directory and
+     * no coordinates, so it cannot corroborate the `npa-reference` value
+     * sitting in the constants registry. The record has to say that,
+     * because the next reader will otherwise see a tagged coordinate
+     * beside an "unavailable" status and assume an oversight.
+     */
+    const port = NIGERIAN_PORTS.NGPHC!;
+    expect(port.provenance.note).toMatch(/no coordinate published|awaiting/i);
+    const source = readFileSync(
+      resolve(process.cwd(), "src/services/geospatial/nigerian-ports.ts"),
+      "utf8",
+    );
+    const block = source.slice(source.indexOf("NGPHC: {"), source.indexOf("NGWARR: {"));
+    expect(block).toMatch(/Port Process Manual/i);
+    expect(block).toMatch(/no port directory|no coordinates/i);
+  });
+
   it("still refuses to place Rivers Port", () => {
     /*
      * Not an oversight. UN/LOCODE publishes no coordinate for NGPHC, and

@@ -195,17 +195,40 @@ export const NIGERIAN_PORTS: Readonly<Record<string, CanonicalPort>> = {
     shortName: "PHC",
     aliases: ["PHC", "NGPH"],
     /*
-     * No coordinate exists for this port in this repository.
+     * No coordinate this module is willing to publish.
      *
-     * UN/LOCODE lists NGPHC and publishes no position for it. The Port
-     * Locations card carries a lat/lng, but that file states its
-     * coordinates are "used for SVG projection, not navigation" and the
-     * surface it feeds is labelled simulated — promoting it here would
-     * make a demo value indistinguishable from an operator reference.
+     * Three candidates have been examined and each rejected for a
+     * different reason, recorded here so the question is not reopened
+     * from scratch every time someone notices Rivers is undrawn.
      *
-     * Substituting Onne was considered and rejected: Onne and Rivers
-     * are distinct facilities roughly 20 km apart, and conflating them
-     * would misstate the estate rather than approximate it.
+     *   UN/LOCODE lists NGPHC and publishes no position for it.
+     *
+     *   The Port Locations card carries a lat/lng, but that file states
+     *   its coordinates are "used for SVG projection, not navigation"
+     *   and the surface it feeds is labelled simulated. Promoting it
+     *   would make a demo value indistinguishable from an operator
+     *   reference.
+     *
+     *   `NIMASA_PORTS.NGPHC` carries 4.7566 N, 7.0125 E tagged
+     *   `npa-reference` — the same tag the five drawn ports carry, which
+     *   is why this looks like an inconsistency rather than a decision.
+     *   It was checked against the NPA source supplied for exactly this
+     *   purpose, the Port Process Manual 2020. That document is a
+     *   procedures manual — arrival and departure, terminal operations,
+     *   customs clearing, immigration, port health — and contains no
+     *   port directory and no coordinates of any kind. It therefore
+     *   neither corroborates nor refutes the value, and an `npa-reference`
+     *   tag whose authority nothing in reach can confirm is a claim, not
+     *   a source.
+     *
+     * Substituting Onne was considered and rejected: Onne and Rivers are
+     * distinct facilities roughly 20 km apart, and conflating them would
+     * misstate the estate rather than approximate it.
+     *
+     * What would settle it: the NPA port handbook proper — the
+     * publication that gave Tin Can 06°25.7'N 003°20.530'E — or any
+     * NIMASA reference position for Rivers. Until one of those is in
+     * hand, Rivers stays named, selectable and undrawn.
      */
     positionStatus: "position-unavailable",
     provenance: {
