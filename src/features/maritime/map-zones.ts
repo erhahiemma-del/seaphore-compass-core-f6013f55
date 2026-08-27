@@ -42,6 +42,24 @@ export const MAP_ZONE = {
    */
   RIGHT_READOUT: "absolute right-3 top-1/2 -translate-y-1/2 z-20",
   /**
+   * Voice command, on the bottom edge at centre.
+   *
+   * The one position on the chart an officer can reach without looking
+   * for it, which is the whole point of a control you press while your
+   * eyes are on the map. Every corner is spoken for; the centre of the
+   * bottom edge is not, and it puts the affordance where a hand already
+   * rests between the rail and the timeline.
+   *
+   * Shares the common level and is kept apart by position, like every
+   * overlay that is not the rail. It first claimed `z-30` so its readout
+   * would sit over the others, which tied the rail and broke the one
+   * rule the stacking has: the rail must be strictly above everything,
+   * or a drawer can cover the control that closes it. Position was
+   * always the right instrument here — the readout opens upward from the
+   * bottom edge into the one part of the chart nothing else occupies.
+   */
+  VOICE: "absolute bottom-3 left-1/2 -translate-x-1/2 z-20",
+  /**
    * The legend, and anything else keyed to the picture.
    *
    * Lifted clear of the assistant below. It sat at `bottom-3` and the

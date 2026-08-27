@@ -45,6 +45,7 @@ import { ContextDrawer } from "./ContextDrawer";
 import { ControlRail } from "./ControlRail";
 import { SpatialTrail } from "./SpatialTrail";
 import { CoordinateHud } from "./CoordinateHud";
+import { VoiceCommand } from "./VoiceCommand";
 import { MAP_ZONE } from "./map-zones";
 import { useVoyages, type VoyageFeed } from "./useVoyages";
 import { MapCanvas, type VesselFeedState } from "./MapCanvas";
@@ -361,6 +362,13 @@ export function MaritimeCommand() {
               reads the camera and never drives it.
             */}
             <CoordinateHud />
+
+            {/*
+              Voice, on the map rather than behind a menu. The officer
+              speaks a place, a position or the global view; every
+              outcome goes through the same navigation path a click does.
+            */}
+            <VoiceCommand />
 
             <div
               className={cn(
