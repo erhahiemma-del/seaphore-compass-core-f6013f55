@@ -643,6 +643,30 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     order: 25,
   },
   {
+    id: "geographic-context",
+    label: "Geographic Context",
+    description:
+      "High-detail imagery of the shoreline, harbour and infrastructure, revealed as you zoom in.",
+    group: "MARITIME_ZONES",
+    renderLayerIds: [LAYER_IDS.geographicContext],
+    /*
+     * On by default, and invisible until it matters.
+     *
+     * The layer is fully transparent below zoom 13, so an officer working
+     * the national picture never sees it and it costs no tiles. It exists
+     * for the moment they drill into a port, which is precisely where the
+     * vector basemap runs out.
+     *
+     * It is context, not observation: shoreline, jetties and buildings as
+     * they were when the tile was captured. A ship visible in imagery is
+     * not a vessel report, and nothing here is dated, because Seaphore
+     * cannot date it.
+     */
+    defaultVisible: true,
+    status: "ready",
+    order: 6,
+  },
+  {
     id: "graticule",
     label: "Graticule",
     description: "Latitude and longitude reference lines. Generated, not observed.",

@@ -72,6 +72,39 @@ export const BASEMAP_STYLE = "https://basemaps.cartocdn.com/gl/dark-matter-gl-st
 export const LIGHT_BASEMAP_STYLE = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
 
 /**
+ * High-detail geographic context for tactical zoom.
+ *
+ * The vector basemap's source stops at zoom 14. Past that MapLibre
+ * overzooms one tile, so the picture does not merely stop improving — it
+ * empties, because a smaller viewport holds fewer of the same features.
+ * Measured at Onne: 1409 features at zoom 8, 41 at zoom 17, with water
+ * reaching zero. The harbour itself stopped being drawn.
+ *
+ * Imagery is the only thing that adds geometry past that ceiling. It is
+ * GEOGRAPHIC CONTEXT and nothing else: shoreline, jetties, terminals and
+ * buildings as they were when the tile was captured. A ship visible in a
+ * tile is not an observation — Seaphore did not see it, cannot date it,
+ * and must never present it as a position. Live operational data
+ * continues to come only from the vessel, incident and investigation
+ * layers, which draw above this.
+ */
+export const GEOGRAPHIC_CONTEXT_TILES =
+  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+
+/** Attribution the imagery requires. Shown in the map's attribution control. */
+export const GEOGRAPHIC_CONTEXT_ATTRIBUTION = "Imagery © Esri";
+
+/**
+ * Where the vector source stops carrying new geometry.
+ *
+ * Read from its own TileJSON rather than assumed.
+ */
+export const VECTOR_SOURCE_MAX_ZOOM = 14;
+
+/** Zoom at which geographic context begins to appear, and is fully opaque. */
+export const GEOGRAPHIC_CONTEXT_ZOOM = { fadeIn: 13, full: 15.5 } as const;
+
+/**
  * How far the map is allowed to travel.
  *
  * The map was built around one area of responsibility, and `maxBounds`
@@ -812,6 +845,8 @@ export const LAYER_IDS = {
    */
   portSelection: "port-selection-layer",
   seaLabels: "sea-labels-layer",
+  /** High-detail geographic context, revealed at tactical zoom. */
+  geographicContext: "geographic-context-layer",
   /**
    * Confidence ring, drawn beneath a vessel.
    *

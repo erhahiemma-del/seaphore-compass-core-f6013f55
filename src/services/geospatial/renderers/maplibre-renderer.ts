@@ -31,6 +31,9 @@
  */
 import {
   BASEMAP_STYLE,
+  GEOGRAPHIC_CONTEXT_ATTRIBUTION,
+  GEOGRAPHIC_CONTEXT_TILES,
+  GEOGRAPHIC_CONTEXT_ZOOM,
   basemapStyleFor,
   LAYER_IDS,
   SEA_LABELS,
@@ -135,6 +138,7 @@ function intelligenceMatch(pick: (signal: IntelligenceSignal) => unknown) {
 
 /** Source ids owned by this renderer. */
 const SOURCE_IDS = {
+  geographicContext: "geographic-context",
   vessels: "vessels",
   ports: "ports",
   anchorages: "anchorages",
@@ -203,6 +207,7 @@ const FALLBACK_BASEMAP = "https://tiles.stadiamaps.com/styles/alidade_smooth_dar
 const STYLE_LOAD_STALL_MS = 12_000;
 
 export const INSTALLED_RENDER_LAYERS: readonly string[] = [
+  LAYER_IDS.geographicContext,
   LAYER_IDS.buildings,
   LAYER_IDS.graticule,
   LAYER_IDS.seaLabels,
@@ -945,6 +950,50 @@ export class MapLibreRenderer implements MapRenderer {
      * Below zoom 13 the source has no building geometry at all, so the
      * `minzoom` costs nothing and states the fact.
      */
+    /*
+     * Geographic context, first and therefore lowest.
+     *
+     * Everything operational installs after this and draws above it,
+     * which is the ordering that keeps the distinction honest: imagery
+     * is the ground, and vessels, ports and incidents are what Seaphore
+     * observed on it. A ship in a tile is scenery; a vessel on the map is
+     * a report.
+     *
+     * It fades in rather than switching, because an abrupt swap at a
+     * zoom threshold reads as the map breaking. Below the fade it is
+     * fully transparent and costs nothing — MapLibre requests no tiles
+     * for a layer at zero opacity outside its zoom range.
+     */
+    map.addSource(SOURCE_IDS.geographicContext, {
+      type: "raster",
+      tiles: [GEOGRAPHIC_CONTEXT_TILES],
+      tileSize: 256,
+      // The vector source stops at 14; this exists to go past it.
+      minzoom: GEOGRAPHIC_CONTEXT_ZOOM.fadeIn,
+      maxzoom: 19,
+      attribution: GEOGRAPHIC_CONTEXT_ATTRIBUTION,
+    } as never);
+    map.addLayer({
+      id: LAYER_IDS.geographicContext,
+      type: "raster",
+      source: SOURCE_IDS.geographicContext,
+      minzoom: GEOGRAPHIC_CONTEXT_ZOOM.fadeIn,
+      paint: {
+        "raster-opacity": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          GEOGRAPHIC_CONTEXT_ZOOM.fadeIn,
+          0,
+          GEOGRAPHIC_CONTEXT_ZOOM.full,
+          1,
+        ],
+        // Slightly softened so operational symbols keep their contrast
+        // against it rather than competing with a photograph.
+        "raster-saturation": -0.25,
+      },
+    });
+
     map.addLayer({
       id: LAYER_IDS.buildings,
       type: "fill-extrusion",

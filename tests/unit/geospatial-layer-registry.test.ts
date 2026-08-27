@@ -224,6 +224,14 @@ describe("default layer catalogue", () => {
        * id resolves to this one so shared links still work.
        */
       "nigeria-eez",
+      /*
+       * Geographic context is on by default and invisible until it
+       * matters: fully transparent below zoom 13, so the national
+       * picture never shows it and it costs no tiles. It exists for the
+       * moment an officer drills into a port, which is exactly where the
+       * vector basemap runs out of geometry.
+       */
+      "geographic-context",
       "graticule",
     ]);
   });
