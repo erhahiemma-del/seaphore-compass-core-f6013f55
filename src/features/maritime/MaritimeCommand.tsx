@@ -43,6 +43,7 @@ import { cn } from "@/lib/utils";
 
 import { ContextDrawer } from "./ContextDrawer";
 import { ControlRail } from "./ControlRail";
+import { MAP_ZONE } from "./map-zones";
 import { useVoyages, type VoyageFeed } from "./useVoyages";
 import { MapCanvas, type VesselFeedState } from "./MapCanvas";
 import { useReplayTimeline } from "./useReplayTimeline";
@@ -112,6 +113,7 @@ export function MaritimeCommand() {
   useMapFocusBridge(undefined, "focus-only");
 
   const viewMode = useMapSelector((state) => state.viewMode);
+  const presentationMode = useMapSelector((state) => state.presentationMode);
   const operatingMode = useMapSelector((state) => state.operatingMode);
   const selection = useMapSelector((state) => state.selection);
   const enabledCsv = useMapSelector((state) => state.enabledSources.join(","));
@@ -192,7 +194,23 @@ export function MaritimeCommand() {
      * scroll container, which is what would otherwise cost the map the
      * space it exists to fill.
      */
-    <AppShell capabilities={{ chromeless: true }}>
+    /*
+     * The shell is lit the same way as the map.
+     *
+     * Presentation mode was a map-only decision, which produced two
+     * disconnected products on one screen: a light institutional map
+     * under dark application chrome, or the reverse. An officer choosing
+     * Institutional is choosing how Maritime Command looks, not how its
+     * basemap looks.
+     *
+     * `mode` is the environment's default, and the officer's own theme
+     * toggle still overrides it — the same precedence every other
+     * environment already follows.
+     */
+    <AppShell
+      capabilities={{ chromeless: true }}
+      mode={presentationMode === "institutional" ? "light" : "dark"}
+    >
       {/*
        * `min-h-0 flex-1`, not `h-dvh`.
        *
@@ -315,7 +333,7 @@ export function MaritimeCommand() {
             starts collapsed so it costs nothing until asked for. It reads
             the same visual config and layer registry the renderer uses.
           */}
-            <div className="absolute bottom-3 right-3 z-10 flex justify-end">
+            <div className={cn(MAP_ZONE.BOTTOM_RIGHT, "flex justify-end")}>
               <OperationalLegend />
             </div>
 
@@ -334,9 +352,14 @@ export function MaritimeCommand() {
               reaches for repeatedly belongs under the hand rather than
               across the panel they are reading.
             */}
-            <ControlRail className="absolute left-3 top-3 z-20" fullscreenTarget={shellRef} />
+            <ControlRail className={MAP_ZONE.LEFT_RAIL} fullscreenTarget={shellRef} />
 
-            <div className="absolute left-3 top-3 z-10 flex w-[19rem] max-w-[calc(100%-1.5rem)] flex-col items-start gap-1.5">
+            <div
+              className={cn(
+                MAP_ZONE.LEFT_CONTEXT,
+                "flex w-[19rem] max-w-[calc(100%-5.5rem)] flex-col items-start gap-1.5",
+              )}
+            >
               <ScopeToggle scope={scope} onChange={setScope} />
               <VoyageFeedNotice feed={voyageFeed} />
             </div>
