@@ -50,16 +50,62 @@ async function readHealth(page: import("@playwright/test").Page): Promise<MapHea
     return probe();
   });
 }
+/**
+ * Reach the map past the access gate.
+ *
+ * `/maritime` sits behind a session, so an unauthenticated probe reads
+ * the landing page and reports "map absent" for a map that is perfectly
+ * healthy. Two routes in, in order of fidelity: a real injected session,
+ * then the preview role selector. If neither is available the check
+ * fails loudly rather than passing on the landing page.
+ */
+async function openMap(
+  page: import("@playwright/test").Page,
+  context: import("@playwright/test").BrowserContext,
+) {
+  const storageKey = process.env.LOVABLE_BROWSER_SUPABASE_STORAGE_KEY;
+  const sessionJson = process.env.LOVABLE_BROWSER_SUPABASE_SESSION_JSON;
+  const cookiesJson = process.env.LOVABLE_BROWSER_SUPABASE_COOKIES_JSON;
+
+  if (cookiesJson) {
+    await context.addCookies(
+      JSON.parse(cookiesJson).map((cookie: Record<string, unknown>) => ({ ...cookie, url: BASE })),
+    );
+  }
+  await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded" });
+  if (storageKey && sessionJson) {
+    await page.evaluate(
+      ([key, value]) => window.localStorage.setItem(key as string, value as string),
+      [storageKey, sessionJson],
+    );
+  }
+
+  await page.goto(HEALTH_URL, { waitUntil: "domcontentloaded" });
+  const canvas = page.getByTestId("map-canvas");
+  if (await canvas.isVisible().catch(() => false)) return;
+
+  // Preview builds offer one-click role access; production does not, and
+  // there the injected session above is the only way through.
+  const officer = page.getByRole("button", { name: /Intelligence Officer/i }).first();
+  if (await officer.isVisible({ timeout: 8_000 }).catch(() => false)) {
+    await officer.click();
+    await page.waitForLoadState("domcontentloaded");
+    await page.goto(HEALTH_URL, { waitUntil: "domcontentloaded" });
+  }
+}
 
 test.describe("deployment health · Live Command Map", () => {
-  test("the deployed camera reaches zoom 20 and the map draws vessels", async ({ page }) => {
+  test("the deployed camera reaches zoom 20 and the map draws vessels", async ({
+    page,
+    context,
+  }) => {
     const consoleErrors: string[] = [];
     page.on("console", (message) => {
       if (message.type() === "error") consoleErrors.push(message.text());
     });
     page.on("pageerror", (error) => consoleErrors.push(error.message));
 
-    await page.goto(HEALTH_URL, { waitUntil: "domcontentloaded" });
+    await openMap(page, context);
 
     // The canvas host, then the probe. Separated so a failure says which
     // of "the page never mounted" and "the probe was compiled out" it is.
