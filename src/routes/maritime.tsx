@@ -22,7 +22,26 @@ registerGlobalFishingWatchSource();
  * demonstration that appears without being asked for is one somebody
  * will eventually mistake for the operational picture.
  */
-registerSimulatedVesselSource();
+/*
+ * `?simSpeed=` accelerates the demonstration clock, and only when asked.
+ *
+ * A ship makes 6–18 knots, which at a port-scale zoom is about three
+ * pixels of screen travel in thirty seconds. That is real movement and
+ * it is impossible to watch, which makes the simulation impossible to
+ * verify by looking at it. Rather than inflate the vessels' stated
+ * speeds — which would make the readout lie — the clock runs faster and
+ * the speeds stay honest.
+ *
+ * Default 1, so nothing is accelerated unless a demonstration explicitly
+ * asks for it.
+ */
+function demonstrationTimeScale(): number {
+  if (typeof window === "undefined") return 1;
+  const requested = Number(new URLSearchParams(window.location.search).get("simSpeed"));
+  return Number.isFinite(requested) && requested > 1 ? Math.min(requested, 500) : 1;
+}
+
+registerSimulatedVesselSource({ timeScale: demonstrationTimeScale() });
 
 // Seed the enabled set AFTER registration.
 //

@@ -45,7 +45,6 @@
  * `OBSERVED` would have made the provenance model decorative on the only
  * source that exercises it.
  */
-import { TIMING } from "../constants";
 import type { PositionKind } from "../position-provenance";
 import type { LonLat, VesselType } from "../types";
 import type { Vessel, VesselPosition } from "../vessel";
@@ -340,13 +339,39 @@ export interface SimulatedVesselSourceOptions {
   readonly epoch?: number;
   /** Clock, injectable for the same reason. */
   readonly now?: () => number;
+  /**
+   * How often a display position is pushed.
+   *
+   * Distinct from {@link REPORT_INTERVAL_MS}, which is how often the
+   * simulation *reports*. Short enough that a vessel glides rather than
+   * jumping a minute of travel at a time.
+   */
+  readonly pushIntervalMs?: number;
+  /**
+   * Simulation seconds per real second. Default 1.
+   *
+   * A ship makes 6–18 knots, which at a port-scale zoom is roughly three
+   * pixels of screen travel in thirty seconds — real movement that is
+   * impossible to watch and impossible to verify by looking. Rather than
+   * inflate the vessels' stated speeds, which would make the readout
+   * lie, the clock runs faster and the speeds stay honest.
+   *
+   * It multiplies inside `secondsFor` alone, so an accelerated track is
+   * still deterministic and still reproducible for the same scale.
+   */
+  readonly timeScale?: number;
 }
+
+/** Default display cadence. Smooth to watch, cheap to compute. */
+const DEFAULT_PUSH_INTERVAL_MS = 3_000;
 
 export class SimulatedVesselSource implements DescribableVesselSource {
   readonly id = "simulated";
   private readonly fleet: readonly SimVessel[];
   private readonly epoch: number;
   private readonly now: () => number;
+  private readonly pushIntervalMs: number;
+  private readonly timeScale: number;
   private readonly listeners = new Set<(vessel: Vessel) => void>();
   private timer: ReturnType<typeof setInterval> | null = null;
 
@@ -378,6 +403,12 @@ export class SimulatedVesselSource implements DescribableVesselSource {
     const size = options.fleetSize ?? 32;
     this.now = options.now ?? (() => Date.now());
     this.epoch = options.epoch ?? this.now();
+    this.pushIntervalMs = options.pushIntervalMs ?? DEFAULT_PUSH_INTERVAL_MS;
+    /*
+     * Never below real time. A stopped or reversed clock demonstrates
+     * nothing and would make the archive `history` returns nonsensical.
+     */
+    this.timeScale = Math.max(1, options.timeScale ?? 1);
 
     const random = mulberry32(seed);
     const fleet: SimVessel[] = [];
@@ -403,15 +434,22 @@ export class SimulatedVesselSource implements DescribableVesselSource {
     this.fleet = fleet;
   }
 
-  /** Simulation seconds elapsed for a vessel at a given wall-clock moment. */
+  /**
+   * Simulation seconds elapsed for a vessel at a given wall-clock moment.
+   *
+   * `timeScale` multiplies here and nowhere else, which is what keeps
+   * accelerated time deterministic: a position is still a pure function
+   * of the route and the elapsed simulation time, and the same scale
+   * always produces the same track.
+   */
   private secondsFor(vessel: SimVessel, at: number): number {
-    return vessel.offsetSeconds + (at - this.epoch) / 1000;
+    return vessel.offsetSeconds + ((at - this.epoch) / 1000) * this.timeScale;
   }
 
-  private vesselAt(sim: SimVessel, at: number): Vessel {
+  private vesselAt(sim: SimVessel, at: number, forcedKind?: PositionKind): Vessel {
     const fix = fixOnRoute(sim.route, sim.speed, this.secondsFor(sim, at));
     const elapsed = at - this.epoch;
-    const kind = kindForMoment(elapsed);
+    const kind = forcedKind ?? kindForMoment(elapsed);
 
     const position: VesselPosition = {
       lon: fix.position[0],
@@ -508,23 +546,50 @@ export class SimulatedVesselSource implements DescribableVesselSource {
   }
 
   /**
-   * Push updates on the same cadence the map already polls at.
+   * Push a display position often; report an observation rarely.
    *
-   * Reusing `TIMING.positionRefreshMs` rather than inventing a tick keeps
-   * the simulation indistinguishable from a real push source in the one
-   * way that matters architecturally: the update engine sees the same
-   * shape of traffic either way.
+   * These were one cadence, and both were 60 s. The vessel therefore
+   * jumped a full minute of travel at a time — impossible to watch, and
+   * visually a teleport, which is the one artefact this source is
+   * supposed to prove it does not produce.
+   *
+   * They are two different things and now run at two rates. A *report*
+   * is the simulation's imitation of a feed saying "the vessel was here
+   * at this time", and stays on {@link REPORT_INTERVAL_MS} because that
+   * is what makes the archive plausible and what `history` returns. A
+   * *display position* is the interface keeping the glyph continuous
+   * between two reports, several times a second's worth, and is marked
+   * `DISPLAY_INTERPOLATED` exactly because nobody observed it.
+   *
+   * This is what the provenance model was built for. Before the split
+   * every push was a report, which made the interpolated kind almost
+   * unreachable on the only source that exercises it.
    */
   subscribe(onVessel: (vessel: Vessel) => void): () => void {
     this.listeners.add(onVessel);
     if (!this.timer) {
+      /*
+       * The reporting bucket each vessel was last seen in.
+       *
+       * When a push crosses into a new bucket, that push carries the
+       * report; every push in between carries an interpolation. Tracking
+       * the bucket rather than testing the timestamp is what makes this
+       * correct at arbitrary push times — an exact modulo hit would
+       * essentially never occur, so every position would have been
+       * classified as interpolated and the source would never have
+       * reported anything at all.
+       */
+      let lastBucket = -1;
       this.timer = setInterval(() => {
         const at = this.now();
+        const bucket = Math.floor((at - this.epoch) / REPORT_INTERVAL_MS);
+        const reporting = bucket !== lastBucket;
+        if (reporting) lastBucket = bucket;
         for (const sim of this.fleet) {
-          const vessel = this.vesselAt(sim, at);
+          const vessel = this.vesselAt(sim, at, reporting ? "OBSERVED" : "DISPLAY_INTERPOLATED");
           for (const listener of [...this.listeners]) listener(vessel);
         }
-      }, TIMING.positionRefreshMs);
+      }, this.pushIntervalMs);
     }
     return () => {
       this.listeners.delete(onVessel);
