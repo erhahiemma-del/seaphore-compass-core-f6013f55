@@ -43,6 +43,7 @@ import { cn } from "@/lib/utils";
 
 import { ContextDrawer } from "./ContextDrawer";
 import { ControlRail } from "./ControlRail";
+import { SpatialTrail } from "./SpatialTrail";
 import { MAP_ZONE } from "./map-zones";
 import { useVoyages, type VoyageFeed } from "./useVoyages";
 import { MapCanvas, type VesselFeedState } from "./MapCanvas";
@@ -360,6 +361,12 @@ export function MaritimeCommand() {
                 "flex w-[19rem] max-w-[calc(100%-5.5rem)] flex-col items-start gap-1.5",
               )}
             >
+              {/*
+                Orientation above the scope control: where the officer is
+                now, and every step back out. Derived from the camera, so
+                it follows a hand-pan as readily as a control.
+              */}
+              <SpatialTrail />
               <ScopeToggle scope={scope} onChange={setScope} />
               <VoyageFeedNotice feed={voyageFeed} />
             </div>
