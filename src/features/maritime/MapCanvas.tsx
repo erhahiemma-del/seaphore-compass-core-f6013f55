@@ -15,6 +15,7 @@ import { MapPinOff } from "lucide-react";
 
 import { prefersReducedMotion } from "@/hooks/use-reduced-motion";
 import { AssetPopup } from "./AssetPopup";
+import { installMapHealthProbe } from "./health-probe";
 
 /**
  * Selection kinds the contextual drawer renders in full.
