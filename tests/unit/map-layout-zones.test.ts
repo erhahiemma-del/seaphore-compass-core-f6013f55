@@ -16,7 +16,12 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { MAP_ZONE, anchorOf, type MapZone } from "@/features/maritime/map-zones";
+import {
+  ASSISTANT_RESERVED,
+  MAP_ZONE,
+  anchorOf,
+  type MapZone,
+} from "@/features/maritime/map-zones";
 import { resolveTheme } from "@/stores/theme.store";
 
 const COMMAND = readFileSync(
@@ -51,6 +56,25 @@ describe("the zone table is coherent", () => {
       if (zone === "LEFT_RAIL") continue;
       expect(MAP_ZONE[zone], `${zone} intrudes on the rail`).not.toMatch(/\bleft-3\b/);
     }
+  });
+
+  it("keeps the bottom-right clear of the application assistant", () => {
+    /*
+     * The collision this file was written to prevent, and missed.
+     *
+     * `GlobalCopilotLauncher` is mounted by the shell for every
+     * environment at `fixed bottom-16 right-6`, so Maritime Command
+     * cannot move it. The legend sat at `bottom-3` and the launcher
+     * covered it — measured live at 579-701 x 598-624 against the
+     * launcher's 564-692 x 607-642, overlapping in both axes.
+     *
+     * The first version of this suite compared only the anchors of the
+     * zones it knew about. It could not see a widget that was never in
+     * the table, which is exactly what the launcher is.
+     */
+    const bottom = /bottom-(\d+)/.exec(MAP_ZONE.BOTTOM_RIGHT)?.[1];
+    expect(bottom, "BOTTOM_RIGHT must declare a bottom offset").toBeDefined();
+    expect(Number(bottom)).toBeGreaterThanOrEqual(ASSISTANT_RESERVED.bottomUnits);
   });
 
   it("puts the rail above the panels it opens", () => {

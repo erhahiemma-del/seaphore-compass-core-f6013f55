@@ -32,8 +32,31 @@ export const MAP_ZONE = {
   RIGHT_CONTEXT: "absolute right-3 top-3 z-20",
   /** Coordinate and scale readouts. */
   BOTTOM_LEFT: "absolute bottom-3 left-16 z-20",
-  /** The legend, and anything else keyed to the picture. */
-  BOTTOM_RIGHT: "absolute bottom-3 right-3 z-20",
+  /**
+   * The legend, and anything else keyed to the picture.
+   *
+   * Lifted clear of the assistant below. It sat at `bottom-3` and the
+   * launcher covered it — measured at 579-701 x 598-624 against the
+   * launcher's 564-692 x 607-642, overlapping in both axes. The officer
+   * saw the legend's count with a button on top of it.
+   */
+  BOTTOM_RIGHT: "absolute bottom-28 right-3 z-20",
+} as const;
+
+/**
+ * Space the application's assistant launcher occupies, in this corner.
+ *
+ * Not a zone anything may claim — a reservation. `GlobalCopilotLauncher`
+ * is mounted by the shell for every environment at `fixed bottom-16
+ * right-6`, so Maritime Command cannot move it without moving it
+ * everywhere. Recording its footprint here is what lets a map widget be
+ * placed around it deliberately rather than discovering the overlap in a
+ * screenshot.
+ */
+export const ASSISTANT_RESERVED = {
+  /** Tailwind units from the bottom edge, including the launcher's height. */
+  bottomUnits: 25,
+  right: "right-6",
 } as const;
 
 export type MapZone = keyof typeof MAP_ZONE;
