@@ -799,3 +799,24 @@
     outline-offset: 1px;
   }
 }
+
+/*
+ * Full Screen fallback.
+ *
+ * Used only where the browser refuses its own Fullscreen API — Safari on
+ * iOS, and any context under a permissions policy that blocks it. The
+ * workspace still fills the viewport; what is lost is the browser chrome
+ * going away, which is a smaller thing than the control not working.
+ *
+ * The map is not told about this. It resizes through its own observer,
+ * so the camera, the selection and the filters are untouched: the same
+ * canvas is simply larger.
+ */
+.seaphore-fullscreen-fallback {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  width: 100vw;
+  height: 100dvh;
+  background: var(--background);
+}

@@ -334,7 +334,7 @@ export function MaritimeCommand() {
               reaches for repeatedly belongs under the hand rather than
               across the panel they are reading.
             */}
-            <ControlRail className="absolute left-3 top-3 z-20" />
+            <ControlRail className="absolute left-3 top-3 z-20" fullscreenTarget={shellRef} />
 
             <div className="absolute left-3 top-3 z-10 flex w-[19rem] max-w-[calc(100%-1.5rem)] flex-col items-start gap-1.5">
               <ScopeToggle scope={scope} onChange={setScope} />

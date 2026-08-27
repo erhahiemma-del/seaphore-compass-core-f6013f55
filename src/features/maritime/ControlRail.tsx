@@ -12,7 +12,7 @@
  * offers nothing to press, which is the honest shape of a capability
  * Seaphore models but cannot yet serve.
  */
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -28,6 +28,7 @@ import {
 import type { VesselType } from "@/services/geospatial/types";
 
 import { CONTROL_STATUS_LABEL, MAP_CONTROLS, type MapControlDefinition } from "./control-rail";
+import { useFullscreen } from "./use-fullscreen";
 import { LayerPanel } from "./LayerPanel";
 import { MapStyleDrawer } from "./MapStyleDrawer";
 
@@ -58,16 +59,39 @@ const RISK_LEVELS = ["CRITICAL", "HIGH", "MEDIUM", "LOW"] as const;
 export interface ControlRailProps {
   readonly service?: SharedGeospatialService;
   readonly className?: string;
+  /**
+   * The workspace Full Screen expands.
+   *
+   * Passed in rather than discovered, because the element that should
+   * grow is the whole Maritime Command shell — chrome, rail and map —
+   * and only the surface that composes them knows which that is.
+   */
+  readonly fullscreenTarget?: React.RefObject<HTMLElement | null>;
 }
 
-export function ControlRail({ service = sgs, className }: ControlRailProps) {
+export function ControlRail({ service = sgs, className, fullscreenTarget }: ControlRailProps) {
   const [openControl, setOpenControl] = useState<string | null>(null);
+  const fallbackTarget = useRef<HTMLElement | null>(null);
+  const fullscreen = useFullscreen(fullscreenTarget ?? fallbackTarget);
   const filters = useMapSelector((state) => state.filters, service);
   const activeCount = activeFilterCount(filters);
 
+  /*
+   * Full Screen is an action, not a drawer.
+   *
+   * It was routed through the same open-a-panel path as everything
+   * else, which is how a control marked ready came to open an
+   * explanation of itself instead of doing the thing it names.
+   */
   const toggle = useCallback(
-    (id: string) => setOpenControl((current) => (current === id ? null : id)),
-    [],
+    (id: string) => {
+      if (id === "full-screen") {
+        fullscreen.toggle();
+        return;
+      }
+      setOpenControl((current) => (current === id ? null : id));
+    },
+    [fullscreen],
   );
 
   return (
@@ -82,7 +106,7 @@ export function ControlRail({ service = sgs, className }: ControlRailProps) {
           <RailButton
             key={control.id}
             control={control}
-            open={openControl === control.id}
+            open={control.id === "full-screen" ? fullscreen.active : openControl === control.id}
             badge={control.id === "vessel-filters" && activeCount > 0 ? activeCount : null}
             onClick={() => toggle(control.id)}
           />

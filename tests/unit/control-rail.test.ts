@@ -146,6 +146,58 @@ describe("the rail is an instrument, not a status page", () => {
     expect(RAIL).toContain("PENDING_FILTER_DIMENSIONS");
   });
 
+  it("makes Full Screen act rather than explain itself", () => {
+    /*
+     * It was routed through the same open-a-drawer path as every other
+     * control, so a control marked ready opened an explanation of
+     * itself. That is the precise failure the status model exists to
+     * prevent, and it is worse than marking the control unavailable.
+     */
+    expect(RAIL).toContain('if (id === "full-screen")');
+    expect(RAIL).toContain("fullscreen.toggle()");
+    expect(RAIL).not.toMatch(/control\.id === "full-screen" \?\s*<Unavailable/);
+  });
+
+  it("reflects the browser's own fullscreen state, not a local guess", () => {
+    // An officer can leave with Esc or the window chrome, neither of
+    // which routes through the control.
+    const hook = readFileSync(
+      resolve(process.cwd(), "src/features/maritime/use-fullscreen.ts"),
+      "utf8",
+    );
+    expect(hook).toContain('document.addEventListener("fullscreenchange", sync)');
+    expect(hook).toContain("currentElement() === element");
+  });
+
+  it("expands the workspace without touching the map", () => {
+    /*
+     * Fullscreen is a property of a DOM element, so camera, selection,
+     * focus and filters survive by construction — the same canvas is
+     * mounted, merely larger.
+     */
+    /*
+     * Comments stripped first. The docstring explains *why* the map is
+     * not touched, so asserting against the raw file matched the
+     * explanation rather than the code — a test that fails on its own
+     * reasoning is worse than no test.
+     */
+    const code = readFileSync(
+      resolve(process.cwd(), "src/features/maritime/use-fullscreen.ts"),
+      "utf8",
+    )
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/\/\/.*$/gm, "");
+    expect(code).not.toMatch(/maplibre|setCamera|jumpTo|flyTo/i);
+  });
+
+  it("falls back where the browser refuses fullscreen", () => {
+    const hook = readFileSync(
+      resolve(process.cwd(), "src/features/maritime/use-fullscreen.ts"),
+      "utf8",
+    );
+    expect(hook).toContain("seaphore-fullscreen-fallback");
+  });
+
   it("labels every control for assistive technology", () => {
     expect(RAIL).toContain("aria-label");
     expect(RAIL).toContain("aria-expanded");
