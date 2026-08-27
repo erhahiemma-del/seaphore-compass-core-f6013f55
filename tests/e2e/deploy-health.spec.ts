@@ -43,9 +43,8 @@ const HEALTH_URL = `${BASE}/maritime?sources=simulated&simSpeed=120&lon=3.38&lat
 
 async function readHealth(page: import("@playwright/test").Page): Promise<MapHealthSnapshot> {
   return page.evaluate(() => {
-    const probe = (
-      window as typeof window & { __seaphoreMapHealth?: () => MapHealthSnapshot }
-    ).__seaphoreMapHealth;
+    const probe = (window as typeof window & { __seaphoreMapHealth?: () => MapHealthSnapshot })
+      .__seaphoreMapHealth;
     if (!probe) throw new Error("health probe absent");
     return probe();
   });
@@ -131,9 +130,8 @@ test.describe("deployment health · Live Command Map", () => {
     // scope's own range at the renderer.
     await page.waitForFunction(
       (target) => {
-        const probe = (
-          window as typeof window & { __seaphoreMapHealth?: () => { zoom: number } }
-        ).__seaphoreMapHealth;
+        const probe = (window as typeof window & { __seaphoreMapHealth?: () => { zoom: number } })
+          .__seaphoreMapHealth;
         return !!probe && probe().zoom >= target;
       },
       DEEP_ZOOM,

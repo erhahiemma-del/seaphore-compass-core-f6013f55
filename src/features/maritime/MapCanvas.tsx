@@ -307,8 +307,6 @@ export function MapCanvas({
     [engine, service, rendererDraws],
   );
 
-
-
   // ── Renderer lifecycle ────────────────────────────────────────────────
   useEffect(() => {
     const container = containerRef.current;
