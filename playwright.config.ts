@@ -11,10 +11,26 @@ import { defineConfig, devices } from "@playwright/test";
  * itself; naming a missing binary fails the launch outright.
  */
 function resolveChromium(): string | undefined {
-  const explicit = process.env.SEAPHORE_CHROMIUM;
-  if (explicit) return existsSync(explicit) ? explicit : undefined;
-  const sandbox = "/chromium-1194/chrome-linux/chrome";
-  return existsSync(sandbox) ? sandbox : undefined;
+  const candidates = [
+    process.env.SEAPHORE_CHROMIUM,
+    // The sandbox's browser pool. Its revision moves independently of the
+    // pinned @playwright/test version, so it is matched by glob-free
+    // enumeration rather than by the revision Playwright expects.
+    ...chromiumRevisions(),
+    "/chromium-1194/chrome-linux/chrome",
+  ];
+  return candidates.find((path): path is string => !!path && existsSync(path));
+}
+
+/** Installed Chromium builds under the shared Playwright browser pool. */
+function chromiumRevisions(): string[] {
+  const root = process.env.PLAYWRIGHT_BROWSERS_PATH || "/opt/ms-playwright";
+  if (!existsSync(root)) return [];
+  return readdirSync(root)
+    .filter((entry) => entry.startsWith("chromium-"))
+    .sort()
+    .reverse()
+    .map((entry) => join(root, entry, "chrome-linux", "chrome"));
 }
 
 /**
