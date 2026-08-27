@@ -153,7 +153,7 @@ function SelectionPanel({
       ) : (
         <Unresolved
           title="Vessel not loaded"
-          detail="This vessel is selected but is not in the currently loaded set. It may be outside the active viewport, filtered out, or from a provider that is not connected."
+          detail="This vessel is selected but is not in the currently loaded set. It may be outside the active viewport, filtered out, or beyond the movement data currently available."
         />
       );
 
@@ -231,7 +231,7 @@ function SelectionPanel({
             {
               label: "AIS history",
               reason:
-                "No AIS history provider is connected. Transmission gaps cannot be detected, which is not a statement that no vessel has gone dark.",
+                "Transmission gaps cannot be detected from the movement data available, which is not a statement that no vessel has gone dark.",
             },
           ]}
         />

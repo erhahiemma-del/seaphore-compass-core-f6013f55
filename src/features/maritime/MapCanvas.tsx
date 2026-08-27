@@ -48,6 +48,7 @@ import {
   type VesselSource,
   type Voyage,
 } from "@/services/geospatial";
+import { basemapStyleFor } from "@/services/geospatial/constants";
 import { matchesFilters } from "@/services/geospatial/vessel-filter";
 
 /**
@@ -282,8 +283,8 @@ export function MapCanvas({
     void renderer
       .mount({
         container,
-        style: basemapStyle ?? (palette === "institutional" ? LIGHT_BASEMAP_STYLE : BASEMAP_STYLE),
-        palette,
+        style: basemapStyle ?? basemapStyleFor(state.presentationMode),
+        palette: state.presentationMode,
         center: state.center,
         zoom: state.zoom,
         // The camera's opening pose, restored from a shared link or a
@@ -598,6 +599,29 @@ export function MapCanvas({
       engine.refreshPresentation();
     });
   }, [engine, service]);
+
+  /*
+   * A presentation change repaints the live map.
+   *
+   * `setStyle` replaces the basemap document and takes every operational
+   * layer with it, so the renderer reinstalls them and announces
+   * `map:style` when the new style is addressable. Vessels live in the
+   * engine rather than in the style, so they are handed back then — the
+   * one place that knows the source was just recreated.
+   */
+  useEffect(() => {
+    let previous = service.get().presentationMode;
+    const stop = service.subscribe((state) => {
+      if (state.presentationMode === previous) return;
+      previous = state.presentationMode;
+      renderer.setPresentation(state.presentationMode);
+    });
+    const restore = bus.on("map:style", () => engine.refreshPresentation());
+    return () => {
+      stop();
+      restore();
+    };
+  }, [bus, engine, renderer, service]);
 
   // ── Selection changes re-derive presentation, not data ────────────────
   useEffect(() => {

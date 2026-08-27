@@ -143,6 +143,15 @@ export interface MapRenderer {
    * broken rather than unsupported.
    */
   setProjection(view: ViewMode): void;
+  /**
+   * Repaint the map in a different presentation mode.
+   *
+   * Swaps the basemap style document on the mounted instance and
+   * reinstalls the operational layers over it. Not a remount: the map,
+   * its camera, its selection and the shared state all survive, because
+   * a lighting choice must not cost the officer their place.
+   */
+  setPresentation(palette: MapStylePaletteName): void;
 
   /** Current camera pose, or null before mount. */
   getCamera(): MapCamera | null;

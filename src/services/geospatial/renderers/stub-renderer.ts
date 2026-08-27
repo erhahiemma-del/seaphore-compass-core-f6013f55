@@ -71,6 +71,8 @@ export class StubMapRenderer implements MapRenderer {
   /** No projection to switch. The officer's choice still lives in MapState. */
   setProjection(): void {}
 
+  setPresentation(): void {}
+
   setCamera(camera: Partial<MapCamera>): void {
     const base: MapCamera = this.camera ?? { center: [0, 0], zoom: 0, pitch: 0, bearing: 0 };
     this.camera = { ...base, ...camera };

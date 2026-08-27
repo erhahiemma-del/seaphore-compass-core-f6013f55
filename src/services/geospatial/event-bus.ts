@@ -157,6 +157,15 @@ export interface MapEventMap {
   "vessel:hover": VesselHoverEvent;
   "layer:visibility": LayerVisibilityEvent;
   "vessels:applied": VesselsAppliedEvent;
+  /**
+   * The basemap has been repainted in a new presentation mode.
+   *
+   * Emitted after the operational layers are reinstalled over the new
+   * style. Surfaces holding data the style does not — the vessel engine,
+   * chiefly — use this to hand their features back to a source that was
+   * just recreated.
+   */
+  "map:style": { readonly palette: string };
   "map:error": MapErrorEvent;
 }
 

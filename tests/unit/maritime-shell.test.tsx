@@ -183,7 +183,13 @@ describe("context drawer", () => {
     );
 
     expect(screen.getByText("Vessel not loaded")).toBeInTheDocument();
-    expect(screen.getByText(/provider that is not connected/)).toBeInTheDocument();
+    /*
+     * Wording follows the officer vocabulary: the map no longer names a
+     * provider or its connection state. The distinction being guarded is
+     * unchanged — "we have not loaded this vessel" is not "this vessel
+     * does not exist".
+     */
+    expect(screen.getByText(/beyond the movement data currently available/)).toBeInTheDocument();
   });
 
   it("shows port sections with NPA stated as pending, never fabricated", () => {

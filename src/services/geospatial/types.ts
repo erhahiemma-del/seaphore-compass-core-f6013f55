@@ -10,7 +10,7 @@
  * belong to OSAE (`@/services/osae`) and are referenced here only as
  * optional, externally-populated fields.
  */
-import type { MapScopeId } from "./constants";
+import type { MapScopeId, MapStylePaletteName } from "./constants";
 import type { MapSelection, OperatingMode } from "./selection";
 import type { MapFilters } from "./vessel-filter";
 
@@ -103,6 +103,16 @@ export type { ArrivalWindow, MapFilters, PositionAgeWindow } from "./vessel-filt
 export interface MapState {
   /** Rendering perspective. 2D/3D only — see `operatingMode` for context. */
   readonly viewMode: ViewMode;
+  /**
+   * How the map presents itself.
+   *
+   * Shared state rather than a component prop, which is what it was: a
+   * prop meant the officer could not choose, the choice could not
+   * survive a reload, and a shared link carried someone else's lighting.
+   * It is a presentation decision and changes nothing about what is
+   * observed.
+   */
+  readonly presentationMode: MapStylePaletteName;
   /**
    * The intelligence context the officer is working in.
    *

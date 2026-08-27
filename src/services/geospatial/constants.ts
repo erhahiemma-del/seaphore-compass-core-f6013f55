@@ -336,7 +336,71 @@ export const MARITIME_PALETTE: MaritimePalette = {
   /** Voyage destination marker. */
   voyageDestination: "#B78BD9",
 } as const;
-export type MapStylePaletteName = "maritime" | "institutional";
+/**
+ * How the map presents itself.
+ *
+ * A presentation choice, not a claim about data. The three modes repaint
+ * water, land, boundaries and label contrast for different working
+ * conditions — a lit operations room, a darkened one, and a night watch
+ * where screen glare carries into the bridge. None of them changes what
+ * is observed, which is why adding one is design work rather than a
+ * statement Seaphore has to be able to defend.
+ *
+ * `maritime` and `institutional` are retained as the historical names so
+ * existing callers and stored state keep working; the officer-facing
+ * labels live in `PRESENTATION_MODES`.
+ */
+export type MapStylePaletteName = "maritime" | "institutional" | "night-operations";
+
+/** The presentation modes, in the order the control offers them. */
+export const PRESENTATION_MODES: readonly {
+  readonly id: MapStylePaletteName;
+  readonly label: string;
+  readonly description: string;
+}[] = [
+  {
+    id: "institutional",
+    label: "Institutional",
+    description: "Light command surface. The default for daylight operations.",
+  },
+  {
+    id: "maritime",
+    label: "Maritime Dark",
+    description: "Dark operational environment for a low-light room.",
+  },
+  {
+    id: "night-operations",
+    label: "Night Operations",
+    description: "Near-black ground with high-contrast operational colour, for a night watch.",
+  },
+] as const;
+
+/**
+ * Night Operations palette.
+ *
+ * Built for contrast against a near-black ground rather than for
+ * prettiness: the ocean sits barely above the page so operational colour
+ * carries, and land is separated by value rather than hue. Restrained
+ * deliberately — a night watch needs to read a chart at low luminance,
+ * not look at a heads-up display.
+ */
+export const NIGHT_OPS_PALETTE: MaritimePalette = {
+  ocean: "#061525",
+  oceanShallow: "#0A2036",
+  land: "#0B1622",
+  landUrban: "#111F2E",
+  buildingExtrusion: "#16283A",
+  coastline: "#2C6B87",
+  waterway: "#1B4560",
+  seaLabel: "#4E7E96",
+  placeLabel: "#8FA6B8",
+  labelHalo: "#030712",
+  boundary: "#22384A",
+  graticule: "#1E3446",
+  voyageRelationship: "#8B6FC7",
+  voyageOrigin: "#00E5FF",
+  voyageDestination: "#36D399",
+} as const;
 
 /**
  * Institutional light equivalent of the maritime palette.
@@ -827,7 +891,21 @@ export const PIXELS_PER_KM = {
  * adding a token obliges every theme to answer for it.
  */
 export function paletteFor(name: MapStylePaletteName | undefined): MaritimePalette {
-  return name === "institutional" ? LIGHT_MARITIME_PALETTE : MARITIME_PALETTE;
+  if (name === "institutional") return LIGHT_MARITIME_PALETTE;
+  if (name === "night-operations") return NIGHT_OPS_PALETTE;
+  return MARITIME_PALETTE;
+}
+
+/**
+ * Basemap style document each mode is painted over.
+ *
+ * Night Operations shares the dark basemap rather than needing one of its
+ * own: `applyMaritimeStyle` repaints water, land, boundaries and labels
+ * from the palette, so the mode is a colour decision and not a second
+ * network dependency.
+ */
+export function basemapStyleFor(name: MapStylePaletteName | undefined): string {
+  return name === "institutional" ? LIGHT_BASEMAP_STYLE : BASEMAP_STYLE;
 }
 
 /** Operational timings, in milliseconds. */

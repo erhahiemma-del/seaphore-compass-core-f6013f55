@@ -28,6 +28,8 @@ import {
 import type { VesselType } from "@/services/geospatial/types";
 
 import { CONTROL_STATUS_LABEL, MAP_CONTROLS, type MapControlDefinition } from "./control-rail";
+import { LayerPanel } from "./LayerPanel";
+import { MapStyleDrawer } from "./MapStyleDrawer";
 
 /**
  * Ship types the canonical vessel record can actually carry.
@@ -160,7 +162,12 @@ function Drawer({
     <section
       data-testid={`control-drawer-${control.id}`}
       aria-label={control.label}
-      className="w-[19rem] max-w-[calc(100vw-6rem)] rounded-xl bg-white/95 p-3 shadow-[0_10px_28px_-12px_rgba(6,22,48,0.55)] ring-1 ring-black/10 backdrop-blur dark:bg-[#0E1D2C]/95 dark:ring-white/10"
+      className={cn(
+        "max-w-[calc(100vw-6rem)] rounded-xl bg-white/95 p-3 shadow-[0_10px_28px_-12px_rgba(6,22,48,0.55)] ring-1 ring-black/10 backdrop-blur dark:bg-[#0E1D2C]/95 dark:ring-white/10",
+        // Layers carries a search field and grouped rows; the filter
+        // drawer is a column of controls and reads better narrower.
+        control.id === "layers" ? "max-h-[70vh] w-[21rem] overflow-y-auto" : "w-[19rem]",
+      )}
     >
       <header className="mb-2 flex items-baseline justify-between gap-2">
         <h2 className="text-sm font-semibold">{control.label}</h2>
@@ -171,6 +178,10 @@ function Drawer({
 
       {control.id === "vessel-filters" ? (
         <VesselFilters service={service} filters={filters} />
+      ) : control.id === "map-style" ? (
+        <MapStyleDrawer service={service} />
+      ) : control.id === "layers" ? (
+        <LayerPanel service={service} />
       ) : (
         <UnavailableDrawer control={control} />
       )}

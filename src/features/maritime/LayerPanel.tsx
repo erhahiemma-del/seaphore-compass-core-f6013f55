@@ -235,7 +235,7 @@ function LayerRow({ layer, checked, opacity, onToggle, onOpacity }: LayerRowProp
           </label>
           {pending ? (
             <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-normal">
-              No source
+              Unavailable
             </Badge>
           ) : null}
         </div>

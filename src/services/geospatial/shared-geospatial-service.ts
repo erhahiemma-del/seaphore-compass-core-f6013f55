@@ -17,7 +17,14 @@
  *
  * Sprint G5.5.1 — infrastructure only.
  */
-import { MAP_DEFAULTS, MAP_SCOPES, ZOOM_LIMITS, type MapScopeId } from "./constants";
+import {
+  MAP_DEFAULTS,
+  MAP_SCOPES,
+  PRESENTATION_MODES,
+  ZOOM_LIMITS,
+  type MapScopeId,
+  type MapStylePaletteName,
+} from "./constants";
 import { layerRegistry, MISSION_PRESETS, type LayerRegistry } from "./layer-registry";
 import { defaultEnabledSourceIds } from "./vessel-source";
 import {
@@ -53,6 +60,14 @@ export const DEFAULT_FILTERS: MapFilters = EMPTY_FILTERS;
 export function createDefaultMapState(registry: LayerRegistry = layerRegistry): MapState {
   return {
     viewMode: "2D",
+    /*
+     * Institutional by default.
+     *
+     * The command surface is a lit room during the working day, and the
+     * light presentation is the one an officer can read a chart on
+     * without the screen being the brightest object in front of them.
+     */
+    presentationMode: "institutional",
     operatingMode: "NATIONAL",
     // The current picture, as it is reporting. Every other interaction
     // mode is something the officer chooses to do to it.
@@ -170,6 +185,18 @@ export class SharedGeospatialService {
   /** Switch between the Operational View (2D) and Terrain Perspective (3D). */
   switchView(viewMode: ViewMode): void {
     this.update({ viewMode });
+  }
+
+  /**
+   * Choose how the map presents itself.
+   *
+   * Validated against the known modes because this arrives from a URL as
+   * readily as from a control, and an unrecognised mode should leave the
+   * map as it was rather than render nothing.
+   */
+  setPresentationMode(mode: MapStylePaletteName): void {
+    if (!PRESENTATION_MODES.some((m) => m.id === mode)) return;
+    this.update({ presentationMode: mode });
   }
 
   /** Replace the active layer set, ignoring ids the registry does not know. */
@@ -364,6 +391,7 @@ export class SharedGeospatialService {
     if (state.bearing !== 0) params.set("bearing", state.bearing.toFixed(1));
     if (state.enabledSources.length > 0) params.set("sources", state.enabledSources.join(","));
     if (state.operatingMode !== "NATIONAL") params.set("mode", state.operatingMode);
+    params.set("style", state.presentationMode);
     // `imode`, not `mode` — the two axes must not collide in one key.
     if (state.interactionMode !== "LIVE") params.set("imode", state.interactionMode);
     // Only when it differs from the default, so the common link stays short.
@@ -432,6 +460,11 @@ export class SharedGeospatialService {
 
     const bearing = Number.parseFloat(params.get("bearing") ?? "");
     if (Number.isFinite(bearing)) patch.bearing = ((bearing % 360) + 360) % 360;
+
+    const style = params.get("style");
+    if (style && PRESENTATION_MODES.some((m) => m.id === style)) {
+      patch.presentationMode = style as MapStylePaletteName;
+    }
 
     const layers = params.get("layers");
     if (layers !== null) {

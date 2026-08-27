@@ -15,8 +15,6 @@ import {
   Maximize2,
   Minus,
   Orbit,
-  PanelLeftClose,
-  PanelLeftOpen,
   Plus,
   RotateCcw,
   Ruler,
@@ -46,7 +44,6 @@ import { cn } from "@/lib/utils";
 import { ContextDrawer } from "./ContextDrawer";
 import { ControlRail } from "./ControlRail";
 import { useVoyages, type VoyageFeed } from "./useVoyages";
-import { LayerPanel } from "./LayerPanel";
 import { MapCanvas, type VesselFeedState } from "./MapCanvas";
 import { useReplayTimeline } from "./useReplayTimeline";
 import { OperationalLegend } from "./OperationalLegend";
@@ -141,7 +138,6 @@ export function MaritimeCommand() {
     if (voyageFeed.status === "loading") return undefined;
     return voyageFeed.voyages.find((voyage) => voyage.id === selection.id) ?? null;
   }, [selection, voyageFeed]);
-  const [leftOpen, setLeftOpen] = useState(true);
   const [lastPlan, setLastPlan] = useState<IntelligenceMapPlan | null>(null);
   const shellRef = useRef<HTMLDivElement>(null);
 
@@ -273,42 +269,16 @@ export function MaritimeCommand() {
         ) : null}
 
         <div className="flex min-h-0 flex-1">
-          {/* ── LEFT INTELLIGENCE DRAWER ──────────────────────────── */}
-          {leftOpen ? (
-            <aside
-              aria-label="Layers"
-              data-testid="left-drawer"
-              className="flex w-[300px] shrink-0 flex-col overflow-auto border-r border-border"
-            >
-              {/*
-                Layers, and nothing above them.
+          {/*
+            No permanent layer panel.
 
-                This drawer used to open with the national picture's
-                answerability ratio and the provider health summary, so the
-                first thing on the map surface was a status report about
-                Seaphore's collection rather than the sea. Both are real
-                and both belong in Data Sources, where an officer goes to
-                ask why a feed is quiet.
-              */}
-              <LayerPanel />
-            </aside>
-          ) : null}
-
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-7 w-7 self-start"
-            aria-label={leftOpen ? "Collapse layers panel" : "Expand layers panel"}
-            aria-expanded={leftOpen}
-            onClick={() => setLeftOpen((open) => !open)}
-          >
-            {leftOpen ? (
-              <PanelLeftClose className="h-3.5 w-3.5" aria-hidden />
-            ) : (
-              <PanelLeftOpen className="h-3.5 w-3.5" aria-hidden />
-            )}
-          </Button>
-
+            It held 300px of application width open for a configuration
+            surface an officer touches occasionally, which made the map —
+            the thing they came for — the smaller half of the screen.
+            The same panel now opens from the rail as a drawer over the
+            map, so the width is borrowed for as long as it is being used
+            and returned afterwards.
+          */}
           {/* ── MAP CANVAS — the dominant surface ─────────────────── */}
           <main className="relative min-w-0 flex-1">
             {/*

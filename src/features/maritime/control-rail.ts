@@ -95,7 +95,7 @@ export const MAP_CONTROLS: readonly MapControlDefinition[] = [
     status: "pending-source",
     description: "Wind, sea state and visibility over the operating area.",
     pendingReason:
-      "No meteorological provider is connected. Synthesising a forecast would put weather on the map that nobody observed.",
+      "Operational weather is not currently available. Nothing here is estimated, because a forecast nobody observed is not weather.",
   },
   {
     id: "density",
@@ -161,6 +161,6 @@ export function readyControls(): readonly MapControlDefinition[] {
 export const CONTROL_STATUS_LABEL: Readonly<Record<ControlStatus, string>> = {
   ready: "Ready",
   limited: "Limited",
-  "pending-source": "Pending source",
+  "pending-source": "Not available",
   unavailable: "Unavailable",
 };

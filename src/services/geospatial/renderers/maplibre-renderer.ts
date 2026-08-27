@@ -31,9 +31,11 @@
  */
 import {
   BASEMAP_STYLE,
+  basemapStyleFor,
   LAYER_IDS,
   SEA_LABELS,
   paletteFor,
+  type MapStylePaletteName,
   type MaritimePalette,
   PIXELS_PER_KM,
   RISK_COLORS,
@@ -287,6 +289,16 @@ export class MapLibreRenderer implements MapRenderer {
 
   private ready = false;
   private destroyed = false;
+  /** Presentation mode currently painted. */
+  /**
+   * Presentation mode currently painted.
+   *
+   * Set at mount from the mode the map was actually built with. It used
+   * to default to "maritime" regardless, so selecting Maritime Dark on a
+   * map mounted institutional matched the no-op guard below and did
+   * nothing — the field described a map that did not exist.
+   */
+  private palette: MapStylePaletteName = "maritime";
   private styleFailed = false;
   /**
    * Identifies the current mount attempt.
@@ -554,6 +566,7 @@ export class MapLibreRenderer implements MapRenderer {
      * throws, so a basemap it does not recognise costs colour, not the
      * mount.
      */
+    this.palette = options.palette ?? "maritime";
     const palette = paletteFor(options.palette);
     const styleResult = applyMaritimeStyle(map as unknown as StyleTarget, palette);
     this.installLayersWithRetry(map, palette);
@@ -2255,6 +2268,77 @@ export class MapLibreRenderer implements MapRenderer {
    * where they left it, and `applyPerspective` remains the one place
    * that decides pitch.
    */
+  /**
+   * Repaint in a different presentation mode, on the live map.
+   *
+   * `setStyle` replaces the basemap document, and MapLibre discards every
+   * layer that was not part of it — which is all of ours. So the
+   * operational layers are reinstalled once the new style reports
+   * itself loaded, and the vessel source is re-pushed because its data
+   * lives in the engine rather than in the style.
+   *
+   * The camera is untouched: MapLibre preserves centre, zoom, pitch and
+   * bearing across a style swap, and selection lives in shared state
+   * rather than on the map. An officer changing the lighting keeps their
+   * place, which is the whole point of doing this here instead of
+   * remounting the canvas.
+   */
+  setPresentation(palette: MapStylePaletteName): void {
+    const map = this.map;
+    if (!map || this.destroyed || palette === this.palette) return;
+    this.palette = palette;
+
+    const token = this.mountToken;
+    const resolved = paletteFor(palette);
+
+    const reinstall = () => {
+      // A mount that was superseded while the style loaded must not
+      // install onto whichever map is now current.
+      if (token !== this.mountToken || this.destroyed || !this.map) return;
+      applyMaritimeStyle(map as unknown as StyleTarget, resolved);
+      this.installLayersWithRetry(map, resolved);
+      /*
+       * Vessels are not re-pushed here. The update engine owns them and
+       * re-projects on `map:style` below, which keeps one path for
+       * "the source was recreated, hand the features back" instead of
+       * the renderer holding a second copy purely for this case.
+       */
+      this.bus?.emit("map:style", { palette });
+    };
+
+    try {
+      /*
+       * `styledata` fires while the new document is still settling, and
+       * a reinstall at that moment silently loses layers — measured: the
+       * ports layer was simply absent afterwards. Waiting for the style
+       * to report itself loaded is the difference between a repainted
+       * map and an empty one.
+       */
+      const whenReady = (attempt = 0) => {
+        if (token !== this.mountToken || this.destroyed) return;
+        if (map.isStyleLoaded()) {
+          reinstall();
+          return;
+        }
+        if (attempt > 60) {
+          this.bus?.emit("map:error", {
+            scope: "maplibre:style",
+            message:
+              "The map was repainted but the new basemap did not finish loading, so no operational layer was reinstalled.",
+          });
+          return;
+        }
+        setTimeout(() => whenReady(attempt + 1), 100);
+      };
+      map.once("styledata", () => whenReady());
+      map.setStyle(basemapStyleFor(palette));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("[Seaphore map] presentation mode could not be applied", error);
+      this.bus?.emit("map:error", { scope: "maplibre:style", message });
+    }
+  }
+
   setProjection(view: ViewMode): void {
     const map = this.map;
     if (!map || this.destroyed) return;

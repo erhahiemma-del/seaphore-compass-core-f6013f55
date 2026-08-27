@@ -78,7 +78,7 @@ const REASONS: Readonly<Record<Exclude<ReplayAvailability, "READY">, string>> = 
   SOURCE_UNAVAILABLE:
     "The vessel source is connected but currently failing, so no period can be replayed.",
   PENDING_CREDENTIALS:
-    "No historical AIS provider is connected. Datalastic and SeaVantage are awaiting credentials.",
+    "Historical movement is not available. Replay covers what this session has observed.",
 };
 
 /** How often `tick` runs. The player advances by elapsed time, not by frame. */
