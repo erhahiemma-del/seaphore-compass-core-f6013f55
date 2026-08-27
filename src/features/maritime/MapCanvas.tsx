@@ -15,6 +15,7 @@ import { MapPinOff } from "lucide-react";
 
 import { prefersReducedMotion } from "@/hooks/use-reduced-motion";
 import { AssetPopup } from "./AssetPopup";
+import { EMPTY_TRACK, type TrackCollection } from "@/services/geospatial/vessel-track";
 
 /**
  * Selection kinds the contextual drawer renders in full.
@@ -189,6 +190,14 @@ export interface MapCanvasProps {
    * nothing else.
    */
   readonly onEngineReady?: (engine: ReplaySink) => void;
+  /**
+   * The selected vessel's recorded track, already resolved.
+   *
+   * Passed in rather than fetched here: deciding what a track is and
+   * whether one exists is a domain question, and the renderer's job is
+   * to draw features rather than to adjudicate provenance.
+   */
+  readonly vesselTrack?: TrackCollection;
 }
 
 /**
@@ -224,6 +233,7 @@ export function MapCanvas({
   onRecorderReady,
   onVesselsChanged,
   onEngineReady,
+  vesselTrack,
 }: MapCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   /** Scope of the previous successful mount. Null before the first. */
@@ -404,6 +414,19 @@ export function MapCanvas({
     const list = voyages ?? [];
     renderer.setVoyageData(toVoyageEndpointCollection(list));
   }, [renderer, voyages, rendererDraws]);
+
+  /*
+   * ── Selected vessel track ─────────────────────────────────────────
+   *
+   * Same shape as the voyage push above: the collection arrives already
+   * decided, and an empty one clears the line, so deselecting a vessel
+   * removes its history without a second code path.
+   */
+  useEffect(() => {
+    const withTrack = renderer as { setVesselTrack?: (c: TrackCollection) => void };
+    if (!withTrack.setVesselTrack || !renderer.isReady()) return;
+    withTrack.setVesselTrack(vesselTrack ?? EMPTY_TRACK);
+  }, [renderer, vesselTrack, rendererDraws]);
 
   /*
    * ── Projection follows the officer's view mode ────────────────────

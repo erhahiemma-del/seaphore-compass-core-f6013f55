@@ -58,6 +58,7 @@ import {
 } from "../entity-visual";
 import { FRESHNESS_COLORS, FRESHNESS_LABELS, formatAge } from "../freshness";
 import type { MapEventBus } from "../event-bus";
+import type { TrackCollection } from "../vessel-track";
 import { buildVesselSprites, createPortDiamondImage } from "../icons/vessel-arrow";
 import { buildSymbolSprites, symbolSpriteId } from "../icons/symbol-sprites";
 import { MAP_SYMBOLS } from "@/lib/map-symbols";
@@ -228,6 +229,7 @@ const SOURCE_IDS = {
   graticule: "graticule",
   seaLabels: "sea-labels",
   voyageEndpoints: "voyage-endpoints",
+  vesselTrack: "vessel-track",
   investigationArea: "investigation-area",
 } as const;
 
@@ -293,6 +295,7 @@ export const INSTALLED_RENDER_LAYERS: readonly string[] = [
   LAYER_IDS.seaLabels,
   LAYER_IDS.voyageEndpoints,
   LAYER_IDS.voyageEndpointLabels,
+  LAYER_IDS.vesselTrack,
   LAYER_IDS.eezFill,
   LAYER_IDS.eezBoundary,
   LAYER_IDS.portAnchorage,
@@ -705,6 +708,20 @@ export class MapLibreRenderer implements MapRenderer {
    * one whose photographs have not arrived yet. This is how the two are
    * told apart when checking that a deep zoom degraded correctly.
    */
+  /**
+   * Draw the selected vessel's recorded track, or clear it.
+   *
+   * Takes an already-resolved collection rather than a vessel id: the
+   * decision about what a track is and whether one exists belongs to
+   * , and the renderer only draws what it is handed.
+   */
+  setVesselTrack(collection: TrackCollection): void {
+    const source = this.map?.getSource(SOURCE_IDS.vesselTrack) as
+      | { setData?: (data: unknown) => void }
+      | undefined;
+    source?.setData?.(collection);
+  }
+
   missingGeographicContextTiles(): number {
     return this.geographicContextMissing;
   }
@@ -1692,6 +1709,50 @@ export class MapLibreRenderer implements MapRenderer {
         // removed, and it would render a white halo on the dark theme.
         "text-halo-color": palette.labelHalo,
         "text-halo-width": 1.6,
+      },
+    });
+
+    /*
+     * ── Selected vessel's recorded track ──
+     *
+     * Installed before the vessels so it draws beneath them: a vessel
+     * must never be covered by its own history. One line for the whole
+     * path rather than a feature per segment — the track is one claim
+     * about one vessel, and a feature per reported point would put
+     * thousands of objects on the map to say what a single line says.
+     *
+     * Straight segments between reported positions, because that is the
+     * only shape the data supports. Nothing is smoothed or resampled;
+     * curving the line would imply a route between two reports that
+     * nobody observed.
+     */
+    map.addSource(SOURCE_IDS.vesselTrack, {
+      type: "geojson",
+      data: { type: "FeatureCollection", features: [] },
+    });
+    map.addLayer({
+      id: LAYER_IDS.vesselTrack,
+      type: "line",
+      source: SOURCE_IDS.vesselTrack,
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: {
+        /*
+         * Dashed, and subordinate.
+         *
+         * A solid line at full strength would read as a continuously
+         * observed path and would compete with the vessel it belongs to.
+         * The gaps say what the data is: discrete reports, joined for
+         * legibility.
+         */
+        "line-color": INTERACTION_COLORS.selected,
+        "line-dasharray": [2, 2],
+        "line-opacity": 0.55,
+        /*
+         * Held thin as the officer descends. Without a ceiling the track
+         * thickens with zoom until it covers the vessel at the exact
+         * moment the officer is inspecting it.
+         */
+        "line-width": ["interpolate", ["linear"], ["zoom"], 4, 1, 12, 1.6, MAX_CAMERA_ZOOM, 2.4],
       },
     });
 

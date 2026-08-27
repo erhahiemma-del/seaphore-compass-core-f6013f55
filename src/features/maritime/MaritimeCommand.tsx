@@ -58,6 +58,8 @@ import { OperatingModeBar } from "./OperatingModeBar";
 import { TimelineBar } from "./TimelineBar";
 import { replayPresentation } from "./replay-presentation";
 import { framingCentreFor } from "./selected-vessel-framing";
+import { useVesselTrack } from "./useVesselTrack";
+import { toTrackCollection } from "@/services/geospatial/vessel-track";
 import { navigateToCoordinates } from "@/services/geospatial/navigation";
 import { hasHistory } from "@/services/geospatial/vessel-source";
 
@@ -162,6 +164,23 @@ export function MaritimeCommand() {
           return source ? hasHistory(source) : false;
         }),
     [enabledCsv],
+  );
+
+  /*
+   * The selected vessel's recorded movement.
+   *
+   * Asked of the active source once per selection, and handed to the map
+   * as an already-resolved collection — deciding what a track is belongs
+   * to the domain layer, not to the renderer.
+   */
+  const selectedImo = selection?.kind === "vessel" ? selection.id : null;
+  const { track: vesselTrack } = useVesselTrack(
+    selectedImo,
+    useMemo(() => enabledCsv.split(",").filter(Boolean), [enabledCsv]),
+  );
+  const trackCollection = useMemo(
+    () => (vesselTrack ? toTrackCollection(vesselTrack) : undefined),
+    [vesselTrack],
   );
 
   const scope = useMapSelector((state) => state.scope);
@@ -417,6 +436,7 @@ export function MaritimeCommand() {
                 onVesselSelected={handleSelected}
                 onVesselsChanged={handleVessels}
                 onRecorderReady={replay.attachRecorder}
+                vesselTrack={trackCollection}
                 onEngineReady={(engine) => {
                   engineRef.current = engine;
                 }}
@@ -492,6 +512,7 @@ export function MaritimeCommand() {
             vessel={selectedVessel}
             voyage={selectedVoyage}
             sourceSupportsHistory={sourceSupportsHistory}
+            vesselTrack={vesselTrack}
             onClose={closeCard}
           />
         </div>

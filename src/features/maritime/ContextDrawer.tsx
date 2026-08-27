@@ -40,6 +40,7 @@ import {
 } from "@/services/geospatial";
 
 import { VesselIntelligenceCard } from "./VesselIntelligenceCard";
+import type { VesselTrack } from "@/services/geospatial/vessel-track";
 import { VesselIntelligenceView } from "./VesselIntelligenceView";
 import { VoyagePanel } from "./VoyagePanel";
 
@@ -49,6 +50,8 @@ export interface ContextDrawerProps {
   readonly vessel?: Vessel | null;
   /** Whether the active vessel source keeps an archive. Passed through. */
   readonly sourceSupportsHistory?: boolean;
+  /** The selected vessel's resolved track, when one has been asked for. */
+  readonly vesselTrack?: VesselTrack | null;
   /**
    * Resolved voyage, when the selection is a voyage.
    *
@@ -71,6 +74,7 @@ export function ContextDrawer({
   onAskCopilot,
   className,
   sourceSupportsHistory,
+  vesselTrack,
 }: ContextDrawerProps) {
   if (!selection) return null;
 
@@ -123,6 +127,7 @@ export function ContextDrawer({
           voyage={voyage}
           onClose={onClose}
           sourceSupportsHistory={sourceSupportsHistory}
+          vesselTrack={vesselTrack}
         />
       </div>
     </aside>
@@ -141,8 +146,10 @@ function SelectionPanel({
   voyage,
   onClose,
   sourceSupportsHistory,
+  vesselTrack,
 }: {
   selection: MapSelection;
+  vesselTrack?: VesselTrack | null;
   vessel: Vessel | null;
   sourceSupportsHistory?: boolean;
   /** `undefined` means still resolving; `null` means resolved to nothing. */
@@ -159,6 +166,7 @@ function SelectionPanel({
           vessel={vessel}
           onClose={onClose}
           sourceSupportsHistory={sourceSupportsHistory}
+          vesselTrack={vesselTrack}
         />
       ) : (
         <Unresolved
@@ -295,10 +303,12 @@ function VesselTabs({
   vessel,
   onClose,
   sourceSupportsHistory,
+  vesselTrack,
 }: {
   vessel: Vessel;
   onClose: () => void;
   sourceSupportsHistory?: boolean;
+  vesselTrack?: VesselTrack | null;
 }) {
   const [tab, setTab] = useState<"overview" | "intelligence">("overview");
 
@@ -340,6 +350,7 @@ function VesselTabs({
             vessel={vessel}
             onClose={onClose}
             sourceSupportsHistory={sourceSupportsHistory}
+            vesselTrack={vesselTrack}
           />
         ) : (
           <VesselIntelligenceView vessel={vessel} />

@@ -17,6 +17,11 @@ import { RISK_COLORS, riskColor, type Vessel } from "@/services/geospatial";
 
 import { VesselImageHeader } from "./VesselImageHeader";
 import {
+  trackProvenanceLabel,
+  trackStateLabel,
+  type VesselTrack,
+} from "@/services/geospatial/vessel-track";
+import {
   destinationLabel,
   operationalStateLabel,
   positionFreshnessLabel,
@@ -35,6 +40,8 @@ export interface VesselIntelligenceCardProps {
   readonly onOpenCopilot?: (imo: string) => void;
   /** Whether the active source can answer questions about this vessel's past. */
   readonly sourceSupportsHistory?: boolean;
+  /** The vessel's resolved track, when the archive has been asked. */
+  readonly vesselTrack?: VesselTrack | null;
 }
 
 export function VesselIntelligenceCard({
@@ -45,6 +52,7 @@ export function VesselIntelligenceCard({
   onOpenTimeline,
   onOpenCopilot,
   sourceSupportsHistory = false,
+  vesselTrack,
 }: VesselIntelligenceCardProps) {
   const { identity, position } = vessel;
   const color = riskColor(vessel.riskLevel);
@@ -182,11 +190,26 @@ export function VesselIntelligenceCard({
               value={position.etaHours != null ? `${position.etaHours} h` : undefined}
               reason="Not reported by the source"
             />
+            {/*
+              The real track, not merely the capability.
+
+              `trackStateLabel` says what it is — a simulated track is
+              never called recorded — and the sentence beneath says where
+              it came from. When there is none, the reason distinguishes
+              a source that keeps no archive from one holding no records
+              for this hull.
+            */}
             <Field
               label="Movement history"
-              value={track.state === "SUPPORTED" ? "Available" : undefined}
-              reason={track.note}
+              value={vesselTrack ? trackStateLabel(vesselTrack) : undefined}
+              reason={vesselTrack ? trackProvenanceLabel(vesselTrack) : track.note}
             />
+            {vesselTrack?.state === "RECORDED_TRACK" ? (
+              <Field
+                label="Track points"
+                value={`${vesselTrack.points.length} reported positions`}
+              />
+            ) : null}
           </Section>
 
           <Section title="Intelligence">

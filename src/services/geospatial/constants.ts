@@ -968,6 +968,14 @@ export const LAYER_IDS = {
   /** Latitude/longitude reference lines. */
   graticule: "graticule-layer",
   voyageEndpoints: "voyage-endpoints-layer",
+  /**
+   * The selected vessel's recorded movement, when a source holds one.
+   *
+   * Its own layer rather than a property of the vessel symbol, so the
+   * track can sit beneath the fleet without the vessel ever being drawn
+   * under its own history.
+   */
+  vesselTrack: "vessel-track-layer",
   voyageEndpointLabels: "voyage-endpoint-labels-layer",
   aisTrack: "ais-track-layer",
   aisTrackDark: "ais-track-dark-layer",
