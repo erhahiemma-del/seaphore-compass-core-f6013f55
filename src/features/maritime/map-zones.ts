@@ -33,6 +33,15 @@ export const MAP_ZONE = {
   /** Coordinate and scale readouts. */
   BOTTOM_LEFT: "absolute bottom-3 left-16 z-20",
   /**
+   * The spatial reading, on the right edge at mid-height.
+   *
+   * Neither corner would do. The top-right is the contextual drawer's,
+   * and the bottom-right belongs to the legend and the assistant below
+   * it. Mid-height is the one edge an officer's eye can reach without
+   * leaving the chart, and it is empty.
+   */
+  RIGHT_READOUT: "absolute right-3 top-1/2 -translate-y-1/2 z-20",
+  /**
    * The legend, and anything else keyed to the picture.
    *
    * Lifted clear of the assistant below. It sat at `bottom-3` and the

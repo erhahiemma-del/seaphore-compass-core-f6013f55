@@ -44,6 +44,7 @@ import { cn } from "@/lib/utils";
 import { ContextDrawer } from "./ContextDrawer";
 import { ControlRail } from "./ControlRail";
 import { SpatialTrail } from "./SpatialTrail";
+import { CoordinateHud } from "./CoordinateHud";
 import { MAP_ZONE } from "./map-zones";
 import { useVoyages, type VoyageFeed } from "./useVoyages";
 import { MapCanvas, type VesselFeedState } from "./MapCanvas";
@@ -354,6 +355,12 @@ export function MaritimeCommand() {
               across the panel they are reading.
             */}
             <ControlRail className={MAP_ZONE.LEFT_RAIL} fullscreenTarget={shellRef} />
+
+            {/*
+              Spatial reading. Renders the guides and the readout; it
+              reads the camera and never drives it.
+            */}
+            <CoordinateHud />
 
             <div
               className={cn(
