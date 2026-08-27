@@ -17,12 +17,32 @@
  * With no historical provider connected there is nothing to replay. The
  * bar says so rather than rendering an empty track that reads as a quiet
  * period.
+ *
+ * ## A control that cannot act is not drawn
+ *
+ * This used to render the full transport strip — restart, step, play,
+ * step, four speeds, a scrubber — permanently greyed out, with the
+ * explanation beside it. Every button was honestly `disabled`, so
+ * nothing was lying exactly. It was still the wrong surface: a row of
+ * playback controls reads as a capability the system has and the officer
+ * has failed to reach, and they go looking for the setting that turns it
+ * on. There is no such setting.
+ *
+ * So the bar is now one of two shapes rather than one shape in two
+ * moods. Either the controls are live, or they are gone and a sentence
+ * says what would bring them back. Which shape is chosen is decided by
+ * `replayPresentation`, from state the application already owns.
  */
 import { ChevronLeft, ChevronRight, Pause, Play, SkipBack } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { REPLAY_SPEEDS, type ReplaySpeed, type ReplayStatus } from "@/services/geospatial";
+import {
+  REPLAY_ACTION_LABELS,
+  type ReplayOfferedAction,
+  type ReplayPresentation,
+} from "./replay-presentation";
 
 export interface TimelineBarProps {
   /** Null when no recording is loaded. */
@@ -34,6 +54,16 @@ export interface TimelineBarProps {
    * is null so the bar can never be silently empty.
    */
   readonly unavailableReason?: string;
+  /**
+   * Which of the two shapes to draw, and the copy for the quiet one.
+   *
+   * Optional so existing callers and stories keep working; absent means
+   * "draw the controls", which is what this component did before the
+   * distinction existed.
+   */
+  readonly presentation?: ReplayPresentation;
+  /** Invoked when the officer takes one of the offered actions. */
+  readonly onAction?: (action: ReplayOfferedAction) => void;
   readonly onPlay?: () => void;
   readonly onPause?: () => void;
   readonly onStep?: (direction: 1 | -1) => void;
@@ -47,20 +77,75 @@ export function TimelineBar({
   status,
   windowLabel,
   unavailableReason,
+  presentation,
   onPlay,
   onPause,
   onStep,
   onRestart,
   onSpeed,
   onScrub,
+  onAction,
   className,
 }: TimelineBarProps) {
   const playing = status?.state === "playing";
+
+  /*
+   * Nothing to drive: say what would help, and draw no controls.
+   *
+   * The whole point of the rewrite. An officer must be able to tell "this
+   * system cannot do that right now" from "this system can do that and
+   * you have not found the switch", and a greyed-out transport strip
+   * says the second when the truth is the first.
+   */
+  if (presentation && !presentation.controlsLive) {
+    return (
+      <footer
+        aria-label="Timeline and replay"
+        data-testid="timeline-bar"
+        data-replay-state={presentation.state}
+        className={cn(
+          "flex shrink-0 items-center gap-3 border-t border-border bg-background px-3 py-2",
+          className,
+        )}
+      >
+        <span
+          data-testid="replay-explanation"
+          className="min-w-0 flex-1 truncate text-[11.5px] text-muted-foreground"
+        >
+          {presentation.message}
+        </span>
+
+        {presentation.actions.length > 0 ? (
+          <div className="flex shrink-0 items-center gap-1">
+            {presentation.actions.map((action) => (
+              <Button
+                key={action}
+                size="sm"
+                variant="ghost"
+                className="h-6 px-2 text-[10.5px]"
+                onClick={() => onAction?.(action)}
+              >
+                {REPLAY_ACTION_LABELS[action]}
+              </Button>
+            ))}
+          </div>
+        ) : null}
+
+        <span
+          className="shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground"
+          title="The period queried, which is distinct from the replay playhead."
+        >
+          Window · {windowLabel}
+        </span>
+      </footer>
+    );
+  }
 
   return (
     <footer
       aria-label="Timeline and replay"
       data-testid="timeline-bar"
+      data-replay-state={presentation?.state ?? "HISTORY_AVAILABLE"}
       className={cn(
         "flex shrink-0 items-center gap-3 border-t border-border bg-background px-3 py-1.5",
         className,

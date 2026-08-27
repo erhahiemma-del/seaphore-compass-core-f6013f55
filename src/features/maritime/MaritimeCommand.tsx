@@ -54,6 +54,8 @@ import { OperationalLegend } from "./OperationalLegend";
 import { MapSearch } from "./MapSearch";
 import { OperatingModeBar } from "./OperatingModeBar";
 import { TimelineBar } from "./TimelineBar";
+import { replayPresentation } from "./replay-presentation";
+import { navigateToCoordinates } from "@/services/geospatial/navigation";
 
 /**
  * The three perspectives, named for what an officer is looking at.
@@ -400,6 +402,29 @@ export function MaritimeCommand() {
         <TimelineBar
           status={replay.status}
           unavailableReason={replay.unavailableReason}
+          /*
+            Which shape the bar takes. Derived from state the application
+            already owns — selection, the feed's availability, the
+            player's status — so replay gains no second source of truth.
+          */
+          presentation={replayPresentation({
+            selection,
+            availability: replay.availability,
+            status: replay.status,
+            unavailableReason: replay.unavailableReason,
+          })}
+          onAction={(action) => {
+            /*
+              Both offered actions are about the vessel already selected,
+              so both go through the canonical camera path rather than
+              moving it here.
+            */
+            if (action === "view-position" && selectedVessel) {
+              navigateToCoordinates([selectedVessel.position.lon, selectedVessel.position.lat], {
+                source: "selection",
+              });
+            }
+          }}
           windowLabel={
             operatingMode === "REPLAY" || operatingMode === "HISTORY" ? "historical" : "live"
           }
