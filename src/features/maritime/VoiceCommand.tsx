@@ -187,6 +187,12 @@ export function VoiceCommand({
         data-testid="voice-state-label"
         className="rounded bg-background/80 px-1.5 text-[10px] uppercase tracking-[0.1em] text-muted-foreground backdrop-blur-sm"
       >
+        {/*
+          "Try again" rather than a second failure word.
+          The control is the retry, so the label says what pressing it
+          will do — an officer reading "Failed" has been told the
+          outcome and not the way out of it.
+        */}
         {blocked
           ? "Unavailable"
           : listening
@@ -195,7 +201,9 @@ export function VoiceCommand({
               ? "Working"
               : state === "clarifying"
                 ? "Which one?"
-                : "Speak"}
+                : state === "failed"
+                  ? "Try again"
+                  : "Speak"}
       </span>
     </div>
   );

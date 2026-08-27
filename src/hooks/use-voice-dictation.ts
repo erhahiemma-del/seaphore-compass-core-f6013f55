@@ -22,7 +22,19 @@ export type DictationIssueCode =
   | "microphone-busy"
   | "empty-recording"
   | "no-speech"
-  | "transcription-failed";
+  | "transcription-failed"
+  /*
+   * An initialisation failure nobody has classified.
+   *
+   * This exists because the alternative was worse: the final `else` in
+   * `start()` used to report *any* unrecognised error as a blocked
+   * permission. That is the one diagnosis an officer will act on — they
+   * go and check a setting, find it already correct, and learn that the
+   * message cannot be trusted. Saying "something failed" is less
+   * informative and far more honest than confidently naming the wrong
+   * cause.
+   */
+  | "unknown-error";
 
 export interface DictationIssue {
   code: DictationIssueCode;
@@ -49,7 +61,14 @@ interface Options {
   maxSeconds?: number;
 }
 
-const TYPE_FALLBACK = "You can type the investigation instead — nothing is lost.";
+/*
+ * Neutral, because this hook now serves two surfaces.
+ *
+ * It said "type the investigation instead", which reads correctly in
+ * Copilot and as nonsense on the map, where the officer was trying to
+ * navigate rather than open a case.
+ */
+const TYPE_FALLBACK = "You can type instead — nothing is lost.";
 
 const ISSUES: Record<DictationIssueCode, Omit<DictationIssue, "code">> = {
   "unsupported-browser": {
@@ -65,10 +84,37 @@ const ISSUES: Record<DictationIssueCode, Omit<DictationIssue, "code">> = {
     blocking: true,
   },
   "permission-denied": {
-    title: "Microphone access is blocked",
-    detail: "This browser has blocked Seaphore from using the microphone.",
-    hint: `Click the lock or camera icon in the address bar, set Microphone to Allow, then reload. ${TYPE_FALLBACK}`,
-    blocking: true,
+    title: "Microphone permission is not enabled",
+    /*
+     * "This browser", not "your browser settings".
+     *
+     * Maritime Command runs in more than one browser, and each keeps its
+     * own permission store. An officer who has allowed the microphone for
+     * this site in one browser and opens Seaphore in another — an
+     * embedded window, a different profile — is told the setting they
+     * just checked is wrong. Naming the browser doing the refusing is the
+     * difference between a message that is technically true and one an
+     * officer can act on.
+     */
+    detail: "The browser Seaphore is running in has not granted microphone access.",
+    /*
+     * No mention of the address bar.
+     *
+     * The previous wording said to click the lock icon in the address
+     * bar — advice that is impossible to follow in an embedded window,
+     * which has no address bar. An instruction the officer cannot carry
+     * out reads as the application being broken.
+     */
+    hint: `Allow microphone access for Seaphore in this browser, then press the microphone again. ${TYPE_FALLBACK}`,
+    /*
+     * Not blocking. A permission can be granted.
+     *
+     * This was `true`, which disabled the control — so an officer who
+     * fixed the permission had no way to retry, because the button that
+     * would have retried was dead. A refusal that can be reversed must
+     * never take the retry away.
+     */
+    blocking: false,
   },
   "permission-dismissed": {
     title: "Microphone permission wasn't granted",
@@ -104,6 +150,12 @@ const ISSUES: Record<DictationIssueCode, Omit<DictationIssue, "code">> = {
     title: "Transcription failed",
     detail: "The transcription service could not process the recording.",
     hint: `Try again in a moment. ${TYPE_FALLBACK}`,
+    blocking: false,
+  },
+  "unknown-error": {
+    title: "Voice could not be started",
+    detail: "Something prevented the microphone from starting.",
+    hint: `Press the microphone to try again. ${TYPE_FALLBACK}`,
     blocking: false,
   },
 };
@@ -240,8 +292,27 @@ export function useVoiceDictation(options: Options = {}) {
       if (!status || cancelled) return;
       const next = status.state as DictationPermission;
       setPermission(next);
-      if (next === "denied") setIssue(buildIssue("permission-denied"));
-      else setIssue((current) => (current?.code === "permission-denied" ? null : current));
+      /*
+       * Track the permission; do not announce it.
+       *
+       * This used to raise a permission failure the moment the query
+       * came back `denied` — before the officer had pressed anything.
+       * The result was a warning sitting permanently on the map about
+       * something nobody had attempted, and the Permissions API is not a
+       * reliable oracle here: it reports per-browser state, disagrees
+       * across embedded windows, and can lag a setting the officer has
+       * just changed.
+       *
+       * An attempt is what proves a failure. Until then there is nothing
+       * to report, and the control stays live so the officer can make
+       * the attempt.
+       *
+       * The clearing half stays: a permission that becomes usable must
+       * retire the message that said it was not.
+       */
+      if (next === "granted") {
+        setIssue((current) => (current?.code === "permission-denied" ? null : current));
+      }
     };
 
     navigator.permissions
@@ -396,7 +467,20 @@ export function useVoiceDictation(options: Options = {}) {
       } else if (name === "NotReadableError" || name === "AbortError") {
         raise("microphone-busy");
       } else {
-        raise("permission-denied");
+        /*
+         * Unclassified, and said so.
+         *
+         * This branch used to report `permission-denied` for anything it
+         * did not recognise. That is the single worst guess available: a
+         * permission problem is the one diagnosis an officer will act on,
+         * so they go and check the setting, find it already correct, and
+         * conclude the message cannot be trusted — which then discredits
+         * the message on the occasions it is right.
+         *
+         * The real error name goes into the detail so a diagnostic run
+         * has it; the officer sees a plain statement and a retry.
+         */
+        raise("unknown-error", name ? `The microphone failed to start (${name}).` : undefined);
       }
       return;
     }
