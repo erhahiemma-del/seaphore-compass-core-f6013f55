@@ -190,7 +190,32 @@ export class StaticVesselSource implements VesselSource {
  * ───────────────────────────────────────────────────────────────────── */
 
 /** Where a provider's data comes from, for officer-facing grouping. */
-export type SourceType = "OSINT" | "COMMERCIAL" | "GOVERNMENT";
+export type SourceType =
+  | "OSINT"
+  | "COMMERCIAL"
+  | "GOVERNMENT"
+  /**
+   * Traffic Seaphore generated for demonstration.
+   *
+   * A first-class kind rather than a flag on a real one, because the
+   * distinction has to survive every renaming and refactor between here
+   * and the officer's screen. A boolean called `isDemo` gets dropped in a
+   * mapping function; a source type that no officer-facing status
+   * vocabulary maps to "live" cannot be.
+   */
+  | "SIMULATED";
+
+/**
+ * Whether a source's data may ever be described as live.
+ *
+ * The one question every status label must ask before choosing a word.
+ * Simulated traffic is coherent, moves, and looks entirely plausible —
+ * which is exactly why the prohibition belongs in code rather than in a
+ * reviewer's memory.
+ */
+export function mayClaimLive(type: SourceType): boolean {
+  return type !== "SIMULATED";
+}
 
 /** Operational state of a provider, independent of any one query. */
 export type SourceStatus =
@@ -294,7 +319,19 @@ export function registerVesselSource(source: DescribableVesselSource): () => voi
 
 /** Every registered source, ordered by type then label. */
 export function listVesselSources(): readonly DescribableVesselSource[] {
-  const order: Record<SourceType, number> = { GOVERNMENT: 0, COMMERCIAL: 1, OSINT: 2 };
+  /*
+   * Simulation sorts last, below every real provider.
+   *
+   * Ordering is the cheapest honesty there is: an officer scanning the
+   * Sources list reads top-down, and demonstration traffic sitting above
+   * a government feed would misrepresent what the picture rests on.
+   */
+  const order: Record<SourceType, number> = {
+    GOVERNMENT: 0,
+    COMMERCIAL: 1,
+    OSINT: 2,
+    SIMULATED: 3,
+  };
   return [...sources.values()].sort((a, b) => {
     const da = a.describe();
     const db = b.describe();

@@ -6,11 +6,23 @@ import {
   registerGlobalFishingWatchSource,
   sgs,
 } from "@/services/geospatial";
+import { registerSimulatedVesselSource } from "@/services/geospatial/sources/simulated-vessel-source";
 
 // Register the live provider once, at module load. `registerVesselSource`
 // replaces by id, so a hot reload cannot produce a duplicate row in the
 // Sources panel.
 registerGlobalFishingWatchSource();
+
+/*
+ * The simulation registers alongside it, switched off.
+ *
+ * Registered so an officer can turn it on from Sources like any other
+ * provider, and `defaultEnabled: false` so it never turns itself on. An
+ * empty map is the truthful default when nothing is connected, and a
+ * demonstration that appears without being asked for is one somebody
+ * will eventually mistake for the operational picture.
+ */
+registerSimulatedVesselSource();
 
 // Seed the enabled set AFTER registration.
 //
