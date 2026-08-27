@@ -1,4 +1,38 @@
+import { existsSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+
 import { defineConfig, devices } from "@playwright/test";
+
+/**
+ * Which Chromium to launch.
+ *
+ * The sandbox ships one at a fixed path, so tests run there without an
+ * install step. Returning `undefined` — rather than that path — when it
+ * does not exist is what lets a CI runner use the browser it downloaded
+ * itself; naming a missing binary fails the launch outright.
+ */
+function resolveChromium(): string | undefined {
+  const candidates = [
+    process.env.SEAPHORE_CHROMIUM,
+    // The sandbox's browser pool. Its revision moves independently of the
+    // pinned @playwright/test version, so it is matched by glob-free
+    // enumeration rather than by the revision Playwright expects.
+    ...chromiumRevisions(),
+    "/chromium-1194/chrome-linux/chrome",
+  ];
+  return candidates.find((path): path is string => !!path && existsSync(path));
+}
+
+/** Installed Chromium builds under the shared Playwright browser pool. */
+function chromiumRevisions(): string[] {
+  const root = process.env.PLAYWRIGHT_BROWSERS_PATH || "/opt/ms-playwright";
+  if (!existsSync(root)) return [];
+  return readdirSync(root)
+    .filter((entry) => entry.startsWith("chromium-"))
+    .sort()
+    .reverse()
+    .map((entry) => join(root, entry, "chrome-linux", "chrome"));
+}
 
 /**
  * Playwright config for Seaphore UI regression tests.
@@ -16,7 +50,9 @@ export default defineConfig({
   expect: { timeout: 5_000 },
   reporter: [["list"]],
   use: {
-    baseURL: "http://localhost:8080",
+    // Post-deploy health checks point at a deployed origin; everything
+    // else keeps the local dev server default.
+    baseURL: process.env.SEAPHORE_HEALTH_URL || "http://localhost:8080",
     viewport: { width: 1280, height: 1800 },
     trace: "retain-on-failure",
   },
@@ -27,9 +63,10 @@ export default defineConfig({
         ...devices["Desktop Chrome"],
         // Use the sandbox's pre-installed Chromium so tests run without a
         // separate `playwright install` step. Falls through to the bundled
-        // browser (via PLAYWRIGHT_BROWSERS_PATH) on developer machines.
+        // browser (via PLAYWRIGHT_BROWSERS_PATH) when that path is absent —
+        // developer machines and CI runners that ran `playwright install`.
         launchOptions: {
-          executablePath: process.env.SEAPHORE_CHROMIUM || "/chromium-1194/chrome-linux/chrome",
+          executablePath: resolveChromium(),
         },
       },
     },
