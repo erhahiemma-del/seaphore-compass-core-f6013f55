@@ -47,6 +47,8 @@ export interface ContextDrawerProps {
   readonly selection: MapSelection | null;
   /** Resolved vessel, when the selection is a vessel the engine holds. */
   readonly vessel?: Vessel | null;
+  /** Whether the active vessel source keeps an archive. Passed through. */
+  readonly sourceSupportsHistory?: boolean;
   /**
    * Resolved voyage, when the selection is a voyage.
    *
@@ -68,6 +70,7 @@ export function ContextDrawer({
   onClose,
   onAskCopilot,
   className,
+  sourceSupportsHistory,
 }: ContextDrawerProps) {
   if (!selection) return null;
 
@@ -119,6 +122,7 @@ export function ContextDrawer({
           vessel={vessel ?? null}
           voyage={voyage}
           onClose={onClose}
+          sourceSupportsHistory={sourceSupportsHistory}
         />
       </div>
     </aside>
@@ -136,9 +140,11 @@ function SelectionPanel({
   vessel,
   voyage,
   onClose,
+  sourceSupportsHistory,
 }: {
   selection: MapSelection;
   vessel: Vessel | null;
+  sourceSupportsHistory?: boolean;
   /** `undefined` means still resolving; `null` means resolved to nothing. */
   voyage: Voyage | null | undefined;
   onClose: () => void;
@@ -149,7 +155,11 @@ function SelectionPanel({
       // selection. Absent means the engine has not loaded it — a real
       // state, distinct from "no such vessel".
       return vessel ? (
-        <VesselTabs vessel={vessel} onClose={onClose} />
+        <VesselTabs
+          vessel={vessel}
+          onClose={onClose}
+          sourceSupportsHistory={sourceSupportsHistory}
+        />
       ) : (
         <Unresolved
           title="Vessel not loaded"
@@ -281,7 +291,15 @@ function SelectionPanel({
  * wants one or the other, and stacking them buries whichever they came
  * for.
  */
-function VesselTabs({ vessel, onClose }: { vessel: Vessel; onClose: () => void }) {
+function VesselTabs({
+  vessel,
+  onClose,
+  sourceSupportsHistory,
+}: {
+  vessel: Vessel;
+  onClose: () => void;
+  sourceSupportsHistory?: boolean;
+}) {
   const [tab, setTab] = useState<"overview" | "intelligence">("overview");
 
   return (
@@ -318,7 +336,11 @@ function VesselTabs({ vessel, onClose }: { vessel: Vessel; onClose: () => void }
 
       <div className="min-h-0 flex-1 overflow-auto">
         {tab === "overview" ? (
-          <VesselIntelligenceCard vessel={vessel} onClose={onClose} />
+          <VesselIntelligenceCard
+            vessel={vessel}
+            onClose={onClose}
+            sourceSupportsHistory={sourceSupportsHistory}
+          />
         ) : (
           <VesselIntelligenceView vessel={vessel} />
         )}

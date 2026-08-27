@@ -9,13 +9,21 @@
  * "this vessel has no registered owner on file" apart from "we forgot to
  * display the owner". Nothing here invents a value.
  */
-import { ExternalLink, X } from "lucide-react";
+import { ExternalLink, ShieldCheck, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RISK_COLORS, riskColor, type Vessel } from "@/services/geospatial";
 
 import { VesselImageHeader } from "./VesselImageHeader";
+import {
+  destinationLabel,
+  operationalStateLabel,
+  positionFreshnessLabel,
+  positionProvenanceLabel,
+  riskBadgeLabel,
+  trackAvailability,
+} from "./vessel-panel-state";
 
 export interface VesselIntelligenceCardProps {
   readonly vessel: Vessel;
@@ -25,6 +33,8 @@ export interface VesselIntelligenceCardProps {
   readonly onOpenEntity?: (imo: string) => void;
   readonly onOpenTimeline?: (imo: string) => void;
   readonly onOpenCopilot?: (imo: string) => void;
+  /** Whether the active source can answer questions about this vessel's past. */
+  readonly sourceSupportsHistory?: boolean;
 }
 
 export function VesselIntelligenceCard({
@@ -34,9 +44,11 @@ export function VesselIntelligenceCard({
   onOpenEntity,
   onOpenTimeline,
   onOpenCopilot,
+  sourceSupportsHistory = false,
 }: VesselIntelligenceCardProps) {
   const { identity, position } = vessel;
   const color = riskColor(vessel.riskLevel);
+  const track = trackAvailability(sourceSupportsHistory);
 
   return (
     <aside
@@ -48,12 +60,20 @@ export function VesselIntelligenceCard({
           <h2 className="truncate text-sm font-semibold">{identity.name}</h2>
           <p className="font-mono text-xs text-muted-foreground">IMO {identity.imo}</p>
         </div>
+        {/*
+          The badge names its own axis.
+
+          It rendered `riskLevel` alone, so an unassessed vessel showed a
+          bare `UNKNOWN` beside its name and the officer had to guess what
+          was unknown — identity, position, or intent. One word removes
+          the guess.
+        */}
         <Badge
           variant="outline"
           style={{ color, borderColor: color }}
-          className="shrink-0 text-[10px]"
+          className="shrink-0 whitespace-nowrap text-[10px]"
         >
-          {vessel.riskLevel}
+          {riskBadgeLabel(vessel)}
         </Badge>
         <Button
           variant="ghost"
@@ -75,57 +95,109 @@ export function VesselIntelligenceCard({
         */}
         <VesselImageHeader identity={identity} />
 
-        <div className="space-y-4 px-4 py-3">
+        {/*
+          One line for the thing an officer checks first.
+
+          There is no alert model yet, so the honest answer is that
+          nothing is outstanding — stated rather than left blank. A blank
+          space where an alert would go reads as "not loaded"; a sentence
+          reads as "checked, nothing there", and the strip is already the
+          right shape to carry a real alert when one exists.
+        */}
+        <div
+          data-testid="vessel-operational-state"
+          className="flex items-center gap-2 border-b border-border bg-muted/30 px-4 py-2"
+        >
+          <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+          <span className="text-[11.5px] font-medium text-foreground">
+            {operationalStateLabel()}
+          </span>
+        </div>
+
+        <div className="space-y-3.5 px-4 py-3">
+          {/*
+            Identity first and compact: the fields that answer "which ship
+            is this", on one row each, with the type and flag beside the
+            numbers rather than below them.
+          */}
           <Section title="Identity">
-            <Field label="Name" value={identity.name} />
             <Field label="IMO" value={identity.imo} mono />
-            <Field label="MMSI" value={identity.mmsi} mono reason="Not in current AIS report" />
+            <Field
+              label="MMSI"
+              value={identity.mmsi}
+              mono
+              reason="Not in current position report"
+            />
             <Field
               label="Call sign"
               value={identity.callSign}
               mono
-              reason="Not in current AIS report"
+              reason="Not in current position report"
             />
             <Field label="Flag" value={identity.flag} reason="Requires vessel registry lookup" />
             <Field label="Type" value={identity.type} reason="Not classified" />
           </Section>
 
-          <Section title="Ownership">
-            {/* Ownership resolution is an Intelligence Orchestrator concern and is
-              not wired to the map in this sprint — say so rather than blank. */}
-            <Field label="Owner" value={undefined} reason="Awaiting ownership intelligence" />
-            <Field label="Operator" value={undefined} reason="Awaiting ownership intelligence" />
-          </Section>
-
+          {/*
+            The operational snapshot — where it is, how it is moving, and
+            how much the position is worth. Provenance and freshness sit
+            beside the coordinates rather than in a separate section,
+            because a position without them is a number an officer cannot
+            weigh.
+          */}
           <Section title="Position">
             <Field
               label="Coordinates"
               value={`${position.lat.toFixed(4)}°, ${position.lon.toFixed(4)}°`}
               mono
             />
-            <Field label="Heading" value={`${Math.round(position.heading)}°`} mono />
             <Field label="Speed" value={`${position.speed.toFixed(1)} kn`} mono />
-            <Field label="Destination" value={position.destination} reason="Not declared" />
+            <Field
+              label="Heading"
+              value={
+                position.headingReported === false ? undefined : `${Math.round(position.heading)}°`
+              }
+              mono
+              reason="Course not reported"
+            />
+            <Field label="Source" value={positionProvenanceLabel(vessel)} />
+            <Field label="Freshness" value={positionFreshnessLabel(vessel)} />
+            <Field label="Received" value={formatTimestamp(position.timestamp)} mono />
+          </Section>
+
+          {/*
+            Voyage as the source gave it. The destination is printed
+            verbatim and never geocoded — expanding a LOCODE into a place
+            or a map marker would be Seaphore adding a claim to a voyage
+            it did not observe.
+          */}
+          <Section title="Voyage">
+            <Field
+              label="Destination"
+              value={destinationLabel(vessel).value}
+              reason={destinationLabel(vessel).reason}
+            />
             <Field
               label="ETA"
               value={position.etaHours != null ? `${position.etaHours} h` : undefined}
-              reason="Not derivable"
+              reason="Not reported by the source"
             />
-            <Field label="Last AIS" value={formatTimestamp(position.timestamp)} mono />
+            <Field
+              label="Movement history"
+              value={track.state === "SUPPORTED" ? "Available" : undefined}
+              reason={track.note}
+            />
           </Section>
 
-          <Section title="Assessment">
-            <Field label="Risk" value={vessel.riskLevel} />
+          <Section title="Intelligence">
+            <Field label="Risk" value={riskBadgeLabel(vessel)} />
             <Field
               label="Attention score"
               value={vessel.attentionScore > 0 ? String(vessel.attentionScore) : undefined}
-              reason="Not ranked by OSAE"
+              reason="Not ranked"
             />
-            <Field
-              label="Confidence"
-              value={undefined}
-              reason="Requires a resolved UIP for this vessel"
-            />
+            <Field label="Owner" value={undefined} reason="Awaiting ownership intelligence" />
+            <Field label="Operator" value={undefined} reason="Awaiting ownership intelligence" />
           </Section>
         </div>
       </div>

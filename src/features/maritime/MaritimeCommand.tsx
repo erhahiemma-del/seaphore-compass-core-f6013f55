@@ -491,6 +491,7 @@ export function MaritimeCommand() {
             selection={selection}
             vessel={selectedVessel}
             voyage={selectedVoyage}
+            sourceSupportsHistory={sourceSupportsHistory}
             onClose={closeCard}
           />
         </div>
