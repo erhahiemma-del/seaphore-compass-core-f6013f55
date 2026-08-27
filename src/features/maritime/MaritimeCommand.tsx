@@ -59,6 +59,7 @@ import { TimelineBar } from "./TimelineBar";
 import { replayPresentation } from "./replay-presentation";
 import { framingCentreFor } from "./selected-vessel-framing";
 import { useVesselTrack } from "./useVesselTrack";
+import { REQUESTED_SELECTION, resolveRequestedVessel } from "./deterministic-selection";
 import { toTrackCollection } from "@/services/geospatial/vessel-track";
 import { navigateToCoordinates } from "@/services/geospatial/navigation";
 import { hasHistory } from "@/services/geospatial/vessel-source";
@@ -228,6 +229,32 @@ export function MaritimeCommand() {
   useEffect(() => {
     sgs.loadFromURL();
   }, []);
+
+  /*
+   * Deterministic selection for verification.
+   *
+   * Simulated vessels move, so verifying anything about a selected
+   * vessel by clicking one meant the vessel had moved before the click
+   * landed. A `select` query parameter names it instead, and then goes
+   * through the same `service.select` a click uses — a parallel path
+   * would prove something about itself rather than about the product.
+   *
+   * Latched: it fires once, when the named vessel first appears in the
+   * feed, and never again. Re-applying it would fight an officer who
+   * selected something else.
+   */
+  const requestedSelection = useRef<string | null>(REQUESTED_SELECTION);
+  useEffect(() => {
+    const wanted = requestedSelection.current;
+    if (!wanted || vessels.length === 0) return;
+    const imo = resolveRequestedVessel(wanted, vessels);
+    // Consumed either way: an unresolvable name should not retry on
+    // every feed update, and leaves selection exactly as it was.
+    requestedSelection.current = null;
+    if (!imo) return;
+    sgs.select({ kind: "vessel", id: imo, imo });
+    setSelectedVessel(vessels.find((vessel) => vessel.identity.imo === imo) ?? null);
+  }, [vessels]);
 
   const handleSelected = useCallback((vessel: Vessel | null) => {
     setSelectedVessel(vessel);

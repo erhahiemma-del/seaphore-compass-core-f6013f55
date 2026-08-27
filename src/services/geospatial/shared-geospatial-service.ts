@@ -572,7 +572,29 @@ export class SharedGeospatialService {
     // Preserve the current pathname — the map may be mounted under a route
     // other than /maritime (embedded panels, future workspaces).
     const { pathname } = window.location;
-    window.history.replaceState(null, "", `${pathname}?${this.toSearchParams().toString()}`);
+
+    /*
+     * Keep the parameters this service does not own.
+     *
+     * The write replaced the whole query string with the map's own keys,
+     * so anything else in the URL was destroyed on the first camera
+     * update — measured: a `select` parameter was gone before the feature
+     * module that reads it had even been imported, because this service
+     * is constructed at import time and writes before the rest of the
+     * application loads.
+     *
+     * That silently breaks every deep link the map does not recognise,
+     * present and future — a share token, a return path, a verification
+     * parameter. Owning some of the query string is not the same as
+     * owning all of it, and foreign keys are carried through untouched.
+     */
+    const params = this.toSearchParams();
+    const owned = new Set(params.keys());
+    for (const [key, value] of new URLSearchParams(window.location.search)) {
+      if (!owned.has(key)) params.append(key, value);
+    }
+
+    window.history.replaceState(null, "", `${pathname}?${params.toString()}`);
   }
 }
 
