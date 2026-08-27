@@ -16,7 +16,9 @@ export default defineConfig({
   expect: { timeout: 5_000 },
   reporter: [["list"]],
   use: {
-    baseURL: "http://localhost:8080",
+    // Post-deploy health checks point at a deployed origin; everything
+    // else keeps the local dev server default.
+    baseURL: process.env.SEAPHORE_HEALTH_URL || "http://localhost:8080",
     viewport: { width: 1280, height: 1800 },
     trace: "retain-on-failure",
   },
@@ -27,9 +29,10 @@ export default defineConfig({
         ...devices["Desktop Chrome"],
         // Use the sandbox's pre-installed Chromium so tests run without a
         // separate `playwright install` step. Falls through to the bundled
-        // browser (via PLAYWRIGHT_BROWSERS_PATH) on developer machines.
+        // browser (via PLAYWRIGHT_BROWSERS_PATH) when that path is absent —
+        // developer machines and CI runners that ran `playwright install`.
         launchOptions: {
-          executablePath: process.env.SEAPHORE_CHROMIUM || "/chromium-1194/chrome-linux/chrome",
+          executablePath: resolveChromium(),
         },
       },
     },
