@@ -44,6 +44,7 @@ import {
   PIXELS_PER_KM,
   RISK_COLORS,
   TIMING,
+  MAX_CAMERA_ZOOM,
   ZOOM_BANDS,
 } from "../constants";
 import {
@@ -159,6 +160,60 @@ function isGeographicContextTileEvent(event: {
   if (event?.sourceId === "geographic-context") return true;
   const url = event?.error?.url;
   return typeof url === "string" && url.includes("blankTile=false");
+}
+
+/**
+ * How large a vessel is drawn, by zoom.
+ *
+ * The ramp used to stop at 14. MapLibre holds the last stop flat, so a
+ * vessel at zoom 20 was drawn at exactly its zoom-14 size over ground
+ * sixty-four times closer — an officer inspecting a berth got a thumbnail
+ * arrow adrift on a photograph of a quay. The vessel is the subject of
+ * this map and it was the only thing on screen that stopped responding to
+ * the approach.
+ *
+ * Deliberately not scaled to the hull's real length. No connected source
+ * reports vessel dimensions, so a footprint drawn to them would be
+ * invented, and a sprite stretched to hundreds of pixels is a blurred
+ * rectangle claiming a precision the position does not have. This grows
+ * the symbol until it reads as a vessel rather than a marker, and stops.
+ */
+const VESSEL_SIZE_STOPS: readonly (readonly [number, number])[] = [
+  [ZOOM_BANDS.worldMin, 0.26],
+  [ZOOM_BANDS.regionalMin, 0.36],
+  [7, 0.55],
+  [9, 0.8],
+  [14, 1.3],
+  [17, 2.1],
+  [MAX_CAMERA_ZOOM, 3.1],
+];
+
+/** How much larger the officer's chosen vessel is drawn, at every zoom. */
+const SELECTED_VESSEL_SCALE = 1.25;
+
+/**
+ * Build the `icon-size` expression.
+ *
+ * The zoom interpolation has to sit at the top level — MapLibre rejects a
+ * `zoom` expression nested inside another operator, and a first attempt
+ * that multiplied the whole ramp by a selection factor was declined at
+ * install, which took the vessel layer off the map entirely. So the
+ * selection factor is folded into each stop instead.
+ *
+ * The selected vessel is emphasised at every zoom rather than only at
+ * depth, so the thing the officer chose stays findable while they move
+ * the camera.
+ */
+function vesselIconSizeExpression(): unknown {
+  return [
+    "interpolate",
+    ["linear"],
+    ["zoom"],
+    ...VESSEL_SIZE_STOPS.flatMap(([zoom, size]) => [
+      zoom,
+      ["case", ["==", ["get", "isSelected"], true], size * SELECTED_VESSEL_SCALE, size],
+    ]),
+  ];
 }
 
 /** Source ids owned by this renderer. */
@@ -1773,21 +1828,31 @@ export class MapLibreRenderer implements MapRenderer {
         // globe was drawn at national-view size. Smaller, but never
         // vanishing — a vessel is the subject of this map, and the one
         // thing that must stay findable at every zoom.
-        "icon-size": [
-          "interpolate",
-          ["linear"],
-          ["zoom"],
-          ZOOM_BANDS.worldMin,
-          0.26,
-          ZOOM_BANDS.regionalMin,
-          0.36,
-          7,
-          0.55,
-          9,
-          0.8,
-          14,
-          1.3,
-        ],
+        /*
+         * The ramp runs to the camera's ceiling, and the selected vessel
+         * runs ahead of it.
+         *
+         * It used to stop at 14. MapLibre holds the last stop flat, so a
+         * vessel at zoom 20 was drawn at exactly its zoom-14 size over
+         * ground sixty-four times closer — the officer inspecting a berth
+         * got a thumbnail arrow adrift on a photograph of a quay. The
+         * vessel is the subject of this map and it was the only thing on
+         * screen that stopped responding to the approach.
+         *
+         * It is deliberately not scaled to the hull's real length. A
+         * true-to-scale symbol at this depth would be hundreds of pixels
+         * of sprite, and a sprite stretched that far is a blurred
+         * rectangle claiming a precision the position does not have — the
+         * vessel's dimensions are not reported by any connected source,
+         * so a footprint drawn to them would be invented. This grows the
+         * symbol until it reads as a vessel rather than a marker, and
+         * stops.
+         *
+         * The selected vessel is drawn larger at every stop rather than
+         * only at depth, so the thing the officer chose stays the thing
+         * they can find while they move the camera.
+         */
+        "icon-size": vesselIconSizeExpression() as never,
         /*
          * Rotate only a bearing someone reported.
          *

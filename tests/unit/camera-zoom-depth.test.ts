@@ -130,3 +130,55 @@ describe("vessel work cannot reach the camera or the ground", () => {
     }
   });
 });
+
+describe("the vessel grows with the ground", () => {
+  it("ramps vessel size all the way to the camera ceiling", async () => {
+    /*
+     * The ramp used to stop at 14. MapLibre holds the last stop flat, so
+     * a vessel at zoom 20 was drawn at exactly its zoom-14 size over
+     * ground sixty-four times closer — the officer inspecting a berth got
+     * a thumbnail arrow adrift on a photograph of a quay, and the vessel
+     * was the only thing on screen that stopped responding to the
+     * approach.
+     */
+    const { readFileSync } = await import("node:fs");
+    const { resolve } = await import("node:path");
+    const renderer = readFileSync(
+      resolve(process.cwd(), "src/services/geospatial/renderers/maplibre-renderer.ts"),
+      "utf8",
+    );
+    const stops = renderer.slice(
+      renderer.indexOf("const VESSEL_SIZE_STOPS"),
+      renderer.indexOf("] as const", renderer.indexOf("const VESSEL_SIZE_STOPS")) + 10,
+    );
+    expect(stops).toContain("MAX_CAMERA_ZOOM");
+    // And the deepest stop must be larger than the old ceiling's value.
+    expect(stops).toContain("3.1");
+  });
+
+  it("keeps the zoom expression at the top level of icon-size", async () => {
+    /*
+     * A first attempt multiplied the whole ramp by a selection factor.
+     * MapLibre rejects a `zoom` expression nested inside another
+     * operator, so the layer was declined at install and the vessels
+     * disappeared from the map entirely — caught in the browser, not by
+     * a type. The selection factor is folded into each stop instead.
+     */
+    const { readFileSync } = await import("node:fs");
+    const { resolve } = await import("node:path");
+    const renderer = readFileSync(
+      resolve(process.cwd(), "src/services/geospatial/renderers/maplibre-renderer.ts"),
+      "utf8",
+    );
+    const fn = renderer.slice(
+      renderer.indexOf("function vesselIconSizeExpression"),
+      renderer.indexOf("/** Source ids owned by this renderer. */"),
+    );
+    const interpolateAt = fn.indexOf('"interpolate"');
+    const returnAt = fn.indexOf("return [");
+    expect(interpolateAt).toBeGreaterThan(-1);
+    // `interpolate` is the first element of the returned array.
+    expect(interpolateAt - returnAt).toBeLessThan(20);
+    expect(fn).not.toContain('["*"');
+  });
+});
