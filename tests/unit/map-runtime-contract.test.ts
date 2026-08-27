@@ -102,6 +102,34 @@ describe("a stalled style is reported, not resolved", () => {
     expect(stall).toMatch(/clearTimeout\(stall\);\s*resolve\(\);/);
   });
 
+  it("recovers the one condition that never recovers on its own", () => {
+    /*
+     * Measured against this engine: a good style loads; a style replaced
+     * mid-load still fires `load`; a failed style replaced afterwards
+     * fires `load` for the replacement. Only a style document that fails
+     * with nothing replacing it never fires `load` at all — zero
+     * installed layers for the life of the page.
+     *
+     * The message-matching error handler cannot be relied on to catch
+     * that, because it matches on wording. The stall is observable, so
+     * the stall triggers the swap.
+     */
+    expect(stall).toContain("!this.styleFailed && !map.isStyleLoaded()");
+    expect(stall).toContain("map.setStyle(FALLBACK_BASEMAP)");
+  });
+
+  it("attempts the fallback at most once from the stall", () => {
+    // A fallback that also fails must not start the map thrashing
+    // between two styles it cannot load.
+    expect(stall).toContain("this.styleFailed = true");
+  });
+
+  it("does not swap a style that did load", () => {
+    // The stall can also fire because something downstream is slow. A
+    // swap in that case would discard a working basemap.
+    expect(stall).toMatch(/!map\.isStyleLoaded\(\)/);
+  });
+
   it("says the map is empty rather than only that a host is down", () => {
     // The officer's question is "why is there nothing there", not "which
     // CDN is unreachable".

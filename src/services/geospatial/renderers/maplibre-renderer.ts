@@ -1905,14 +1905,49 @@ export class MapLibreRenderer implements MapRenderer {
         return;
       }
       const stall = setTimeout(() => {
-        // Not `styleFailed`-gated: that flag tracks the basemap swap, and
-        // the whole point here is to speak when that path has gone quiet.
         const message =
           `The basemap style has not finished loading after ${STYLE_LOAD_STALL_MS / 1000}s. ` +
           `No operational layer has been installed — the map is showing an empty canvas. ` +
           `This is usually the basemap host being unreachable.`;
         console.error(`[Seaphore map] ${message}`);
         this.bus?.emit("map:error", { scope: "maplibre:style", message });
+
+        /*
+         * Reporting was not enough, and this is the one case that never
+         * recovers on its own.
+         *
+         * Controlled runs against this engine show four outcomes. A good
+         * style loads. A style replaced mid-load still fires `load`. A
+         * style that fails and is then replaced fires `load` for the
+         * replacement. And a style document that simply fails, with
+         * nothing replacing it, fires no `load` at all, ever — the map
+         * sits at zero installed layers for the life of the page.
+         *
+         * The error handler above swaps the basemap, but only for a
+         * message it recognises as a style-document failure, and it
+         * matches on wording. A failure that arrives phrased differently,
+         * or as a bare network error, leaves the map stalled with the
+         * swap never attempted.
+         *
+         * So the stall itself becomes the trigger. Twelve seconds without
+         * a loaded style is the condition that matters, whatever produced
+         * it, and it is observable rather than inferred from a string.
+         * `styleFailed` still bounds this to one attempt: a fallback that
+         * also fails must not start the map thrashing between two styles
+         * it cannot load.
+         */
+        if (!this.styleFailed && !map.isStyleLoaded()) {
+          this.styleFailed = true;
+          this.bus?.emit("map:error", {
+            scope: "maplibre:style",
+            message: `Retrying with ${FALLBACK_BASEMAP}`,
+          });
+          try {
+            map.setStyle(FALLBACK_BASEMAP);
+          } catch (error) {
+            console.error("[Seaphore map] fallback basemap could not be applied", error);
+          }
+        }
       }, STYLE_LOAD_STALL_MS);
       map.once("load", () => {
         clearTimeout(stall);
