@@ -45,6 +45,7 @@ import { ContextDrawer } from "./ContextDrawer";
 import { ControlRail } from "./ControlRail";
 import { SpatialTrail } from "./SpatialTrail";
 import { CoordinateHud } from "./CoordinateHud";
+import { DataProvenanceNotice } from "./DataProvenanceNotice";
 import { VoiceCommand } from "./VoiceCommand";
 import { MAP_ZONE } from "./map-zones";
 import { useVoyages, type VoyageFeed } from "./useVoyages";
@@ -384,6 +385,13 @@ export function MaritimeCommand() {
                 it follows a hand-pan as readily as a control.
               */}
               <SpatialTrail />
+              {/*
+                What kind of data is on the map, when that needs saying.
+                It lives in this column because the zone already owns
+                explanations of the current picture, which means it costs
+                no new position and cannot collide with anything.
+              */}
+              <DataProvenanceNotice />
               <ScopeToggle scope={scope} onChange={setScope} />
               <VoyageFeedNotice feed={voyageFeed} />
             </div>
