@@ -272,7 +272,7 @@ const INTENT_LAYERS: Readonly<Record<OfficerIntent, readonly string[]>> = {
   "operational-recommendation": ["vessels"],
   "strategic-summary": ["vessels", "ports"],
   "executive-brief": ["vessels", "ports"],
-  "mission-planning": ["vessels", "ports", "eezBoundary"],
+  "mission-planning": ["vessels", "ports", "nigeria-eez"],
   "natural-language-search": ["vessels"],
   "officer-notes": [],
   unknown: [],

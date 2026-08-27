@@ -169,8 +169,24 @@ export class LayerRegistryError extends Error {
   }
 }
 
+/**
+ * Layer ids that have been renamed, and what they became.
+ *
+ * Both entries are the same mistake: a descriptive catalogue id was
+ * added beside an older camel-cased one instead of replacing it, leaving
+ * two logical layers driving one render layer. The kebab-case names won
+ * because the other fifty-three entries use them; the old names stay
+ * here because they have been in shared URLs since M1.
+ */
+const RETIRED_LAYER_IDS: Readonly<Record<string, string>> = {
+  eezBoundary: "nigeria-eez",
+  investigArea: "investigation-areas",
+};
+
 export class LayerRegistry {
   private readonly layers = new Map<string, LayerDefinition>();
+  /** Render layer id → the one logical layer allowed to drive it. */
+  private readonly renderOwners = new Map<string, string>();
 
   /**
    * Add a layer. Throws on a duplicate id — silently overwriting would let
@@ -198,8 +214,47 @@ export class LayerRegistry {
         `Layer "${definition.id}" is ready but declares no render layer ids`,
       );
     }
+    /*
+     * One render layer, one owner.
+     *
+     * The visibility resolver below turns a render layer on when *any*
+     * logical layer that claims it is on. That is correct for a layer
+     * with one owner and a trap with two: the second owner keeps the
+     * render layer alive after the officer switches the first one off,
+     * so the control reports what the officer asked for and the map
+     * shows the opposite.
+     *
+     * It happened twice, both times because a catalogue entry was added
+     * beside an existing one rather than renaming it — `nigeria-eez`
+     * next to `eezBoundary`, `investigation-areas` next to
+     * `investigArea`. Both pairs were `ready` and both were on by
+     * default, so the EEZ could not be switched off at all. Renaming a
+     * layer now fails loudly at registration instead of quietly at the
+     * chip.
+     */
+    for (const renderId of definition.renderLayerIds) {
+      const owner = this.renderOwners.get(renderId);
+      if (owner) {
+        throw new LayerRegistryError(
+          `Layer "${definition.id}" claims render layer "${renderId}", which "${owner}" already owns`,
+        );
+      }
+      this.renderOwners.set(renderId, definition.id);
+    }
     this.layers.set(definition.id, definition);
     return this;
+  }
+
+  /**
+   * Resolve a retired layer id to the one that replaced it.
+   *
+   * A shared operational link carries its layer set in the URL, so an id
+   * that ships once has to keep resolving after it is renamed — the
+   * alternative is that a link an officer saved silently loses a layer.
+   * Unknown ids are returned unchanged and rejected by the caller.
+   */
+  resolveId(id: string): string {
+    return RETIRED_LAYER_IDS[id] ?? id;
   }
 
   /**
@@ -473,19 +528,19 @@ export const MISSION_PRESETS: readonly MissionPreset[] = [
     id: "compliance-sweep",
     label: "Compliance Sweep",
     description: "Risk concentration inside the Nigerian EEZ.",
-    layers: ["vessels", "ports", "riskHeatmap", "eezBoundary"],
+    layers: ["vessels", "ports", "riskHeatmap", "nigeria-eez"],
   },
   {
     id: "navigation",
     label: "Navigation",
     description: "Traffic, ports, boundary, and weather.",
-    layers: ["vessels", "ports", "eezBoundary", "weather"],
+    layers: ["vessels", "ports", "nigeria-eez", "weather"],
   },
   {
     id: "full-intelligence",
     label: "Full Intelligence",
     description: "Every intelligence overlay at once.",
-    layers: ["vessels", "ports", "eezBoundary", "riskHeatmap", "revenueHeat", "aisTrack"],
+    layers: ["vessels", "ports", "nigeria-eez", "riskHeatmap", "revenueHeat", "aisTrack"],
   },
 ] as const;
 
@@ -515,13 +570,13 @@ export const MISSION_PRESETS: readonly MissionPreset[] = [
  */
 export const DOMAIN_PRESETS = {
   /** Where is this vessel, and what surrounds it. */
-  vessel: ["vessels", "ports", "eezBoundary", "graticule"],
+  vessel: ["vessels", "ports", "nigeria-eez", "graticule"],
   /** Which ports a manifest touches, inside whose waters. */
-  manifest: ["ports", "eezBoundary", "vessels", "graticule"],
+  manifest: ["ports", "nigeria-eez", "vessels", "graticule"],
   /** Where cargo moves through the port system. */
-  cargo: ["ports", "eezBoundary", "graticule"],
+  cargo: ["ports", "nigeria-eez", "graticule"],
   /** The port estate itself, and the traffic around it. */
-  ports: ["ports", "anchorages", "eezBoundary", "vessels", "graticule"],
+  ports: ["ports", "anchorages", "nigeria-eez", "vessels", "graticule"],
 } as const satisfies Record<string, readonly string[]>;
 
 export type MapDomain = keyof typeof DOMAIN_PRESETS;
@@ -630,16 +685,6 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
   },
 
   {
-    id: "eezBoundary",
-    label: "EEZ Boundary",
-    description: "Nigerian Exclusive Economic Zone, 200 nautical miles.",
-    group: "MARITIME_ZONES",
-    renderLayerIds: [LAYER_IDS.eezFill, LAYER_IDS.eezBoundary],
-    defaultVisible: true,
-    status: "ready",
-    order: 30,
-  },
-  {
     id: "weather",
     label: "Weather",
     description: "Weather overlay affecting port approach and ETA.",
@@ -715,16 +760,6 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     order: 10,
     pendingReason:
       "No renderer implementation. MapLibre clusters at the source, which is incompatible with the promoteId-addressed incremental updates the vessel source relies on; clustering needs a second source and a selection rule.",
-  },
-  {
-    id: "investigArea",
-    label: "Investigation Area",
-    description: "Officer-drawn area of interest.",
-    group: "INVESTIGATIONS",
-    renderLayerIds: [LAYER_IDS.investigArea],
-    defaultVisible: false,
-    status: "ready",
-    order: 20,
   },
   {
     id: "sarDetections",

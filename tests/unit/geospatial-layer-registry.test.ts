@@ -11,12 +11,20 @@ import {
 } from "@/services/geospatial";
 
 function layer(overrides: Partial<LayerDefinition> = {}): LayerDefinition {
+  const id = overrides.id ?? "test-layer";
   return {
-    id: "test-layer",
+    id,
     label: "Test Layer",
     description: "A layer used in tests.",
     group: "OPERATIONAL",
-    renderLayerIds: ["test-render-layer"],
+    /*
+     * Derived from the id so two helper-built layers do not both claim
+     * one render layer. They used to share a literal, which was harmless
+     * while the registry allowed shared ownership and became a
+     * registration error when it stopped — the fixture was relying on the
+     * very thing the registry now forbids.
+     */
+    renderLayerIds: [`${id}-render-layer`],
     defaultVisible: false,
     status: "ready",
     order: 1,
@@ -135,14 +143,28 @@ describe("LayerRegistry", () => {
       ]);
     });
 
-    it("shows a shared render layer when any owning logical layer is active", () => {
-      const registry = new LayerRegistry().registerAll([
+    it("refuses to let two logical layers own one render layer", () => {
+      /*
+       * This used to assert the opposite — that a render layer shows when
+       * *any* owning logical layer is on. That rule is unobjectionable
+       * with one owner and a trap with two: the second owner keeps the
+       * render layer alive after the officer switches the first one off,
+       * so the control reports what they asked for and the map shows the
+       * reverse.
+       *
+       * It reached the product twice, both times because a catalogue
+       * entry was added beside an existing one instead of renaming it.
+       * The EEZ ended up with two `ready`, on-by-default owners and could
+       * not be switched off at all. Registration now rejects the second
+       * owner, so the mistake fails at build rather than at the chip.
+       */
+      const registry = new LayerRegistry().register(
         layer({ id: "first", renderLayerIds: ["shared"] }),
-        layer({ id: "second", renderLayerIds: ["shared"], order: 2 }),
-      ]);
+      );
 
-      expect(registry.resolveVisibility(["second"]).get("shared")).toBe(true);
-      expect(registry.resolveVisibility([]).get("shared")).toBe(false);
+      expect(() =>
+        registry.register(layer({ id: "second", renderLayerIds: ["shared"], order: 2 })),
+      ).toThrow(/already owns/);
     });
 
     it("ignores unknown ids in the active set", () => {
@@ -151,7 +173,7 @@ describe("LayerRegistry", () => {
       const visibility = registry.resolveVisibility(["test-layer", "does-not-exist"]);
 
       expect(visibility.size).toBe(1);
-      expect(visibility.get("test-render-layer")).toBe(true);
+      expect(visibility.get("test-layer-render-layer")).toBe(true);
     });
   });
 
@@ -193,15 +215,15 @@ describe("default layer catalogue", () => {
       // Verified anchorages are estate, like ports: on by default.
       "anchorages",
       /*
-       * The EEZ is a logical layer now, not only a render id.
-       *
-       * `eezBoundary` was drawn from the start and had no catalogue
+       * The EEZ, once. It was drawn from the start with no catalogue
        * entry, so an officer could see the boundary and had no way to
-       * turn it off. Both appear here because the render id remains in
-       * the default set and the logical layer that governs it is on.
+       * turn it off; the entry that fixed that was added beside the
+       * older `eezBoundary` rather than replacing it, which left two
+       * logical layers driving one render layer and made the boundary
+       * un-hideable for a different reason. One owner now, and the old
+       * id resolves to this one so shared links still work.
        */
       "nigeria-eez",
-      "eezBoundary",
       "graticule",
     ]);
   });
@@ -239,12 +261,12 @@ describe("mission presets", () => {
       "riskHeatmap",
       "revenueHeat",
     ]);
-    expect(byId["compliance-sweep"]).toEqual(["vessels", "ports", "riskHeatmap", "eezBoundary"]);
-    expect(byId["navigation"]).toEqual(["vessels", "ports", "eezBoundary", "weather"]);
+    expect(byId["compliance-sweep"]).toEqual(["vessels", "ports", "riskHeatmap", "nigeria-eez"]);
+    expect(byId["navigation"]).toEqual(["vessels", "ports", "nigeria-eez", "weather"]);
     expect(byId["full-intelligence"]).toEqual([
       "vessels",
       "ports",
-      "eezBoundary",
+      "nigeria-eez",
       "riskHeatmap",
       "revenueHeat",
       "aisTrack",

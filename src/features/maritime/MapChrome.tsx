@@ -475,7 +475,7 @@ const LEGEND: readonly LegendEntry[] = [
   { kind: "port", layers: ["ports"] },
   { kind: "anchorage", layers: ["ports"] },
   { kind: "incident", layers: ["incidents"] },
-  { kind: "restricted-zone", layers: ["investigArea"] },
+  { kind: "restricted-zone", layers: ["investigation-areas"] },
   { kind: "weather-alert", layers: ["weather"] },
 ];
 

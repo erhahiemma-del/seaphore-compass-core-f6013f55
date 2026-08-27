@@ -56,6 +56,18 @@ import { NationalPicturePanel } from "./NationalPicturePanel";
 import { OperatingModeBar } from "./OperatingModeBar";
 import { TimelineBar } from "./TimelineBar";
 
+/**
+ * The three perspectives, named for what an officer is looking at.
+ *
+ * Globe was added to the engine and to Mission Control's cycling control
+ * without reaching this one, so Maritime Command — the surface that owns
+ * the full map — was the only place the projection could not be chosen.
+ * Worse than absent: switching to Globe elsewhere left every button here
+ * unpressed, because the mode the map was in had no entry to match.
+ *
+ * Labels follow the Command Edition rule that officers choose a purpose,
+ * never a rendering engine.
+ */
 const VIEW_MODES: ReadonlyArray<{ mode: ViewMode; label: string; title: string }> = [
   { mode: "2D", label: "Operational View", title: "Overhead national picture" },
   {
@@ -63,7 +75,24 @@ const VIEW_MODES: ReadonlyArray<{ mode: ViewMode; label: string; title: string }
     label: "Terrain Perspective",
     title: "Terrain-level view — port approach, berth layout, vessel proximity",
   },
+  {
+    mode: "GLOBE",
+    label: "Global View",
+    title: "Whole-earth projection — ocean basins, distant voyages and approaches",
+  },
 ];
+
+/**
+ * Pitch belongs to the tilt, not to the projection.
+ *
+ * The same rule the perspective control on the compact map applies: 3D
+ * asks for real camera pitch, while 2D and the globe both sit level, so
+ * an officer spinning out to the globe does not find the world tilted as
+ * well.
+ */
+function pitchForView(mode: ViewMode): number {
+  return mode === "3D" ? 50 : 0;
+}
 
 /** Centre and zoom that frame Nigeria and its maritime approaches. */
 const NIGERIA_VIEW = { center: [5.7, 4.35] as const, zoom: 6 };
@@ -290,7 +319,10 @@ export function MaritimeCommand() {
                 variant={viewMode === mode ? "default" : "ghost"}
                 title={title}
                 aria-pressed={viewMode === mode}
-                onClick={() => sgs.switchView(mode)}
+                onClick={() => {
+                  sgs.switchView(mode);
+                  sgs.setCamera({ pitch: pitchForView(mode) });
+                }}
                 className="h-7 text-xs"
               >
                 {label}
@@ -340,7 +372,23 @@ export function MaritimeCommand() {
 
           {/* ── MAP CANVAS — the dominant surface ─────────────────── */}
           <main className="relative min-w-0 flex-1">
-            {viewMode === "2D" ? (
+            {/*
+             * One map instance, whatever the projection.
+             *
+             * This used to render the canvas only in 2D and a "delivered
+             * in G7" placeholder otherwise, which was honest when neither
+             * the tilt nor the globe existed. Both do now: 3D is the
+             * renderer's own camera pitch and Globe is a MapLibre
+             * projection set on the mounted map, so switching perspective
+             * is one call on the live instance rather than a different
+             * screen.
+             *
+             * Unmounting the canvas to change projection would also throw
+             * away the thing the officer came for — selection, camera and
+             * focus all live on that instance, and a remount loses every
+             * one of them.
+             */}
+            {
               <MapCanvas
                 scope={scope}
                 voyages={voyageFeed.voyages}
@@ -351,20 +399,16 @@ export function MaritimeCommand() {
                   engineRef.current = engine;
                 }}
               />
-            ) : (
-              <TerrainPerspectivePlaceholder />
-            )}
+            }
 
             {/*
             Legend overlays the map rather than taking a panel slot, and
             starts collapsed so it costs nothing until asked for. It reads
             the same visual config and layer registry the renderer uses.
           */}
-            {viewMode === "2D" ? (
-              <div className="pointer-events-none absolute bottom-3 right-3 z-10 flex justify-end">
-                <MapLegend />
-              </div>
-            ) : null}
+            <div className="pointer-events-none absolute bottom-3 right-3 z-10 flex justify-end">
+              <MapLegend />
+            </div>
 
             {/*
             Scope control and the voyage feed's own state, together.
@@ -373,12 +417,10 @@ export function MaritimeCommand() {
             what makes a voyage between two continents visible at all,
             and the feed note is what explains an empty world map.
           */}
-            {viewMode === "2D" ? (
-              <div className="absolute left-3 top-3 z-10 flex w-[19rem] max-w-[calc(100%-1.5rem)] flex-col items-start gap-1.5">
-                <ScopeToggle scope={scope} onChange={setScope} />
-                <VoyageFeedNotice feed={voyageFeed} />
-              </div>
-            ) : null}
+            <div className="absolute left-3 top-3 z-10 flex w-[19rem] max-w-[calc(100%-1.5rem)] flex-col items-start gap-1.5">
+              <ScopeToggle scope={scope} onChange={setScope} />
+              <VoyageFeedNotice feed={voyageFeed} />
+            </div>
           </main>
 
           {/* ── RIGHT CONTEXT DRAWER ──────────────────────────────── */}
@@ -546,15 +588,6 @@ function ToolButton({
     >
       {children}
     </Button>
-  );
-}
-
-/** The Terrain Perspective is delivered in G7; this states that honestly. */
-function TerrainPerspectivePlaceholder() {
-  return (
-    <div className="flex h-full items-center justify-center bg-[#0D1B2A]">
-      <p className="text-sm text-muted-foreground">Terrain Perspective — delivered in G7</p>
-    </div>
   );
 }
 

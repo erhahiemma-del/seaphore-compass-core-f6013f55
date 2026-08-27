@@ -108,6 +108,53 @@ describe("2D, 3D and Globe are one map", () => {
     expect(CHROME).toMatch(/GLOBE: "2D"/);
   });
 
+  it("offers every projection on the surface that owns the full map", () => {
+    /*
+     * Globe reached the engine and the compact map's cycling control
+     * without reaching Maritime Command's segmented one, so the surface
+     * responsible for the full map was the only place the projection
+     * could not be chosen — and switching to it elsewhere left every
+     * button here unpressed, because the map was in a mode the control
+     * had no entry for.
+     *
+     * Asserted against the ViewMode union rather than a literal list, so
+     * a fourth projection cannot be added to the engine and quietly skip
+     * this control.
+     */
+    const command = read("src/features/maritime/MaritimeCommand.tsx");
+    const declared = /const VIEW_MODES[\s\S]*?\n\];/.exec(command)?.[0] ?? "";
+    expect(declared).not.toBe("");
+    const union = /export type ViewMode = ([^\n;]+)/.exec(TYPES)?.[1] ?? "";
+    const modes = [...union.matchAll(/"([A-Z0-9]+)"/g)].map((m) => m[1]!);
+    expect(modes.length).toBeGreaterThan(2);
+    for (const mode of modes) {
+      expect(declared, `Maritime Command cannot reach ${mode}`).toContain(`"${mode}"`);
+    }
+  });
+
+  it("keeps one map instance across every projection", () => {
+    /*
+     * Maritime Command used to render the canvas only in 2D and a
+     * "delivered in G7" placeholder otherwise. That was honest while
+     * neither the tilt nor the globe existed, and became a trap once they
+     * did: choosing a perspective unmounted the map, taking the camera,
+     * the selection and the focus subject with it.
+     *
+     * The renderer switches projection on the mounted instance, so the
+     * canvas must not be conditional on the view mode at all.
+     */
+    const command = read("src/features/maritime/MaritimeCommand.tsx");
+    expect(command).not.toContain("TerrainPerspectivePlaceholder");
+    expect(command).not.toMatch(/viewMode === "2D" \?\s*\(?\s*<MapCanvas/);
+  });
+
+  it("keeps the globe level from that control too", () => {
+    // The same pitch rule the cycling control applies. Two controls
+    // writing one camera must not disagree about tilt.
+    const command = read("src/features/maritime/MaritimeCommand.tsx");
+    expect(command).toContain('mode === "3D" ? 50 : 0');
+  });
+
   it("leaves the globe level", () => {
     // Pitch belongs to the tilt. An officer spinning out should not find
     // the world tilted as well.

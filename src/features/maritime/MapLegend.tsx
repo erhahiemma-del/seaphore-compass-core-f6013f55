@@ -94,7 +94,7 @@ export function MapLegend({ className }: { className?: string }) {
   const ports = shown("ports");
   const clusters = shown("vesselClusters");
   const voyages = shown("voyages");
-  const eez = shown("eezBoundary");
+  const eez = shown("nigeria-eez");
   const graticule = shown("graticule");
   const buildings = shown("buildings");
 

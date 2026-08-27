@@ -171,16 +171,30 @@ export class SharedGeospatialService {
   }
 
   /** Replace the active layer set, ignoring ids the registry does not know. */
+  /**
+   * Retired ids are resolved here rather than at each caller.
+   *
+   * Mission Modes, the map presets and a shared URL all name layer sets,
+   * and several were written before two layers were renamed. Normalising
+   * at the one place layer sets are written means none of those callers
+   * has to be edited to keep working — which matters most for the
+   * Mission Mode definitions, where the layer list is incidental to a
+   * frozen surface.
+   */
   setActiveLayers(layerIds: readonly string[]): void {
-    this.update({ activeLayers: layerIds.filter((id) => this.registry.has(id)) });
+    const resolved = layerIds
+      .map((id) => this.registry.resolveId(id))
+      .filter((id) => this.registry.has(id));
+    this.update({ activeLayers: [...new Set(resolved)] });
   }
 
   /** Turn one layer on or off. Unknown ids are ignored. */
   toggleLayer(layerId: string): void {
-    if (!this.registry.has(layerId)) return;
+    const id = this.registry.resolveId(layerId);
+    if (!this.registry.has(id)) return;
     const active = new Set(this.state.activeLayers);
-    if (active.has(layerId)) active.delete(layerId);
-    else active.add(layerId);
+    if (active.has(id)) active.delete(id);
+    else active.add(id);
     this.setActiveLayers([...active]);
   }
 
@@ -419,10 +433,18 @@ export class SharedGeospatialService {
 
     const layers = params.get("layers");
     if (layers !== null) {
-      const known = layers
-        .split(",")
-        .map((id) => id.trim())
-        .filter((id) => id.length > 0 && this.registry.has(id));
+      const known = [
+        ...new Set(
+          layers
+            .split(",")
+            .map((id) => id.trim())
+            // A link saved before a layer was renamed still names the old
+            // id. Resolving here rather than rejecting means the officer
+            // gets the layer they shared, not a quietly shorter map.
+            .map((id) => this.registry.resolveId(id))
+            .filter((id) => id.length > 0 && this.registry.has(id)),
+        ),
+      ];
       // An explicit empty list is meaningful ("hide everything"); a list of
       // entirely unknown ids is not, and is ignored.
       if (known.length > 0 || layers.trim() === "") patch.activeLayers = known;

@@ -68,7 +68,7 @@ describe("layer groups", () => {
   it("re-groups vessels and ports into the new taxonomy", () => {
     expect(layerRegistry.get("vessels")?.group).toBe("VESSELS");
     expect(layerRegistry.get("ports")?.group).toBe("PORTS_INFRASTRUCTURE");
-    expect(layerRegistry.get("eezBoundary")?.group).toBe("MARITIME_ZONES");
+    expect(layerRegistry.get("nigeria-eez")?.group).toBe("MARITIME_ZONES");
     expect(layerRegistry.get("sarDetections")?.group).toBe("SATELLITE_EO");
   });
 });
