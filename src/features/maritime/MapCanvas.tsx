@@ -15,6 +15,7 @@ import { MapPinOff } from "lucide-react";
 
 import { prefersReducedMotion } from "@/hooks/use-reduced-motion";
 import { AssetPopup } from "./AssetPopup";
+import { installMapHealthProbe } from "./health-probe";
 
 /**
  * Selection kinds the contextual drawer renders in full.
@@ -286,6 +287,24 @@ export function MapCanvas({
         },
       }),
     [bus, service],
+  );
+
+  /*
+   * ── Post-deploy health probe ──────────────────────────────────────
+   *
+   * Reads live, on demand, rather than pushing a cached snapshot: the
+   * answer must describe the map as it is when asked, not as it was
+   * when a render last happened.
+   */
+  useEffect(
+    () =>
+      installMapHealthProbe(() => ({
+        rendererDraws,
+        zoom: service.get().zoom,
+        vesselCount: engine.snapshot().length,
+        sources: service.get().enabledSources,
+      })),
+    [engine, service, rendererDraws],
   );
 
   // ── Renderer lifecycle ────────────────────────────────────────────────
