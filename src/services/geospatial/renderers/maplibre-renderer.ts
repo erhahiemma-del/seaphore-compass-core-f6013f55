@@ -32,6 +32,7 @@
 import {
   BASEMAP_STYLE,
   GEOGRAPHIC_CONTEXT_ATTRIBUTION,
+  GEOGRAPHIC_CONTEXT_MAX_ZOOM,
   GEOGRAPHIC_CONTEXT_TILES,
   GEOGRAPHIC_CONTEXT_ZOOM,
   basemapStyleFor,
@@ -134,6 +135,30 @@ function intelligenceMatch(pick: (signal: IntelligenceSignal) => unknown) {
     ...INTELLIGENCE_SIGNALS.flatMap((signal) => [signal, pick(signal)]),
     pick("investigation"),
   ] as never;
+}
+
+/**
+ * Whether a MapLibre error is nothing more than absent imagery.
+ *
+ * Two shapes, because MapLibre reports tile failures differently
+ * depending on where they fail. A source-scoped event carries the
+ * `sourceId` directly; a transport failure arrives as an `AJAXError`
+ * carrying only the URL it could not fetch. Matching the source id is
+ * the reliable half, and the URL check catches the rest without matching
+ * on anything as brittle as an error message.
+ *
+ * Deliberately narrow. This suppresses one specific, expected, harmless
+ * condition — a supplemental photograph that does not exist for this
+ * patch of ground — and nothing else. Every other error still reaches
+ * the officer, because most of them mean the map is genuinely broken.
+ */
+function isGeographicContextTileEvent(event: {
+  sourceId?: string;
+  error?: { message?: string; url?: string; status?: number };
+}): boolean {
+  if (event?.sourceId === "geographic-context") return true;
+  const url = event?.error?.url;
+  return typeof url === "string" && url.includes("blankTile=false");
 }
 
 /** Source ids owned by this renderer. */
@@ -305,6 +330,16 @@ export class MapLibreRenderer implements MapRenderer {
    */
   private palette: MapStylePaletteName = "maritime";
   private styleFailed = false;
+  /**
+   * Supplemental imagery tiles that did not exist.
+   *
+   * Counted rather than ignored so the condition is observable — a
+   * verification run can ask whether the map is currently drawing
+   * geography without imagery, which is otherwise indistinguishable from
+   * imagery that simply has not loaded yet. It drives nothing on screen:
+   * absent imagery is a normal state of the map, not a fault report.
+   */
+  private geographicContextMissing = 0;
   /**
    * Identifies the current mount attempt.
    *
@@ -497,7 +532,7 @@ export class MapLibreRenderer implements MapRenderer {
     });
 
     // A failed basemap must degrade to a usable map, not a blank canvas.
-    map.on("error", (event: { error?: { message?: string } }) => {
+    map.on("error", (event: { sourceId?: string; error?: { message?: string; url?: string } }) => {
       /*
        * Ignore anything from a map this renderer has moved on from.
        *
@@ -513,6 +548,28 @@ export class MapLibreRenderer implements MapRenderer {
        * officer can act on.
        */
       if (token !== this.mountToken || this.map !== map) return;
+
+      /*
+       * A missing supplemental tile is not a fault the officer can act on.
+       *
+       * Geographic context now asks the service for a 404 rather than its
+       * grey "not yet available" card, which is what stops the card being
+       * painted over the vector geography. The cost is that every tile
+       * outside coverage arrives here as an error — and this handler sets
+       * `rendererStatus: "error"` and prints the message in the status
+       * bar, so the fix would have traded a grey map for a technical
+       * diagnostic naming the provider and the URL.
+       *
+       * Imagery is an enhancement. Its absence is a normal condition of
+       * the map, recorded so the layer can report its own state, and
+       * never a renderer failure: the vector base is untouched, the
+       * camera is untouched, and there is nothing to tell anyone.
+       */
+      if (isGeographicContextTileEvent(event)) {
+        this.geographicContextMissing += 1;
+        return;
+      }
+
       const message = event?.error?.message ?? "Unknown map error";
       /*
        * Only a genuine style-document failure justifies swapping basemaps.
@@ -582,6 +639,19 @@ export class MapLibreRenderer implements MapRenderer {
 
     this.ready = true;
     this.bus?.emit("map:ready", { renderer: this.id });
+  }
+
+  /**
+   * How many supplemental imagery tiles were absent.
+   *
+   * Absent imagery is a normal condition and shows the officer nothing,
+   * which makes it invisible to verification as well — a map drawing
+   * vector geography because there is no photograph looks exactly like
+   * one whose photographs have not arrived yet. This is how the two are
+   * told apart when checking that a deep zoom degraded correctly.
+   */
+  missingGeographicContextTiles(): number {
+    return this.geographicContextMissing;
   }
 
   destroy(): void {
@@ -970,7 +1040,14 @@ export class MapLibreRenderer implements MapRenderer {
       tileSize: 256,
       // The vector source stops at 14; this exists to go past it.
       minzoom: GEOGRAPHIC_CONTEXT_ZOOM.fadeIn,
-      maxzoom: 19,
+      /*
+       * Past this the source is overzoomed, not queried. Coverage ends at
+       * different depths in different places — it is photography — so
+       * asking deeper would request tiles that may not exist and leave
+       * gaps where stretching the last real tile keeps the ground
+       * continuous.
+       */
+      maxzoom: GEOGRAPHIC_CONTEXT_MAX_ZOOM,
       attribution: GEOGRAPHIC_CONTEXT_ATTRIBUTION,
     } as never);
     map.addLayer({

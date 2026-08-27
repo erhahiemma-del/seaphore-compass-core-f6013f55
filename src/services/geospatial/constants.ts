@@ -88,11 +88,47 @@ export const LIGHT_BASEMAP_STYLE = "https://basemaps.cartocdn.com/gl/positron-gl
  * continues to come only from the vessel, incident and investigation
  * layers, which draw above this.
  */
+/*
+ * `blankTile=false` is load-bearing, not a tuning parameter.
+ *
+ * Beyond its coverage the service does not fail — it succeeds, returning
+ * HTTP 200 with a valid JPEG that is a flat grey card reading "Map data
+ * not yet available". Measured: 2.5 KB at every location past coverage,
+ * against 5–24 KB for real imagery, and `200 image/jpeg` in both cases.
+ *
+ * Nothing downstream could tell the two apart. MapLibre had no error to
+ * detect, so it painted the card; the raster layer is fully opaque from
+ * zoom 15.5, so the card covered the vector geography underneath. An
+ * officer zooming into a harbour watched the map turn grey and print an
+ * error message across itself — the deeper they looked, the less they
+ * could see.
+ *
+ * With this parameter the same request returns 404 instead. MapLibre
+ * draws nothing for that tile and the vector geography beneath shows
+ * through, which is the honest answer: no imagery here, the map
+ * continues. Verified against the live service — placeholders became
+ * 404, and real imagery at Apapa z17 and Rotterdam z20 was untouched.
+ */
 export const GEOGRAPHIC_CONTEXT_TILES =
-  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}?blankTile=false";
 
 /** Attribution the imagery requires. Shown in the map's attribution control. */
 export const GEOGRAPHIC_CONTEXT_ATTRIBUTION = "Imagery © Esri";
+
+/**
+ * The deepest zoom the imagery service is asked for.
+ *
+ * Coverage is not uniform and cannot be: it is photography, and it ends
+ * at different depths in different places. Measured across the Nigerian
+ * ports and Rotterdam, real tiles run to 18–20 depending on location.
+ *
+ * Past this the source is overzoomed rather than queried — MapLibre
+ * stretches the deepest tile it holds instead of requesting one that may
+ * not exist. That keeps the ground continuous at tactical zoom, and it
+ * is a property of the service rather than of any port, so no location
+ * is special-cased.
+ */
+export const GEOGRAPHIC_CONTEXT_MAX_ZOOM = 19;
 
 /**
  * Where the vector source stops carrying new geometry.
