@@ -28,7 +28,7 @@ import {
 } from "@/components/intelligence/ExecutiveBriefPanel";
 import { FindingEvidenceViewer } from "@/components/intelligence/FindingEvidenceViewer";
 import { Button } from "@/components/ui/button";
-import { writeAuditLog } from "@/lib/audit.functions";
+import { recordAudit } from "@/lib/audit-client";
 import type { Vessel } from "@/services/geospatial";
 import {
   aggregateFindings,
