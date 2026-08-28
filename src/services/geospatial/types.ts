@@ -159,6 +159,18 @@ export interface MapState {
    * Non-null only when the selection is a vessel carrying an IMO.
    */
   readonly selectedEntityImo: string | null;
+  /**
+   * Vessels the current answer is about.
+   *
+   * Shared state rather than a component's own, for the same reason the
+   * camera is: a result an officer is looking at must survive a remount
+   * and be visible to every surface at once. Empty means no answer is on
+   * screen and the map draws normally.
+   *
+   * Presentation only. It records which vessels a question returned, and
+   * asserts nothing about them.
+   */
+  readonly approachHighlight: readonly string[];
   /** Logical layer keys currently switched on. See the Layer Registry. */
   readonly activeLayers: readonly string[];
   /**

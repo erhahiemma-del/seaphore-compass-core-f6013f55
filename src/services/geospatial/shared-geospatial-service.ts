@@ -95,6 +95,7 @@ export function createDefaultMapState(registry: LayerRegistry = layerRegistry): 
     selection: null,
     selectedEntityId: null,
     selectedEntityImo: null,
+    approachHighlight: [],
     activeLayers: registry.defaultActiveLayers(),
     layerOpacity: {},
     enabledSources: defaultEnabledSourceIds(),

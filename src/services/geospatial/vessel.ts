@@ -204,6 +204,18 @@ export interface VesselRenderContext {
    * by OSAE; the map only applies the opacity.
    */
   readonly dimUnattended?: boolean;
+  /**
+   * Vessels an answer is about, dimming the rest.
+   *
+   * Kept separate from `dimUnattended`, which keys off OSAE's
+   * `attentionScore` — a different axis that nothing populates today.
+   * Folding an approach result into that score would make a question the
+   * officer asked look like an assessment the system performed.
+   *
+   * Absent means no answer is on screen and every vessel draws normally.
+   * A highlight is a presentation state, never intelligence.
+   */
+  readonly highlightedImos?: ReadonlySet<string>;
 }
 
 /** The stable key identifying a vessel in every collection and diff. */
@@ -239,6 +251,14 @@ export function vesselOpacity(vessel: Vessel, ctx: VesselRenderContext = {}): nu
   if (selected) return RISK_OPACITY.ACTIVE;
   if (isStale(vessel, now)) return RISK_OPACITY.STALE;
   if (ctx.dimUnattended && vessel.attentionScore <= 0) return RISK_OPACITY.DIMMED;
+  /*
+   * Outside the answer the officer is looking at. Dimmed rather than
+   * hidden: a vessel removed from the map would look like one the source
+   * stopped reporting.
+   */
+  if (ctx.highlightedImos && !ctx.highlightedImos.has(vessel.identity.imo)) {
+    return RISK_OPACITY.DIMMED;
+  }
   return RISK_OPACITY.ACTIVE;
 }
 

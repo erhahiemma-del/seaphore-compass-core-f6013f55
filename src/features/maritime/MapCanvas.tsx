@@ -281,7 +281,19 @@ export function MapCanvas({
     () =>
       new VesselUpdateEngine({
         bus,
-        renderContext: () => ({ selectedImo: service.get().selectedEntityImo }),
+        renderContext: () => {
+          const state = service.get();
+          return {
+            selectedImo: state.selectedEntityImo,
+            /*
+             * Undefined rather than an empty set when no answer is on
+             * screen: an empty set would dim every vessel, which reads
+             * as the feed having failed.
+             */
+            highlightedImos:
+              state.approachHighlight.length > 0 ? new Set(state.approachHighlight) : undefined,
+          };
+        },
         /*
          * Read from shared state at apply time rather than captured.
          *
@@ -313,6 +325,7 @@ export function MapCanvas({
         zoom: service.get().zoom,
         vesselCount: engine.snapshot().length,
         sources: service.get().enabledSources,
+        highlightedVessels: service.get().approachHighlight.length,
       })),
     [engine, service, rendererDraws],
   );

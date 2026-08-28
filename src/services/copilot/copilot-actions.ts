@@ -30,7 +30,11 @@
  * actually produced.
  */
 import { MAP_SCOPES } from "@/services/geospatial/constants";
-import { assessFleetApproach, describeFleetApproach } from "@/services/geospatial/fleet-approach";
+import {
+  assessFleetApproach,
+  describeFleetApproach,
+  type FleetApproachResult,
+} from "@/services/geospatial/fleet-approach";
 import type { Vessel } from "@/services/geospatial";
 import { navigateTo, navigateToCoordinates } from "@/services/geospatial/navigation";
 import { sgs, type SharedGeospatialService } from "@/services/geospatial";
@@ -129,6 +133,15 @@ export interface ActionResult {
    * set, the caller speaks it instead of the intent.
    */
   readonly answer?: string;
+  /**
+   * The assessment behind the answer, per vessel.
+   *
+   * Carried so a surface can render distance, arrival basis and
+   * provenance rather than re-deriving them from a sentence. Present
+   * only for actions that produce one; a caller must not infer an
+   * assessment from an action that never made one.
+   */
+  readonly approach?: FleetApproachResult;
 }
 
 export interface ActionExecutionOptions {
@@ -203,6 +216,12 @@ export function executeCopilotAction(
         };
       }
       service.select({ kind: "vessel", id: action.imo, imo: action.imo });
+      /*
+       * Choosing one hull ends the fleet answer. Leaving the highlight
+       * up would dim the rest of the map around a selection that has
+       * nothing to do with the earlier question.
+       */
+      service.update({ approachHighlight: [] });
       return { ok: true, summary: `Selected ${action.imo}.` };
     }
 
@@ -288,7 +307,21 @@ export function executeCopilotAction(
         thresholdHours: action.thresholdHours,
       });
       const answer = describeFleetApproach(result);
-      return { ok: true, summary: answer, answer };
+
+      /*
+       * Show the officer the vessels the answer is about.
+       *
+       * Through shared state, like every other thing the map draws — a
+       * renderer call here would be a second way to change the picture.
+       * Vessels that could not be assessed are deliberately excluded:
+       * highlighting them would present an unanswered question as a
+       * result.
+       */
+      service.update({
+        approachHighlight: result.approaching.map((entry) => entry.vessel.identity.imo),
+      });
+
+      return { ok: true, summary: answer, answer, approach: result };
     }
 
     /*

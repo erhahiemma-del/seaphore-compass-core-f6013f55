@@ -166,8 +166,8 @@ export function describeFleetApproach(result: FleetApproachResult): string {
       : base;
   }
 
-  const plural = approaching.length === 1 ? "vessel" : "vessels";
-  const base = `${approaching.length} ${plural} meet the ${thresholdHours}-hour approach threshold.`;
+  const subject = approaching.length === 1 ? "vessel meets" : "vessels meet";
+  const base = `${approaching.length} ${subject} the ${thresholdHours}-hour approach threshold.`;
   return unassessable.length > 0
     ? `${base} ${unassessable.length} could not be assessed from the available data.`
     : base;

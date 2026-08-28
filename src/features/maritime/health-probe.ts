@@ -30,6 +30,14 @@ export interface MapHealthSnapshot {
   readonly vesselCount: number;
   /** Enabled vessel provider ids. */
   readonly sources: readonly string[];
+  /**
+   * How many vessels the current answer is about.
+   *
+   * Zero means no fleet answer is on screen. Reported because a
+   * highlight is otherwise only checkable by eye, and "the map looks
+   * dimmer" is not a verification.
+   */
+  readonly highlightedVessels: number;
   /** Milliseconds since the probe was installed. */
   readonly uptimeMs: number;
 }
