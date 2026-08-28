@@ -28,6 +28,7 @@ import type {
 } from "@/connectors/datalastic/types";
 import { clearVesselSources, listVesselSources } from "@/services/geospatial/vessel-source";
 import { registerDatalasticSource } from "@/services/geospatial/sources/datalastic-vessel-source";
+import { feedErrorFromSource } from "@/features/maritime/MapCanvas";
 
 const OBSERVED_AT = "2026-08-28T20:00:00.000Z";
 const NOW = Date.parse("2026-08-28T20:10:00.000Z");
@@ -361,5 +362,27 @@ describe("Datalastic · credential containment", () => {
       readFileSync(file, "utf8").includes("VITE_DATALASTIC"),
     );
     expect(viteAliases).toEqual([]);
+  });
+});
+
+describe("Datalastic · a plan limit is not an empty sea", () => {
+  it("names the plan limit in the feed error the map surfaces", async () => {
+    const source = new DatalasticVesselSource({
+      gateway: gatewayReturning(result("subscription-inactive", null, "HTTP 402 Payment Required")),
+      now: () => NOW,
+    });
+    expect(await source.list()).toHaveLength(0);
+    const message = feedErrorFromSource(source);
+    expect(message).toMatch(/plan does not return this data/);
+    expect(message).toMatch(/402/);
+  });
+
+  it("reports no error when the provider genuinely saw nothing", async () => {
+    const source = new DatalasticVesselSource({
+      gateway: gatewayReturning(result("empty", [])),
+      now: () => NOW,
+    });
+    await source.list();
+    expect(feedErrorFromSource(source)).toBeNull();
   });
 });

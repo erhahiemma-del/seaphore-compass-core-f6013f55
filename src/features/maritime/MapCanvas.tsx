@@ -241,7 +241,7 @@ export interface MapCanvasProps {
  * Everything else is a gap in collection, phrased so an officer can tell
  * which one it is and who can fix it.
  */
-function feedErrorFromSource(source: VesselSource): string | null {
+export function feedErrorFromSource(source: VesselSource): string | null {
   if (!isDescribable(source)) return null;
   const { status, message } = source.report();
   const detail = message ? ` ${message}` : "";
