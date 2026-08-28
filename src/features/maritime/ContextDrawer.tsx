@@ -24,7 +24,7 @@
  * detections. Nothing is cached here, so the drawer cannot show a staler
  * copy than the map.
  */
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -38,10 +38,10 @@ import {
   hasDrawablePosition,
   positionUnavailableReason,
 } from "@/services/geospatial";
+import { navigateToCoordinates } from "@/services/geospatial/navigation";
 
-import { VesselIntelligenceCard } from "./VesselIntelligenceCard";
+import { VesselIntelligenceCard, type VesselTabId } from "./VesselIntelligenceCard";
 import type { VesselTrack } from "@/services/geospatial/vessel-track";
-import { VesselIntelligenceView } from "./VesselIntelligenceView";
 import { VoyagePanel } from "./VoyagePanel";
 
 export interface ContextDrawerProps {
@@ -84,7 +84,24 @@ export function ContextDrawer({
       data-testid="context-drawer"
       data-selection-kind={selection.kind}
       className={cn(
-        "flex w-[380px] shrink-0 flex-col border-l border-border bg-background",
+        /*
+          Widened from 380px to 520px for the six-tab workspace.
+
+          Safe because the framing correction measures this element's
+          real rect at run time rather than reading a constant — the one
+          design decision that lets the panel grow without the selected
+          vessel silently drifting under it.
+        */
+        /*
+          And `relative z-30`, because the drawer must own its own
+          pixels. The map's spatial-context breadcrumb lives in an
+          absolute `z-20` layer that overflows past the canvas, and with
+          the drawer statically positioned it painted straight over the
+          vessel name — the panel's primary anchor, covered by a
+          neighbour. Measured, not guessed: `elementFromPoint` over the
+          heading returned the breadcrumb's `nav`.
+        */
+        "relative z-30 flex w-[520px] shrink-0 flex-col border-l border-border bg-background",
         className,
       )}
     >
@@ -310,52 +327,30 @@ function VesselTabs({
   sourceSupportsHistory?: boolean;
   vesselTrack?: VesselTrack | null;
 }) {
-  const [tab, setTab] = useState<"overview" | "intelligence">("overview");
+  const [tab, setTab] = useState<VesselTabId>("overview");
+
+  /*
+   * Focus routes through the canonical navigation service, the same call
+   * a Copilot instruction lands on. A `flyTo` here would be a second
+   * camera writer reachable from a button.
+   */
+  const onFocus = useCallback(() => {
+    navigateToCoordinates([vessel.position.lon, vessel.position.lat], {
+      source: "selection",
+    });
+  }, [vessel.position.lon, vessel.position.lat]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div
-        role="tablist"
-        aria-label="Vessel view"
-        className="flex shrink-0 gap-1 border-b border-border/60 px-3 py-1.5"
-      >
-        {(
-          [
-            ["overview", "Overview"],
-            ["intelligence", "Intelligence"],
-          ] as const
-        ).map(([id, label]) => (
-          <button
-            key={id}
-            role="tab"
-            type="button"
-            aria-selected={tab === id}
-            data-testid={`vessel-tab-${id}`}
-            onClick={() => setTab(id)}
-            className={cn(
-              "rounded px-2 py-1 text-[11px] font-medium transition-colors",
-              tab === id
-                ? "bg-accent text-foreground"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      <div className="min-h-0 flex-1 overflow-auto">
-        {tab === "overview" ? (
-          <VesselIntelligenceCard
-            vessel={vessel}
-            onClose={onClose}
-            sourceSupportsHistory={sourceSupportsHistory}
-            vesselTrack={vesselTrack}
-          />
-        ) : (
-          <VesselIntelligenceView vessel={vessel} />
-        )}
-      </div>
+      <VesselIntelligenceCard
+        vessel={vessel}
+        onClose={onClose}
+        tab={tab}
+        onTabChange={setTab}
+        onFocus={onFocus}
+        sourceSupportsHistory={sourceSupportsHistory}
+        vesselTrack={vesselTrack}
+      />
     </div>
   );
 }

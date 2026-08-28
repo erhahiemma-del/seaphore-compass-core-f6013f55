@@ -8,36 +8,63 @@
  * with the reason, rather than being hidden — an officer must be able to tell
  * "this vessel has no registered owner on file" apart from "we forgot to
  * display the owner". Nothing here invents a value.
+ *
+ * The card no longer reads the vessel object directly. `presentVessel`
+ * decides what may be said and why each absence is an absence, so the
+ * truthfulness rule lives in one module instead of being re-applied by
+ * hand in every section that gets added later.
  */
-import { ExternalLink, ShieldCheck, X } from "lucide-react";
+import { useMemo } from "react";
+import { Crosshair, X } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+
 import { Button } from "@/components/ui/button";
-import { RISK_COLORS, riskColor, type Vessel } from "@/services/geospatial";
+import type { Vessel } from "@/services/geospatial";
+import type { VesselTrack } from "@/services/geospatial/vessel-track";
 
-import { VesselImageHeader } from "./VesselImageHeader";
+import { VesselHero } from "./VesselHero";
 import {
-  trackProvenanceLabel,
-  trackStateLabel,
-  type VesselTrack,
-} from "@/services/geospatial/vessel-track";
-import {
-  destinationLabel,
-  operationalStateLabel,
-  positionFreshnessLabel,
-  positionProvenanceLabel,
-  riskBadgeLabel,
-  trackAvailability,
-} from "./vessel-panel-state";
+  ActivityPanel,
+  IntelligencePanel,
+  OverviewPanel,
+  OwnershipPanel,
+  PeoplePanel,
+  VesselVoyagePanel,
+} from "./VesselIntelligenceSections";
+import { presentVessel } from "./vessel-presentation";
+
+/** The six panels, in the order an officer works through them. */
+export const VESSEL_TAB_IDS = [
+  "overview",
+  "voyage",
+  "people",
+  "ownership",
+  "intelligence",
+  "activity",
+] as const;
+
+export type VesselTabId = (typeof VESSEL_TAB_IDS)[number];
+
+export const VESSEL_TAB_LABELS: Readonly<Record<VesselTabId, string>> = {
+  overview: "Overview",
+  voyage: "Voyage",
+  people: "People",
+  ownership: "Ownership",
+  intelligence: "Intelligence",
+  activity: "Activity",
+};
 
 export interface VesselIntelligenceCardProps {
   readonly vessel: Vessel;
   readonly onClose: () => void;
-  /** Optional navigation hooks. Absent handlers disable their button. */
-  readonly onOpenInvestigation?: (imo: string) => void;
-  readonly onOpenEntity?: (imo: string) => void;
-  readonly onOpenTimeline?: (imo: string) => void;
-  readonly onOpenCopilot?: (imo: string) => void;
+  /** Which panel to render. `VesselTabs` owns the state; this draws it. */
+  readonly tab?: VesselTabId;
+  readonly onTabChange?: (tab: VesselTabId) => void;
+  /** Centre the map on this vessel through the canonical navigation path. */
+  readonly onFocus?: () => void;
+  /** Open the existing replay experience for this vessel. */
+  readonly onReplay?: () => void;
   /** Whether the active source can answer questions about this vessel's past. */
   readonly sourceSupportsHistory?: boolean;
   /** The vessel's resolved track, when the archive has been asked. */
@@ -47,270 +74,108 @@ export interface VesselIntelligenceCardProps {
 export function VesselIntelligenceCard({
   vessel,
   onClose,
-  onOpenInvestigation,
-  onOpenEntity,
-  onOpenTimeline,
-  onOpenCopilot,
+  tab = "overview",
+  onTabChange,
+  onFocus,
+  onReplay,
   sourceSupportsHistory = false,
   vesselTrack,
 }: VesselIntelligenceCardProps) {
-  const { identity, position } = vessel;
-  const color = riskColor(vessel.riskLevel);
-  const track = trackAvailability(sourceSupportsHistory);
+  /*
+   * Derived once per vessel rather than per render. The drawer sits
+   * beside a map that repaints continuously, so recomputing the whole
+   * presentation on every frame would put avoidable work directly in the
+   * path of camera movement.
+   */
+  const presentation = useMemo(
+    () => presentVessel(vessel, { sourceSupportsHistory, track: vesselTrack }),
+    [vessel, sourceSupportsHistory, vesselTrack],
+  );
 
   return (
     <aside
-      aria-label={`Intelligence for ${identity.name}`}
-      className="flex h-full w-80 shrink-0 flex-col border-l border-border bg-card"
+      aria-label={`Intelligence for ${vessel.identity.name}`}
+      data-testid="vessel-intelligence-card"
+      className="flex h-full min-h-0 flex-col bg-card"
     >
-      <header className="flex items-start gap-2 border-b border-border px-4 py-3">
-        <div className="min-w-0 flex-1">
-          <h2 className="truncate text-sm font-semibold">{identity.name}</h2>
-          <p className="font-mono text-xs text-muted-foreground">IMO {identity.imo}</p>
-        </div>
-        {/*
-          The badge names its own axis.
-
-          It rendered `riskLevel` alone, so an unassessed vessel showed a
-          bare `UNKNOWN` beside its name and the officer had to guess what
-          was unknown — identity, position, or intent. One word removes
-          the guess.
-        */}
-        <Badge
-          variant="outline"
-          style={{ color, borderColor: color }}
-          className="shrink-0 whitespace-nowrap text-[10px]"
-        >
-          {riskBadgeLabel(vessel)}
-        </Badge>
+      <div className="relative">
+        <VesselHero vessel={vessel} snapshot={presentation.snapshot} />
         <Button
           variant="ghost"
           size="icon"
           onClick={onClose}
           aria-label="Close intelligence card"
-          className="h-6 w-6 shrink-0"
+          className="absolute right-2 top-2 h-6 w-6"
         >
           <X className="h-4 w-4" aria-hidden />
         </Button>
-      </header>
-
-      <div className="flex-1 overflow-y-auto">
-        {/*
-          The picture first, because an officer identifies a ship by
-          looking at it faster than by reading a table. What it is
-          entitled to claim is stated on it, so a class reference can
-          never be mistaken for a photograph of this hull.
-        */}
-        <VesselImageHeader identity={identity} />
-
-        {/*
-          One line for the thing an officer checks first.
-
-          There is no alert model yet, so the honest answer is that
-          nothing is outstanding — stated rather than left blank. A blank
-          space where an alert would go reads as "not loaded"; a sentence
-          reads as "checked, nothing there", and the strip is already the
-          right shape to carry a real alert when one exists.
-        */}
-        <div
-          data-testid="vessel-operational-state"
-          className="flex items-center gap-2 border-b border-border bg-muted/30 px-4 py-2"
-        >
-          <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
-          <span className="text-[11.5px] font-medium text-foreground">
-            {operationalStateLabel()}
-          </span>
-        </div>
-
-        <div className="space-y-3.5 px-4 py-3">
-          {/*
-            Identity first and compact: the fields that answer "which ship
-            is this", on one row each, with the type and flag beside the
-            numbers rather than below them.
-          */}
-          <Section title="Identity">
-            <Field label="IMO" value={identity.imo} mono />
-            <Field
-              label="MMSI"
-              value={identity.mmsi}
-              mono
-              reason="Not in current position report"
-            />
-            <Field
-              label="Call sign"
-              value={identity.callSign}
-              mono
-              reason="Not in current position report"
-            />
-            <Field label="Flag" value={identity.flag} reason="Requires vessel registry lookup" />
-            <Field label="Type" value={identity.type} reason="Not classified" />
-          </Section>
-
-          {/*
-            The operational snapshot — where it is, how it is moving, and
-            how much the position is worth. Provenance and freshness sit
-            beside the coordinates rather than in a separate section,
-            because a position without them is a number an officer cannot
-            weigh.
-          */}
-          <Section title="Position">
-            <Field
-              label="Coordinates"
-              value={`${position.lat.toFixed(4)}°, ${position.lon.toFixed(4)}°`}
-              mono
-            />
-            <Field label="Speed" value={`${position.speed.toFixed(1)} kn`} mono />
-            <Field
-              label="Heading"
-              value={
-                position.headingReported === false ? undefined : `${Math.round(position.heading)}°`
-              }
-              mono
-              reason="Course not reported"
-            />
-            <Field label="Source" value={positionProvenanceLabel(vessel)} />
-            <Field label="Freshness" value={positionFreshnessLabel(vessel)} />
-            <Field label="Received" value={formatTimestamp(position.timestamp)} mono />
-          </Section>
-
-          {/*
-            Voyage as the source gave it. The destination is printed
-            verbatim and never geocoded — expanding a LOCODE into a place
-            or a map marker would be Seaphore adding a claim to a voyage
-            it did not observe.
-          */}
-          <Section title="Voyage">
-            <Field
-              label="Destination"
-              value={destinationLabel(vessel).value}
-              reason={destinationLabel(vessel).reason}
-            />
-            <Field
-              label="ETA"
-              value={position.etaHours != null ? `${position.etaHours} h` : undefined}
-              reason="Not reported by the source"
-            />
-            {/*
-              The real track, not merely the capability.
-
-              `trackStateLabel` says what it is — a simulated track is
-              never called recorded — and the sentence beneath says where
-              it came from. When there is none, the reason distinguishes
-              a source that keeps no archive from one holding no records
-              for this hull.
-            */}
-            <Field
-              label="Movement history"
-              value={vesselTrack ? trackStateLabel(vesselTrack) : undefined}
-              reason={vesselTrack ? trackProvenanceLabel(vesselTrack) : track.note}
-            />
-            {vesselTrack?.state === "RECORDED_TRACK" ? (
-              <Field
-                label="Track points"
-                value={`${vesselTrack.points.length} reported positions`}
-              />
-            ) : null}
-          </Section>
-
-          <Section title="Intelligence">
-            <Field label="Risk" value={riskBadgeLabel(vessel)} />
-            <Field
-              label="Attention score"
-              value={vessel.attentionScore > 0 ? String(vessel.attentionScore) : undefined}
-              reason="Not ranked"
-            />
-            <Field label="Owner" value={undefined} reason="Awaiting ownership intelligence" />
-            <Field label="Operator" value={undefined} reason="Awaiting ownership intelligence" />
-          </Section>
-        </div>
       </div>
 
-      <footer className="grid grid-cols-2 gap-2 border-t border-border px-4 py-3">
-        <ActionButton
-          label="Investigation"
-          onClick={onOpenInvestigation && (() => onOpenInvestigation(identity.imo))}
-        />
-        <ActionButton label="Entity" onClick={onOpenEntity && (() => onOpenEntity(identity.imo))} />
-        <ActionButton
-          label="Timeline"
-          onClick={onOpenTimeline && (() => onOpenTimeline(identity.imo))}
-        />
-        <ActionButton
-          label="Copilot"
-          onClick={onOpenCopilot && (() => onOpenCopilot(identity.imo))}
-        />
+      {/*
+        Tabs sit below the hero, not above it: the vessel's identity is
+        the anchor an officer returns to, and it must not change as they
+        move between panels.
+      */}
+      <div
+        role="tablist"
+        aria-label="Vessel view"
+        className="flex shrink-0 gap-0.5 overflow-x-auto border-b border-border px-2"
+      >
+        {VESSEL_TAB_IDS.map((id) => (
+          <button
+            key={id}
+            role="tab"
+            type="button"
+            aria-selected={tab === id}
+            data-testid={`vessel-tab-${id}`}
+            onClick={() => onTabChange?.(id)}
+            className={cn(
+              "shrink-0 border-b-2 px-2.5 py-1.5 text-[11px] font-medium transition-colors",
+              tab === id
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {VESSEL_TAB_LABELS[id]}
+          </button>
+        ))}
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {tab === "overview" ? <OverviewPanel vessel={vessel} presentation={presentation} /> : null}
+        {tab === "voyage" ? (
+          <VesselVoyagePanel presentation={presentation} onReplay={onReplay} />
+        ) : null}
+        {tab === "people" ? <PeoplePanel /> : null}
+        {tab === "ownership" ? <OwnershipPanel /> : null}
+        {tab === "intelligence" ? <IntelligencePanel vessel={vessel} /> : null}
+        {tab === "activity" ? <ActivityPanel events={presentation.activity} /> : null}
+      </div>
+
+      {/*
+        One action, because one action genuinely works.
+
+        The footer used to carry four buttons, all four permanently
+        disabled because nothing passed their handlers. Four dead
+        controls describe a product rather than offering one. Focus
+        routes through the canonical navigation path, so it behaves
+        identically whether an officer clicks it or the Copilot calls it.
+      */}
+      <footer className="shrink-0 border-t border-border px-3 py-2">
+        <Button
+          size="sm"
+          onClick={onFocus}
+          disabled={!onFocus}
+          title={onFocus ? undefined : "Map navigation is unavailable"}
+          className="h-8 w-full text-[11.5px]"
+        >
+          <Crosshair className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+          Focus on map
+        </Button>
+        <p className="mt-1.5 text-center text-[9.5px] leading-tight text-muted-foreground/70">
+          Every value above is reported by a connected source or marked unavailable.
+        </p>
       </footer>
     </aside>
   );
 }
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section>
-      <h3 className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-        {title}
-      </h3>
-      <dl className="space-y-1">{children}</dl>
-    </section>
-  );
-}
-
-interface FieldProps {
-  readonly label: string;
-  readonly value?: string;
-  readonly mono?: boolean;
-  /** Shown in place of the value when it is absent. */
-  readonly reason?: string;
-}
-
-function Field({ label, value, mono, reason }: FieldProps) {
-  const available = value !== undefined && value !== null && value !== "";
-  return (
-    <div className="flex items-baseline justify-between gap-3 text-xs">
-      <dt className="shrink-0 text-muted-foreground">{label}</dt>
-      <dd
-        className={[
-          "min-w-0 truncate text-right",
-          mono && available ? "font-mono" : "",
-          available ? "text-foreground" : "italic text-muted-foreground/70",
-        ]
-          .filter(Boolean)
-          .join(" ")}
-        title={available ? value : reason}
-      >
-        {available ? value : (reason ?? "Not available")}
-      </dd>
-    </div>
-  );
-}
-
-function ActionButton({ label, onClick }: { label: string; onClick?: () => void }) {
-  return (
-    <Button
-      variant="outline"
-      size="sm"
-      disabled={!onClick}
-      onClick={onClick}
-      title={onClick ? undefined : `${label} is not wired up yet`}
-      className="h-7 justify-start gap-1.5 text-xs"
-    >
-      <ExternalLink className="h-3 w-3" aria-hidden />
-      {label}
-    </Button>
-  );
-}
-
-/** Format an ISO timestamp with relative age, or say it is unreadable. */
-function formatTimestamp(iso: string): string | undefined {
-  const parsed = Date.parse(iso);
-  if (Number.isNaN(parsed)) return undefined;
-  const minutes = Math.round((Date.now() - parsed) / 60_000);
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes} min ago`;
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours} h ago`;
-  return `${Math.round(hours / 24)} d ago`;
-}
-
-/** Palette re-export guard — keeps the card honest about using shared colours. */
-export const CARD_RISK_COLORS = RISK_COLORS;
