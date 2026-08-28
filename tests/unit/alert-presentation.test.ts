@@ -10,7 +10,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  ArrivalAlertStore,
   actionsFor,
   arrivalLineFor,
   countBySeverity,
@@ -19,11 +18,8 @@ import {
   presentAlert,
   presentAlerts,
   raiseAlert,
-  transitionAlert,
-  applyTransition,
   visualStateFor,
   type AlertEvidence,
-  type AlertState,
   type ArrivalInterventionAlert,
 } from "@/services/alerts";
 import type { FleetApproachResult } from "@/services/geospatial/fleet-approach";
@@ -192,162 +188,35 @@ describe("ordering is deterministic and invents no arrival", () => {
   });
 });
 
-/* ── The store ─────────────────────────────────────────────────────── */
+/* ── Severity counting ─────────────────────────────────────────────── */
 
-function vessel(imo: string, lon: number): Vessel {
-  return {
-    identity: { imo, name: `Vessel ${imo}` },
-    position: { lon, lat: 5.2, heading: 90, speed: 12, timestamp: AT },
-    riskLevel: "UNKNOWN",
-    attentionScore: 0,
-  };
-}
-
-function fleetResult(hours: number | undefined, imo = "SIM-0015"): FleetApproachResult {
-  const entry = {
-    vessel: vessel(imo, 3.4),
-    assessment: {
-      relation: "APPROACHING" as const,
-      hoursToBoundary: hours,
-      distanceNm: 160,
-      basis: (hours == null ? "UNAVAILABLE" : "ESTIMATED") as "UNAVAILABLE" | "ESTIMATED",
-      accuracy: "APPROXIMATE" as const,
-      rationale: "Closing on the boundary.",
-    },
-    positionAgeMs: 60_000,
-  };
-  return {
-    approaching: hours == null ? [] : [entry as never],
-    inside: [],
-    unassessable: hours == null ? [entry as never] : [],
-    thresholdHours: 24,
-  } as unknown as FleetApproachResult;
-}
-
-const CONTEXT = { assessedAt: AT, sourceId: "simulated" };
-
-/**
- * Move an alert through the real lifecycle table.
- *
- * Deliberately goes through `transitionAlert` and asserts it succeeded,
- * rather than constructing an event: a test that hand-built the event
- * would pass even if the transition were forbidden.
+/*
+ * The rest of what this file used to cover — raising once, escalating in
+ * place, preserving the trigger, refusing to resolve on lost signal,
+ * counting acknowledged alerts as active — moved to
+ * alert-persistence.test.ts when the bespoke store was removed. They are
+ * asserted there against the real repository contract and the real
+ * reconciliation engine rather than against a second store, which is
+ * stricter than what stood here.
  */
-function move(alert: ArrivalInterventionAlert, to: AlertState): ArrivalInterventionAlert {
-  const outcome = transitionAlert({
-    alertId: alert.id,
-    from: alert.state,
-    to,
-    actor: "officer",
-    at: AT,
-  });
-  if (!outcome.ok) throw new Error(outcome.reason);
-  return applyTransition(alert, outcome.event);
-}
+describe("severity counting for the attention badge", () => {
+  it("counts active alerts by severity", () => {
+    const urgent = alertWith();
+    const watch: ArrivalInterventionAlert = {
+      ...alertWith(),
+      id: "alert_SIM-0016#1",
+      severity: "WATCH",
+      condition: "APPROACHING_72H",
+    };
 
-describe("the alert store holds, and does not decide", () => {
-  it("raises one alert for an approaching vessel", () => {
-    const store = new ArrivalAlertStore();
-
-    const change = store.apply(fleetResult(18), CONTEXT, "system");
-
-    expect(change.raised).toHaveLength(1);
-    expect(store.active()).toHaveLength(1);
-    expect(store.forVessel("SIM-0015")?.condition).toBe("APPROACHING_24H");
-  });
-
-  /*
-   * The property the whole design exists for. The fleet is reassessed on
-   * every polling cycle, and without this an officer's list would climb
-   * into the hundreds and be ignored.
-   */
-  it("raises nothing further when the same assessment arrives again", () => {
-    const store = new ArrivalAlertStore();
-    store.apply(fleetResult(18), CONTEXT, "system");
-
-    for (let i = 0; i < 4; i++) store.apply(fleetResult(18), CONTEXT, "system");
-
-    expect(store.active()).toHaveLength(1);
-  });
-
-  it("keeps one episode as the vessel closes in, escalating rather than duplicating", () => {
-    const store = new ArrivalAlertStore();
-    store.apply(fleetResult(70), CONTEXT, "system");
-    const first = store.active()[0];
-    expect(first.condition).toBe("APPROACHING_72H");
-
-    store.apply(fleetResult(40), CONTEXT, "system");
-    store.apply(fleetResult(18), CONTEXT, "system");
-
-    const alerts = store.active();
-    expect(alerts).toHaveLength(1);
-    expect(alerts[0].id).toBe(first.id);
-    expect(alerts[0].episode).toEqual(first.episode);
-    expect(alerts[0].condition).toBe("APPROACHING_24H");
-    expect(alerts[0].severity).toBe("URGENT");
-  });
-
-  it("preserves the trigger evidence through escalation", () => {
-    const store = new ArrivalAlertStore();
-    store.apply(fleetResult(70), CONTEXT, "system");
-    const raisedEvidence = store.active()[0].evidence;
-
-    store.apply(fleetResult(18), CONTEXT, "system");
-
-    // Why it was raised must survive; where the vessel is now is a
-    // different question with a different answer.
-    expect(store.active()[0].evidence).toEqual(raisedEvidence);
-    expect(store.active()[0].currentAssessment?.hoursToBoundary).toBe(18);
-  });
-
-  it("does not resolve an alert because the vessel stopped being assessable", () => {
-    const store = new ArrivalAlertStore();
-    store.apply(fleetResult(18), CONTEXT, "system");
-
-    const change = store.apply(fleetResult(undefined), CONTEXT, "system");
-
-    expect(change.unassessable).toBe(1);
-    expect(store.active()).toHaveLength(1);
-    expect(store.active()[0].state).toBe("OPEN");
-    expect(store.active()[0].currentAssessmentUnavailable).toBe(true);
-  });
-
-  it("counts acknowledged alerts as still active, and resolved ones as not", () => {
-    const store = new ArrivalAlertStore();
-    store.apply(fleetResult(18), CONTEXT, "system");
-    const alert = store.active()[0];
-
-    const acked = move(alert, "ACKNOWLEDGED");
-    store.replace(acked);
-    expect(store.active()).toHaveLength(1);
-
-    const resolved = move(acked, "RESOLVED");
-    store.replace(resolved);
-
-    expect(store.active()).toHaveLength(0);
-    // Resolved is not deleted: the record stays readable.
-    expect(store.snapshot()).toHaveLength(1);
-  });
-
-  it("counts by severity for the attention badge", () => {
-    const store = new ArrivalAlertStore();
-    store.apply(fleetResult(18), CONTEXT, "system");
-
-    expect(countBySeverity(store.active())).toEqual({ URGENT: 1, ATTENTION: 0, WATCH: 0 });
-  });
-
-  it("notifies subscribers only when something actually happened", () => {
-    const store = new ArrivalAlertStore();
-    let calls = 0;
-    store.subscribe(() => {
-      calls += 1;
+    expect(countBySeverity([urgent, watch, urgent])).toEqual({
+      URGENT: 2,
+      ATTENTION: 0,
+      WATCH: 1,
     });
+  });
 
-    store.apply(fleetResult(18), CONTEXT, "system");
-    const afterRaise = calls;
-    store.apply(fleetResult(18), CONTEXT, "system");
-
-    expect(afterRaise).toBe(1);
-    expect(calls).toBe(afterRaise);
+  it("counts nothing as nothing, rather than as absent", () => {
+    expect(countBySeverity([])).toEqual({ URGENT: 0, ATTENTION: 0, WATCH: 0 });
   });
 });

@@ -283,3 +283,17 @@ export function presentAlerts(
       a.alertId.localeCompare(b.alertId),
   );
 }
+
+/**
+ * Active alerts per severity, for an attention count.
+ *
+ * Lives here rather than in a store because it is a display question:
+ * how the officer's open work is summarised on a badge.
+ */
+export function countBySeverity(
+  alerts: readonly ArrivalInterventionAlert[],
+): Readonly<Record<AttentionSeverity, number>> {
+  const counts: Record<AttentionSeverity, number> = { URGENT: 0, ATTENTION: 0, WATCH: 0 };
+  for (const alert of alerts) counts[alert.severity] += 1;
+  return counts;
+}

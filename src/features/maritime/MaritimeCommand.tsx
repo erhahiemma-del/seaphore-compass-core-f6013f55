@@ -68,7 +68,7 @@ import { toTrackCollection } from "@/services/geospatial/vessel-track";
 import { navigateToCoordinates } from "@/services/geospatial/navigation";
 import { hasHistory } from "@/services/geospatial/vessel-source";
 import { eezRingIfLoaded } from "@/services/geospatial/eez-ring";
-import { applyTransition, transitionAlert } from "@/services/alerts";
+import { transitionAlert } from "@/services/alerts";
 
 /**
  * The three perspectives, named for what an officer is looking at.
@@ -116,6 +116,17 @@ function pitchForView(mode: ViewMode): number {
  * than measured because both are fixed by the zone table.
  */
 const LEFT_CONTEXT_WIDTH_PX = 360;
+
+/**
+ * Who an officer action is attributed to, until sign-in reaches this surface.
+ *
+ * A single named placeholder rather than a string repeated at each call
+ * site, so the day real identity arrives there is one place to change and
+ * no risk of half the actions still being attributed to a literal. It is
+ * deliberately not a person's name: an unattributed action is better than
+ * a misattributed one.
+ */
+const OFFICER_ACTOR = "officer";
 
 /** Centre and zoom that frame Nigeria and its maritime approaches. */
 const NIGERIA_VIEW = { center: [5.7, 4.35] as const, zoom: 6 };
@@ -263,18 +274,31 @@ export function MaritimeCommand() {
   }, []);
 
   const acknowledgeAlert = useCallback(
-    (alertId: string) => {
-      const alert = alerts.store.get(alertId);
+    async (alertId: string) => {
+      const alert = await alerts.repository.getAlert(alertId);
       if (!alert) return;
       const outcome = transitionAlert({
         alertId,
         from: alert.state,
         to: "ACKNOWLEDGED",
-        actor: "officer",
+        actor: OFFICER_ACTOR,
       });
-      // The lifecycle table decides. A refusal is left as it is rather
+      // The lifecycle table decides. A refusal is left standing rather
       // than forced through, so the interface cannot outrank the domain.
-      if (outcome.ok) alerts.replace(applyTransition(alert, outcome.event));
+      if (!outcome.ok) return;
+      /*
+       * The version the read returned is asserted by the write. If
+       * another session moved this alert in between, the repository
+       * refuses and the next refresh shows what actually happened
+       * instead of quietly overwriting someone else's decision.
+       */
+      await alerts.repository.applyTransition({
+        alertId,
+        expectedVersion: alert.version,
+        event: outcome.event,
+        officerId: OFFICER_ACTOR,
+      });
+      alerts.refresh();
     },
     [alerts],
   );
