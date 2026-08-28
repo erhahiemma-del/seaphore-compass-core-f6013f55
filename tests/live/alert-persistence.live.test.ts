@@ -15,7 +15,7 @@
  *
  * @vitest-environment jsdom
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -26,7 +26,21 @@ import {
   type StoredAlert,
 } from "@/services/alerts";
 
-const SESSION_FILE = "/root/.cache/lovable-auth/session.json";
+const SESSION_FILE = process.env.SEAPHORE_LIVE_SESSION ?? "/root/.cache/lovable-auth/session.json";
+
+/**
+ * Whether a signed-in session is available to run against.
+ *
+ * The path above exists only inside the environment that provisions it,
+ * so on every other machine this file used to throw inside `beforeAll` —
+ * which failed the whole suite, and with it the pre-commit hook, for
+ * anyone who did not have those credentials. A test that needs a live
+ * database and a real officer must skip when it has neither, not fail:
+ * absent credentials are not a broken build.
+ *
+ * Override the location with SEAPHORE_LIVE_SESSION to run it elsewhere.
+ */
+const HAS_SESSION = existsSync(SESSION_FILE);
 
 /** A hull nobody else uses, so a rerun cannot collide with real data. */
 const IMO = `TEST${Date.now()}`;
@@ -60,6 +74,7 @@ function unwrap(result: { ok: boolean } & Record<string, unknown>): StoredAlert 
 }
 
 beforeAll(async () => {
+  if (!HAS_SESSION) return;
   const session = JSON.parse(readFileSync(SESSION_FILE, "utf8")) as {
     access_token?: string;
     refresh_token?: string;
@@ -75,7 +90,7 @@ beforeAll(async () => {
   expect(officerId).not.toBe("");
 });
 
-describe("durable arrival alert persistence", () => {
+describe.skipIf(!HAS_SESSION)("durable arrival alert persistence", () => {
   let alertId = "";
   let sequence = 0;
 
