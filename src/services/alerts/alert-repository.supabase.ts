@@ -160,12 +160,6 @@ function describe(error: unknown): string {
 }
 
 export class SupabaseAlertRepository implements AlertRepository {
-  private table() {
-    // Cast once, here: the generated types describe these tables, but the
-    // domain's own shapes are the contract callers see.
-    return supabase.from(ALERTS as never);
-  }
-
   async getAlert(alertId: string): Promise<StoredAlert | null> {
     const { data, error } = await supabase
       .from(ALERTS as never)
