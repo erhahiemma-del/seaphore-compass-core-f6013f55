@@ -379,18 +379,25 @@ export async function getVessel(
   );
 }
 
-/** `/vessel_inarea` — Location Traffic. Bills per vessel found. */
+/**
+ * `/vessel_inradius` — Location Traffic. Bills per vessel found.
+ *
+ * The provider's area endpoint is centre+radius and is named
+ * `vessel_inradius`; `vessel_inarea` does not exist (it answers 404,
+ * which this client would have reported as an empty sea).
+ */
 export async function getLocationTraffic(
   query: DatalasticAreaQuery,
 ): Promise<DatalasticResult<readonly DatalasticVesselRecord[]>> {
   const radius = Math.min(Math.max(query.radiusKm, 1), MAX_RADIUS_KM);
   return request<readonly DatalasticVesselRecord[]>(
-    "vessel_inarea",
+    "vessel_inradius",
     { lat: query.lat, lon: query.lon, radius },
     parseVesselList,
     CACHE_TTL_MS.positions,
   );
 }
+
 
 /** `/vessel_find` — Vessel Finder. Bills per vessel found. */
 export async function findVessels(
