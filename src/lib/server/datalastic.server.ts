@@ -324,7 +324,19 @@ export function parseVesselRow(input: unknown): DatalasticVesselRecord | null {
   };
 }
 
-function parseVesselList(raw: RawResponse): readonly DatalasticVesselRecord[] | null {
+/**
+ * Rows from a list endpoint.
+ *
+ * `requirePosition` is the difference between traffic and identity:
+ * `/vessel_inradius` answers with positions and a row without one is
+ * unusable, while `/vessel_find` is an identity search whose rows carry
+ * no coordinates at all. Filtering on position there would return an
+ * empty search for a provider that answered with matches.
+ */
+function parseVesselListWith(
+  raw: RawResponse,
+  requirePosition: boolean,
+): readonly DatalasticVesselRecord[] | null {
   const container = raw.data;
   const rows = Array.isArray(container)
     ? container
@@ -334,7 +346,14 @@ function parseVesselList(raw: RawResponse): readonly DatalasticVesselRecord[] | 
   if (!Array.isArray(rows)) return null;
   return rows
     .map(parseVesselRow)
-    .filter((row): row is DatalasticVesselRecord => row !== null && row.lat !== null);
+    .filter(
+      (row): row is DatalasticVesselRecord =>
+        row !== null && (!requirePosition || row.lat !== null),
+    );
+}
+
+function parseVesselList(raw: RawResponse): readonly DatalasticVesselRecord[] | null {
+  return parseVesselListWith(raw, true);
 }
 
 /* ── Client ──────────────────────────────────────────────────────────── */
@@ -379,13 +398,19 @@ export async function getVessel(
   );
 }
 
-/** `/vessel_inarea` — Location Traffic. Bills per vessel found. */
+/**
+ * `/vessel_inradius` — Location Traffic. Bills per vessel found.
+ *
+ * The provider's area endpoint is centre+radius and is named
+ * `vessel_inradius`; `vessel_inarea` does not exist (it answers 404,
+ * which this client would have reported as an empty sea).
+ */
 export async function getLocationTraffic(
   query: DatalasticAreaQuery,
 ): Promise<DatalasticResult<readonly DatalasticVesselRecord[]>> {
   const radius = Math.min(Math.max(query.radiusKm, 1), MAX_RADIUS_KM);
   return request<readonly DatalasticVesselRecord[]>(
-    "vessel_inarea",
+    "vessel_inradius",
     { lat: query.lat, lon: query.lon, radius },
     parseVesselList,
     CACHE_TTL_MS.positions,
@@ -406,7 +431,9 @@ export async function findVessels(
       country_iso: query.countryIso,
       fuzzy: query.name ? 1 : undefined,
     },
-    (raw) => parseVesselList(raw) ?? [],
+    // Identity search: rows carry no position, so none is required.
+    (raw) => parseVesselListWith(raw, false) ?? [],
+
     CACHE_TTL_MS.identity,
   );
 }
