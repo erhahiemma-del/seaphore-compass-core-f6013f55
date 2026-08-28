@@ -29,6 +29,7 @@ import {
   MAP_DEFAULTS,
   MAP_SCOPES,
   getVesselSource,
+  resolveMapDataState,
   mapEventBus,
   type MapScopeId,
   sgs,
@@ -687,6 +688,15 @@ export function MaritimeCommand() {
               */}
               <DataProvenanceNotice />
               <ScopeToggle scope={scope} onChange={setScope} />
+              {/*
+                Why the fleet is what it is. A provider can answer
+                without failing and still return nothing — a plan that
+                does not cover the data, a missing credential, an
+                unreachable upstream — and each of those arrives as an
+                empty list. Saying so here is what stops an officer
+                reading a collection gap as an empty sea.
+              */}
+              <VesselFeedNotice feed={feed} count={liveVessels.length} />
               <VoyageFeedNotice feed={voyageFeed} />
             </div>
           </main>
@@ -1003,6 +1013,37 @@ function ScopeToggle({
  * "could not read the register" from "voyages held, ports unresolvable",
  * and those are three different operational situations.
  */
+/**
+ * What the vessel feed itself claims, in an officer's terms.
+ *
+ * Derived from the canonical `resolveMapDataState` rather than a local
+ * judgement, so the map cannot say LIVE while the drawer says stale.
+ * Silent only when the picture is genuinely live and populated.
+ */
+function VesselFeedNotice({ feed, count }: { feed: VesselFeedState; count: number }) {
+  const state = resolveMapDataState({
+    loading: feed.loading,
+    error: feed.error,
+    sourceId: feed.sourceId,
+    lastAppliedAt: feed.lastAppliedAt,
+    recordCount: count,
+  });
+  if (state.isLive && count > 0) return null;
+
+  return (
+    <div
+      data-testid="vessel-feed-notice"
+      data-feed-state={state.state}
+      className="pointer-events-auto w-full rounded-md border border-border/60 bg-background/92 px-2.5 py-1.5 backdrop-blur-sm"
+    >
+      <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+        Vessels · {state.label}
+      </div>
+      <p className="text-[11px] leading-relaxed text-muted-foreground">{state.reason}</p>
+    </div>
+  );
+}
+
 function VoyageFeedNotice({ feed }: { feed: VoyageFeed }) {
   const { status, coverage, note } = feed;
   const unmappable = coverage.oneResolved + coverage.neitherResolved;

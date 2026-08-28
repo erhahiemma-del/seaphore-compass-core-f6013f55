@@ -7,6 +7,7 @@ import {
   sgs,
 } from "@/services/geospatial";
 import { registerSimulatedVesselSource } from "@/services/geospatial/sources/simulated-vessel-source";
+import { registerDatalasticSource } from "@/services/geospatial/sources/datalastic-vessel-source";
 import { registerConnectedProviders } from "@/services/intelligence-layer";
 import { loadEezRing } from "@/services/geospatial/eez-ring";
 
@@ -14,6 +15,19 @@ import { loadEezRing } from "@/services/geospatial/eez-ring";
 // replaces by id, so a hot reload cannot produce a duplicate row in the
 // Sources panel.
 registerGlobalFishingWatchSource();
+
+/*
+ * Datalastic — the commercial AIS foundation, switched on by default.
+ *
+ * Registered as the primary live provider. It queries the Nigerian EEZ
+ * only, through the existing canonical refresh cycle: this adds a
+ * provider, not a second polling loop. When the provider is
+ * unauthorised, rate-limited, unreachable, or outside the plan's
+ * entitlement, the Sources panel says which — an empty map is never
+ * presented as an empty sea, and simulated traffic is never substituted
+ * for it.
+ */
+registerDatalasticSource();
 
 /*
  * The simulation registers alongside it, switched off.

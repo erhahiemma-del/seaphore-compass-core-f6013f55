@@ -104,16 +104,14 @@ export const DATALASTIC_ENTRY: AisProviderEntry = {
   credentialEnv: ["DATALASTIC_API_KEY"],
   documentationUrl: null,
   blockers: [
-    "Official API documentation has not been supplied to the repository.",
-    "No API key is provisioned; DATALASTIC_API_KEY is absent from .env.example.",
-    "Endpoint paths, request shape, response shape and pagination are unverified.",
-    "Historical query capability, area/fleet query support and rate limits are unverified.",
-    "Timestamp semantics are unverified — whether reported values are transmission time or receipt time changes every correlation.",
-    "Commercial licensing terms for storage and derived data are unread.",
+    "VERIFIED 2026-09: the upgraded DATALASTIC_API_KEY is provisioned server-side; /api/v0/stat reports key_status = Valid and addons = true. Data endpoints now answer HTTP 200: /vessel, /vessel_pro, /vessel_find, /vessel_history, /vessel_inradius, /port_find, /port, /weather. The earlier blanket HTTP 402 was an expired/unentitled key, not a code defect.",
+    "The account reports add-ons available, but no add-on endpoint path has been observed answering 200, so no add-on capability (ownership, inspections, casualties, classification) may be claimed until its documented path is verified live.",
+    "EO/AIS correlation still has no Datalastic provider implementation in this registry; the live integration is the geospatial VesselSource, not this slot.",
   ],
   notes: [
-    "src/adapters/ais/datalastic.adapter.ts already exists as an honest stub returning an empty, degraded envelope. It should be completed rather than replaced.",
-    "Activation is: implement AisHistoryProvider against the official documentation, then registerAisProvider().",
+    "The commercial AIS integration is implemented and wired: src/lib/server/datalastic.server.ts (client, x-api-key, error mapping, caching), src/lib/datalastic.functions.ts (gateway), and src/services/geospatial/sources/datalastic-vessel-source.ts (canonical VesselSource, registered COMMERCIAL).",
+    "Area traffic uses /vessel_inradius (centre + radius). /vessel_inarea does not exist on the provider and answered 404.",
+    "Provider failures continue to surface as collection gaps or plan limits, never as an empty sea, and no simulated traffic is substituted for them.",
   ],
 };
 
