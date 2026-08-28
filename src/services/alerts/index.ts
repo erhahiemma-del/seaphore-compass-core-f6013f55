@@ -13,6 +13,8 @@
 export * from "./arrival-alert";
 export * from "./alert-lifecycle";
 export * from "./alert-episode";
+export * from "./alert-eligibility";
+export * from "./alert-reconciliation";
 
 import {
   SEVERITY_FOR_CONDITION,
@@ -43,6 +45,28 @@ export interface ArrivalInterventionAlert {
 
   /** Frozen at creation. The reason this alert exists. */
   readonly evidence: AlertEvidence;
+  /**
+   * The latest assessment for this vessel, replaced as the fleet is
+   * reassessed.
+   *
+   * Separate from `evidence` on purpose, and the separation is the
+   * whole point of having both: an officer must be able to see why the
+   * alert was raised *and* where the vessel is now, and those are
+   * different questions with different answers. Overwriting the first
+   * with the second destroys the audit.
+   *
+   * Absent means no reassessment has arrived since the alert was
+   * raised — never that the vessel has gone.
+   */
+  readonly currentAssessment?: AlertEvidence;
+  /**
+   * True when the latest assessment could not be made at all.
+   *
+   * Carried rather than inferred from a missing field, because "we
+   * could not assess" and "we have not reassessed" are different
+   * states, and neither is "resolved".
+   */
+  readonly currentAssessmentUnavailable?: boolean;
 
   readonly raisedAt: string;
   readonly updatedAt: string;
@@ -149,6 +173,49 @@ export function applyTransition(
     ...(next === "RESOLVED" ? { resolvedAt: event.at, resolvedBy: event.actor } : {}),
     ...(next === "CLOSED" ? { closedAt: event.at, closedBy: event.actor } : {}),
     events: [...alert.events, event],
+  };
+}
+
+/**
+ * Record the latest assessment against a live alert.
+ *
+ * Touches `currentAssessment` and nothing else. The trigger evidence,
+ * the acknowledgement, the assignment and the lifecycle state all
+ * survive — an officer who already looked at this vessel has not
+ * stopped having looked at it because a new position arrived.
+ */
+export function updateCurrentAssessment(
+  alert: ArrivalInterventionAlert,
+  assessment: AlertEvidence,
+  at: string = new Date().toISOString(),
+): ArrivalInterventionAlert {
+  return {
+    ...alert,
+    currentAssessment: assessment,
+    currentAssessmentUnavailable: false,
+    updatedAt: at,
+  };
+}
+
+/**
+ * Record that the latest assessment could not be made.
+ *
+ * Deliberately does not resolve, downgrade or close anything. Losing
+ * sight of a vessel is not the same as the vessel ceasing to matter,
+ * and an alert that quietly cleared itself when the data went missing
+ * would be the most dangerous behaviour in this module.
+ */
+export function markAssessmentUnavailable(
+  alert: ArrivalInterventionAlert,
+  actor: string,
+  reason: string,
+  at: string = new Date().toISOString(),
+): ArrivalInterventionAlert {
+  return {
+    ...alert,
+    currentAssessmentUnavailable: true,
+    updatedAt: at,
+    events: [...alert.events, alertEvent(alert.id, "EVIDENCE_STALE", actor, { at, note: reason })],
   };
 }
 

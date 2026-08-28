@@ -23,7 +23,12 @@
  * something, and the situation recurred. It should be visible, dated,
  * and separate — which is also why a closed alert can never reopen.
  */
-import { isMoreUrgent, type AlertCondition, type AlertVesselRef } from "./arrival-alert";
+import {
+  isMoreUrgent,
+  type AlertCondition,
+  type AlertEvidence,
+  type AlertVesselRef,
+} from "./arrival-alert";
 import { isActive, type AlertState } from "./alert-lifecycle";
 
 /**
@@ -50,6 +55,14 @@ export interface ReconcilableAlert {
   readonly vessel: AlertVesselRef;
   readonly condition: AlertCondition;
   readonly state: AlertState;
+  /**
+   * The latest assessment already recorded, when there is one.
+   *
+   * Read so an unchanged feed can be recognised as unchanged. Without
+   * it every polling cycle would look like news and the event history
+   * would fill with identical records.
+   */
+  readonly currentAssessment?: AlertEvidence;
 }
 
 export type Reconciliation =
