@@ -2104,6 +2104,30 @@ export type Database = {
         }
         Relationships: []
       }
+      provider_credentials: {
+        Row: {
+          last_validated_at: string | null
+          provider: string
+          rotated_at: string
+          rotated_by: string | null
+          secret: string
+        }
+        Insert: {
+          last_validated_at?: string | null
+          provider: string
+          rotated_at?: string
+          rotated_by?: string | null
+          secret: string
+        }
+        Update: {
+          last_validated_at?: string | null
+          provider?: string
+          rotated_at?: string
+          rotated_by?: string | null
+          secret?: string
+        }
+        Relationships: []
+      }
       regulations: {
         Row: {
           code: string | null

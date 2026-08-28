@@ -21,6 +21,8 @@ import { runSanctionsScreening } from "@/services/capabilities/sanctions";
 import type { SanctionsScreeningTarget } from "@/services/capabilities/sanctions";
 import { runIce } from "@/services/ice";
 import type { IceQueryInput, IntelligencePackage } from "@/services/ice/types";
+import { screenEntity } from "@/lib/server/opensanctions.server";
+import type { SanctionsScreeningFinding } from "@/lib/sanctions/match-state";
 
 /** Officer-facing sanctions screening outcome (transport-safe shape). */
 export interface ServerSanctionsScreening {
@@ -33,14 +35,24 @@ export interface ServerSanctionsScreening {
     readonly confidence: string | null;
     readonly observedAt: string | null;
   }>;
+  /**
+   * Normalized screening finding from the provider's screening endpoint
+   * (POST /match/{dataset}). Distinct from free-text search evidence: a
+   * score is similarity, never a confirmed sanction.
+   */
+  readonly finding: SanctionsScreeningFinding;
 }
 
 export async function screenSanctionsOnServer(
   target: SanctionsScreeningTarget,
 ): Promise<ServerSanctionsScreening> {
-  const result = await runSanctionsScreening({ target });
+  const [result, finding] = await Promise.all([
+    runSanctionsScreening({ target }),
+    screenEntity({ name: target.name, kind: target.kind, imo: target.imo }),
+  ]);
   const verified = result.package.verified.filter((v) => v.kind === "sanctions");
   return {
+    finding,
     providers: result.providers.map((p) => p.displayName),
     hitCount: verified.length,
     findings: verified.slice(0, 50).map((v) => {
