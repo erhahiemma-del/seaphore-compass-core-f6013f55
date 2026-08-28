@@ -1,0 +1,411 @@
+/**
+ * One turn of conversation: a transcript in, an action and an answer out.
+ *
+ * This is the join between understanding and doing, and it is
+ * deliberately the only one. Everything upstream — the microphone, the
+ * transcription endpoint, the development harness — hands it the same
+ * normalised string, and everything downstream goes through
+ * `executeCopilotAction`. A second route from speech to system state
+ * would be a second set of rules about what the Copilot may do, and only
+ * one of them would have the confirmation gate.
+ *
+ * ## It plans; it does not act
+ *
+ * `planTurn` is pure. It reads the transcript and the conversation, and
+ * returns what should happen. Executing is the caller's job, which is
+ * what makes the whole decision path testable without a map, a browser
+ * or a voice.
+ *
+ * ## Order matters
+ *
+ * A pending question is answered before a new command is looked for. An
+ * officer replying "yes" to a proposed investigation is not issuing a
+ * fresh instruction, and parsing their reply as one would drop the
+ * approval on the floor and leave the write pending forever.
+ */
+import { interpret } from "@/features/maritime/voice-intent";
+
+import type { CopilotAction } from "./copilot-actions";
+import { isStateChanging } from "./copilot-actions";
+import {
+  type ConversationContext,
+  type ResolvableVessel,
+  type VesselChoice,
+  isLive,
+  readsAsAffirmative,
+  readsAsNegative,
+  resolveChoice,
+  resolvePronoun,
+  resolveVesselEntity,
+  usesPronoun,
+} from "./copilot-conversation";
+
+/** What the interface should do next. */
+export type TurnOutcome =
+  /** Run this, then speak the result. */
+  | { readonly kind: "EXECUTE"; readonly action: CopilotAction; readonly speech: string }
+  /** Ask which vessel, and wait. */
+  | { readonly kind: "CLARIFY"; readonly speech: string }
+  /** Propose a write, and wait for a plain yes. */
+  | { readonly kind: "CONFIRM"; readonly speech: string }
+  /** Nothing to do — an answer, a refusal, or a question we cannot take. */
+  | { readonly kind: "REPLY"; readonly speech: string };
+
+export interface TurnPlan {
+  readonly outcome: TurnOutcome;
+  /** The conversation as it stands after this turn. */
+  readonly context: ConversationContext;
+}
+
+export interface TurnInput {
+  readonly transcript: string;
+  readonly context: ConversationContext;
+  readonly vessels: readonly ResolvableVessel[];
+  /** The map's current selection, for pronouns with no prior reference. */
+  readonly selectedImo: string | null;
+  readonly now?: number;
+}
+
+/** Phrases that ask for something the deployment cannot answer. */
+const UNAVAILABLE_TOPICS: readonly { readonly test: RegExp; readonly answer: string }[] = [
+  {
+    test: /\b(who owns|owner|ownership|operator|manager)\b/i,
+    answer:
+      "Ownership intelligence is not available. No entity intelligence source is connected to this deployment.",
+  },
+  {
+    test: /\b(crew|master|captain|who is on board)\b/i,
+    answer: "Crew intelligence is not available. No crew source is connected to this deployment.",
+  },
+  {
+    test: /\b(depart|departed|origin|come from|came from|sailed from)\b/i,
+    answer:
+      "I do not have a verified origin record for this vessel. I can show its available movement history instead.",
+  },
+  {
+    test: /\b(cargo|manifest|what is it carrying)\b/i,
+    answer: "Cargo and manifest intelligence is not available from any connected source.",
+  },
+];
+
+export function planTurn(input: TurnInput): TurnPlan {
+  const now = input.now ?? Date.now();
+  const said = input.transcript.trim();
+  const context = input.context;
+
+  if (!said) {
+    return reply(context, "I did not catch that. Please say that again.");
+  }
+
+  /*
+   * A live confirmation is answered first. Only a bare yes or no counts:
+   * anything else is a new instruction, and the proposed write is
+   * dropped rather than left waiting to catch a later "yes" that was
+   * meant for something else.
+   */
+  const confirmation = context.pendingConfirmation;
+  if (isLive(confirmation, now) && confirmation) {
+    if (readsAsAffirmative(said)) {
+      return {
+        outcome: {
+          kind: "EXECUTE",
+          action: confirmation.action,
+          speech: "Confirmed.",
+        },
+        context: { ...context, pendingConfirmation: undefined },
+      };
+    }
+    if (readsAsNegative(said)) {
+      return reply(
+        { ...context, pendingConfirmation: undefined },
+        "Understood. I have not done that.",
+      );
+    }
+    // Neither — fall through and treat it as a new command, having
+    // discarded the proposal the officer declined to answer.
+    return planTurn({
+      ...input,
+      context: { ...context, pendingConfirmation: undefined },
+    });
+  }
+
+  /* A live clarification is answered next, for the same reason. */
+  const clarification = context.pendingClarification;
+  if (isLive(clarification, now) && clarification) {
+    const chosen = resolveChoice(said, clarification.candidates);
+    if (chosen) {
+      return {
+        outcome: {
+          kind: "EXECUTE",
+          action: { type: clarification.then, imo: chosen.imo },
+          speech: `Opening ${chosen.name}.`,
+        },
+        context: {
+          ...context,
+          pendingClarification: undefined,
+          lastReferencedVesselId: chosen.imo,
+          lastReferencedVesselName: chosen.name,
+        },
+      };
+    }
+    if (readsAsNegative(said)) {
+      return reply({ ...context, pendingClarification: undefined }, "Cancelled.");
+    }
+    return planTurn({
+      ...input,
+      context: { ...context, pendingClarification: undefined },
+    });
+  }
+
+  /*
+   * Questions the deployment cannot answer are refused before any intent
+   * parsing. "Who owns it" must never become a vessel selection that
+   * looks like it answered the question.
+   */
+  for (const topic of UNAVAILABLE_TOPICS) {
+    if (topic.test.test(said)) return reply(context, topic.answer);
+  }
+
+  const vesselCommand = readVesselCommand(said);
+  if (vesselCommand) {
+    return planVesselCommand(vesselCommand, input, context, now);
+  }
+
+  /*
+   * Anything left is a map command, read by the existing interpreter.
+   * Voice and Copilot share it rather than each carrying their own
+   * phrasebook.
+   */
+  const reading = interpret(said);
+  switch (reading.intent.kind) {
+    case "navigate":
+      return execute(
+        context,
+        { type: "NAVIGATE_PLACE", place: reading.intent.place.id },
+        `Taking you to ${reading.intent.place.name}.`,
+      );
+    case "coordinates":
+      return execute(
+        context,
+        { type: "NAVIGATE_COORDINATES", coordinates: reading.intent.coordinates, zoom: 12 },
+        "Moving to those coordinates.",
+      );
+    case "global":
+      return execute(
+        context,
+        { type: "NAVIGATE_PLACE", place: "world" },
+        "Showing the global view.",
+      );
+    case "zoom":
+      return execute(
+        context,
+        { type: "ZOOM", direction: reading.intent.direction },
+        reading.intent.direction === "in" ? "Zooming in." : "Zooming out.",
+      );
+    case "clarify":
+      return {
+        outcome: {
+          kind: "CLARIFY",
+          speech: `I heard a place but could not be sure which. Did you mean ${reading.intent.candidates
+            .map((c) => c.name)
+            .join(", or ")}?`,
+        },
+        context,
+      };
+    case "unrecognised":
+      return reply(
+        context,
+        "I am not sure what you would like me to do. You can ask me to find a vessel, move the map, show a vessel's movement history, or open its intelligence.",
+      );
+  }
+}
+
+/* ── Vessel commands ─────────────────────────────────────────────────── */
+
+type VesselVerb =
+  | "SELECT_VESSEL"
+  | "SHOW_VESSEL_TRACK"
+  | "SHOW_VESSEL_INTELLIGENCE"
+  | "OPEN_INVESTIGATION";
+
+interface VesselCommand {
+  readonly verb: VesselVerb;
+  /** The name or identifier the officer gave, if any. */
+  readonly subject: string | null;
+}
+
+const TRACK_PHRASES =
+  /\b(where has it been|where has this vessel been|movement history|its journey|the journey|track|where it went|voyage history)\b/i;
+const INTELLIGENCE_PHRASES = /\b(intelligence|dossier|what do we know|details|tell me about)\b/i;
+const INVESTIGATION_PHRASES = /\b(investigation|investigate|open a case|case file)\b/i;
+const SELECT_PHRASES = /\b(show me|find|select|open|locate|pull up|bring up)\b/i;
+
+function readVesselCommand(said: string): VesselCommand | null {
+  if (INVESTIGATION_PHRASES.test(said)) {
+    return { verb: "OPEN_INVESTIGATION", subject: subjectFrom(said) };
+  }
+  if (TRACK_PHRASES.test(said)) {
+    return { verb: "SHOW_VESSEL_TRACK", subject: subjectFrom(said) };
+  }
+  if (INTELLIGENCE_PHRASES.test(said)) {
+    return { verb: "SHOW_VESSEL_INTELLIGENCE", subject: subjectFrom(said) };
+  }
+  if (SELECT_PHRASES.test(said)) {
+    const subject = subjectFrom(said);
+    return subject ? { verb: "SELECT_VESSEL", subject } : null;
+  }
+  return null;
+}
+
+/**
+ * The vessel the officer named, stripped of the words around it.
+ *
+ * Returns null for a pronoun, which is the signal to resolve against the
+ * conversation rather than search for a hull called "it".
+ */
+function subjectFrom(said: string): string | null {
+  if (usesPronoun(said)) return null;
+
+  const identifier = said.match(/\b(?:imo|mmsi)\s*[:\s]?\s*([a-z0-9-]+)/i);
+  if (identifier) return identifier[1];
+
+  const named = said.match(
+    /\b(?:show me|find|select|open|locate|pull up|bring up|tell me about|intelligence for|investigation (?:on|for))\s+(?:the\s+)?(?:vessel\s+)?([a-z0-9][a-z0-9 '-]*?)(?:\s*(?:'s|s')?\s*(?:track|history|intelligence|dossier|details|journey|voyage))?\s*$/i,
+  );
+  const subject = named?.[1]?.trim();
+  return subject && subject.length > 1 ? subject : null;
+}
+
+function planVesselCommand(
+  command: VesselCommand,
+  input: TurnInput,
+  context: ConversationContext,
+  now: number,
+): TurnPlan {
+  let imo: string | null = null;
+  let name: string | undefined;
+
+  if (command.subject) {
+    const match = resolveVesselEntity(command.subject, input.vessels);
+    if (match.kind === "none") {
+      return reply(context, `I could not find a vessel matching ${command.subject}.`);
+    }
+    if (match.kind === "many") {
+      /*
+       * Never a guess. Selecting one of three vessels the officer might
+       * have meant is worse than asking, because the panel then looks
+       * authoritative about the wrong hull.
+       */
+      return {
+        outcome: {
+          kind: "CLARIFY",
+          speech: `I found ${match.candidates.length} vessels matching ${command.subject}. Which one do you mean? ${describeCandidates(match.candidates)}.`,
+        },
+        context: {
+          ...context,
+          pendingClarification: {
+            query: command.subject,
+            candidates: match.candidates,
+            then: command.verb === "OPEN_INVESTIGATION" ? "SELECT_VESSEL" : command.verb,
+            at: now,
+          },
+        },
+      };
+    }
+    imo = match.vessel.imo;
+    name = match.vessel.name;
+  } else {
+    imo = resolvePronoun(context, input.selectedImo);
+    name =
+      context.lastReferencedVesselName ??
+      input.vessels.find((v) => v.identity.imo === imo)?.identity.name;
+    if (!imo) {
+      return reply(context, "I do not have a vessel selected. Which vessel would you like?");
+    }
+  }
+
+  const remembered: ConversationContext = {
+    ...context,
+    lastReferencedVesselId: imo,
+    lastReferencedVesselName: name,
+  };
+
+  const action: CopilotAction =
+    command.verb === "OPEN_INVESTIGATION"
+      ? { type: "OPEN_INVESTIGATION", imo, vesselName: name }
+      : { type: command.verb, imo };
+
+  if (isStateChanging(action)) {
+    return {
+      outcome: {
+        kind: "CONFIRM",
+        speech: `This will open an investigation for ${name ?? imo}. Should I proceed?`,
+      },
+      context: {
+        ...remembered,
+        pendingConfirmation: {
+          action,
+          prompt: `Open an investigation for ${name ?? imo}?`,
+          at: now,
+        },
+      },
+    };
+  }
+
+  return execute(remembered, action, speechFor(command.verb, name ?? imo));
+}
+
+/**
+ * Name the candidates so the officer can actually pick one.
+ *
+ * Two vessels can carry the same name — that is precisely why IMO
+ * numbers exist, and the simulated fleet reproduces it. Reading back
+ * "Opobo Pioneer, or Opobo Pioneer" asks a question that cannot be
+ * answered, so a name shared by more than one candidate is qualified by
+ * its identifier and by flag where they differ.
+ */
+function describeCandidates(candidates: readonly VesselChoice[]): string {
+  const duplicated = new Set(
+    candidates
+      .map((c) => c.name.toLowerCase())
+      .filter((name, index, all) => all.indexOf(name) !== index),
+  );
+  return candidates
+    .map((c) => {
+      if (!duplicated.has(c.name.toLowerCase())) return c.name;
+      const flag = c.flag ? `, flag ${c.flag}` : "";
+      return `${c.name}, ${c.imo}${flag}`;
+    })
+    .join(", or ");
+}
+
+function speechFor(verb: VesselVerb, name: string): string {
+  switch (verb) {
+    case "SHOW_VESSEL_TRACK":
+      /*
+       * Deliberately not "tracked" or "observed". What the source holds
+       * is described by the drawer, which knows whether the track is
+       * recorded or simulated; the spoken line promises only to open it.
+       */
+      return `Opening the available movement history for ${name}.`;
+    case "SHOW_VESSEL_INTELLIGENCE":
+      return `Opening vessel intelligence for ${name}.`;
+    case "SELECT_VESSEL":
+      return `I have located ${name}. Opening vessel intelligence now.`;
+    case "OPEN_INVESTIGATION":
+      return `Opening an investigation for ${name}.`;
+  }
+}
+
+/* ── Small constructors ──────────────────────────────────────────────── */
+
+function execute(context: ConversationContext, action: CopilotAction, speech: string): TurnPlan {
+  return {
+    outcome: { kind: "EXECUTE", action, speech },
+    context: { ...context, lastResponse: speech },
+  };
+}
+
+function reply(context: ConversationContext, speech: string): TurnPlan {
+  return { outcome: { kind: "REPLY", speech }, context: { ...context, lastResponse: speech } };
+}

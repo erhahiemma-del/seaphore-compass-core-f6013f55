@@ -31,7 +31,24 @@ import { MAP_SCOPES } from "@/services/geospatial/constants";
 import { sgs, type SharedGeospatialService } from "@/services/geospatial";
 import type { Place } from "@/services/geospatial/places";
 
-import { interpret, type VoiceIntent, type VoiceReading } from "./voice-intent";
+import { executeCopilotAction, type CopilotAction } from "@/services/copilot/copilot-actions";
+import {
+  EMPTY_CONTEXT,
+  type ConversationContext,
+  type ResolvableVessel,
+} from "@/services/copilot/copilot-conversation";
+import { planTurn } from "@/services/copilot/copilot-turn";
+import { useVoiceOutputService } from "@/services/voice/use-voice-output";
+
+import { type VoiceIntent, type VoiceReading } from "./voice-intent";
+import { devTranscriptsFrom } from "./voice-dev-harness";
+
+export interface VoiceCommandOptions {
+  /** Vessels currently held, for naming and identifier resolution. */
+  readonly vessels?: readonly ResolvableVessel[];
+  /** How to open a case, when the surface has a workflow. */
+  readonly openInvestigation?: (imo: string) => void;
+}
 
 /**
  * What the officer is looking at.
@@ -47,6 +64,13 @@ export type VoiceState =
   | "processing"
   | "understood"
   | "clarifying"
+  /** A write has been proposed and is waiting for a plain yes or no. */
+  | "confirming"
+  /** The action is running. Shown only while something is genuinely in flight. */
+  | "executing"
+  /** Speaking the result. Interruptible. */
+  | "speaking"
+  | "completed"
   | "failed";
 
 /** Sustained silence that ends an utterance. Long enough to think in. */
@@ -68,6 +92,10 @@ export interface VoiceCommand {
   readonly reading: VoiceReading | null;
   /** Places to choose between, when the command was ambiguous. */
   readonly candidates: readonly Place[];
+  /** The sentence Seaphore last said, shown alongside being spoken. */
+  readonly spoken: string | null;
+  /** Stop speech immediately. The barge-in control. */
+  readonly stopSpeaking: () => void;
   readonly start: () => void;
   readonly stop: () => void;
   readonly cancel: () => void;
@@ -87,73 +115,222 @@ export function executeIntent(
   intent: VoiceIntent,
   service: SharedGeospatialService = sgs,
 ): boolean {
+  /*
+   * Translation only. This used to carry its own navigation, coordinate
+   * and zoom calls, which made it a second dispatcher: the same four
+   * capabilities implemented twice, diverging quietly, and only one of
+   * them behind the confirmation gate. It now turns a voice intent into
+   * a `CopilotAction` and hands it to the single executor.
+   *
+   * Kept as a function rather than deleted because it is the seam the
+   * voice affordance already calls, and because a named translation
+   * point is easier to hold to one dispatcher than an inline conversion
+   * at every call site.
+   */
+  const action = intentToAction(intent, service);
+  return action ? executeCopilotAction(action, { service }).ok : false;
+}
+
+/** A voice intent as an action the canonical dispatcher understands. */
+function intentToAction(
+  intent: VoiceIntent,
+  service: SharedGeospatialService,
+): CopilotAction | null {
   switch (intent.kind) {
     case "navigate":
-      return navigateTo({ place: intent.place.id, source: "voice" }, service).ok;
+      return { type: "NAVIGATE_PLACE", place: intent.place.id };
     case "coordinates":
-      return navigateTo(
-        { coordinates: intent.coordinates, zoom: 12, level: "LOCAL", source: "voice" },
-        service,
-      ).ok;
+      return { type: "NAVIGATE_COORDINATES", coordinates: intent.coordinates, zoom: 12 };
     case "global":
-      return navigateTo({ place: "world", source: "voice" }, service).ok;
-    case "zoom": {
+      return { type: "NAVIGATE_PLACE", place: "world" };
+    case "zoom":
       /*
-       * Zoom is a navigation to where the officer already is.
-       *
-       * Reaching for `setCamera` here would be the fifth camera caller,
-       * and the limits would have to be re-derived at the call site.
+       * The scope's limits are still applied here rather than in the
+       * dispatcher, because they are a property of the map surface the
+       * officer is looking at, not of the instruction.
        */
-      const state = service.get();
-      const limits = MAP_SCOPES[state.scope];
-      const target =
-        intent.direction === "in"
-          ? Math.min(limits.maxZoom, state.zoom + 2)
-          : Math.max(limits.minZoom, state.zoom - 2);
-      return navigateTo({ coordinates: state.center, zoom: target, source: "voice" }, service).ok;
-    }
+      return {
+        type: "NAVIGATE_COORDINATES",
+        coordinates: service.get().center,
+        zoom: clampedZoom(intent.direction, service),
+      };
     case "clarify":
     case "unrecognised":
-      return false;
+      return null;
   }
 }
 
-export function useVoiceCommand(service: SharedGeospatialService = sgs): VoiceCommand {
+function clampedZoom(direction: "in" | "out", service: SharedGeospatialService): number {
+  const state = service.get();
+  const limits = MAP_SCOPES[state.scope];
+  return direction === "in"
+    ? Math.min(limits.maxZoom, state.zoom + 2)
+    : Math.max(limits.minZoom, state.zoom - 2);
+}
+
+export function useVoiceCommand(
+  service: SharedGeospatialService = sgs,
+  options: VoiceCommandOptions = {},
+): VoiceCommand {
   const [state, setState] = useState<VoiceState>("idle");
   const [reading, setReading] = useState<VoiceReading | null>(null);
   const [candidates, setCandidates] = useState<readonly Place[]>([]);
+  const [spoken, setSpoken] = useState<string | null>(null);
 
+  /*
+   * The conversation lives in a ref, not in state.
+   *
+   * It is read inside the transcript handler and must be the value as of
+   * that moment; a state variable captured in a callback would resolve
+   * "it" against whatever the conversation looked like when the handler
+   * was created, which is one turn stale exactly when it matters.
+   */
+  const conversation = useRef<ConversationContext>(EMPTY_CONTEXT);
+  /** The dev harness runs once per page load, never per fleet update. */
+  const harnessRan = useRef(false);
   const settle = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const voice = useVoiceOutputService();
 
   const restAfter = useCallback((next: VoiceState) => {
     if (settle.current) clearTimeout(settle.current);
-    settle.current = setTimeout(() => setState("idle"), next === "understood" ? SETTLE_MS : 6000);
+    settle.current = setTimeout(() => setState("idle"), next === "completed" ? SETTLE_MS : 6000);
   }, []);
 
-  const onFinal = useCallback(
-    (text: string) => {
-      const next = interpret(text);
-      setReading(next);
+  /**
+   * Say it, and show it.
+   *
+   * One response, two renderings. Separate text and speech paths would
+   * eventually disagree, and the officer would have no way to tell which
+   * one the system actually acted on.
+   */
+  const respond = useCallback(
+    (speech: string, next: VoiceState) => {
+      setSpoken(speech);
+      voice.speak(speech);
 
-      if (next.intent.kind === "clarify") {
-        setCandidates(next.intent.candidates);
-        setState("clarifying");
+      /*
+       * `speaking` has to outlast the call that starts it.
+       *
+       * Setting it and then immediately setting the next state put both
+       * in one React batch, so the speaking state was never rendered —
+       * measured: a state trace across a five-turn conversation showed
+       * idle, completed, confirming, completed, idle, and no speaking at
+       * all. The officer could not see they were being talked to, and
+       * the Stop control never appeared.
+       *
+       * So the state follows the utterance: speaking while the service
+       * says it is speaking, and the resting state once it finishes. If
+       * synthesis is unavailable there is nothing to wait for and the
+       * response settles immediately.
+       */
+      if (voice.state() === "unavailable") {
+        setState(next);
+        restAfter(next);
         return;
       }
+
+      /*
+       * Subscribe before deciding, because `onstart` is asynchronous:
+       * reading `state()` on the line after `speak()` returns "idle" for
+       * an utterance that is about to begin, which made the speaking
+       * state appear for some responses and not others. Waiting for the
+       * service to say it has finished is the only reading that is true
+       * in both cases.
+       */
+      setState("speaking");
+      let started = false;
+      const unsubscribe = voice.onChange(() => {
+        if (voice.state() === "speaking") {
+          started = true;
+          return;
+        }
+        if (!started) return;
+        unsubscribe();
+        setState((current) => (current === "speaking" ? next : current));
+        restAfter(next);
+      });
+
+      /*
+       * A backstop, so a browser that never fires `onstart` — muted tab,
+       * blocked autoplay — cannot leave the affordance claiming to speak
+       * forever.
+       */
+      setTimeout(() => {
+        if (started) return;
+        unsubscribe();
+        setState((current) => (current === "speaking" ? next : current));
+        restAfter(next);
+      }, 1200);
+    },
+    [voice, restAfter],
+  );
+
+  const handleTranscript = useCallback(
+    (text: string) => {
+      setState("processing");
+
+      /*
+       * Every route in — microphone, transcription endpoint, dev harness
+       * — arrives here. There is no second path from speech to system
+       * state, which is the only reason a harness-driven verification
+       * says anything about the real product.
+       */
+      const selection = service.get().selection;
+      const plan = planTurn({
+        transcript: text,
+        context: conversation.current,
+        vessels: options.vessels ?? [],
+        selectedImo: selection?.kind === "vessel" ? selection.imo : null,
+      });
+      conversation.current = plan.context;
+      setReading({ heard: text, intent: { kind: "unrecognised", reason: "" } });
       setCandidates([]);
 
-      if (next.intent.kind === "unrecognised") {
-        setState("failed");
-        restAfter("failed");
-        return;
+      switch (plan.outcome.kind) {
+        case "CLARIFY":
+          respond(plan.outcome.speech, "clarifying");
+          return;
+        case "CONFIRM":
+          // The write has not happened and must not look as if it has.
+          respond(plan.outcome.speech, "confirming");
+          return;
+        case "REPLY":
+          respond(plan.outcome.speech, "completed");
+          return;
+        case "EXECUTE": {
+          setState("executing");
+          const result = executeCopilotAction(plan.outcome.action, {
+            service,
+            confirmed: true,
+            knownImos: options.vessels?.map((v) => v.identity.imo),
+            openInvestigation: options.openInvestigation,
+          });
+          /*
+           * The spoken line reports what happened, not what was
+           * attempted. A failed action that announces success is the
+           * worst outcome available to a voice interface, because there
+           * is no screen state contradicting it.
+           */
+          respond(
+            result.ok ? plan.outcome.speech : (result.reason ?? result.summary),
+            result.ok ? "completed" : "failed",
+          );
+          return;
+        }
       }
-
-      const moved = executeIntent(next.intent, service);
-      setState(moved ? "understood" : "failed");
-      restAfter(moved ? "understood" : "failed");
     },
-    [service, restAfter],
+    [service, options.vessels, options.openInvestigation, respond],
   );
+
+  /*
+   * Held in a ref so the harness can call the current handler without
+   * taking a dependency on its identity — the dependency that made the
+   * scripted conversation restart on every vessel tick.
+   */
+  const handleTranscriptRef = useRef(handleTranscript);
+  handleTranscriptRef.current = handleTranscript;
+
+  const onFinal = handleTranscript;
 
   const onError = useCallback(() => {
     setState("failed");
@@ -245,6 +422,56 @@ export function useVoiceCommand(service: SharedGeospatialService = sgs): VoiceCo
     setCandidates([]);
   }, []);
 
+  /*
+   * Barge-in. Speech stops the instant the officer starts a new
+   * interaction, because finishing a stale sentence talks over the
+   * question they are asking now. Routed through the service so there is
+   * one thing that can be cancelled.
+   */
+  const stopSpeaking = useCallback(() => {
+    voice.stop();
+    setState((current) => (current === "speaking" ? "completed" : current));
+  }, [voice]);
+
+  /*
+   * The development harness enters here and nowhere else — the same
+   * handler the transcription endpoint calls, with the same conversation
+   * and the same dispatcher behind it. Sequential rather than parallel,
+   * so a clarification can be answered by the transcript after it.
+   */
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    /*
+     * A latch, because the effect's dependency is a callback that closes
+     * over the fleet — and simulated vessels move, so the fleet changes
+     * every tick. Without this the scripted conversation restarted on
+     * every vessel update: measured, fifteen utterances from five
+     * transcripts, cycling forever. The same reason `?select=` fires
+     * once.
+     */
+    if (harnessRan.current) return;
+    const scripted = devTranscriptsFrom(window.location.search);
+    if (scripted.length === 0) return;
+    harnessRan.current = true;
+
+    /*
+     * No cleanup, deliberately. React's development double-invoke runs
+     * the effect, tears it down, and runs it again — so a cleanup that
+     * cancelled the timers cancelled the only scheduled run, and the
+     * latch then refused to schedule another. Measured: nothing spoke at
+     * all. A one-shot script that outlives a remount is the correct
+     * behaviour for a harness; it is gated out of production entirely.
+     */
+    let index = 0;
+    const next = () => {
+      if (index >= scripted.length) return;
+      handleTranscriptRef.current(scripted[index]);
+      index += 1;
+      setTimeout(next, 1600);
+    };
+    setTimeout(next, 1500);
+  }, []);
+
   return {
     state,
     unavailable: dictation.unavailable,
@@ -252,6 +479,8 @@ export function useVoiceCommand(service: SharedGeospatialService = sgs): VoiceCo
     level: dictation.level,
     reading,
     candidates,
+    spoken,
+    stopSpeaking,
     start,
     stop: dictation.stop,
     cancel,

@@ -239,7 +239,9 @@ describe("commands move the map through the canonical path", () => {
 describe("the officer can see, reach and use it", () => {
   it("is mounted in Maritime Command", () => {
     // A capability with no affordance is code, not a feature.
-    expect(stripComments(SHELL)).toContain("<VoiceCommand />");
+    // Now mounted with the fleet, so a spoken vessel name resolves
+    // against what the officer can actually see.
+    expect(stripComments(SHELL)).toMatch(/<VoiceCommand[\s/][^>]*\/>/);
   });
 
   it("occupies a declared zone that collides with nothing", () => {
@@ -278,7 +280,13 @@ describe("the officer can see, reach and use it", () => {
      */
     const code = stripComments(COMPONENT);
     expect(code).toContain("showReadout");
-    expect(code).toContain('reading !== null || (issue !== null && state === "failed")');
+    /*
+     * The condition now also admits a spoken response, because Seaphore
+     * answers aloud and the same sentence has to be readable. The rule
+     * it protects is unchanged: an issue alone is not something to say.
+     */
+    expect(code).toContain('issue !== null && state === "failed"');
+    expect(code).toContain("spoken !== null");
   });
 
   it("ends on sustained silence, not on the first pause", () => {

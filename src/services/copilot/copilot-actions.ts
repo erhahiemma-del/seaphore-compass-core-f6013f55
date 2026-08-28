@@ -46,7 +46,23 @@ export type CopilotAction =
   | { readonly type: "NAVIGATE_PLACE"; readonly place: string }
   | { readonly type: "NAVIGATE_COORDINATES"; readonly coordinates: LonLat; readonly zoom?: number }
   | { readonly type: "ZOOM"; readonly direction: "in" | "out" }
-  | { readonly type: "SET_SOURCES"; readonly sourceIds: readonly string[] };
+  | { readonly type: "SET_SOURCES"; readonly sourceIds: readonly string[] }
+  /*
+   * Vessel questions about a hull the officer has already chosen.
+   *
+   * These carry the IMO rather than reading the current selection at
+   * execution time: "where has it been" is answered about the vessel the
+   * officer meant when they said it, not whichever vessel happens to be
+   * selected once the sentence finishes resolving.
+   */
+  | { readonly type: "SHOW_VESSEL_TRACK"; readonly imo: string }
+  | { readonly type: "SHOW_VESSEL_INTELLIGENCE"; readonly imo: string }
+  /*
+   * The only action here that writes a record. It exists to make the
+   * confirmation gate real rather than theoretical — a gate with nothing
+   * behind it is a gate nobody has tested.
+   */
+  | { readonly type: "OPEN_INVESTIGATION"; readonly imo: string; readonly vesselName?: string };
 
 /**
  * Whether an action changes something an officer would have to undo.
@@ -66,7 +82,15 @@ export function isStateChanging(action: CopilotAction): boolean {
     case "NAVIGATE_PLACE":
     case "NAVIGATE_COORDINATES":
     case "ZOOM":
+    case "SHOW_VESSEL_TRACK":
+    case "SHOW_VESSEL_INTELLIGENCE":
       return false;
+    case "OPEN_INVESTIGATION":
+      /*
+       * Creates a case record with the officer's name on it. Nothing
+       * about that is reversible by looking elsewhere.
+       */
+      return true;
     case "SET_SOURCES":
       /*
        * Changing which providers feed the map alters what every other
@@ -99,6 +123,14 @@ export interface ActionExecutionOptions {
   readonly confirmed?: boolean;
   /** Vessels currently held, for resolving a selection to a real hull. */
   readonly knownImos?: readonly string[];
+  /**
+   * How to open an investigation, supplied by the surface that has one.
+   *
+   * Injected rather than imported so the dispatcher stays free of the
+   * investigation module, and so a surface with no case workflow reports
+   * that honestly instead of appearing to open one.
+   */
+  readonly openInvestigation?: (imo: string) => void;
 }
 
 /**
@@ -186,5 +218,53 @@ export function executeCopilotAction(
     case "SET_SOURCES":
       service.setEnabledSources(action.sourceIds);
       return { ok: true, summary: "Changed the active sources." };
+
+    /*
+     * Both vessel questions are answered by selecting the hull. The
+     * drawer already resolves the track and the findings from the
+     * selection, so a second retrieval path here would produce a copy
+     * that could disagree with what the officer is looking at.
+     */
+    case "SHOW_VESSEL_TRACK":
+    case "SHOW_VESSEL_INTELLIGENCE": {
+      if (options.knownImos && !options.knownImos.includes(action.imo)) {
+        return {
+          ok: false,
+          summary: "That vessel is not in the current picture.",
+          reason: "No vessel with that identifier is held by the connected source.",
+        };
+      }
+      service.select({ kind: "vessel", id: action.imo, imo: action.imo });
+      return {
+        ok: true,
+        summary:
+          action.type === "SHOW_VESSEL_TRACK"
+            ? `Opened the movement history for ${action.imo}.`
+            : `Opened vessel intelligence for ${action.imo}.`,
+      };
+    }
+
+    case "OPEN_INVESTIGATION": {
+      /*
+       * Reaches confirmed only, because `isStateChanging` gates it
+       * above. The case itself is opened by the existing server
+       * function, which owns the lifecycle; this returns immediately and
+       * reports the request rather than the outcome, so nothing here
+       * claims a case exists before the server says so.
+       */
+      const opener = options.openInvestigation;
+      if (!opener) {
+        return {
+          ok: false,
+          summary: "I cannot open an investigation from here.",
+          reason: "No investigation workflow is connected to this surface.",
+        };
+      }
+      opener(action.imo);
+      return {
+        ok: true,
+        summary: `Requested an investigation for ${action.vesselName ?? action.imo}.`,
+      };
+    }
   }
 }

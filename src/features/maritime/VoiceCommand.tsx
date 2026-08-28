@@ -26,21 +26,49 @@ import { cn } from "@/lib/utils";
 import { sgs, type SharedGeospatialService } from "@/services/geospatial";
 
 import { describeIntent } from "./voice-intent";
-import { useVoiceCommand } from "./useVoiceCommand";
+import { useVoiceCommand, type VoiceState } from "./useVoiceCommand";
+import type { ResolvableVessel } from "@/services/copilot/copilot-conversation";
 import { MAP_ZONE } from "./map-zones";
+
+/**
+ * What Seaphore is doing, in the officer's words.
+ *
+ * A spinner for every state would say only "busy". These distinguish
+ * understanding from acting from waiting on an answer, because the
+ * officer's next move differs in each: wait, watch, or reply.
+ */
+const STATE_LABEL: Readonly<Record<VoiceState, string>> = {
+  idle: "Speak",
+  listening: "Listening",
+  processing: "Understanding",
+  understood: "Done",
+  clarifying: "Which one?",
+  confirming: "Confirm?",
+  executing: "Working",
+  speaking: "Speaking",
+  completed: "Done",
+  failed: "Try again",
+};
 
 export function VoiceCommand({
   service = sgs,
+  vessels,
   className,
 }: {
   readonly service?: SharedGeospatialService;
+  /**
+   * The fleet on screen, so a spoken name resolves against what the
+   * officer can actually see rather than a separate lookup that could
+   * return a vessel the map is not drawing.
+   */
+  readonly vessels?: readonly ResolvableVessel[];
   readonly className?: string;
 }) {
-  const voice = useVoiceCommand(service);
-  const { state, reading, candidates, unavailable, issue } = voice;
+  const voice = useVoiceCommand(service, { vessels });
+  const { state, reading, candidates, unavailable, issue, spoken, stopSpeaking } = voice;
 
   const listening = state === "listening";
-  const busy = state === "processing";
+  const busy = state === "processing" || state === "executing";
   /*
    * A permission the browser has already refused blocks this as surely
    * as a missing device. The dictation engine reports the two
@@ -60,7 +88,7 @@ export function VoiceCommand({
    * control. The barrier belongs on the button, which is where an
    * officer looks to find out whether pressing it is worth trying.
    */
-  const showReadout = reading !== null || (issue !== null && state === "failed");
+  const showReadout = reading !== null || spoken !== null || (issue !== null && state === "failed");
 
   // A ring that follows the officer's voice, so "it is hearing me" needs
   // no words. Clamped: a loud room should not fill the screen.
@@ -84,17 +112,39 @@ export function VoiceCommand({
               <p data-testid="voice-heard" className="text-[12px] font-medium text-foreground">
                 “{reading.heard}”
               </p>
-              <p
-                data-testid="voice-meaning"
-                className={cn(
-                  "mt-0.5 text-[11px]",
-                  state === "failed" ? "text-destructive" : "text-muted-foreground",
-                )}
-              >
-                {state === "understood" ? "Went to " : ""}
-                {describeIntent(reading.intent)}
-              </p>
+              {/*
+                One response, shown and spoken. Separate text and speech
+                would eventually disagree, and the officer would have no
+                way to tell which one the system acted on.
+              */}
+              {spoken ? (
+                <p
+                  data-testid="voice-response"
+                  className={cn(
+                    "mt-0.5 text-[11px]",
+                    state === "failed" ? "text-destructive" : "text-muted-foreground",
+                  )}
+                >
+                  {spoken}
+                </p>
+              ) : null}
             </>
+          ) : null}
+
+          {/*
+            Barge-in, as a visible control as well as a spoken one. An
+            officer who wants the sentence to stop should not have to
+            talk over it to say so.
+          */}
+          {state === "speaking" ? (
+            <button
+              type="button"
+              data-testid="voice-stop-speaking"
+              onClick={stopSpeaking}
+              className="mt-1.5 rounded border border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground"
+            >
+              Stop
+            </button>
           ) : null}
 
           {candidates.length > 0 ? (
@@ -193,17 +243,7 @@ export function VoiceCommand({
           will do — an officer reading "Failed" has been told the
           outcome and not the way out of it.
         */}
-        {blocked
-          ? "Unavailable"
-          : listening
-            ? "Listening"
-            : busy
-              ? "Working"
-              : state === "clarifying"
-                ? "Which one?"
-                : state === "failed"
-                  ? "Try again"
-                  : "Speak"}
+        {blocked ? "Unavailable" : STATE_LABEL[state]}
       </span>
     </div>
   );

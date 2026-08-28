@@ -507,7 +507,7 @@ export function MaritimeCommand() {
               speaks a place, a position or the global view; every
               outcome goes through the same navigation path a click does.
             */}
-            <VoiceCommand />
+            <VoiceCommand vessels={vessels} />
 
             <div
               className={cn(
