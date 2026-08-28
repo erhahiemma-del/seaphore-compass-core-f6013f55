@@ -59,6 +59,18 @@ describe("an unanswerable question says why", () => {
 });
 
 describe("what the deployment can actually answer", () => {
+  it("claims nothing for a registered provider that is not enabled", () => {
+    /*
+     * The defect this replaced: capabilities were taken from
+     * `sources[0]`. Global Fishing Watch registers ahead of the
+     * simulation and has no API key here, so the layer announced live
+     * positions from a provider that cannot answer.
+     */
+    registerSimulatedVesselSource({ timeScale: 1 });
+    registerConnectedProviders([]);
+    expect(isConnected("vessel.positions")).toBe(false);
+  });
+
   it("claims nothing before providers register", () => {
     expect(isConnected("vessel.positions")).toBe(false);
     expect(capabilityMatrix().every((row) => !row.connected)).toBe(true);
@@ -66,7 +78,13 @@ describe("what the deployment can actually answer", () => {
 
   it("claims only positions, identity and track once a source is connected", () => {
     registerSimulatedVesselSource({ timeScale: 1 });
-    registerConnectedProviders();
+    /*
+     * Declared from the *enabled* sources, not the registered ones. A
+     * provider with an adapter and no credentials is registered and
+     * cannot answer, and claiming it would have the Copilot announce
+     * positions nothing can supply.
+     */
+    registerConnectedProviders(["simulated"]);
 
     const connected = capabilityMatrix()
       .filter((row) => row.connected)
@@ -115,7 +133,7 @@ describe("answers carry who produced them", () => {
 
   it("separates a missing record from a missing provider", () => {
     registerSimulatedVesselSource({ timeScale: 1 });
-    registerConnectedProviders();
+    registerConnectedProviders(["simulated"]);
 
     const answer = getVessel("SIM-9999", fleet);
     expect(answer.availability).toBe("NO_RECORD");

@@ -44,17 +44,6 @@ function demonstrationTimeScale(): number {
 
 registerSimulatedVesselSource({ timeScale: demonstrationTimeScale() });
 
-/*
- * Declare what the connected providers can actually answer.
- *
- * After source registration, because the intelligence layer reads the
- * registry to decide which capabilities exist. Everything not claimed
- * here answers "not connected" with a reason — which is how the Copilot
- * stays honest about ownership, crew and cargo without any of that being
- * hardcoded into the assistant.
- */
-registerConnectedProviders();
-
 // Seed the enabled set AFTER registration.
 //
 // The SGS singleton is constructed when its module is first imported, which
@@ -67,6 +56,21 @@ registerConnectedProviders();
 if (sgs.get().enabledSources.length === 0) {
   sgs.setEnabledSources(defaultEnabledSourceIds());
 }
+
+/*
+ * Declare what the enabled providers can actually answer.
+ *
+ * After the enabled set is seeded, not merely after registration. A
+ * provider with an adapter and no credentials is registered and useless,
+ * and claiming its capabilities would have the Copilot announce live
+ * positions nothing can supply. What is switched on is the honest
+ * signal, because it is what the officer is looking at.
+ *
+ * Re-declared whenever the officer changes sources, so the claim tracks
+ * the picture rather than the first frame of the session.
+ */
+registerConnectedProviders(sgs.get().enabledSources);
+sgs.subscribe((state) => registerConnectedProviders(state.enabledSources));
 
 export const Route = createFileRoute("/maritime")({
   head: () => ({

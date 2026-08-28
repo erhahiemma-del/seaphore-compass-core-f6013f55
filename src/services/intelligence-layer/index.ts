@@ -24,6 +24,7 @@ import {
   noRecord,
   notConnected,
   registerCapability,
+  resetCapabilities,
   type Answer,
   type CapabilityId,
   type Provenance,
@@ -39,29 +40,41 @@ export * from "./capabilities";
  * Called once at start-up. A capability absent from this function is
  * absent from the product, and that is the intended way to read it.
  */
-export function registerConnectedProviders(): void {
-  const sources = listVesselSources();
-  if (sources.length === 0) return;
-
+export function registerConnectedProviders(activeSourceIds: readonly string[]): void {
   /*
-   * Positions and track come from the vessel source registry, which is
-   * real and working. Identity rides along with position because the
-   * same feed carries it — but only the fields the feed actually has,
-   * which is why `vessel.ownership` is not claimed here despite
-   * ownership being a property of a vessel.
+   * Registered is not the same as answering.
+   *
+   * This previously claimed positions from `sources[0]` — whichever
+   * provider happened to register first. Global Fishing Watch registers
+   * ahead of the simulation and has no API key in this deployment, so
+   * the layer announced live positions from a provider that cannot
+   * answer, and the Copilot inherited the claim.
+   *
+   * `defaultEnabled` is not the signal either: GFW is `true` while
+   * unconfigured, and the simulation is `false` while working. It says
+   * "on by default", not "able to answer". The honest signal is which
+   * sources are actually feeding the map right now, which is what the
+   * officer is looking at.
    */
-  const primary = sources[0].describe();
-  const provider = { id: primary.id, label: primary.label, capabilities: POSITION_CAPABILITIES };
-  for (const capability of POSITION_CAPABILITIES) {
-    registerCapability(capability, provider);
-  }
-}
+  resetCapabilities();
+  const active = listVesselSources().filter((source) =>
+    activeSourceIds.includes(source.describe().id),
+  );
+  if (active.length === 0) return;
 
-const POSITION_CAPABILITIES: readonly CapabilityId[] = [
-  "vessel.positions",
-  "vessel.identity",
-  "vessel.track",
-];
+  const source = active[0];
+  const descriptor = source.describe();
+  const capabilities: CapabilityId[] = ["vessel.positions", "vessel.identity"];
+  /*
+   * Claimed from the interface rather than assumed. `history` is
+   * optional on `VesselSource`, and a source that omits it is stating
+   * that it keeps no archive — a claim the layer must not overrule.
+   */
+  if (typeof source.history === "function") capabilities.push("vessel.track");
+
+  const provider = { id: descriptor.id, label: descriptor.label, capabilities };
+  for (const capability of capabilities) registerCapability(capability, provider);
+}
 
 /* ── Queries ─────────────────────────────────────────────────────────── */
 
