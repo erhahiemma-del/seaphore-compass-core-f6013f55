@@ -41,14 +41,24 @@ describe("the Copilot has exactly one executor", () => {
   });
 
   it("routes voice through the canonical dispatcher, not its own calls", () => {
-    const source = read("src/features/maritime/useVoiceCommand.ts");
+    const source = code("src/features/maritime/useVoiceCommand.ts");
     expect(source).toContain("executeCopilotAction");
-    /*
-     * `executeIntent` used to call `navigateTo` four times. It now
-     * translates an intent into an action and hands it over; the only
-     * remaining reference is the import, which this checks has no call.
-     */
     expect(source).not.toMatch(/navigateTo\(\s*\{/);
+  });
+
+  it("has no second executor left to call", () => {
+    /*
+     * `executeIntent` is gone, not merely delegating. While it existed
+     * as an exported function it remained a second entry point a future
+     * surface could reach for, and the scope clamp it owned lived at the
+     * call site rather than in the dispatcher — which is precisely how
+     * the duplication grew the first time.
+     */
+    for (const file of VOICE_AND_COPILOT) {
+      expect(code(file), `${file} still defines or calls executeIntent`).not.toContain(
+        "executeIntent",
+      );
+    }
   });
 
   it("selects vessels only through the shared selection model", () => {

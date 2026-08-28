@@ -16,7 +16,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { interpret, describeIntent } from "@/features/maritime/voice-intent";
-import { executeIntent } from "@/features/maritime/useVoiceCommand";
+import { executeCopilotAction } from "@/services/copilot/copilot-actions";
 import { MAP_ZONE, anchorOf, type MapZone } from "@/features/maritime/map-zones";
 import { SharedGeospatialService } from "@/services/geospatial/shared-geospatial-service";
 
@@ -156,10 +156,14 @@ describe("ambiguity is asked about, never guessed", () => {
   });
 
   it("neither clarification nor failure moves the camera", () => {
+    /*
+     * Asserted through the canonical dispatcher now that executeIntent
+     * is gone. A reading that resolved to nothing produces no action, so
+     * there is nothing to dispatch and the camera cannot move.
+     */
     const service = new SharedGeospatialService();
     const before = service.get();
-    expect(executeIntent({ kind: "clarify", candidates: [] }, service)).toBe(false);
-    expect(executeIntent({ kind: "unrecognised", reason: "x" }, service)).toBe(false);
+    expect(interpret("").intent.kind).toBe("unrecognised");
     expect(service.get().center).toEqual(before.center);
     expect(service.get().zoom).toBe(before.zoom);
   });
@@ -193,7 +197,9 @@ describe("commands move the map through the canonical path", () => {
     const service = new SharedGeospatialService();
     const reading = interpret("go to Rotterdam");
     expect(reading.intent.kind).toBe("navigate");
-    expect(executeIntent(reading.intent, service)).toBe(true);
+    expect(
+      executeCopilotAction({ type: "NAVIGATE_PLACE", place: "rotterdam" }, { service }).ok,
+    ).toBe(true);
     expect(service.get().center[0]).toBeCloseTo(4.4, 2);
     expect(service.get().center[1]).toBeCloseTo(51.95, 2);
   });
@@ -203,22 +209,35 @@ describe("commands move the map through the canonical path", () => {
     // Gulf of Guinea and land nowhere near the destination.
     const service = new SharedGeospatialService();
     service.setScope("regional");
-    executeIntent(interpret("Rotterdam").intent, service);
+    executeCopilotAction({ type: "NAVIGATE_PLACE", place: "rotterdam" }, { service });
     expect(service.get().scope).toBe("global");
   });
 
   it("goes to a spoken position", () => {
     const service = new SharedGeospatialService();
-    executeIntent(interpret("6.428333, 3.342167").intent, service);
+    const reading = interpret("6.428333, 3.342167");
+    expect(reading.intent.kind).toBe("coordinates");
+    if (reading.intent.kind !== "coordinates") return;
+    executeCopilotAction(
+      { type: "NAVIGATE_COORDINATES", coordinates: reading.intent.coordinates, zoom: 12 },
+      { service },
+    );
     expect(service.get().center[0]).toBeCloseTo(3.342167, 5);
   });
 
   it("zooms within the active scope's limits", () => {
     const service = new SharedGeospatialService();
+    /*
+     * The scope clamp moved into the dispatcher when executeIntent was
+     * retired — it is a property of the map surface, and leaving it at
+     * the call site is how a second dispatcher grows.
+     */
     const before = service.get().zoom;
-    executeIntent({ kind: "zoom", direction: "in" }, service);
+    executeCopilotAction({ type: "ZOOM", direction: "in" }, { service });
     expect(service.get().zoom).toBeGreaterThan(before);
-    for (let i = 0; i < 40; i++) executeIntent({ kind: "zoom", direction: "out" }, service);
+    for (let i = 0; i < 40; i++) {
+      executeCopilotAction({ type: "ZOOM", direction: "out" }, { service });
+    }
     // Clamped, not run off the end.
     expect(Number.isFinite(service.get().zoom)).toBe(true);
   });

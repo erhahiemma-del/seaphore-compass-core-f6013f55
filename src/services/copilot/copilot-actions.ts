@@ -29,6 +29,7 @@
  * failed to find. Every result carries the outcome the canonical service
  * actually produced.
  */
+import { MAP_SCOPES } from "@/services/geospatial/constants";
 import { navigateTo, navigateToCoordinates } from "@/services/geospatial/navigation";
 import { sgs, type SharedGeospatialService } from "@/services/geospatial";
 import type { LonLat } from "@/services/geospatial/types";
@@ -204,8 +205,19 @@ export function executeCopilotAction(
        * reaching for `setCamera` and re-deriving the scope's limits at
        * the call site.
        */
+      /*
+       * Clamped to the current scope's limits, absorbed from the voice
+       * layer when `executeIntent` was retired. The bound belongs here:
+       * it is a property of the map surface, and leaving it at the call
+       * site meant every future caller had to remember to re-derive it —
+       * which is exactly how the second dispatcher grew last time.
+       */
       const state = service.get();
-      const target = action.direction === "in" ? state.zoom + 2 : state.zoom - 2;
+      const limits = MAP_SCOPES[state.scope];
+      const target =
+        action.direction === "in"
+          ? Math.min(limits.maxZoom, state.zoom + 2)
+          : Math.max(limits.minZoom, state.zoom - 2);
       const result = navigateTo(
         { coordinates: state.center, zoom: target, source: "voice" },
         service,

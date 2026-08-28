@@ -105,69 +105,6 @@ export interface VoiceCommand {
   readonly dismiss: () => void;
 }
 
-/**
- * Carry out an interpreted command.
- *
- * Exported because it is the whole behavioural claim of this feature and
- * deserves testing without a microphone in the room.
- */
-export function executeIntent(
-  intent: VoiceIntent,
-  service: SharedGeospatialService = sgs,
-): boolean {
-  /*
-   * Translation only. This used to carry its own navigation, coordinate
-   * and zoom calls, which made it a second dispatcher: the same four
-   * capabilities implemented twice, diverging quietly, and only one of
-   * them behind the confirmation gate. It now turns a voice intent into
-   * a `CopilotAction` and hands it to the single executor.
-   *
-   * Kept as a function rather than deleted because it is the seam the
-   * voice affordance already calls, and because a named translation
-   * point is easier to hold to one dispatcher than an inline conversion
-   * at every call site.
-   */
-  const action = intentToAction(intent, service);
-  return action ? executeCopilotAction(action, { service }).ok : false;
-}
-
-/** A voice intent as an action the canonical dispatcher understands. */
-function intentToAction(
-  intent: VoiceIntent,
-  service: SharedGeospatialService,
-): CopilotAction | null {
-  switch (intent.kind) {
-    case "navigate":
-      return { type: "NAVIGATE_PLACE", place: intent.place.id };
-    case "coordinates":
-      return { type: "NAVIGATE_COORDINATES", coordinates: intent.coordinates, zoom: 12 };
-    case "global":
-      return { type: "NAVIGATE_PLACE", place: "world" };
-    case "zoom":
-      /*
-       * The scope's limits are still applied here rather than in the
-       * dispatcher, because they are a property of the map surface the
-       * officer is looking at, not of the instruction.
-       */
-      return {
-        type: "NAVIGATE_COORDINATES",
-        coordinates: service.get().center,
-        zoom: clampedZoom(intent.direction, service),
-      };
-    case "clarify":
-    case "unrecognised":
-      return null;
-  }
-}
-
-function clampedZoom(direction: "in" | "out", service: SharedGeospatialService): number {
-  const state = service.get();
-  const limits = MAP_SCOPES[state.scope];
-  return direction === "in"
-    ? Math.min(limits.maxZoom, state.zoom + 2)
-    : Math.max(limits.minZoom, state.zoom - 2);
-}
-
 export function useVoiceCommand(
   service: SharedGeospatialService = sgs,
   options: VoiceCommandOptions = {},
@@ -403,9 +340,15 @@ export function useVoiceCommand(
 
   const choose = useCallback(
     (place: Place) => {
-      // The officer has resolved the ambiguity; this is now a plain
-      // navigation and takes the same path as any other.
-      const moved = executeIntent({ kind: "navigate", place, confidence: 1 }, service);
+      /*
+       * The officer resolved the ambiguity, so this is now a plain
+       * navigation and goes straight to the one dispatcher — the same
+       * call a typed search or a spoken command lands on.
+       */
+      const moved = executeCopilotAction(
+        { type: "NAVIGATE_PLACE", place: place.id },
+        { service },
+      ).ok;
       setCandidates([]);
       setReading((current) =>
         current ? { ...current, intent: { kind: "navigate", place, confidence: 1 } } : current,
