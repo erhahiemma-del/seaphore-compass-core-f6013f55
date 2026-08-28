@@ -25,14 +25,14 @@ describe("Security · OpenSanctions credential never reaches the browser", () =>
   const clientFiles = walk(ROOT).filter((f) => !isServerOnly(f) && !/\.test\.tsx?$/.test(f));
 
   it("no client-reachable file declares a VITE_ OpenSanctions alias", () => {
-    const leaks = clientFiles.filter((f) =>
-      /VITE_OPEN_?SANCTIONS/i.test(readFileSync(f, "utf8")),
-    );
+    const leaks = clientFiles.filter((f) => /VITE_OPEN_?SANCTIONS/i.test(readFileSync(f, "utf8")));
     expect(leaks).toEqual([]);
   });
 
   it("no client-reachable file calls the OpenSanctions API directly", () => {
-    const leaks = clientFiles.filter((f) => readFileSync(f, "utf8").includes("api.opensanctions.org"));
+    const leaks = clientFiles.filter((f) =>
+      readFileSync(f, "utf8").includes("api.opensanctions.org"),
+    );
     expect(leaks).toEqual([]);
   });
 

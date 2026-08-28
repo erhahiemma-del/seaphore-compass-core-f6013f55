@@ -272,15 +272,18 @@ export async function screenEntity(input: ScreenInput): Promise<SanctionsScreeni
   if (input.imo && kind === "vessel") properties["imoNumber"] = [input.imo];
 
   try {
-    const res = await timedFetch(`${API_BASE}/match/${encodeURIComponent(dataset)}?algorithm=best`, {
-      method: "POST",
-      headers: { ...authHeaders(secret), "Content-Type": "application/json" },
-      body: JSON.stringify({
-        queries: {
-          subject: { schema: SCHEMA_BY_KIND[kind] ?? "LegalEntity", properties },
-        },
-      }),
-    });
+    const res = await timedFetch(
+      `${API_BASE}/match/${encodeURIComponent(dataset)}?algorithm=best`,
+      {
+        method: "POST",
+        headers: { ...authHeaders(secret), "Content-Type": "application/json" },
+        body: JSON.stringify({
+          queries: {
+            subject: { schema: SCHEMA_BY_KIND[kind] ?? "LegalEntity", properties },
+          },
+        }),
+      },
+    );
     if (!res.ok) {
       return {
         ...base,

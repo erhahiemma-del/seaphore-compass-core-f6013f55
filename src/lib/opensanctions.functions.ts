@@ -41,9 +41,8 @@ export const testOpenSanctionsConnection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ValidationOutcome> => {
     await assertAdmin(context as AuthedContext);
-    const { validateCredential, touchValidation } = await import(
-      "@/lib/server/opensanctions.server"
-    );
+    const { validateCredential, touchValidation } =
+      await import("@/lib/server/opensanctions.server");
     const outcome = await validateCredential();
     if (outcome.authenticated) await touchValidation(outcome.checkedAt);
     return outcome;
@@ -67,9 +66,8 @@ export const rotateOpenSanctionsCredential = createServerFn({ method: "POST" })
       context,
     }): Promise<{ replaced: boolean; validation: ValidationOutcome; status: CredentialStatus }> => {
       await assertAdmin(context as AuthedContext);
-      const { rotateCredential, getCredentialStatus } = await import(
-        "@/lib/server/opensanctions.server"
-      );
+      const { rotateCredential, getCredentialStatus } =
+        await import("@/lib/server/opensanctions.server");
       const result = await rotateCredential(data.apiKey, context.userId);
       if (result.replaced) {
         await context.supabase.from("audit_log").insert({
