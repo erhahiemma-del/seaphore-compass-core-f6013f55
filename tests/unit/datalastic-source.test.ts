@@ -28,7 +28,7 @@ import type {
 } from "@/connectors/datalastic/types";
 import { clearVesselSources, listVesselSources } from "@/services/geospatial/vessel-source";
 import { registerDatalasticSource } from "@/services/geospatial/sources/datalastic-vessel-source";
-import { feedErrorFromSource } from "@/features/maritime/MapCanvas";
+import { feedErrorFromSource } from "@/features/maritime/feed-error";
 
 const OBSERVED_AT = "2026-08-28T20:00:00.000Z";
 const NOW = Date.parse("2026-08-28T20:10:00.000Z");
