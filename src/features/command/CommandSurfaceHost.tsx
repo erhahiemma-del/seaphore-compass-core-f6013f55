@@ -15,7 +15,7 @@ import { useFocusSubjectStore } from "@/stores/focus-subject.store";
 import { useInvestigationWorkflowStore } from "@/services/investigations-workflow";
 import { useMissionMode } from "@/features/mission-control/useMissionMode";
 import { useRoles } from "@/hooks/use-permissions";
-import { writeAuditLog } from "@/lib/audit.functions";
+import { recordAudit } from "@/lib/audit-client";
 import type { Role } from "@/lib/permissions";
 
 import { CommandSurface } from "./CommandSurface";
@@ -35,9 +35,7 @@ import type { CommandResult } from "./results";
  * no UPDATE or DELETE policy, so entries cannot be altered afterwards.
  */
 function audit(action: string, entity: string, metadata?: Record<string, unknown>) {
-  void writeAuditLog({
-    data: { action, entity, module: "mission-control.command", metadata },
-  }).catch(() => {
+  void recordAudit({ action, entity, module: "mission-control.command", metadata }).catch(() => {
     /* Audit is a record, not a gate. Never block the officer on it. */
   });
 }
