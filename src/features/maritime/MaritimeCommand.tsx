@@ -59,12 +59,16 @@ import { OperatingModeBar } from "./OperatingModeBar";
 import { TimelineBar } from "./TimelineBar";
 import { replayPresentation } from "./replay-presentation";
 import { displayOwner, replayOwnsDisplay, DISPLAY_OWNER_LABEL } from "./replay-ownership";
+import { useArrivalAlerts } from "./useArrivalAlerts";
+import { AttentionCentre } from "./AttentionCentre";
 import { framingCentreFor } from "./selected-vessel-framing";
 import { useVesselTrack } from "./useVesselTrack";
 import { REQUESTED_SELECTION, resolveRequestedVessel } from "./deterministic-selection";
 import { toTrackCollection } from "@/services/geospatial/vessel-track";
 import { navigateToCoordinates } from "@/services/geospatial/navigation";
 import { hasHistory } from "@/services/geospatial/vessel-source";
+import { eezRingIfLoaded } from "@/services/geospatial/eez-ring";
+import { applyTransition, transitionAlert } from "@/services/alerts";
 
 /**
  * The three perspectives, named for what an officer is looking at.
@@ -233,6 +237,47 @@ export function MaritimeCommand() {
    * LIVE over a historical picture.
    */
   const replayOwner = displayOwner(replay.status);
+
+  /*
+   * Continuous approach assessment.
+   *
+   * The alert domain existed and produced nothing because nothing ran
+   * it: approach was assessed only when an officer asked a question. One
+   * interval, the canonical engine, the same boundary ring the map draws.
+   */
+  const alerts = useArrivalAlerts({
+    vessels,
+    boundaryRing: eezRingIfLoaded(),
+    sourceId: feed.sourceId ?? "unknown",
+  });
+
+  /*
+   * An alert leads to the same selection every other route leads to.
+   *
+   * Through `sgs.select`, so there is no alert-specific selected vessel
+   * and no second drawer. The camera is left to the existing selection
+   * framing rather than moved from here.
+   */
+  const viewAlertVessel = useCallback((imo: string) => {
+    sgs.select({ kind: "vessel", id: imo, imo });
+  }, []);
+
+  const acknowledgeAlert = useCallback(
+    (alertId: string) => {
+      const alert = alerts.store.get(alertId);
+      if (!alert) return;
+      const outcome = transitionAlert({
+        alertId,
+        from: alert.state,
+        to: "ACKNOWLEDGED",
+        actor: "officer",
+      });
+      // The lifecycle table decides. A refusal is left as it is rather
+      // than forced through, so the interface cannot outrank the domain.
+      if (outcome.ok) alerts.replace(applyTransition(alert, outcome.event));
+    },
+    [alerts],
+  );
 
   // Hydrate shared state from the URL so a pasted link restores the view.
   useEffect(() => {
@@ -420,6 +465,25 @@ export function MaritimeCommand() {
             the map.
           */}
           <MaritimeSearch onApplied={setLastPlan} vessels={vessels} className="w-full max-w-md" />
+
+          {/*
+            The attention count sits in the command bar rather than in a
+            map zone, and its position is a collision decision rather than
+            a stylistic one. Opening it on the right would drop a 320px
+            panel over the top of the context drawer — precisely the
+            vessel identity an officer opened the drawer to read. Anchored
+            here, the panel falls between the left context column (which
+            ends around 368px) and the drawer, over map the officer is not
+            reading a value from.
+          */}
+          <AttentionCentre
+            alerts={alerts.alerts}
+            counts={alerts.counts}
+            assessable={alerts.assessable}
+            unassessableCount={alerts.unassessableCount}
+            onView={viewAlertVessel}
+            onAcknowledge={acknowledgeAlert}
+          />
 
           <OperatingModeBar />
 

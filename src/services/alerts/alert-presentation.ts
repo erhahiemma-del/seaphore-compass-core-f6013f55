@@ -154,10 +154,11 @@ export function arrivalLineFor(evidence: AlertEvidence): string {
   }
 
   const rounded = Math.round(hours);
+  const unit = rounded === 1 ? "hour" : "hours";
   const label = BASIS_LABEL[basis] ?? basis;
   return basis === "REPORTED"
-    ? `${rounded} hours · ${label}`
-    : `Approximately ${rounded} hours · ${label}`;
+    ? `${rounded} ${unit} · ${label}`
+    : `Approximately ${rounded} ${unit} · ${label}`;
 }
 
 /**
