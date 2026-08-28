@@ -390,7 +390,6 @@ describe("AIS provider registry", () => {
     expect(DATALASTIC_ENTRY.capabilities.areaQuery).toBeNull();
   });
 
-
   it("activates a provider once an implementation exists", () => {
     const registry = new AisProviderRegistry().register(DATALASTIC_ENTRY);
     registry.activate("datalastic", {

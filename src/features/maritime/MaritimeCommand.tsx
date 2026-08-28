@@ -30,7 +30,6 @@ import {
   MAP_SCOPES,
   getVesselSource,
   resolveMapDataState,
-
   mapEventBus,
   type MapScopeId,
   sgs,

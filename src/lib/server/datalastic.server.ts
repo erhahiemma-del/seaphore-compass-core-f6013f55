@@ -356,7 +356,6 @@ function parseVesselList(raw: RawResponse): readonly DatalasticVesselRecord[] | 
   return parseVesselListWith(raw, true);
 }
 
-
 /* ── Client ──────────────────────────────────────────────────────────── */
 
 /**
@@ -417,7 +416,6 @@ export async function getLocationTraffic(
     CACHE_TTL_MS.positions,
   );
 }
-
 
 /** `/vessel_find` — Vessel Finder. Bills per vessel found. */
 export async function findVessels(

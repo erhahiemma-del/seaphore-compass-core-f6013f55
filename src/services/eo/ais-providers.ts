@@ -113,7 +113,6 @@ export const DATALASTIC_ENTRY: AisProviderEntry = {
     "Area traffic uses /vessel_inradius (centre + radius). /vessel_inarea does not exist on the provider and answered 404.",
     "Provider failures continue to surface as collection gaps or plan limits, never as an empty sea, and no simulated traffic is substituted for them.",
   ],
-
 };
 
 /**
