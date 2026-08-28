@@ -217,12 +217,30 @@ export const useScreeningQueueStore = create<ScreeningQueueState>()(
           const result = await screenSanctions({
             data: { kind: e.kind, name: e.name, imo: e.imo },
           });
-          const hitCount = result.hitCount;
           const providers = [...result.providers];
+          const finding = result.finding;
 
-          const status = classifyHits(hitCount);
-          const summary =
-            hitCount === 0
+          // The provider's screening endpoint is authoritative when it
+          // ran; a score is similarity, never a confirmed sanction.
+          if (finding && finding.error) {
+            get().markResult(id, { status: "ERROR", providers, error: finding.error });
+            return;
+          }
+          const hitCount = finding ? finding.candidates.length : result.hitCount;
+          const status: ScreeningStatus = finding
+            ? finding.state === "NO_MATCH"
+              ? "CLEAR"
+              : finding.state === "REVIEW_REQUIRED"
+                ? "REVIEW"
+                : finding.state === "POSSIBLE_MATCH"
+                  ? "REVIEW"
+                  : classifyHits(hitCount)
+            : classifyHits(hitCount);
+          const summary = finding
+            ? finding.state === "NO_MATCH"
+              ? `No match on ${finding.provider} (${finding.dataset}).`
+              : `${finding.candidates.length} ranked candidate${finding.candidates.length === 1 ? "" : "s"} · top score ${(finding.topScore ?? 0).toFixed(2)} · ${finding.provider}`
+            : hitCount === 0
               ? `No matches across ${providers.length} provider${providers.length === 1 ? "" : "s"}.`
               : `${hitCount} potential match${hitCount === 1 ? "" : "es"} · ${providers.join(", ")}`;
           get().markResult(id, { status, hitCount, providers, summary, error: undefined });
