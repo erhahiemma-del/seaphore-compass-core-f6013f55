@@ -18,6 +18,7 @@ import { AssetPopup } from "./AssetPopup";
 import { EMPTY_TRACK, type TrackCollection } from "@/services/geospatial/vessel-track";
 import { useAlertPulse } from "./useAlertPulse";
 import { installMapHealthProbe } from "./health-probe";
+import { feedErrorFromSource } from "./feed-error";
 
 /**
  * Selection kinds the contextual drawer renders in full.
@@ -669,7 +670,15 @@ export function MapCanvas({
         }
         feed = {
           loading: false,
-          error: null,
+          /*
+           * A provider that answers without throwing can still have
+           * failed. Datalastic returns "your plan does not cover this",
+           * a credential can be missing, an upstream can be down — and
+           * every one of those arrives here as an empty list. Reading
+           * the provider's own status is what stops a collection failure
+           * being drawn as an empty sea.
+           */
+          error: feedErrorFromSource(source),
           sourceId: source.id,
           lastAppliedAt: new Date().toISOString(),
         };

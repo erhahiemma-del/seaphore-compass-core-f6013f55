@@ -223,6 +223,16 @@ export type SourceStatus =
   | "empty"
   | "credentials-missing"
   | "auth-failed"
+  /**
+   * Credential accepted, entitlement absent.
+   *
+   * A commercial provider answering "your plan does not cover this" is
+   * saying nothing about the sea and nothing about the key. Folding it
+   * into `auth-failed` would send an officer chasing a credential that
+   * is fine, and folding it into `empty` would present a billing state
+   * as an empty ocean.
+   */
+  | "subscription-inactive"
   | "upstream-error"
   | "not-queried";
 
