@@ -42,6 +42,12 @@ const GLOBAL_INTENTS: ReadonlySet<OfficerIntent> = new Set([
 
 /** The entity kind each intent is primarily about, when it has one. */
 const PREFERRED_ENTITY: Readonly<Record<OfficerIntent, EntityKind | null>> = {
+  // What the command is about, so entity resolution knows what to look
+  // for: a place for navigation, a hull for the vessel commands.
+  "map-navigation": "port",
+  "map-zoom": null,
+  "vessel-selection": "vessel",
+  "vessel-track": "vessel",
   "fleet-intelligence": null,
   "vessel-investigation": "vessel",
   "manifest-intelligence": "manifest",
@@ -178,6 +184,17 @@ export function resolveWorkspaceMode(
       return primary ? "investigation" : "fleet-overview";
     case "officer-notes":
       return "evidence-review";
+    /*
+     * A command does not change the workspace. The officer asked for the
+     * map to move or a vessel to open; rearranging the panels around
+     * them would be the system answering a question they did not ask.
+     */
+    case "map-navigation":
+    case "map-zoom":
+      return "fleet-overview";
+    case "vessel-selection":
+    case "vessel-track":
+      return "investigation";
     case "natural-language-search":
     case "unknown":
       // With a subject, show the subject; without one, show the fleet.

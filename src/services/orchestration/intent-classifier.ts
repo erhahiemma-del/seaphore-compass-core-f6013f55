@@ -33,6 +33,14 @@ import type { OfficerIntent, ResolvedEntity } from "./understanding/types";
  * investigation and a risk assessment both warrant the full agent set.
  */
 const INTENT_MODE: Readonly<Record<OfficerIntent, Intent["mode"]>> = {
+  /*
+   * Commands. They instruct rather than ask, so they retrieve nothing
+   * and plan no briefing: the answer is the system doing the thing.
+   */
+  "map-navigation": "lookup",
+  "map-zoom": "lookup",
+  "vessel-selection": "lookup",
+  "vessel-track": "lookup",
   "vessel-investigation": "investigation",
   "risk-assessment": "investigation",
   "pattern-detection": "investigation",
@@ -68,6 +76,14 @@ const INTENT_MODE: Readonly<Record<OfficerIntent, Intent["mode"]>> = {
  * first, so it names the question's primary dimension.
  */
 const INTENT_CAPABILITIES: Readonly<Record<OfficerIntent, readonly CapabilityId[]>> = {
+  /*
+   * Commands. They instruct rather than ask, so they retrieve nothing
+   * and plan no briefing: the answer is the system doing the thing.
+   */
+  "map-navigation": [],
+  "map-zoom": [],
+  "vessel-selection": [],
+  "vessel-track": [],
   "fleet-intelligence": ["PATTERN_DETECTION", "RISK_SCORING"],
   "vessel-investigation": [
     "PATTERN_DETECTION",

@@ -316,7 +316,14 @@ describe("Maritime Command keeps its map inside the shell", () => {
   });
 
   it("keeps the controls that act on the map", () => {
-    for (const control of ["<MapSearch", "<OperatingModeBar", "<CommandToolbar", "<MapCanvas"]) {
+    // `MapSearch` became `MaritimeSearch` when interpretation converged
+    // on the orchestration engine. Same rule: the map keeps a search.
+    for (const control of [
+      "<MaritimeSearch",
+      "<OperatingModeBar",
+      "<CommandToolbar",
+      "<MapCanvas",
+    ]) {
       expect(MARITIME).toContain(control);
     }
   });

@@ -53,7 +53,7 @@ import { useVoyages, type VoyageFeed } from "./useVoyages";
 import { MapCanvas, type VesselFeedState } from "./MapCanvas";
 import { useReplayTimeline } from "./useReplayTimeline";
 import { OperationalLegend } from "./OperationalLegend";
-import { MapSearch } from "./MapSearch";
+import { MaritimeSearch } from "./MaritimeSearch";
 import { OperatingModeBar } from "./OperatingModeBar";
 import { TimelineBar } from "./TimelineBar";
 import { replayPresentation } from "./replay-presentation";
@@ -261,6 +261,30 @@ export function MaritimeCommand() {
   }, []);
 
   /*
+   * The panel follows the shared selection, not just the map click.
+   *
+   * `selectedVessel` used to be set only where a click happened, which
+   * quietly made it a second selection state: a vessel chosen from
+   * search or by the Copilot went through `sgs.select` and never
+   * reached here, so the drawer opened on the right IMO and reported it
+   * as "not loaded" while the vessel sat in the feed. Measured in the
+   * browser — one drawer, correct identifier, no panel.
+   *
+   * Deriving it from the shared selection means every route in resolves
+   * the same way, which is what having one selection model is for.
+   */
+  useEffect(() => {
+    if (selection?.kind !== "vessel") {
+      setSelectedVessel(null);
+      return;
+    }
+    const found = vessels.find((vessel) => vessel.identity.imo === selection.imo);
+    // Absent means the feed has not caught up; the drawer's own
+    // "not loaded" state is the honest answer until it does.
+    if (found) setSelectedVessel(found);
+  }, [selection, vessels]);
+
+  /*
    * Keep the chosen vessel where the officer can see it.
    *
    * Selecting opens a 380px drawer. The camera does not change, so the
@@ -375,7 +399,7 @@ export function MaritimeCommand() {
             screen from the navigation model. What stays is what acts on
             the map.
           */}
-          <MapSearch onApplied={setLastPlan} className="max-w-md" />
+          <MaritimeSearch onApplied={setLastPlan} vessels={vessels} className="w-full max-w-md" />
 
           <OperatingModeBar />
 

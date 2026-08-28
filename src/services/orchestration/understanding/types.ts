@@ -54,6 +54,21 @@ export type OfficerIntent =
   | "natural-language-search"
   | "officer-notes"
   | "mission-planning"
+  /*
+   * Instructions rather than questions.
+   *
+   * The taxonomy above describes what an officer wants to *know*. These
+   * describe what they want the system to *do*, and they live in the
+   * same union on purpose: one classifier reading one sentence, so that
+   * "show me Opobo Pioneer" cannot mean one thing typed and another
+   * spoken. Everything downstream that switches on an intent is an
+   * exhaustive record, so adding them here forces every consumer to say
+   * what it does with a command.
+   */
+  | "map-navigation"
+  | "map-zoom"
+  | "vessel-selection"
+  | "vessel-track"
   | "unknown";
 
 /**

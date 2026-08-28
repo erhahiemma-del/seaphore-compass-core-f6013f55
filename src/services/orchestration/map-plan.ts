@@ -253,6 +253,16 @@ export interface IntelligenceMapPlan {
 
 /** Layers each intent wants switched on. */
 const INTENT_LAYERS: Readonly<Record<OfficerIntent, readonly string[]>> = {
+  /*
+   * A command should not silently rearrange the officer's layers.
+   * Navigation moves the camera; selection opens a panel. Neither is a
+   * reason to turn layers on behind their back, so these add none and
+   * the vessel commands name only what they are about.
+   */
+  "map-navigation": [],
+  "map-zoom": [],
+  "vessel-selection": ["vessels"],
+  "vessel-track": ["vessels", "aisTrack"],
   "fleet-intelligence": ["vessels"],
   "vessel-investigation": ["vessels", "aisTrack"],
   "port-intelligence": ["vessels", "ports"],
@@ -280,6 +290,12 @@ const INTENT_LAYERS: Readonly<Record<OfficerIntent, readonly string[]>> = {
 
 /** Operating mode each intent implies. */
 const INTENT_MODE: Readonly<Record<OfficerIntent, OperatingMode>> = {
+  // Navigation keeps the officer's current mode; the vessel commands
+  // are about one hull, which is what VESSEL mode means.
+  "map-navigation": "NATIONAL",
+  "map-zoom": "NATIONAL",
+  "vessel-selection": "VESSEL",
+  "vessel-track": "VESSEL",
   "fleet-intelligence": "NATIONAL",
   "strategic-summary": "NATIONAL",
   "executive-brief": "NATIONAL",

@@ -18,6 +18,12 @@ import type { DatasetId, OfficerIntent, RetrievalPlan, RiskModuleId } from "./ty
 
 /** What each intent wants, before availability is considered. */
 const INTENT_DATASETS: Readonly<Record<OfficerIntent, readonly DatasetId[]>> = {
+  // Moving the camera reads nothing. The vessel commands read only the
+  // positions the map is already drawing.
+  "map-navigation": [],
+  "map-zoom": [],
+  "vessel-selection": ["fleet-positions"],
+  "vessel-track": ["fleet-positions", "ais-events"],
   "fleet-intelligence": ["fleet-positions", "ais-events", "risk-modules"],
   "vessel-investigation": [
     "fleet-positions",

@@ -73,6 +73,12 @@ const RULES: readonly Rule[] = [
  * periods rather than operational ones.
  */
 const DEFAULTS: Readonly<Record<OfficerIntent, { span: number; label: string }>> = {
+  // A command happens now. Track is the exception: it asks about the
+  // past, and ninety days matches what a vessel investigation assumes.
+  "map-navigation": { span: MINUTE, label: "now" },
+  "map-zoom": { span: MINUTE, label: "now" },
+  "vessel-selection": { span: MINUTE, label: "now" },
+  "vessel-track": { span: 90 * DAY, label: "last 90 days" },
   "fleet-intelligence": { span: 15 * MINUTE, label: "last 15 minutes" },
   "vessel-investigation": { span: 90 * DAY, label: "last 90 days" },
   "manifest-intelligence": { span: 30 * DAY, label: "last 30 days" },

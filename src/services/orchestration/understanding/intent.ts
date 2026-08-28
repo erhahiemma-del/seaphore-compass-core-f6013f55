@@ -31,6 +31,71 @@ interface IntentRule {
 }
 
 const RULES: readonly IntentRule[] = [
+  /*
+   * ── Commands ──────────────────────────────────────────────────────
+   *
+   * First, and weighted high, because an instruction is unambiguous in a
+   * way a question is not: "take me to Apapa" is not a port-intelligence
+   * question that happens to mention a port, it is an instruction to
+   * move the camera. Ordering them ahead of the domain nouns is what
+   * stops the noun in the sentence outvoting the verb the officer used.
+   *
+   * They live in the same rule set as every other intent on purpose.
+   * A separate command classifier would be a second reading of the same
+   * sentence, and the two would disagree the first time someone taught
+   * one of them a phrase.
+   */
+  {
+    intent: "map-zoom",
+    rx: /\b(zoom (in|out)|zoom closer|closer in|further out)\b/i,
+    weight: 0.96,
+  },
+  {
+    intent: "map-navigation",
+    rx: /\b(take me to|go to|navigate to|fly to|show me the (global|world) view|global view|zoom into)\b/i,
+    weight: 0.94,
+  },
+  {
+    // Bare coordinates are an instruction to go there and nothing else.
+    intent: "map-navigation",
+    rx: /-?\d{1,3}\.\d+\s*,\s*-?\d{1,3}\.\d+/,
+    weight: 0.93,
+  },
+  {
+    intent: "vessel-track",
+    rx: /\b(where has (it|this vessel|.+) been|movement history|voyage history|its journey|where (it|she) went)\b/i,
+    weight: 0.92,
+  },
+  {
+    /*
+     * "Show me X" is a selection only when X is not one of the domain
+     * nouns above — "show me the manifest" is a manifest question. The
+     * negative lookahead keeps the verb from claiming those sentences.
+     */
+    intent: "vessel-selection",
+    /*
+     * Singular subjects only. "Show me vessels approaching Nigeria" is a
+     * fleet question that happens to start with the selection verb, and
+     * an earlier version of this rule claimed it — the officer asked
+     * about a fleet and got one hull. So the lookahead rejects the
+     * plural, the fleet words, and the domain nouns whose own rules must
+     * win.
+     */
+    rx: /\b(show me|find|select|locate|pull up|bring up)\s+(?!(?:the\s+)?(?:manifest|cargo|container|owner|crew|revenue|risk|vessels|ships|tankers|traffic|all\b|every\b|any\b))/i,
+    weight: 0.88,
+  },
+
+  {
+    /*
+     * Investigations. A question or an instruction depending on the
+     * verb, which is decided at translation rather than here — one
+     * sentence must not classify two ways.
+     */
+    intent: "vessel-investigation",
+    rx: /\b(investigations?|investigate|open a case|case file)\b/i,
+    weight: 0.9,
+  },
+
   // ── Unambiguous document and object nouns ───────────────────────
   // The manifest rule precedes the container-number one: in "pull the
   // manifest for MSCU1234567" the container is the lookup key, not the
@@ -219,6 +284,11 @@ export function classifyOfficerIntent(raw: string): IntentClassification {
  * questions all want the same ones.
  */
 const ICE_MAP: Readonly<Record<OfficerIntent, IceIntent>> = {
+  // ICE plans retrieval. A command asks it for nothing.
+  "map-navigation": "OTHER",
+  "map-zoom": "OTHER",
+  "vessel-selection": "FACT_LOOKUP",
+  "vessel-track": "FACT_LOOKUP",
   "fleet-intelligence": "FACT_LOOKUP",
   "vessel-investigation": "INVESTIGATION",
   "manifest-intelligence": "FACT_LOOKUP",

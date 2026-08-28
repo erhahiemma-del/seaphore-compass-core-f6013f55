@@ -279,6 +279,33 @@ const GLOBAL_PHRASES = [
  * shown only the outcome cannot tell a misheard word from a
  * misunderstood one, and those need different corrections.
  */
+/**
+ * Rank places against a spoken or typed phrase.
+ *
+ * Exported because this is the part of the voice parser genuinely worth
+ * keeping. `findPlace` matches what a place is called; this matches what
+ * a person calls it — "Apapa" for Lagos Port Complex, "Tin Can" for Tin
+ * Can Island — using phonetic distance and the generic suffixes people
+ * drop. That is entity resolution, not classification: it names no
+ * intent and performs no action, so it belongs under the canonical
+ * engine rather than beside it.
+ */
+export function rankPlaces(phrase: string): readonly { place: Place; value: number }[] {
+  const text = stripLeadIns(normalise(phrase));
+  if (!text) return [];
+  return allPlaces()
+    .map((place) => ({
+      place,
+      value: Math.max(...matchKeys(place.name, place.id).map((key) => score(text, key))),
+    }))
+    .sort((a, b) => b.value - a.value);
+}
+
+/** The confidence at which a place match is acted on without asking. */
+export const PLACE_ACT_THRESHOLD = ACT_THRESHOLD;
+/** Below this, the phrase is not a place at all. */
+export const PLACE_CLARIFY_THRESHOLD = CLARIFY_THRESHOLD;
+
 export function interpret(transcript: string): VoiceReading {
   const heard = transcript.trim();
   const text = normalise(heard);

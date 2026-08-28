@@ -23,7 +23,14 @@
  * fresh instruction, and parsing their reply as one would drop the
  * approval on the floor and leave the write pending forever.
  */
-import { interpret } from "@/features/maritime/voice-intent";
+import { understand } from "@/services/orchestration";
+import {
+  commandInput,
+  normalisedText,
+  type CommandSource,
+} from "@/services/orchestration/command-input";
+
+import { translateUnderstanding } from "./understanding-to-action";
 
 import type { CopilotAction } from "./copilot-actions";
 import { isStateChanging } from "./copilot-actions";
@@ -63,6 +70,8 @@ export interface TurnInput {
   readonly vessels: readonly ResolvableVessel[];
   /** The map's current selection, for pronouns with no prior reference. */
   readonly selectedImo: string | null;
+  /** Where the text came from, so voice gets its preprocessing. */
+  readonly source?: CommandSource;
   readonly now?: number;
 }
 
@@ -166,58 +175,95 @@ export function planTurn(input: TurnInput): TurnPlan {
     if (topic.test.test(said)) return reply(context, topic.answer);
   }
 
-  const vesselCommand = readVesselCommand(said);
-  if (vesselCommand) {
-    return planVesselCommand(vesselCommand, input, context, now);
-  }
-
   /*
-   * Anything left is a map command, read by the existing interpreter.
-   * Voice and Copilot share it rather than each carrying their own
-   * phrasebook.
+   * One engine. The text goes to `understand`, and what comes back is
+   * either an instruction or a question — the same reading whether the
+   * officer typed it, spoke it, or asked the Copilot.
    */
-  const reading = interpret(said);
-  switch (reading.intent.kind) {
-    case "navigate":
-      return execute(
-        context,
-        { type: "NAVIGATE_PLACE", place: reading.intent.place.id },
-        `Taking you to ${reading.intent.place.name}.`,
-      );
-    case "coordinates":
-      return execute(
-        context,
-        { type: "NAVIGATE_COORDINATES", coordinates: reading.intent.coordinates, zoom: 12 },
-        "Moving to those coordinates.",
-      );
-    case "global":
-      return execute(
-        context,
-        { type: "NAVIGATE_PLACE", place: "world" },
-        "Showing the global view.",
-      );
-    case "zoom":
-      return execute(
-        context,
-        { type: "ZOOM", direction: reading.intent.direction },
-        reading.intent.direction === "in" ? "Zooming in." : "Zooming out.",
-      );
-    case "clarify":
+  const normalised = normalisedText(commandInput(said, input.source ?? "COPILOT", context));
+  const understanding = understand(normalised);
+  const translation = translateUnderstanding({
+    understanding,
+    text: normalised,
+    vessels: input.vessels,
+    contextVesselImo: resolvePronoun(context, input.selectedImo),
+    contextVesselName: context.lastReferencedVesselName,
+  });
+
+  switch (translation.kind) {
+    case "ACTION": {
+      /*
+       * A write is proposed, never performed. `isStateChanging` decides,
+       * so a capability added to the action union without a considered
+       * answer cannot slip past the gate.
+       */
+      const remembered = rememberVessel(context, translation.action, input.vessels);
+      if (isStateChanging(translation.action)) {
+        return {
+          outcome: { kind: "CONFIRM", speech: confirmationFor(translation.action) },
+          context: {
+            ...remembered,
+            pendingConfirmation: {
+              action: translation.action,
+              prompt: confirmationFor(translation.action),
+              at: now,
+            },
+          },
+        };
+      }
+      return execute(remembered, translation.action, translation.speech);
+    }
+
+    case "AMBIGUOUS":
       return {
         outcome: {
           kind: "CLARIFY",
-          speech: `I heard a place but could not be sure which. Did you mean ${reading.intent.candidates
-            .map((c) => c.name)
-            .join(", or ")}?`,
+          speech: `I found ${translation.candidates.length} vessels matching ${translation.subject}. Which one do you mean? ${describeCandidates(translation.candidates)}.`,
         },
-        context,
+        context: {
+          ...context,
+          pendingClarification: {
+            query: translation.subject,
+            candidates: translation.candidates,
+            then: translation.then,
+            at: now,
+          },
+        },
       };
-    case "unrecognised":
+
+    case "UNRESOLVED":
+      return reply(context, translation.speech);
+
+    case "NOT_ACTIONABLE":
+      /*
+       * A question, not an instruction. Retrieval is not wired to this
+       * surface, so the honest answer names what can be done rather than
+       * pretending to have searched.
+       */
       return reply(
         context,
-        "I am not sure what you would like me to do. You can ask me to find a vessel, move the map, show a vessel's movement history, or open its intelligence.",
+        understanding.intent === "unknown"
+          ? "I am not sure what you would like me to do. You can ask me to find a vessel, move the map, show a vessel's movement history, or open its intelligence."
+          : "I understood that as a question rather than an instruction, and query results are not available from this surface yet.",
       );
   }
+}
+
+/** Remember the hull an action is about, so the next pronoun resolves. */
+function rememberVessel(
+  context: ConversationContext,
+  action: CopilotAction,
+  vessels: readonly ResolvableVessel[],
+): ConversationContext {
+  if (!("imo" in action)) return context;
+  const name = vessels.find((v) => v.identity.imo === action.imo)?.identity.name;
+  return { ...context, lastReferencedVesselId: action.imo, lastReferencedVesselName: name };
+}
+
+function confirmationFor(action: CopilotAction): string {
+  return action.type === "OPEN_INVESTIGATION"
+    ? `This will open an investigation for ${action.vesselName ?? action.imo}. Should I proceed?`
+    : "This changes what the map reports. Should I proceed?";
 }
 
 /* ── Vessel commands ─────────────────────────────────────────────────── */
