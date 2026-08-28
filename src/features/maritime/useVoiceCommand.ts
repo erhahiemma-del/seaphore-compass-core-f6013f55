@@ -28,7 +28,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useVoiceDictation, type DictationIssue } from "@/hooks/use-voice-dictation";
 import { navigateTo } from "@/services/geospatial/navigation";
 import { MAP_SCOPES } from "@/services/geospatial/constants";
-import { sgs, type SharedGeospatialService } from "@/services/geospatial";
+import { sgs, type SharedGeospatialService, type Vessel } from "@/services/geospatial";
+import { eezRingIfLoaded } from "@/services/geospatial/eez-ring";
 import type { Place } from "@/services/geospatial/places";
 
 import { executeCopilotAction, type CopilotAction } from "@/services/copilot/copilot-actions";
@@ -46,6 +47,8 @@ import { devTranscriptsFrom } from "./voice-dev-harness";
 export interface VoiceCommandOptions {
   /** Vessels currently held, for naming and identifier resolution. */
   readonly vessels?: readonly ResolvableVessel[];
+  /** The full fleet, for assessments that read every vessel. */
+  readonly fleet?: readonly Vessel[];
   /** How to open a case, when the surface has a workflow. */
   readonly openInvestigation?: (imo: string) => void;
 }
@@ -240,6 +243,12 @@ export function useVoiceCommand(
             service,
             confirmed: true,
             knownImos: options.vessels?.map((v) => v.identity.imo),
+            /*
+             * The same fleet the map is drawing, so an approach
+             * assessment cannot disagree with what the officer sees.
+             */
+            fleet: options.fleet,
+            boundaryRing: eezRingIfLoaded() ?? undefined,
             openInvestigation: options.openInvestigation,
           });
           /*
@@ -248,15 +257,20 @@ export function useVoiceCommand(
            * worst outcome available to a voice interface, because there
            * is no screen state contradicting it.
            */
+          /*
+           * The answer wins over the intent. "Assessing the fleet" is a
+           * statement of having started, and an officer who asked a
+           * question and hears only that has been left without one.
+           */
           respond(
-            result.ok ? plan.outcome.speech : (result.reason ?? result.summary),
+            result.ok ? (result.answer ?? plan.outcome.speech) : (result.reason ?? result.summary),
             result.ok ? "completed" : "failed",
           );
           return;
         }
       }
     },
-    [service, options.vessels, options.openInvestigation, respond],
+    [service, options.vessels, options.fleet, options.openInvestigation, respond],
   );
 
   /*

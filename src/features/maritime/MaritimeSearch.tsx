@@ -28,7 +28,13 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { executeCopilotAction } from "@/services/copilot/copilot-actions";
 import type { ResolvableVessel } from "@/services/copilot/copilot-conversation";
-import { layerRegistry, sgs, type SharedGeospatialService } from "@/services/geospatial";
+import {
+  layerRegistry,
+  sgs,
+  type SharedGeospatialService,
+  type Vessel,
+} from "@/services/geospatial";
+import { eezRingIfLoaded } from "@/services/geospatial/eez-ring";
 import {
   captureMapContext,
   intentsToStatePatch,
@@ -95,11 +101,29 @@ export function MaritimeSearch({
           service,
           confirmed: false,
           knownImos: vessels.map((v) => v.identity.imo),
+          /*
+           * The fleet the officer is looking at, and the outline the map
+           * draws. An approach answer computed against anything else
+           * would disagree with the screen it appears on.
+           */
+          fleet: vessels as readonly Vessel[],
+          boundaryRing: eezRingIfLoaded() ?? undefined,
         });
-        setOutcome(result.ok ? resolved.translation.speech : (result.reason ?? result.summary));
+        setOutcome(
+          result.ok
+            ? (result.answer ?? resolved.translation.speech)
+            : (result.reason ?? result.summary),
+        );
         if (result.ok) {
           setRecent(rememberSearch(text));
-          setOpen(false);
+          /*
+           * An answer keeps the panel open. Closing on success is right
+           * for an instruction — the officer wants to see the map they
+           * asked for — and wrong for a question, because the panel is
+           * the only place the answer appears and closing it throws the
+           * result away at the moment it arrives.
+           */
+          if (!result.answer) setOpen(false);
         }
         return;
       }

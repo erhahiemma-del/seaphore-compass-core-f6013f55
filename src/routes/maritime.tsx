@@ -8,6 +8,7 @@ import {
 } from "@/services/geospatial";
 import { registerSimulatedVesselSource } from "@/services/geospatial/sources/simulated-vessel-source";
 import { registerConnectedProviders } from "@/services/intelligence-layer";
+import { loadEezRing } from "@/services/geospatial/eez-ring";
 
 // Register the live provider once, at module load. `registerVesselSource`
 // replaces by id, so a hot reload cannot produce a duplicate row in the
@@ -69,6 +70,16 @@ if (sgs.get().enabledSources.length === 0) {
  * Re-declared whenever the officer changes sources, so the claim tracks
  * the picture rather than the first frame of the session.
  */
+/*
+ * Warm the boundary outline the approach engine assesses against.
+ *
+ * Loaded here so the dispatcher can stay synchronous: an action that
+ * had to await a fetch could not report its own outcome in the same
+ * turn. A failed load leaves the ring empty and the assessment reports
+ * the boundary as unavailable rather than assessing against nothing.
+ */
+void loadEezRing();
+
 registerConnectedProviders(sgs.get().enabledSources);
 sgs.subscribe((state) => registerConnectedProviders(state.enabledSources));
 

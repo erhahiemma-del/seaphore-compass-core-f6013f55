@@ -28,6 +28,7 @@ import { sgs, type SharedGeospatialService } from "@/services/geospatial";
 import { describeIntent } from "./voice-intent";
 import { useVoiceCommand, type VoiceState } from "./useVoiceCommand";
 import type { ResolvableVessel } from "@/services/copilot/copilot-conversation";
+import type { Vessel } from "@/services/geospatial";
 import { MAP_ZONE } from "./map-zones";
 
 /**
@@ -53,6 +54,7 @@ const STATE_LABEL: Readonly<Record<VoiceState, string>> = {
 export function VoiceCommand({
   service = sgs,
   vessels,
+  fleet,
   className,
 }: {
   readonly service?: SharedGeospatialService;
@@ -62,9 +64,11 @@ export function VoiceCommand({
    * return a vessel the map is not drawing.
    */
   readonly vessels?: readonly ResolvableVessel[];
+  /** The full fleet, for assessments that read every vessel. */
+  readonly fleet?: readonly Vessel[];
   readonly className?: string;
 }) {
-  const voice = useVoiceCommand(service, { vessels });
+  const voice = useVoiceCommand(service, { vessels, fleet });
   const { state, reading, candidates, unavailable, issue, spoken, stopSpeaking } = voice;
 
   const listening = state === "listening";

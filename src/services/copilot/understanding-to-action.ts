@@ -24,6 +24,7 @@ import { findPlace } from "@/services/geospatial/places";
 import { listVesselSources } from "@/services/geospatial/vessel-source";
 import { PLACE_CLARIFY_THRESHOLD, rankPlaces } from "@/features/maritime/voice-intent";
 import type { QueryUnderstanding } from "@/services/orchestration";
+import { approachWindowFor } from "@/services/orchestration/understanding/approach-window";
 
 import type { CopilotAction } from "./copilot-actions";
 import { type ResolvableVessel, resolveVesselEntity } from "./copilot-conversation";
@@ -76,6 +77,29 @@ export function translateUnderstanding(input: TranslationInput): Translation {
 
     case "source-switch":
       return sourceSwitch(input);
+
+    case "approach-intelligence": {
+      /*
+       * The horizon comes from the officer's own words. `approachWindowFor`
+       * reads a forward threshold and never a recency window — "within 24
+       * hours" and "in the last 24 hours" are opposite questions, and the
+       * default is flagged as inferred so the interface can say the
+       * threshold was assumed rather than asked for.
+       */
+      const window = approachWindowFor(input.text);
+      return {
+        kind: "ACTION",
+        action: { type: "SHOW_APPROACHING_VESSELS", thresholdHours: window.hours },
+        /*
+         * Deliberately no count here. The number belongs to the
+         * assessment, which has not run yet; promising one now would be
+         * the assistant answering before it looked.
+         */
+        speech: window.inferred
+          ? `Assessing the fleet against the default ${window.hours}-hour approach threshold.`
+          : `Assessing the fleet ${window.label}.`,
+      };
+    }
 
     case "vessel-investigation":
       /*

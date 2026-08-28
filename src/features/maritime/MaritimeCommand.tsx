@@ -543,7 +543,7 @@ export function MaritimeCommand() {
               speaks a place, a position or the global view; every
               outcome goes through the same navigation path a click does.
             */}
-            <VoiceCommand vessels={vessels} />
+            <VoiceCommand vessels={vessels} fleet={vessels} />
 
             <div
               className={cn(

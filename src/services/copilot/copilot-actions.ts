@@ -30,6 +30,8 @@
  * actually produced.
  */
 import { MAP_SCOPES } from "@/services/geospatial/constants";
+import { assessFleetApproach, describeFleetApproach } from "@/services/geospatial/fleet-approach";
+import type { Vessel } from "@/services/geospatial";
 import { navigateTo, navigateToCoordinates } from "@/services/geospatial/navigation";
 import { sgs, type SharedGeospatialService } from "@/services/geospatial";
 import type { LonLat } from "@/services/geospatial/types";
@@ -63,7 +65,13 @@ export type CopilotAction =
    * confirmation gate real rather than theoretical — a gate with nothing
    * behind it is a gate nobody has tested.
    */
-  | { readonly type: "OPEN_INVESTIGATION"; readonly imo: string; readonly vesselName?: string };
+  | { readonly type: "OPEN_INVESTIGATION"; readonly imo: string; readonly vesselName?: string }
+  /*
+   * Which vessels are heading for the boundary, within a horizon the
+   * officer named. Read-only: it assesses and reports, and changes
+   * nothing about the map or the fleet.
+   */
+  | { readonly type: "SHOW_APPROACHING_VESSELS"; readonly thresholdHours: number };
 
 /**
  * Whether an action changes something an officer would have to undo.
@@ -85,6 +93,7 @@ export function isStateChanging(action: CopilotAction): boolean {
     case "ZOOM":
     case "SHOW_VESSEL_TRACK":
     case "SHOW_VESSEL_INTELLIGENCE":
+    case "SHOW_APPROACHING_VESSELS":
       return false;
     case "OPEN_INVESTIGATION":
       /*
@@ -109,6 +118,17 @@ export interface ActionResult {
   readonly summary: string;
   /** Present when the action could not be carried out. */
   readonly reason?: string;
+  /**
+   * Set when the result *is* the answer rather than a report of doing
+   * something.
+   *
+   * "Taking you to Apapa" is worth saying before the camera moves; an
+   * assessment is not. Asked how many vessels are approaching, an
+   * officer who hears "assessing the fleet" and nothing further has been
+   * told the assistant started work and never finished. When this is
+   * set, the caller speaks it instead of the intent.
+   */
+  readonly answer?: string;
 }
 
 export interface ActionExecutionOptions {
@@ -124,6 +144,16 @@ export interface ActionExecutionOptions {
   readonly confirmed?: boolean;
   /** Vessels currently held, for resolving a selection to a real hull. */
   readonly knownImos?: readonly string[];
+  /**
+   * The fleet, for assessments that read every vessel.
+   *
+   * Passed in rather than fetched. The map is what holds live positions,
+   * and a second retrieval path would produce an answer that could
+   * disagree with what the officer is looking at.
+   */
+  readonly fleet?: readonly Vessel[];
+  /** The displayed boundary to assess against. */
+  readonly boundaryRing?: readonly LonLat[];
   /**
    * How to open an investigation, supplied by the surface that has one.
    *
@@ -230,6 +260,36 @@ export function executeCopilotAction(
     case "SET_SOURCES":
       service.setEnabledSources(action.sourceIds);
       return { ok: true, summary: "Changed the active sources." };
+
+    case "SHOW_APPROACHING_VESSELS": {
+      /*
+       * Refuses rather than guesses. Without a fleet or a boundary there
+       * is no assessment to make, and answering "none approaching" would
+       * be indistinguishable from a real all-clear.
+       */
+      const fleet = options.fleet;
+      const ring = options.boundaryRing;
+      if (!fleet || fleet.length === 0) {
+        return {
+          ok: false,
+          summary: "I cannot assess approach right now.",
+          reason: "No vessels are loaded from the connected source.",
+        };
+      }
+      if (!ring || ring.length < 3) {
+        return {
+          ok: false,
+          summary: "I cannot assess approach right now.",
+          reason: "The maritime boundary outline is not loaded.",
+        };
+      }
+
+      const result = assessFleetApproach(fleet, ring, {
+        thresholdHours: action.thresholdHours,
+      });
+      const answer = describeFleetApproach(result);
+      return { ok: true, summary: answer, answer };
+    }
 
     /*
      * Both vessel questions are answered by selecting the hull. The
