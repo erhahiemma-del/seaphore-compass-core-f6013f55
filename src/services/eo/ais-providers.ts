@@ -104,16 +104,14 @@ export const DATALASTIC_ENTRY: AisProviderEntry = {
   credentialEnv: ["DATALASTIC_API_KEY"],
   documentationUrl: null,
   blockers: [
-    "Official API documentation has not been supplied to the repository.",
-    "No API key is provisioned; DATALASTIC_API_KEY is absent from .env.example.",
-    "Endpoint paths, request shape, response shape and pagination are unverified.",
-    "Historical query capability, area/fleet query support and rate limits are unverified.",
-    "Timestamp semantics are unverified — whether reported values are transmission time or receipt time changes every correlation.",
-    "Commercial licensing terms for storage and derived data are unread.",
+    "VERIFIED 2026-08-28: DATALASTIC_API_KEY is provisioned server-side and /api/v0/stat reports key_status = Valid, but every data endpoint (/vessel, /vessel_inarea, /vessel_find, /vessel_history, /port_find) answers HTTP 402 Payment Required. The plan does not currently entitle data access.",
+    "Add-ons (ownership, inspections, casualties, classification, maritime companies) are reported absent by /stat, so none may be claimed.",
+    "Response shapes for the entitled endpoints remain unverified against live payloads because no data response has yet been observed.",
   ],
   notes: [
-    "src/adapters/ais/datalastic.adapter.ts already exists as an honest stub returning an empty, degraded envelope. It should be completed rather than replaced.",
-    "Activation is: implement AisHistoryProvider against the official documentation, then registerAisProvider().",
+    "The commercial AIS integration is implemented and wired: src/lib/server/datalastic.server.ts (client, x-api-key, error mapping, caching), src/lib/datalastic.functions.ts (gateway), and src/services/geospatial/sources/datalastic-vessel-source.ts (canonical VesselSource, registered COMMERCIAL).",
+    "While the plan returns 402 the map reports the provider as a plan limit, not as an empty sea, and no simulated traffic is substituted for it.",
+    "This registry entry stays PENDING_CREDENTIALS because entitlement, not code, is what is missing.",
   ],
 };
 

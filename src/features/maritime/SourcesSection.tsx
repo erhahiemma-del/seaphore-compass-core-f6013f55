@@ -249,6 +249,7 @@ const STATUS_LABEL: Readonly<Record<SourceStatus, string>> = {
   empty: "No data",
   "credentials-missing": "No credentials",
   "auth-failed": "Auth failed",
+  "subscription-inactive": "Plan limit",
   "upstream-error": "Unreachable",
   "not-queried": "Idle",
 };
@@ -259,6 +260,7 @@ const STATUS_CLASS: Readonly<Record<SourceStatus, string>> = {
   "credentials-missing": "text-amber-500 border-amber-500/40",
   "auth-failed": "text-destructive border-destructive/40",
   "upstream-error": "text-destructive border-destructive/40",
+  "subscription-inactive": "text-amber-500 border-amber-500/40",
   "not-queried": "text-muted-foreground border-border",
 };
 

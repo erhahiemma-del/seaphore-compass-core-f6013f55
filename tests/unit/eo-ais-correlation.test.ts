@@ -381,9 +381,12 @@ describe("AIS provider registry", () => {
 
   it("names Datalastic's blockers precisely", () => {
     const blockers = DATALASTIC_ENTRY.blockers.join(" ");
-    expect(blockers).toMatch(/documentation has not been supplied/);
-    expect(blockers).toMatch(/No API key is provisioned/);
-    expect(blockers).toMatch(/Timestamp semantics are unverified/);
+    // The credential is now provisioned and verified against /stat, so the
+    // blocker is entitlement — HTTP 402 — not a missing key or missing docs.
+    expect(blockers).toMatch(/key_status = Valid/);
+    expect(blockers).toMatch(/402/);
+    expect(blockers).toMatch(/Add-ons .* are reported absent/);
+    expect(DATALASTIC_ENTRY.capabilities.areaQuery).toBeNull();
   });
 
   it("activates a provider once an implementation exists", () => {
