@@ -15,6 +15,8 @@ export * from "./alert-lifecycle";
 export * from "./alert-episode";
 export * from "./alert-eligibility";
 export * from "./alert-reconciliation";
+export * from "./alert-store";
+export * from "./alert-presentation";
 
 import {
   SEVERITY_FOR_CONDITION,
