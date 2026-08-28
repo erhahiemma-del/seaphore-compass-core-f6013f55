@@ -381,13 +381,15 @@ describe("AIS provider registry", () => {
 
   it("names Datalastic's blockers precisely", () => {
     const blockers = DATALASTIC_ENTRY.blockers.join(" ");
-    // The credential is now provisioned and verified against /stat, so the
-    // blocker is entitlement — HTTP 402 — not a missing key or missing docs.
+    // The upgraded credential is verified against /stat and the data
+    // endpoints answer 200, so the remaining blocker is that no add-on
+    // endpoint path has been observed and this EO slot has no provider.
     expect(blockers).toMatch(/key_status = Valid/);
-    expect(blockers).toMatch(/402/);
-    expect(blockers).toMatch(/Add-ons .* are reported absent/);
+    expect(blockers).toMatch(/addons = true/);
+    expect(blockers).toMatch(/no add-on endpoint path has been observed/);
     expect(DATALASTIC_ENTRY.capabilities.areaQuery).toBeNull();
   });
+
 
   it("activates a provider once an implementation exists", () => {
     const registry = new AisProviderRegistry().register(DATALASTIC_ENTRY);
