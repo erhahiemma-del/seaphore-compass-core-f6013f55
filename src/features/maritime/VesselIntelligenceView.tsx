@@ -50,9 +50,13 @@ import {
  *
  * Wrapped rather than passed directly so this component depends on the
  * `DecisionSink` contract, which tests can substitute without a
- * Supabase client or an authenticated request.
+ * Supabase client or an authenticated request. The wrapper skips the
+ * write when no officer is signed in and reports it as unpersisted.
  */
-const auditSink: DecisionSink = (input) => writeAuditLog({ data: input });
+const auditSink: DecisionSink = async (input) => {
+  const outcome = await recordAudit(input);
+  if (!outcome.persisted) throw new Error(outcome.reason);
+};
 
 export interface VesselIntelligenceViewProps {
   readonly vessel: Vessel;
