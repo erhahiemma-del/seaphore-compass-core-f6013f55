@@ -132,6 +132,17 @@ describe("translation decides what is actionable, and never acts", () => {
     expect(result.kind === "UNRESOLVED" && result.speech).toMatch(/which vessel/i);
   });
 
+  it("reads a source switch with the provider named in the middle", () => {
+    /*
+     * "Switch to the simulated source" puts the provider between the
+     * verb and the noun. An earlier pattern required "source" straight
+     * after "to" and matched nothing an officer would say — caught in
+     * the browser, not here, which is why it is now here.
+     */
+    expect(understand("switch to the simulated source").intent).toBe("source-switch");
+    expect(understand("use the global fishing watch source").intent).toBe("source-switch");
+  });
+
   it("performs nothing itself", () => {
     const source = code("src/services/copilot/understanding-to-action.ts");
     for (const forbidden of [

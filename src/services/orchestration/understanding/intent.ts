@@ -87,6 +87,23 @@ const RULES: readonly IntentRule[] = [
 
   {
     /*
+     * Which providers feed the map. Weighted above the domain nouns
+     * because "switch to the simulated source" names a provider, not a
+     * question about simulation.
+     */
+    intent: "source-switch",
+    /*
+     * The provider's name sits between the verb and the noun — "switch
+     * to the simulated source" — so the pattern has to span it. An
+     * earlier version required "source" immediately after "to" and
+     * matched nothing an officer would actually say.
+     */
+    rx: /\b(switch|change|use|enable)\b[^.?!]{0,40}\bsources?\b/i,
+    weight: 0.93,
+  },
+
+  {
+    /*
      * Investigations. A question or an instruction depending on the
      * verb, which is decided at translation rather than here — one
      * sentence must not classify two ways.
@@ -285,6 +302,7 @@ export function classifyOfficerIntent(raw: string): IntentClassification {
  */
 const ICE_MAP: Readonly<Record<OfficerIntent, IceIntent>> = {
   // ICE plans retrieval. A command asks it for nothing.
+  "source-switch": "OTHER",
   "map-navigation": "OTHER",
   "map-zoom": "OTHER",
   "vessel-selection": "FACT_LOOKUP",

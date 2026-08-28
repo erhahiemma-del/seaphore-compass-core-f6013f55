@@ -202,15 +202,24 @@ describe("writes wait for a plain yes", () => {
 });
 
 describe("it does not invent intelligence", () => {
+  /*
+   * The wording now comes from the intelligence layer rather than being
+   * written into the assistant, so the day a registry connects the
+   * Copilot stops saying no without anyone editing this file. What is
+   * asserted is the rule, not the sentence: the topic is named, and the
+   * absence is a missing provider rather than a missing record.
+   */
   it.each([
-    ["who owns this vessel", /ownership intelligence is not available/i],
+    ["who owns this vessel", /ownership/i],
     ["who is the master", /crew/i],
-    ["where did it depart from", /verified origin/i],
+    ["where did it depart from", /voyage|origin/i],
     ["what is it carrying", /cargo/i],
   ])("answers %s honestly", (asked, expected) => {
     const { outcome } = turn(asked, { selectedImo: "IMO-1" });
     expect(outcome.kind).toBe("REPLY");
     expect(outcome.speech).toMatch(expected);
+    // Never "we have none for this vessel" — nothing looked.
+    expect(outcome.speech).toMatch(/no provider is connected/i);
   });
 
   it("never calls a track observed, tracked or verified", () => {

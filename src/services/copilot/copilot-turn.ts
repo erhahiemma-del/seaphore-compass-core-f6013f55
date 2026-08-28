@@ -24,6 +24,7 @@
  * approval on the floor and leave the write pending forever.
  */
 import { understand } from "@/services/orchestration";
+import { describeCapability, isConnected, type CapabilityId } from "@/services/intelligence-layer";
 import {
   commandInput,
   normalisedText,
@@ -76,26 +77,30 @@ export interface TurnInput {
 }
 
 /** Phrases that ask for something the deployment cannot answer. */
-const UNAVAILABLE_TOPICS: readonly { readonly test: RegExp; readonly answer: string }[] = [
-  {
-    test: /\b(who owns|owner|ownership|operator|manager)\b/i,
-    answer:
-      "Ownership intelligence is not available. No entity intelligence source is connected to this deployment.",
-  },
-  {
-    test: /\b(crew|master|captain|who is on board)\b/i,
-    answer: "Crew intelligence is not available. No crew source is connected to this deployment.",
-  },
-  {
-    test: /\b(depart|departed|origin|come from|came from|sailed from)\b/i,
-    answer:
-      "I do not have a verified origin record for this vessel. I can show its available movement history instead.",
-  },
-  {
-    test: /\b(cargo|manifest|what is it carrying)\b/i,
-    answer: "Cargo and manifest intelligence is not available from any connected source.",
-  },
-];
+/**
+ * Questions whose answer depends on a provider, mapped to the capability
+ * that would answer them.
+ *
+ * The sentences are not written here. Whether ownership is available is
+ * a fact about the deployment, and hardcoding "not connected" in the
+ * assistant means the day a registry is wired the Copilot keeps saying
+ * no. Asking the layer means the answer changes when the deployment
+ * does, and stays honest either way.
+ */
+const TOPIC_CAPABILITIES: readonly { readonly test: RegExp; readonly capability: CapabilityId }[] =
+  [
+    { test: /\b(who owns|owner|ownership|operator|manager)\b/i, capability: "vessel.ownership" },
+    { test: /\b(crew|master|captain|who is on board)\b/i, capability: "vessel.crew" },
+    {
+      test: /\b(depart|departed|origin|come from|came from|sailed from|port calls?)\b/i,
+      capability: "vessel.voyage",
+    },
+    { test: /\b(cargo|manifest|what is it carrying)\b/i, capability: "vessel.cargo" },
+    {
+      test: /\b(sanction\w*|detention|inspection|complian\w*)\b/i,
+      capability: "vessel.compliance",
+    },
+  ];
 
 export function planTurn(input: TurnInput): TurnPlan {
   const now = input.now ?? Date.now();
@@ -171,8 +176,19 @@ export function planTurn(input: TurnInput): TurnPlan {
    * parsing. "Who owns it" must never become a vessel selection that
    * looks like it answered the question.
    */
-  for (const topic of UNAVAILABLE_TOPICS) {
-    if (topic.test.test(said)) return reply(context, topic.answer);
+  for (const topic of TOPIC_CAPABILITIES) {
+    if (!topic.test.test(said)) continue;
+    if (isConnected(topic.capability)) break;
+    /*
+     * Stated as a missing connection, never as a missing record. "We
+     * have no owner for this vessel" and "nothing here can resolve an
+     * owner for any vessel" are different facts, and only one of them
+     * is true today.
+     */
+    return reply(
+      context,
+      `${sentenceCase(describeCapability(topic.capability))} is not available. No provider is connected for it in this deployment.`,
+    );
   }
 
   /*
@@ -454,4 +470,8 @@ function execute(context: ConversationContext, action: CopilotAction, speech: st
 
 function reply(context: ConversationContext, speech: string): TurnPlan {
   return { outcome: { kind: "REPLY", speech }, context: { ...context, lastResponse: speech } };
+}
+
+function sentenceCase(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }

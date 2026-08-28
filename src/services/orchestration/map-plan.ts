@@ -259,6 +259,7 @@ const INTENT_LAYERS: Readonly<Record<OfficerIntent, readonly string[]>> = {
    * reason to turn layers on behind their back, so these add none and
    * the vessel commands name only what they are about.
    */
+  "source-switch": [],
   "map-navigation": [],
   "map-zoom": [],
   "vessel-selection": ["vessels"],
@@ -292,6 +293,7 @@ const INTENT_LAYERS: Readonly<Record<OfficerIntent, readonly string[]>> = {
 const INTENT_MODE: Readonly<Record<OfficerIntent, OperatingMode>> = {
   // Navigation keeps the officer's current mode; the vessel commands
   // are about one hull, which is what VESSEL mode means.
+  "source-switch": "NATIONAL",
   "map-navigation": "NATIONAL",
   "map-zoom": "NATIONAL",
   "vessel-selection": "VESSEL",

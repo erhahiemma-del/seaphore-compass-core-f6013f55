@@ -7,6 +7,7 @@ import {
   sgs,
 } from "@/services/geospatial";
 import { registerSimulatedVesselSource } from "@/services/geospatial/sources/simulated-vessel-source";
+import { registerConnectedProviders } from "@/services/intelligence-layer";
 
 // Register the live provider once, at module load. `registerVesselSource`
 // replaces by id, so a hot reload cannot produce a duplicate row in the
@@ -42,6 +43,17 @@ function demonstrationTimeScale(): number {
 }
 
 registerSimulatedVesselSource({ timeScale: demonstrationTimeScale() });
+
+/*
+ * Declare what the connected providers can actually answer.
+ *
+ * After source registration, because the intelligence layer reads the
+ * registry to decide which capabilities exist. Everything not claimed
+ * here answers "not connected" with a reason — which is how the Copilot
+ * stays honest about ownership, crew and cargo without any of that being
+ * hardcoded into the assistant.
+ */
+registerConnectedProviders();
 
 // Seed the enabled set AFTER registration.
 //

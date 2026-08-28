@@ -21,6 +21,7 @@
  * was not an instruction", which the caller answers some other way.
  */
 import { findPlace } from "@/services/geospatial/places";
+import { listVesselSources } from "@/services/geospatial/vessel-source";
 import { PLACE_CLARIFY_THRESHOLD, rankPlaces } from "@/features/maritime/voice-intent";
 import type { QueryUnderstanding } from "@/services/orchestration";
 
@@ -72,6 +73,9 @@ export function translateUnderstanding(input: TranslationInput): Translation {
 
     case "vessel-track":
       return vessel(input, "SHOW_VESSEL_TRACK");
+
+    case "source-switch":
+      return sourceSwitch(input);
 
     case "vessel-investigation":
       /*
@@ -142,6 +146,38 @@ function navigation(input: TranslationInput): Translation {
         speech: named
           ? `I could not find a place called ${named}.`
           : "I did not catch where you would like to go.",
+      };
+}
+
+/**
+ * Change which providers feed the map.
+ *
+ * Named against the registry rather than parsed freely, so the Copilot
+ * cannot enable a provider that does not exist and then report success.
+ * State-changing, so it reaches the officer as a proposal: switching
+ * sources alters what every other surface reports, and an officer who
+ * did not notice would be reading a different picture than they think.
+ */
+function sourceSwitch(input: TranslationInput): Translation {
+  const said = input.text.toLowerCase();
+  const match = listVesselSources()
+    .map((source) => source.describe())
+    .find(
+      (descriptor) =>
+        said.includes(descriptor.id.toLowerCase()) || said.includes(descriptor.label.toLowerCase()),
+    );
+
+  return match
+    ? {
+        kind: "ACTION",
+        action: { type: "SET_SOURCES", sourceIds: [match.id] },
+        speech: `Switching to the ${match.label} source.`,
+      }
+    : {
+        kind: "UNRESOLVED",
+        speech: `I do not have a source by that name. Available sources are ${listVesselSources()
+          .map((source) => source.describe().label)
+          .join(", ")}.`,
       };
 }
 

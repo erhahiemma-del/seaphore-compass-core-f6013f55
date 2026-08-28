@@ -69,6 +69,7 @@ export type OfficerIntent =
   | "map-zoom"
   | "vessel-selection"
   | "vessel-track"
+  | "source-switch"
   | "unknown";
 
 /**
