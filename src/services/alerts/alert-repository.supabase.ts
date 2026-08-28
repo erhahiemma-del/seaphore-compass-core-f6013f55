@@ -453,13 +453,31 @@ export class SupabaseAlertRepository implements AlertRepository {
       note: event.note ?? null,
       at: event.at,
     };
-    const { data, error } = await supabase
-      .from(EVENTS as never)
-      .insert(insert as never)
-      .select("*")
-      .single();
-    if (error || !data) return null;
-    return toEvent(data as unknown as EventRow);
+    /*
+     * The row and its event are two calls, not one transaction, because
+     * PostgREST offers no cross-table atomic write. The consequence is a
+     * narrow one — a saved state change whose history line is missing —
+     * and it is handled the only two honest ways available: retry once,
+     * because the common cause is a transient network failure, and then
+     * report it loudly. A silently dropped history line would leave an
+     * officer reading an audit trail with a hole in it and no sign there
+     * was ever supposed to be an entry there.
+     */
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const { data, error } = await supabase
+        .from(EVENTS as never)
+        .insert(insert as never)
+        .select("*")
+        .single();
+      if (!error && data) return toEvent(data as unknown as EventRow);
+      if (attempt === 1) {
+        console.error(
+          `[alerts] history line not written for alert ${alertId} (${event.type}): ` +
+            `${(error as { message?: string } | null)?.message ?? "no row returned"}`,
+        );
+      }
+    }
+    return null;
   }
 
   private async withEvent(
