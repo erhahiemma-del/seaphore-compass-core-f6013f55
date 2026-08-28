@@ -28,6 +28,7 @@ import {
   DISPLAY_OWNER_LABEL,
   SESSION_REPLAY_EXPLANATION,
 } from "@/features/maritime/replay-ownership";
+import { formatPlayhead, replayDrawerNotice } from "@/features/maritime/replay-drawer-state";
 
 const T0 = Date.parse("2026-08-28T12:00:00.000Z");
 const SEC = 1_000;
@@ -267,5 +268,59 @@ describe("replay playback moves vessels", () => {
 
     expect(engine.snapshot()).toHaveLength(1);
     expect(engine.get("IMO1")?.position.lon).toBeCloseTo(4.02, 5);
+  });
+});
+
+describe("the drawer states which instant it is showing", () => {
+  const playheadIso = "2026-08-28T15:42:31.426Z";
+
+  /*
+   * The defect this covers, measured in the browser: during playback the
+   * drawer showed `POSITION 3.1692°, 7.2948°` beside a `Fresh · 25s`
+   * chip while the playhead sat at 15:39. Two false claims in one panel
+   * — that the coordinate is current, and that the reading is live.
+   */
+  it("says nothing at all while the picture is live", () => {
+    expect(replayDrawerNotice(null)).toBeNull();
+    expect(replayDrawerNotice({ owner: "LIVE", playheadIso })).toBeNull();
+  });
+
+  it("names session replay and the instant on screen", () => {
+    const notice = replayDrawerNotice({ owner: "SESSION_REPLAY", playheadIso });
+
+    expect(notice?.heading).toBe("SESSION REPLAY");
+    expect(notice?.timestampLabel).toBe("2026-08-28 15:42Z");
+    expect(notice?.explanation).toContain("this Maritime Command session");
+  });
+
+  it("distinguishes a paused replay from a running one", () => {
+    expect(replayDrawerNotice({ owner: "PAUSED_REPLAY", playheadIso })?.chipLabel).toBe(
+      "SESSION REPLAY · PAUSED",
+    );
+    expect(replayDrawerNotice({ owner: "SESSION_REPLAY", playheadIso })?.chipLabel).toBe(
+      "SESSION REPLAY",
+    );
+  });
+
+  it("never calls a paused replay live, or the recording provider history", () => {
+    for (const owner of ["SESSION_REPLAY", "PAUSED_REPLAY"] as const) {
+      const notice = replayDrawerNotice({ owner, playheadIso });
+      const copy = `${notice?.heading} ${notice?.chipLabel} ${notice?.explanation}`;
+      expect(copy).not.toMatch(/LIVE/);
+      expect(copy).not.toMatch(/AIS|archive|provider history/i);
+    }
+  });
+
+  it("refuses to format a playhead it cannot read", () => {
+    // An unreadable instant must not render as the epoch, which would
+    // date the coordinate to 1970 and look like real data.
+    expect(formatPlayhead("not a date")).toBe("Replay position not established");
+    expect(formatPlayhead("not a date")).not.toMatch(/1970/);
+  });
+
+  it("shows minutes and an explicit zone, not seconds and no zone", () => {
+    // Seconds would imply the recording is sampled far more finely than
+    // it is; a bare local time is the ambiguity that costs an hour.
+    expect(formatPlayhead(playheadIso)).toMatch(/^\d{4}-\d\d-\d\d \d\d:\d\dZ$/);
   });
 });

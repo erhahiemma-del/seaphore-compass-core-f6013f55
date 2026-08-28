@@ -31,17 +31,33 @@ import type { VesselImagerySource } from "@/services/geospatial/vessel-imagery";
 import { VesselImageHeader } from "./VesselImageHeader";
 import type { Datum } from "./vessel-presentation";
 import { positionFreshnessLabel, positionProvenanceLabel } from "./vessel-panel-state";
+import { replayDrawerNotice, type ReplayDrawerContext } from "./replay-drawer-state";
 
 export interface VesselHeroProps {
   readonly vessel: Vessel;
+  /**
+   * Set while a recording owns the displayed position.
+   *
+   * The hero's chips assert currency, and during replay that assertion
+   * is false — the coordinate below them is a historical frame. This is
+   * how the hero learns to say so.
+   */
+  readonly replayContext?: ReplayDrawerContext | null;
   readonly snapshot: readonly Datum[];
   readonly imagery?: VesselImagerySource;
   readonly className?: string;
 }
 
-export function VesselHero({ vessel, snapshot, imagery, className }: VesselHeroProps) {
+export function VesselHero({
+  vessel,
+  snapshot,
+  imagery,
+  replayContext,
+  className,
+}: VesselHeroProps) {
   const { identity } = vessel;
   const stale = isStalePosition(vessel);
+  const replay = replayDrawerNotice(replayContext);
 
   return (
     <div className={cn("border-b border-border px-4 pb-3 pt-3", className)}>
@@ -76,8 +92,37 @@ export function VesselHero({ vessel, snapshot, imagery, className }: VesselHeroP
           label={positionProvenanceLabel(vessel)}
           testid="vessel-position-provenance"
         />
-        <Chip tone="neutral" label={positionFreshnessLabel(vessel)} testid="vessel-freshness" />
+        {/*
+          Freshness answers "how much is this position still worth", and
+          during replay the question does not apply: the frame is exactly
+          as old as the playhead. Showing a live reading beside a
+          historical coordinate was the drawer's part of the replay
+          falsehood, so the playhead replaces it rather than colouring it.
+        */}
+        {replay ? (
+          <Chip tone="stale" label={replay.chipLabel} testid="vessel-replay-state" />
+        ) : (
+          <Chip tone="neutral" label={positionFreshnessLabel(vessel)} testid="vessel-freshness" />
+        )}
       </div>
+
+      {replay ? (
+        <div
+          data-testid="vessel-replay-notice"
+          className="mt-2 rounded border border-amber-500/40 bg-amber-500/10 px-2 py-1.5"
+        >
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+            {replay.heading}
+          </p>
+          {/* The instant being shown, so the coordinate below is dated. */}
+          <p className="mt-0.5 font-mono text-[11px] tabular-nums text-foreground">
+            {replay.timestampLabel}
+          </p>
+          <p className="mt-0.5 text-[10.5px] leading-snug text-muted-foreground">
+            {replay.explanation}
+          </p>
+        </div>
+      ) : null}
 
       <div className="mt-3 flex gap-3">
         <div className="w-[38%] shrink-0">

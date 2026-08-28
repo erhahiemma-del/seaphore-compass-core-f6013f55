@@ -29,6 +29,7 @@ import { X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import type { ReplayDrawerContext } from "./replay-drawer-state";
 import {
   describeSelection,
   type MapSelection,
@@ -68,6 +69,8 @@ export interface ContextDrawerProps {
   /** Open the existing replay experience for this vessel. */
   readonly onReplay?: () => void;
   readonly replayAvailable?: boolean;
+  /** Set while a recording owns the displayed position. */
+  readonly replayContext?: ReplayDrawerContext | null;
   readonly className?: string;
 }
 
@@ -83,6 +86,7 @@ export function ContextDrawer({
   camera,
   onReplay,
   replayAvailable,
+  replayContext,
 }: ContextDrawerProps) {
   if (!selection) return null;
 
@@ -156,6 +160,7 @@ export function ContextDrawer({
           camera={camera}
           onReplay={onReplay}
           replayAvailable={replayAvailable}
+          replayContext={replayContext}
         />
       </div>
     </aside>
@@ -178,6 +183,7 @@ function SelectionPanel({
   camera,
   onReplay,
   replayAvailable,
+  replayContext,
 }: {
   selection: MapSelection;
   vesselTrack?: VesselTrack | null;
@@ -186,6 +192,7 @@ function SelectionPanel({
   camera?: VesselCamera;
   onReplay?: () => void;
   replayAvailable?: boolean;
+  replayContext?: ReplayDrawerContext | null;
   /** `undefined` means still resolving; `null` means resolved to nothing. */
   voyage: Voyage | null | undefined;
   onClose: () => void;
@@ -204,6 +211,7 @@ function SelectionPanel({
           camera={camera}
           onReplay={onReplay}
           replayAvailable={replayAvailable}
+          replayContext={replayContext}
         />
       ) : (
         <Unresolved
@@ -344,6 +352,7 @@ function VesselTabs({
   camera,
   onReplay,
   replayAvailable,
+  replayContext,
 }: {
   vessel: Vessel;
   onClose: () => void;
@@ -352,6 +361,7 @@ function VesselTabs({
   camera?: VesselCamera;
   onReplay?: () => void;
   replayAvailable?: boolean;
+  replayContext?: ReplayDrawerContext | null;
 }) {
   const [tab, setTab] = useState<VesselTabId>("overview");
 
@@ -376,6 +386,7 @@ function VesselTabs({
         onStopFollow={camera?.stopFollow}
         onResumeFollow={camera?.resumeFollow}
         onReplay={replayAvailable ? onReplay : undefined}
+        replayContext={replayContext}
         sourceSupportsHistory={sourceSupportsHistory}
         vesselTrack={vesselTrack}
       />

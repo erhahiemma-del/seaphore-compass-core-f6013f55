@@ -679,6 +679,22 @@ export function MaritimeCommand() {
             // recorder actually holds something to play.
             onReplay={replay.play}
             replayAvailable={replay.availability === "READY"}
+            /*
+              Told, rather than left to infer. The drawer showed a
+              replayed coordinate under a live freshness chip because
+              nothing had ever informed it that a recording was playing.
+              Derived from the player's own state, so the drawer and the
+              timeline bar cannot disagree about which instant is on
+              screen.
+            */
+            replayContext={
+              replay.status
+                ? {
+                    owner: replayOwner,
+                    playheadIso: new Date(replay.status.position).toISOString(),
+                  }
+                : null
+            }
             onClose={closeCard}
           />
         </div>

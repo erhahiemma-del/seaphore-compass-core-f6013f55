@@ -24,6 +24,7 @@ import type { Vessel } from "@/services/geospatial";
 import type { VesselTrack } from "@/services/geospatial/vessel-track";
 
 import { VesselHero } from "./VesselHero";
+import type { ReplayDrawerContext } from "./replay-drawer-state";
 import {
   ActivityPanel,
   IntelligencePanel,
@@ -71,6 +72,8 @@ export interface VesselIntelligenceCardProps {
   readonly onResumeFollow?: () => void;
   /** Open the existing replay experience for this vessel. */
   readonly onReplay?: () => void;
+  /** Set while a recording owns the displayed position. */
+  readonly replayContext?: ReplayDrawerContext | null;
   /** Whether the active source can answer questions about this vessel's past. */
   readonly sourceSupportsHistory?: boolean;
   /** The vessel's resolved track, when the archive has been asked. */
@@ -88,6 +91,7 @@ export function VesselIntelligenceCard({
   onStopFollow,
   onResumeFollow,
   onReplay,
+  replayContext,
   sourceSupportsHistory = false,
   vesselTrack,
 }: VesselIntelligenceCardProps) {
@@ -109,7 +113,11 @@ export function VesselIntelligenceCard({
       className="flex h-full min-h-0 flex-col bg-card"
     >
       <div className="relative">
-        <VesselHero vessel={vessel} snapshot={presentation.snapshot} />
+        <VesselHero
+          vessel={vessel}
+          snapshot={presentation.snapshot}
+          replayContext={replayContext}
+        />
         <Button
           variant="ghost"
           size="icon"
