@@ -221,16 +221,39 @@ export function MaritimeCommand() {
   // These come from VesselUpdateEngine.snapshot() via MapCanvas, so the
   // panel counts exactly the objects the map drew.
   const [vessels, setVessels] = useState<readonly Vessel[]>([]);
+  /**
+   * The fleet as the provider last reported it.
+   *
+   * Equal to `vessels` except during replay, when the map is showing
+   * historical frames and this is still the present.
+   */
+  const [liveVessels, setLiveVessels] = useState<readonly Vessel[]>([]);
   const [feed, setFeed] = useState<VesselFeedState>({
     loading: true,
     error: null,
     sourceId: null,
     lastAppliedAt: null,
   });
-  const handleVessels = useCallback((next: readonly Vessel[], nextFeed: VesselFeedState) => {
-    setVessels(next);
-    setFeed(nextFeed);
-  }, []);
+  /*
+   * Two sets, and the distinction is load-bearing.
+   *
+   * `vessels` is what the map is drawing, which during replay is
+   * historical — the drawer and the search read it so they agree with the
+   * picture. `liveVessels` is what the provider last reported, and is the
+   * only set anything reasoning about the present may use. Measured
+   * before they were separated: an alert's current assessment was derived
+   * from a frame observed at 16:03:02 and stamped assessedAt 16:05:09, a
+   * lag of 126 seconds, because replay frames reached the approach
+   * engine as though they were the live fleet.
+   */
+  const handleVessels = useCallback(
+    (next: readonly Vessel[], nextFeed: VesselFeedState, live: readonly Vessel[]) => {
+      setVessels(next);
+      setLiveVessels(live);
+      setFeed(nextFeed);
+    },
+    [],
+  );
 
   // ── Canonical replay ───────────────────────────────────────────
   // The sink is the engine MapCanvas draws from, so replaying moves the
@@ -257,7 +280,8 @@ export function MaritimeCommand() {
    * interval, the canonical engine, the same boundary ring the map draws.
    */
   const alerts = useArrivalAlerts({
-    vessels,
+    // The live fleet, never the replayed one.
+    vessels: liveVessels,
     boundaryRing: eezRingIfLoaded(),
     sourceId: feed.sourceId ?? "unknown",
   });

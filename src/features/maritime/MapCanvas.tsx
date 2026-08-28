@@ -181,7 +181,21 @@ export interface MapCanvasProps {
    * objects the map drew, rather than keeping a second store that could
    * disagree with what is on screen.
    */
-  readonly onVesselsChanged?: (vessels: readonly Vessel[], feed: VesselFeedState) => void;
+  /**
+   * The vessels as drawn, and the vessels as reported.
+   *
+   * Normally the same list. They diverge during replay, when the engine
+   * holds historical frames — and the difference matters: the map and the
+   * drawer must show what is being replayed, while anything reasoning
+   * about the present must not. Handing one list to both is how an alert
+   * came to assess a two-minute-old position and stamp it as assessed
+   * now.
+   */
+  readonly onVesselsChanged?: (
+    vessels: readonly Vessel[],
+    feed: VesselFeedState,
+    live: readonly Vessel[],
+  ) => void;
   /**
    * Hands out the canonical `VesselUpdateEngine` as a `ReplaySink`.
    *
@@ -608,7 +622,13 @@ export function MapCanvas({
       sourceId: source.id,
       lastAppliedAt: null,
     };
-    const report = () => onVesselsChanged?.(engine.snapshot(), feed);
+    /*
+     * The displayed set comes from the engine; the live set is whatever
+     * the provider last reported, which during replay is the batch being
+     * withheld from the display rather than what the engine holds.
+     */
+    const report = () =>
+      onVesselsChanged?.(engine.snapshot(), feed, withheldRef.current ?? engine.snapshot());
     report();
 
     async function refresh() {
