@@ -17,11 +17,15 @@
  * An earlier version of this hook owned a bespoke in-memory store. That
  * made two places holding alert state, which is the failure the whole
  * persistence layer exists to prevent, so the repository is now the only
- * one. Today it is the in-memory implementation: the tables are authored
- * but not applied to the project database, and defaulting to the durable
- * adapter would tell an officer their acknowledgement had been saved when
- * it had not. Swapping implementations is a one-line change here, because
- * both satisfy the same contract.
+ * one. The alert tables are applied, so the durable adapter is the
+ * default: an officer's acknowledgement is written to the database and
+ * survives a reload.
+ *
+ * The in-memory implementation remains the fallback for the one case in
+ * which the durable one cannot honestly be used — no authenticated
+ * session, so every row-level policy would refuse the write. The fallback
+ * is never silent: `durable` reports which store is actually in use, and
+ * the surface says so.
  *
  * ## The fleet is not fetched here
  *
@@ -34,6 +38,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   InMemoryAlertRepository,
+  SupabaseAlertRepository,
   countBySeverity,
   presentAlerts,
   runReconciliationCycle,
@@ -42,6 +47,7 @@ import {
   type StoredAlert,
 } from "@/services/alerts";
 import { sgs, type LonLat, type Vessel } from "@/services/geospatial";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * How often the fleet is reassessed.
@@ -77,8 +83,9 @@ export interface ArrivalAlertsState {
   /**
    * Whether alerts survive a reload.
    *
-   * Reported rather than assumed, so a surface can say what is true
-   * instead of implying a durable record that does not exist yet.
+   * Derived from the store actually in use, never asserted. A surface
+   * that says "stored" while holding a session-only map is worse than one
+   * that admits the limitation.
    */
   readonly durable: boolean;
   readonly forVessel: (imo: string) => StoredAlert | undefined;
@@ -92,7 +99,7 @@ export interface UseArrivalAlertsOptions {
   readonly boundaryRing: readonly LonLat[] | null;
   readonly sourceId: string;
   readonly intervalMs?: number;
-  /** Supplied by a test, or by a future durable adapter. */
+  /** Supplied by a test. Production resolves the durable store itself. */
   readonly repository?: AlertRepository;
   readonly now?: () => number;
 }
@@ -107,10 +114,43 @@ export function useArrivalAlerts(options: UseArrivalAlertsOptions): ArrivalAlert
     now,
   } = options;
 
-  // One repository per mounted surface. Created once; rebuilding it on a
-  // render would discard the officer's acknowledgements.
-  const fallback = useMemo(() => new InMemoryAlertRepository(), []);
-  const repository = injected ?? fallback;
+  /*
+   * The durable store, unless there is no session to write with.
+   *
+   * Both are created once. Rebuilding the in-memory one on a render would
+   * discard the officer's acknowledgements, and rebuilding the Supabase
+   * one would be pointless churn.
+   */
+  const durableStore = useMemo(() => new SupabaseAlertRepository(), []);
+  const sessionStore = useMemo(() => new InMemoryAlertRepository(), []);
+
+  /*
+   * Null until the session is known. Persistence mode is a fact about the
+   * environment, not a guess, so it is resolved before it is reported —
+   * and an unauthenticated surface degrades to the session store rather
+   * than writing into policies that will refuse it.
+   */
+  const [authenticated, setAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    void supabase.auth.getSession().then(({ data }) => {
+      if (live) setAuthenticated(Boolean(data.session));
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthenticated(Boolean(session));
+    });
+    return () => {
+      live = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
+  const resolved = authenticated ? durableStore : sessionStore;
+  const repository = injected ?? resolved;
+  // Injected stores are the test seam; only the resolved durable adapter
+  // may claim a record that outlives the tab.
+  const durable = injected ? injected instanceof SupabaseAlertRepository : authenticated === true;
 
   const [alerts, setAlerts] = useState<readonly StoredAlert[]>([]);
   const [unassessableCount, setUnassessableCount] = useState(0);
@@ -198,8 +238,7 @@ export function useArrivalAlerts(options: UseArrivalAlertsOptions): ArrivalAlert
     activeCount: active.length,
     assessable,
     unassessableCount,
-    // In memory for this session. Said out loud rather than implied.
-    durable: false,
+    durable,
     forVessel: useCallback(
       (imo: string) => active.find((alert) => alert.vessel.imo === imo),
       [active],

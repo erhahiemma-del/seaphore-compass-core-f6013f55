@@ -221,12 +221,12 @@ export function AttentionCentre({
             </p>
           ) : null}
 
-          {/* Said out loud rather than implied by an interface that looks durable. */}
-          {!durable ? (
-            <p className="border-t border-white/10 px-3 py-1.5 text-[10px] text-white/45">
-              Operational alerts are active for this session and are not stored.
-            </p>
-          ) : null}
+          {/* What is true of the store in use, not what the interface implies. */}
+          <p className="border-t border-white/10 px-3 py-1.5 text-[10px] text-white/45">
+            {durable
+              ? "Alerts, acknowledgements and history are saved and survive a reload."
+              : "Operational alerts are active for this session and are not stored."}
+          </p>
         </div>
       ) : null}
     </div>
