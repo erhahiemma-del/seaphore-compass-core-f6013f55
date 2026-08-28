@@ -97,6 +97,142 @@ export type Database = {
           },
         ]
       }
+      arrival_alert_events: {
+        Row: {
+          actor_type: string
+          alert_id: string
+          at: string
+          id: string
+          next_state: string | null
+          note: string | null
+          officer_id: string | null
+          previous_state: string | null
+          type: string
+        }
+        Insert: {
+          actor_type: string
+          alert_id: string
+          at?: string
+          id?: string
+          next_state?: string | null
+          note?: string | null
+          officer_id?: string | null
+          previous_state?: string | null
+          type: string
+        }
+        Update: {
+          actor_type?: string
+          alert_id?: string
+          at?: string
+          id?: string
+          next_state?: string | null
+          note?: string | null
+          officer_id?: string | null
+          previous_state?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arrival_alert_events_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "arrival_intervention_alerts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      arrival_intervention_alerts: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          assigned_at: string | null
+          assigned_by: string | null
+          assigned_to: string | null
+          closed_at: string | null
+          closed_by: string | null
+          closure_reason: string | null
+          condition: string
+          current_assessment: Json | null
+          current_assessment_unavailable: boolean
+          episode_sequence: number
+          id: string
+          imo: string
+          raised_at: string
+          resolution_reason: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          state: string
+          trigger_evidence: Json
+          updated_at: string
+          version: number
+          vessel_id: string | null
+          vessel_name: string | null
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          assigned_at?: string | null
+          assigned_by?: string | null
+          assigned_to?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
+          closure_reason?: string | null
+          condition: string
+          current_assessment?: Json | null
+          current_assessment_unavailable?: boolean
+          episode_sequence: number
+          id?: string
+          imo: string
+          raised_at?: string
+          resolution_reason?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity: string
+          state?: string
+          trigger_evidence: Json
+          updated_at?: string
+          version?: number
+          vessel_id?: string | null
+          vessel_name?: string | null
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          assigned_at?: string | null
+          assigned_by?: string | null
+          assigned_to?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
+          closure_reason?: string | null
+          condition?: string
+          current_assessment?: Json | null
+          current_assessment_unavailable?: boolean
+          episode_sequence?: number
+          id?: string
+          imo?: string
+          raised_at?: string
+          resolution_reason?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          state?: string
+          trigger_evidence?: Json
+          updated_at?: string
+          version?: number
+          vessel_id?: string | null
+          vessel_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arrival_intervention_alerts_vessel_id_fkey"
+            columns: ["vessel_id"]
+            isOneToOne: false
+            referencedRelation: "vessels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: string
