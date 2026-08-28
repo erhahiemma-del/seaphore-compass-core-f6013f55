@@ -2362,6 +2362,116 @@ export type Database = {
           },
         ]
       }
+      sanctions_match_decisions: {
+        Row: {
+          candidate_caption: string | null
+          candidate_id: string
+          decided_at: string
+          decision: string
+          evidence_ref: string | null
+          id: string
+          note: string | null
+          officer_id: string
+          reason: string
+          screening_id: string
+          subject_imo: string | null
+          subject_name: string
+        }
+        Insert: {
+          candidate_caption?: string | null
+          candidate_id: string
+          decided_at?: string
+          decision: string
+          evidence_ref?: string | null
+          id?: string
+          note?: string | null
+          officer_id: string
+          reason: string
+          screening_id: string
+          subject_imo?: string | null
+          subject_name: string
+        }
+        Update: {
+          candidate_caption?: string | null
+          candidate_id?: string
+          decided_at?: string
+          decision?: string
+          evidence_ref?: string | null
+          id?: string
+          note?: string | null
+          officer_id?: string
+          reason?: string
+          screening_id?: string
+          subject_imo?: string | null
+          subject_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sanctions_match_decisions_screening_id_fkey"
+            columns: ["screening_id"]
+            isOneToOne: false
+            referencedRelation: "sanctions_screenings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sanctions_screenings: {
+        Row: {
+          candidate_count: number
+          candidates: Json
+          dataset: string
+          entity_kind: string
+          entity_role: string | null
+          error_message: string | null
+          failure_reason: string | null
+          id: string
+          provider: string
+          requested_by: string
+          scope: string
+          screened_at: string
+          state: string
+          subject_imo: string | null
+          subject_name: string
+          top_score: number | null
+        }
+        Insert: {
+          candidate_count?: number
+          candidates?: Json
+          dataset: string
+          entity_kind?: string
+          entity_role?: string | null
+          error_message?: string | null
+          failure_reason?: string | null
+          id?: string
+          provider: string
+          requested_by: string
+          scope: string
+          screened_at?: string
+          state: string
+          subject_imo?: string | null
+          subject_name: string
+          top_score?: number | null
+        }
+        Update: {
+          candidate_count?: number
+          candidates?: Json
+          dataset?: string
+          entity_kind?: string
+          entity_role?: string | null
+          error_message?: string | null
+          failure_reason?: string | null
+          id?: string
+          provider?: string
+          requested_by?: string
+          scope?: string
+          screened_at?: string
+          state?: string
+          subject_imo?: string | null
+          subject_name?: string
+          top_score?: number | null
+        }
+        Relationships: []
+      }
       sessions: {
         Row: {
           channel: string
