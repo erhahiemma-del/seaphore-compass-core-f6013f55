@@ -15,8 +15,10 @@ export * from "./alert-lifecycle";
 export * from "./alert-episode";
 export * from "./alert-eligibility";
 export * from "./alert-reconciliation";
-export * from "./alert-store";
 export * from "./alert-presentation";
+export * from "./alert-repository";
+export * from "./alert-persistence";
+export * from "./alert-runner";
 
 import {
   SEVERITY_FOR_CONDITION,
@@ -78,6 +80,15 @@ export interface ArrivalInterventionAlert {
   readonly resolvedBy?: string;
   readonly closedAt?: string;
   readonly closedBy?: string;
+  /**
+   * Why an officer resolved or closed it, in their words.
+   *
+   * Separate from the events so the current record answers "why is this
+   * finished" without replaying the history, and optional because not
+   * every transition is required to carry a reason.
+   */
+  readonly resolutionReason?: string;
+  readonly closureReason?: string;
 
   /**
    * Who is dealing with it.
