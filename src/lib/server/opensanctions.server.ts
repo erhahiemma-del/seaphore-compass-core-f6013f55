@@ -25,6 +25,11 @@ import {
   type SanctionsCandidate,
   type SanctionsScreeningFinding,
 } from "@/lib/sanctions/match-state";
+import type {
+  CredentialSource,
+  CredentialStatus,
+  ValidationOutcome,
+} from "@/lib/sanctions/credential-types";
 
 const API_BASE = "https://api.opensanctions.org";
 const DEFAULT_DATASET = "sanctions";
@@ -32,21 +37,11 @@ const PROVIDER_NAME = "OpenSanctions";
 const PROVIDER_KEY = "opensanctions";
 const TIMEOUT_MS = 8_000;
 
-export type CredentialSource = "platform-secret" | "credential-store" | "none";
-
-export interface CredentialStatus {
-  readonly configured: boolean;
-  readonly source: CredentialSource;
-  readonly rotatedAt: string | null;
-  readonly lastValidatedAt: string | null;
-}
-
-export interface ValidationOutcome {
-  readonly authenticated: boolean;
-  readonly checkedAt: string;
-  readonly httpStatus: number | null;
-  readonly error: string | null;
-}
+export type {
+  CredentialSource,
+  CredentialStatus,
+  ValidationOutcome,
+} from "@/lib/sanctions/credential-types";
 
 async function readStoredSecret(): Promise<{
   secret: string;

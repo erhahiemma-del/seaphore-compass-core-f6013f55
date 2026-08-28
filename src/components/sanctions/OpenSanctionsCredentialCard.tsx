@@ -13,7 +13,7 @@ import {
   getOpenSanctionsCredentialStatus,
   testOpenSanctionsConnection,
 } from "@/lib/opensanctions.functions";
-import type { CredentialStatus, ValidationOutcome } from "@/lib/server/opensanctions.server";
+import type { CredentialStatus, ValidationOutcome } from "@/lib/sanctions/credential-types";
 
 type Phase = "UNKNOWN" | "CHECKING" | "CONNECTED" | "FAILED" | "NOT_CONFIGURED";
 

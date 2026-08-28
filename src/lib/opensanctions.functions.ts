@@ -14,11 +14,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
-import type {
-  CredentialStatus,
-  EntityDetail,
-  ValidationOutcome,
-} from "@/lib/server/opensanctions.server";
+import type { CredentialStatus, ValidationOutcome } from "@/lib/sanctions/credential-types";
+import type { EntityDetail } from "@/lib/server/opensanctions.server";
 import type { SanctionsScreeningFinding } from "@/lib/sanctions/match-state";
 
 type AuthedContext = { supabase: SupabaseClient<Database>; userId: string };

@@ -9,6 +9,7 @@
  * on the underlying tables and by the entry RBAC check.
  */
 
+import { OpenSanctionsCredentialCard } from "@/components/sanctions/OpenSanctionsCredentialCard";
 import { startTransition, useEffect, useMemo, useState } from "react";
 import type { ComponentType, ReactNode, SVGProps } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -384,7 +385,13 @@ function SectionContent({
   if (section === "overview") return <OverviewSection role={role} search={search} />;
   if (section === "roles") return <RolesSection />;
   if (section === "audit") return <AuditCentreSection />;
-  if (section === "data-sources") return <DataSourceMatrixPanel />;
+  if (section === "data-sources")
+    return (
+      <div className="space-y-4">
+        <OpenSanctionsCredentialCard />
+        <DataSourceMatrixPanel />
+      </div>
+    );
   if (section === "ial") return <IalAdminPanel />;
   if (section === "capability-catalog") return <CapabilityCatalogSection />;
   if (section === "observatory") return <ObservatorySection />;
