@@ -824,7 +824,7 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     status: "pending-source",
     order: 40,
     pendingReason:
-      "Requires an AIS history source. Datalastic is wired and its key is valid, but the current plan returns HTTP 402 for history; SeaVantage is not implemented.",
+      "Backed by Datalastic /vessel_history, verified live on the upgraded plan (HTTP 200); SeaVantage is not implemented.",
   },
 
   /*
