@@ -433,7 +433,9 @@ export async function findVessels(
       country_iso: query.countryIso,
       fuzzy: query.name ? 1 : undefined,
     },
-    (raw) => parseVesselList(raw) ?? [],
+    // Identity search: rows carry no position, so none is required.
+    (raw) => parseVesselListWith(raw, false) ?? [],
+
     CACHE_TTL_MS.identity,
   );
 }
