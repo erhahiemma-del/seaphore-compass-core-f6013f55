@@ -41,7 +41,7 @@ import {
   type AlertRepository,
   type StoredAlert,
 } from "@/services/alerts";
-import type { LonLat, Vessel } from "@/services/geospatial";
+import { sgs, type LonLat, type Vessel } from "@/services/geospatial";
 
 /**
  * How often the fleet is reassessed.
@@ -129,6 +129,31 @@ export function useArrivalAlerts(options: UseArrivalAlertsOptions): ArrivalAlert
   const republish = useCallback(async () => {
     setAlerts(await repository.listActive());
   }, [repository]);
+
+  /*
+   * Publish the beacons the map draws from.
+   *
+   * Through shared state, the same path selection and the query
+   * highlight take, so the map, the attention centre and the drawer all
+   * read one alert state rather than three. The map is told severity and
+   * visual state — both already decided by the projection — and works
+   * nothing out for itself.
+   */
+  const beacons = useMemo(
+    () =>
+      presentAlerts(alerts)
+        .filter((alert) => alert.visualState !== "CLEARED")
+        .map((alert) => ({
+          imo: alert.imo,
+          severity: alert.severity,
+          visualState: alert.visualState,
+        })),
+    [alerts],
+  );
+
+  useEffect(() => {
+    sgs.update({ alertBeacons: beacons });
+  }, [beacons]);
 
   const cycle = useCallback(async () => {
     const { vessels: fleet, boundaryRing: ring, sourceId: source } = inputs.current;

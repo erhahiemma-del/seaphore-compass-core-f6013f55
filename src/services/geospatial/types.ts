@@ -100,6 +100,20 @@ export type { ArrivalWindow, MapFilters, PositionAgeWindow } from "./vessel-filt
  * object so it can be snapshotted, diffed, persisted to the URL, and
  * asserted against in tests.
  */
+/**
+ * One vessel's alert, reduced to what the map needs to draw it.
+ *
+ * Severity and visual state arrive decided by the alert projection. The
+ * renderer is told what to draw, never asked to work out how urgent
+ * something is.
+ */
+export interface AlertBeacon {
+  readonly imo: string;
+  readonly severity: "WATCH" | "ATTENTION" | "URGENT";
+  /** ACTIVE pulses, QUIET is a static ring, CLEARED is not drawn. */
+  readonly visualState: "ACTIVE" | "QUIET" | "CLEARED";
+}
+
 export interface MapState {
   /** Rendering perspective. 2D/3D only — see `operatingMode` for context. */
   readonly viewMode: ViewMode;
@@ -171,6 +185,23 @@ export interface MapState {
    * asserts nothing about them.
    */
   readonly approachHighlight: readonly string[];
+  /**
+   * Vessels carrying an unresolved operational alert, and how loud each is.
+   *
+   * Deliberately separate from `approachHighlight`. A highlight records
+   * which vessels a question returned and vanishes with the next
+   * question; an alert is an unresolved item of work with a lifecycle and
+   * an audit trail. Folding one into the other would make every search
+   * look like an alarm, and would make an alert disappear because
+   * somebody asked something else.
+   *
+   * It is also separate from `riskLevel` and `attentionScore`. Alert
+   * severity is how promptly to look, never a claim about the vessel.
+   *
+   * Presentation state only: it carries the decisions the alert domain
+   * already made and derives nothing.
+   */
+  readonly alertBeacons: readonly AlertBeacon[];
   /** Logical layer keys currently switched on. See the Layer Registry. */
   readonly activeLayers: readonly string[];
   /**

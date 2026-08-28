@@ -16,6 +16,7 @@ import { MapPinOff } from "lucide-react";
 import { prefersReducedMotion } from "@/hooks/use-reduced-motion";
 import { AssetPopup } from "./AssetPopup";
 import { EMPTY_TRACK, type TrackCollection } from "@/services/geospatial/vessel-track";
+import { useAlertPulse } from "./useAlertPulse";
 import { installMapHealthProbe } from "./health-probe";
 
 /**
@@ -317,6 +318,13 @@ export function MapCanvas({
   // observations the update engine receives — never a parallel copy — so a
   // recording can only ever contain what an officer actually saw.
   const recorder = useMemo(() => new ReplayRecorder(), []);
+  /*
+   * Whether anything is alerting at all. With nothing to animate the
+   * clock never starts, so an empty attention list costs no frames.
+   */
+  const alertsActive = useMapSelector((state) =>
+    state.alertBeacons.some((beacon) => beacon.visualState === "ACTIVE"),
+  );
 
   const engine = useMemo(
     () =>
@@ -333,6 +341,16 @@ export function MapCanvas({
              */
             highlightedImos:
               state.approachHighlight.length > 0 ? new Set(state.approachHighlight) : undefined,
+            /*
+             * Alerts reach the features the same way selection and the
+             * highlight do — through shared state, read at apply time.
+             * A second channel into the renderer would be a second
+             * answer to "which vessels need attention".
+             */
+            alerts:
+              state.alertBeacons.length > 0
+                ? new Map(state.alertBeacons.map((beacon) => [beacon.imo, beacon]))
+                : undefined,
           };
         },
         /*
@@ -366,6 +384,7 @@ export function MapCanvas({
         zoom: service.get().zoom,
         vesselCount: engine.snapshot().length,
         sources: service.get().enabledSources,
+        alertBeacons: service.get().alertBeacons.filter((b) => b.visualState !== "CLEARED").length,
         highlightedVessels: service.get().approachHighlight.length,
       })),
     [engine, service, rendererDraws],
@@ -710,6 +729,16 @@ export function MapCanvas({
       unsubscribe?.();
     };
   }, [source, engine, recorder, bus, setVesselCount, onVesselsChanged]);
+
+  /*
+   * One clock for every attention ring, driven from here because this is
+   * where the renderer lives. The phase is a layer property, so the cost
+   * does not grow with the number of alerts.
+   */
+  useAlertPulse({
+    target: renderer as unknown as { setAlertPulse(phase: number): void },
+    active: alertsActive,
+  });
 
   useEffect(() => {
     onRecorderReady?.(recorder);

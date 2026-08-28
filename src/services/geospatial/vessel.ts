@@ -12,7 +12,14 @@
  */
 import { RISK_COLORS, RISK_OPACITY, TIMING } from "./constants";
 import { freshnessBandForTimestamp, type FreshnessBand } from "./freshness";
-import type { GeoJsonFeature, GeoJsonPoint, LonLat, RiskLevel, VesselType } from "./types";
+import type {
+  AlertBeacon,
+  GeoJsonFeature,
+  GeoJsonPoint,
+  LonLat,
+  RiskLevel,
+  VesselType,
+} from "./types";
 import {
   classifyVessel,
   resolveHeading,
@@ -216,6 +223,19 @@ export interface VesselRenderContext {
    * A highlight is a presentation state, never intelligence.
    */
   readonly highlightedImos?: ReadonlySet<string>;
+  /**
+   * Vessels carrying an unresolved operational alert.
+   *
+   * Additive, and kept off every axis that already means something else.
+   * It does not touch `riskLevel` — severity is how promptly to look,
+   * never a claim about the vessel — nor `attentionScore`, nor
+   * `intelligenceSignal`, nor the icon size. An alert is a fifth thing a
+   * vessel can be, drawn on top of the four it already was.
+   *
+   * Absent when nothing is alerting, so the beacon layer's `has` filter
+   * draws nothing rather than drawing for everyone.
+   */
+  readonly alerts?: ReadonlyMap<string, AlertBeacon>;
 }
 
 /** The stable key identifying a vessel in every collection and diff. */
@@ -322,6 +342,14 @@ export function toVesselFeature(vessel: Vessel, ctx: VesselRenderContext = {}): 
   const confidenceTier = vessel.confidenceLevel
     ? confidenceTierFor(vessel.confidenceLevel as ConfidenceLevel)
     : undefined;
+  /*
+   * Only a beacon that should actually draw becomes a property. A
+   * CLEARED alert is a resolved one; it stays in the officer's history
+   * and leaves the map, so it must not survive into the features at all
+   * — `["has", …]` would otherwise ring a vessel nobody is waiting on.
+   */
+  const beacon = ctx.alerts?.get(vessel.identity.imo);
+  const alert = beacon && beacon.visualState !== "CLEARED" ? beacon : undefined;
   return {
     type: "Feature",
     id: vessel.identity.imo,
@@ -329,6 +357,7 @@ export function toVesselFeature(vessel: Vessel, ctx: VesselRenderContext = {}): 
     properties: {
       ...(confidenceTier ? { confidenceTier } : {}),
       ...(vessel.intelligenceSignal ? { intelligenceSignal: vessel.intelligenceSignal } : {}),
+      ...(alert ? { alertSeverity: alert.severity, alertVisual: alert.visualState } : {}),
       imo: vessel.identity.imo,
       name: vessel.identity.name,
       risk: vessel.riskLevel,

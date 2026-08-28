@@ -38,6 +38,14 @@ export interface MapHealthSnapshot {
    * dimmer" is not a verification.
    */
   readonly highlightedVessels: number;
+  /**
+   * Vessels currently drawing an operational attention ring.
+   *
+   * Reported for the same reason the highlight count is: a beacon is
+   * otherwise only checkable by eye, and "the ring looks like it is
+   * there" is not a verification. Counts only, no identities.
+   */
+  readonly alertBeacons: number;
   /** Milliseconds since the probe was installed. */
   readonly uptimeMs: number;
 }

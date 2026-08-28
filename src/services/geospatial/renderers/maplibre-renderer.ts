@@ -288,6 +288,32 @@ const FALLBACK_BASEMAP = "https://tiles.stadiamaps.com/styles/alidade_smooth_dar
  */
 const STYLE_LOAD_STALL_MS = 12_000;
 
+/**
+ * The paint expression shape MapLibre accepts for a numeric property.
+ *
+ * Declared locally rather than imported so this helper does not depend
+ * on the adapter's type surface leaking outward.
+ */
+type AlertPulsePaint = readonly [string, readonly unknown[], number, number];
+
+/**
+ * Stroke opacity for the attention ring at one instant of the pulse.
+ *
+ * Built as a function of a single number so the whole layer can be
+ * repainted from one clock: `setAlertPulse` substitutes the current
+ * phase and MapLibre applies it to every alerting vessel at once. The
+ * alternative — a timer or an animation frame per alert — would scale
+ * with the fleet and is the thing this shape exists to avoid.
+ *
+ * Acknowledged alerts ignore the phase entirely and hold a steady ring.
+ */
+export function alertPulseExpression(phase: number): AlertPulsePaint {
+  // Kept well clear of zero: a ring that vanishes at the bottom of the
+  // cycle reads as an alert that resolved itself.
+  const opacity = 0.55 + 0.4 * phase;
+  return ["case", ["==", ["get", "alertVisual"], "ACTIVE"], opacity, 0.5];
+}
+
 export const INSTALLED_RENDER_LAYERS: readonly string[] = [
   LAYER_IDS.geographicContext,
   LAYER_IDS.buildings,
@@ -309,10 +335,12 @@ export const INSTALLED_RENDER_LAYERS: readonly string[] = [
   LAYER_IDS.portLabels,
   LAYER_IDS.riskHeatmap,
   LAYER_IDS.vesselConfidence,
+  LAYER_IDS.vesselAlertRing,
   LAYER_IDS.vesselSelection,
   LAYER_IDS.vessels,
   LAYER_IDS.vesselIntelligence,
   LAYER_IDS.vesselLabels,
+  LAYER_IDS.vesselAlertBadge,
   LAYER_IDS.incidentReports,
   LAYER_IDS.weatherOverlay,
   LAYER_IDS.investigArea,
@@ -840,6 +868,24 @@ export class MapLibreRenderer implements MapRenderer {
   }
 
   // ─── Vessel data ────────────────────────────────────────────────────────
+
+  /**
+   * Advance the attention ring's pulse to a phase between 0 and 1.
+   *
+   * One call repaints every alerting vessel, because the phase is a
+   * property of the layer rather than of any vessel. The caller owns the
+   * clock; the renderer owns the drawing.
+   */
+  setAlertPulse(phase: number): void {
+    const map = this.map;
+    if (!map || !map.getLayer(LAYER_IDS.vesselAlertRing)) return;
+    const clamped = Math.min(Math.max(phase, 0), 1);
+    map.setPaintProperty(
+      LAYER_IDS.vesselAlertRing,
+      "circle-stroke-opacity",
+      alertPulseExpression(clamped) as never,
+    );
+  }
 
   setVesselData(collection: VesselFeatureCollection): void {
     this.fullReplacements += 1;
@@ -1802,6 +1848,105 @@ export class MapLibreRenderer implements MapRenderer {
      * movement or urgency the data does not support. It says "this is
      * the one you clicked", and nothing else.
      */
+    /*
+     * ── Operational attention ring ──
+     *
+     * Beneath the hull and outside the selection ring, so an alerted
+     * vessel that is also selected shows both — selection is what the
+     * officer is looking at, the alert is what is asking to be looked
+     * at, and neither may hide the other.
+     *
+     * Severity is carried by radius, colour and stroke width together.
+     * An officer who cannot separate amber from red still reads three
+     * distinct rings, and the badge layer above names the severity in a
+     * glyph as well.
+     *
+     * `alertPulse` is a paint property driven by one shared clock (see
+     * `setAlertPulse`); the expression consumes it rather than each
+     * vessel animating itself.
+     */
+    map.addLayer({
+      id: LAYER_IDS.vesselAlertRing,
+      type: "circle",
+      source: SOURCE_IDS.vessels,
+      // Only vessels actually carrying an unresolved alert. Absent key
+      // means no ring, which is what keeps the filter honest.
+      filter: ["has", "alertSeverity"],
+      paint: {
+        /*
+         * Zoom is the outer interpolate, never nested inside another
+         * expression: MapLibre requires `["zoom"]` at the top level and
+         * declines the whole layer, silently, when it is not.
+         */
+        "circle-radius": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          5,
+          ["match", ["get", "alertSeverity"], "URGENT", 13, "ATTENTION", 11, 9],
+          14,
+          ["match", ["get", "alertSeverity"], "URGENT", 26, "ATTENTION", 22, 18],
+          20,
+          ["match", ["get", "alertSeverity"], "URGENT", 40, "ATTENTION", 34, 28],
+        ],
+        "circle-color": "transparent",
+        "circle-stroke-color": [
+          "match",
+          ["get", "alertSeverity"],
+          "URGENT",
+          "#DC2626",
+          "ATTENTION",
+          "#EA580C",
+          "#D97706",
+        ],
+        "circle-stroke-width": [
+          "match",
+          ["get", "alertSeverity"],
+          "URGENT",
+          2.4,
+          "ATTENTION",
+          1.9,
+          1.4,
+        ],
+        /*
+         * Acknowledged alerts hold a static ring. The officer has seen
+         * it; continuing to pulse would train them to ignore movement,
+         * and the alert still needs to be visible because seeing is not
+         * resolving.
+         */
+        "circle-stroke-opacity": alertPulseExpression(1) as never,
+      },
+    });
+
+    map.addLayer({
+      id: LAYER_IDS.vesselAlertBadge,
+      type: "symbol",
+      source: SOURCE_IDS.vessels,
+      filter: ["has", "alertSeverity"],
+      layout: {
+        "text-field": "!",
+        "text-size": ["interpolate", ["linear"], ["zoom"], 5, 9, 14, 13, 20, 16],
+        "text-offset": ["literal", [0, -1.5]],
+        // Always drawn: an attention marker that collides away is an
+        // attention marker an officer never sees.
+        "text-allow-overlap": true,
+        "text-ignore-placement": true,
+      },
+      paint: {
+        "text-color": [
+          "match",
+          ["get", "alertSeverity"],
+          "URGENT",
+          "#DC2626",
+          "ATTENTION",
+          "#EA580C",
+          "#D97706",
+        ],
+        "text-halo-color": palette.labelHalo,
+        "text-halo-width": 1.6,
+      },
+    });
+
     map.addLayer({
       id: LAYER_IDS.vesselSelection,
       type: "circle",

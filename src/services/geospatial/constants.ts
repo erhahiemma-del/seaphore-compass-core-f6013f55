@@ -948,6 +948,18 @@ export const LAYER_IDS = {
   vesselConfidence: "vessel-confidence-layer",
   /** Intelligence badges (investigation, risk, alert) attached to a vessel. */
   vesselIntelligence: "vessel-intelligence-layer",
+  /**
+   * Attention ring for an unresolved operational alert.
+   *
+   * Its own layer rather than a mode of an existing one. Alert state is
+   * a fifth axis — a vessel can be risky, unconfident, selected,
+   * highlighted by a query and alerting, all at once, and every one of
+   * those has to remain readable. Overloading risk colour or icon size
+   * with alert state would delete an axis to show another.
+   */
+  vesselAlertRing: "vessel-alert-ring-layer",
+  /** Severity glyph pinned above the hull of an alerting vessel. */
+  vesselAlertBadge: "vessel-alert-badge-layer",
   portAnchorageSymbol: "port-anchorage-symbol-layer",
   /** Elevation halo drawn beneath a major port symbol. */
   portHalo: "port-halo-layer",
