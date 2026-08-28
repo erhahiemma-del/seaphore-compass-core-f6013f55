@@ -29,6 +29,8 @@
  * setting the newest answer is the only one worth hearing.
  */
 
+import { deliveryFor, speakable, type SpeechTone } from "./speech-style";
+
 /** Where a voice sits on the fallback ladder. */
 export type VoiceMatchQuality =
   /** The requested locale exactly — a genuine Nigerian English voice. */
@@ -66,6 +68,57 @@ export const VOICE_LOCALE_PREFERENCE: readonly string[] = [
 ];
 
 /**
+ * Voices this platform ships that are female.
+ *
+ * A name list, because the Web Speech API exposes no gender field at
+ * all — `SpeechSynthesisVoice` carries a name, a language and a URI and
+ * nothing else. So this is a heuristic over known platform voices, and
+ * it is honest about being one: an unrecognised name is treated as
+ * unknown rather than guessed at, and locale still wins over gender.
+ *
+ * It exists because the selection had no gender criterion whatsoever.
+ * The en-GB block on this machine is George, Hazel, Susan, and `find`
+ * returned the first — so Seaphore spoke with a male voice not by
+ * preference but by array order.
+ */
+const KNOWN_FEMALE_VOICES: readonly string[] = [
+  // Microsoft / Windows
+  "hazel",
+  "susan",
+  "zira",
+  "aria",
+  "jenny",
+  "michelle",
+  "sonia",
+  "libby",
+  "maisie",
+  "ada",
+  "ezinne",
+  // Apple
+  "samantha",
+  "karen",
+  "moira",
+  "tessa",
+  "fiona",
+  "serena",
+  "kate",
+  "victoria",
+  "allison",
+  "ava",
+  "susan (enhanced)",
+  // Google / Android / Chrome
+  "google uk english female",
+  "google us english",
+  "english female",
+];
+
+/** Whether a voice is one this platform is known to ship as female. */
+export function isLikelyFemale(name: string): boolean {
+  const lower = name.toLowerCase();
+  return KNOWN_FEMALE_VOICES.some((known) => lower.includes(known));
+}
+
+/**
  * Pick a voice, and say how good the match is.
  *
  * Pure, so the ladder can be asserted without a speech engine — which
@@ -81,7 +134,15 @@ export function selectVoice(
   const normalise = (lang: string) => lang.replace("_", "-").toLowerCase();
 
   for (const preferred of VOICE_LOCALE_PREFERENCE) {
-    const match = voices.find((voice) => normalise(voice.lang) === preferred.toLowerCase());
+    const inLocale = voices.filter((voice) => normalise(voice.lang) === preferred.toLowerCase());
+    /*
+     * Female first *within* each locale, never across them. A female
+     * American voice must not outrank a West African one — the accent
+     * an officer hears matters more than the gender, and reordering the
+     * locale ladder to chase a voice would quietly undo the judgement
+     * the ladder encodes.
+     */
+    const match = inLocale.find((voice) => isLikelyFemale(voice.name)) ?? inLocale[0];
     if (match) {
       return {
         name: match.name,
@@ -98,7 +159,8 @@ export function selectVoice(
   }
 
   // Any English at all, before giving up on language entirely.
-  const anyEnglish = voices.find((voice) => normalise(voice.lang).startsWith("en"));
+  const english = voices.filter((voice) => normalise(voice.lang).startsWith("en"));
+  const anyEnglish = english.find((voice) => isLikelyFemale(voice.name)) ?? english[0];
   if (anyEnglish) {
     return { name: anyEnglish.name, lang: anyEnglish.lang, quality: "ENGLISH_FALLBACK" };
   }
@@ -131,7 +193,8 @@ export function describeVoice(voice: SelectedVoice | null): string {
 export type VoiceOutputState = "idle" | "speaking" | "unavailable";
 
 export interface VoiceOutputService {
-  speak(text: string): void;
+  /** Say it. `tone` changes delivery, never the voice or the words. */
+  speak(text: string, tone?: SpeechTone): void;
   stop(): void;
   pause(): void;
   resume(): void;
@@ -183,7 +246,7 @@ export function createVoiceOutput(
   }
 
   return {
-    speak(text: string) {
+    speak(text: string, tone: SpeechTone = "CALM") {
       if (!synth || text.trim() === "") return;
       /*
        * Replace, never queue.
@@ -194,10 +257,26 @@ export function createVoiceOutput(
        */
       synth.cancel();
 
-      const utterance = new SpeechSynthesisUtterance(text);
+      /*
+       * Spoken form, not screen form. The same fact, pronounced — a
+       * degree sign read aloud is "degree sign", and one stray character
+       * undoes an otherwise natural sentence.
+       */
+      const utterance = new SpeechSynthesisUtterance(speakable(text));
       const match = synth.getVoices().find((voice) => voice.name === chosen?.name);
       if (match) utterance.voice = match;
       if (chosen) utterance.lang = chosen.lang;
+
+      /*
+       * Delivery is set explicitly. Browser defaults produce the flat,
+       * clipped cadence people call robotic, and leaving them unset is
+       * not a neutral choice — it is a choice to sound like a stock
+       * ticker.
+       */
+      const delivery = deliveryFor(tone);
+      utterance.rate = delivery.rate;
+      utterance.pitch = delivery.pitch;
+      utterance.volume = delivery.volume;
       utterance.onstart = () => {
         speaking = true;
         notify();
