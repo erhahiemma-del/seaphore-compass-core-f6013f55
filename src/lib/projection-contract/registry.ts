@@ -484,6 +484,36 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: REVIEWED,
   },
+  {
+    id: "sanctions.opensanctions-credential-connection",
+    name: "OpenSanctions Credential & Connection State",
+    producer: "IAL",
+    description:
+      "Admin-only credential rotation and connection validation for OpenSanctions. The key is written to a server-side store unreachable from any browser role, validated against the provider before it replaces an existing credential, and never returned, logged or partially rendered. Rotation writes an audit_log entry with no key material.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Administration · Data Sources · Open Sanctions panel",
+      location: "src/components/sanctions/OpenSanctionsCredentialCard.tsx",
+      component: "src/lib/server/opensanctions.server.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: REVIEWED,
+  },
+  {
+    id: "sanctions.normalized-screening-finding",
+    name: "Normalized Sanctions Screening Finding",
+    producer: "IAL",
+    description:
+      "POST /match/{dataset} screening producing ranked candidates and a normalized state (NO_MATCH / POSSIBLE_MATCH / REVIEW_REQUIRED / CONFIRMED_MATCH). Scores express similarity only; CONFIRMED_MATCH is unreachable without an officer decision. Provider failures surface as NOT_SCREENED with an explicit reason, never as a clear.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Compliance · Entities Requiring Screening queue status and summary",
+      location: "src/stores/screening-queue.store.ts",
+      component: "src/lib/sanctions/match-state.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: REVIEWED,
+  },
 
   {
     id: "ial.environmental-intelligence-provider",
