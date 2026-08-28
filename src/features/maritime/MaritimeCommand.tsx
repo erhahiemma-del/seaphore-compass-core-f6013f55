@@ -29,6 +29,8 @@ import {
   MAP_DEFAULTS,
   MAP_SCOPES,
   getVesselSource,
+  resolveMapDataState,
+
   mapEventBus,
   type MapScopeId,
   sgs,
