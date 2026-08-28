@@ -131,14 +131,27 @@ describe("the attention list", () => {
 
   it("offers acknowledge only while the domain would accept it", () => {
     renderCentre({
-      alerts: [presentation({ actions: ["ADD_UPDATE", "RESOLVE"], acknowledged: true })],
+      /*
+       * A coherent acknowledged alert: the lifecycle state and the
+       * acknowledged flag must agree, because the row now reports the
+       * state the domain holds rather than a derived boolean.
+       */
+      alerts: [
+        presentation({
+          actions: ["ADD_UPDATE", "RESOLVE"],
+          acknowledged: true,
+          lifecycleState: "ACKNOWLEDGED",
+          visualState: "QUIET",
+        }),
+      ],
       counts: { URGENT: 1, ATTENTION: 0, WATCH: 0 },
     });
     fireEvent.click(screen.getByRole("button", { name: /Attention centre/ }));
 
     expect(screen.queryByRole("button", { name: /Acknowledge/ })).not.toBeInTheDocument();
-    // Acknowledged is not gone: it is still the officer's open work.
-    expect(screen.getByText(/Acknowledged/)).toBeInTheDocument();
+    // Acknowledged is not gone: it is still the officer's open work, and
+    // the row says which state it is in.
+    expect(screen.getByText(/ACKNOWLEDGED/)).toBeInTheDocument();
   });
 
   it("reports unassessable vessels separately from alerts", () => {

@@ -529,6 +529,7 @@ export function MaritimeCommand() {
             counts={alerts.counts}
             assessable={alerts.assessable}
             unassessableCount={alerts.unassessableCount}
+            durable={alerts.durable}
             onView={viewAlertVessel}
             onAcknowledge={acknowledgeAlert}
           />
