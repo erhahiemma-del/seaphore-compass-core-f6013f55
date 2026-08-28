@@ -215,9 +215,7 @@ export class SupabaseAlertRepository implements AlertRepository {
     if (error || !data) return [];
     return (data as unknown as JoinedRow[])
       .map(toStoredJoined)
-      .sort(
-        (a, b) => (SEVERITY_RANK[a.severity] ?? 9) - (SEVERITY_RANK[b.severity] ?? 9),
-      );
+      .sort((a, b) => (SEVERITY_RANK[a.severity] ?? 9) - (SEVERITY_RANK[b.severity] ?? 9));
   }
 
   async listByVessel(imo: string): Promise<readonly StoredAlert[]> {
@@ -401,10 +399,7 @@ export class SupabaseAlertRepository implements AlertRepository {
     alertId: string,
     expectedVersion: number,
     patch: Record<string, unknown>,
-  ): Promise<
-    | { ok: true; value: StoredAlert }
-    | Extract<WriteResult<StoredAlert>, { ok: false }>
-  > {
+  ): Promise<{ ok: true; value: StoredAlert } | Extract<WriteResult<StoredAlert>, { ok: false }>> {
     /*
      * The version assertion lives in the WHERE clause, not in a read
      * beforehand. A read-then-write would leave a window in which another
