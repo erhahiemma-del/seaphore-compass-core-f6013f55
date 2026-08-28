@@ -70,7 +70,16 @@ export function useVesselCamera({
   const moveTo = useCallback(
     (target: LonLat) => {
       requested.current = target;
-      navigateToCoordinates(target, { source: "selection" }, service);
+      /*
+       * The officer's zoom is preserved, explicitly.
+       *
+       * `navigateToCoordinates` applies a default when none is given,
+       * and centring at z18 dropped the camera to z12 — destroying the
+       * deep-zoom context the officer had built up, in response to a
+       * button that only promised to centre. Measured in the browser:
+       * z14 became z12 on the first press.
+       */
+      navigateToCoordinates(target, { zoom: service.get().zoom, source: "selection" }, service);
     },
     [service],
   );
