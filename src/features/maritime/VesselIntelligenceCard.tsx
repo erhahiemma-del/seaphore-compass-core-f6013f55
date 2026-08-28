@@ -15,7 +15,7 @@
  * hand in every section that gets added later.
  */
 import { useMemo } from "react";
-import { Crosshair, X } from "lucide-react";
+import { Crosshair, LocateFixed, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -33,6 +33,7 @@ import {
   VesselVoyagePanel,
 } from "./VesselIntelligenceSections";
 import { presentVessel } from "./vessel-presentation";
+import type { FollowState } from "./vessel-camera";
 
 /** The six panels, in the order an officer works through them. */
 export const VESSEL_TAB_IDS = [
@@ -63,6 +64,11 @@ export interface VesselIntelligenceCardProps {
   readonly onTabChange?: (tab: VesselTabId) => void;
   /** Centre the map on this vessel through the canonical navigation path. */
   readonly onFocus?: () => void;
+  /** Follow state and controls, when the surface supplies a camera. */
+  readonly follow?: FollowState;
+  readonly onStartFollow?: () => void;
+  readonly onStopFollow?: () => void;
+  readonly onResumeFollow?: () => void;
   /** Open the existing replay experience for this vessel. */
   readonly onReplay?: () => void;
   /** Whether the active source can answer questions about this vessel's past. */
@@ -77,6 +83,10 @@ export function VesselIntelligenceCard({
   tab = "overview",
   onTabChange,
   onFocus,
+  follow,
+  onStartFollow,
+  onStopFollow,
+  onResumeFollow,
   onReplay,
   sourceSupportsHistory = false,
   vesselTrack,
@@ -162,16 +172,49 @@ export function VesselIntelligenceCard({
         identically whether an officer clicks it or the Copilot calls it.
       */}
       <footer className="shrink-0 border-t border-border px-3 py-2">
-        <Button
-          size="sm"
-          onClick={onFocus}
-          disabled={!onFocus}
-          title={onFocus ? undefined : "Map navigation is unavailable"}
-          className="h-8 w-full text-[11.5px]"
-        >
-          <Crosshair className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-          Focus on map
-        </Button>
+        <div className="flex gap-1.5">
+          <Button
+            size="sm"
+            onClick={onFocus}
+            disabled={!onFocus}
+            title={onFocus ? undefined : "Map navigation is unavailable"}
+            className="h-8 flex-1 text-[11.5px]"
+          >
+            <Crosshair className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+            Centre
+          </Button>
+
+          {/*
+            Follow states its own state rather than toggling silently.
+            A control that reads "Follow" while following, or resumes on
+            its own after a pan, is a control an officer stops trusting.
+          */}
+          {onStartFollow ? (
+            <Button
+              size="sm"
+              variant={follow === "ACTIVE" ? "default" : "outline"}
+              data-testid="vessel-follow"
+              data-follow={follow ?? "OFF"}
+              onClick={
+                follow === "ACTIVE"
+                  ? onStopFollow
+                  : follow === "PAUSED"
+                    ? onResumeFollow
+                    : onStartFollow
+              }
+              className="h-8 flex-1 text-[11.5px]"
+            >
+              <LocateFixed className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+              {follow === "ACTIVE" ? "Following" : follow === "PAUSED" ? "Resume" : "Follow"}
+            </Button>
+          ) : null}
+        </div>
+
+        {follow === "PAUSED" ? (
+          <p className="mt-1 text-center text-[10px] text-amber-700">
+            Follow paused — you moved the map.
+          </p>
+        ) : null}
         <p className="mt-1.5 text-center text-[9.5px] leading-tight text-muted-foreground/70">
           Every value above is reported by a connected source or marked unavailable.
         </p>

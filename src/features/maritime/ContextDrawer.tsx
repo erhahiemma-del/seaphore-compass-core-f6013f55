@@ -38,7 +38,7 @@ import {
   hasDrawablePosition,
   positionUnavailableReason,
 } from "@/services/geospatial";
-import { navigateToCoordinates } from "@/services/geospatial/navigation";
+import type { VesselCamera } from "./useVesselCamera";
 
 import { VesselIntelligenceCard, type VesselTabId } from "./VesselIntelligenceCard";
 import type { VesselTrack } from "@/services/geospatial/vessel-track";
@@ -63,6 +63,11 @@ export interface ContextDrawerProps {
   readonly voyage?: Voyage | null;
   readonly onClose: () => void;
   readonly onAskCopilot?: (selection: MapSelection) => void;
+  /** Shared camera, so Centre and Follow measure the same usable map. */
+  readonly camera?: VesselCamera;
+  /** Open the existing replay experience for this vessel. */
+  readonly onReplay?: () => void;
+  readonly replayAvailable?: boolean;
   readonly className?: string;
 }
 
@@ -75,6 +80,9 @@ export function ContextDrawer({
   className,
   sourceSupportsHistory,
   vesselTrack,
+  camera,
+  onReplay,
+  replayAvailable,
 }: ContextDrawerProps) {
   if (!selection) return null;
 
@@ -145,6 +153,9 @@ export function ContextDrawer({
           onClose={onClose}
           sourceSupportsHistory={sourceSupportsHistory}
           vesselTrack={vesselTrack}
+          camera={camera}
+          onReplay={onReplay}
+          replayAvailable={replayAvailable}
         />
       </div>
     </aside>
@@ -164,11 +175,17 @@ function SelectionPanel({
   onClose,
   sourceSupportsHistory,
   vesselTrack,
+  camera,
+  onReplay,
+  replayAvailable,
 }: {
   selection: MapSelection;
   vesselTrack?: VesselTrack | null;
   vessel: Vessel | null;
   sourceSupportsHistory?: boolean;
+  camera?: VesselCamera;
+  onReplay?: () => void;
+  replayAvailable?: boolean;
   /** `undefined` means still resolving; `null` means resolved to nothing. */
   voyage: Voyage | null | undefined;
   onClose: () => void;
@@ -184,6 +201,9 @@ function SelectionPanel({
           onClose={onClose}
           sourceSupportsHistory={sourceSupportsHistory}
           vesselTrack={vesselTrack}
+          camera={camera}
+          onReplay={onReplay}
+          replayAvailable={replayAvailable}
         />
       ) : (
         <Unresolved
@@ -321,24 +341,27 @@ function VesselTabs({
   onClose,
   sourceSupportsHistory,
   vesselTrack,
+  camera,
+  onReplay,
+  replayAvailable,
 }: {
   vessel: Vessel;
   onClose: () => void;
   sourceSupportsHistory?: boolean;
   vesselTrack?: VesselTrack | null;
+  camera?: VesselCamera;
+  onReplay?: () => void;
+  replayAvailable?: boolean;
 }) {
   const [tab, setTab] = useState<VesselTabId>("overview");
 
   /*
-   * Focus routes through the canonical navigation service, the same call
-   * a Copilot instruction lands on. A `flyTo` here would be a second
-   * camera writer reachable from a button.
+   * Centre goes through the shared camera, which measures the drawer and
+   * the left rail before deciding where to move. The previous version
+   * centred on the raw coordinate, which put the vessel behind the very
+   * panel describing it.
    */
-  const onFocus = useCallback(() => {
-    navigateToCoordinates([vessel.position.lon, vessel.position.lat], {
-      source: "selection",
-    });
-  }, [vessel.position.lon, vessel.position.lat]);
+  const onFocus = camera?.centre;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -348,6 +371,11 @@ function VesselTabs({
         tab={tab}
         onTabChange={setTab}
         onFocus={onFocus}
+        follow={camera?.follow}
+        onStartFollow={camera?.startFollow}
+        onStopFollow={camera?.stopFollow}
+        onResumeFollow={camera?.resumeFollow}
+        onReplay={replayAvailable ? onReplay : undefined}
         sourceSupportsHistory={sourceSupportsHistory}
         vesselTrack={vesselTrack}
       />

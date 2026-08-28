@@ -52,6 +52,7 @@ import { MAP_ZONE } from "./map-zones";
 import { useVoyages, type VoyageFeed } from "./useVoyages";
 import { MapCanvas, type VesselFeedState } from "./MapCanvas";
 import { useReplayTimeline } from "./useReplayTimeline";
+import { useVesselCamera } from "./useVesselCamera";
 import { OperationalLegend } from "./OperationalLegend";
 import { MaritimeSearch } from "./MaritimeSearch";
 import { OperatingModeBar } from "./OperatingModeBar";
@@ -255,6 +256,17 @@ export function MaritimeCommand() {
     sgs.select({ kind: "vessel", id: imo, imo });
     setSelectedVessel(vessels.find((vessel) => vessel.identity.imo === imo) ?? null);
   }, [vessels]);
+
+  /*
+   * One camera for Centre and Follow, measuring the drawer and the left
+   * rail once so the two controls cannot disagree about where the usable
+   * map ends.
+   */
+  const camera = useVesselCamera({
+    position: selectedVessel ? [selectedVessel.position.lon, selectedVessel.position.lat] : null,
+    vesselId: selectedVessel?.identity.imo ?? null,
+    leftInsetPx: LEFT_CONTEXT_WIDTH_PX,
+  });
 
   const handleSelected = useCallback((vessel: Vessel | null) => {
     setSelectedVessel(vessel);
@@ -564,6 +576,12 @@ export function MaritimeCommand() {
             voyage={selectedVoyage}
             sourceSupportsHistory={sourceSupportsHistory}
             vesselTrack={vesselTrack}
+            camera={camera}
+            // Replay is the existing session recorder, reached from the
+            // Voyage tab rather than rebuilt there. Offered only when the
+            // recorder actually holds something to play.
+            onReplay={replay.play}
+            replayAvailable={replay.availability === "READY"}
             onClose={closeCard}
           />
         </div>
