@@ -34,6 +34,9 @@ import {
   type ReplayStatus,
   type SharedGeospatialService,
 } from "@/services/geospatial";
+import type { Vessel } from "@/services/geospatial/vessel";
+
+import { installReplayProbe } from "./replay-probe";
 
 /**
  * Why no recording is available.
@@ -104,6 +107,11 @@ export function useReplayTimeline(options: UseReplayTimelineOptions = {}): Repla
 
   const recorderRef = useRef<ReplayRecorder | null>(null);
   const playerRef = useRef<ReplayPlayer | null>(null);
+  // Instrumentation only. Never read by playback itself.
+  const playerIdRef = useRef(0);
+  const tickRunningRef = useRef(false);
+  const ticksFiredRef = useRef(0);
+  const framesAppliedRef = useRef(0);
   const [status, setStatus] = useState<ReplayStatus | null>(null);
   const [frameCount, setFrameCount] = useState(0);
 
@@ -122,17 +130,35 @@ export function useReplayTimeline(options: UseReplayTimelineOptions = {}): Repla
     return () => clearInterval(poll);
   }, []);
 
-  /** Build the player lazily — there is nothing to play until frames exist. */
+  /**
+   * Build the player lazily — there is nothing to play until frames exist.
+   *
+   * A player is constructed with the frames it will ever have, so one
+   * built after ten seconds of collection covers ten seconds for the rest
+   * of the session no matter how long the officer keeps the map open.
+   * That quietly contradicts the sentence beside the controls, which
+   * offers the observations collected during *this session*. So a player
+   * that is neither playing nor paused is rebuilt when the recording has
+   * grown past it, and one mid-playback is left strictly alone — changing
+   * the recording under a running playhead would move the ground the
+   * officer is standing on.
+   */
   const ensurePlayer = useCallback((): ReplayPlayer | null => {
-    if (playerRef.current) return playerRef.current;
     const recorder = recorderRef.current;
     if (!recorder || !sink) return null;
 
     const frames = recorder.snapshot();
+    const existing = playerRef.current;
+    if (existing) {
+      const held = existing.status();
+      const settled = held.state === "idle" || held.state === "ended";
+      if (!settled || frames.length <= held.total) return existing;
+    }
     if (frames.length === 0) return null;
 
     const player = new ReplayPlayer({
       frames,
+      speed: playerRef.current?.status().speed,
       sink,
       onChange: (next) => {
         setStatus(next);
@@ -145,18 +171,87 @@ export function useReplayTimeline(options: UseReplayTimelineOptions = {}): Repla
       },
     });
     playerRef.current = player;
+    playerIdRef.current += 1;
     setStatus(player.status());
     return player;
   }, [sink, service]);
 
-  // Advance the canonical player. One interval, owned here, disposed here.
+  /*
+   * Advance the canonical player. One interval, owned here, disposed here.
+   *
+   * Gated on a boolean rather than on `status`, and the difference is not
+   * stylistic. Every tick emits a fresh status object, so depending on the
+   * object made this effect tear the interval down and rebuild it on each
+   * tick — restarting the 250ms countdown before it could next fire. The
+   * playhead then advanced at roughly a quarter of real time while
+   * reporting itself as playing at 1×. A boolean changes twice per
+   * playback session, so the interval is created once and left alone.
+   */
+  const playing = status?.state === "playing";
   useEffect(() => {
-    if (!status || status.state !== "playing") return;
+    if (!playing) return;
+    tickRunningRef.current = true;
+    /*
+     * Advance by measured time, not by the nominal interval.
+     *
+     * `setInterval` under a live map does not fire every 250ms, and
+     * crediting the player with 250ms regardless meant the slippage was
+     * lost for good: the playhead ran at four-fifths of real time at 1×,
+     * and the speed multipliers inherited the same shortfall. Reading the
+     * clock makes a replayed minute a real minute.
+     */
+    let last = Date.now();
     const timer = setInterval(() => {
-      playerRef.current?.tick(TICK_MS);
+      const now = Date.now();
+      const elapsed = now - last;
+      last = now;
+      ticksFiredRef.current += 1;
+      framesAppliedRef.current += playerRef.current?.tick(elapsed) ?? 0;
     }, TICK_MS);
-    return () => clearInterval(timer);
-  }, [status]);
+    return () => {
+      tickRunningRef.current = false;
+      clearInterval(timer);
+    };
+  }, [playing]);
+
+  /*
+   * Instrumentation. Reading the source could not distinguish "the tick
+   * never starts" from "the tick runs and applies nothing", and those have
+   * opposite fixes — so the chain reports which one is true.
+   */
+  useEffect(
+    () =>
+      installReplayProbe(() => {
+        const player = playerRef.current;
+        const engine = sink as { snapshot?: () => readonly Vessel[] } | null;
+        const sample = engine?.snapshot?.()[0];
+        const playerStatus = player?.status() ?? null;
+        return {
+          recorderAttached: recorderRef.current != null,
+          recordedFrames: recorderRef.current?.snapshot().length ?? 0,
+          sinkAttached: sink != null,
+          playerExists: player != null,
+          playerId: player ? playerIdRef.current : null,
+          playerFrames: playerStatus?.total ?? null,
+          playerState: playerStatus?.state ?? null,
+          cursor: playerStatus?.cursor ?? null,
+          playhead: playerStatus ? new Date(playerStatus.position).toISOString() : null,
+          speed: playerStatus?.speed ?? null,
+          tickRunning: tickRunningRef.current,
+          ticksFired: ticksFiredRef.current,
+          framesApplied: framesAppliedRef.current,
+          sampleVessel: sample
+            ? {
+                imo: sample.identity.imo,
+                lat: sample.position.lat,
+                lon: sample.position.lon,
+                timestamp: sample.position.timestamp,
+              }
+            : null,
+        };
+      }),
+    [sink],
+  );
 
   const availability: ReplayAvailability = (() => {
     if (playerRef.current || frameCount > 1) return "READY";

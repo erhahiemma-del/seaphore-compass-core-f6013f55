@@ -293,19 +293,63 @@ describe("timeline bar", () => {
     );
   });
 
-  it("disables controls with no recording loaded", () => {
-    render(<TimelineBar status={null} windowLabel="live" />);
+  /*
+   * These two used to assert that the transport was `disabled` whenever
+   * `status` was null. That was the bug rather than the contract: the
+   * player is built by the first transport command, so `status` stays
+   * null until something presses play — and every control that could
+   * press play was disabled until `status` existed. Replay could never
+   * start from the timeline bar at all.
+   *
+   * The intent behind them is still worth holding, and is asserted here
+   * more strictly than before: when there is nothing to play the controls
+   * are not merely disabled, they are not drawn.
+   */
+  it("draws no transport at all when there is nothing to replay", () => {
+    render(
+      <TimelineBar
+        status={null}
+        windowLabel="live"
+        presentation={{
+          state: "NO_VESSEL_SELECTED",
+          controlsLive: false,
+          message: "Select a vessel to inspect movement history.",
+          actions: [],
+        }}
+      />,
+    );
 
-    expect(screen.getByRole("button", { name: "Play replay" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "1 times speed" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Play replay" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "1 times speed" })).not.toBeInTheDocument();
+  });
+
+  it("offers a live transport for a recording that has not started playing", () => {
+    // The deadlock in one assertion: a ready recording has no player and
+    // therefore no status, and its controls must still be usable.
+    render(
+      <TimelineBar
+        status={null}
+        windowLabel="live"
+        presentation={{ state: "REPLAY_READY", controlsLive: true, message: "", actions: [] }}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Play replay" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "1 times speed" })).toBeEnabled();
   });
 
   it("states why there is nothing to replay rather than drawing an empty track", () => {
     // An empty scrubber reads as a quiet period, which is the opposite of
     // what is true.
-    render(<TimelineBar status={null} windowLabel="live" />);
+    render(
+      <TimelineBar
+        status={null}
+        windowLabel="live"
+        unavailableReason="No historical track loaded."
+      />,
+    );
 
-    expect(screen.getByText(/Historical AIS is not connected/)).toBeInTheDocument();
+    expect(screen.getByText(/No historical track loaded/)).toBeInTheDocument();
     expect(screen.queryByRole("slider")).not.toBeInTheDocument();
   });
 

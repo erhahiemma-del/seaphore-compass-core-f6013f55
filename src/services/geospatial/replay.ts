@@ -192,11 +192,18 @@ export class ReplayPlayer {
     };
   }
 
+  /**
+   * Start, or start again from the beginning once the recording has run out.
+   *
+   * The rewind happens before the state is set, and the order is the whole
+   * point: `jumpTo` decides a state of its own, so rewinding afterwards
+   * overwrote "playing" with "paused". Pressing play on a finished
+   * recording then did nothing visible and needed a second press.
+   */
   play(): void {
     if (this.frames.length === 0) return;
-    this.state = this.state === "ended" ? "playing" : "playing";
-    if (this.state === "playing" && this.cursor >= this.frames.length)
-      this.seekTo(this.status().from);
+    if (this.cursor >= this.frames.length) this.jumpTo(this.status().from);
+    this.state = "playing";
     this.emit();
   }
 

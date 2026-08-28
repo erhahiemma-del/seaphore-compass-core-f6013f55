@@ -58,6 +58,7 @@ import { MaritimeSearch } from "./MaritimeSearch";
 import { OperatingModeBar } from "./OperatingModeBar";
 import { TimelineBar } from "./TimelineBar";
 import { replayPresentation } from "./replay-presentation";
+import { displayOwner, replayOwnsDisplay, DISPLAY_OWNER_LABEL } from "./replay-ownership";
 import { framingCentreFor } from "./selected-vessel-framing";
 import { useVesselTrack } from "./useVesselTrack";
 import { REQUESTED_SELECTION, resolveRequestedVessel } from "./deterministic-selection";
@@ -225,6 +226,13 @@ export function MaritimeCommand() {
     feedLoading: feed.loading,
     feedError: feed.error,
   });
+  /*
+   * Who owns the displayed position, derived from the player's own state
+   * rather than tracked separately — a second replay-mode flag could
+   * disagree with the player and would eventually be the thing that says
+   * LIVE over a historical picture.
+   */
+  const replayOwner = displayOwner(replay.status);
 
   // Hydrate shared state from the URL so a pasted link restores the view.
   useEffect(() => {
@@ -503,6 +511,7 @@ export function MaritimeCommand() {
                 onEngineReady={(engine) => {
                   engineRef.current = engine;
                 }}
+                replayOwnsDisplay={replayOwnsDisplay(replayOwner)}
               />
             }
 
@@ -619,8 +628,18 @@ export function MaritimeCommand() {
               });
             }
           }}
+          /*
+            Named from the player, so a paused or playing recording can
+            never be captioned LIVE. "historical" was also the wrong word
+            for it: nothing here came from a provider's archive, and this
+            says only what it is — observations this session collected.
+          */
           windowLabel={
-            operatingMode === "REPLAY" || operatingMode === "HISTORY" ? "historical" : "live"
+            replayOwner === "LIVE" && operatingMode !== "HISTORY"
+              ? DISPLAY_OWNER_LABEL.LIVE
+              : replayOwner === "LIVE"
+                ? "HISTORICAL"
+                : DISPLAY_OWNER_LABEL[replayOwner]
           }
           onPlay={replay.play}
           onPause={replay.pause}

@@ -192,6 +192,15 @@ export interface MapCanvasProps {
    */
   readonly onEngineReady?: (engine: ReplaySink) => void;
   /**
+   * Whether replay currently owns the displayed position.
+   *
+   * When true the live feed keeps polling and keeps recording but stops
+   * writing to the engine, so the picture stays where the playhead put it.
+   * The most recent withheld batch is applied on release, which is what
+   * returns the map to the present instead of stranding it in the past.
+   */
+  readonly replayOwnsDisplay?: boolean;
+  /**
    * The selected vessel's recorded track, already resolved.
    *
    * Passed in rather than fetched here: deciding what a track is and
@@ -234,9 +243,27 @@ export function MapCanvas({
   onRecorderReady,
   onVesselsChanged,
   onEngineReady,
+  replayOwnsDisplay = false,
   vesselTrack,
 }: MapCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  /*
+   * Read through a ref inside the feed effect.
+   *
+   * Putting the flag in that effect's dependencies would tear down and
+   * restart polling every time playback paused or resumed, which is a
+   * far worse behaviour than the one being fixed.
+   */
+  const replayOwnsDisplayRef = useRef(replayOwnsDisplay);
+  const withheldRef = useRef<readonly Vessel[] | null>(null);
+  const restoreLiveRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    replayOwnsDisplayRef.current = replayOwnsDisplay;
+    // Releasing is the only edge that needs an action: the withheld batch
+    // is what the map should show again.
+    if (!replayOwnsDisplay) restoreLiveRef.current?.();
+  }, [replayOwnsDisplay]);
   /** Scope of the previous successful mount. Null before the first. */
   const previousScope = useRef<MapScopeId | null>(null);
   /*
@@ -588,9 +615,19 @@ export function MapCanvas({
       try {
         const vessels = await source.list();
         if (disposed) return;
-        engine.applyFull(vessels);
+        /*
+         * Recorded always, displayed only when live owns the picture.
+         * Withholding the *display* keeps replay visible; withholding the
+         * *recording* would punch a hole in the session's observations for
+         * exactly the period an officer chose to look at.
+         */
         recorder.recordBatch(vessels);
-        setVesselCount(engine.size);
+        if (replayOwnsDisplayRef.current) {
+          withheldRef.current = vessels;
+        } else {
+          engine.applyFull(vessels);
+          setVesselCount(engine.size);
+        }
         feed = {
           loading: false,
           error: null,
@@ -618,15 +655,37 @@ export function MapCanvas({
     const interval = setInterval(() => void refresh(), TIMING.positionRefreshMs);
 
     const unsubscribe = source.subscribe?.((vessel) => {
-      engine.applyPatch(vessel);
       recorder.record(vessel);
-      setVesselCount(engine.size);
+      // The same boundary as the polling path. A realtime source pushes
+      // more often than a poll, so leaving this one open would overwrite
+      // the replayed picture even faster.
+      if (!replayOwnsDisplayRef.current) {
+        engine.applyPatch(vessel);
+        setVesselCount(engine.size);
+      }
       feed = { ...feed, loading: false, lastAppliedAt: new Date().toISOString() };
       report();
     });
 
+    /*
+     * Hand the present back when replay lets go.
+     *
+     * Without this the vessels stay at whatever frame playback last
+     * applied until the next poll — a stranded historical position on a
+     * map that has stopped saying it is replaying.
+     */
+    restoreLiveRef.current = () => {
+      const withheld = withheldRef.current;
+      withheldRef.current = null;
+      if (disposed || !withheld) return;
+      engine.applyFull(withheld);
+      setVesselCount(engine.size);
+      report();
+    };
+
     return () => {
       disposed = true;
+      restoreLiveRef.current = null;
       clearInterval(interval);
       unsubscribe?.();
     };

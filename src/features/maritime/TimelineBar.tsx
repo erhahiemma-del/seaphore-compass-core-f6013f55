@@ -38,6 +38,7 @@ import { ChevronLeft, ChevronRight, Pause, Play, SkipBack } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { REPLAY_SPEEDS, type ReplaySpeed, type ReplayStatus } from "@/services/geospatial";
+import { SESSION_REPLAY_EXPLANATION } from "./replay-ownership";
 import {
   REPLAY_ACTION_LABELS,
   type ReplayOfferedAction,
@@ -88,6 +89,17 @@ export function TimelineBar({
   className,
 }: TimelineBarProps) {
   const playing = status?.state === "playing";
+
+  /*
+   * The transport is never disabled on `status`.
+   *
+   * It used to be, and that was the second half of the deadlock that made
+   * replay unreachable: the player is built lazily by the first command,
+   * so `status` is null until something presses Play — and every control
+   * that could press Play was disabled until `status` existed. Nothing
+   * could ever start. `controlsLive` is the honest gate and it is checked
+   * above; by the time this strip renders there is a recording to drive.
+   */
 
   /*
    * Nothing to drive: say what would help, and draw no controls.
@@ -157,7 +169,6 @@ export function TimelineBar({
           variant="ghost"
           className="h-7 w-7"
           aria-label="Restart replay"
-          disabled={!status}
           onClick={onRestart}
         >
           <SkipBack className="h-3.5 w-3.5" aria-hidden />
@@ -167,7 +178,6 @@ export function TimelineBar({
           variant="ghost"
           className="h-7 w-7"
           aria-label="Step back"
-          disabled={!status}
           onClick={() => onStep?.(-1)}
         >
           <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
@@ -177,7 +187,6 @@ export function TimelineBar({
           variant="ghost"
           className="h-7 w-7"
           aria-label={playing ? "Pause replay" : "Play replay"}
-          disabled={!status}
           onClick={() => (playing ? onPause?.() : onPlay?.())}
         >
           {playing ? (
@@ -191,7 +200,6 @@ export function TimelineBar({
           variant="ghost"
           className="h-7 w-7"
           aria-label="Step forward"
-          disabled={!status}
           onClick={() => onStep?.(1)}
         >
           <ChevronRight className="h-3.5 w-3.5" aria-hidden />
@@ -207,7 +215,6 @@ export function TimelineBar({
             className="h-6 px-1.5 text-[10px]"
             aria-label={`${speed} times speed`}
             aria-pressed={status?.speed === speed}
-            disabled={!status}
             onClick={() => onSpeed?.(speed)}
           >
             {speed}×
@@ -235,11 +242,17 @@ export function TimelineBar({
             </span>
           </>
         ) : (
-          // Never an empty track: an empty scrubber reads as a period with
-          // no activity, which is the opposite of what is true.
-          <span className="truncate text-[11px] text-amber-700">
-            {unavailableReason ??
-              "No recording loaded. Historical AIS is not connected, so no period can be replayed."}
+          /*
+            Never an empty track: an empty scrubber reads as a period with
+            no activity, which is the opposite of what is true.
+
+            The scrubber itself does need a player — it has no range to
+            draw without one — so this stands in until playback starts.
+            It says what the recording is rather than denying one exists,
+            because at this point the controls beside it are live.
+          */
+          <span className="truncate text-[11px] text-muted-foreground">
+            {unavailableReason || SESSION_REPLAY_EXPLANATION}
           </span>
         )}
       </div>

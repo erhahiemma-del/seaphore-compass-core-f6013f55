@@ -134,6 +134,25 @@ export function replayPresentation(input: ReplayPresentationInput): ReplayPresen
     return { state, controlsLive: true, message: "", actions: [] };
   }
 
+  /*
+   * A recording exists but nothing has been played yet.
+   *
+   * This branch is the whole reason replay was unreachable. The player is
+   * built lazily by the first transport command, so `status` stays null
+   * until something presses Play — and the check above only draws the
+   * transport once `status` exists. Controls gated on a player that only a
+   * control can create is a deadlock, and it presented as the feature
+   * simply not being there: a session holding a thousand recorded frames
+   * still rendered "select a vessel to inspect movement history".
+   *
+   * Availability is the honest gate. It is derived from frames the
+   * recorder actually holds, so it answers "is there something to play"
+   * without requiring that something already be playing.
+   */
+  if (availability === "READY") {
+    return { state: "REPLAY_READY", controlsLive: true, message: "", actions: [] };
+  }
+
   if (historyLoading || availability === "LOADING") {
     // Not a failure and not an empty state — say so rather than showing
     // an explanation the next second will contradict.
