@@ -82,6 +82,7 @@ export const rotateOpenSanctionsCredential = createServerFn({ method: "POST" })
           entity_id: "opensanctions",
           module: "administration",
           rule_refs: ["HR-9"],
+          ip_address: "server",
           // Deliberately no key material, length, or fingerprint.
           metadata: { provider: "OpenSanctions", validated: true },
         });
