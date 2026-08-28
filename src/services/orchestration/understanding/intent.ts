@@ -87,6 +87,21 @@ const RULES: readonly IntentRule[] = [
 
   {
     /*
+     * Vessels heading toward the boundary.
+     *
+     * Ahead of `port-intelligence`, which matches "arrivals" and the
+     * Nigerian port names — an approach question mentions both and is
+     * not a question about a port. Ahead of `risk-assessment` too:
+     * "vessels requiring attention" is an operational-attention query,
+     * and attention is not risk.
+     */
+    intent: "approach-intelligence",
+    rx: /\b(approach\w*|heading (?:towards?|for)|inbound|entering nigerian waters|requiring attention|need(?:ing|s)? attention|inside nigerian waters)\b/i,
+    weight: 0.91,
+  },
+
+  {
+    /*
      * Which providers feed the map. Weighted above the domain nouns
      * because "switch to the simulated source" names a provider, not a
      * question about simulation.
@@ -302,6 +317,7 @@ export function classifyOfficerIntent(raw: string): IntentClassification {
  */
 const ICE_MAP: Readonly<Record<OfficerIntent, IceIntent>> = {
   // ICE plans retrieval. A command asks it for nothing.
+  "approach-intelligence": "FACT_LOOKUP",
   "source-switch": "OTHER",
   "map-navigation": "OTHER",
   "map-zoom": "OTHER",

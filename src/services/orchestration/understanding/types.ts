@@ -70,6 +70,7 @@ export type OfficerIntent =
   | "vessel-selection"
   | "vessel-track"
   | "source-switch"
+  | "approach-intelligence"
   | "unknown";
 
 /**

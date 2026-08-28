@@ -44,6 +44,7 @@ const GLOBAL_INTENTS: ReadonlySet<OfficerIntent> = new Set([
 const PREFERRED_ENTITY: Readonly<Record<OfficerIntent, EntityKind | null>> = {
   // What the command is about, so entity resolution knows what to look
   // for: a place for navigation, a hull for the vessel commands.
+  "approach-intelligence": null,
   "source-switch": null,
   "map-navigation": "port",
   "map-zoom": null,
@@ -193,6 +194,7 @@ export function resolveWorkspaceMode(
     case "map-navigation":
     case "map-zoom":
     case "source-switch":
+    case "approach-intelligence":
       return "fleet-overview";
     case "vessel-selection":
     case "vessel-track":

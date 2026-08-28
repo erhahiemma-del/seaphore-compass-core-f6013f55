@@ -37,6 +37,7 @@ const INTENT_MODE: Readonly<Record<OfficerIntent, Intent["mode"]>> = {
    * Commands. They instruct rather than ask, so they retrieve nothing
    * and plan no briefing: the answer is the system doing the thing.
    */
+  "approach-intelligence": "lookup",
   "source-switch": "lookup",
   "map-navigation": "lookup",
   "map-zoom": "lookup",
@@ -81,6 +82,7 @@ const INTENT_CAPABILITIES: Readonly<Record<OfficerIntent, readonly CapabilityId[
    * Commands. They instruct rather than ask, so they retrieve nothing
    * and plan no briefing: the answer is the system doing the thing.
    */
+  "approach-intelligence": [],
   "source-switch": [],
   "map-navigation": [],
   "map-zoom": [],

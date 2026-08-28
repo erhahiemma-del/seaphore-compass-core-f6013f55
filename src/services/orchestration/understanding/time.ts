@@ -75,6 +75,7 @@ const RULES: readonly Rule[] = [
 const DEFAULTS: Readonly<Record<OfficerIntent, { span: number; label: string }>> = {
   // A command happens now. Track is the exception: it asks about the
   // past, and ninety days matches what a vessel investigation assumes.
+  "approach-intelligence": { span: 30 * MINUTE, label: "last 30 minutes" },
   "source-switch": { span: MINUTE, label: "now" },
   "map-navigation": { span: MINUTE, label: "now" },
   "map-zoom": { span: MINUTE, label: "now" },
