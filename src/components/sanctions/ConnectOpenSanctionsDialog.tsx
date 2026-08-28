@@ -3,8 +3,8 @@
  *
  * The key is held in component state only for the duration of the
  * submit, sent once over the authenticated server-function boundary, and
- * cleared. It is never written to localStorage, sessionStorage, a URL,
- * a log line, or an audit record, and never rendered unmasked unless the
+ * cleared. It is never persisted in the browser, placed in a URL, logged,
+ * or written to an audit record, and never rendered unmasked unless the
  * officer explicitly reveals their own input.
  */
 import { useState } from "react";
