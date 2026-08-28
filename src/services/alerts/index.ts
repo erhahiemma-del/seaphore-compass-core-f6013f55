@@ -17,6 +17,7 @@ export * from "./alert-eligibility";
 export * from "./alert-reconciliation";
 export * from "./alert-presentation";
 export * from "./alert-repository";
+export * from "./alert-repository.supabase";
 export * from "./alert-persistence";
 export * from "./alert-runner";
 
