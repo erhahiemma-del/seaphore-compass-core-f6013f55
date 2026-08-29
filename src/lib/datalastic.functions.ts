@@ -17,12 +17,16 @@ import {
   getStat,
   getVessel,
   getVesselHistory,
+  getVesselIdentity,
+  getVesselVoyage,
 } from "@/lib/server/datalastic.server";
 import type {
   DatalasticAccount,
   DatalasticHistoryPoint,
   DatalasticResult,
+  DatalasticVesselIdentity,
   DatalasticVesselRecord,
+  DatalasticVesselVoyage,
 } from "@/connectors/datalastic/types";
 
 function finite(value: unknown, name: string): number {
@@ -71,6 +75,40 @@ export const datalasticVessel = createServerFn({ method: "POST" })
     return { ...(imo ? { imo } : {}), ...(mmsi ? { mmsi } : {}), ...(uuid ? { uuid } : {}) };
   })
   .handler(async ({ data }): Promise<DatalasticResult<DatalasticVesselRecord>> => getVessel(data));
+
+/**
+ * Validator shared by the two deep-load functions.
+ *
+ * Both identify one vessel by the same three keys in the same order, so
+ * they share the check rather than drifting apart over which key wins.
+ */
+function vesselKey(data: { imo?: string; mmsi?: string; uuid?: string }) {
+  const imo = typeof data?.imo === "string" ? data.imo.trim() : "";
+  const mmsi = typeof data?.mmsi === "string" ? data.mmsi.trim() : "";
+  const uuid = typeof data?.uuid === "string" ? data.uuid.trim() : "";
+  if (!imo && !mmsi && !uuid) throw new Error("imo, mmsi or uuid is required");
+  return { ...(imo ? { imo } : {}), ...(mmsi ? { mmsi } : {}), ...(uuid ? { uuid } : {}) };
+}
+
+/**
+ * Static particulars for one selected vessel.
+ *
+ * Never called for the map. One request per vessel, and the map holds
+ * hundreds — this is the selection-time load, not the ambient one.
+ */
+export const datalasticVesselIdentity = createServerFn({ method: "POST" })
+  .inputValidator(vesselKey)
+  .handler(
+    async ({ data }): Promise<DatalasticResult<DatalasticVesselIdentity>> =>
+      getVesselIdentity(data),
+  );
+
+/** Live voyage context — ports, ETA, draught — for one selected vessel. */
+export const datalasticVesselVoyage = createServerFn({ method: "POST" })
+  .inputValidator(vesselKey)
+  .handler(
+    async ({ data }): Promise<DatalasticResult<DatalasticVesselVoyage>> => getVesselVoyage(data),
+  );
 
 /** Vessel search. Ambiguity is returned, never resolved silently. */
 export const datalasticFind = createServerFn({ method: "POST" })

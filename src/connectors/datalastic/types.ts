@@ -73,6 +73,88 @@ export interface DatalasticVesselRecord {
   readonly navigationStatus: string | null;
 }
 
+/**
+ * Static vessel particulars, from `vessel_info`.
+ *
+ * Deliberately separate from `DatalasticVesselRecord` rather than folded
+ * into it. The record is what every vessel on the map carries, and the map
+ * may hold hundreds; this is bought once for the one vessel an officer
+ * selected. Merging them would either make the map pay for particulars it
+ * never shows, or leave the same interface half-populated in most of its
+ * uses, so that a null could mean either "not loaded yet" or "the provider
+ * has no value" — the ambiguity provenance exists to prevent.
+ *
+ * These change on the scale of a refit, so they cache for a day.
+ */
+export interface DatalasticVesselIdentity {
+  readonly uuid: string | null;
+  readonly imo: string | null;
+  readonly mmsi: string | null;
+  readonly name: string | null;
+  /** The name transmitted over AIS, which can differ from the registered one. */
+  readonly nameAis: string | null;
+  readonly callSign: string | null;
+  readonly flag: string | null;
+  readonly flagName: string | null;
+  readonly type: string | null;
+  readonly typeSpecific: string | null;
+  readonly grossTonnage: number | null;
+  readonly deadweight: number | null;
+  /** Container capacity, where the vessel carries containers. */
+  readonly teu: number | null;
+  readonly liquidGas: number | null;
+  /** Metres. */
+  readonly length: number | null;
+  /** Metres. */
+  readonly breadth: number | null;
+  readonly draughtAvg: number | null;
+  readonly draughtMax: number | null;
+  /** Knots, provider-observed averages rather than design figures. */
+  readonly speedAvg: number | null;
+  readonly speedMax: number | null;
+  readonly yearBuilt: number | null;
+  readonly homePort: string | null;
+  /** True for a navigation aid rather than a ship. */
+  readonly isNavaid: boolean | null;
+}
+
+/**
+ * Live voyage context, from `vessel_pro`.
+ *
+ * The provider's own account of where this vessel came from, where it says
+ * it is going, and how it is loaded. Everything here is declared by the
+ * vessel or resolved by the provider — none of it is inferred by Seaphore,
+ * and the distinction has to survive into the drawer.
+ */
+export interface DatalasticVesselVoyage {
+  readonly uuid: string | null;
+  readonly imo: string | null;
+  readonly mmsi: string | null;
+  /**
+   * Metres of draught right now.
+   *
+   * Operationally the most informative number here: a draught well below
+   * the vessel's maximum means it is riding light, and a change across two
+   * observations at a berth is loading or discharging.
+   */
+  readonly currentDraught: number | null;
+  readonly navigationStatus: string | null;
+  /** Free-text destination as broadcast — often abbreviated or stale. */
+  readonly destination: string | null;
+  /** Provider-resolved destination port, which the free text may not match. */
+  readonly destinationPort: string | null;
+  readonly destinationPortUnlocode: string | null;
+  /** Provider port id, the join key to `port_find`. */
+  readonly destinationPortUuid: string | null;
+  readonly departurePort: string | null;
+  readonly departurePortUnlocode: string | null;
+  readonly departurePortUuid: string | null;
+  /** Actual time of departure, provider-reported ISO-8601. */
+  readonly departedAt: string | null;
+  readonly eta: string | null;
+  readonly observedAt: string | null;
+}
+
 /** One historical position. */
 export interface DatalasticHistoryPoint {
   readonly lat: number;

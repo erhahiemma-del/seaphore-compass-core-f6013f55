@@ -33,8 +33,10 @@ import type {
   DatalasticHistoryQuery,
   DatalasticResult,
   DatalasticStatus,
+  DatalasticVesselIdentity,
   DatalasticVesselQuery,
   DatalasticVesselRecord,
+  DatalasticVesselVoyage,
 } from "@/connectors/datalastic/types";
 
 import {
@@ -74,7 +76,27 @@ const MAX_HISTORY_DAYS = 7;
 /** Positions go stale fast; identity does not. Kept short and in-process. */
 const CACHE_TTL_MS = {
   positions: 60_000,
-  identity: 10 * 60_000,
+  /*
+   * Static particulars — tonnage, dimensions, year built.
+   *
+   * A day, because these change when a vessel is rebuilt, not while it is
+   * being watched. The old ten minutes was set when this key held only
+   * light identity fields and would now re-buy a refit-scale fact 144
+   * times a day.
+   */
+  identity: 24 * 60 * 60_000,
+  /** Voyage context: moves with the vessel, but far slower than position. */
+  voyage: 5 * 60_000,
+  /**
+   * Identity search results.
+   *
+   * Ten minutes, not a day: a search is a question about the fleet as it
+   * is now, and a vessel that has just entered the area should be findable
+   * without waiting out a gazetteer-length cache.
+   */
+  search: 10 * 60_000,
+  /** Ports move even more rarely than vessels are rebuilt. */
+  gazetteer: 24 * 60 * 60_000,
   history: 10 * 60_000,
   stat: 5 * 60_000,
 } as const;
@@ -388,6 +410,85 @@ export function parseVesselRow(input: unknown): DatalasticVesselRecord | null {
 }
 
 /**
+ * An epoch-or-ISO pair, as the provider gives its times.
+ *
+ * `vessel_pro` reports each time twice — `*_UTC` and `*_epoch`. The ISO
+ * form is preferred because it carries its own zone; the epoch is the
+ * fallback for the rows where the ISO string is absent. A null means the
+ * provider gave no time, and is never filled in with the current one.
+ */
+function providerTime(
+  row: Record<string, unknown>,
+  isoKey: string,
+  epochKey: string,
+): string | null {
+  const iso = str(row[isoKey]);
+  if (iso) {
+    const parsed = Date.parse(iso.includes("T") ? iso : iso.replace(" ", "T") + "Z");
+    if (Number.isFinite(parsed)) return new Date(parsed).toISOString();
+  }
+  const epoch = num(row[epochKey]);
+  if (epoch !== null && epoch > 0) return new Date(epoch * 1000).toISOString();
+  return null;
+}
+
+export function parseVesselIdentity(input: unknown): DatalasticVesselIdentity | null {
+  if (typeof input !== "object" || input === null) return null;
+  const row = input as Record<string, unknown>;
+  // Identity is worthless without something to key it to.
+  if (!str(row["imo"]) && !str(row["mmsi"]) && !str(row["uuid"])) return null;
+  const navaid = row["is_navaid"];
+  return {
+    uuid: str(row["uuid"]),
+    imo: str(row["imo"]),
+    mmsi: str(row["mmsi"]),
+    name: str(row["name"]),
+    nameAis: str(row["name_ais"]),
+    callSign: str(row["callsign"]),
+    flag: str(row["country_iso"]),
+    flagName: str(row["country_name"]),
+    type: str(row["type"]),
+    typeSpecific: str(row["type_specific"]),
+    grossTonnage: num(row["gross_tonnage"]),
+    deadweight: num(row["deadweight"]),
+    teu: num(row["teu"]),
+    liquidGas: num(row["liquid_gas"]),
+    length: num(row["length"]),
+    breadth: num(row["breadth"]),
+    draughtAvg: num(row["draught_avg"]),
+    draughtMax: num(row["draught_max"]),
+    speedAvg: num(row["speed_avg"]),
+    speedMax: num(row["speed_max"]),
+    yearBuilt: num(row["year_built"]),
+    homePort: str(row["home_port"]),
+    isNavaid: typeof navaid === "boolean" ? navaid : null,
+  };
+}
+
+export function parseVesselVoyage(input: unknown): DatalasticVesselVoyage | null {
+  if (typeof input !== "object" || input === null) return null;
+  const row = input as Record<string, unknown>;
+  if (!str(row["imo"]) && !str(row["mmsi"]) && !str(row["uuid"])) return null;
+  return {
+    uuid: str(row["uuid"]),
+    imo: str(row["imo"]),
+    mmsi: str(row["mmsi"]),
+    currentDraught: num(row["current_draught"]),
+    navigationStatus: str(row["navigation_status"]),
+    destination: str(row["destination"]),
+    destinationPort: str(row["dest_port"]),
+    destinationPortUnlocode: str(row["dest_port_unlocode"]),
+    destinationPortUuid: str(row["dest_port_uuid"]),
+    departurePort: str(row["dep_port"]),
+    departurePortUnlocode: str(row["dep_port_unlocode"]),
+    departurePortUuid: str(row["dep_port_uuid"]),
+    departedAt: providerTime(row, "atd_UTC", "atd_epoch"),
+    eta: providerTime(row, "eta_UTC", "eta_epoch"),
+    observedAt: providerTimestamp(row),
+  };
+}
+
+/**
  * Rows from a list endpoint.
  *
  * `requirePosition` is the difference between traffic and identity:
@@ -462,6 +563,56 @@ export async function getVessel(
 }
 
 /**
+ * Identify a vessel by whichever key the caller has.
+ *
+ * IMO first because it survives reflagging and renaming, then MMSI, then
+ * the provider's own uuid. Same order everywhere so two surfaces asking
+ * about one vessel produce one cache key rather than three.
+ */
+function identityParams(query: DatalasticVesselQuery): Record<string, string> {
+  if (query.imo) return { imo: query.imo };
+  if (query.mmsi) return { mmsi: query.mmsi };
+  return { uuid: query.uuid ?? "" };
+}
+
+/**
+ * `/vessel_info` — static particulars for one vessel.
+ *
+ * Tonnage, dimensions, year built, home port. Cached for a day: these
+ * change on the scale of a refit, and paying for them again on every
+ * selection would be buying the same answer.
+ */
+export async function getVesselIdentity(
+  query: DatalasticVesselQuery,
+): Promise<DatalasticResult<DatalasticVesselIdentity>> {
+  return request<DatalasticVesselIdentity>(
+    "vessel_info",
+    identityParams(query),
+    (raw) => parseVesselIdentity(raw.data),
+    CACHE_TTL_MS.identity,
+  );
+}
+
+/**
+ * `/vessel_pro` — live voyage context for one vessel.
+ *
+ * Departure and destination ports with UNLOCODEs, actual departure time,
+ * ETA, current draught, navigation status. Loaded when an officer selects
+ * a vessel, never for the whole map: it is one request per vessel, and a
+ * map holds hundreds.
+ */
+export async function getVesselVoyage(
+  query: DatalasticVesselQuery,
+): Promise<DatalasticResult<DatalasticVesselVoyage>> {
+  return request<DatalasticVesselVoyage>(
+    "vessel_pro",
+    identityParams(query),
+    (raw) => parseVesselVoyage(raw.data),
+    CACHE_TTL_MS.voyage,
+  );
+}
+
+/**
  * `/vessel_inradius` — Location Traffic. Bills per vessel found.
  *
  * The provider's area endpoint is centre+radius and is named
@@ -497,7 +648,7 @@ export async function findVessels(
     // Identity search: rows carry no position, so none is required.
     (raw) => parseVesselListWith(raw, false) ?? [],
 
-    CACHE_TTL_MS.identity,
+    CACHE_TTL_MS.search,
   );
 }
 
@@ -565,6 +716,6 @@ export async function findPorts(
           : null;
       return Array.isArray(rows) ? (rows as Record<string, unknown>[]) : null;
     },
-    CACHE_TTL_MS.identity,
+    CACHE_TTL_MS.gazetteer,
   );
 }
