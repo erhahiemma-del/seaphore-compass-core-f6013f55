@@ -40,9 +40,20 @@ import { resolve } from "node:path";
 
 const DIR = resolve(process.cwd(), "tests/unit");
 
-/** A test the module graph cannot reach, and so must always be run. */
-const isGuard = (file) =>
-  /\breadFileSync\b|\breaddirSync\b/.test(readFileSync(resolve(DIR, file), "utf8"));
+/**
+ * A test the module graph cannot reach, and so must always be run.
+ *
+ * Detected by how it reads source, which is the property that makes it
+ * invisible to `vitest related` in the first place. Reading through the
+ * shared walker in `helpers/source-tree` counts: when two guards were
+ * refactored onto it they stopped containing the literal `readFileSync`,
+ * silently dropped out of this run — 48 became 46 — and the suite still
+ * reported green. That is precisely the "guard everyone believes is
+ * protecting them" this script exists to prevent, so the selector tracks
+ * the behaviour rather than one spelling of it.
+ */
+const READS_SOURCE = /readFileSync|readdirSync|helpers\/source-tree/;
+const isGuard = (file) => READS_SOURCE.test(readFileSync(resolve(DIR, file), "utf8"));
 
 const guards = readdirSync(DIR)
   .filter((f) => f.endsWith(".test.ts") || f.endsWith(".test.tsx"))
@@ -50,13 +61,23 @@ const guards = readdirSync(DIR)
   .map((f) => `tests/unit/${f}`)
   .sort();
 
-if (guards.length === 0) {
-  // Every one of them disappearing at once is far more likely to be a
-  // broken selector than a deliberate deletion, and reporting success
-  // would be the exact failure this script is written to avoid.
+/*
+ * A floor, not just a zero-check.
+ *
+ * Zero was already refused, but the dangerous case is subtler: a handful
+ * quietly falling out of selection while the rest still run and the suite
+ * still passes. The number only goes up in practice, so a drop below what
+ * is known to exist means the selector broke, not that guards were
+ * deliberately deleted.
+ */
+const MINIMUM_GUARDS = 48;
+
+if (guards.length < MINIMUM_GUARDS) {
   console.error(
-    "✖ No guard tests found in tests/unit. Expected several. Refusing to report success.",
+    `✖ Found ${guards.length} guard tests in tests/unit, expected at least ${MINIMUM_GUARDS}.`,
   );
+  console.error("  Guards are selected by how they read source. If one was refactored onto a");
+  console.error("  different helper, extend the selector — do not lower this floor to match.");
   process.exit(1);
 }
 

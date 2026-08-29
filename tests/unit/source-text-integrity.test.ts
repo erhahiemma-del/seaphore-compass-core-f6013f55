@@ -13,30 +13,23 @@
  * regex. ESLint's `no-control-regex` catches the regex case and has no
  * opinion about the rest, which is exactly the half that got through.
  */
-import { readFileSync } from "node:fs";
-import { readdirSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+
+import { readSourceBytes, sourceFilesUnder } from "./helpers/source-tree";
 
 const ROOT = resolve(process.cwd());
 const ROOTS = ["src", "tests", "scripts"];
 const EXTENSIONS = /\.(ts|tsx|js|jsx|mjs|cjs|css|json|md)$/;
 
-function sourceFiles(dir: string): string[] {
-  const out: string[] = [];
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const path = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      if (entry.name === "node_modules" || entry.name.startsWith(".")) continue;
-      out.push(...sourceFiles(path));
-      continue;
-    }
-    if (EXTENSIONS.test(entry.name)) out.push(path);
-  }
-  return out;
-}
-
-const FILES = ROOTS.flatMap((r) => sourceFiles(resolve(ROOT, r)));
+/*
+ * Shared walker, so a file removed between the listing and the read is
+ * skipped rather than throwing ENOENT. This guard used to fail with a
+ * filesystem error on a different file each run whenever anything else
+ * was writing to the tree — a failure unrelated to what it asserts, which
+ * teaches people to re-run until green.
+ */
+const FILES = ROOTS.flatMap((r) => sourceFilesUnder(resolve(ROOT, r), EXTENSIONS));
 
 describe("every source file is text", () => {
   it("scans a real tree", () => {
@@ -53,8 +46,15 @@ describe("every source file is text", () => {
      * generation mistake wearing an invisible costume.
      */
     const offenders: string[] = [];
+    let scanned = 0;
     for (const file of FILES) {
-      const bytes = readFileSync(file);
+      // Skipped when the file vanished since the walk. Counted below, so a
+      // scan that read nothing cannot pass by reading nothing.
+      // Raw bytes, never a decoded string: decoding would turn an invalid
+      // sequence into U+FFFD and hide exactly what this looks for.
+      const bytes = readSourceBytes(file);
+      if (bytes === null) continue;
+      scanned += 1;
       for (let i = 0; i < bytes.length; i += 1) {
         const byte = bytes[i]!;
         const control = byte < 0x20 && byte !== 0x09 && byte !== 0x0a && byte !== 0x0d;
@@ -66,5 +66,6 @@ describe("every source file is text", () => {
       }
     }
     expect(offenders).toEqual([]);
+    expect(scanned).toBeGreaterThan(200);
   });
 });

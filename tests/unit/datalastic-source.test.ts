@@ -8,8 +8,9 @@
  * can reach.
  */
 import { describe, it, expect, beforeEach } from "vitest";
-import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+
+import { readSource, sourceFilesUnder } from "./helpers/source-tree";
 
 import { NIGERIA_COVERAGE_ZONES } from "@/services/geospatial/sources/datalastic-coverage-zones";
 
@@ -354,31 +355,40 @@ describe("Datalastic · vessel source behaviour", () => {
 
 describe("Datalastic · credential containment", () => {
   it("keeps DATALASTIC_API_KEY out of every client-reachable module", () => {
-    const files: string[] = [];
-    const walk = (dir: string) => {
-      for (const entry of readdirSync(dir)) {
-        const full = join(dir, entry);
-        if (statSync(full).isDirectory()) walk(full);
-        else if (/\.(ts|tsx)$/.test(entry) && !/\.test\.tsx?$/.test(entry)) files.push(full);
-      }
-    };
-    walk(join(process.cwd(), "src"));
+    const files = sourceFilesUnder(join(process.cwd(), "src"), /\.(ts|tsx)$/).filter(
+      (file) => !/\.test\.tsx?$/.test(file),
+    );
+
+    /*
+     * Guard the guard. The walk tolerates a file vanishing mid-scan, which
+     * makes it deterministic under concurrent writes — but it also means a
+     * walk that found nothing would satisfy every "no leaks" assertion
+     * below while inspecting nothing at all.
+     */
+    expect(files.length).toBeGreaterThan(200);
+
+    const contents = files
+      .map((file) => ({ file, text: readSource(file) }))
+      .filter((entry): entry is { file: string; text: string } => entry.text !== null);
+    expect(contents.length).toBeGreaterThan(200);
     /*
      * The rule is about *reading* the credential, not naming it: the AIS
      * provider registry deliberately lists env var names so an officer
      * can see what a provider is waiting for, and a name is not a secret.
      */
-    const leaks = files.filter(
-      (file) =>
-        !/\.server\.tsx?$/.test(file) &&
-        !/\.functions\.tsx?$/.test(file) &&
-        /process\.env\[?["']?DATALASTIC_API_KEY/.test(readFileSync(file, "utf8")),
-    );
+    const leaks = contents
+      .filter(
+        ({ file, text }) =>
+          !/\.server\.tsx?$/.test(file) &&
+          !/\.functions\.tsx?$/.test(file) &&
+          /process\.env\[?["']?DATALASTIC_API_KEY/.test(text),
+      )
+      .map(({ file }) => file);
     expect(leaks, `Client-reachable references: ${leaks.join(", ")}`).toEqual([]);
     // And no VITE_ alias may exist anywhere.
-    const viteAliases = files.filter((file) =>
-      readFileSync(file, "utf8").includes("VITE_DATALASTIC"),
-    );
+    const viteAliases = contents
+      .filter(({ text }) => text.includes("VITE_DATALASTIC"))
+      .map(({ file }) => file);
     expect(viteAliases).toEqual([]);
   });
 });
