@@ -19,8 +19,12 @@ import type { Vessel } from "@/services/geospatial";
 import { RiskGauge } from "./RiskGauge";
 import { VesselIntelligenceView } from "./VesselIntelligenceView";
 import type { MapSelection } from "@/services/geospatial";
+import { vesselDocuments } from "@/services/geospatial/vessel-documents";
 import type { VesselEnrichment } from "@/services/geospatial/vessel-enrichment";
-import { destinationPortTarget } from "@/services/geospatial/voyage-port-target";
+import {
+  departurePortTarget,
+  destinationPortTarget,
+} from "@/services/geospatial/voyage-port-target";
 
 import type { ActivityEvent, Datum, VesselPresentation } from "./vessel-presentation";
 import {
@@ -379,6 +383,26 @@ export function ParticularsPanel({
       </Card>
 
       {/*
+        Documentary record. Almost entirely absences today, and each one
+        names what is missing — the source, the link, or the record — so
+        none of them reads as a claim that nothing was ever filed.
+      */}
+      <Card title="Trade & documents">
+        {vesselDocuments().entries.map((entry) => (
+          <DatumRow
+            key={entry.kind}
+            datum={{
+              label: entry.kind,
+              availability: entry.availability === "AVAILABLE" ? "AVAILABLE" : "NOT_CONNECTED",
+              ...(entry.availability === "AVAILABLE"
+                ? { value: entry.recordId ?? "Available" }
+                : { reason: entry.note }),
+            }}
+          />
+        ))}
+      </Card>
+
+      {/*
         Named rather than omitted. An officer looking for ownership finds a
         reason here instead of silence — the endpoints are sold and answer
         404, which is a fact about the API, not about the ship.
@@ -410,6 +434,7 @@ export function DeclaredVoyagePanel({
   onOpenPort?: (selection: MapSelection) => void;
 }) {
   const target = destinationPortTarget(enrichment?.voyage ?? null);
+  const origin = departurePortTarget(enrichment?.voyage ?? null);
   if (failed) {
     return (
       <Card title="Declared voyage">
@@ -447,6 +472,22 @@ export function DeclaredVoyagePanel({
           >
             <Anchor className="mr-1.5 h-3.5 w-3.5" aria-hidden />
             Open {target.port?.shortName ?? target.port?.name ?? "destination port"}
+          </Button>
+        ) : null}
+        {/*
+          Both ends of the voyage are navigable on the same terms. A vessel
+          out of Kamsar has a valid UNLOCODE this register does not hold, so
+          that end offers nothing — for the same reason, stated the same way.
+        */}
+        {onOpenPort && origin.state === "AVAILABLE" && origin.selection ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onOpenPort(origin.selection!)}
+            className="mt-2 h-8 w-full text-[11.5px]"
+          >
+            <Anchor className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+            Open {origin.port?.shortName ?? origin.port?.name ?? "departure port"}
           </Button>
         ) : null}
       </Card>

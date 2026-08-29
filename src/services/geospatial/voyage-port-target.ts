@@ -119,3 +119,36 @@ export function destinationPortTarget(voyage: DeclaredVoyage | null): PortTarget
     note: null,
   };
 }
+
+/**
+ * Resolve the port a declared voyage departed from.
+ *
+ * `vessel_pro` gives the departure as a name and a UNLOCODE but no
+ * provider uuid, so this resolves on the code alone — which is the join
+ * that matters anyway. The states mean exactly what they mean for a
+ * destination, so an officer reads both halves of a voyage the same way.
+ *
+ * Reuses {@link destinationPortTarget} by presenting the departure in the
+ * shape it already understands, rather than growing a second copy of the
+ * same decision that could drift.
+ */
+export function departurePortTarget(voyage: DeclaredVoyage | null): PortTarget {
+  if (!voyage) return destinationPortTarget(null);
+
+  return destinationPortTarget({
+    ...voyage,
+    destinationText: voyage.departurePort,
+    destinationLink: {
+      state: voyage.departureUnlocode
+        ? "VERIFIED"
+        : voyage.departurePort
+          ? "NO_VERIFIED_PORT_LINK"
+          : "NOT_DECLARED",
+      unlocode: voyage.departureUnlocode,
+      // The provider does not return a uuid for the departure leg.
+      providerPortUuid: null,
+      name: voyage.departurePort,
+      note: null,
+    },
+  });
+}

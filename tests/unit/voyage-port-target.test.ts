@@ -13,7 +13,10 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { destinationPortTarget } from "@/services/geospatial/voyage-port-target";
+import {
+  departurePortTarget,
+  destinationPortTarget,
+} from "@/services/geospatial/voyage-port-target";
 import type { DeclaredVoyage } from "@/services/geospatial/vessel-enrichment";
 
 /** Bound for Lagos out of Kamsar — the real live case. */
@@ -177,5 +180,74 @@ describe("every non-available state explains itself", () => {
         expect(target.note, `${target.state} must explain itself`).toBeTruthy();
       }
     }
+  });
+});
+
+/*
+ * The departure end of the voyage.
+ *
+ * `vessel_pro` gives a departure name and UNLOCODE but no provider uuid,
+ * so this resolves on the code alone. The states must mean exactly what
+ * they mean for a destination, or an officer reads the two ends of one
+ * voyage by different rules.
+ */
+describe("departure port", () => {
+  it("resolves a departure inside the register", () => {
+    const target = departurePortTarget({
+      ...BOUND_FOR_LAGOS,
+      departurePort: "LAGOS",
+      departureUnlocode: "NGLOS",
+    });
+
+    expect(target.state).toBe("AVAILABLE");
+    expect(target.selection).not.toBeNull();
+  });
+
+  /*
+   * The real live case: Kamsar, Guinea. A valid UNLOCODE this deployment
+   * does not hold — Seaphore's coverage, not a defect in the declaration.
+   */
+  it("says a foreign departure is outside coverage", () => {
+    const target = departurePortTarget(BOUND_FOR_LAGOS);
+
+    expect(target.state).toBe("OUTSIDE_COVERAGE");
+    expect(target.unlocode).toBe("GNKMR");
+    expect(target.note).toMatch(/outside this deployment/i);
+  });
+
+  it("refuses a departure declared by name alone", () => {
+    const target = departurePortTarget({ ...BOUND_FOR_LAGOS, departureUnlocode: null });
+
+    expect(target.state).toBe("NO_IDENTIFIER");
+    expect(target.selection).toBeNull();
+  });
+
+  it("reports a vessel declaring no departure at all", () => {
+    const target = departurePortTarget({
+      ...BOUND_FOR_LAGOS,
+      departurePort: null,
+      departureUnlocode: null,
+    });
+
+    expect(target.state).toBe("NOT_DECLARED");
+  });
+
+  it("handles no voyage", () => {
+    expect(departurePortTarget(null).state).toBe("NOT_DECLARED");
+  });
+
+  /*
+   * The two ends must not be confused. A vessel from Kamsar to Lagos has
+   * one openable port and one outside coverage, and swapping them would
+   * send an officer to the wrong end of the voyage.
+   */
+  it("does not confuse the two ends of a voyage", () => {
+    const destination = destinationPortTarget(BOUND_FOR_LAGOS);
+    const origin = departurePortTarget(BOUND_FOR_LAGOS);
+
+    expect(destination.unlocode).toBe("NGLOS");
+    expect(origin.unlocode).toBe("GNKMR");
+    expect(destination.state).toBe("AVAILABLE");
+    expect(origin.state).toBe("OUTSIDE_COVERAGE");
   });
 });
