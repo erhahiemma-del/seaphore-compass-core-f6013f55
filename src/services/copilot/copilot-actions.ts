@@ -191,6 +191,15 @@ export interface ActionExecutionOptions {
    * that honestly instead of appearing to open one.
    */
   readonly openInvestigation?: (imo: string) => void;
+  /**
+   * How to run a sanctions screen, supplied by the surface that holds the
+   * screening panel.
+   *
+   * Injected for the same reason as `openInvestigation`: the dispatcher
+   * must not acquire a second screening path, and a surface without one
+   * says so rather than implying a screen was run.
+   */
+  readonly requestSanctionsScreening?: (imo: string) => void;
 }
 
 /**
