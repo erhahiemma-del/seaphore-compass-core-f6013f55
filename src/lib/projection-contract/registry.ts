@@ -1727,7 +1727,7 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
       surface: "Intelligence findings · corroboration label",
       location: "src/services/findings/corroboration.ts",
       component: "src/services/findings/corroboration.ts",
-      interaction: "inline",
+      interaction: "passive-display",
     },
     reviewedAt: "2026-08-30",
   },
