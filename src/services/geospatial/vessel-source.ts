@@ -457,3 +457,22 @@ export function computeIntelligenceMetrics(
     lastIntelligenceUpdate: lastUpdateIso,
   };
 }
+
+/**
+ * Whether a source id names simulated traffic.
+ *
+ * Asked of the registry rather than matched against a literal, so a second
+ * demonstration provider added later is covered without anyone remembering
+ * to update a list.
+ *
+ * The literal is still a floor. `loadFromURL` can run before the route has
+ * registered its providers, and at that point the registry cannot answer —
+ * so the one id that exists today is treated as simulated regardless. The
+ * failure this guards against is a link silently replacing the operational
+ * fleet with a demonstration, and being wrong in the cautious direction
+ * there costs an officer one toggle in the Sources panel.
+ */
+export function isSimulatedSourceId(id: string): boolean {
+  if (id === "simulated") return true;
+  return sources.get(id)?.describe().type === "SIMULATED";
+}

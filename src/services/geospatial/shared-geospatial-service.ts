@@ -26,7 +26,7 @@ import {
   type MapStylePaletteName,
 } from "./constants";
 import { layerRegistry, MISSION_PRESETS, type LayerRegistry } from "./layer-registry";
-import { defaultEnabledSourceIds } from "./vessel-source";
+import { defaultEnabledSourceIds, isSimulatedSourceId } from "./vessel-source";
 import {
   OPERATING_MODES,
   decodeSelection,
@@ -574,10 +574,25 @@ export class SharedGeospatialService {
 
     const sources = params.get("sources");
     if (sources !== null) {
-      patch.enabledSources = sources
+      /*
+       * A link may not put the operational chart into simulation.
+       *
+       * `sources` replaces the whole enabled set, so a URL carrying
+       * `sources=simulated` removed every real provider and drew a
+       * demonstration in their place. The banner said so, but the picture
+       * was already wrong by then — and because the parameter persists,
+       * one bookmark or one shared link kept an officer in a simulation
+       * indefinitely, across reloads, with the real fleet absent.
+       *
+       * Turning simulation on is a deliberate act, so it stays one: the
+       * Sources panel still toggles it within a session. What a link
+       * cannot do is make that choice on an officer's behalf.
+       */
+      const requested = sources
         .split(",")
         .map((id) => id.trim())
         .filter((id) => id.length > 0);
+      patch.enabledSources = requested.filter((id) => !isSimulatedSourceId(id));
     }
 
     // `sel` is authoritative; `vessel` is the pre-selection-model form and
