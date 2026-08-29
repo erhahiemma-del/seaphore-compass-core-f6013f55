@@ -20,10 +20,23 @@ import type { ScreenSubjectOutcome } from "@/lib/server/opensanctions.server";
 type Db = SupabaseClient<never, never, never>;
 type Row = Record<string, unknown>;
 
-function table(db: Db, name: string) {
-  // The screening tables are newer than the generated types; the query
-  // shape is validated by the tests in tests/unit/sanctions-*.
-  return (db as unknown as { from: (t: string) => any }).from(name);
+/**
+ * PostgREST query builder for a table the generated types do not know
+ * about yet. Typed loosely on purpose, and only here: the row shapes are
+ * narrowed by `toRecord`/`toDecision` before anything else sees them.
+ */
+type LooseQuery = {
+  insert: (row: Record<string, unknown>) => LooseQuery;
+  select: (columns: string) => LooseQuery;
+  order: (column: string, options: { ascending: boolean }) => LooseQuery;
+  limit: (count: number) => LooseQuery;
+  eq: (column: string, value: unknown) => LooseQuery;
+  in: (column: string, values: readonly string[]) => LooseQuery;
+  single: () => PromiseLike<{ data: unknown; error: unknown }>;
+} & PromiseLike<{ data: unknown; error: unknown }>;
+
+function table(db: Db, name: string): LooseQuery {
+  return (db as unknown as { from: (t: string) => LooseQuery }).from(name);
 }
 
 function str(row: Row, key: string): string | null {
