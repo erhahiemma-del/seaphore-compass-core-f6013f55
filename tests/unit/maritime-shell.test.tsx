@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 /** TEST_FIXTURE — synthetic map state only. */
 import "@testing-library/jest-dom/vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -46,6 +47,22 @@ function vessel(): Vessel {
 }
 
 /* ═══════════ Operating mode ═══════════ */
+
+/**
+ * Render inside a query client, as the application does.
+ *
+ * The vessel drawer buys deep provider data for the vessel an officer
+ * opened, so it is a data-consuming component now. `__root.tsx` wraps the
+ * whole app in a `QueryClientProvider`; a bare render here was the harness
+ * being out of step with the app, not the drawer overreaching.
+ *
+ * Retries are off so a failing query surfaces immediately instead of being
+ * retried past the end of the test.
+ */
+function renderWithQuery(ui: React.ReactElement) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+}
 
 describe("operating mode bar", () => {
   it("offers the modes an officer can enter directly", () => {
@@ -155,12 +172,12 @@ describe("national picture panel", () => {
 
 describe("context drawer", () => {
   it("renders nothing when nothing is selected", () => {
-    render(<ContextDrawer selection={null} onClose={() => {}} />);
+    renderWithQuery(<ContextDrawer selection={null} onClose={() => {}} />);
     expect(screen.queryByTestId("context-drawer")).not.toBeInTheDocument();
   });
 
   it("renders the vessel card for a resolved vessel", () => {
-    render(
+    renderWithQuery(
       <ContextDrawer
         selection={{ kind: "vessel", id: "9074729", imo: "9074729" }}
         vessel={vessel()}
@@ -174,7 +191,7 @@ describe("context drawer", () => {
   });
 
   it("distinguishes an unloaded vessel from a non-existent one", () => {
-    render(
+    renderWithQuery(
       <ContextDrawer
         selection={{ kind: "vessel", id: "9074729", imo: "9074729" }}
         vessel={null}
@@ -193,14 +210,16 @@ describe("context drawer", () => {
   });
 
   it("shows port sections with NPA stated as pending, never fabricated", () => {
-    render(<ContextDrawer selection={{ kind: "port", id: "NGAPAPA" }} onClose={() => {}} />);
+    renderWithQuery(
+      <ContextDrawer selection={{ kind: "port", id: "NGAPAPA" }} onClose={() => {}} />,
+    );
 
     expect(screen.getByText("Schedule")).toBeInTheDocument();
     expect(screen.getByText(/NPA SHIPPOS integration awaiting data access/)).toBeInTheDocument();
   });
 
   it("shows a SAR detection panel that admits no detector is configured", () => {
-    render(
+    renderWithQuery(
       <ContextDrawer
         selection={{ kind: "sar-detection", id: "d1", sceneId: "s1" }}
         onClose={() => {}}
@@ -211,7 +230,7 @@ describe("context drawer", () => {
   });
 
   it("says an AIS gap cannot be detected without a provider, not that none exist", () => {
-    render(
+    renderWithQuery(
       <ContextDrawer
         selection={{ kind: "ais-gap", id: "g1", mmsi: "657123400" }}
         onClose={() => {}}
@@ -232,7 +251,7 @@ describe("context drawer", () => {
 
     for (const selection of kinds) {
       cleanup();
-      render(<ContextDrawer selection={selection} onClose={() => {}} />);
+      renderWithQuery(<ContextDrawer selection={selection} onClose={() => {}} />);
       expect(screen.getByTestId("context-drawer")).toHaveAttribute(
         "data-selection-kind",
         selection.kind,
@@ -241,13 +260,15 @@ describe("context drawer", () => {
   });
 
   it("states honestly when a kind has no panel yet", () => {
-    render(<ContextDrawer selection={{ kind: "geofence", id: "f1" }} onClose={() => {}} />);
+    renderWithQuery(
+      <ContextDrawer selection={{ kind: "geofence", id: "f1" }} onClose={() => {}} />,
+    );
     expect(screen.getByText(/nothing connected to show/)).toBeInTheDocument();
   });
 
   it("closes on request", () => {
     const onClose = vi.fn();
-    render(<ContextDrawer selection={{ kind: "port", id: "p" }} onClose={onClose} />);
+    renderWithQuery(<ContextDrawer selection={{ kind: "port", id: "p" }} onClose={onClose} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Close intelligence drawer" }));
     expect(onClose).toHaveBeenCalled();
@@ -256,7 +277,9 @@ describe("context drawer", () => {
   it("offers Copilot the selection as context", () => {
     const onAsk = vi.fn();
     const selection: MapSelection = { kind: "port", id: "NGAPAPA" };
-    render(<ContextDrawer selection={selection} onClose={() => {}} onAskCopilot={onAsk} />);
+    renderWithQuery(
+      <ContextDrawer selection={selection} onClose={() => {}} onAskCopilot={onAsk} />,
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Ask Copilot" }));
     expect(onAsk).toHaveBeenCalledWith(selection);

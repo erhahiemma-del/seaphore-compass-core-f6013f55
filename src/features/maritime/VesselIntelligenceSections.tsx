@@ -18,7 +18,16 @@ import type { Vessel } from "@/services/geospatial";
 
 import { RiskGauge } from "./RiskGauge";
 import { VesselIntelligenceView } from "./VesselIntelligenceView";
+import type { VesselEnrichment } from "@/services/geospatial/vessel-enrichment";
+
 import type { ActivityEvent, Datum, VesselPresentation } from "./vessel-presentation";
+import {
+  presentDeclaredVoyage,
+  presentEnrichmentSource,
+  presentParticulars,
+  presentPortContext,
+  presentUnservedCapabilities,
+} from "./vessel-presentation";
 import { operationalStateLabel } from "./vessel-panel-state";
 
 /* ── Primitives ──────────────────────────────────────────────────────── */
@@ -215,14 +224,29 @@ export function IntelligencePanel({ vessel }: { vessel: Vessel }) {
 export function VesselVoyagePanel({
   presentation,
   onReplay,
+  supersededLabels,
 }: {
   presentation: VesselPresentation;
   onReplay?: () => void;
+  /**
+   * Rows a provider panel below answers authoritatively.
+   *
+   * Without this the two panels contradict each other: this one reports
+   * "ETA — not reported by the source" from the map-level snapshot while
+   * the declared-voyage panel immediately below shows the ETA the source
+   * did report. An officer reading top to bottom would see the absence
+   * first, and a stated absence is believed.
+   */
+  supersededLabels?: ReadonlySet<string>;
 }) {
+  const rows = supersededLabels
+    ? presentation.voyage.filter((datum) => !supersededLabels.has(datum.label))
+    : presentation.voyage;
+
   return (
     <div className="space-y-2.5 p-3">
       <Card title="Voyage">
-        {presentation.voyage.map((datum) => (
+        {rows.map((datum) => (
           <DatumRow key={datum.label} datum={datum} />
         ))}
       </Card>
@@ -301,4 +325,108 @@ export function ActivityPanel({ events }: { events: readonly ActivityEvent[] }) 
 function formatWhen(iso: string): string {
   const parsed = Date.parse(iso);
   return Number.isFinite(parsed) ? new Date(parsed).toLocaleString() : "Time not readable";
+}
+
+/**
+ * Particulars, voyage and provenance from the deep Datalastic loads.
+ *
+ * These panels exist because the data did: `vessel_info` and `vessel_pro`
+ * return roughly forty fields that used to be parsed and discarded. Nothing
+ * here is computed — every value is what the provider stated, and every
+ * absence carries the reason it is absent.
+ */
+export function ParticularsPanel({
+  enrichment,
+  loading,
+  failed,
+}: {
+  enrichment: VesselEnrichment | null;
+  loading: boolean;
+  failed: boolean;
+}) {
+  /*
+   * A provider failure is not an empty vessel. Rendering the rows with
+   * their "no record" wording would state that Datalastic answered and had
+   * nothing, when in fact it never answered.
+   */
+  if (failed) {
+    return (
+      <div className="p-3">
+        <Card title="Vessel particulars">
+          <p className="py-1 text-[11.5px] text-muted-foreground">
+            Datalastic could not be reached for this vessel. Nothing here reflects the vessel — it
+            reflects a collection failure.
+          </p>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3 p-3">
+      <Card title={loading ? "Vessel particulars · loading" : "Vessel particulars"}>
+        {presentParticulars(enrichment).map((datum) => (
+          <DatumRow key={datum.label} datum={datum} />
+        ))}
+      </Card>
+
+      <Card title="Source & freshness">
+        {presentEnrichmentSource(enrichment).map((datum) => (
+          <DatumRow key={datum.label} datum={datum} />
+        ))}
+      </Card>
+
+      {/*
+        Named rather than omitted. An officer looking for ownership finds a
+        reason here instead of silence — the endpoints are sold and answer
+        404, which is a fact about the API, not about the ship.
+      */}
+      <Card title="Not served by this provider">
+        {presentUnservedCapabilities().map((datum) => (
+          <DatumRow key={datum.label} datum={datum} />
+        ))}
+      </Card>
+    </div>
+  );
+}
+
+/**
+ * The voyage the vessel is declaring, and where it resolved to.
+ *
+ * Kept beside the registered-voyage panel rather than merged into it: one
+ * is Seaphore's own record and the other is a provider's momentary account,
+ * and an officer needs to see which is which.
+ */
+export function DeclaredVoyagePanel({
+  enrichment,
+  failed,
+}: {
+  enrichment: VesselEnrichment | null;
+  failed: boolean;
+}) {
+  if (failed) {
+    return (
+      <Card title="Declared voyage">
+        <p className="py-1 text-[11.5px] text-muted-foreground">
+          Datalastic could not be reached. No voyage has been declared as far as Seaphore knows —
+          which is not the same as the vessel declaring none.
+        </p>
+      </Card>
+    );
+  }
+
+  return (
+    <>
+      <Card title="Declared voyage · Datalastic">
+        {presentDeclaredVoyage(enrichment).map((datum) => (
+          <DatumRow key={datum.label} datum={datum} />
+        ))}
+      </Card>
+      <Card title="Port context">
+        {presentPortContext(enrichment).map((datum) => (
+          <DatumRow key={datum.label} datum={datum} />
+        ))}
+      </Card>
+    </>
+  );
 }

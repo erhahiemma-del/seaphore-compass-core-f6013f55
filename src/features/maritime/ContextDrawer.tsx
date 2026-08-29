@@ -42,6 +42,7 @@ import {
 import type { VesselCamera } from "./useVesselCamera";
 
 import { VesselIntelligenceCard, type VesselTabId } from "./VesselIntelligenceCard";
+import { useVesselEnrichment } from "./use-vessel-enrichment";
 import type { VesselTrack } from "@/services/geospatial/vessel-track";
 import { VoyagePanel } from "./VoyagePanel";
 
@@ -366,6 +367,19 @@ function VesselTabs({
   const [tab, setTab] = useState<VesselTabId>("overview");
 
   /*
+   * The deep load, bought once for the vessel an officer actually opened.
+   *
+   * Keyed on IMO through React Query, so the drawer, the Copilot and any
+   * other surface asking about this vessel share one request rather than
+   * each buying the same answer.
+   */
+  const {
+    enrichment,
+    loading: enrichmentLoading,
+    failed: enrichmentFailed,
+  } = useVesselEnrichment(vessel.identity.imo || null);
+
+  /*
    * Centre goes through the shared camera, which measures the drawer and
    * the left rail before deciding where to move. The previous version
    * centred on the raw coordinate, which put the vessel behind the very
@@ -385,6 +399,9 @@ function VesselTabs({
         onStartFollow={camera?.startFollow}
         onStopFollow={camera?.stopFollow}
         onResumeFollow={camera?.resumeFollow}
+        enrichment={enrichment}
+        enrichmentLoading={enrichmentLoading}
+        enrichmentFailed={enrichmentFailed}
         onReplay={replayAvailable ? onReplay : undefined}
         replayContext={replayContext}
         sourceSupportsHistory={sourceSupportsHistory}

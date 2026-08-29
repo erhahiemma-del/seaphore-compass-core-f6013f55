@@ -23,13 +23,17 @@ import { Button } from "@/components/ui/button";
 import type { Vessel } from "@/services/geospatial";
 import type { VesselTrack } from "@/services/geospatial/vessel-track";
 
+import type { VesselEnrichment } from "@/services/geospatial/vessel-enrichment";
+
 import { VesselHero } from "./VesselHero";
 import type { ReplayDrawerContext } from "./replay-drawer-state";
 import {
   ActivityPanel,
+  DeclaredVoyagePanel,
   IntelligencePanel,
   OverviewPanel,
   OwnershipPanel,
+  ParticularsPanel,
   PeoplePanel,
   VesselVoyagePanel,
 } from "./VesselIntelligenceSections";
@@ -40,6 +44,7 @@ import type { FollowState } from "./vessel-camera";
 export const VESSEL_TAB_IDS = [
   "overview",
   "voyage",
+  "particulars",
   "people",
   "ownership",
   "intelligence",
@@ -51,6 +56,7 @@ export type VesselTabId = (typeof VESSEL_TAB_IDS)[number];
 export const VESSEL_TAB_LABELS: Readonly<Record<VesselTabId, string>> = {
   overview: "Overview",
   voyage: "Voyage",
+  particulars: "Particulars",
   people: "People",
   ownership: "Ownership",
   intelligence: "Intelligence",
@@ -78,6 +84,17 @@ export interface VesselIntelligenceCardProps {
   readonly sourceSupportsHistory?: boolean;
   /** The vessel's resolved track, when the archive has been asked. */
   readonly vesselTrack?: VesselTrack | null;
+  /**
+   * Deep provider data for this vessel, loaded on selection.
+   *
+   * Optional because the card is also rendered by surfaces that have not
+   * paid for it. Absent renders as "not loaded", which is a different
+   * statement from the provider having no particulars.
+   */
+  readonly enrichment?: VesselEnrichment | null;
+  readonly enrichmentLoading?: boolean;
+  /** The provider could not be reached — never rendered as an empty vessel. */
+  readonly enrichmentFailed?: boolean;
 }
 
 export function VesselIntelligenceCard({
@@ -94,6 +111,9 @@ export function VesselIntelligenceCard({
   replayContext,
   sourceSupportsHistory = false,
   vesselTrack,
+  enrichment,
+  enrichmentLoading,
+  enrichmentFailed,
 }: VesselIntelligenceCardProps) {
   /*
    * Derived once per vessel rather than per render. The drawer sits
@@ -162,7 +182,38 @@ export function VesselIntelligenceCard({
       <div className="min-h-0 flex-1 overflow-y-auto">
         {tab === "overview" ? <OverviewPanel vessel={vessel} presentation={presentation} /> : null}
         {tab === "voyage" ? (
-          <VesselVoyagePanel presentation={presentation} onReplay={onReplay} />
+          <div className="space-y-3">
+            <VesselVoyagePanel
+              presentation={presentation}
+              onReplay={onReplay}
+              supersededLabels={
+                enrichment?.voyage
+                  ? // The declared-voyage panel below states these with the
+                    // provider and timestamp behind them.
+                    new Set(["ETA", "Origin", "Declared destination"])
+                  : undefined
+              }
+            />
+            {/*
+              The provider's account sits below Seaphore's own register
+              entry rather than replacing it. The register is the record;
+              this is what the vessel is currently declaring, and an
+              officer needs to see which is which.
+            */}
+            <div className="space-y-3 px-3 pb-3">
+              <DeclaredVoyagePanel
+                enrichment={enrichment ?? null}
+                failed={enrichmentFailed ?? false}
+              />
+            </div>
+          </div>
+        ) : null}
+        {tab === "particulars" ? (
+          <ParticularsPanel
+            enrichment={enrichment ?? null}
+            loading={enrichmentLoading ?? false}
+            failed={enrichmentFailed ?? false}
+          />
         ) : null}
         {tab === "people" ? <PeoplePanel /> : null}
         {tab === "ownership" ? <OwnershipPanel /> : null}
