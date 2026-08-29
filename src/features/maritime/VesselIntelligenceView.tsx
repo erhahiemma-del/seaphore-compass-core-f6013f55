@@ -190,6 +190,8 @@ export function VesselIntelligenceView({
 
       {decision ? <DecisionReceipt state={decision} /> : null}
 
+      <SanctionsScreeningPanel subjectName={name} subjectImo={imo} role="vessel" />
+
       <SarEvidenceNote />
     </div>
   );
