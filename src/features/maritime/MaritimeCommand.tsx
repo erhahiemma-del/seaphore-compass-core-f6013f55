@@ -324,38 +324,35 @@ export function MaritimeCommand() {
    * reference travel as typed fields, so the case carries a real
    * relationship rather than an IMO buried in a description.
    */
-  const linkFinding = useCallback(
-    async (finding: IntelligenceFinding) => {
-      try {
-        const result = await openInvestigationForFinding({
-          data: {
-            findingId: finding.id,
-            findingType: finding.findingType,
-            subjectType: finding.subjectType,
-            subjectId: finding.subjectId,
-            subjectLabel: finding.subjectLabel,
-            source: finding.source,
-            sourceRecordId: finding.sourceRecordId ?? undefined,
-            summary: finding.summary,
-            evidenceRef: finding.evidenceRef ?? undefined,
-          },
-        });
-        toast.success(
-          result.created
-            ? `Case ${result.caseNumber} opened from this finding.`
-            : `Finding attached to case ${result.caseNumber}.`,
-        );
-      } catch (error) {
-        // A failed link is reported, never presented as done.
-        toast.error(
-          error instanceof Error
-            ? `Could not attach this finding to a case: ${error.message}`
-            : "Could not attach this finding to a case.",
-        );
-      }
-    },
-    [],
-  );
+  const linkFinding = useCallback(async (finding: IntelligenceFinding) => {
+    try {
+      const result = await openInvestigationForFinding({
+        data: {
+          findingId: finding.id,
+          findingType: finding.findingType,
+          subjectType: finding.subjectType,
+          subjectId: finding.subjectId,
+          subjectLabel: finding.subjectLabel,
+          source: finding.source,
+          sourceRecordId: finding.sourceRecordId ?? undefined,
+          summary: finding.summary,
+          evidenceRef: finding.evidenceRef ?? undefined,
+        },
+      });
+      toast.success(
+        result.created
+          ? `Case ${result.caseNumber} opened from this finding.`
+          : `Finding attached to case ${result.caseNumber}.`,
+      );
+    } catch (error) {
+      // A failed link is reported, never presented as done.
+      toast.error(
+        error instanceof Error
+          ? `Could not attach this finding to a case: ${error.message}`
+          : "Could not attach this finding to a case.",
+      );
+    }
+  }, []);
 
   const acknowledgeAlert = useCallback(
     async (alertId: string) => {

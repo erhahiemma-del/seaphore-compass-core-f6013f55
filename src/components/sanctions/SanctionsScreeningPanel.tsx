@@ -167,37 +167,34 @@ export function SanctionsScreeningPanel({
    * evidence reference, so the case points at stored evidence rather
    * than at a sentence describing it.
    */
-  const addToCase = useCallback(
-    async (record: SanctionsScreeningRecord) => {
-      try {
-        const result = await openInvestigationForFinding({
-          data: {
-            findingId: `sanctions:${record.id}`,
-            findingType: "SANCTIONS_SCREENING",
-            subjectType: "vessel",
-            subjectId: record.subjectImo ?? record.subjectName,
-            subjectLabel: record.subjectName,
-            source: record.provider,
-            sourceRecordId: record.id,
-            summary: `Sanctions screening state ${effectiveState(record)}`,
-            evidenceRef: `sanctions_screenings:${record.id}`,
-          },
-        });
-        toast.success(
-          result.created
-            ? `Case ${result.caseNumber} opened from this screening.`
-            : `Screening attached to case ${result.caseNumber}.`,
-        );
-      } catch (cause) {
-        toast.error(
-          cause instanceof Error
-            ? `Could not attach this screening to a case: ${cause.message}`
-            : "Could not attach this screening to a case.",
-        );
-      }
-    },
-    [],
-  );
+  const addToCase = useCallback(async (record: SanctionsScreeningRecord) => {
+    try {
+      const result = await openInvestigationForFinding({
+        data: {
+          findingId: `sanctions:${record.id}`,
+          findingType: "SANCTIONS_SCREENING",
+          subjectType: "vessel",
+          subjectId: record.subjectImo ?? record.subjectName,
+          subjectLabel: record.subjectName,
+          source: record.provider,
+          sourceRecordId: record.id,
+          summary: `Sanctions screening state ${effectiveState(record)}`,
+          evidenceRef: `sanctions_screenings:${record.id}`,
+        },
+      });
+      toast.success(
+        result.created
+          ? `Case ${result.caseNumber} opened from this screening.`
+          : `Screening attached to case ${result.caseNumber}.`,
+      );
+    } catch (cause) {
+      toast.error(
+        cause instanceof Error
+          ? `Could not attach this screening to a case: ${cause.message}`
+          : "Could not attach this screening to a case.",
+      );
+    }
+  }, []);
 
   return (
     <section

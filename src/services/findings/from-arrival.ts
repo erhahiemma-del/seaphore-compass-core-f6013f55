@@ -10,7 +10,11 @@
  * separate scales, mapped once, in one direction, here, and nothing reads
  * the finding priority back into the alert.
  */
-import { presentAlert, type ArrivalInterventionAlert, type AttentionSeverity } from "@/services/alerts";
+import {
+  presentAlert,
+  type ArrivalInterventionAlert,
+  type AttentionSeverity,
+} from "@/services/alerts";
 
 import type { FindingAttentionPriority, IntelligenceFinding } from "./finding";
 

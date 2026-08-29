@@ -16,10 +16,7 @@
  * `SCREENING UNAVAILABLE` is carried too, because a provider that could
  * not answer is a collection gap and not a clear result.
  */
-import {
-  effectiveState,
-  type SanctionsScreeningRecord,
-} from "./match-state";
+import { effectiveState, type SanctionsScreeningRecord } from "./match-state";
 
 export type SanctionsIndicatorState =
   | "NOT_SCREENED"

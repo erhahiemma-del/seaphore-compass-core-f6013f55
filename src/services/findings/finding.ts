@@ -100,8 +100,7 @@ export function orderFindings(
   findings: readonly IntelligenceFinding[],
 ): readonly IntelligenceFinding[] {
   return [...findings].sort((a, b) => {
-    const byPriority =
-      PRIORITY_ORDER[a.attentionPriority] - PRIORITY_ORDER[b.attentionPriority];
+    const byPriority = PRIORITY_ORDER[a.attentionPriority] - PRIORITY_ORDER[b.attentionPriority];
     if (byPriority !== 0) return byPriority;
     return b.updatedAt.localeCompare(a.updatedAt);
   });

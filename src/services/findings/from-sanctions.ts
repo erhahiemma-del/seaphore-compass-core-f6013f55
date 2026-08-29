@@ -54,12 +54,11 @@ function reasonFor(record: SanctionsScreeningRecord, state: SanctionsMatchState)
   }
   if (state === "CONFIRMED_MATCH") {
     const confirmed = record.decisions.find((d) => d.decision === "CONFIRMED");
-    return confirmed
-      ? `Confirmed by an officer · ${confirmed.reason}`
-      : "Confirmed by an officer.";
+    return confirmed ? `Confirmed by an officer · ${confirmed.reason}` : "Confirmed by an officer.";
   }
   const top = record.candidates[0];
-  const score = record.topScore === null ? "no score reported" : `score ${record.topScore.toFixed(2)}`;
+  const score =
+    record.topScore === null ? "no score reported" : `score ${record.topScore.toFixed(2)}`;
   return top
     ? `Candidate "${top.caption}" (${score}) resembles this subject. Officer review required.`
     : "A candidate was returned. Officer review required.";
