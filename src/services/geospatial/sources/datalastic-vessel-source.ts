@@ -127,8 +127,17 @@ export function sourceStatusForDatalastic(status: DatalasticStatus): SourceStatu
       return "auth-failed";
     case "subscription-inactive":
       return "subscription-inactive";
+    /*
+     * A rejected request lands on `upstream-error` alongside the genuine
+     * outages because the source vocabulary has no "we asked wrongly"
+     * state, and the alternatives are worse: `empty` would present a
+     * defect as an empty sea, and `auth-failed` would send someone after
+     * a credential that is fine. The provider's own message travels
+     * alongside and says which of the three actually happened.
+     */
     case "rate-limited":
     case "unavailable":
+    case "request-rejected":
       return "upstream-error";
   }
 }

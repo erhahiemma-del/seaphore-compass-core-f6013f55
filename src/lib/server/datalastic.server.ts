@@ -43,7 +43,22 @@ const BASE_URL = "https://api.datalastic.com/api/v0";
 const REQUEST_TIMEOUT_MS = 20_000;
 
 /** Location Traffic bills per vessel found, so the radius is capped. */
-const MAX_RADIUS_KM = 150;
+/**
+ * The provider's own ceiling for `/vessel_inradius`, in kilometres.
+ *
+ * Not a policy choice — Datalastic rejects anything larger with
+ * `{"radius":"must be no greater than 50"}` and HTTP 400. This was 150,
+ * so every area query the map made was refused before it reached the
+ * fleet: the Nigerian EEZ box converts to a 493km circle, clamped to
+ * 150, rejected, and reported as an unreachable provider. The map showed
+ * an empty sea while the credential, the account and the data were all
+ * fine.
+ *
+ * A single circle therefore covers 50km. Covering the whole EEZ needs
+ * several, and that is a billing decision — this endpoint charges per
+ * vessel found — so it is left to the caller rather than decided here.
+ */
+const MAX_RADIUS_KM = 50;
 
 /** History bills per calendar date returned. */
 const MAX_HISTORY_DAYS = 7;
@@ -137,6 +152,15 @@ export function datalasticStatusForHttp(httpStatus: number): DatalasticStatus {
   if (httpStatus === 402) return "subscription-inactive";
   if (httpStatus === 404) return "empty";
   if (httpStatus === 429) return "rate-limited";
+  /*
+   * 400 is the provider answering, not failing to answer.
+   *
+   * Reporting a rejected request as "unavailable" sent an officer
+   * looking for a network fault when the truth was that Seaphore had
+   * asked for something the endpoint does not accept. The two need
+   * different people to fix them, so they cannot share a status.
+   */
+  if (httpStatus === 400 || httpStatus === 422) return "request-rejected";
   return "unavailable";
 }
 
@@ -150,6 +174,8 @@ function messageForStatus(status: DatalasticStatus, endpoint: string): string {
       return `Datalastic accepted the credential but the current plan does not include ${endpoint}. This is a subscription limit, not an empty sea.`;
     case "rate-limited":
       return "Datalastic rate limit reached. AIS positions will resume shortly.";
+    case "request-rejected":
+      return `Datalastic rejected the request to ${endpoint}. Seaphore asked for something the endpoint does not accept — a defect in the query, not a provider outage.`;
     case "unavailable":
       return "Datalastic is unreachable. Seaphore is not receiving AIS positions — this is a collection failure, not an absence of vessels.";
     case "empty":

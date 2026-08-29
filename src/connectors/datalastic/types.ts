@@ -31,6 +31,15 @@ export type DatalasticStatus =
   | "unauthorized"
   | "subscription-inactive"
   | "rate-limited"
+  /**
+   * The provider answered and refused the request.
+   *
+   * Distinct from `unavailable`, which means it never answered. A
+   * rejected request is Seaphore's defect to fix; an unreachable
+   * provider is not, and one reported as the other sends the wrong
+   * person looking in the wrong place.
+   */
+  | "request-rejected"
   | "unavailable";
 
 /** Provider-reported position, already flattened from the upstream row. */
