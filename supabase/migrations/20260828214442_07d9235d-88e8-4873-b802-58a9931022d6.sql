@@ -1,3 +1,24 @@
+-- Arrival intervention alerts — idempotent re-declaration.
+--
+-- This file and 20260828160000_arrival_intervention_alerts.sql create the
+-- same two tables, the same six indexes and the same policies: their SQL is
+-- byte-identical once comments and whitespace are stripped. They arrived by
+-- two routes — one authored here, one generated when the schema was applied
+-- — and both are now in the repository.
+--
+-- Neither can simply be deleted. Which of the two the migration ledger
+-- recorded is not readable from this repository (supabase_migrations is not
+-- exposed through PostgREST), and deleting the recorded one would desync
+-- history from the database.
+--
+-- So the later of the two is made idempotent instead. That is correct in
+-- every ledger state: if this file was the one applied it is never re-run;
+-- if the other was, this one no-ops when it runs; and on a fresh database
+-- the first creates the objects and this one passes over them. Nothing is
+-- dropped and no data can be lost.
+--
+-- The original intent below is preserved verbatim.
+--
 -- Arrival intervention alerts — durable state for the approach alert domain.
 --
 -- The domain (src/services/alerts) already decides everything: eligibility,
@@ -26,7 +47,7 @@
 -- domain already models as AlertEvent, and it carries actor_type so a system
 -- reconciliation can never be mistaken for a human decision.
 
-CREATE TABLE public.arrival_intervention_alerts (
+CREATE TABLE IF NOT EXISTS public.arrival_intervention_alerts (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 
   -- Episode identity: the hull, plus which approach this is for that hull.
@@ -89,23 +110,23 @@ CREATE TABLE public.arrival_intervention_alerts (
 -- alert" and both attempt to insert; only one insert can succeed here, and
 -- the loser converges on the winner's row instead of creating a duplicate
 -- episode. An `if (!existing) insert()` cannot make that promise.
-CREATE UNIQUE INDEX arrival_alert_one_active_episode
+CREATE UNIQUE INDEX IF NOT EXISTS arrival_alert_one_active_episode
   ON public.arrival_intervention_alerts (imo)
   WHERE state IN ('OPEN', 'ACKNOWLEDGED', 'UNDER_REVIEW', 'ACTION_REQUIRED');
 
 -- The queries the attention surfaces actually run: the active list ordered by
 -- urgency, and one hull's history. Neither should scan the table.
-CREATE INDEX arrival_alert_active_idx
+CREATE INDEX IF NOT EXISTS arrival_alert_active_idx
   ON public.arrival_intervention_alerts (severity, raised_at DESC)
   WHERE state IN ('OPEN', 'ACKNOWLEDGED', 'UNDER_REVIEW', 'ACTION_REQUIRED');
-CREATE INDEX arrival_alert_imo_idx ON public.arrival_intervention_alerts (imo, episode_sequence DESC);
-CREATE INDEX arrival_alert_assigned_idx
+CREATE INDEX IF NOT EXISTS arrival_alert_imo_idx ON public.arrival_intervention_alerts (imo, episode_sequence DESC);
+CREATE INDEX IF NOT EXISTS arrival_alert_assigned_idx
   ON public.arrival_intervention_alerts (assigned_to) WHERE assigned_to IS NOT NULL;
-CREATE INDEX arrival_alert_state_idx ON public.arrival_intervention_alerts (state);
+CREATE INDEX IF NOT EXISTS arrival_alert_state_idx ON public.arrival_intervention_alerts (state);
 
 -- Append-only. No UPDATE or DELETE policy exists below, so an event cannot be
 -- rewritten once written.
-CREATE TABLE public.arrival_alert_events (
+CREATE TABLE IF NOT EXISTS public.arrival_alert_events (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   alert_id uuid NOT NULL REFERENCES public.arrival_intervention_alerts(id) ON DELETE CASCADE,
   type text NOT NULL CHECK (type IN (
@@ -123,7 +144,7 @@ CREATE TABLE public.arrival_alert_events (
     CHECK ((actor_type = 'OFFICER') = (officer_id IS NOT NULL))
 );
 
-CREATE INDEX arrival_alert_events_alert_idx ON public.arrival_alert_events (alert_id, at);
+CREATE INDEX IF NOT EXISTS arrival_alert_events_alert_idx ON public.arrival_alert_events (alert_id, at);
 
 GRANT SELECT, INSERT, UPDATE ON public.arrival_intervention_alerts TO authenticated;
 GRANT SELECT, INSERT ON public.arrival_alert_events TO authenticated;
@@ -136,14 +157,19 @@ ALTER TABLE public.arrival_alert_events ENABLE ROW LEVEL SECURITY;
 -- an approach alert is not restricted to the officer who happened to load the
 -- map first. There is deliberately no DELETE policy on either table: a
 -- resolved alert is a record, and records are not removed.
+DROP POLICY IF EXISTS "Officers read arrival alerts" ON public.arrival_intervention_alerts;
 CREATE POLICY "Officers read arrival alerts"
   ON public.arrival_intervention_alerts FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "Officers raise arrival alerts" ON public.arrival_intervention_alerts;
 CREATE POLICY "Officers raise arrival alerts"
   ON public.arrival_intervention_alerts FOR INSERT TO authenticated WITH CHECK (true);
+DROP POLICY IF EXISTS "Officers update arrival alerts" ON public.arrival_intervention_alerts;
 CREATE POLICY "Officers update arrival alerts"
   ON public.arrival_intervention_alerts FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Officers read alert events" ON public.arrival_alert_events;
 CREATE POLICY "Officers read alert events"
   ON public.arrival_alert_events FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "Officers append alert events" ON public.arrival_alert_events;
 CREATE POLICY "Officers append alert events"
   ON public.arrival_alert_events FOR INSERT TO authenticated WITH CHECK (true);
