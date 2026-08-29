@@ -286,3 +286,47 @@ export async function runCoveragePass(options: RunCoverageOptions): Promise<Cove
     durationMs: now() - started,
   };
 }
+
+/**
+ * How much a zone is earning, banded rather than ranked.
+ *
+ * The measured pass had five zones return real vessels and contribute
+ * zero unique hulls, because their neighbours already covered the same
+ * water. That is worth acting on — those five cost 719 of 1,374 credits
+ * — but not by deleting them after a single observation. Vessels move,
+ * and a zone that is redundant at nine in the morning may be the only
+ * one holding a hull by evening.
+ *
+ * So yield is a band, not a verdict. A LOW zone is a candidate for a
+ * longer interval or a lower priority; it is not evidence that the water
+ * is empty.
+ */
+export type ZoneYield = "HIGH" | "MEDIUM" | "LOW";
+
+/**
+ * Unique hulls per credit spent.
+ *
+ * Unique rather than raw, because raw is what the provider charges for
+ * and unique is what the officer actually gains. A zone returning two
+ * hundred vessels that another zone already supplied has a yield of
+ * zero, however busy it looks.
+ */
+export function zoneYield(report: ZoneReport): ZoneYield {
+  const cost = report.requestCost ?? report.raw;
+  if (cost <= 0) return report.unique > 0 ? "HIGH" : "LOW";
+  const perCredit = report.unique / cost;
+  if (perCredit >= 0.5) return "HIGH";
+  if (perCredit > 0) return "MEDIUM";
+  return "LOW";
+}
+
+/** Yield band per zone, for a diagnostic surface or a tuning decision. */
+export function coverageYield(result: CoverageResult): ReadonlyMap<string, ZoneYield> {
+  return new Map(
+    result.zones
+      // A zone that was never queried has no yield to report, and
+      // guessing one would recommend tuning based on nothing.
+      .filter((zone) => zone.outcome === "OK" || zone.outcome === "NO_RECORD")
+      .map((zone) => [zone.zoneId, zoneYield(zone)]),
+  );
+}

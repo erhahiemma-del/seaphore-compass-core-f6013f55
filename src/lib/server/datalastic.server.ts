@@ -37,6 +37,14 @@ import type {
   DatalasticVesselRecord,
 } from "@/connectors/datalastic/types";
 
+import {
+  datalasticGovernor,
+  mayIssueRequest,
+  recordFailure,
+  recordRequestIssued,
+  recordSuccess,
+} from "./datalastic-governor";
+
 const BASE_URL = "https://api.datalastic.com/api/v0";
 
 /** Provider-documented ceiling is 600 req/min; we stay far below it. */
@@ -203,6 +211,25 @@ async function request<T>(
   attempt = 0,
 ): Promise<DatalasticResult<T>> {
   const endpoint = `/api/v0/${path}`;
+
+  /*
+   * Checked before anything else, including the credential, so a blocked
+   * provider costs nothing at all — no socket, no DNS lookup, and above
+   * all no request the provider would still count against an allowance
+   * that is already gone.
+   */
+  if (!mayIssueRequest()) {
+    const snapshot = datalasticGovernor();
+    const blocked = envelope<T>(
+      endpoint,
+      snapshot.state === "CREDIT_EXHAUSTED" ? "subscription-inactive" : "rate-limited",
+      { message: snapshot.reason },
+    );
+    usage.lastStatus = blocked.status;
+    usage.lastCheckedAt = blocked.retrievedAt;
+    return blocked;
+  }
+
   const key = readKey();
   if (!key) {
     const result = envelope<T>(endpoint, "credentials-missing", {
@@ -229,6 +256,7 @@ async function request<T>(
 
   const started = Date.now();
   usage.requests += 1;
+  recordRequestIssued();
   try {
     const response = await fetch(`${BASE_URL}/${path}?${search.toString()}`, {
       method: "GET",
@@ -252,6 +280,11 @@ async function request<T>(
         return request(path, params, parse, ttlMs, attempt + 1);
       }
       usage.failures += status === "empty" ? 0 : 1;
+      recordFailure({
+        httpStatus: response.status,
+        at: new Date().toISOString(),
+        retryAfterSeconds: Number.isFinite(retryAfterSeconds) ? retryAfterSeconds : null,
+      });
       const result = envelope<T>(endpoint, status, {
         httpStatus: response.status,
         latencyMs,
@@ -276,6 +309,7 @@ async function request<T>(
     });
     usage.lastStatus = status;
     usage.lastCheckedAt = result.retrievedAt;
+    recordSuccess(result.retrievedAt);
     if (ttlMs > 0) cache.set(cacheKey, { expiresAt: Date.now() + ttlMs, value: result });
     return result;
   } catch (error) {
@@ -286,6 +320,9 @@ async function request<T>(
     });
     usage.lastStatus = "unavailable";
     usage.lastCheckedAt = result.retrievedAt;
+    // A thrown request never reached the provider, so there is no status
+    // to read — null tells the governor to treat it as an outage.
+    recordFailure({ httpStatus: null, at: result.retrievedAt });
     // Logged without the credential; the URL is never logged.
     console.error("[datalastic] request failed", {
       endpoint,
