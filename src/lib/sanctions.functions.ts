@@ -113,3 +113,17 @@ export const getSanctionsProviderStatus = createServerFn({ method: "GET" }).hand
   const { credentialStatus } = await import("@/lib/server/opensanctions.server");
   return credentialStatus();
 });
+
+/**
+ * Recent screenings across subjects, for the attention projection.
+ * Officer-visible history only — no credential, no provider call.
+ */
+export const listRecentSanctionsScreenings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ limit: z.number().int().min(1).max(200).optional() }).parse(data ?? {}),
+  )
+  .handler(async ({ data, context }): Promise<SanctionsScreeningRecord[]> => {
+    const { loadRecentScreenings } = await import("@/lib/server/sanctions-store.server");
+    return loadRecentScreenings(context.supabase as unknown as Db, data.limit ?? 100);
+  });

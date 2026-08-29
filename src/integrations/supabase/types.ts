@@ -884,6 +884,62 @@ export type Database = {
           },
         ]
       }
+      finding_investigation_links: {
+        Row: {
+          created_at: string
+          evidence_ref: string | null
+          finding_id: string
+          finding_type: string
+          id: string
+          investigation_id: string
+          linked_by: string
+          source: string
+          source_record_id: string | null
+          subject_id: string
+          subject_label: string | null
+          subject_type: string
+          summary: string | null
+        }
+        Insert: {
+          created_at?: string
+          evidence_ref?: string | null
+          finding_id: string
+          finding_type: string
+          id?: string
+          investigation_id: string
+          linked_by: string
+          source: string
+          source_record_id?: string | null
+          subject_id: string
+          subject_label?: string | null
+          subject_type: string
+          summary?: string | null
+        }
+        Update: {
+          created_at?: string
+          evidence_ref?: string | null
+          finding_id?: string
+          finding_type?: string
+          id?: string
+          investigation_id?: string
+          linked_by?: string
+          source?: string
+          source_record_id?: string | null
+          subject_id?: string
+          subject_label?: string | null
+          subject_type?: string
+          summary?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finding_investigation_links_investigation_id_fkey"
+            columns: ["investigation_id"]
+            isOneToOne: false
+            referencedRelation: "investigations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ice_conflicts: {
         Row: {
           age_differential_hrs: number | null

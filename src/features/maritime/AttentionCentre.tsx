@@ -66,6 +66,21 @@ export interface AttentionCentreProps {
   /** Select the vessel through the canonical path. Never a second one. */
   readonly onView: (imo: string) => void;
   readonly onAcknowledge: (alertId: string) => void;
+  /**
+   * Findings from the other intelligence domains, already projected.
+   *
+   * A separate list from `alerts` on purpose: an arrival alert has a
+   * lifecycle this surface can act on, while a finding is a pointer to
+   * evidence held by the domain that produced it. Mixing them into one
+   * array would invite one domain's actions onto another's rows.
+   */
+  readonly findings?: readonly IntelligenceFinding[];
+  /** Opens the canonical context for the finding's subject. */
+  readonly onOpenFinding?: (finding: IntelligenceFinding) => void;
+  /** Officer attaches the finding to a case. Never automatic. */
+  readonly onLinkFinding?: (finding: IntelligenceFinding) => void;
+  /** Why the findings list is empty, when it is empty for a reason. */
+  readonly findingsUnavailableReason?: string | null;
   readonly className?: string;
 }
 
