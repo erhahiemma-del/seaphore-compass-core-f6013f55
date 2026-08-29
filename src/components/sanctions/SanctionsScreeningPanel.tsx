@@ -39,6 +39,7 @@ import {
   type SanctionsMatchState,
   type SanctionsScreeningRecord,
 } from "@/lib/sanctions/match-state";
+import { consumeScreeningRequest, onScreeningRequested } from "@/lib/sanctions/screen-request";
 import {
   getSanctionsEntityDetail,
   listSanctionsScreenings,
