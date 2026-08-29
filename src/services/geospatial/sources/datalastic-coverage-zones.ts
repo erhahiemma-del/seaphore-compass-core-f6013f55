@@ -74,6 +74,21 @@ const MINUTE = 60_000;
  * does not cost the same as a river mouth. Every one is at or under the
  * provider ceiling.
  */
+/*
+ * Measured yields, from the pass of 2026-08-29.
+ *
+ * Five zones returned real vessels and contributed no unique hulls,
+ * because higher-priority neighbours already covered the same water:
+ * Tin Can 133 raw / 0 unique, Onne 218/0, Port Harcourt 217/0, Lekki
+ * 94/0, Forcados 57/0. Together they cost 719 of the pass's 1,374
+ * credits — 52% of the spend for nothing gained.
+ *
+ * They are slowed to fifteen minutes rather than removed. Vessels move,
+ * and a zone redundant at nine in the morning may be the only one
+ * holding a hull by evening; one snapshot is not grounds for deciding a
+ * stretch of coast never needs looking at. Slowing keeps the coverage
+ * and removes most of the cost.
+ */
 export const NIGERIA_COVERAGE_ZONES: readonly CoverageZone[] = [
   {
     id: "lagos-apapa",
@@ -94,7 +109,7 @@ export const NIGERIA_COVERAGE_ZONES: readonly CoverageZone[] = [
     radiusKm: 30,
     priority: 2,
     enabled: true,
-    refreshIntervalMs: 3 * MINUTE,
+    refreshIntervalMs: 15 * MINUTE,
     creditBudget: 30,
   },
   {
@@ -105,7 +120,7 @@ export const NIGERIA_COVERAGE_ZONES: readonly CoverageZone[] = [
     radiusKm: 40,
     priority: 3,
     enabled: true,
-    refreshIntervalMs: 5 * MINUTE,
+    refreshIntervalMs: 15 * MINUTE,
     creditBudget: 24,
   },
   {
@@ -149,7 +164,7 @@ export const NIGERIA_COVERAGE_ZONES: readonly CoverageZone[] = [
     radiusKm: 40,
     priority: 5,
     enabled: true,
-    refreshIntervalMs: 10 * MINUTE,
+    refreshIntervalMs: 15 * MINUTE,
     creditBudget: 16,
   },
   {
@@ -171,7 +186,7 @@ export const NIGERIA_COVERAGE_ZONES: readonly CoverageZone[] = [
     radiusKm: 30,
     priority: 5,
     enabled: true,
-    refreshIntervalMs: 5 * MINUTE,
+    refreshIntervalMs: 15 * MINUTE,
     creditBudget: 20,
   },
   {
@@ -182,7 +197,7 @@ export const NIGERIA_COVERAGE_ZONES: readonly CoverageZone[] = [
     radiusKm: 30,
     priority: 6,
     enabled: true,
-    refreshIntervalMs: 10 * MINUTE,
+    refreshIntervalMs: 15 * MINUTE,
     creditBudget: 16,
   },
   {

@@ -101,8 +101,13 @@ describe("the address bar after a straightening", () => {
       "/maritime?view=2D&lat=6.4&lon=3.4&zoom=9&bearing=90.0&sharetoken=keepme",
     );
     const service = new SharedGeospatialService({ urlSync: true });
-    service.loadFromURL(window.location.search);
-    expect(service.get().bearing).toBe(90);
+    /*
+     * Turned after construction rather than hydrated from the link,
+     * because the operational chart now opens north-up whatever the URL
+     * said. What is under test here is the merge, not the hydration.
+     */
+    service.setCamera({ bearing: 90 });
+    expect(new URLSearchParams(window.location.search).get("bearing")).toBe("90.0");
 
     service.setCamera({ bearing: 0 });
 
@@ -116,7 +121,7 @@ describe("the address bar after a straightening", () => {
   it("keeps the officer's position while clearing the rotation", () => {
     window.history.replaceState(null, "", "/maritime?view=2D&lat=6.4&lon=3.4&zoom=9&bearing=90.0");
     const service = new SharedGeospatialService({ urlSync: true });
-    service.loadFromURL(window.location.search);
+    service.setCamera({ bearing: 90 });
 
     service.setCamera({ bearing: 0 });
 
@@ -124,5 +129,67 @@ describe("the address bar after a straightening", () => {
     expect(params.get("zoom")).toBe("9.0");
     expect(params.get("lat")).toBe("6.4000");
     expect(params.get("lon")).toBe("3.4000");
+  });
+});
+
+/*
+ * The operational chart opens north-up, whatever the link said.
+ *
+ * A rotated URL gets bookmarked and shared, and every later session then
+ * opens sideways with nothing on screen explaining why — which is how
+ * this reached an officer as "the map is broken" rather than "somebody
+ * turned it".
+ */
+describe("a rotated link cannot leave the operational chart on its side", () => {
+  beforeEach(() => {
+    window.history.replaceState(null, "", "/maritime");
+  });
+
+  it("opens north-up even when the URL asks for a rotation", () => {
+    window.history.replaceState(null, "", "/maritime?view=2D&lat=6.4&lon=3.4&zoom=9&bearing=90.0");
+
+    const service = new SharedGeospatialService({ urlSync: true });
+
+    expect(service.get().bearing).toBe(0);
+    // And the address bar stops claiming otherwise.
+    expect(new URLSearchParams(window.location.search).get("bearing")).toBeNull();
+  });
+
+  it("keeps the position and zoom the link asked for", () => {
+    window.history.replaceState(null, "", "/maritime?view=2D&lat=6.4&lon=3.4&zoom=9&bearing=90.0");
+
+    const service = new SharedGeospatialService({ urlSync: true });
+
+    // Straightening the chart is not a reason to move the officer.
+    expect(service.get().zoom).toBe(9);
+    expect(service.get().center[1]).toBeCloseTo(6.4, 3);
+    expect(service.get().center[0]).toBeCloseTo(3.4, 3);
+  });
+
+  /*
+   * The globe and the tilted perspective exist to show a different
+   * angle. Normalising those would break the modes whose entire purpose
+   * is not being flat and north-up.
+   */
+  it("leaves the globe's own orientation alone", () => {
+    window.history.replaceState(
+      null,
+      "",
+      "/maritime?view=GLOBE&lat=6.4&lon=3.4&zoom=3&bearing=90.0",
+    );
+
+    const service = new SharedGeospatialService({ urlSync: true });
+
+    expect(service.get().bearing).toBe(90);
+  });
+
+  it("still allows an officer to turn the chart during a session", () => {
+    const service = new SharedGeospatialService({ urlSync: true });
+
+    service.setCamera({ bearing: 45 });
+
+    // Normalisation happens once, at construction — turning the map is
+    // still a thing an officer may do.
+    expect(service.get().bearing).toBe(45);
   });
 });

@@ -173,7 +173,53 @@ export class SharedGeospatialService {
      */
     if (this.urlSync && typeof window !== "undefined") {
       this.loadFromURL();
+      this.normaliseOperationalOrientation();
     }
+  }
+
+  /**
+   * The operational chart opens north-up, whatever the link said.
+   *
+   * `dragRotate` is enabled, so an officer can turn the chart with a
+   * right-drag or a two-finger twist without meaning to, and the bearing
+   * is written to the address bar. That URL then gets bookmarked, shared
+   * or simply reloaded, and every subsequent session opens sideways with
+   * no indication why — an officer arriving at a rotated coastline reads
+   * it as a broken map, not as a setting they can change.
+   *
+   * A turned chart is a thing an officer does *during* a session, not a
+   * state one should be handed at the start of one. So the rotation is
+   * cleared at construction only: turning the map still works, still
+   * survives a share within the session, and the reset control is still
+   * there — but no link can leave the operational picture lying on its
+   * side.
+   *
+   * Scoped to the flat operational view. The globe and the tilted
+   * perspective are entitled to their own orientation, and normalising
+   * those would break the modes whose whole point is a different angle.
+   */
+  private normaliseOperationalOrientation(): void {
+    if (this.state.viewMode !== "2D") return;
+    if (this.state.bearing === 0) return;
+    /*
+     * Assigned, not `update`d, and the difference is not cosmetic.
+     *
+     * `update` notifies subscribers and rewrites the address bar, and
+     * doing either during construction had a measurable side effect:
+     * loading a link at zoom 9 with a bearing left the officer at zoom
+     * 4.4 over a different centre, because the early `replaceState`
+     * disturbed state that had not finished settling. Straightening the
+     * chart must not move the officer, so the field is corrected in
+     * place before anybody is listening.
+     *
+     * The address bar catches up on its own: bearing 0 is not
+     * serialised, and the ownership fix means the stale key is cleared
+     * rather than carried, so the first genuine update tidies the URL.
+     */
+    this.state = { ...this.state, bearing: 0 };
+    // The address bar is corrected too, but without notifying: a
+    // subscriber woken during construction is what moved the camera.
+    this.syncToURL();
   }
 
   /** Current state. Returned by value so callers cannot mutate the interior. */
