@@ -27,6 +27,7 @@ import {
   type BriefDecision,
 } from "@/components/intelligence/ExecutiveBriefPanel";
 import { FindingEvidenceViewer } from "@/components/intelligence/FindingEvidenceViewer";
+import { SanctionsScreeningPanel } from "@/components/sanctions/SanctionsScreeningPanel";
 import { Button } from "@/components/ui/button";
 import { recordAudit } from "@/lib/audit-client";
 import type { Vessel } from "@/services/geospatial";
@@ -189,6 +190,8 @@ export function VesselIntelligenceView({
       />
 
       {decision ? <DecisionReceipt state={decision} /> : null}
+
+      <SanctionsScreeningPanel subjectName={name} subjectImo={imo} role="vessel" />
 
       <SarEvidenceNote />
     </div>

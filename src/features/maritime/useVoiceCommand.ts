@@ -32,6 +32,7 @@ import { sgs, type SharedGeospatialService, type Vessel } from "@/services/geosp
 import { eezRingIfLoaded } from "@/services/geospatial/eez-ring";
 import type { Place } from "@/services/geospatial/places";
 
+import { requestVesselScreening } from "@/lib/sanctions/screen-request";
 import { executeCopilotAction, type CopilotAction } from "@/services/copilot/copilot-actions";
 import {
   EMPTY_CONTEXT,
@@ -250,6 +251,11 @@ export function useVoiceCommand(
             fleet: options.fleet,
             boundaryRing: eezRingIfLoaded() ?? undefined,
             openInvestigation: options.openInvestigation,
+            /*
+             * Screening runs in the drawer panel that owns the canonical
+             * call; the voice path only asks for it.
+             */
+            requestSanctionsScreening: requestVesselScreening,
           });
           /*
            * The spoken line reports what happened, not what was
