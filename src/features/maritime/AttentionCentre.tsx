@@ -33,6 +33,11 @@ import { AlertTriangle, Bell, Check, CircleAlert, Eye, Pause, Play } from "lucid
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { AlertPresentation, AttentionSeverity } from "@/services/alerts";
+import {
+  FINDING_PRIORITY_LABEL,
+  FINDING_TYPE_LABEL,
+  type IntelligenceFinding,
+} from "@/services/findings/finding";
 
 import { useAttentionFeed } from "./useAttentionFeed";
 
@@ -92,10 +97,15 @@ export function AttentionCentre({
   durable = false,
   onView,
   onAcknowledge,
+  findings = [],
+  onOpenFinding,
+  onLinkFinding,
+  findingsUnavailableReason = null,
   className,
 }: AttentionCentreProps) {
   const [open, setOpen] = useState(false);
-  const total = alerts.length;
+  // One number for the officer's open work, both domains included.
+  const total = alerts.length + findings.length;
   const feed = useAttentionFeed({ count: total, open });
 
   return (
@@ -219,6 +229,31 @@ export function AttentionCentre({
             ))}
           </ul>
 
+          {findings.length > 0 ? (
+            <section data-testid="attention-findings" className="border-t border-white/10">
+              <h3 className="px-3 pt-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/50">
+                Intelligence findings
+              </h3>
+              <ul className="max-h-[14rem] overflow-y-auto">
+                {findings.map((finding) => (
+                  <FindingRow
+                    key={finding.id}
+                    finding={finding}
+                    onOpen={onOpenFinding}
+                    onLink={onLinkFinding}
+                  />
+                ))}
+              </ul>
+            </section>
+          ) : findingsUnavailableReason ? (
+            <p
+              data-testid="findings-unavailable"
+              className="border-t border-white/10 px-3 py-2 text-[10.5px] text-white/55"
+            >
+              {findingsUnavailableReason}
+            </p>
+          ) : null}
+
           {total === 0 ? <EmptyState assessable={assessable} /> : null}
 
           {unassessableCount > 0 ? (
@@ -321,6 +356,68 @@ function AlertRow({
           >
             <Check className="h-3 w-3" aria-hidden />
             Acknowledge
+          </Button>
+        ) : null}
+      </div>
+    </li>
+  );
+}
+
+/**
+ * One finding, in the producing domain's own words.
+ *
+ * The row states which domain reported it and what that domain's state
+ * is, verbatim. It never restates a candidate as a conclusion, and the
+ * only actions offered are "look at the evidence" and "attach to a case"
+ * — both of which an officer performs, and neither of which changes the
+ * producing domain's state.
+ */
+function FindingRow({
+  finding,
+  onOpen,
+  onLink,
+}: {
+  finding: IntelligenceFinding;
+  onOpen?: (finding: IntelligenceFinding) => void;
+  onLink?: (finding: IntelligenceFinding) => void;
+}) {
+  return (
+    <li className="border-b border-white/[0.07] px-3 py-2 last:border-b-0">
+      <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-white/45">
+        <span className="rounded border border-white/15 px-1 py-px text-[9.5px] text-white/70">
+          {FINDING_TYPE_LABEL[finding.findingType]}
+        </span>
+        <span>{FINDING_PRIORITY_LABEL[finding.attentionPriority]}</span>
+        <span aria-hidden>·</span>
+        {/* The producing domain's state, not a reinterpretation of it. */}
+        <span>{finding.statusDetail}</span>
+      </p>
+      <p className="mt-0.5 truncate text-[12px] font-medium text-white">{finding.subjectLabel}</p>
+      <p className="truncate font-mono text-[10px] tabular-nums text-white/45">
+        {finding.subjectId}
+      </p>
+      <p className="mt-0.5 text-[11px] text-white/70">{finding.summary}</p>
+      <p className="text-[10.5px] text-white/55">{finding.reason}</p>
+      <p className="mt-0.5 truncate text-[10px] text-white/45">Source · {finding.source}</p>
+      <div className="mt-1.5 flex gap-1">
+        {onOpen ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-6 border border-white/15 px-2 text-[10.5px] text-white/90 hover:bg-white/10 hover:text-white"
+            onClick={() => onOpen(finding)}
+          >
+            Open evidence
+          </Button>
+        ) : null}
+        {onLink ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-6 px-2 text-[10.5px] text-white/70 hover:bg-white/10 hover:text-white"
+            onClick={() => onLink(finding)}
+          >
+            Add to case
           </Button>
         ) : null}
       </div>
