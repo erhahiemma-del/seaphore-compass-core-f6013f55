@@ -75,7 +75,16 @@ export type CopilotAction =
    * officer named. Read-only: it assesses and reports, and changes
    * nothing about the map or the fleet.
    */
-  | { readonly type: "SHOW_APPROACHING_VESSELS"; readonly thresholdHours: number };
+  | { readonly type: "SHOW_APPROACHING_VESSELS"; readonly thresholdHours: number }
+  /*
+   * Sanctions screening, through the one canonical screening service.
+   *
+   * Running a screen writes an evidentiary record and consumes provider
+   * quota, so it is state-changing. Reading what a previous screen found
+   * is not — it opens the drawer panel that already holds the history.
+   */
+  | { readonly type: "SCREEN_VESSEL"; readonly imo: string; readonly vesselName?: string }
+  | { readonly type: "SHOW_SANCTIONS_RESULT"; readonly imo: string };
 
 /**
  * Whether an action changes something an officer would have to undo.
@@ -98,7 +107,14 @@ export function isStateChanging(action: CopilotAction): boolean {
     case "SHOW_VESSEL_TRACK":
     case "SHOW_VESSEL_INTELLIGENCE":
     case "SHOW_APPROACHING_VESSELS":
+    case "SHOW_SANCTIONS_RESULT":
       return false;
+    case "SCREEN_VESSEL":
+      /*
+       * Writes a screening record against the officer's name, consumes
+       * provider quota, and produces evidence that outlives the session.
+       */
+      return true;
     case "OPEN_INVESTIGATION":
       /*
        * Creates a case record with the officer's name on it. Nothing
@@ -175,6 +191,15 @@ export interface ActionExecutionOptions {
    * that honestly instead of appearing to open one.
    */
   readonly openInvestigation?: (imo: string) => void;
+  /**
+   * How to run a sanctions screen, supplied by the surface that holds the
+   * screening panel.
+   *
+   * Injected for the same reason as `openInvestigation`: the dispatcher
+   * must not acquire a second screening path, and a surface without one
+   * says so rather than implying a screen was run.
+   */
+  readonly requestSanctionsScreening?: (imo: string) => void;
 }
 
 /**
@@ -369,6 +394,50 @@ export function executeCopilotAction(
       return {
         ok: true,
         summary: `Requested an investigation for ${action.vesselName ?? action.imo}.`,
+      };
+    }
+
+    case "SHOW_SANCTIONS_RESULT": {
+      /*
+       * Opening the drawer is the whole answer: the screening panel there
+       * reads the persisted history through the canonical service. Fetching
+       * it here would be a second read path that could disagree with what
+       * the officer sees.
+       */
+      if (options.knownImos && !options.knownImos.includes(action.imo)) {
+        return {
+          ok: false,
+          summary: "That vessel is not in the current picture.",
+          reason: "No vessel with that identifier is held by the connected source.",
+        };
+      }
+      service.select({ kind: "vessel", id: action.imo, imo: action.imo });
+      return {
+        ok: true,
+        summary: `Opened the sanctions screening record for ${action.imo}.`,
+      };
+    }
+
+    case "SCREEN_VESSEL": {
+      /*
+       * Confirmed only, via `isStateChanging`. Reports the request, not a
+       * result — the outcome belongs to the screening service, and
+       * claiming "no match" here before the provider answered would be
+       * the exact failure this sprint exists to prevent.
+       */
+      const screener = options.requestSanctionsScreening;
+      if (!screener) {
+        return {
+          ok: false,
+          summary: "I cannot run a sanctions screen from here.",
+          reason: "No screening surface is connected to this view.",
+        };
+      }
+      service.select({ kind: "vessel", id: action.imo, imo: action.imo });
+      screener(action.imo);
+      return {
+        ok: true,
+        summary: `Requested a sanctions screen for ${action.vesselName ?? action.imo}. The result and its confidence will appear in the vessel drawer.`,
       };
     }
   }
