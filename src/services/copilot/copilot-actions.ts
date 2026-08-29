@@ -107,7 +107,14 @@ export function isStateChanging(action: CopilotAction): boolean {
     case "SHOW_VESSEL_TRACK":
     case "SHOW_VESSEL_INTELLIGENCE":
     case "SHOW_APPROACHING_VESSELS":
+    case "SHOW_SANCTIONS_RESULT":
       return false;
+    case "SCREEN_VESSEL":
+      /*
+       * Writes a screening record against the officer's name, consumes
+       * provider quota, and produces evidence that outlives the session.
+       */
+      return true;
     case "OPEN_INVESTIGATION":
       /*
        * Creates a case record with the officer's name on it. Nothing
