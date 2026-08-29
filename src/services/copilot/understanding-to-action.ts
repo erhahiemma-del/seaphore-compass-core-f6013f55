@@ -283,6 +283,52 @@ function investigation(input: TranslationInput): Translation {
   };
 }
 
+/**
+ * Sanctions screening, about the vessel already under discussion.
+ *
+ * Like `investigation`, it refuses to resolve a hull from the sentence:
+ * screening the wrong vessel writes an evidentiary record against the
+ * wrong name. Only sanctions wording is treated as actionable — the rest
+ * of compliance remains a question for retrieval to answer.
+ */
+function sanctions(input: TranslationInput): Translation {
+  const said = input.text;
+  if (!/\b(sanction|sanctions|screen|screening|screened|watchlist|ofac)\b/i.test(said)) {
+    return { kind: "NOT_ACTIONABLE" };
+  }
+
+  const isRequest = /\b(screen|run|re-?screen|check against)\b/i.test(said);
+  const isQuestion =
+    /\b(has|have|was|were|what|show|did|when)\b/i.test(said) && !/^screen\b/i.test(said.trim());
+
+  if (!input.contextVesselImo) {
+    return {
+      kind: "UNRESOLVED",
+      speech: "Which vessel should I screen? Select it first.",
+    };
+  }
+  const name = input.contextVesselName ?? input.contextVesselImo;
+
+  if (isRequest && !isQuestion) {
+    return {
+      kind: "ACTION",
+      action: { type: "SCREEN_VESSEL", imo: input.contextVesselImo, vesselName: name },
+      /*
+       * Promises a screen, never an outcome. Saying anything about what
+       * the lists contain before the provider answered is exactly the
+       * failure the screening states exist to prevent.
+       */
+      speech: `Screening ${name} against the sanctions lists. I will show the result and its confidence, not a verdict.`,
+    };
+  }
+
+  return {
+    kind: "ACTION",
+    action: { type: "SHOW_SANCTIONS_RESULT", imo: input.contextVesselImo },
+    speech: `Opening the sanctions screening record for ${name}.`,
+  };
+}
+
 function speechFor(then: "SELECT_VESSEL" | "SHOW_VESSEL_TRACK", name: string): string {
   /*
    * Never "tracked", "observed" or "verified". Whether the history is
