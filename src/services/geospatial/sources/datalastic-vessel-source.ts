@@ -221,6 +221,14 @@ export class DatalasticVesselSource implements DescribableVesselSource {
   private readonly requestBudget: number | undefined;
   /** The last coverage pass, for diagnostics. Null before the first. */
   private lastCoverage: CoverageResult | null = null;
+  /**
+   * When each zone was last queried.
+   *
+   * Held here so the engine stays pure, and so a zone's cadence survives
+   * across polls — without it the map's sixty-second refresh re-billed
+   * every zone every minute regardless of what the zone asked for.
+   */
+  private readonly zoneLastRun = new Map<string, number>();
 
   private status: SourceStatus = "not-queried";
   private message: string | null = "Not yet queried.";
@@ -328,7 +336,11 @@ export class DatalasticVesselSource implements DescribableVesselSource {
       zones: this.zones,
       requestBudget: this.requestBudget,
       now: this.now,
+      lastRunAt: this.zoneLastRun,
       fetchZone: async (zone) => {
+        // Stamped before the call, so a failed zone still waits its
+        // interval rather than being retried on every poll.
+        this.zoneLastRun.set(zone.id, this.now());
         this.counters.requests += 1;
         const result = await this.gateway.areaTraffic({
           lat: zone.lat,

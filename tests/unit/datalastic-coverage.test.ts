@@ -281,3 +281,69 @@ describe("cost telemetry", () => {
     expect(report.totalRequestCost).toBeNull();
   });
 });
+
+describe("cadence is the main cost control", () => {
+  /*
+   * The incident this locks: the engine ignored refreshIntervalMs and
+   * queried every zone on every pass, so the map's sixty-second poll
+   * re-billed the whole coast every minute. At 1,374 vessels per pass,
+   * billed per vessel found, that exhausted a 20,000-request allowance
+   * in about thirteen minutes of the map being open.
+   */
+  it("skips a zone that was refreshed inside its own interval", async () => {
+    let calls = 0;
+    const report = await runCoveragePass({
+      zones: [zone("apapa", { refreshIntervalMs: 180_000 })],
+      lastRunAt: new Map([["apapa", 1_000_000 - 60_000]]),
+      now: () => 1_000_000,
+      fetchZone: async () => {
+        calls += 1;
+        return ok([vessel({ imo: "A" })]);
+      },
+    });
+
+    expect(calls).toBe(0);
+    expect(report.requestsMade).toBe(0);
+    expect(report.zones[0].outcome).toBe("SKIPPED_INTERVAL");
+    // Not due is not failed: an empty pass here is not an empty sea.
+    expect(report.anyZoneSucceeded).toBe(true);
+  });
+
+  it("queries a zone once its interval has elapsed", async () => {
+    let calls = 0;
+    const report = await runCoveragePass({
+      zones: [zone("apapa", { refreshIntervalMs: 180_000 })],
+      lastRunAt: new Map([["apapa", 1_000_000 - 200_000]]),
+      now: () => 1_000_000,
+      fetchZone: async () => {
+        calls += 1;
+        return ok([vessel({ imo: "A" })]);
+      },
+    });
+
+    expect(calls).toBe(1);
+    expect(report.zones[0].outcome).toBe("OK");
+  });
+
+  it("always queries a zone that has never run", async () => {
+    const report = await runCoveragePass({
+      zones: [zone("fresh", { refreshIntervalMs: 900_000 })],
+      lastRunAt: new Map(),
+      fetchZone: async () => ok([vessel({ imo: "A" })]),
+    });
+
+    expect(report.requestsMade).toBe(1);
+  });
+
+  it("says why a zone was skipped rather than omitting it", async () => {
+    const report = await runCoveragePass({
+      zones: [zone("apapa", { refreshIntervalMs: 300_000 })],
+      lastRunAt: new Map([["apapa", 1_000_000 - 1_000]]),
+      now: () => 1_000_000,
+      fetchZone: async () => ok([]),
+    });
+
+    // Silence about a zone reads as coverage that failed.
+    expect(report.zones[0].message).toContain("interval");
+  });
+});

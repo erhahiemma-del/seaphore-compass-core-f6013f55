@@ -21,6 +21,16 @@
  * with the failures named — because "we could not read Calabar" and
  * "Calabar is empty" are different facts and only one of them is calm.
  *
+ * ## Cadence is the main cost control, and it is enforced here
+ *
+ * Every zone declares how often it is worth re-reading — a berth changes
+ * minute to minute, an offshore corridor does not. The engine used to
+ * ignore that and query every zone on every pass, so the map's
+ * sixty-second poll re-billed the entire coast every minute. Measured:
+ * 1,374 vessels per pass, billed per vessel found, which exhausted a
+ * 20,000-request allowance in roughly thirteen minutes of the map simply
+ * being open. A zone is now skipped until its own interval has elapsed.
+ *
  * ## Spending is bounded before it happens
  *
  * Requests cost credits whether or not anyone is looking. The budget is
@@ -48,7 +58,15 @@ export type ZoneOutcome =
   | "INVALID_REQUEST"
   | "NOT_CONFIGURED"
   /** Dropped before it ran, because the budget did not reach it. */
-  | "SKIPPED_BUDGET";
+  | "SKIPPED_BUDGET"
+  /**
+   * Not due yet.
+   *
+   * Reported rather than omitted: a zone absent from the table reads as
+   * coverage that failed, and this one simply has a fresher answer than
+   * the interval calls for.
+   */
+  | "SKIPPED_INTERVAL";
 
 export interface ZoneReport {
   readonly zoneId: string;
@@ -97,6 +115,14 @@ export interface RunCoverageOptions {
   readonly requestBudget?: number;
   readonly fetchZone: (zone: CoverageZone) => Promise<ZoneFetchResult>;
   readonly now?: () => number;
+  /**
+   * When each zone was last queried, by id.
+   *
+   * Supplied by the caller so the engine stays pure and a test can drive
+   * cadence without waiting. A zone absent from the map has never run
+   * and is always due.
+   */
+  readonly lastRunAt?: ReadonlyMap<string, number>;
 }
 
 /**
@@ -145,6 +171,18 @@ export async function runCoveragePass(options: RunCoverageOptions): Promise<Cove
     options.requestBudget == null ? ordered : zonesWithinBudget(ordered, options.requestBudget);
   const skipped = ordered.slice(affordable.length);
 
+  /*
+   * Due zones only. This is the difference between re-billing the whole
+   * coast every minute and re-reading each part of it as often as it
+   * actually changes.
+   */
+  const lastRun = options.lastRunAt ?? new Map<string, number>();
+  const due = affordable.filter((zone) => {
+    const previous = lastRun.get(zone.id);
+    return previous === undefined || started - previous >= zone.refreshIntervalMs;
+  });
+  const notDue = affordable.filter((zone) => !due.includes(zone));
+
   const byIdentity = new Map<string, Vessel>();
   const reports: ZoneReport[] = [];
   let totalRaw = 0;
@@ -152,7 +190,7 @@ export async function runCoveragePass(options: RunCoverageOptions): Promise<Cove
   let costSeen = false;
   let totalCost = 0;
 
-  for (const zone of affordable) {
+  for (const zone of due) {
     const result = await fetchZone(zone);
     requestsMade += 1;
     totalRaw += result.vessels.length;
@@ -192,6 +230,20 @@ export async function runCoveragePass(options: RunCoverageOptions): Promise<Cove
     });
   }
 
+  for (const zone of notDue) {
+    reports.push({
+      zoneId: zone.id,
+      zoneName: zone.name,
+      outcome: "SKIPPED_INTERVAL",
+      raw: 0,
+      unique: 0,
+      latencyMs: null,
+      requestCost: null,
+      retrievedAt: null,
+      message: `Not queried: refreshed within its ${Math.round(zone.refreshIntervalMs / 60_000)}-minute interval.`,
+    });
+  }
+
   for (const zone of skipped) {
     reports.push({
       zoneId: zone.id,
@@ -220,8 +272,15 @@ export async function runCoveragePass(options: RunCoverageOptions): Promise<Cove
      * vessels". A pass where every zone failed returns an empty fleet
      * that must never be presented as an empty sea.
      */
+    /*
+     * A pass where every zone was merely not due has not failed, and an
+     * empty fleet from it must not read as an empty sea.
+     */
     anyZoneSucceeded: reports.some(
-      (report) => report.outcome === "OK" || report.outcome === "NO_RECORD",
+      (report) =>
+        report.outcome === "OK" ||
+        report.outcome === "NO_RECORD" ||
+        report.outcome === "SKIPPED_INTERVAL",
     ),
     startedAt: new Date(started).toISOString(),
     durationMs: now() - started,
