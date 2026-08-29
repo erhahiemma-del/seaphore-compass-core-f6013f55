@@ -114,8 +114,14 @@ const SENTINEL2_FEATURE: CdseStacFeature = {
 
 const QUERY: AcquisitionQuery = { text: "Apapa anchorage" };
 
+/*
+ * `sentinel-1-grd`, not `SENTINEL-1`. This fixture used to name a
+ * collection CDSE does not have, and the assertion below agreed with it,
+ * so the pair proved only that the provider was internally consistent
+ * about a request the catalogue always rejected.
+ */
 const COORD_QUERY: AcquisitionQuery = {
-  text: "lat=6.45,lon=3.38 collection=SENTINEL-1",
+  text: "lat=6.45,lon=3.38 collection=sentinel-1-grd",
 };
 
 // ── 1. Authentication ─────────────────────────────────────────────────
@@ -347,7 +353,49 @@ describe("EP-COPERNICUS-01 · Search", () => {
     // Bounding box should be around lat=6.45, lon=3.38
     expect(body.bbox).toBeDefined();
     expect(body.bbox![0]).toBeCloseTo(3.33, 1);
-    expect(body.collections).toEqual(["SENTINEL-1"]);
+    expect(body.collections).toEqual(["sentinel-1-grd"]);
+  });
+
+  /*
+   * The failure that made every default query useless.
+   *
+   * CDSE refuses a search that carries no `collections` — it is not a
+   * broader search, it is a 400. The provider only set the key when the
+   * query text spelled a mission out, so "Apapa anchorage", a port entity
+   * and a bare bounding box all failed, and the whole capability was dead
+   * for anything an officer would actually type.
+   */
+  it("always names a collection, even when the query does not", async () => {
+    const bodies: unknown[] = [];
+    const capturingFetch = (async (url: RequestInfo | URL, init?: RequestInit) => {
+      const u = String(url);
+      if (u.includes("openid-connect/token")) {
+        return new Response(JSON.stringify({ access_token: "tok", expires_in: 600 }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      if (u.includes("/search")) bodies.push(JSON.parse((init?.body as string) ?? "{}"));
+      return new Response(
+        JSON.stringify({ type: "FeatureCollection", features: [SENTINEL1_FEATURE] }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }) as unknown as typeof fetch;
+
+    const provider = new CopernicusProvider({
+      cache: new EvidenceCache(),
+      fetchImpl: capturingFetch,
+      username: "u@test.com",
+      password: "p",
+    });
+
+    await provider.search({ text: "Apapa anchorage" });
+
+    const body = bodies[0] as { collections?: string[] };
+    expect(body.collections).toBeDefined();
+    expect(body.collections!.length).toBeGreaterThan(0);
+    // SAR leads: it sees through Gulf of Guinea cloud, and at night.
+    expect(body.collections).toContain("sentinel-1-grd");
   });
 
   it("serves second identical query from the frozen EvidenceCache", async () => {

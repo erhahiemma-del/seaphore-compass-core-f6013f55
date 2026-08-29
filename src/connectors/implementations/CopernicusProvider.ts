@@ -61,11 +61,57 @@ import { readProviderCredential, timedFetch, type ProviderOptions } from "./shar
 const TOKEN_ENDPOINT =
   "https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token";
 
+/*
+ * The STAC API host.
+ *
+ * `stac.dataspace.copernicus.eu/v1` is the same API and answers these
+ * searches identically; this one is the documented entry point, so it
+ * stays.
+ */
+const STAC_HOST = "https://catalogue.dataspace.copernicus.eu/stac/v1";
+
 /** STAC API search endpoint. */
-const STAC_SEARCH = "https://catalogue.dataspace.copernicus.eu/stac/v1/search";
+const STAC_SEARCH = `${STAC_HOST}/search`;
 
 /** Health probe: STAC root (no auth required). */
-const STAC_ROOT = "https://catalogue.dataspace.copernicus.eu/stac/v1";
+const STAC_ROOT = STAC_HOST;
+
+/*
+ * Collection identifiers, as CDSE actually names them.
+ *
+ * There is no `SENTINEL-1` collection; the catalogue is split by product
+ * level, and the names are lower-case. Asking for the mission alone is
+ * rejected as a collection that does not exist — which is what this
+ * provider did, so every search it made was refused. The offline suite
+ * could not see it: it mocks `fetch`, and asserted the same non-existent
+ * identifiers the provider was sending.
+ *
+ * GRD is the Sentinel-1 level that matters for vessel detection — the
+ * detected, ground-projected backscatter a ship shows up in — and L2A is
+ * the atmospherically corrected optical counterpart. SAR leads because it
+ * sees through the cloud that covers the Gulf of Guinea for much of the
+ * year, and at night.
+ */
+const SENTINEL1_GRD = "sentinel-1-grd";
+const SENTINEL2_L2A = "sentinel-2-l2a";
+
+/**
+ * What to search when the query names no collection.
+ *
+ * A search with no `collections` is refused outright by CDSE, so there is
+ * no such thing as an unfiltered default here — omitting it does not
+ * broaden the search, it fails it.
+ */
+const DEFAULT_COLLECTIONS = [SENTINEL1_GRD, SENTINEL2_L2A];
+
+/**
+ * Mission shorthand an officer or a query may use, mapped to the
+ * collection that actually answers it.
+ */
+const MISSION_COLLECTIONS: Record<string, string> = {
+  "1": SENTINEL1_GRD,
+  "2": SENTINEL2_L2A,
+};
 
 const CONNECT_TIMEOUT_MS = 8_000;
 const SEARCH_TIMEOUT_MS = 12_000;
@@ -409,13 +455,23 @@ export class CopernicusProvider extends BaseEvidenceProvider {
       }
     }
 
-    // Collection filter: "collection=SENTINEL-2" or entity label
-    const colExplicit = /collection[=:]([A-Z0-9_-]+)/i.exec(text);
-    const colSentinel = /sentinel[-_]?([12])/i.exec(text);
+    /*
+     * Collection filter: "collection=sentinel-2-l2a" or a mission named
+     * in the text. Always resolves to something — CDSE rejects a search
+     * carrying no collections, so leaving it unset is not a wider search
+     * but a guaranteed failure, which is precisely what used to happen to
+     * every query that did not spell a mission out.
+     */
+    const colExplicit = /collection[=:]([A-Za-z0-9_-]+)/i.exec(text);
+    const colSentinel = /sentinel[-_\s]?([12])/i.exec(text);
     if (colExplicit) {
-      body.collections = [colExplicit[1].toUpperCase()];
+      // Taken as given: the catalogue holds far more than the two
+      // Sentinel missions, and an explicit identifier is a deliberate ask.
+      body.collections = [colExplicit[1].toLowerCase()];
     } else if (colSentinel) {
-      body.collections = [`SENTINEL-${colSentinel[1]}`];
+      body.collections = [MISSION_COLLECTIONS[colSentinel[1]]];
+    } else {
+      body.collections = DEFAULT_COLLECTIONS;
     }
 
     // Date range: "from=2026-07-01,to=2026-07-27"
@@ -538,7 +594,8 @@ export class CopernicusProvider extends BaseEvidenceProvider {
     const platform =
       props.platform ??
       props.constellation ??
-      (collection.startsWith("SENTINEL") ? collection : "Copernicus");
+      // Case-insensitive: CDSE names its collections in lower case.
+      (/^sentinel/i.test(collection) ? collection : "Copernicus");
 
     const instruments = Array.isArray(props.instruments)
       ? (props.instruments as string[]).join(", ")
