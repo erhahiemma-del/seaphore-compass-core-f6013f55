@@ -250,6 +250,11 @@ export function useVoiceCommand(
             fleet: options.fleet,
             boundaryRing: eezRingIfLoaded() ?? undefined,
             openInvestigation: options.openInvestigation,
+            /*
+             * Screening runs in the drawer panel that owns the canonical
+             * call; the voice path only asks for it.
+             */
+            requestSanctionsScreening: requestVesselScreening,
           });
           /*
            * The spoken line reports what happened, not what was
