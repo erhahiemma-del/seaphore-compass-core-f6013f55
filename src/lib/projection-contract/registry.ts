@@ -1671,6 +1671,66 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: "2026-08-29",
   },
+  {
+    id: "findings.attention-projection",
+    name: "Intelligence finding projection",
+    producer: "CAPABILITY",
+    description:
+      "Provider-neutral presentation projection of arrival and sanctions records into one attention list. Owns no rules and never writes back into a domain.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Attention Centre · Intelligence findings",
+      location: "src/features/maritime/AttentionCentre.tsx",
+      component: "src/services/findings/finding.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-08-30",
+  },
+  {
+    id: "findings.sanctions-indicator",
+    name: "Vessel sanctions indicator",
+    producer: "CAPABILITY",
+    description:
+      "Subtle per-vessel indicator: Not screened / Review required / Match confirmed / Dismissed / No match / Screening unavailable. Never labels a vessel sanctioned.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Vessel intelligence · sanctions indicator chip",
+      location: "src/components/sanctions/SanctionsIndicator.tsx",
+      component: "src/lib/sanctions/indicator.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-08-30",
+  },
+  {
+    id: "findings.case-linkage",
+    name: "Finding to investigation linkage",
+    producer: "CAPABILITY",
+    description:
+      "Append-only officer linkage of a finding to an investigation case, carrying subject type/id and the stored evidence reference as typed columns.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Attention Centre and vessel sanctions panel · Add to case",
+      location: "src/features/maritime/MaritimeCommand.tsx",
+      component: "src/lib/server/findings-store.server.ts",
+      interaction: "action",
+    },
+    reviewedAt: "2026-08-30",
+  },
+  {
+    id: "findings.corroboration",
+    name: "Finding source corroboration",
+    producer: "CAPABILITY",
+    description:
+      "Cross-source agreement level for a claim: uncorroborated, single source, corroborated, or an explicitly reported source conflict.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Intelligence findings · corroboration label",
+      location: "src/services/findings/corroboration.ts",
+      component: "src/services/findings/corroboration.ts",
+      interaction: "inline",
+    },
+    reviewedAt: "2026-08-30",
+  },
 ];
 
 export function getContractEntry(id: string): ProjectionContractEntry | undefined {
