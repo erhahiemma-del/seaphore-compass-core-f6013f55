@@ -58,6 +58,12 @@ export interface SanctionsScreeningPanelProps {
 
 type Phase = "idle" | "loading" | "screening" | "error";
 
+import { toast } from "sonner";
+
+import { SanctionsIndicator } from "./SanctionsIndicator";
+import { indicatorFor } from "@/lib/sanctions/indicator";
+import { openInvestigationForFinding } from "@/lib/findings.functions";
+
 const TONE: Record<SanctionsMatchState, string> = {
   NOT_SCREENED: "border-border/60 bg-muted/20 text-muted-foreground",
   NO_MATCH: "border-border/60 bg-muted/20 text-foreground",
@@ -156,16 +162,71 @@ export function SanctionsScreeningPanel({
     [current],
   );
 
+  /*
+   * Finding → case linkage. The screening record id travels as the
+   * evidence reference, so the case points at stored evidence rather
+   * than at a sentence describing it.
+   */
+  const addToCase = useCallback(
+    async (record: SanctionsScreeningRecord) => {
+      try {
+        const result = await openInvestigationForFinding({
+          data: {
+            findingId: `sanctions:${record.id}`,
+            findingType: "SANCTIONS_SCREENING",
+            subjectType: "vessel",
+            subjectId: record.subjectImo ?? record.subjectName,
+            subjectLabel: record.subjectName,
+            source: record.provider,
+            sourceRecordId: record.id,
+            summary: `Sanctions screening state ${effectiveState(record)}`,
+            evidenceRef: `sanctions_screenings:${record.id}`,
+          },
+        });
+        toast.success(
+          result.created
+            ? `Case ${result.caseNumber} opened from this screening.`
+            : `Screening attached to case ${result.caseNumber}.`,
+        );
+      } catch (cause) {
+        toast.error(
+          cause instanceof Error
+            ? `Could not attach this screening to a case: ${cause.message}`
+            : "Could not attach this screening to a case.",
+        );
+      }
+    },
+    [],
+  );
+
   return (
     <section
       data-testid="sanctions-screening-panel"
       className="rounded-md border border-border/60 bg-card p-3"
     >
       <header className="flex items-start justify-between gap-2">
-        <h3 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Sanctions screening
-        </h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Sanctions screening
+          </h3>
+          {/* The same four words every other surface uses for this hull. */}
+          <SanctionsIndicator state={indicatorFor(history)} />
+        </div>
         <div className="flex items-center gap-1.5">
+          {/*
+            Attaching evidence to a case is an officer action and is only
+            offered once there is a real screening record to attach.
+          */}
+          {current ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 px-2 text-[10.5px]"
+              onClick={() => void addToCase(current)}
+            >
+              Add to case
+            </Button>
+          ) : null}
           <Button
             size="sm"
             variant="outline"
