@@ -11,6 +11,8 @@
  * Confidence: 0.9 · VERIFIED.
  * ─────────────────────────────────────────────────────────────────────
  */
+import { readProviderCredential } from "@/connectors/implementations/shared/provider-io";
+
 import type {
   ConnectorInterface,
   GraphEdge,
@@ -119,7 +121,9 @@ const SEED: ChRaw[] = [
 ];
 
 function authHeader(): string | null {
-  const key = process.env.COMPANIES_HOUSE_API_KEY;
+  // Via the audited reader, so alias resolution and the credential guard
+  // both apply here as they do to every other provider.
+  const key = readProviderCredential("COMPANIES_HOUSE_API_KEY");
   if (!key) return null;
   // Companies House uses HTTP Basic with the API key as username, empty password.
   const token =

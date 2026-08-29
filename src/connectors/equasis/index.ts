@@ -25,6 +25,7 @@ import type {
   RawRecord,
   SeaphoreRecord,
 } from "@/lib/osint/types";
+import { readProviderCredential } from "@/connectors/implementations/shared/provider-io";
 import { AuthError, NetworkError } from "@/lib/osint/errors";
 
 async function runSharedIngestionPipeline(
@@ -154,8 +155,14 @@ export class EquasisConnector implements ConnectorInterface {
 
   // ── SECTION 2: AUTHENTICATION ────────────────────────────────────
   private readCredentials(): { email: string; password: string } | null {
-    const email = process.env.EQUASIS_EMAIL;
-    const password = process.env.EQUASIS_PASSWORD;
+    /*
+     * Through the audited reader rather than `process.env` directly:
+     * that is the one path which resolves the historical aliases these
+     * secrets are sometimes stored under, and the one the credential
+     * guard knows how to check.
+     */
+    const email = readProviderCredential("EQUASIS_EMAIL");
+    const password = readProviderCredential("EQUASIS_PASSWORD");
     if (!email || !password) return null;
     return { email, password };
   }

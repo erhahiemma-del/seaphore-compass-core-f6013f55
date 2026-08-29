@@ -48,14 +48,28 @@ export function credentialCandidates(name: string): ReadonlyArray<string> {
   return [name, ...(CREDENTIAL_ALIASES[name] ?? [])];
 }
 
+/**
+ * Read a credential from the server environment. Server only.
+ *
+ * This used to fall back to `import.meta.env["VITE_" + name]`, which was a
+ * standing invitation to fix a "Credentials Missing" report by adding a
+ * `VITE_` variable — and Vite inlines those into the client bundle, so the
+ * fix would have shipped the secret to every browser. Nothing exercised
+ * the path, which is exactly why it survived review: it was a loaded gun
+ * rather than a bleeding wound.
+ *
+ * There is no allowlist because no provider credential here is
+ * browser-safe. Every one authenticates Seaphore itself to a metered or
+ * privileged upstream, so a browser copy is a usable copy for anyone who
+ * opens devtools. A genuinely public key — a basemap style URL, Supabase's
+ * publishable key — is not a provider credential and does not come through
+ * this function.
+ */
 function readEnvValue(name: string): string | null {
   try {
     const fromProcess =
       typeof process !== "undefined" && process.env ? process.env[name] : undefined;
-    if (fromProcess) return String(fromProcess);
-    const env = (import.meta as unknown as { env?: Record<string, string> }).env;
-    const viteValue = env?.[`VITE_${name}`] ?? env?.[name];
-    return viteValue ? String(viteValue) : null;
+    return fromProcess ? String(fromProcess) : null;
   } catch {
     return null;
   }
