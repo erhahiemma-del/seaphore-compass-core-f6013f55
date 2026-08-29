@@ -124,6 +124,18 @@ export function SanctionsScreeningPanel({
     if (autoScreen && phase === "idle" && history.length === 0) void screen();
   }, [autoScreen, history.length, phase, screen]);
 
+  /*
+   * A Copilot or voice request for THIS hull runs the same screen the
+   * button runs. Addressed by IMO and consumed once, so a request cannot
+   * follow the officer onto the next vessel they open.
+   */
+  useEffect(() => {
+    if (consumeScreeningRequest(subjectImo)) void screen();
+    return onScreeningRequested((imo) => {
+      if (imo === subjectImo && consumeScreeningRequest(imo)) void screen();
+    });
+  }, [screen, subjectImo]);
+
   const confirmedCandidateIds = useMemo(
     () =>
       new Set(
