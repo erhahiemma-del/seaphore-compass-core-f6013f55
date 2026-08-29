@@ -61,6 +61,11 @@ import { TimelineBar } from "./TimelineBar";
 import { replayPresentation } from "./replay-presentation";
 import { displayOwner, replayOwnsDisplay, DISPLAY_OWNER_LABEL } from "./replay-ownership";
 import { useArrivalAlerts } from "./useArrivalAlerts";
+import { toast } from "sonner";
+
+import { useIntelligenceFindings } from "./useIntelligenceFindings";
+import { openInvestigationForFinding } from "@/lib/findings.functions";
+import type { IntelligenceFinding } from "@/services/findings/finding";
 import { AttentionCentre } from "./AttentionCentre";
 import { framingCentreFor } from "./selected-vessel-framing";
 import { useVesselTrack } from "./useVesselTrack";
@@ -298,6 +303,57 @@ export function MaritimeCommand() {
     sgs.select({ kind: "vessel", id: imo, imo });
   }, []);
 
+  /*
+   * Findings from the other intelligence domains, read from what they
+   * already stored. Nothing is screened here and no provider is called.
+   */
+  const findings = useIntelligenceFindings();
+
+  /*
+   * A finding leads to the same canonical context as everything else.
+   * Only vessel subjects can be selected on the map; any other subject
+   * is left to its own surface rather than mapped to a hull we do not have.
+   */
+  const openFinding = useCallback((finding: IntelligenceFinding) => {
+    if (finding.subjectType !== "vessel") return;
+    sgs.select({ kind: "vessel", id: finding.subjectId, imo: finding.subjectId });
+  }, []);
+
+  /*
+   * The officer attaches a finding to a case. The subject and evidence
+   * reference travel as typed fields, so the case carries a real
+   * relationship rather than an IMO buried in a description.
+   */
+  const linkFinding = useCallback(async (finding: IntelligenceFinding) => {
+    try {
+      const result = await openInvestigationForFinding({
+        data: {
+          findingId: finding.id,
+          findingType: finding.findingType,
+          subjectType: finding.subjectType,
+          subjectId: finding.subjectId,
+          subjectLabel: finding.subjectLabel,
+          source: finding.source,
+          sourceRecordId: finding.sourceRecordId ?? undefined,
+          summary: finding.summary,
+          evidenceRef: finding.evidenceRef ?? undefined,
+        },
+      });
+      toast.success(
+        result.created
+          ? `Case ${result.caseNumber} opened from this finding.`
+          : `Finding attached to case ${result.caseNumber}.`,
+      );
+    } catch (error) {
+      // A failed link is reported, never presented as done.
+      toast.error(
+        error instanceof Error
+          ? `Could not attach this finding to a case: ${error.message}`
+          : "Could not attach this finding to a case.",
+      );
+    }
+  }, []);
+
   const acknowledgeAlert = useCallback(
     async (alertId: string) => {
       const alert = await alerts.repository.getAlert(alertId);
@@ -533,6 +589,10 @@ export function MaritimeCommand() {
             durable={alerts.durable}
             onView={viewAlertVessel}
             onAcknowledge={acknowledgeAlert}
+            findings={findings.findings}
+            onOpenFinding={openFinding}
+            onLinkFinding={linkFinding}
+            findingsUnavailableReason={findings.unavailableReason}
           />
 
           <OperatingModeBar />
