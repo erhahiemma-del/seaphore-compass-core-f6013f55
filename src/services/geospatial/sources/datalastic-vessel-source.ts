@@ -45,6 +45,13 @@ import type {
 } from "@/connectors/datalastic/types";
 
 import { NIGERIA_EEZ_BBOX } from "../constants";
+import { NIGERIA_COVERAGE_ZONES, type CoverageZone } from "./datalastic-coverage-zones";
+import {
+  fleetIdentity,
+  runCoveragePass,
+  type CoverageResult,
+  type ZoneOutcome,
+} from "./datalastic-coverage";
 import { validateBatch, type ValidationSummary } from "../validation";
 import type { VesselType } from "../types";
 import type { Vessel } from "../vessel";
@@ -94,6 +101,15 @@ export interface DatalasticVesselSourceOptions {
   readonly now?: () => number;
   /** Switched on when no officer preference is stored. Defaults to true. */
   readonly defaultEnabled?: boolean;
+  /** Coverage zones. Defaults to the Nigerian set. */
+  readonly zones?: readonly CoverageZone[];
+  /**
+   * Maximum provider requests one coverage pass may make.
+   *
+   * Absent means every enabled zone runs. Present, the low-priority
+   * zones are dropped whole rather than every zone being thinned.
+   */
+  readonly requestBudget?: number;
 }
 
 /** Provider vessel-type strings mapped to Seaphore's canonical families. */
@@ -201,6 +217,10 @@ export class DatalasticVesselSource implements DescribableVesselSource {
   private readonly defaultBbox: readonly [number, number, number, number];
   private readonly now: () => number;
   private readonly defaultEnabled: boolean;
+  private readonly zones: readonly CoverageZone[];
+  private readonly requestBudget: number | undefined;
+  /** The last coverage pass, for diagnostics. Null before the first. */
+  private lastCoverage: CoverageResult | null = null;
 
   private status: SourceStatus = "not-queried";
   private message: string | null = "Not yet queried.";
@@ -224,6 +244,8 @@ export class DatalasticVesselSource implements DescribableVesselSource {
     ];
     this.now = options.now ?? (() => Date.now());
     this.defaultEnabled = options.defaultEnabled ?? true;
+    this.zones = options.zones ?? NIGERIA_COVERAGE_ZONES;
+    this.requestBudget = options.requestBudget;
   }
 
   // ── VesselSource ────────────────────────────────────────────────────
@@ -233,28 +255,191 @@ export class DatalasticVesselSource implements DescribableVesselSource {
    * list plus a status the Sources panel explains, which is a different
    * statement from an empty sea.
    */
-  async list(query?: VesselQuery): Promise<readonly Vessel[]> {
-    const bbox = query?.bbox ?? this.defaultBbox;
-    const circle = circleForBbox(bbox);
-    this.counters.requests += 1;
+  /**
+   * The provider's outcome vocabulary, in the coverage engine's terms.
+   *
+   * Kept as a translation rather than a reuse: the engine reports what
+   * happened to a *zone*, and a zone can be skipped for budget, which is
+   * not a provider state at all.
+   */
+  private static outcomeFor(status: DatalasticStatus): ZoneOutcome {
+    switch (status) {
+      case "ok":
+        return "OK";
+      case "empty":
+        return "NO_RECORD";
+      case "credentials-missing":
+        return "NOT_CONFIGURED";
+      case "rate-limited":
+        return "RATE_LIMITED";
+      case "subscription-inactive":
+        return "CREDIT_LIMIT";
+      case "request-rejected":
+        return "INVALID_REQUEST";
+      case "unauthorized":
+      case "unavailable":
+        return "PROVIDER_FAILURE";
+    }
+  }
 
+  /** One circle, for a caller who asked for a specific area. */
+  private async singleCircle(circle: { lat: number; lon: number; radiusKm: number }) {
+    this.counters.requests += 1;
     const result = await this.gateway.areaTraffic(circle);
     this.status = sourceStatusForDatalastic(result.status);
     this.message = result.message;
     this.lastCheckedAt = result.retrievedAt;
     this.lastLatencyMs = result.latencyMs;
     this.cacheState = result.cached ? "hit" : "miss";
+    const ok = result.status === "ok" || result.status === "empty";
+    if (!ok) this.counters.failures += 1;
+    else this.latencies.push(result.latencyMs);
 
-    if (result.status !== "ok") {
-      if (result.status !== "empty") this.counters.failures += 1;
+    return {
+      records: (result.data ?? []).map((record) => ({
+        record,
+        retrievedAt: result.retrievedAt,
+      })),
+      anySucceeded: ok,
+      retrievedAt: result.retrievedAt,
+      report: null as CoverageResult | null,
+    };
+  }
+
+  /**
+   * Every enabled zone, merged.
+   *
+   * The engine owns ordering, deduplication and the budget; this only
+   * supplies the fetch and keeps the source's own counters honest.
+   */
+  private async multiZone() {
+    /*
+     * Records rather than canonical vessels, so deduplication happens on
+     * the same identity rule the rest of the fleet uses. Building
+     * vessels per zone and merging afterwards would deduplicate twice
+     * with two different notions of sameness.
+     */
+    const collected: { record: DatalasticVesselRecord; retrievedAt: string }[] = [];
+    const providerStatuses: DatalasticStatus[] = [];
+    let providerMessage: string | null = null;
+    let latest: string | null = null;
+
+    const report = await runCoveragePass({
+      zones: this.zones,
+      requestBudget: this.requestBudget,
+      now: this.now,
+      fetchZone: async (zone) => {
+        this.counters.requests += 1;
+        const result = await this.gateway.areaTraffic({
+          lat: zone.lat,
+          lon: zone.lon,
+          radiusKm: zone.radiusKm,
+        });
+        const ok = result.status === "ok" || result.status === "empty";
+        providerStatuses.push(result.status);
+        // The first explanation offered is kept: a uniform failure has one
+        // reason, and the provider states it the same way every time.
+        if (!ok && providerMessage === null) providerMessage = result.message;
+        if (!ok) this.counters.failures += 1;
+        else this.latencies.push(result.latencyMs);
+        if (ok && (latest === null || result.retrievedAt > latest)) latest = result.retrievedAt;
+
+        const records = result.data ?? [];
+        for (const record of records) {
+          collected.push({ record, retrievedAt: result.retrievedAt });
+        }
+
+        /*
+         * The engine deduplicates canonical vessels, so it is handed
+         * placeholders carrying only identity and position — enough to
+         * decide sameness, and not a second vessel model.
+         */
+        return {
+          outcome: DatalasticVesselSource.outcomeFor(result.status),
+          vessels: records
+            .map((record) => toCanonicalVessel(record, result.retrievedAt))
+            .filter((vessel): vessel is Vessel => vessel !== null),
+          latencyMs: result.latencyMs,
+          requestCost: null,
+          retrievedAt: result.retrievedAt,
+          message: result.message,
+        };
+      },
+    });
+
+    /*
+     * The engine already merged; the identities it kept decide which of
+     * the collected records survive, so the canonical pass below sees
+     * one entry per hull.
+     */
+    const kept = new Set(report.vessels.map((vessel) => fleetIdentity(vessel)));
+    const seen = new Set<string>();
+    const records = collected.filter(({ record, retrievedAt }) => {
+      const vessel = toCanonicalVessel(record, retrievedAt);
+      if (!vessel) return false;
+      const key = fleetIdentity(vessel);
+      if (!kept.has(key) || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    /*
+     * When every zone met the same provider condition, that condition is
+     * the source's condition, reported in the provider's own words. The
+     * failure vocabulary — plan limit, rate limit, outage, rejected
+     * request — is the whole reason an officer can tell a billing state
+     * from an empty sea, and aggregating it away would put every one of
+     * them behind the same grey label.
+     *
+     * Only a genuinely mixed pass gets an aggregate, and that aggregate
+     * names which zones failed and how.
+     */
+    const distinct = new Set(providerStatuses);
+    if (distinct.size === 1) {
+      const only = providerStatuses[0];
+      this.status = sourceStatusForDatalastic(only);
+      this.message = providerMessage;
+    } else {
+      const failed = report.zones.filter(
+        (zone) => zone.outcome !== "OK" && zone.outcome !== "NO_RECORD",
+      );
+      // A partial picture must never advertise itself as a healthy one.
+      this.status = report.anyZoneSucceeded ? "empty" : "upstream-error";
+      this.message = `${failed.length} of ${report.zones.length} coverage zones did not answer: ${failed
+        .map((zone) => `${zone.zoneName} (${zone.outcome})`)
+        .join(", ")}.`;
+    }
+    this.lastCheckedAt = report.startedAt;
+    this.lastLatencyMs = report.durationMs;
+    this.cacheState = "miss";
+
+    return { records, anySucceeded: report.anyZoneSucceeded, retrievedAt: latest, report };
+  }
+
+  /** The last coverage pass. Null before the first. */
+  coverage(): CoverageResult | null {
+    return this.lastCoverage;
+  }
+
+  async list(query?: VesselQuery): Promise<readonly Vessel[]> {
+    /*
+     * A caller asking for a specific box gets that box; otherwise the
+     * coverage engine runs, because the Nigerian EEZ is far larger than
+     * one 50km circle and the provider refuses anything wider.
+     */
+    const coverage = query?.bbox
+      ? await this.singleCircle(circleForBbox(query.bbox))
+      : await this.multiZone();
+
+    this.lastCoverage = coverage.report;
+    const candidates = coverage.records
+      .map((entry) => toCanonicalVessel(entry.record, entry.retrievedAt))
+      .filter((vessel): vessel is Vessel => vessel !== null);
+
+    if (!coverage.anySucceeded) {
       this.recordCount = 0;
       return [];
     }
-
-    this.latencies.push(result.latencyMs);
-    const candidates = (result.data ?? [])
-      .map((record) => toCanonicalVessel(record, result.retrievedAt))
-      .filter((vessel): vessel is Vessel => vessel !== null);
 
     // Same validation every other source passes through.
     const validated = validateBatch(candidates, { now: this.now() });
@@ -273,7 +458,7 @@ export class DatalasticVesselSource implements DescribableVesselSource {
     if (typeof query?.limit === "number") vessels = vessels.slice(0, query.limit);
 
     this.recordCount = vessels.length;
-    this.lastSuccessfulSync = result.retrievedAt;
+    this.lastSuccessfulSync = coverage.retrievedAt;
     this.newestObservedAt = vessels.reduce<number | null>((newest, vessel) => {
       const at = Date.parse(vessel.position.timestamp);
       return newest === null || at > newest ? at : newest;

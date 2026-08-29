@@ -11,6 +11,8 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
+import { NIGERIA_COVERAGE_ZONES } from "@/services/geospatial/sources/datalastic-coverage-zones";
+
 import {
   DatalasticVesselSource,
   DATALASTIC_SOURCE_ID,
@@ -248,7 +250,17 @@ describe("Datalastic · vessel source behaviour", () => {
     const report = source.report();
     expect(report.status).toBe("upstream-error");
     expect(report.confidence).toBeNull();
-    expect(report.failureCount).toBe(1);
+    /*
+     * One poll, twelve failed queries — one per coverage zone.
+     *
+     * `failureCount` is documented as queries that failed to return
+     * usable data, and Nigeria is covered by twelve circles because the
+     * provider answers at most fifty kilometres at a time. Counting the
+     * poll rather than the queries would make successRate and
+     * averageLatencyMs describe a request that was never made.
+     */
+    expect(report.failureCount).toBe(NIGERIA_COVERAGE_ZONES.length);
+    expect(report.requestCount).toBe(NIGERIA_COVERAGE_ZONES.length);
   });
 
   it("reports rate limiting without spinning retries", async () => {
@@ -265,7 +277,13 @@ describe("Datalastic · vessel source behaviour", () => {
       now: () => NOW,
     });
     await source.list();
-    expect(calls).toBe(1);
+    /*
+     * One call per zone and not one more. The point of the test is that a
+     * rate-limited provider is not retried in a loop — so the count that
+     * matters is that it equals the zone count exactly, rather than
+     * climbing past it.
+     */
+    expect(calls).toBe(NIGERIA_COVERAGE_ZONES.length);
     expect(source.report().status).toBe("upstream-error");
   });
 
