@@ -396,5 +396,49 @@ export function executeCopilotAction(
         summary: `Requested an investigation for ${action.vesselName ?? action.imo}.`,
       };
     }
+
+    case "SHOW_SANCTIONS_RESULT": {
+      /*
+       * Opening the drawer is the whole answer: the screening panel there
+       * reads the persisted history through the canonical service. Fetching
+       * it here would be a second read path that could disagree with what
+       * the officer sees.
+       */
+      if (options.knownImos && !options.knownImos.includes(action.imo)) {
+        return {
+          ok: false,
+          summary: "That vessel is not in the current picture.",
+          reason: "No vessel with that identifier is held by the connected source.",
+        };
+      }
+      service.select({ kind: "vessel", id: action.imo, imo: action.imo });
+      return {
+        ok: true,
+        summary: `Opened the sanctions screening record for ${action.imo}.`,
+      };
+    }
+
+    case "SCREEN_VESSEL": {
+      /*
+       * Confirmed only, via `isStateChanging`. Reports the request, not a
+       * result — the outcome belongs to the screening service, and
+       * claiming "no match" here before the provider answered would be
+       * the exact failure this sprint exists to prevent.
+       */
+      const screener = options.requestSanctionsScreening;
+      if (!screener) {
+        return {
+          ok: false,
+          summary: "I cannot run a sanctions screen from here.",
+          reason: "No screening surface is connected to this view.",
+        };
+      }
+      service.select({ kind: "vessel", id: action.imo, imo: action.imo });
+      screener(action.imo);
+      return {
+        ok: true,
+        summary: `Requested a sanctions screen for ${action.vesselName ?? action.imo}. The result and its confidence will appear in the vessel drawer.`,
+      };
+    }
   }
 }
