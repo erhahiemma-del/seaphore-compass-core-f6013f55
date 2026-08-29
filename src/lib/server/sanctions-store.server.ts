@@ -265,3 +265,42 @@ export async function writeScreeningAudit(
     },
   });
 }
+
+/**
+ * The newest screenings across every subject, for the cross-surface
+ * attention projection.
+ *
+ * A separate loader rather than a looser `loadScreenings`, because the
+ * subject-scoped read must keep refusing an unfiltered query: a drawer
+ * that silently listed the whole estate would attribute other vessels'
+ * screenings to the one on screen.
+ */
+export async function loadRecentScreenings(
+  db: Db,
+  limit = 100,
+): Promise<SanctionsScreeningRecord[]> {
+  const { data, error } = await table(db, "sanctions_screenings")
+    .select("*")
+    .order("screened_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  const rows = (data ?? []) as Row[];
+  if (rows.length === 0) return [];
+
+  const ids = rows.map((row) => String(row["id"]));
+  const { data: decisionRows, error: decisionError } = await table(db, "sanctions_match_decisions")
+    .select("*")
+    .in("screening_id", ids)
+    .order("decided_at", { ascending: false });
+  if (decisionError) throw decisionError;
+
+  const byScreening = new Map<string, SanctionsMatchDecision[]>();
+  for (const raw of (decisionRows ?? []) as Row[]) {
+    const decision = toDecision(raw);
+    const bucket = byScreening.get(decision.screeningId) ?? [];
+    bucket.push(decision);
+    byScreening.set(decision.screeningId, bucket);
+  }
+
+  return rows.map((row) => toRecord(row, byScreening.get(String(row["id"])) ?? []));
+}
