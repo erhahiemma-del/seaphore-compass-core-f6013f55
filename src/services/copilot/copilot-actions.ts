@@ -75,7 +75,16 @@ export type CopilotAction =
    * officer named. Read-only: it assesses and reports, and changes
    * nothing about the map or the fleet.
    */
-  | { readonly type: "SHOW_APPROACHING_VESSELS"; readonly thresholdHours: number };
+  | { readonly type: "SHOW_APPROACHING_VESSELS"; readonly thresholdHours: number }
+  /*
+   * Sanctions screening, through the one canonical screening service.
+   *
+   * Running a screen writes an evidentiary record and consumes provider
+   * quota, so it is state-changing. Reading what a previous screen found
+   * is not — it opens the drawer panel that already holds the history.
+   */
+  | { readonly type: "SCREEN_VESSEL"; readonly imo: string; readonly vesselName?: string }
+  | { readonly type: "SHOW_SANCTIONS_RESULT"; readonly imo: string };
 
 /**
  * Whether an action changes something an officer would have to undo.
