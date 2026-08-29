@@ -32,6 +32,7 @@ import { sgs, type SharedGeospatialService, type Vessel } from "@/services/geosp
 import { eezRingIfLoaded } from "@/services/geospatial/eez-ring";
 import type { Place } from "@/services/geospatial/places";
 
+import { requestVesselScreening } from "@/lib/sanctions/screen-request";
 import { executeCopilotAction, type CopilotAction } from "@/services/copilot/copilot-actions";
 import {
   EMPTY_CONTEXT,
