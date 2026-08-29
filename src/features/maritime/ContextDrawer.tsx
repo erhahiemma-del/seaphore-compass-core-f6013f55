@@ -64,6 +64,13 @@ export interface ContextDrawerProps {
    */
   readonly voyage?: Voyage | null;
   readonly onClose: () => void;
+  /**
+   * Follow a vessel's declared destination to that port.
+   *
+   * Optional: surfaces without a selection dispatcher render the port
+   * context without the action rather than a button that does nothing.
+   */
+  readonly onOpenPort?: (selection: MapSelection) => void;
   readonly onAskCopilot?: (selection: MapSelection) => void;
   /** Shared camera, so Centre and Follow measure the same usable map. */
   readonly camera?: VesselCamera;
@@ -80,6 +87,7 @@ export function ContextDrawer({
   vessel,
   voyage,
   onClose,
+  onOpenPort,
   onAskCopilot,
   className,
   sourceSupportsHistory,
@@ -152,6 +160,7 @@ export function ContextDrawer({
 
       <div className="min-h-0 flex-1 overflow-auto">
         <SelectionPanel
+          onOpenPort={onOpenPort}
           selection={selection}
           vessel={vessel ?? null}
           voyage={voyage}
@@ -179,6 +188,7 @@ function SelectionPanel({
   vessel,
   voyage,
   onClose,
+  onOpenPort,
   sourceSupportsHistory,
   vesselTrack,
   camera,
@@ -197,6 +207,8 @@ function SelectionPanel({
   /** `undefined` means still resolving; `null` means resolved to nothing. */
   voyage: Voyage | null | undefined;
   onClose: () => void;
+  /** Follow a declared destination to its port. Absent disables the action. */
+  onOpenPort?: (selection: MapSelection) => void;
 }) {
   switch (selection.kind) {
     case "vessel":
@@ -205,6 +217,7 @@ function SelectionPanel({
       // state, distinct from "no such vessel".
       return vessel ? (
         <VesselTabs
+          onOpenPort={onOpenPort}
           vessel={vessel}
           onClose={onClose}
           sourceSupportsHistory={sourceSupportsHistory}
@@ -348,6 +361,7 @@ function SelectionPanel({
 function VesselTabs({
   vessel,
   onClose,
+  onOpenPort,
   sourceSupportsHistory,
   vesselTrack,
   camera,
@@ -357,6 +371,7 @@ function VesselTabs({
 }: {
   vessel: Vessel;
   onClose: () => void;
+  onOpenPort?: (selection: MapSelection) => void;
   sourceSupportsHistory?: boolean;
   vesselTrack?: VesselTrack | null;
   camera?: VesselCamera;
@@ -399,6 +414,7 @@ function VesselTabs({
         onStartFollow={camera?.startFollow}
         onStopFollow={camera?.stopFollow}
         onResumeFollow={camera?.resumeFollow}
+        onOpenPort={onOpenPort}
         enrichment={enrichment}
         enrichmentLoading={enrichmentLoading}
         enrichmentFailed={enrichmentFailed}

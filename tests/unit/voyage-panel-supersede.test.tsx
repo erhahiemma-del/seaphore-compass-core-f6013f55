@@ -12,11 +12,14 @@
  * provenance behind them. Removing that yields the contradiction back.
  */
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { VesselIntelligenceCard } from "@/features/maritime/VesselIntelligenceCard";
-import { VesselVoyagePanel } from "@/features/maritime/VesselIntelligenceSections";
+import {
+  DeclaredVoyagePanel,
+  VesselVoyagePanel,
+} from "@/features/maritime/VesselIntelligenceSections";
 import type { VesselPresentation } from "@/features/maritime/vessel-presentation";
 import type { Vessel } from "@/services/geospatial";
 import type { VesselEnrichment } from "@/services/geospatial/vessel-enrichment";
@@ -162,5 +165,90 @@ describe("the card decides to supersede when it has a declared voyage", () => {
     render(<VesselIntelligenceCard vessel={subject()} onClose={() => {}} tab="voyage" />);
 
     expect(screen.getByText("Not reported by the source")).toBeInTheDocument();
+  });
+});
+
+/*
+ * Following a destination to its port.
+ *
+ * The action is offered only when a port was resolved on an identifier and
+ * this deployment holds it. Every other state already explains itself in
+ * the rows above, and a button that cannot act is worse than no button: it
+ * reads as broken software rather than as absent data.
+ */
+describe("the open-port action", () => {
+  const bound = (unlocode: string | null, name: string | null): VesselEnrichment => ({
+    particulars: null,
+    particularsProvenance: null,
+    voyage: {
+      departurePort: "KAMSAR",
+      departureUnlocode: "GNKMR",
+      departedAt: "2026-07-27T13:18:00.000Z",
+      destinationText: name,
+      destinationLink: {
+        state: unlocode ? "VERIFIED" : "NO_VERIFIED_PORT_LINK",
+        unlocode,
+        providerPortUuid: unlocode ? "2cb375dd" : null,
+        name,
+        note: null,
+      },
+      eta: "2026-08-24T09:13:00.000Z",
+      navigationStatus: "Underway",
+      currentDraught: 3.8,
+      observedAt: "2026-08-29T14:41:00.000Z",
+    },
+    voyageProvenance: null,
+  });
+
+  it("offers the port when it resolves inside the register", () => {
+    const opened: unknown[] = [];
+    render(
+      <DeclaredVoyagePanel
+        enrichment={bound("NGLOS", "LAGOS")}
+        failed={false}
+        onOpenPort={(s) => opened.push(s)}
+      />,
+    );
+
+    const button = screen.getByRole("button", { name: /open/i });
+    fireEvent.click(button);
+
+    expect(opened).toHaveLength(1);
+    expect((opened[0] as { kind: string }).kind).toBe("port");
+  });
+
+  /*
+   * Kamsar is a real port with a valid UNLOCODE, outside the Nigerian
+   * register. Offering a button that cannot open it would blame the
+   * software for a coverage limit the rows already explain.
+   */
+  it("offers nothing for a port outside the register", () => {
+    render(
+      <DeclaredVoyagePanel
+        enrichment={bound("GNKMR", "KAMSAR")}
+        failed={false}
+        onOpenPort={() => {}}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: /open/i })).not.toBeInTheDocument();
+  });
+
+  it("offers nothing when only a broadcast name was declared", () => {
+    render(
+      <DeclaredVoyagePanel
+        enrichment={bound(null, "LAGOS")}
+        failed={false}
+        onOpenPort={() => {}}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: /open/i })).not.toBeInTheDocument();
+  });
+
+  it("offers nothing on a surface with no selection dispatcher", () => {
+    render(<DeclaredVoyagePanel enrichment={bound("NGLOS", "LAGOS")} failed={false} />);
+
+    expect(screen.queryByRole("button", { name: /open/i })).not.toBeInTheDocument();
   });
 });

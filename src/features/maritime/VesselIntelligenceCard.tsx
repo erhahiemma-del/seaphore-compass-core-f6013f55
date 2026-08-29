@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import type { Vessel } from "@/services/geospatial";
 import type { VesselTrack } from "@/services/geospatial/vessel-track";
 
+import type { MapSelection } from "@/services/geospatial";
 import type { VesselEnrichment } from "@/services/geospatial/vessel-enrichment";
 
 import { VesselHero } from "./VesselHero";
@@ -91,6 +92,8 @@ export interface VesselIntelligenceCardProps {
    * paid for it. Absent renders as "not loaded", which is a different
    * statement from the provider having no particulars.
    */
+  /** Follow the declared destination to its port. Absent hides the action. */
+  readonly onOpenPort?: (selection: MapSelection) => void;
   readonly enrichment?: VesselEnrichment | null;
   readonly enrichmentLoading?: boolean;
   /** The provider could not be reached — never rendered as an empty vessel. */
@@ -111,6 +114,7 @@ export function VesselIntelligenceCard({
   replayContext,
   sourceSupportsHistory = false,
   vesselTrack,
+  onOpenPort,
   enrichment,
   enrichmentLoading,
   enrichmentFailed,
@@ -204,6 +208,7 @@ export function VesselIntelligenceCard({
               <DeclaredVoyagePanel
                 enrichment={enrichment ?? null}
                 failed={enrichmentFailed ?? false}
+                onOpenPort={onOpenPort}
               />
             </div>
           </div>

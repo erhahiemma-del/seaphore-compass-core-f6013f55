@@ -10,7 +10,7 @@
  * record, and never render a row shaped like a person or a company.
  */
 import type { LucideIcon } from "lucide-react";
-import { Building2, Route, Users } from "lucide-react";
+import { Anchor, Building2, Route, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -18,7 +18,9 @@ import type { Vessel } from "@/services/geospatial";
 
 import { RiskGauge } from "./RiskGauge";
 import { VesselIntelligenceView } from "./VesselIntelligenceView";
+import type { MapSelection } from "@/services/geospatial";
 import type { VesselEnrichment } from "@/services/geospatial/vessel-enrichment";
+import { destinationPortTarget } from "@/services/geospatial/voyage-port-target";
 
 import type { ActivityEvent, Datum, VesselPresentation } from "./vessel-presentation";
 import {
@@ -400,10 +402,14 @@ export function ParticularsPanel({
 export function DeclaredVoyagePanel({
   enrichment,
   failed,
+  onOpenPort,
 }: {
   enrichment: VesselEnrichment | null;
   failed: boolean;
+  /** Follow the destination to its port. Absent hides the action entirely. */
+  onOpenPort?: (selection: MapSelection) => void;
 }) {
+  const target = destinationPortTarget(enrichment?.voyage ?? null);
   if (failed) {
     return (
       <Card title="Declared voyage">
@@ -426,6 +432,23 @@ export function DeclaredVoyagePanel({
         {presentPortContext(enrichment).map((datum) => (
           <DatumRow key={datum.label} datum={datum} />
         ))}
+        {/*
+          Offered only when a port was resolved on an identifier and this
+          deployment holds it. Every other state already explains itself in
+          the rows above, and a button that cannot act is worse than none:
+          it reads as broken software rather than absent data.
+        */}
+        {onOpenPort && target.state === "AVAILABLE" && target.selection ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onOpenPort(target.selection!)}
+            className="mt-2 h-8 w-full text-[11.5px]"
+          >
+            <Anchor className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+            Open {target.port?.shortName ?? target.port?.name ?? "destination port"}
+          </Button>
+        ) : null}
       </Card>
     </>
   );

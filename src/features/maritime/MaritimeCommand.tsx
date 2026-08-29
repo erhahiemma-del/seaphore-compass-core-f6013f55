@@ -35,6 +35,7 @@ import {
   type MapScopeId,
   sgs,
   useMapSelector,
+  type MapSelection,
   useMapSessionStore,
   type ReplaySink,
   type Vessel,
@@ -518,6 +519,19 @@ export function MaritimeCommand() {
     setSelectedVessel(null);
   }, []);
 
+  /*
+   * Follow a vessel's declared destination to that port.
+   *
+   * Through the same `sgs.select` every other selection uses, so there is
+   * no port-specific selection state and the drawer switches to the port
+   * panel the map already owns. The caller has resolved the port on a
+   * UNLOCODE — never a name — before reaching here.
+   */
+  const openPort = useCallback((portSelection: MapSelection) => {
+    sgs.select(portSelection);
+    setSelectedVessel(null);
+  }, []);
+
   return (
     /*
      * Chromeless: the shell keeps navigation and the top bar, and hands
@@ -792,6 +806,7 @@ export function MaritimeCommand() {
                 : null
             }
             onClose={closeCard}
+            onOpenPort={openPort}
           />
         </div>
 
