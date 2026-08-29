@@ -114,6 +114,15 @@ export function translateUnderstanding(input: TranslationInput): Translation {
         ? investigation(input)
         : { kind: "NOT_ACTIONABLE" };
 
+    case "compliance-intelligence":
+      /*
+       * Sanctions language reaches the existing compliance intent — no
+       * second classifier. Same question-or-instruction split as
+       * investigation: "screen this vessel" instructs, "has it been
+       * screened" asks for the record that already exists.
+       */
+      return sanctions(input);
+
     default:
       /*
        * Every other intent is a question. Deliberately not a catch-all
