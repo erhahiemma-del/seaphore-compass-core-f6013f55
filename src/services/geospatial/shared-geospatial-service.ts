@@ -119,6 +119,32 @@ export interface SharedGeospatialServiceOptions {
   readonly urlSync?: boolean;
 }
 
+/**
+ * Every query parameter this service is responsible for.
+ *
+ * Listed explicitly because most are written conditionally: a key absent
+ * from one serialisation is still owned, and must be cleared rather than
+ * preserved as somebody else's.
+ */
+const OWNED_URL_KEYS: ReadonlySet<string> = new Set([
+  "view",
+  "lat",
+  "lon",
+  "zoom",
+  "layers",
+  "opacity",
+  "pitch",
+  "bearing",
+  "sources",
+  "mode",
+  "style",
+  "imode",
+  "scope",
+  "sel",
+  "vessel",
+  "mission",
+]);
+
 export class SharedGeospatialService {
   private state: MapState;
   private readonly subscribers = new Set<(state: MapState) => void>();
@@ -591,7 +617,21 @@ export class SharedGeospatialService {
      * owning all of it, and foreign keys are carried through untouched.
      */
     const params = this.toSearchParams();
-    const owned = new Set(params.keys());
+    /*
+     * Ownership is declared, not inferred from what was emitted.
+     *
+     * `toSearchParams` writes most keys conditionally — bearing only when
+     * turned, pitch only when tilted, `sel` only when something is
+     * chosen. Deriving ownership from the emitted keys therefore made a
+     * key the service had just stopped writing indistinguishable from a
+     * foreign one, and the stale value was carried forward for ever.
+     *
+     * Measured: resetting a 90° rotation set the state to north-up and
+     * left `bearing=90.0` in the URL, so the next reload turned the
+     * chart straight back. Every conditional key had the same defect
+     * latent in it.
+     */
+    const owned = OWNED_URL_KEYS;
     for (const [key, value] of new URLSearchParams(window.location.search)) {
       if (!owned.has(key)) params.append(key, value);
     }

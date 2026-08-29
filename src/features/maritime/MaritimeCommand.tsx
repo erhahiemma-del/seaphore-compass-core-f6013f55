@@ -11,6 +11,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  Compass,
   Crosshair,
   Maximize2,
   Minus,
@@ -878,6 +879,16 @@ function CommandToolbar({
    */
   const scope = useMapSelector((state) => state.scope);
   const limits = MAP_SCOPES[scope];
+  /*
+   * Bearing, read so the reset control appears only when the chart is
+   * actually turned.
+   *
+   * Bearing alone, deliberately. Pitch is owned by the zoom→pitch ramp
+   * in `perspective.ts` and is 12° at zoom 9 by design, so including it
+   * would light this control permanently and, worse, have it fight a
+   * policy that is working correctly.
+   */
+  const bearing = useMapSelector((state) => state.bearing);
 
   /*
    * Whether the officer has taken pitch over from the automatic policy.
@@ -917,6 +928,35 @@ function CommandToolbar({
       >
         <Minus className="h-3.5 w-3.5" aria-hidden />
       </ToolButton>
+      {/*
+        North up, and nothing else.
+
+        `dragRotate` is enabled, so an officer can turn the chart with a
+        right-drag or a two-finger twist without meaning to — and the
+        bearing is written to the URL, so the rotation survives a reload.
+        Until this control existed there was no way back: "Locate
+        Nigeria" moves the camera and never touches bearing, so an
+        officer trying to straighten the map lost their position and kept
+        the rotation.
+
+        Deliberately does not move the camera. Resetting orientation and
+        throwing away where the officer was looking are two different
+        actions, and merging them is what made the existing control
+        useless for this.
+
+        Shown only when the chart is actually turned: a permanently lit
+        "reset north" on a north-up map is a control that never does
+        anything, and an officer learns to ignore it.
+
+        Bearing only. Pitch belongs to the zoom→pitch ramp and is
+        non-zero by design above zoom 7.5, so resetting it here would
+        override a working policy and keep this control lit forever.
+      */}
+      {bearing !== 0 && (
+        <ToolButton label="Reset north" onClick={() => sgs.setCamera({ bearing: 0 })}>
+          <Compass className="h-3.5 w-3.5" aria-hidden />
+        </ToolButton>
+      )}
       <ToolButton
         label="Locate Nigeria"
         onClick={() =>
