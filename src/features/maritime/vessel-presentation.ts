@@ -30,6 +30,7 @@
  * is missing it reports the reason the underlying service already knows.
  */
 import type { Vessel } from "@/services/geospatial";
+import type { VesselEnrichment } from "@/services/geospatial/vessel-enrichment";
 import type { VesselTrack } from "@/services/geospatial/vessel-track";
 import { trackProvenanceLabel, trackStateLabel } from "@/services/geospatial/vessel-track";
 
@@ -278,4 +279,222 @@ function activityFor(vessel: Vessel): readonly ActivityEvent[] {
       provenance: positionProvenanceLabel(vessel),
     },
   ];
+}
+
+/* ── Deep Datalastic enrichment ──────────────────────────────────────── */
+
+/**
+ * Formatters for the particulars.
+ *
+ * Units are attached here rather than in the model, because a number
+ * without a unit in an operational panel is worse than no number: 15 could
+ * be metres of beam or knots of wind, and the reader cannot tell which the
+ * panel meant.
+ */
+const metres = (n: number): string => `${n.toLocaleString()} m`;
+const tonnes = (n: number): string => `${n.toLocaleString()} t`;
+const knots = (n: number): string => `${n} kn`;
+
+/** ISO-8601 to something an officer reads, in UTC, never localised away. */
+function utc(iso: string): string {
+  return `${new Date(iso).toISOString().slice(0, 16).replace("T", " ")} UTC`;
+}
+
+/**
+ * The sentence used wherever an add-on Seaphore cannot reach would go.
+ *
+ * `NOT_CONNECTED`, never `UNAVAILABLE`: the provider was not asked and
+ * found nothing, it has no endpoint to ask. Saying "no record" there would
+ * assert something about the vessel rather than about Seaphore.
+ */
+const NOT_SERVED = "Datalastic sells this but serves no endpoint for it.";
+
+/**
+ * Static particulars, from `vessel_info`.
+ *
+ * A null enrichment means the deep load has not run — nobody selected this
+ * vessel, or the request is in flight. That is a different state from the
+ * provider holding no tonnage, so the two produce different sentences.
+ */
+export function presentParticulars(enrichment: VesselEnrichment | null): readonly Datum[] {
+  const p = enrichment?.particulars ?? null;
+  if (!p) {
+    return [
+      missing(
+        "Vessel particulars",
+        "UNKNOWN",
+        "Not loaded. Particulars are retrieved when a vessel is selected.",
+      ),
+    ];
+  }
+
+  const noRecord = (label: string) =>
+    missing(label, "UNAVAILABLE", "The provider holds no value for this vessel.");
+
+  return [
+    p.callSign ? available("Call sign", p.callSign, { mono: true }) : noRecord("Call sign"),
+    p.grossTonnage !== null
+      ? available("Gross tonnage", tonnes(p.grossTonnage))
+      : noRecord("Gross tonnage"),
+    p.deadweight !== null ? available("Deadweight", tonnes(p.deadweight)) : noRecord("Deadweight"),
+    p.length !== null ? available("Length", metres(p.length)) : noRecord("Length"),
+    p.breadth !== null ? available("Breadth", metres(p.breadth)) : noRecord("Breadth"),
+    p.yearBuilt !== null ? available("Year built", String(p.yearBuilt)) : noRecord("Year built"),
+    p.homePort ? available("Home port", p.homePort) : noRecord("Home port"),
+    p.flagName ? available("Flag state", p.flagName) : noRecord("Flag state"),
+    /*
+     * Only when the two names disagree. A vessel broadcasting a name other
+     * than its registered one is something an officer should see; the same
+     * name printed twice trains them to stop looking.
+     */
+    ...(p.aisNameDiffers
+      ? [
+          available("AIS name", p.aisNameDiffers, {
+            provenance: "Differs from the registered name",
+          }),
+        ]
+      : []),
+    p.speedMax !== null
+      ? available("Observed max speed", knots(p.speedMax), {
+          provenance: "Provider-observed, not a design figure",
+        })
+      : noRecord("Observed max speed"),
+  ];
+}
+
+/**
+ * The declared voyage, from `vessel_pro`.
+ *
+ * Every value is what the vessel or the provider stated. Nothing is
+ * computed — in particular there is no ETA derived from speed and
+ * distance, because an inferred arrival printed beside a declared one is
+ * indistinguishable from it.
+ */
+export function presentDeclaredVoyage(enrichment: VesselEnrichment | null): readonly Datum[] {
+  const v = enrichment?.voyage ?? null;
+  if (!v) {
+    return [
+      missing(
+        "Voyage",
+        "UNKNOWN",
+        "Not loaded. Voyage detail is retrieved when a vessel is selected.",
+      ),
+    ];
+  }
+
+  const notDeclared = (label: string) =>
+    missing(label, "UNAVAILABLE", "The vessel is not declaring this.");
+
+  return [
+    v.departurePort
+      ? available("Departure port", v.departurePort, {
+          ...(v.departureUnlocode ? { provenance: `UNLOCODE ${v.departureUnlocode}` } : {}),
+        })
+      : notDeclared("Departure port"),
+    v.departedAt
+      ? available("Departed", utc(v.departedAt), { provenance: "Provider-reported actual" })
+      : notDeclared("Departed"),
+    v.destinationLink.name
+      ? available("Destination", v.destinationLink.name, {
+          provenance:
+            v.destinationLink.state === "VERIFIED"
+              ? `UNLOCODE ${v.destinationLink.unlocode ?? "not given"}`
+              : "Broadcast text — no port identifier resolved",
+        })
+      : notDeclared("Destination"),
+    v.eta
+      ? available("ETA", utc(v.eta), { provenance: "Declared by the vessel, not computed" })
+      : notDeclared("ETA"),
+    v.navigationStatus
+      ? available("Navigation status", v.navigationStatus)
+      : notDeclared("Navigation status"),
+    v.currentDraught !== null
+      ? available("Current draught", metres(v.currentDraught))
+      : notDeclared("Current draught"),
+  ];
+}
+
+/**
+ * Whether the destination resolved to a port Seaphore can open.
+ *
+ * The distinction this panel carries: a broadcast destination is text, and
+ * text is not a port. "LAGOS" names a port in Nigeria and one in Portugal,
+ * so an unresolved name is reported as unresolved rather than linked to
+ * whichever happens to sort first.
+ */
+export function presentPortContext(enrichment: VesselEnrichment | null): readonly Datum[] {
+  const link = enrichment?.voyage?.destinationLink ?? null;
+  if (!link) return [missing("Destination port", "UNKNOWN", "Not loaded.")];
+
+  if (link.state === "VERIFIED") {
+    return [
+      available("Destination port", link.name ?? "Resolved without a name"),
+      link.unlocode
+        ? available("UNLOCODE", link.unlocode, { mono: true })
+        : missing("UNLOCODE", "UNAVAILABLE", "The provider resolved the port without one."),
+    ];
+  }
+
+  if (link.state === "NO_VERIFIED_PORT_LINK") {
+    return [
+      available("Broadcast destination", link.name ?? "Declared without a name", {
+        provenance: "Not linked to a Seaphore port",
+      }),
+      missing("Destination port", "UNAVAILABLE", link.note ?? "No port identifier was resolved."),
+    ];
+  }
+
+  return [
+    missing("Destination port", "UNAVAILABLE", "This vessel is not declaring a destination."),
+  ];
+}
+
+/**
+ * Where each half of the enrichment came from.
+ *
+ * Endpoint-level rather than provider-level: facts from `vessel_info` and
+ * `vessel_pro` age differently and cache differently, so collapsing them to
+ * "Datalastic" would hide which one is stale.
+ */
+export function presentEnrichmentSource(enrichment: VesselEnrichment | null): readonly Datum[] {
+  const rows: Datum[] = [];
+
+  for (const [label, provenance] of [
+    ["Particulars", enrichment?.particularsProvenance ?? null],
+    ["Voyage", enrichment?.voyageProvenance ?? null],
+  ] as const) {
+    if (!provenance) {
+      rows.push(missing(label, "UNKNOWN", "Not loaded."));
+      continue;
+    }
+    rows.push(
+      available(label, `${provenance.provider} /${provenance.endpoint}`, {
+        mono: true,
+        provenance: provenance.observedAt
+          ? `Observed ${utc(provenance.observedAt)} · retrieved ${utc(provenance.retrievedAt)}`
+          : `Retrieved ${utc(provenance.retrievedAt)} · provider gave no observation time`,
+      }),
+    );
+  }
+
+  return rows;
+}
+
+/**
+ * The capabilities Datalastic sells and does not serve.
+ *
+ * Rendered so an officer looking for ownership finds a reason rather than
+ * silence. Probed 29 Aug 2026: every one answered 404 on each documented
+ * path and on API versions v0, v1 and v2.
+ */
+export function presentUnservedCapabilities(): readonly Datum[] {
+  return [
+    "Registered owner",
+    "Operator",
+    "Classification society",
+    "Inspections and detentions",
+    "Casualties",
+    "Engine",
+    "Dry dock history",
+  ].map((label) => missing(label, "NOT_CONNECTED", NOT_SERVED));
 }
