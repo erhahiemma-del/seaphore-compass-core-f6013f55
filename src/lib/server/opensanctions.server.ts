@@ -152,11 +152,7 @@ export async function screenSubject(input: ScreenSubjectInput): Promise<ScreenSu
     });
 
     if (!response.ok) {
-      return failure(
-        classify(response.status),
-        `Provider responded ${response.status}.`,
-        dataset,
-      );
+      return failure(classify(response.status), `Provider responded ${response.status}.`, dataset);
     }
 
     const payload = (await response.json()) as Record<string, unknown>;

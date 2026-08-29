@@ -14,10 +14,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import type {
-  SanctionsMatchDecision,
-  SanctionsScreeningRecord,
-} from "@/lib/sanctions/match-state";
+import type { SanctionsMatchDecision, SanctionsScreeningRecord } from "@/lib/sanctions/match-state";
 
 const roleSchema = z.enum(["vessel", "owner", "operator", "manager", "agent"]);
 
@@ -55,9 +52,8 @@ export const screenSubjectForSanctions = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => screenInput.parse(data))
   .handler(async ({ data, context }): Promise<SanctionsScreeningRecord> => {
     const { screenSubject } = await import("@/lib/server/opensanctions.server");
-    const { toRecord, insertScreening, writeScreeningAudit } = await import(
-      "@/lib/server/sanctions-store.server"
-    );
+    const { toRecord, insertScreening, writeScreeningAudit } =
+      await import("@/lib/server/sanctions-store.server");
 
     const outcome = await screenSubject({
       name: data.name,
@@ -85,7 +81,9 @@ export const screenSubjectForSanctions = createServerFn({ method: "POST" })
 export const listSanctionsScreenings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
-    z.object({ imo: z.string().max(20).optional(), name: z.string().max(200).optional() }).parse(data),
+    z
+      .object({ imo: z.string().max(20).optional(), name: z.string().max(200).optional() })
+      .parse(data),
   )
   .handler(async ({ data, context }): Promise<SanctionsScreeningRecord[]> => {
     const { loadScreenings } = await import("@/lib/server/sanctions-store.server");

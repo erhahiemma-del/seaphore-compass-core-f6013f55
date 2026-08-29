@@ -237,9 +237,7 @@ export function SanctionsScreeningPanel({
           <ul className="mt-1 space-y-0.5">
             {history.slice(1).map((record) => (
               <li key={record.id} className="flex justify-between text-[11px]">
-                <span className="text-muted-foreground">
-                  {record.screenedAt.slice(0, 10)}
-                </span>
+                <span className="text-muted-foreground">{record.screenedAt.slice(0, 10)}</span>
                 <span className="text-foreground">
                   {SANCTIONS_MATCH_LABEL[effectiveState(record)]}
                 </span>
@@ -363,7 +361,11 @@ function CandidateRow({
           <Facts label="Countries / flag" values={candidate.countries} />
           <Facts
             label="Identifiers"
-            values={candidate.imoNumber ? [`IMO ${candidate.imoNumber}`, ...candidate.identifiers] : candidate.identifiers}
+            values={
+              candidate.imoNumber
+                ? [`IMO ${candidate.imoNumber}`, ...candidate.identifiers]
+                : candidate.identifiers
+            }
           />
 
           <Button
@@ -442,7 +444,11 @@ function Facts({ label, values }: { label: string; values: ReadonlyArray<string>
     <div className="text-[11px]">
       <span className="text-[9.5px] uppercase tracking-wider text-muted-foreground">{label}</span>
       <p className="text-foreground">
-        {values.length ? values.join(" · ") : <span className="text-muted-foreground">Not reported by provider</span>}
+        {values.length ? (
+          values.join(" · ")
+        ) : (
+          <span className="text-muted-foreground">Not reported by provider</span>
+        )}
       </p>
     </div>
   );

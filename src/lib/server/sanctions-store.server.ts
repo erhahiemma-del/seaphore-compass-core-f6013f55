@@ -41,10 +41,13 @@ export function toRecord(row: Row, decisions: SanctionsMatchDecision[]): Sanctio
     state: String(row["state"]) as SanctionsMatchState,
     failureReason: (str(row, "failure_reason") as SanctionsFailureReason | null) ?? null,
     errorMessage: str(row, "error_message"),
-    topScore: typeof row["top_score"] === "number" ? row["top_score"] : row["top_score"] === null ? null : Number(row["top_score"]),
-    candidates: Array.isArray(row["candidates"])
-      ? (row["candidates"] as SanctionsCandidate[])
-      : [],
+    topScore:
+      typeof row["top_score"] === "number"
+        ? row["top_score"]
+        : row["top_score"] === null
+          ? null
+          : Number(row["top_score"]),
+    candidates: Array.isArray(row["candidates"]) ? (row["candidates"] as SanctionsCandidate[]) : [],
     provider: String(row["provider"] ?? "OpenSanctions"),
     dataset: String(row["dataset"] ?? "sanctions"),
     scope: String(row["scope"] ?? "sanctions"),
