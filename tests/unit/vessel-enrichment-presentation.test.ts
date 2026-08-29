@@ -278,3 +278,44 @@ describe("capabilities Datalastic does not serve", () => {
     expect(labels).toContain("Classification society");
   });
 });
+
+/*
+ * A resolved port is not necessarily one Seaphore holds.
+ *
+ * The gazetteer is Nigerian. A vessel bound for Kamsar has a valid
+ * UNLOCODE and no local record, and the panel must say that is Seaphore's
+ * limit rather than implying the declaration is unresolved.
+ */
+describe("port record availability", () => {
+  it("says the port is held when it is in the register", () => {
+    const row = presentPortContext(FULL).find((r) => r.label === "Port record")!;
+
+    expect(row.availability).toBe("AVAILABLE");
+    expect(row.provenance).toMatch(/register/i);
+  });
+
+  it("says a foreign port is outside the register, not unresolved", () => {
+    const abroad = presentPortContext({
+      ...FULL,
+      voyage: {
+        ...FULL.voyage!,
+        destinationLink: {
+          state: "VERIFIED",
+          unlocode: "GNKMR",
+          providerPortUuid: "05c6be2e",
+          name: "KAMSAR",
+          note: null,
+        },
+      },
+    });
+
+    // The UNLOCODE is still shown as resolved — it is.
+    expect(abroad.find((r) => r.label === "UNLOCODE")?.value).toBe("GNKMR");
+
+    const record = abroad.find((r) => r.label === "Port record")!;
+    expect(record.availability).toBe("NOT_CONNECTED");
+    expect(record.reason).toMatch(/outside this deployment/i);
+    // The vessel is not blamed for Seaphore's coverage.
+    expect(record.reason).toMatch(/not in question/i);
+  });
+});

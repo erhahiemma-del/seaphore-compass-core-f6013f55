@@ -31,6 +31,7 @@
  */
 import type { Vessel } from "@/services/geospatial";
 import type { VesselEnrichment } from "@/services/geospatial/vessel-enrichment";
+import { destinationPortTarget } from "@/services/geospatial/voyage-port-target";
 import type { VesselTrack } from "@/services/geospatial/vessel-track";
 import { trackProvenanceLabel, trackStateLabel } from "@/services/geospatial/vessel-track";
 
@@ -427,11 +428,27 @@ export function presentPortContext(enrichment: VesselEnrichment | null): readonl
   if (!link) return [missing("Destination port", "UNKNOWN", "Not loaded.")];
 
   if (link.state === "VERIFIED") {
+    /*
+     * A resolved port is not necessarily one Seaphore can open. The
+     * gazetteer is Nigerian, so a vessel bound for Kamsar has a perfectly
+     * good UNLOCODE and no local record — a limit of this deployment, not
+     * a defect in the declaration, and the panel has to say which.
+     */
+    const target = destinationPortTarget(enrichment?.voyage ?? null);
     return [
       available("Destination port", link.name ?? "Resolved without a name"),
       link.unlocode
         ? available("UNLOCODE", link.unlocode, { mono: true })
         : missing("UNLOCODE", "UNAVAILABLE", "The provider resolved the port without one."),
+      target.state === "AVAILABLE"
+        ? available("Port record", target.port?.name ?? "Held", {
+            provenance: "In Seaphore's port register",
+          })
+        : missing(
+            "Port record",
+            "NOT_CONNECTED",
+            target.note ?? "This port is outside Seaphore's register.",
+          ),
     ];
   }
 
