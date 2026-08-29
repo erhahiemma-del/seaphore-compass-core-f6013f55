@@ -1627,6 +1627,50 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: "2026-08-04",
   },
+  {
+    id: "sanctions.screening.state",
+    name: "Sanctions screening state and candidates",
+    producer: "CAPABILITY",
+    description:
+      "Normalized OpenSanctions /match outcome: NOT_SCREENED, NO_MATCH, POSSIBLE_MATCH, REVIEW_REQUIRED, CONFIRMED_MATCH (officer only) or SCREENING_UNAVAILABLE with a failure reason. Carries ranked candidates with score, match basis, datasets, topics, programs, identifiers and provider entity id.",
+    state: "PROJECTED",
+    projection: {
+      surface:
+        "Sanctions Screening panel in the vessel drawer — state with caveat, last screened, scope, provider, selectable candidates and provider record",
+      location: "src/components/sanctions/SanctionsScreeningPanel.tsx",
+      component: "src/lib/sanctions/match-state.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-08-29",
+  },
+  {
+    id: "sanctions.screening.history",
+    name: "Durable screening history and officer match decisions",
+    producer: "CAPABILITY",
+    description:
+      "Append-only screening records and immutable officer confirm/dismiss decisions with reason, note and officer identity. A later screening never overwrites an earlier one, and every screening and decision is written to the immutable audit log.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Current screening plus Screening history list in the vessel drawer panel",
+      location: "src/components/sanctions/SanctionsScreeningPanel.tsx",
+      component: "src/lib/server/sanctions-store.server.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-08-29",
+  },
+  {
+    id: "sanctions.screening.credential",
+    name: "OpenSanctions credential resolution",
+    producer: "CAPABILITY",
+    description:
+      "Server-side resolution of OPENSANCTIONS_API_KEY (with historical alias) used to authenticate /match and /entities calls.",
+    state: "INTERNAL",
+    internal: {
+      reason: "security-sensitive",
+      note: "Officers see provider availability and honest SCREENING_UNAVAILABLE failure reasons; the credential itself never reaches the client, the DOM, storage or logs.",
+    },
+    reviewedAt: "2026-08-29",
+  },
 ];
 
 export function getContractEntry(id: string): ProjectionContractEntry | undefined {
