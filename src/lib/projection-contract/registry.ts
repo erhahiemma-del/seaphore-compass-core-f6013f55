@@ -1666,7 +1666,7 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
       "Server-side resolution of OPENSANCTIONS_API_KEY (with historical alias) used to authenticate /match and /entities calls.",
     state: "INTERNAL",
     internal: {
-      reason: "security-sensitive",
+      reason: "sensitive-lineage",
       note: "Officers see provider availability and honest SCREENING_UNAVAILABLE failure reasons; the credential itself never reaches the client, the DOM, storage or logs.",
     },
     reviewedAt: "2026-08-29",
