@@ -515,3 +515,34 @@ export function presentUnservedCapabilities(): readonly Datum[] {
     "Dry dock history",
   ].map((label) => missing(label, "NOT_CONNECTED", NOT_SERVED));
 }
+
+/**
+ * Fill identity rows the position report could not answer.
+ *
+ * `vessel_inradius` carries no call sign, so the identity panel honestly
+ * reported "not in the current position report" — accurate about its own
+ * source, and a contradiction once the particulars panel below it showed
+ * PDSY from `vessel_info`. Two panels in one drawer disagreeing about one
+ * fact teaches an officer to trust neither.
+ *
+ * The deeper source fills the gap and says where the value came from, so
+ * the row is answered rather than merely silenced. Rows the position
+ * report did answer are left alone: this closes a gap, it does not
+ * override a live observation with a cached one.
+ */
+export function withEnrichedIdentity(
+  rows: readonly Datum[],
+  enrichment: VesselEnrichment | null,
+): readonly Datum[] {
+  const callSign = enrichment?.particulars?.callSign ?? null;
+  if (!callSign) return rows;
+
+  return rows.map((datum) =>
+    datum.label === "Call sign" && datum.availability !== "AVAILABLE"
+      ? available("Call sign", callSign, {
+          mono: true,
+          provenance: "Datalastic /vessel_info",
+        })
+      : datum,
+  );
+}

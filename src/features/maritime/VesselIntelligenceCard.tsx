@@ -38,7 +38,7 @@ import {
   PeoplePanel,
   VesselVoyagePanel,
 } from "./VesselIntelligenceSections";
-import { presentVessel } from "./vessel-presentation";
+import { presentVessel, withEnrichedIdentity } from "./vessel-presentation";
 import type { FollowState } from "./vessel-camera";
 
 /** The six panels, in the order an officer works through them. */
@@ -125,10 +125,15 @@ export function VesselIntelligenceCard({
    * presentation on every frame would put avoidable work directly in the
    * path of camera movement.
    */
-  const presentation = useMemo(
-    () => presentVessel(vessel, { sourceSupportsHistory, track: vesselTrack }),
-    [vessel, sourceSupportsHistory, vesselTrack],
-  );
+  const presentation = useMemo(() => {
+    const base = presentVessel(vessel, { sourceSupportsHistory, track: vesselTrack });
+    /*
+     * The position report carries no call sign, so the identity panel said
+     * so — truthfully about its own source, and in flat contradiction with
+     * the particulars panel below it once `vessel_info` supplied one.
+     */
+    return { ...base, identity: withEnrichedIdentity(base.identity, enrichment ?? null) };
+  }, [vessel, sourceSupportsHistory, vesselTrack, enrichment]);
 
   return (
     <aside

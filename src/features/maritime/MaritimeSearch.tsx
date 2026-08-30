@@ -179,6 +179,20 @@ export function MaritimeSearch({
           { service },
         );
       }
+      /*
+       * A place result moved the camera and left whatever was selected
+       * before still open — so searching a port centred on it while the
+       * drawer went on describing the previous vessel. Selecting the port
+       * as well goes through the same dispatcher, so search and the map
+       * open the identical canonical entity rather than two views of one.
+       *
+       * Only when the place resolves in the port register: a location that
+       * is not a port has no workspace to open, and the camera move is the
+       * whole of the correct answer there.
+       */
+      if (result.ok && hit.kind === "place") {
+        executeCopilotAction({ type: "SELECT_PORT", unlocode: hit.id }, { service });
+      }
       if (result.ok) {
         setRecent(rememberSearch(hit.name));
         setOpen(false);

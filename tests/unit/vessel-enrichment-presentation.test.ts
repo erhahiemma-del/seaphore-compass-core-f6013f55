@@ -15,6 +15,7 @@ import {
   presentParticulars,
   presentPortContext,
   presentUnservedCapabilities,
+  withEnrichedIdentity,
 } from "@/features/maritime/vessel-presentation";
 import type { VesselEnrichment } from "@/services/geospatial/vessel-enrichment";
 
@@ -317,5 +318,65 @@ describe("port record availability", () => {
     expect(record.reason).toMatch(/outside this deployment/i);
     // The vessel is not blamed for Seaphore's coverage.
     expect(record.reason).toMatch(/not in question/i);
+  });
+});
+
+/*
+ * Two panels in one drawer must not disagree about one fact.
+ *
+ * `vessel_inradius` carries no call sign, so the identity panel reported
+ * "not in the current position report" — accurate about its own source,
+ * and a contradiction the moment the particulars panel below it showed
+ * PDSY from `vessel_info`. An officer who sees two panels disagree learns
+ * to trust neither.
+ */
+describe("identity gaps the deeper source can fill", () => {
+  const positionOnly = [
+    { label: "IMO", value: "9865714", availability: "AVAILABLE" as const },
+    {
+      label: "Call sign",
+      availability: "UNAVAILABLE" as const,
+      reason: "Not in the current position report",
+    },
+  ];
+
+  it("answers the call sign rather than leaving it contradicted", () => {
+    const rows = withEnrichedIdentity(positionOnly, FULL);
+    const callSign = rows.find((r) => r.label === "Call sign")!;
+
+    expect(callSign.value).toBe("PDSY");
+    expect(callSign.availability).toBe("AVAILABLE");
+    // And says where it came from, so it is answered rather than silenced.
+    expect(callSign.provenance).toMatch(/vessel_info/);
+  });
+
+  it("leaves the row alone when the deep load has not run", () => {
+    const rows = withEnrichedIdentity(positionOnly, EMPTY);
+    const callSign = rows.find((r) => r.label === "Call sign")!;
+
+    // Still honest: nothing has answered it yet.
+    expect(callSign.availability).toBe("UNAVAILABLE");
+  });
+
+  /*
+   * A gap is filled; a live observation is not overwritten. The position
+   * report is the fresher source, and replacing what it did answer with a
+   * day-old cached value would be the opposite of the intent.
+   */
+  it("never overrides a value the position report already gave", () => {
+    const withCallSign = [
+      { label: "Call sign", value: "ZZZZ", availability: "AVAILABLE" as const },
+    ];
+
+    const rows = withEnrichedIdentity(withCallSign, FULL);
+
+    expect(rows.find((r) => r.label === "Call sign")!.value).toBe("ZZZZ");
+  });
+
+  it("leaves every other row untouched", () => {
+    const rows = withEnrichedIdentity(positionOnly, FULL);
+
+    expect(rows.find((r) => r.label === "IMO")!.value).toBe("9865714");
+    expect(rows).toHaveLength(2);
   });
 });

@@ -38,6 +38,7 @@ import {
 import type { Vessel } from "@/services/geospatial";
 import { navigateTo, navigateToCoordinates } from "@/services/geospatial/navigation";
 import { sgs, type SharedGeospatialService } from "@/services/geospatial";
+import { findNigerianPort } from "@/services/geospatial/nigerian-ports";
 import type { LonLat } from "@/services/geospatial/types";
 
 /**
@@ -50,6 +51,14 @@ import type { LonLat } from "@/services/geospatial/types";
 export type CopilotAction =
   | { readonly type: "SELECT_VESSEL"; readonly imo: string }
   | { readonly type: "CLEAR_SELECTION" }
+  /*
+   * Open a port workspace.
+   *
+   * Carries a UN/LOCODE rather than a name: port names are not unique —
+   * "LAGOS" is a port in Nigeria and a port in Portugal — so a name would
+   * let a search box or a spoken sentence open the wrong country's port.
+   */
+  | { readonly type: "SELECT_PORT"; readonly unlocode: string }
   | { readonly type: "NAVIGATE_PLACE"; readonly place: string }
   | { readonly type: "NAVIGATE_COORDINATES"; readonly coordinates: LonLat; readonly zoom?: number }
   | { readonly type: "ZOOM"; readonly direction: "in" | "out" }
@@ -100,6 +109,7 @@ export type CopilotAction =
 export function isStateChanging(action: CopilotAction): boolean {
   switch (action.type) {
     case "SELECT_VESSEL":
+    case "SELECT_PORT":
     case "CLEAR_SELECTION":
     case "NAVIGATE_PLACE":
     case "NAVIGATE_COORDINATES":
@@ -248,6 +258,25 @@ export function executeCopilotAction(
        */
       service.update({ approachHighlight: [] });
       return { ok: true, summary: `Selected ${action.imo}.` };
+    }
+
+    case "SELECT_PORT": {
+      /*
+       * Resolved before selecting, for the same reason SELECT_VESSEL
+       * checks its IMO: announcing a port that opens an empty panel is
+       * worse than saying it is not held. A valid UN/LOCODE outside this
+       * deployment's register is a coverage limit, and says so.
+       */
+      const port = findNigerianPort(action.unlocode);
+      if (!port) {
+        return {
+          ok: false,
+          summary: "That port is not in Seaphore's register.",
+          reason: `${action.unlocode} may be a real port, but this deployment holds no record for it.`,
+        };
+      }
+      service.select({ kind: "port", id: port.locode });
+      return { ok: true, summary: `Opened ${port.name}.` };
     }
 
     case "CLEAR_SELECTION":
