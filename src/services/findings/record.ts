@@ -148,12 +148,7 @@ export interface PersistedFinding {
   readonly decisions: readonly FindingDecision[];
 }
 
-export type FindingDecisionKind =
-  | "CONFIRM"
-  | "DISMISS"
-  | "OPEN_INVESTIGATION"
-  | "NOTE"
-  | "RESOLVE";
+export type FindingDecisionKind = "CONFIRM" | "DISMISS" | "OPEN_INVESTIGATION" | "NOTE" | "RESOLVE";
 
 export interface FindingDecision {
   readonly id: string;
