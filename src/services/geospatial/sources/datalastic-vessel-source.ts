@@ -589,6 +589,21 @@ export class DatalasticVesselSource implements DescribableVesselSource {
  * clamped by the gateway. One geographic definition, converted — not a
  * second one invented.
  */
+/**
+ * The smallest circle worth asking the provider for.
+ *
+ * A viewport-sized query looks reasonable and behaves terribly: zooming in
+ * shrinks the circle, so at close range Seaphore asked about two kilometres
+ * of water, was told there were no vessels in it, and emptied a map that
+ * had been showing four hundred. The officer zooms toward a ship and the
+ * ship disappears — and a paid request buys that.
+ *
+ * Nothing about the answer was untrue; the question was wrong. Below this
+ * radius the surrounding fleet is what an officer is looking at, so the
+ * query stays wide and the map narrows what it draws.
+ */
+const MIN_VIEWPORT_RADIUS_KM = 50;
+
 export function circleForBbox(bbox: readonly [number, number, number, number]): {
   lat: number;
   lon: number;
@@ -599,7 +614,8 @@ export function circleForBbox(bbox: readonly [number, number, number, number]): 
   const lon = (west + east) / 2;
   const latKm = ((north - south) / 2) * 111;
   const lonKm = ((east - west) / 2) * 111 * Math.cos((lat * Math.PI) / 180);
-  return { lat, lon, radiusKm: Math.ceil(Math.sqrt(latKm * latKm + lonKm * lonKm)) };
+  const radiusKm = Math.ceil(Math.sqrt(latKm * latKm + lonKm * lonKm));
+  return { lat, lon, radiusKm: Math.max(radiusKm, MIN_VIEWPORT_RADIUS_KM) };
 }
 
 /** Requested window → whole calendar days, which is how history is billed. */

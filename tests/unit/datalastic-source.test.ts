@@ -414,3 +414,44 @@ describe("Datalastic · a plan limit is not an empty sea", () => {
     expect(feedErrorFromSource(source)).toBeNull();
   });
 });
+
+describe("Datalastic · a zoomed-in viewport does not empty the map", () => {
+  /*
+   * Measured in the browser: 414 vessels at zoom 9, zero at zoom 11. The
+   * viewport-sized circle had shrunk to about two kilometres, the provider
+   * truthfully reported no vessels in it, and the map emptied. Nothing
+   * about the answer was wrong — the question was.
+   */
+  it("keeps the circle wide when the viewport is small", () => {
+    // Roughly a 2 nm view over Lagos, which is where this was seen.
+    const tight = circleForBbox([3.39, 6.4, 3.41, 6.42]);
+
+    expect(tight.radiusKm).toBeGreaterThanOrEqual(50);
+  });
+
+  it("still centres on where the officer is looking", () => {
+    const circle = circleForBbox([3.39, 6.4, 3.41, 6.42]);
+
+    expect(circle.lon).toBeCloseTo(3.4, 2);
+    expect(circle.lat).toBeCloseTo(6.41, 2);
+  });
+
+  /*
+   * A wide viewport is already larger than the floor and must not be
+   * shrunk to it — that would trade one empty map for a narrower one.
+   */
+  it("leaves a wide viewport alone", () => {
+    const wide = circleForBbox([2, 4, 8, 8]);
+
+    expect(wide.radiusKm).toBeGreaterThan(50);
+  });
+
+  /*
+   * The provider rejects anything over 50km, and the server clamps it.
+   * The floor must sit at that ceiling, not above it, or every zoomed-in
+   * query would be rejected instead of merely narrow.
+   */
+  it("does not exceed the provider's own maximum at the floor", () => {
+    expect(circleForBbox([3.399, 6.409, 3.401, 6.411]).radiusKm).toBe(50);
+  });
+});
