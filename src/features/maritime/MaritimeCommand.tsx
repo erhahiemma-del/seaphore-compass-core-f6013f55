@@ -335,7 +335,7 @@ export function MaritimeCommand() {
    * does not.
    */
   const findingFeatures = useMemo(() => {
-    const byImo = new Map(vessels.map((vessel) => [vessel.imo, vessel]));
+    const byImo = new Map(vessels.map((vessel) => [vessel.identity.imo, vessel]));
     return toFindingIndicatorCollection(records.findings, (finding) => {
       if (finding.subjectType !== "vessel") return null;
       const vessel = byImo.get(finding.subjectId);
@@ -401,11 +401,11 @@ export function MaritimeCommand() {
             findingType: finding.findingType,
             subjectType: finding.subjectType,
             subjectId: finding.subjectId,
-            subjectLabel: finding.subjectLabel,
+            subjectLabel: finding.subjectName ?? undefined,
             source: finding.source,
             sourceRecordId: finding.sourceRecordId ?? undefined,
-            summary: finding.summary,
-            evidenceRef: finding.evidenceRef ?? undefined,
+            summary: finding.description,
+            evidenceRef: finding.evidenceRefs[0]?.ref ?? undefined,
           },
         });
         await records.decide({
