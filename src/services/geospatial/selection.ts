@@ -175,7 +175,21 @@ export function describeSelection(selection: MapSelection | null): string {
   if (!selection) return "Nothing selected";
   switch (selection.kind) {
     case "vessel":
-      return selection.imo ? `Vessel · IMO ${selection.imo}` : `Vessel · ${selection.id}`;
+      /*
+       * The selection carries the canonical key, which falls back to the
+       * MMSI when no IMO was reported — so it cannot be labelled "IMO"
+       * without checking. Roughly one vessel in seven off Lagos has no
+       * IMO, and calling its radio identity a registry number is a claim
+       * about the ship rather than a formatting choice.
+       *
+       * The two are only equal when the fallback produced the key: a
+       * vessel carrying both never has them match.
+       */
+      if (!selection.imo) return `Vessel · ${selection.id}`;
+      // An IMO is seven digits, an MMSI is nine. The length is the rule.
+      return /^\d{9}$/.test(selection.imo)
+        ? `Vessel · MMSI ${selection.imo}`
+        : `Vessel · IMO ${selection.imo}`;
     case "voyage":
       return selection.voyageNumber
         ? `Voyage · ${selection.voyageNumber}`

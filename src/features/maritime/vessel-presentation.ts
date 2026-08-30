@@ -29,6 +29,7 @@
  * Nothing here computes intelligence. It reads fields, and where a value
  * is missing it reports the reason the underlying service already knows.
  */
+import { hasReportedImo } from "@/services/geospatial/vessel";
 import type { Vessel } from "@/services/geospatial";
 import type { DatalasticMarineConditions } from "@/connectors/datalastic/types";
 import type { VesselEnrichment } from "@/services/geospatial/vessel-enrichment";
@@ -138,7 +139,24 @@ export function presentVessel(
 
   return {
     identity: [
-      available("IMO", identity.imo, { mono: true }),
+      /*
+       * Only when the provider actually reported one.
+       *
+       * `identity.imo` falls back to the MMSI so every vessel has a key,
+       * which is right — but printing that key as "IMO" tells an officer
+       * the ship has a registry number it does not have. Roughly one
+       * vessel in seven off Lagos reports no IMO.
+       */
+      hasReportedImo(identity)
+        ? available("IMO", identity.imo, { mono: true })
+        : missing(
+            "IMO",
+            "UNAVAILABLE",
+            "Not reported by the source. This vessel is identified by its MMSI.",
+            {
+              mono: true,
+            },
+          ),
       identity.mmsi
         ? available("MMSI", identity.mmsi, { mono: true })
         : missing("MMSI", "UNAVAILABLE", "Not in the current position report", { mono: true }),

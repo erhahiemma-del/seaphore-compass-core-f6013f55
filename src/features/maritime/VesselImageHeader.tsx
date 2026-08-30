@@ -30,6 +30,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Maximize2, X } from "lucide-react";
 
+import { hasReportedImo } from "@/services/geospatial/vessel";
 import { cn } from "@/lib/utils";
 import {
   IMAGE_KIND_BADGE,
@@ -343,7 +344,10 @@ function ExpandedImage({
         <div className="flex items-start gap-3 px-4 py-3">
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold">{identity.name}</p>
-            <p className="font-mono text-[11px] text-muted-foreground">IMO {identity.imo}</p>
+            <p className="font-mono text-[11px] text-muted-foreground">
+              {/* An MMSI standing in as the key is not an IMO. */}
+              {hasReportedImo(identity) ? `IMO ${identity.imo}` : `MMSI ${identity.mmsi ?? "—"}`}
+            </p>
             <p className="mt-1 text-[11px] text-muted-foreground">{IMAGE_KIND_DETAIL[kind]}</p>
             {resolved.attribution ? (
               <p className="mt-0.5 text-[10px] text-muted-foreground">{resolved.attribution}</p>

@@ -20,6 +20,7 @@ import { X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { MAP_SYMBOLS, type MapSymbolKind } from "@/lib/map-symbols";
+import { hasReportedImo } from "@/services/geospatial/vessel";
 import { cn } from "@/lib/utils";
 import {
   anchoragesForPort,
@@ -218,7 +219,12 @@ function vesselCard(selection: MapSelection, vessels: readonly Vessel[]): CardMo
     eyebrow: "Vessel",
     title: vessel.identity.name,
     subtitle: [
-      vessel.identity.imo ? `IMO ${vessel.identity.imo}` : null,
+      // The key may be an MMSI standing in; label it as what it is.
+      hasReportedImo(vessel.identity)
+        ? `IMO ${vessel.identity.imo}`
+        : vessel.identity.mmsi
+          ? `MMSI ${vessel.identity.mmsi}`
+          : null,
       vessel.identity.mmsi ? `MMSI ${vessel.identity.mmsi}` : null,
     ]
       .filter(Boolean)

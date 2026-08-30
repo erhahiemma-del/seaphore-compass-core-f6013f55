@@ -24,6 +24,7 @@
  * freshness colours the chip: a stale position cannot show as current.
  */
 import { cn } from "@/lib/utils";
+import { hasReportedImo } from "@/services/geospatial/vessel";
 import type { Vessel } from "@/services/geospatial";
 import { freshnessBandForTimestamp } from "@/services/geospatial/freshness";
 import type { VesselImagerySource } from "@/services/geospatial/vessel-imagery";
@@ -72,7 +73,10 @@ export function VesselHero({
       <p className="mt-0.5 truncate text-[11.5px] text-muted-foreground">
         {[
           identity.type,
-          `IMO ${identity.imo}`,
+          // Only when the provider reported one: the key falls back to the
+          // MMSI, and printing that as an IMO claims a registry number the
+          // vessel does not have.
+          hasReportedImo(identity) ? `IMO ${identity.imo}` : null,
           identity.mmsi ? `MMSI ${identity.mmsi}` : null,
           identity.callSign,
           identity.flag,
