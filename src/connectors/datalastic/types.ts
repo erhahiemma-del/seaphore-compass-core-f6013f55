@@ -223,3 +223,38 @@ export interface DatalasticHistoryQuery extends DatalasticVesselQuery {
   /** Calendar days back. Clamped to keep credit cost predictable. */
   readonly days: number;
 }
+
+/**
+ * Marine conditions at a point, from `/weather`.
+ *
+ * Sea state rather than a forecast: wave height, period and direction are
+ * what decide whether a small craft can work an anchorage, and they are
+ * the reason this is worth a request at all. Air temperature is included
+ * because the provider returns it, not because it drives anything.
+ *
+ * Every field is optional because the provider omits what it has no
+ * reading for, and an omitted swell must not arrive as a calm sea.
+ */
+export interface DatalasticMarineConditions {
+  /** The point the provider actually answered for, which it may round. */
+  readonly lat: number | null;
+  readonly lon: number | null;
+  /** Provider's own observation time, ISO-8601. Never substituted. */
+  readonly observedAt: string | null;
+  readonly temperatureC: number | null;
+  readonly windSpeedKph: number | null;
+  readonly windDirectionDeg: number | null;
+  readonly windGustsKph: number | null;
+  /** Metres. */
+  readonly waveHeightM: number | null;
+  readonly waveDirectionDeg: number | null;
+  /** Seconds. */
+  readonly wavePeriodS: number | null;
+  /** Metres. Visibility as reported; the provider gives metres, not miles. */
+  readonly visibilityM: number | null;
+  /** Hectopascals at mean sea level. */
+  readonly pressureHpa: number | null;
+  /** Percentage. */
+  readonly cloudCoverPct: number | null;
+  readonly humidityPct: number | null;
+}

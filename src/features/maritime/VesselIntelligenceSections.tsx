@@ -19,6 +19,7 @@ import type { Vessel } from "@/services/geospatial";
 import { RiskGauge } from "./RiskGauge";
 import { VesselIntelligenceView } from "./VesselIntelligenceView";
 import type { MapSelection } from "@/services/geospatial";
+import type { MarineWeatherState } from "./use-marine-weather";
 import { vesselDocuments } from "@/services/geospatial/vessel-documents";
 import type { VesselEnrichment } from "@/services/geospatial/vessel-enrichment";
 import {
@@ -29,6 +30,7 @@ import {
 import type { ActivityEvent, Datum, VesselPresentation } from "./vessel-presentation";
 import {
   presentDeclaredVoyage,
+  presentMarineConditions,
   presentEnrichmentSource,
   presentParticulars,
   presentPortContext,
@@ -345,10 +347,13 @@ export function ParticularsPanel({
   enrichment,
   loading,
   failed,
+  weather,
 }: {
   enrichment: VesselEnrichment | null;
   loading: boolean;
   failed: boolean;
+  /** Sea state for this vessel's position. Absent renders as not loaded. */
+  weather?: MarineWeatherState;
 }) {
   /*
    * A provider failure is not an empty vessel. Rendering the rows with
@@ -378,6 +383,20 @@ export function ParticularsPanel({
 
       <Card title="Source & freshness">
         {presentEnrichmentSource(enrichment).map((datum) => (
+          <DatumRow key={datum.label} datum={datum} />
+        ))}
+      </Card>
+
+      {/*
+        Sea state where this vessel is. Loaded for the selected vessel
+        only, on a coarse grid, so an anchorage of hundreds costs one
+        request rather than one each.
+      */}
+      <Card title="Conditions">
+        {presentMarineConditions(weather?.conditions ?? null, {
+          loading: weather?.loading,
+          failed: weather?.failed,
+        }).map((datum) => (
           <DatumRow key={datum.label} datum={datum} />
         ))}
       </Card>

@@ -30,6 +30,7 @@
  * is missing it reports the reason the underlying service already knows.
  */
 import type { Vessel } from "@/services/geospatial";
+import type { DatalasticMarineConditions } from "@/connectors/datalastic/types";
 import type { VesselEnrichment } from "@/services/geospatial/vessel-enrichment";
 import { destinationPortTarget } from "@/services/geospatial/voyage-port-target";
 import type { VesselTrack } from "@/services/geospatial/vessel-track";
@@ -545,4 +546,108 @@ export function withEnrichedIdentity(
         })
       : datum,
   );
+}
+
+/* ── Marine conditions ───────────────────────────────────────────────── */
+
+/** Degrees to a compass point, which is how a mariner reads a direction. */
+function compass(deg: number): string {
+  const points = [
+    "N",
+    "NNE",
+    "NE",
+    "ENE",
+    "E",
+    "ESE",
+    "SE",
+    "SSE",
+    "S",
+    "SSW",
+    "SW",
+    "WSW",
+    "W",
+    "WNW",
+    "NW",
+    "NNW",
+  ];
+  return points[Math.round(deg / 22.5) % 16]!;
+}
+
+/**
+ * Sea state at a point.
+ *
+ * Wave height leads because it is the number that decides whether a small
+ * craft can work an anchorage; air temperature is included only because the
+ * provider returns it. Every absent reading says the provider had none —
+ * an omitted swell must never render as a calm sea.
+ */
+export function presentMarineConditions(
+  conditions: DatalasticMarineConditions | null,
+  options: { readonly loading?: boolean; readonly failed?: boolean } = {},
+): readonly Datum[] {
+  if (options.failed) {
+    return [
+      missing(
+        "Conditions",
+        "UNAVAILABLE",
+        "Datalastic could not be reached for this location. This is a collection failure, not a calm sea.",
+      ),
+    ];
+  }
+  if (!conditions) {
+    return [
+      missing(
+        "Conditions",
+        "UNKNOWN",
+        options.loading ? "Loading…" : "Not loaded for this location.",
+      ),
+    ];
+  }
+
+  const noReading = (label: string) =>
+    missing(label, "UNAVAILABLE", "The provider returned no reading for this.");
+
+  return [
+    conditions.waveHeightM !== null
+      ? available("Wave height", `${conditions.waveHeightM.toFixed(2)} m`)
+      : noReading("Wave height"),
+    conditions.wavePeriodS !== null
+      ? available("Wave period", `${conditions.wavePeriodS.toFixed(1)} s`)
+      : noReading("Wave period"),
+    conditions.waveDirectionDeg !== null
+      ? available(
+          "Wave direction",
+          `${compass(conditions.waveDirectionDeg)} (${Math.round(conditions.waveDirectionDeg)}°)`,
+        )
+      : noReading("Wave direction"),
+    conditions.windSpeedKph !== null
+      ? available(
+          "Wind",
+          conditions.windDirectionDeg !== null
+            ? `${conditions.windSpeedKph.toFixed(1)} km/h from ${compass(conditions.windDirectionDeg)}`
+            : `${conditions.windSpeedKph.toFixed(1)} km/h`,
+        )
+      : noReading("Wind"),
+    conditions.windGustsKph !== null
+      ? available("Gusts", `${conditions.windGustsKph.toFixed(1)} km/h`)
+      : noReading("Gusts"),
+    conditions.visibilityM !== null
+      ? available("Visibility", `${(conditions.visibilityM / 1000).toFixed(1)} km`)
+      : noReading("Visibility"),
+    conditions.pressureHpa !== null
+      ? available("Pressure", `${conditions.pressureHpa.toFixed(1)} hPa`)
+      : noReading("Pressure"),
+    conditions.temperatureC !== null
+      ? available("Air temperature", `${conditions.temperatureC.toFixed(1)} °C`)
+      : noReading("Air temperature"),
+    conditions.observedAt
+      ? available("Observed", utc(conditions.observedAt), {
+          provenance: "Datalastic /weather",
+        })
+      : missing(
+          "Observed",
+          "UNAVAILABLE",
+          "The provider gave no observation time, so this reading cannot be aged.",
+        ),
+  ];
 }

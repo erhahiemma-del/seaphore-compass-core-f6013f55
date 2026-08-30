@@ -17,12 +17,14 @@ import {
   getStat,
   getVessel,
   getVesselHistory,
+  getMarineWeather,
   getVesselIdentity,
   getVesselVoyage,
 } from "@/lib/server/datalastic.server";
 import type {
   DatalasticAccount,
   DatalasticHistoryPoint,
+  DatalasticMarineConditions,
   DatalasticResult,
   DatalasticVesselIdentity,
   DatalasticVesselRecord,
@@ -108,6 +110,26 @@ export const datalasticVesselVoyage = createServerFn({ method: "POST" })
   .inputValidator(vesselKey)
   .handler(
     async ({ data }): Promise<DatalasticResult<DatalasticVesselVoyage>> => getVesselVoyage(data),
+  );
+
+/**
+ * Marine conditions at a point.
+ *
+ * Coordinates are rounded server-side onto a shared grid, so several
+ * vessels in one anchorage resolve to a single cached answer rather than a
+ * paid request each.
+ */
+export const datalasticWeather = createServerFn({ method: "POST" })
+  .inputValidator((data: { lat: number; lon: number }) => {
+    const lat = finite(data?.lat, "lat");
+    const lon = finite(data?.lon, "lon");
+    if (lat < -90 || lat > 90) throw new Error("lat out of range");
+    if (lon < -180 || lon > 180) throw new Error("lon out of range");
+    return { lat, lon };
+  })
+  .handler(
+    async ({ data }): Promise<DatalasticResult<DatalasticMarineConditions>> =>
+      getMarineWeather(data),
   );
 
 /** Vessel search. Ambiguity is returned, never resolved silently. */

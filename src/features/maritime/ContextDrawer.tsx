@@ -42,6 +42,7 @@ import {
 import type { VesselCamera } from "./useVesselCamera";
 
 import { VesselIntelligenceCard, type VesselTabId } from "./VesselIntelligenceCard";
+import { useMarineWeather } from "./use-marine-weather";
 import { useVesselEnrichment } from "./use-vessel-enrichment";
 import type { VesselTrack } from "@/services/geospatial/vessel-track";
 import { VoyagePanel } from "./VoyagePanel";
@@ -395,6 +396,17 @@ function VesselTabs({
   } = useVesselEnrichment(vessel.identity.imo || null);
 
   /*
+   * Sea state where this vessel is, on the same one-request-per-selection
+   * terms as the enrichment. The position is rounded onto a coarse grid
+   * before it becomes a query key, so two vessels in one anchorage share
+   * the answer rather than buying it twice.
+   */
+  const weather = useMarineWeather({
+    lat: vessel.position.lat,
+    lon: vessel.position.lon,
+  });
+
+  /*
    * Centre goes through the shared camera, which measures the drawer and
    * the left rail before deciding where to move. The previous version
    * centred on the raw coordinate, which put the vessel behind the very
@@ -416,6 +428,7 @@ function VesselTabs({
         onResumeFollow={camera?.resumeFollow}
         onOpenPort={onOpenPort}
         enrichment={enrichment}
+        weather={weather}
         enrichmentLoading={enrichmentLoading}
         enrichmentFailed={enrichmentFailed}
         onReplay={replayAvailable ? onReplay : undefined}

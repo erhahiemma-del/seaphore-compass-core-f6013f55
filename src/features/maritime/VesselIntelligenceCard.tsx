@@ -26,6 +26,7 @@ import type { VesselTrack } from "@/services/geospatial/vessel-track";
 import type { MapSelection } from "@/services/geospatial";
 import type { VesselEnrichment } from "@/services/geospatial/vessel-enrichment";
 
+import type { MarineWeatherState } from "./use-marine-weather";
 import { VesselHero } from "./VesselHero";
 import type { ReplayDrawerContext } from "./replay-drawer-state";
 import {
@@ -98,6 +99,8 @@ export interface VesselIntelligenceCardProps {
   readonly enrichmentLoading?: boolean;
   /** The provider could not be reached — never rendered as an empty vessel. */
   readonly enrichmentFailed?: boolean;
+  /** Sea state for this vessel, loaded by the surface that owns selection. */
+  readonly weather?: MarineWeatherState;
 }
 
 export function VesselIntelligenceCard({
@@ -118,6 +121,7 @@ export function VesselIntelligenceCard({
   enrichment,
   enrichmentLoading,
   enrichmentFailed,
+  weather,
 }: VesselIntelligenceCardProps) {
   /*
    * Derived once per vessel rather than per render. The drawer sits
@@ -223,6 +227,7 @@ export function VesselIntelligenceCard({
             enrichment={enrichment ?? null}
             loading={enrichmentLoading ?? false}
             failed={enrichmentFailed ?? false}
+            weather={weather}
           />
         ) : null}
         {tab === "people" ? <PeoplePanel /> : null}

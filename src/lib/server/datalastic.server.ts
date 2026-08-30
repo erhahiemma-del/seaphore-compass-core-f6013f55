@@ -31,6 +31,7 @@ import type {
   DatalasticFindQuery,
   DatalasticHistoryPoint,
   DatalasticHistoryQuery,
+  DatalasticMarineConditions,
   DatalasticResult,
   DatalasticStatus,
   DatalasticVesselIdentity,
@@ -98,6 +99,8 @@ const CACHE_TTL_MS = {
   /** Ports move even more rarely than vessels are rebuilt. */
   gazetteer: 24 * 60 * 60_000,
   history: 10 * 60_000,
+  /** Sea state moves, but not minute to minute. */
+  weather: 30 * 60_000,
   stat: 5 * 60_000,
 } as const;
 
@@ -563,6 +566,56 @@ export async function getVessel(
 }
 
 /**
+ * Parse `/weather`.
+ *
+ * The provider nests the reading under `weather.current` and echoes the
+ * point it actually answered for, which it rounds to its own grid. Both are
+ * kept: an officer comparing two vessels a mile apart should see that the
+ * same reading was returned for both rather than assume two observations.
+ */
+export function parseMarineConditions(input: unknown): DatalasticMarineConditions | null {
+  if (typeof input !== "object" || input === null) return null;
+  const row = input as Record<string, unknown>;
+  const weather = row["weather"];
+  if (typeof weather !== "object" || weather === null) return null;
+  const w = weather as Record<string, unknown>;
+  const current = w["current"];
+  if (typeof current !== "object" || current === null) return null;
+  const c = current as Record<string, unknown>;
+
+  /*
+   * The provider gives a local wall-clock string with no zone and a
+   * separate `utc_offset_seconds`. Reading it as UTC when it is not would
+   * mis-age every observation, so the offset is applied rather than
+   * assumed away.
+   */
+  const time = str(c["time"]);
+  const offsetSec = num(w["utc_offset_seconds"]) ?? 0;
+  let observedAt: string | null = null;
+  if (time) {
+    const parsed = Date.parse(time.includes("Z") ? time : `${time}Z`);
+    if (Number.isFinite(parsed)) observedAt = new Date(parsed - offsetSec * 1000).toISOString();
+  }
+
+  return {
+    lat: num(w["latitude"]),
+    lon: num(w["longitude"]),
+    observedAt,
+    temperatureC: num(c["temperature_2m"]),
+    windSpeedKph: num(c["wind_speed_10m"]),
+    windDirectionDeg: num(c["wind_direction_10m"]),
+    windGustsKph: num(c["wind_gusts_10m"]),
+    waveHeightM: num(c["wave_height"]),
+    waveDirectionDeg: num(c["wave_direction"]),
+    wavePeriodS: num(c["wave_period"]),
+    visibilityM: num(c["visibility"]),
+    pressureHpa: num(c["pressure_msl"]),
+    cloudCoverPct: num(c["cloud_cover"]),
+    humidityPct: num(c["relative_humidity_2m"]),
+  };
+}
+
+/**
  * Identify a vessel by whichever key the caller has.
  *
  * IMO first because it survives reflagging and renaming, then MMSI, then
@@ -609,6 +662,42 @@ export async function getVesselVoyage(
     identityParams(query),
     (raw) => parseVesselVoyage(raw.data),
     CACHE_TTL_MS.voyage,
+  );
+}
+
+/**
+ * How coarsely a weather request is rounded before it is issued.
+ *
+ * Roughly eleven kilometres. Sea state does not change meaningfully across
+ * that distance, and without it every selected vessel would be a distinct
+ * cache key: four hundred vessels in one anchorage would become four
+ * hundred paid requests for the same patch of water. Rounding collapses
+ * them onto one.
+ */
+const WEATHER_GRID_DEGREES = 0.1;
+
+/** Snap to the shared grid, so neighbours reuse one answer. */
+function weatherGrid(value: number): number {
+  return Math.round(value / WEATHER_GRID_DEGREES) * WEATHER_GRID_DEGREES;
+}
+
+/**
+ * `/weather` — marine conditions at a point.
+ *
+ * Rounded to a grid before the request is made, not after, so the cache key
+ * and the request agree and neighbouring vessels genuinely share one call.
+ */
+export async function getMarineWeather(query: {
+  lat: number;
+  lon: number;
+}): Promise<DatalasticResult<DatalasticMarineConditions>> {
+  const lat = weatherGrid(query.lat);
+  const lon = weatherGrid(query.lon);
+  return request<DatalasticMarineConditions>(
+    "weather",
+    { lat, lon },
+    (raw) => parseMarineConditions(raw.data),
+    CACHE_TTL_MS.weather,
   );
 }
 
