@@ -27,7 +27,7 @@
  */
 
 /**
- * The four ways a position reaches the screen.
+ * The five ways a coordinate reaches the screen.
  *
  * Ordered by how much the data supports them, strongest first.
  */
@@ -52,7 +52,22 @@ export type PositionKind =
    */
   | "ESTIMATED"
   /** A future position. Nothing has happened here yet. */
-  | "PROJECTED";
+  | "PROJECTED"
+  /**
+   * Not a position at all — the coordinate of a place a record names.
+   *
+   * NPA reports that a vessel is at a berth in Lagos. That is a fact
+   * about the vessel, and the port has a coordinate, but the two do not
+   * combine into a position: nobody observed the ship at the port
+   * centroid, and the berth it is actually at has no published geometry.
+   *
+   * It is last in this list because it is the weakest claim on the map —
+   * weaker even than a projection, which is at least derived from an
+   * observation of this vessel. This is derived from an observation of
+   * nothing but a spreadsheet cell naming a place. Drawn as a place, it
+   * is honest; drawn as a fix, it is fabrication.
+   */
+  | "ADMINISTRATIVE";
 
 /** Every kind, strongest evidence first. */
 export const POSITION_KINDS: readonly PositionKind[] = [
@@ -60,6 +75,7 @@ export const POSITION_KINDS: readonly PositionKind[] = [
   "DISPLAY_INTERPOLATED",
   "ESTIMATED",
   "PROJECTED",
+  "ADMINISTRATIVE",
 ] as const;
 
 /**
@@ -74,6 +90,7 @@ export const POSITION_KIND_LABELS: Readonly<Record<PositionKind, string>> = {
   DISPLAY_INTERPOLATED: "Between reports",
   ESTIMATED: "Estimated",
   PROJECTED: "Projected",
+  ADMINISTRATIVE: "Place, not position",
 };
 
 /**
@@ -88,6 +105,8 @@ export const POSITION_KIND_DETAIL: Readonly<Record<PositionKind, string>> = {
     "Drawn between two reported positions so the track is continuous. The vessel was not observed here.",
   ESTIMATED: "Calculated from the last reported position, course and speed. Not observed.",
   PROJECTED: "Where the vessel would be if it holds its present course and speed. Not observed.",
+  ADMINISTRATIVE:
+    "The coordinate of a place a record names, not a report of where the vessel is. Nobody observed it here.",
 };
 
 /**
@@ -148,6 +167,12 @@ export const POSITION_KIND_STROKES: Readonly<Record<PositionKind, PositionKindSt
   ESTIMATED: { dashArray: [2, 1.5], opacity: 0.7 },
   // The longest gaps, because it is the weakest claim on the map.
   PROJECTED: { dashArray: [1, 2], opacity: 0.5 },
+  /*
+   * The faintest and the most broken up. It is the only kind on this
+   * list that is not about this vessel's movement at all, and it must
+   * never read as a track.
+   */
+  ADMINISTRATIVE: { dashArray: [1, 3], opacity: 0.4 },
 };
 
 /**

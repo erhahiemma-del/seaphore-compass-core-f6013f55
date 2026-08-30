@@ -37,6 +37,14 @@ import {
   presentUnservedCapabilities,
 } from "./vessel-presentation";
 import { operationalStateLabel } from "./vessel-panel-state";
+import { useNpaContext } from "./use-npa-context";
+import {
+  npaCargoRows,
+  npaCorrelationRows,
+  npaHistoryLines,
+  npaOperationalRows,
+  npaScheduleRows,
+} from "./npa-presentation";
 
 /* ── Primitives ──────────────────────────────────────────────────────── */
 
@@ -154,6 +162,119 @@ export function NotConnected({
 
 /* ── Tab panels ──────────────────────────────────────────────────────── */
 
+/**
+ * What the Nigerian Ports Authority says about this vessel.
+ *
+ * Its own card, above identity, because it answers the question an
+ * officer opens the drawer with — what is this ship doing here — and
+ * because it must never be mistaken for the AIS observation directly
+ * beneath it. Every row states its source.
+ *
+ * Renders nothing when NPA holds no record. A vessel in transit is
+ * expected to be absent from a Nigerian port schedule, and an empty
+ * "NPA" card on every passing hull would train officers to ignore the
+ * one place the operational state actually appears.
+ */
+export function NpaOperationalPanel({ vessel }: { vessel: Vessel }) {
+  const { vessel: unified, pending } = useNpaContext(vessel.identity.imo || null);
+
+  if (pending) {
+    return (
+      <Card title="Port authority">
+        <p className="py-1.5 text-[11px] italic text-muted-foreground">
+          Reading the NPA operational schedule&hellip;
+        </p>
+      </Card>
+    );
+  }
+
+  if (!unified || !unified.currentPortCall) {
+    /*
+     * Stated rather than omitted. "No NPA record" is a fact about the
+     * schedule, and leaving the space blank would read as "not loaded" —
+     * the same confusion this drawer works hard to keep out everywhere
+     * else.
+     */
+    return (
+      <Card title="Port authority">
+        <DatumRow
+          datum={{
+            label: "NPA record",
+            availability: "UNAVAILABLE",
+            reason:
+              "No record in the NPA daily shipping schedule. The workbook covers Nigerian port operations, so a vessel calling elsewhere is expected to be absent from it.",
+          }}
+        />
+      </Card>
+    );
+  }
+
+  const call = unified.currentPortCall;
+  const history = npaHistoryLines(unified);
+
+  return (
+    <>
+      <Card title="Port authority · operational">
+        {npaOperationalRows(call).map((datum) => (
+          <DatumRow key={datum.label} datum={datum} />
+        ))}
+      </Card>
+
+      <Card title="Port authority · schedule">
+        {npaScheduleRows(call).map((datum) => (
+          <DatumRow key={datum.label} datum={datum} />
+        ))}
+      </Card>
+
+      <Card title="NPA cargo evidence">
+        {npaCargoRows(call).map((datum) => (
+          <DatumRow key={datum.label} datum={datum} />
+        ))}
+        {/*
+          Named evidence, never a manifest, and the CTA routes to the
+          existing Manifest & Cargo workspace rather than a second one.
+        */}
+        <p className="mt-2 text-[10px] leading-tight text-muted-foreground/80">
+          Reported to the port authority. This is not a filed manifest.
+        </p>
+        <a
+          href="/manifest"
+          className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+        >
+          View Manifest &amp; Cargo &rarr;
+        </a>
+      </Card>
+
+      <Card title="Source agreement">
+        {npaCorrelationRows(unified).map((datum) => (
+          <DatumRow key={datum.label} datum={datum} />
+        ))}
+      </Card>
+
+      {history.length > 1 ? (
+        <Card title="NPA port calls">
+          {/*
+            Every call NPA holds for this hull. Ordered by how present the
+            vessel is rather than by date, so a current berthing leads a
+            later-typed departure — and historical calls are never
+            presented as current activity.
+          */}
+          <ul className="space-y-1">
+            {history.map((line, index) => (
+              <li
+                key={line + String(index)}
+                className="border-b border-border/40 py-1 text-[11px] last:border-0 text-muted-foreground"
+              >
+                {line}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
+    </>
+  );
+}
+
 export function OverviewPanel({
   vessel,
   presentation,
@@ -176,6 +297,9 @@ export function OverviewPanel({
         <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-600" aria-hidden />
         <span className="text-[11.5px] font-medium">{operationalStateLabel()}</span>
       </div>
+
+      {/* What the port authority reports, before what AIS observed. */}
+      <NpaOperationalPanel vessel={vessel} />
 
       <Card title="Identity">
         {presentation.identity.map((datum) => (

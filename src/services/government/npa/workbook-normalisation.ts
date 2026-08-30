@@ -365,6 +365,50 @@ export function readNpaTimestamp(cell: unknown): { raw: string | null; iso: stri
   const raw = cell === null || cell === undefined ? null : String(cell).trim();
   if (!raw) return { raw: null, iso: null };
 
+  /*
+   * The workbook writes dates two ways, and only one of them was read
+   * until now.
+   *
+   * The expected, awaiting and departed sheets use `Fri, August 28, 2026
+   * 06:00`. The berth sheets use `15/08/26 09:10 AM`, which this function
+   * silently returned `null` for — so every berth date in the workbook
+   * was dropped, and a berthed vessel showed "no berthing time was
+   * recorded" when the record plainly held one.
+   *
+   * Day-first, not month-first. NPA is a Nigerian authority writing in
+   * British convention, which the long-form dates in the same workbook
+   * confirm, and rows like `15/08/26` settle it outright. Reading these
+   * as month-first would move a berthing by up to eleven months without
+   * failing anything.
+   */
+  const numeric = /^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})(?:\s+(\d{1,2}):(\d{2})\s*([AP]M)?)?/.exec(
+    raw,
+  );
+  if (numeric) {
+    const [, dayText, monthText, yearText, hourText, minuteText, meridiem] = numeric;
+    const day = Number(dayText);
+    const month = Number(monthText) - 1;
+    // Two-digit years are this century: the workbook is a daily schedule,
+    // and there is no 1926 shipping to confuse it with.
+    const year = yearText.length === 2 ? 2000 + Number(yearText) : Number(yearText);
+    if (month < 0 || month > 11 || day < 1 || day > 31) return { raw, iso: null };
+
+    let hour = hourText ? Number(hourText) : 0;
+    const minute = minuteText ? Number(minuteText) : 0;
+    if (meridiem === "PM" && hour < 12) hour += 12;
+    if (meridiem === "AM" && hour === 12) hour = 0;
+    if (hour > 23 || minute > 59) return { raw, iso: null };
+
+    const at = Date.UTC(year, month, day, hour, minute);
+    // Rejects a date the calendar does not have — 31/02 rolls forward in
+    // `Date.UTC`, and a rolled date is a fabricated one.
+    const rolled = new Date(at);
+    if (rolled.getUTCMonth() !== month || rolled.getUTCDate() !== day) {
+      return { raw, iso: null };
+    }
+    return { raw, iso: rolled.toISOString() };
+  }
+
   const match = /([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})(?:\s+(\d{1,2}):(\d{2})\s*([AP]M)?)?/.exec(raw);
   if (!match) return { raw, iso: null };
 

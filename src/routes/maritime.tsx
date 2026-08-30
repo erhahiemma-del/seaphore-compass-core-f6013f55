@@ -8,6 +8,7 @@ import {
 } from "@/services/geospatial";
 import { registerSimulatedVesselSource } from "@/services/geospatial/sources/simulated-vessel-source";
 import { registerDatalasticSource } from "@/services/geospatial/sources/datalastic-vessel-source";
+import { registerNpaAugmentedSource } from "@/services/geospatial/sources/npa-augmented-source";
 import { registerConnectedProviders } from "@/services/intelligence-layer";
 import { loadEezRing } from "@/services/geospatial/eez-ring";
 
@@ -27,7 +28,22 @@ registerGlobalFishingWatchSource();
  * presented as an empty sea, and simulated traffic is never substituted
  * for it.
  */
-registerDatalasticSource();
+const datalastic = registerDatalasticSource();
+
+/*
+ * The Nigerian Ports Authority schedule, folded into the same source.
+ *
+ * Registered as a wrapper under Datalastic's own id rather than as a
+ * second provider: the update engine keys vessels by IMO, so two sources
+ * reporting one hull would let whichever refreshed last decide whether
+ * the ship is drawn at its live position or its port. Wrapping settles
+ * the union once, before anything reaches the engine.
+ *
+ * The effect an officer sees is that vessels the port authority has
+ * scheduled remain on the map when AIS cannot see them — drawn at their
+ * port, and labelled as a place rather than a position.
+ */
+registerNpaAugmentedSource(datalastic);
 
 /*
  * The simulation registers alongside it, switched off.

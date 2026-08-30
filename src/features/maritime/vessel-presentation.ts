@@ -176,7 +176,14 @@ export function presentVessel(
         mono: true,
         provenance: positionProvenanceLabel(vessel),
       }),
-      available("Speed", `${position.speed.toFixed(1)} kn`, { mono: true }),
+      /*
+       * Same trap as the heading below: an unreported speed arrives as 0
+       * and reads as "stopped", which at a berth is entirely plausible
+       * and therefore entirely misleading.
+       */
+      position.speedReported === false
+        ? missing("Speed", "UNAVAILABLE", "Speed not reported", { mono: true })
+        : available("Speed", `${position.speed.toFixed(1)} kn`, { mono: true }),
       /*
        * `heading` is a required number, so an unreported course arrives
        * as 0 and draws as due north. The flag is the only thing keeping

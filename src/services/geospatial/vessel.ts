@@ -63,6 +63,22 @@ export interface VesselPosition {
   readonly headingReported?: boolean;
   /** Speed over ground in knots. */
   readonly speed: number;
+  /**
+   * Whether a provider actually reported the speed above.
+   *
+   * The exact counterpart of {@link headingReported}, and it exists for
+   * the same reason. `speed` is a required number, so a source that
+   * publishes no speed still yields `0` — which reads as "stopped", and
+   * a stopped ship at a berth is entirely plausible. That is what makes
+   * the zero dangerous: it is indistinguishable from a real observation.
+   *
+   * NPA publishes an operational schedule with no speeds at all, so
+   * every vessel drawn from it alone would otherwise report as
+   * stationary. Optional so existing constructions stay valid; absent is
+   * treated as reported, since every caller predating this supplied a
+   * real speed.
+   */
+  readonly speedReported?: boolean;
   /** ISO-8601 timestamp of the report. */
   readonly timestamp: string;
   /**
