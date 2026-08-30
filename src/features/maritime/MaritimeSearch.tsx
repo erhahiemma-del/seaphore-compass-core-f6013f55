@@ -47,6 +47,7 @@ import {
   CATEGORY_LABEL,
   SEARCH_CATEGORIES,
   clearRecent,
+  noResultExplanation,
   readQuery,
   readRecent,
   rememberSearch,
@@ -315,8 +316,18 @@ export function MaritimeSearch({
           ) : null}
 
           {reading && reading.hits.length === 0 && !outcome ? (
-            <p className="px-2 py-3 text-center text-[11px] text-muted-foreground">
-              No matching vessel or place. Try a name, IMO, MMSI or a coordinate.
+            /*
+             * The sentence explains what was searched, not just that it
+             * failed. "No results" reads as "no such vessel", which is a
+             * stronger claim than a picture assembled by the coverage
+             * engine can support — and for a call sign it is simply
+             * wrong, because the fleet feed carries none.
+             */
+            <p
+              data-testid="search-empty"
+              className="px-2 py-3 text-[11px] leading-relaxed text-muted-foreground"
+            >
+              {noResultExplanation(query)}
             </p>
           ) : null}
 

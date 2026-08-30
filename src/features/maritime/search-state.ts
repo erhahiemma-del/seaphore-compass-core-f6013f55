@@ -134,10 +134,21 @@ function findHits(
     } else {
       for (const vessel of vessels) {
         const identity = vessel.identity;
+        /*
+         * Call sign is matched, but rarely present.
+         *
+         * `vessel_inradius` — the feed the map is built from — returns no
+         * call sign at all: measured at zero of 139 rows off Lagos. It
+         * arrives only with `vessel_info`, which is bought when an officer
+         * selects one vessel. So this matches a hull whose particulars
+         * happen to be loaded and nothing else, and a search that finds
+         * nothing must not be read as "no such vessel".
+         */
         const matches =
           identity.name.toLowerCase().startsWith(wanted) ||
           identity.imo.toLowerCase().includes(wanted) ||
-          identity.mmsi?.toLowerCase().startsWith(wanted);
+          identity.mmsi?.toLowerCase().startsWith(wanted) ||
+          identity.callSign?.toLowerCase() === wanted;
         if (matches) hits.push(vesselHit(vessel));
         if (hits.length >= 8) break;
       }
@@ -232,4 +243,33 @@ export function clearRecent(): readonly RecentSearch[] {
     /* As above. */
   }
   return [];
+}
+
+/**
+ * Why a search found nothing, in words that do not overclaim.
+ *
+ * "No results" reads as "no such vessel", and for most queries here that
+ * is a stronger statement than Seaphore can make: the fleet in memory is
+ * whatever the coverage engine last collected, not a register. A query
+ * shaped like a call sign is the sharpest case — the area feed carries no
+ * call signs at all, so failing to match one says nothing whatsoever about
+ * the vessel.
+ */
+export function noResultExplanation(query: string): string {
+  const wanted = query.trim();
+
+  /*
+   * Three to seven letters and digits, at least one letter, no spaces —
+   * the shape of a call sign rather than a name or an identifier. Loose
+   * on purpose: over-matching here costs a gentler sentence, and
+   * under-matching costs a false claim about a ship.
+   */
+  const looksLikeCallSign =
+    /^(?=.*[A-Za-z])[A-Za-z0-9]{3,7}$/.test(wanted) && !/^\d+$/.test(wanted);
+
+  if (looksLikeCallSign) {
+    return "No vessel in the current picture matches that. Call signs are not carried by the fleet feed — they arrive only when a vessel is selected — so this does not mean no such vessel exists.";
+  }
+
+  return "No vessel or place in the current picture matches that. The picture is what the coverage engine has collected, not a register, so this does not establish that no such vessel exists.";
 }
