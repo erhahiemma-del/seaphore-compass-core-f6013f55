@@ -16,6 +16,8 @@ import { MapPinOff } from "lucide-react";
 import { prefersReducedMotion } from "@/hooks/use-reduced-motion";
 import { AssetPopup } from "./AssetPopup";
 import { EMPTY_TRACK, type TrackCollection } from "@/services/geospatial/vessel-track";
+import type { FindingIndicatorCollection } from "@/services/findings/map-features";
+
 import { useAlertPulse } from "./useAlertPulse";
 import { installMapHealthProbe } from "./health-probe";
 import { feedErrorFromSource } from "./feed-error";
