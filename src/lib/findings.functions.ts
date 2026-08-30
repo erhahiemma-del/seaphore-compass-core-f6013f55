@@ -116,7 +116,6 @@ export const listFindingAudit = createServerFn({ method: "POST" })
     return loadFindingAudit(context.supabase as unknown as Db, data);
   });
 
-
 /**
  * Open a case for a finding, or attach the finding to an existing one.
  * The subject travels as typed columns — never as free text, and never as

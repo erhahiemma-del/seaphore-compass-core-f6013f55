@@ -105,9 +105,7 @@ export function useFindingRecords(): FindingRecordsState {
 
   const decide = useCallback<FindingRecordsState["decide"]>(async (input) => {
     const updated = await decideIntelligenceFinding({ data: input });
-    setFindings((current) =>
-      orderRecords(current.map((f) => (f.id === updated.id ? updated : f))),
-    );
+    setFindings((current) => orderRecords(current.map((f) => (f.id === updated.id ? updated : f))));
     return updated;
   }, []);
 

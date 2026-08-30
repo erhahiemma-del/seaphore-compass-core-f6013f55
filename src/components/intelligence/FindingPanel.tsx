@@ -81,9 +81,7 @@ export function FindingPanel({
       await work();
       setMode("VIEW");
     } catch (error) {
-      setProblem(
-        error instanceof Error ? error.message : "That decision could not be recorded.",
-      );
+      setProblem(error instanceof Error ? error.message : "That decision could not be recorded.");
     } finally {
       setPending(null);
     }
@@ -297,8 +295,8 @@ export function FindingPanel({
           className="mt-4 rounded border border-line/70 bg-surface-2/60 p-3"
         >
           <p className="flex items-start gap-1.5 text-[12.5px] text-foreground/85">
-            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 text-[#FB923C]" />
-            A dismissal needs a reason. The finding and its evidence are kept.
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 text-[#FB923C]" />A dismissal needs a
+            reason. The finding and its evidence are kept.
           </p>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {FINDING_DISMISSAL_REASONS.map((option) => (
