@@ -42,6 +42,7 @@ import { coastlineLayer, planMaritimeStyle } from "@/services/geospatial/map-sty
 import { graticuleOpacityExpression } from "@/services/geospatial/graticule";
 import { toVesselFeature } from "@/services/geospatial/vessel";
 import {
+  VESSEL_COLOR_KEYS,
   VESSEL_SILHOUETTES,
   resolveHeading,
   vesselSpriteId,
@@ -138,12 +139,20 @@ describe("vessel symbols distinguish a reported course from a defaulted one", ()
      * `vesselIconId()` can produce that the renderer never registers.
      */
     const registered = new Set(vesselSpriteIds());
+    /*
+     * Every colour, not one sampled key. The colour axis carries vessel
+     * type now, so a category added without a sprite would leave that
+     * kind of ship invisible — MapLibre skips a feature whose icon names
+     * an unregistered sprite, and it does so silently.
+     */
     for (const directional of [true, false]) {
       for (const silhouette of VESSEL_SILHOUETTES) {
-        expect(
-          registered.has(vesselSpriteId("critical", silhouette, directional)),
-          `${silhouette} (${directional ? "directional" : "nodir"}) is unregistered`,
-        ).toBe(true);
+        for (const color of VESSEL_COLOR_KEYS) {
+          expect(
+            registered.has(vesselSpriteId(color, silhouette, directional)),
+            `${color}/${silhouette} (${directional ? "directional" : "nodir"}) is unregistered`,
+          ).toBe(true);
+        }
       }
     }
   });

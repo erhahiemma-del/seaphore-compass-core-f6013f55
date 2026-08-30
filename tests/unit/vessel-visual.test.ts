@@ -202,21 +202,39 @@ describe("sprite selection", () => {
     expect(vesselIconId(v, { selectedImo: v.identity.imo })).toBe("vessel-selected-hull-nodir");
   });
 
-  it("varies shape by type and colour by risk, independently", () => {
+  /*
+   * Colour carries type, not risk.
+   *
+   * It used to carry the risk band, and nothing in this deployment
+   * assesses risk — so every vessel resolved to one colour and four
+   * hundred ships off Lagos rendered as four hundred identical marks.
+   * Colour now encodes the attribute the provider actually reports.
+   */
+  it("varies both shape and colour by type", () => {
     const tanker = { imo: "9074729", name: "TEST_FIXTURE", type: "TANKER" as const };
     const box = { imo: "9074729", name: "TEST_FIXTURE", type: "CONTAINER" as const };
 
-    // Same risk, different hull → different shape, same colour.
     expect(vesselIconId(withHeading(true, { identity: tanker, riskLevel: "HIGH" }))).toBe(
-      "vessel-high-wedge",
+      "vessel-tanker-wedge",
     );
     expect(vesselIconId(withHeading(true, { identity: box, riskLevel: "HIGH" }))).toBe(
-      "vessel-high-block",
+      "vessel-container-block",
     );
-    // Same hull, different risk → same shape, different colour.
-    expect(vesselIconId(withHeading(true, { identity: tanker, riskLevel: "LOW" }))).toBe(
-      "vessel-low-wedge",
-    );
+  });
+
+  /*
+   * The property that makes the change safe: a risk band no longer moves
+   * a hull off its own colour. Recolouring a silhouette to mean danger
+   * would also hide what kind of ship is in danger.
+   */
+  it("never recolours a hull to represent risk", () => {
+    const tanker = { imo: "9074729", name: "TEST_FIXTURE", type: "TANKER" as const };
+
+    for (const riskLevel of ["CRITICAL", "HIGH", "MEDIUM", "LOW", "CLEAN", "UNKNOWN"] as const) {
+      expect(vesselIconId(withHeading(true, { identity: tanker, riskLevel }))).toBe(
+        "vessel-tanker-wedge",
+      );
+    }
   });
 
   it("keeps the reported hull type when the bearing is unknown", () => {
@@ -224,7 +242,7 @@ describe("sprite selection", () => {
     // the course is missing would throw away real information.
     expect(
       vesselIconId(withHeading(false, { identity: { imo: "9074729", name: "T", type: "TANKER" } })),
-    ).toBe("vessel-unknown-wedge-nodir");
+    ).toBe("vessel-tanker-wedge-nodir");
   });
 });
 

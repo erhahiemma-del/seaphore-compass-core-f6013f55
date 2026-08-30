@@ -280,14 +280,17 @@ describe("vessel presentation", () => {
     expect(toVesselFeature(stale, { now: NOW, selectedImo: "1" }).properties.opacity).toBe(1);
   });
 
-  it("selects the icon variant by risk, staleness, and selection", () => {
-    // The sprite id carries three axes: colour from risk (or selection,
-    // which outranks it), silhouette from the reported hull type, and
-    // the `-nodir` suffix from whether a course was reported. These
-    // fixtures report no type, so the hull family is the generic hull.
+  it("selects the icon variant by type, staleness, and selection", () => {
+    // The sprite id carries three axes: colour from vessel type (or
+    // selection, which outranks it), silhouette from the reported hull
+    // type, and the `-nodir` suffix from whether a course was reported.
+    // These fixtures report no type, so both axes fall to the generic.
+    //
+    // Risk does not appear, deliberately: it used to drive colour, and
+    // since nothing assesses it every vessel came out the same shade.
     expect(
       toVesselFeature(vessel("1", { riskLevel: "CRITICAL" }), { now: NOW }).properties.iconId,
-    ).toBe("vessel-critical-hull");
+    ).toBe("vessel-unknown-hull");
     expect(toVesselFeature(vessel("1"), { now: NOW, selectedImo: "1" }).properties.iconId).toBe(
       "vessel-selected-hull",
     );

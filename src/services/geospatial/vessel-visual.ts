@@ -135,31 +135,63 @@ export function classifyVessel(type: VesselType | undefined | null): VesselVisua
 /**
  * The colour axis of a sprite id.
  *
- * Six risk bands plus the two conditions that outrank risk. Kept as its
- * own union rather than reusing `RiskLevel` because `selected` and
- * `stale` are presentation states, not assessments — a selected vessel
- * has not become less risky by being clicked on.
+ * ## Why this carries type and not risk
+ *
+ * It used to carry the risk band. Nothing assesses risk in this
+ * deployment, so every vessel resolved to `unknown` and the entire fleet
+ * rendered in one colour — an axis with eight values encoding a constant,
+ * while vessel type, which the provider reports for every hull, was
+ * squeezed into four silhouettes. Four hundred ships off Lagos looked
+ * like four hundred identical marks.
+ *
+ * Colour now carries the thing that is actually known. Risk gets its own
+ * channel when there is a risk engine to drive one: recolouring a
+ * silhouette to mean danger would also make it impossible to see what
+ * kind of ship is in danger.
+ *
+ * Silhouette still tracks type as well, so the two reinforce rather than
+ * compete — which is what keeps the map readable without colour.
+ *
+ * `selected` and `stale` remain, and still outrank: they are presentation
+ * states, not assessments, and a selected tanker has not stopped being a
+ * tanker.
  */
 export type VesselColorKey =
-  | "critical"
-  | "high"
-  | "medium"
-  | "low"
-  | "clean"
+  | "container"
+  | "tanker"
+  | "bulk"
+  | "vehicle"
+  | "passenger"
+  | "fishing"
+  | "tug"
+  | "offshore"
   | "unknown"
   | "selected"
   | "stale";
 
 export const VESSEL_COLOR_KEYS: readonly VesselColorKey[] = [
-  "critical",
-  "high",
-  "medium",
-  "low",
-  "clean",
+  "container",
+  "tanker",
+  "bulk",
+  "vehicle",
+  "passenger",
+  "fishing",
+  "tug",
+  "offshore",
   "unknown",
   "selected",
   "stale",
 ] as const;
+
+/**
+ * The colour a category paints in.
+ *
+ * Exported so the legend and the renderer cannot disagree about which
+ * colour means which kind of ship.
+ */
+export function colorKeyForCategory(category: VesselVisualCategory): VesselColorKey {
+  return category.toLowerCase() as VesselColorKey;
+}
 
 /** Every silhouette the sprite builder draws. */
 export const VESSEL_SILHOUETTES: readonly VesselSilhouette[] = [

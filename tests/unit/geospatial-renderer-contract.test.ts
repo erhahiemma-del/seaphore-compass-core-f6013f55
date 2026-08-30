@@ -55,12 +55,17 @@ describe("vessel sprite registry", () => {
     expect(REGISTERED).toContain(id);
   });
 
-  it("keeps stale vessels on their semantic risk sprite", () => {
+  /*
+   * Staleness is carried by opacity, not by colour: a hull that has not
+   * reported for an hour is still the same kind of hull, and recolouring
+   * it would lose the type to say something the fade already says.
+   */
+  it("keeps stale vessels on their own category sprite", () => {
     const stale = vessel("1", {
       position: { ...vessel("1").position, timestamp: new Date(NOW - 3_600_000).toISOString() },
     });
     const id = vesselIconId(stale, { now: NOW });
-    expect(id).toBe("vessel-low-hull");
+    expect(id).toBe("vessel-unknown-hull");
     expect(REGISTERED).toContain(id);
   });
 

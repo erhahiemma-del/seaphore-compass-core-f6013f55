@@ -34,18 +34,37 @@ export const VESSEL_SPRITE_SIZE = 30;
  * because MapLibre skips features whose `icon-image` names an
  * unregistered sprite.
  */
+/**
+ * A colour per vessel category.
+ *
+ * Chosen from a colour-blind-safe set rather than a rainbow: the pairs
+ * that must never be confused are tanker against container and fishing
+ * against tug, so those sit far apart in hue *and* in lightness. Anyone
+ * who cannot separate them by hue can still separate them by weight, and
+ * the silhouette carries the same information a third time.
+ *
+ * Tanker takes the warmest colour because a laden tanker is the highest
+ * consequence hull in these waters, and it is the one an officer scanning
+ * an anchorage is most often looking for.
+ */
 export const VESSEL_SPRITE_COLORS: Readonly<Record<VesselColorKey, string>> = {
-  critical: RISK_COLORS.CRITICAL,
-  high: RISK_COLORS.HIGH,
-  medium: RISK_COLORS.MEDIUM,
-  low: RISK_COLORS.LOW,
-  clean: RISK_COLORS.CLEAN,
-  // An unassessed vessel is the baseline maritime green of the symbol
-  // vocabulary — visible and recognisable, without claiming a risk band.
+  container: "#3B7DD8",
+  tanker: "#D97706",
+  bulk: "#B45309",
+  vehicle: "#7C3AED",
+  passenger: "#DB2777",
+  fishing: "#0891B2",
+  tug: "#65A30D",
+  offshore: "#0D9488",
+  /*
+   * A type the provider did not report. The baseline maritime green of
+   * the symbol vocabulary — visible and recognisable, and deliberately
+   * not a category colour, so "unspecified" never reads as a kind of ship.
+   */
   unknown: MAP_SYMBOLS.vessel.color,
-  /** Selection overrides risk colour. */
+  /** Selection outranks category: one hull, unmistakably picked out. */
   selected: "#0E7C7B",
-  /** Stale position keeps the vessel silhouette colour; opacity carries age. */
+  /** A stale position keeps its category; opacity carries the age. */
   stale: MAP_SYMBOLS.vessel.color,
 } as const;
 

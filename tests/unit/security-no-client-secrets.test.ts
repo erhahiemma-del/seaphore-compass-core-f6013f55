@@ -27,8 +27,9 @@
  * inlining one is a leak already shipped.
  */
 import { describe, it, expect } from "vitest";
-import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+
+import { readSource, sourceFilesUnder } from "./helpers/source-tree";
 
 const ROOT = join(process.cwd(), "src");
 
@@ -96,17 +97,14 @@ function isServerOnly(path: string): boolean {
   return path.includes(join("src", "routes", "api"));
 }
 
-function walk(dir: string, out: string[] = []): string[] {
-  for (const entry of readdirSync(dir)) {
-    const full = join(dir, entry);
-    const s = statSync(full);
-    if (s.isDirectory()) walk(full, out);
-    else if (/\.(ts|tsx|js|jsx)$/.test(entry)) out.push(full);
-  }
-  return out;
-}
-
-const ALL_FILES = walk(ROOT);
+/*
+ * The shared walker, so a file removed between the listing and the read is
+ * skipped rather than throwing ENOENT. This guard had the same
+ * readdir-then-stat race the others did and failed intermittently on an
+ * unrelated file — which, in a security guard, teaches people to re-run
+ * until green. The count assertion below is what keeps skipping safe.
+ */
+const ALL_FILES = sourceFilesUnder(ROOT, /\.(ts|tsx|js|jsx)$/);
 const CLIENT_FILES = ALL_FILES.filter(
   (f) => !isServerOnly(f) && !/\.test\.(ts|tsx|js|jsx)$/.test(f),
 );
@@ -130,7 +128,8 @@ describe("no provider secret is inlined into the client bundle", () => {
     const leaks: Array<{ file: string; token: string; line: string }> = [];
     for (const file of ALL_FILES) {
       if (file.endsWith(join("tests", "unit", "security-no-client-secrets.test.ts"))) continue;
-      const contents = readFileSync(file, "utf8");
+      const contents = readSource(file);
+      if (contents === null) continue;
       for (const name of SECRET_NAMES) {
         const aliased = `VITE_${name}`;
         if (contents.includes(aliased)) {
@@ -155,7 +154,8 @@ describe("no provider secret is inlined into the client bundle", () => {
     const leaks: Array<{ file: string; token: string }> = [];
     for (const file of ALL_FILES) {
       if (file.endsWith(join("tests", "unit", "security-no-client-secrets.test.ts"))) continue;
-      const contents = readFileSync(file, "utf8");
+      const contents = readSource(file);
+      if (contents === null) continue;
       for (const match of contents.match(shape) ?? []) {
         // A browser map SDK key has nowhere else to live; a provider
         // credential does. Only the former may appear here.
@@ -174,7 +174,8 @@ describe("no provider secret is read outside a server-only module", () => {
   it("never reads a secret from process.env in client-reachable code", () => {
     const leaks: Array<{ file: string; token: string; line: string }> = [];
     for (const file of CLIENT_FILES) {
-      const contents = readFileSync(file, "utf8");
+      const contents = readSource(file);
+      if (contents === null) continue;
       for (const name of SECRET_NAMES) {
         /*
          * A read, not a mention. `credentialEnv: ["NPA_API_TOKEN"]` is a
@@ -202,10 +203,11 @@ describe("no provider secret is read outside a server-only module", () => {
    * plausible fix for a missing credential.
    */
   it("keeps the credential reader off import.meta.env entirely", () => {
-    const providerIo = readFileSync(
+    const providerIo = readSource(
       join(ROOT, "connectors", "implementations", "shared", "provider-io.ts"),
-      "utf8",
     );
+    // A guard that cannot read its subject must fail, not pass quietly.
+    expect(providerIo).not.toBeNull();
 
     const reader = providerIo.slice(
       providerIo.indexOf("function readEnvValue"),
@@ -228,7 +230,8 @@ describe("the guard covers what the catalogs actually declare", () => {
    * fifteen credentials short in the first place.
    */
   it("guards every credential the provider catalog declares", () => {
-    const catalog = readFileSync(join(ROOT, "connectors", "catalog.ts"), "utf8");
+    const catalog = readSource(join(ROOT, "connectors", "catalog.ts"));
+    expect(catalog).not.toBeNull();
 
     const declared = new Set<string>();
     for (const block of catalog.match(/credentialEnv:\s*\[[^\]]*\]/g) ?? []) {

@@ -24,6 +24,7 @@ import {
   classifyVessel,
   resolveHeading,
   vesselSpriteId,
+  colorKeyForCategory,
   type VesselColorKey,
   type VesselVisualCategory,
 } from "./vessel-visual";
@@ -301,12 +302,22 @@ export function vesselIconId(vessel: Vessel, ctx: VesselRenderContext = {}): str
     vessel.position.heading,
     vessel.position.headingReported,
   ).known;
-  const silhouette = classifyVessel(vessel.identity.type).silhouette;
+  const visual = classifyVessel(vessel.identity.type);
+  const silhouette = visual.silhouette;
 
+  /*
+   * Colour carries type, not risk.
+   *
+   * Nothing assesses risk here, so keying colour to it painted every
+   * vessel the same and threw away the one attribute the provider reports
+   * for all of them. Selection still outranks — an officer needs to find
+   * the hull they picked — but nothing else recolours a ship away from
+   * what kind of ship it is.
+   */
   const colorKey: VesselColorKey =
     ctx.selectedImo != null && ctx.selectedImo === vessel.identity.imo
       ? "selected"
-      : (vessel.riskLevel.toLowerCase() as VesselColorKey);
+      : colorKeyForCategory(visual.category);
 
   return vesselSpriteId(colorKey, silhouette, directional);
 }
