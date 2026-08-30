@@ -1687,6 +1687,37 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     reviewedAt: "2026-08-30",
   },
   {
+    id: "findings.persisted-records",
+    name: "Persisted intelligence findings and officer decisions",
+    producer: "CAPABILITY",
+    description:
+      "Durable findings with status (NEW, UNDER_REVIEW, CONFIRMED, DISMISSED, INVESTIGATION_OPEN, RESOLVED), evidence references and an append-only officer decision trail. Dismissal requires a reason; no status is derived client-side.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Finding panel · read the finding, confirm, dismiss with reason, open a case",
+      location: "src/components/intelligence/FindingPanel.tsx",
+      component: "src/lib/server/finding-records.server.ts",
+      interaction: "action",
+    },
+    reviewedAt: "2026-08-30",
+  },
+  {
+    id: "findings.map-indicators",
+    name: "Finding indicators on the national map",
+    producer: "CAPABILITY",
+    description:
+      "Independent map overlay drawing a finding beside its subject, coloured by indicator class and quieted once decided. A finding whose subject has no observed position is not drawn and stays in the attention list.",
+    state: "PROJECTED",
+    projection: {
+      surface: "National maritime map · intelligence findings layer",
+      location: "src/services/findings/map-features.ts",
+      component: "src/services/geospatial/renderers/maplibre-renderer.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-08-30",
+  },
+
+  {
     id: "findings.sanctions-indicator",
     name: "Vessel sanctions indicator",
     producer: "CAPABILITY",
