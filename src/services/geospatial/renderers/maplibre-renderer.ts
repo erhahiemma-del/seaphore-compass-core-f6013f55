@@ -231,6 +231,15 @@ const SOURCE_IDS = {
   voyageEndpoints: "voyage-endpoints",
   vesselTrack: "vessel-track",
   investigationArea: "investigation-area",
+  /**
+   * Intelligence findings.
+   *
+   * Its own source, with its own feature ids. It must never be folded
+   * into the vessel source: that source promotes `imo` as the feature id
+   * and the fleet's incremental update path depends on it, so a second
+   * kind of feature living there would corrupt both.
+   */
+  findings: "intelligence-findings",
 } as const;
 
 /**
@@ -342,6 +351,8 @@ export const INSTALLED_RENDER_LAYERS: readonly string[] = [
   LAYER_IDS.vesselLabels,
   LAYER_IDS.vesselAlertBadge,
   LAYER_IDS.incidentReports,
+  LAYER_IDS.findingIndicators,
+  LAYER_IDS.findingIndicatorLabels,
   LAYER_IDS.weatherOverlay,
   LAYER_IDS.investigArea,
 ] as const;
@@ -949,6 +960,22 @@ export class MapLibreRenderer implements MapRenderer {
     const endpointSource = map.getSource(SOURCE_IDS.voyageEndpoints);
     if (endpointSource && endpointSource.type === "geojson") {
       (endpointSource as MapLibreGeoJSONSource).setData(endpoints as never);
+    }
+  }
+
+  /**
+   * Replace the intelligence-finding overlay.
+   *
+   * Full replacement, of a source nothing else reads. The fleet's
+   * incremental path is untouched, so adding findings to the map cannot
+   * cost the vessel layer a frame.
+   */
+  setFindingIndicators(features: unknown): void {
+    const map = this.map;
+    if (!map) return;
+    const source = map.getSource(SOURCE_IDS.findings);
+    if (source && source.type === "geojson") {
+      (source as MapLibreGeoJSONSource).setData(features as never);
     }
   }
 
@@ -2198,6 +2225,54 @@ export class MapLibreRenderer implements MapRenderer {
       paint: { "icon-opacity": 0.9 },
     });
 
+    /*
+     * ── Intelligence findings ──
+     *
+     * Drawn as a ring beside the subject rather than as a change to the
+     * subject: the officer must be able to see both what the vessel is
+     * and that a finding exists about it. Colour comes from the feature,
+     * which the finding record already decided, so this layer applies no
+     * severity policy of its own.
+     */
+    map.addSource(SOURCE_IDS.findings, {
+      type: "geojson",
+      data: { type: "FeatureCollection", features: [] },
+      promoteId: "findingId",
+    });
+    map.addLayer({
+      id: LAYER_IDS.findingIndicators,
+      type: "circle",
+      source: SOURCE_IDS.findings,
+      paint: {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 7, 9, 10, 14, 14],
+        "circle-color": "rgba(0,0,0,0)",
+        "circle-stroke-width": 2.4,
+        "circle-stroke-color": ["get", "colour"],
+        // A decided finding stays visible but stops competing for the
+        // officer's eye. It is never removed from the picture.
+        "circle-stroke-opacity": ["case", ["==", ["get", "decided"], true], 0.45, 0.95],
+      },
+    });
+    map.addLayer({
+      id: LAYER_IDS.findingIndicatorLabels,
+      type: "symbol",
+      source: SOURCE_IDS.findings,
+      minzoom: 6,
+      layout: {
+        "text-field": ["get", "indicatorLabel"],
+        "text-size": 10,
+        "text-anchor": "bottom",
+        "text-offset": [0, -1.4],
+        "text-allow-overlap": false,
+        "text-optional": true,
+      },
+      paint: {
+        "text-color": ["get", "colour"],
+        "text-halo-color": palette.labelHalo,
+        "text-halo-width": 1.2,
+      },
+    });
+
     // ── Investigation area ──
     map.addSource(SOURCE_IDS.investigationArea, {
       type: "geojson",
@@ -2514,6 +2589,33 @@ export class MapLibreRenderer implements MapRenderer {
         portId: typeof portId === "string" && portId !== "" ? portId : null,
         position: [event.lngLat.lng, event.lngLat.lat],
       });
+    });
+
+    /*
+     * ── Finding indicators are selectable ──
+     *
+     * Reports the finding, not the hull. The surface resolves the finding
+     * to its canonical subject itself, which is what keeps one selection
+     * path and stops this layer becoming a second way to select a vessel.
+     */
+    map.on("click", LAYER_IDS.findingIndicators, (event: MapLibreLayerMouseEvent) => {
+      const feature = event.features?.[0];
+      const findingId = feature?.properties?.findingId;
+      if (typeof findingId !== "string" || findingId === "") return;
+      const subjectType = feature?.properties?.subjectType;
+      const subjectId = feature?.properties?.subjectId;
+      this.bus?.emit("finding:click", {
+        findingId,
+        subjectType: typeof subjectType === "string" ? subjectType : "unknown",
+        subjectId: typeof subjectId === "string" ? subjectId : "",
+        position: [event.lngLat.lng, event.lngLat.lat],
+      });
+    });
+    map.on("mouseenter", LAYER_IDS.findingIndicators, () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
+    map.on("mouseleave", LAYER_IDS.findingIndicators, () => {
+      map.getCanvas().style.cursor = "";
     });
 
     /*
