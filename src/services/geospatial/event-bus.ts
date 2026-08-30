@@ -135,6 +135,20 @@ export interface AnchorageClickEvent {
   readonly position: LonLat;
 }
 
+/**
+ * An intelligence finding indicator was clicked.
+ *
+ * Its own channel rather than `vessel:click`: a finding is a record with a
+ * lifecycle and a subject, and the surface that opens it needs the finding
+ * id, not only the hull the marker happened to sit beside.
+ */
+export interface FindingClickEvent {
+  readonly findingId: string;
+  readonly subjectType: string;
+  readonly subjectId: string;
+  readonly position: LonLat;
+}
+
 export interface MapEventMap {
   "map:ready": MapReadyEvent;
   "map:perspective": MapPerspectiveEvent;
@@ -154,6 +168,7 @@ export interface MapEventMap {
   "voyage:click": VoyageClickEvent;
   "port:click": PortClickEvent;
   "anchorage:click": AnchorageClickEvent;
+  "finding:click": FindingClickEvent;
   "vessel:hover": VesselHoverEvent;
   "layer:visibility": LayerVisibilityEvent;
   "vessels:applied": VesselsAppliedEvent;

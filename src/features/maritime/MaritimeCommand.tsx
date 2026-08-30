@@ -54,6 +54,10 @@ import { VoiceCommand } from "./VoiceCommand";
 import { MAP_ZONE } from "./map-zones";
 import { useVoyages, type VoyageFeed } from "./useVoyages";
 import { MapCanvas, type VesselFeedState } from "./MapCanvas";
+import { useFindingRecords } from "./useFindingRecords";
+import { FindingPanel } from "@/components/intelligence/FindingPanel";
+import { toFindingIndicatorCollection } from "@/services/findings/map-features";
+import type { FindingDecisionKind, PersistedFinding } from "@/services/findings/record";
 import { useReplayTimeline } from "./useReplayTimeline";
 import { useVesselCamera } from "./useVesselCamera";
 import { OperationalLegend } from "./OperationalLegend";
@@ -310,6 +314,121 @@ export function MaritimeCommand() {
    * already stored. Nothing is screened here and no provider is called.
    */
   const findings = useIntelligenceFindings();
+
+  /*
+   * The persisted findings, which are a different thing from the
+   * projection above: these carry a status an officer set and a decision
+   * trail, so they are what the map indicators and the finding panel read.
+   * The projection stays as the mixed attention list it always was.
+   */
+  const records = useFindingRecords();
+  const [openFindingId, setOpenFindingId] = useState<string | null>(null);
+  const openFindingRecord = openFindingId ? records.byId(openFindingId) : undefined;
+
+  /*
+   * Where a finding may be drawn.
+   *
+   * The subject's last observed position, from the fleet already on
+   * screen — never a position invented for the finding. A subject the map
+   * cannot locate is left out of the overlay and stays in the attention
+   * list, which is the honest outcome: the finding exists, its location
+   * does not.
+   */
+  const findingFeatures = useMemo(() => {
+    const byImo = new Map(vessels.map((vessel) => [vessel.identity.imo, vessel]));
+    return toFindingIndicatorCollection(records.findings, (finding) => {
+      if (finding.subjectType !== "vessel") return null;
+      const vessel = byImo.get(finding.subjectId);
+      if (!vessel) return null;
+      return { lat: vessel.position.lat, lng: vessel.position.lon };
+    });
+  }, [records.findings, vessels]);
+
+  /*
+   * Clicking an indicator opens the finding, and the finding opens the
+   * subject through the same `sgs.select` every other route uses. The map
+   * gains no second selection path from this layer.
+   */
+  useEffect(
+    () =>
+      mapEventBus.on("finding:click", ({ findingId, subjectType, subjectId }) => {
+        setOpenFindingId(findingId);
+        if (subjectType === "vessel" && subjectId !== "") {
+          sgs.select({ kind: "vessel", id: subjectId, imo: subjectId });
+        }
+      }),
+    [],
+  );
+
+  const decideFindingRecord = useCallback(
+    async (
+      finding: PersistedFinding,
+      decision: FindingDecisionKind,
+      reason?: string,
+      note?: string,
+    ) => {
+      try {
+        await records.decide({ findingId: finding.id, decision, reason, note });
+        toast.success(
+          decision === "CONFIRM"
+            ? "Observation confirmed and recorded against your name."
+            : "Finding dismissed with your reason on file.",
+        );
+      } catch (error) {
+        // Nothing is shown as decided that was not written.
+        toast.error(
+          error instanceof Error
+            ? `The decision was not recorded: ${error.message}`
+            : "The decision was not recorded.",
+        );
+      }
+    },
+    [records],
+  );
+
+  /*
+   * Opening a case from a persisted finding does both halves or reports
+   * the failure: the case link, then the finding's own status. The status
+   * is only moved after the link is written, so a finding never claims a
+   * case that does not exist.
+   */
+  const openCaseForRecord = useCallback(
+    async (finding: PersistedFinding) => {
+      try {
+        const result = await openInvestigationForFinding({
+          data: {
+            findingId: finding.id,
+            findingType: finding.findingType,
+            subjectType: finding.subjectType,
+            subjectId: finding.subjectId,
+            subjectLabel: finding.subjectName ?? undefined,
+            source: finding.source,
+            sourceRecordId: finding.sourceRecordId ?? undefined,
+            summary: finding.description,
+            evidenceRef: finding.evidenceRefs[0]?.ref ?? undefined,
+          },
+        });
+        await records.decide({
+          findingId: finding.id,
+          decision: "OPEN_INVESTIGATION",
+          investigationId: result.investigationId,
+          note: `Case ${result.caseNumber}`,
+        });
+        toast.success(
+          result.created
+            ? `Case ${result.caseNumber} opened from this finding.`
+            : `Finding attached to case ${result.caseNumber}.`,
+        );
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? `Could not open a case for this finding: ${error.message}`
+            : "Could not open a case for this finding.",
+        );
+      }
+    },
+    [records],
+  );
 
   /*
    * A finding leads to the same canonical context as everything else.
@@ -693,6 +812,7 @@ export function MaritimeCommand() {
               <MapCanvas
                 scope={scope}
                 voyages={voyageFeed.voyages}
+                findingIndicators={findingFeatures}
                 onVesselSelected={handleSelected}
                 onVesselsChanged={handleVessels}
                 onRecorderReady={replay.attachRecorder}
@@ -712,6 +832,30 @@ export function MaritimeCommand() {
             <div className={cn(MAP_ZONE.BOTTOM_RIGHT, "flex justify-end")}>
               <OperationalLegend />
             </div>
+
+            {/*
+              The finding panel opens over map, not over the context
+              drawer: an officer ruling on a finding is reading the
+              vessel identity next to it, so covering that would remove
+              the evidence the decision rests on.
+            */}
+            {openFindingRecord ? (
+              <div className="pointer-events-auto absolute left-3 top-3 z-20 w-[22rem]">
+                <FindingPanel
+                  finding={openFindingRecord}
+                  onClose={() => setOpenFindingId(null)}
+                  onOpenSubject={(finding) => {
+                    if (finding.subjectType !== "vessel") return;
+                    sgs.select({ kind: "vessel", id: finding.subjectId, imo: finding.subjectId });
+                  }}
+                  onConfirm={(finding) => decideFindingRecord(finding, "CONFIRM")}
+                  onDismiss={(finding, reason, note) =>
+                    decideFindingRecord(finding, "DISMISS", reason, note)
+                  }
+                  onOpenInvestigation={openCaseForRecord}
+                />
+              </div>
+            ) : null}
 
             {/*
             Scope control and the voyage feed's own state, together.

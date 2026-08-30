@@ -16,6 +16,8 @@ import { MapPinOff } from "lucide-react";
 import { prefersReducedMotion } from "@/hooks/use-reduced-motion";
 import { AssetPopup } from "./AssetPopup";
 import { EMPTY_TRACK, type TrackCollection } from "@/services/geospatial/vessel-track";
+import type { FindingIndicatorCollection } from "@/services/findings/map-features";
+
 import { useAlertPulse } from "./useAlertPulse";
 import { installMapHealthProbe } from "./health-probe";
 import { feedErrorFromSource } from "./feed-error";
@@ -125,6 +127,9 @@ const MODE_CONTROLS: Readonly<Record<MapCanvasMode, MapControlOptions>> = {
   context: { navigation: true, compass: false, scale: true },
 };
 
+/** Empty overlay. Clears the layer without a special case. */
+const EMPTY_FINDINGS: FindingIndicatorCollection = { type: "FeatureCollection", features: [] };
+
 export interface MapCanvasProps {
   /** Presentation mode. Defaults to the full command surface. */
   readonly mode?: MapCanvasMode;
@@ -149,6 +154,16 @@ export interface MapCanvasProps {
    * every pre-M2 surface wants.
    */
   readonly voyages?: readonly Voyage[];
+  /**
+   * Intelligence findings to draw as an independent overlay.
+   *
+   * Already projected by the caller, because deciding whether a finding
+   * may be placed at all is a domain judgement — a finding whose subject
+   * has no observed position is not drawn rather than placed somewhere
+   * plausible. Absent means no finding overlay, which leaves the fleet
+   * exactly as it is.
+   */
+  readonly findingIndicators?: FindingIndicatorCollection;
   /**
    * Intelligence domain this map is serving.
    *
@@ -248,6 +263,7 @@ export function MapCanvas({
   mode = "command",
   scope: scopeOverride,
   voyages,
+  findingIndicators,
   domain,
   palette = "maritime",
   basemapStyle,
@@ -507,6 +523,19 @@ export function MapCanvas({
     const list = voyages ?? [];
     renderer.setVoyageData(toVoyageEndpointCollection(list));
   }, [renderer, voyages, rendererDraws]);
+
+  /*
+   * ── Intelligence findings overlay ─────────────────────────────────
+   *
+   * Same shape as the voyage push: an already-decided collection handed
+   * to an independent source. An empty collection clears the overlay, so
+   * a signed-out or empty estate removes the indicators without a second
+   * code path, and the vessel source is never touched.
+   */
+  useEffect(() => {
+    if (!renderer.setFindingIndicators || !renderer.isReady()) return;
+    renderer.setFindingIndicators(findingIndicators ?? EMPTY_FINDINGS);
+  }, [renderer, findingIndicators, rendererDraws]);
 
   /*
    * ── Selected vessel track ─────────────────────────────────────────
