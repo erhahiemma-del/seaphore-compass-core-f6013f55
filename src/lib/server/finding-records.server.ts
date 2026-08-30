@@ -108,6 +108,26 @@ function toFinding(row: Row, decisions: readonly FindingDecision[]): PersistedFi
   };
 }
 
+/**
+ * Audit metadata, flattened to primitives.
+ *
+ * The audit row stores JSON, and a nested object crossing the server
+ * boundary is not serialisable by contract. Nested values are stringified
+ * rather than dropped: an audit entry that quietly loses a field is worse
+ * than one that reads a little awkwardly.
+ */
+function flattenMetadata(value: unknown): Record<string, string | number | boolean | null> {
+  if (!value || typeof value !== "object") return {};
+  const out: Record<string, string | number | boolean | null> = {};
+  for (const [key, raw] of Object.entries(value as Record<string, unknown>)) {
+    if (raw === null) out[key] = null;
+    else if (typeof raw === "string" || typeof raw === "number" || typeof raw === "boolean")
+      out[key] = raw;
+    else out[key] = JSON.stringify(raw);
+  }
+  return out;
+}
+
 export interface UpsertFindingInput {
   readonly findingType: string;
   readonly severity: FindingSeverity;
@@ -340,7 +360,7 @@ export async function loadFindingAudit(
     readonly action: string;
     readonly officerId: string;
     readonly entityId: string | null;
-    readonly metadata: Record<string, unknown>;
+    readonly metadata: Record<string, string | number | boolean | null>;
     readonly createdAt: string;
   }>
 > {
@@ -361,10 +381,7 @@ export async function loadFindingAudit(
     action: String(row["action"]),
     officerId: String(row["officer_id"] ?? ""),
     entityId: str(row, "entity_id"),
-    metadata:
-      row["metadata"] && typeof row["metadata"] === "object"
-        ? (row["metadata"] as Record<string, unknown>)
-        : {},
+    metadata: flattenMetadata(row["metadata"]),
     createdAt: String(row["created_at"]),
   }));
 }
