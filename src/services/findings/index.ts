@@ -6,6 +6,9 @@
  * severity — this layer exists so one surface can list them together.
  */
 export * from "./finding";
+export * from "./record";
+export * from "./map-features";
 export * from "./from-sanctions";
 export * from "./from-arrival";
 export * from "./corroboration";
+
