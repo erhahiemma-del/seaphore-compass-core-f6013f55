@@ -197,6 +197,16 @@ export interface MapRenderer {
   setVoyageData?(endpoints: unknown): void;
 
   /**
+   * Replace the intelligence-finding indicator overlay.
+   *
+   * A full replacement of an independent source. Findings change when an
+   * officer decides something, not many times a second, so the
+   * incremental vessel path is not the right shape here — and reusing the
+   * vessel source would put officer work inside the fleet's identity.
+   */
+  setFindingIndicators?(features: unknown): void;
+
+  /**
    * Mark one port as selected, or clear the selection with `null`.
    *
    * Optional and additive (M2.5), like everything else at this seam.
