@@ -72,7 +72,12 @@ export const activateCesiumIonToken = createServerFn({ method: "POST" })
     async ({
       data,
       context,
-    }): Promise<{ ok: boolean; account: string | null; message: string | null; status: CesiumIonStatus | null }> => {
+    }): Promise<{
+      ok: boolean;
+      account: string | null;
+      message: string | null;
+      status: CesiumIonStatus | null;
+    }> => {
       const { data: isAdmin } = await context.supabase.rpc("has_role", {
         _user_id: context.userId,
         _role: "admin",
@@ -86,9 +91,8 @@ export const activateCesiumIonToken = createServerFn({ method: "POST" })
         };
       }
 
-      const { validateCesiumToken, storeCesiumToken } = await import(
-        "@/lib/server/cesium-ion.server"
-      );
+      const { validateCesiumToken, storeCesiumToken } =
+        await import("@/lib/server/cesium-ion.server");
       const validation = await validateCesiumToken(data.token);
       if (!validation.ok) {
         return { ok: false, account: null, message: validation.message, status: null };
@@ -102,16 +106,15 @@ export const activateCesiumIonToken = createServerFn({ method: "POST" })
       );
 
       // Audit trail: who activated a credential, and when. Never the value.
-      await context.supabase.from("audit_log").insert({
+      await (context.supabase as unknown as Db).from("audit_log").insert({
+        officer_id: context.userId,
         action: "PROVIDER_CREDENTIAL_ACTIVATED",
-        entity_type: "PROVIDER",
+        entity: "provider_credential",
         entity_id: "cesium-ion",
-        actor_id: context.userId,
-        details: {
-          provider: "cesium-ion",
-          account: validation.account,
-          hint: status.hint,
-        },
+        module: "geospatial-3d",
+        rule_refs: ["HR-9"],
+        metadata: { provider: "cesium-ion", account: validation.account, hint: status.hint },
+        ip_address: "server",
       } as never);
 
       return { ok: true, account: validation.account, message: null, status };
