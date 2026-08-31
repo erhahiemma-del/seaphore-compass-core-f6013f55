@@ -766,7 +766,33 @@ export function MaritimeCommand() {
               </Button>
             ))}
           </div>
+
+          {/*
+            Cesium is an additional lens, not a replacement.
+
+            Its own control beside the projection group, because it is a
+            different engine drawing the same canonical picture rather
+            than a fourth projection of the operational map. When no Ion
+            credential is configured the control says so and offers
+            activation — an unconfigured credential is never allowed to
+            look like an empty sea.
+          */}
+          <Button
+            size="sm"
+            variant={terrain.active ? "default" : "outline"}
+            className="h-7 shrink-0 text-xs"
+            aria-pressed={terrain.active}
+            title={
+              terrain.unavailableReason ??
+              "3D intelligence view — Cesium Ion terrain, same vessels, ports, findings and selection"
+            }
+            onClick={terrain.toggle}
+            disabled={terrain.loading}
+          >
+            {terrain.active ? "Exit 3D Intelligence" : "3D Intelligence"}
+          </Button>
         </header>
+
 
         {/* One quiet line saying what a search just did. Not a toast: the
           officer should be able to read it at leisure, or ignore it. */}
