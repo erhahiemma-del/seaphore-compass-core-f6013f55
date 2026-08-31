@@ -113,10 +113,15 @@ export class CesiumRenderer implements MapRenderer {
   };
   private labelsRequested = true;
 
+  /** How the earth is drawn. Presentation state, and the only copy of it. */
+  private earth: EarthSettings = DEFAULT_EARTH_SETTINGS;
+  private satelliteLayer: Cesium | null = null;
+
   constructor(deps: CesiumRendererDependencies) {
     this.bus = deps.bus;
     this.ionToken = deps.ionToken;
     this.baseUrl = deps.baseUrl ?? DEFAULT_BASE_URL;
+    if (deps.earth) this.earth = { ...DEFAULT_EARTH_SETTINGS, ...deps.earth };
   }
 
   async mount(options: MapRendererMountOptions): Promise<void> {
@@ -141,8 +146,6 @@ export class CesiumRenderer implements MapRenderer {
       selectionIndicator: false,
     });
     this.viewer = viewer;
-    viewer.scene.globe.enableLighting = false;
-    viewer.scene.skyAtmosphere.show = true;
 
     /*
      * Terrain is requested, not assumed.
@@ -152,7 +155,12 @@ export class CesiumRenderer implements MapRenderer {
      * officer would read as terrain data saying "no relief here".
      */
     try {
-      viewer.terrainProvider = await cesium.createWorldTerrainAsync();
+      viewer.terrainProvider = await cesium.createWorldTerrainAsync?.({
+        // Requested explicitly: the water mask is what the ocean shader
+        // shades, and vertex normals are what day/night lighting needs.
+        requestWaterMask: true,
+        requestVertexNormals: true,
+      });
     } catch (error) {
       this.bus.emit("map:error", {
         message: `3D terrain unavailable from Cesium Ion: ${
@@ -160,6 +168,31 @@ export class CesiumRenderer implements MapRenderer {
         }. The globe is drawn on the ellipsoid; relief is not being shown.`,
       } as never);
     }
+
+    /*
+     * High-resolution Ion imagery, requested after terrain.
+     *
+     * A failure here is stated and survivable in exactly the same way:
+     * the globe keeps its base colour and the officer is told the
+     * imagery is missing rather than shown a blue sphere to interpret.
+     */
+    try {
+      const imagery = await cesium.createWorldImageryAsync?.();
+      if (imagery) {
+        this.satelliteLayer = viewer.imageryLayers?.addImageryProvider?.(imagery) ?? null;
+        if (this.satelliteLayer) this.satelliteLayer.show = this.earth.satelliteImagery;
+      }
+    } catch (error) {
+      this.bus.emit("map:error", {
+        message: `Satellite imagery unavailable from Cesium Ion: ${
+          error instanceof Error ? error.message : String(error)
+        }. The globe is drawn without imagery.`,
+      } as never);
+    }
+
+    this.applyPerformanceBudget();
+    this.applyEarthSettings(this.earth);
+
 
     this.setCamera({
       center: options.center,
