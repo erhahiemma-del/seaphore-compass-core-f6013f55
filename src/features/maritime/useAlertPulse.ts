@@ -37,7 +37,6 @@ export interface AlertPulseTarget {
   setAlertPulse?(phase: number): void;
 }
 
-
 export interface UseAlertPulseOptions {
   /** The renderer. Null before it mounts. */
   readonly target: AlertPulseTarget | null;

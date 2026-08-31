@@ -721,7 +721,6 @@ export class CesiumRenderer implements MapRenderer {
     this.alertingImos.delete(imo);
   }
 
-
   async loadVesselIcons(): Promise<void> {
     // Cesium draws vessels as depth-tested points; no sprite atlas needed.
   }
