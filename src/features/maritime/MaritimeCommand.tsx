@@ -1033,7 +1033,7 @@ export function MaritimeCommand() {
                 empty list. Saying so here is what stops an officer
                 reading a collection gap as an empty sea.
               */}
-              <VesselFeedNotice feed={feed} count={liveVessels.length} />
+              <VesselFeedNotice feed={feed} count={liveVessels.length} coverage={coverage} />
               <VoyageFeedNotice feed={voyageFeed} />
             </div>
           </main>
@@ -1127,7 +1127,7 @@ export function MaritimeCommand() {
           onScrub={replay.scrub}
         />
 
-        <MapStatusBar />
+        <MapStatusBar coverage={coverage} />
       </div>
     </AppShell>
   );
@@ -1310,7 +1310,7 @@ function ToolButton({
   );
 }
 
-function MapStatusBar() {
+function MapStatusBar({ coverage }: { coverage: VesselCoverageResult }) {
   const vesselCount = useMapSessionStore((s) => s.vesselCount);
   const rendererId = useMapSessionStore((s) => s.rendererId);
   const rendererStatus = useMapSessionStore((s) => s.rendererStatus);
@@ -1320,7 +1320,15 @@ function MapStatusBar() {
 
   return (
     <footer className="flex shrink-0 items-center gap-4 border-t border-border px-4 py-1.5 text-[11px] text-muted-foreground">
-      <Stat label="vessels" value={String(vesselCount)} />
+      {/*
+       * A count is only printed when it means something. An unsupported or
+       * undeclared scope gets the state word instead: "0" next to the word
+       * vessels is a claim about the sea, and the provider has not made it.
+       */}
+      <Stat
+        label="vessels"
+        value={coverage.countIsMeaningful ? String(vesselCount) : coverage.label}
+      />
       <Stat label="layers" value={String(activeLayerCount)} />
       <Stat label="fps" value={fps === null ? "—" : String(fps)} />
       <span className="ml-auto font-mono">
