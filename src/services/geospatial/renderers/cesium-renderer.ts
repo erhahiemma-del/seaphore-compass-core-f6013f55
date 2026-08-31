@@ -466,6 +466,141 @@ export class CesiumRenderer implements MapRenderer {
     this.vesselEntities.set(props.imo, entity);
   }
 
+  // ── Intelligence Earth — presentation of the globe itself ───────────
+
+  /** The earth settings currently in force. */
+  getEarthSettings(): EarthSettings {
+    return this.earth;
+  }
+
+  /**
+   * Apply an earth-presentation change to the live scene.
+   *
+   * Every field is guarded: a Cesium build without a given knob (older
+   * `verticalExaggeration`, no `imageryLayers`) must degrade to "that
+   * control did nothing", never to a thrown mount and a blank map.
+   */
+  applyEarthSettings(next: Partial<EarthSettings>): EarthSettings {
+    this.earth = {
+      ...this.earth,
+      ...next,
+      terrainExaggeration: clampExaggeration(
+        next.terrainExaggeration ?? this.earth.terrainExaggeration,
+      ),
+    };
+    const cesium = this.cesium;
+    const viewer = this.viewer;
+    if (!cesium || !viewer) return this.earth;
+    const scene = viewer.scene;
+    const globe = scene?.globe;
+    const settings = this.earth;
+
+    try {
+      if (globe) {
+        globe.enableLighting = settings.dayNightLighting;
+        globe.dynamicAtmosphereLighting = settings.dayNightLighting;
+        globe.showGroundAtmosphere = settings.atmosphere;
+        // Water is shaded from the terrain's own mask; without a normal
+        // map Cesium draws still water, which reads as a painted sea.
+        globe.oceanNormalMapUrl = settings.ocean
+          ? `${this.baseUrl}Assets/Textures/waterNormalsSmall.jpg`
+          : undefined;
+        if (cesium.Color?.fromCssColorString) {
+          globe.baseColor = cesium.Color.fromCssColorString("#0B2A4A");
+        }
+      }
+      if (scene?.skyAtmosphere) scene.skyAtmosphere.show = settings.atmosphere;
+      if (scene?.fog) scene.fog.enabled = settings.atmosphere;
+      if (scene?.sun) scene.sun.show = settings.dayNightLighting;
+      if (scene?.moon) scene.moon.show = settings.dayNightLighting;
+      if (this.satelliteLayer) this.satelliteLayer.show = settings.satelliteImagery;
+
+      // Relief multiplier. 1 is true-to-life; 0 flattens without
+      // unloading terrain, so the officer can compare the two.
+      if (scene && "verticalExaggeration" in scene) {
+        scene.verticalExaggeration = settings.terrainExaggeration;
+      }
+
+      if (settings.mode === "FLAT") scene?.morphTo2D?.(1.2);
+      else scene?.morphTo3D?.(1.2);
+    } catch (error) {
+      this.bus.emit("map:error", {
+        message: `The 3D earth settings could not be applied: ${
+          error instanceof Error ? error.message : String(error)
+        }. The view is still live.`,
+      } as never);
+    }
+    return this.earth;
+  }
+
+  /**
+   * Performance budget: streamed detail, culled geometry, cached tiles.
+   *
+   * Set once at mount because these are engine budgets, not officer
+   * choices — a control for "screen-space error" would be asking an
+   * officer to tune a renderer.
+   */
+  private applyPerformanceBudget(): void {
+    const viewer = this.viewer;
+    const scene = viewer?.scene;
+    const globe = scene?.globe;
+    if (!globe) return;
+    try {
+      // LOD streaming: coarser tiles further away, refined as they matter.
+      globe.maximumScreenSpaceError = 2;
+      globe.tileCacheSize = 1000;
+      // Frustum culling of tile subtrees, and no speculative siblings.
+      globe.cullWithChildrenBounds = true;
+      globe.preloadSiblings = false;
+      globe.preloadAncestors = true;
+      // Only redraw when the scene actually changed.
+      if (scene && "requestRenderMode" in scene) {
+        scene.requestRenderMode = true;
+        scene.maximumRenderTimeChange = 0.5;
+      }
+      if (viewer.resolutionScale !== undefined) {
+        viewer.resolutionScale = Math.min(
+          1.5,
+          typeof globalThis.devicePixelRatio === "number" ? globalThis.devicePixelRatio : 1,
+        );
+      }
+    } catch {
+      // A build that rejects a budget knob still renders; the picture is
+      // slower, not wrong.
+    }
+  }
+
+  /**
+   * Fly to a named preset, smoothly.
+   *
+   * The camera is still the shared one: the pose leaves on `map:move`
+   * through the existing `moveEnd` listener, so SGS and the URL follow
+   * the officer to Apapa exactly as they would after a drag.
+   */
+  flyToPreset(presetId: string): boolean {
+    const cesium = this.cesium;
+    const viewer = this.viewer;
+    const preset = earthPreset(presetId);
+    if (!cesium || !viewer || !preset) return false;
+    viewer.camera.flyTo({
+      destination: cesium.Cartesian3.fromDegrees(
+        preset.center[0],
+        preset.center[1],
+        zoomToHeight(preset.zoom),
+      ),
+      orientation: {
+        heading: cesium.Math.toRadians(preset.bearing),
+        pitch: cesium.Math.toRadians(preset.pitch - 90),
+        roll: 0,
+      },
+      duration: 2.4,
+      easingFunction: cesium.EasingFunction?.QUADRATIC_IN_OUT,
+    });
+    return true;
+  }
+
+
+
   private removeVessel(imo: string): void {
     const entity = this.vesselEntities.get(imo);
     if (!entity) return;
