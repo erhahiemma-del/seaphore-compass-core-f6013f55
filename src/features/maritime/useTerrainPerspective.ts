@@ -51,7 +51,6 @@ export function useTerrainPerspective(): TerrainPerspective {
   const [unavailableReason, setUnavailableReason] = useState<string | null>(null);
   const [requestActivation, setRequestActivation] = useState(false);
   const [nonce, setNonce] = useState(0);
-  const rendererRef = useRef<MapRenderer | null>(null);
 
   const refresh = useCallback(() => setNonce((n) => n + 1), []);
 
