@@ -224,6 +224,19 @@ export class CesiumRenderer implements MapRenderer {
     return this.ready && this.viewer !== null && !this.viewer.isDestroyed?.();
   }
 
+  /** Screen point → lon/lat on the globe, or null when it misses the earth. */
+  private pickLonLat(windowPosition: unknown): LonLat | null {
+    const cesium = this.cesium;
+    const viewer = this.viewer;
+    if (!cesium || !viewer) return null;
+    const ray = viewer.camera.getPickRay(windowPosition);
+    const cartesian = ray ? viewer.scene.globe.pick(ray, viewer.scene) : null;
+    if (!cartesian) return null;
+    const carto = cesium.Cartographic.fromCartesian(cartesian);
+    if (!carto) return null;
+    return [cesium.Math.toDegrees(carto.longitude), cesium.Math.toDegrees(carto.latitude)];
+  }
+
   // ── Camera ──────────────────────────────────────────────────────────
 
   setCamera(camera: Partial<MapCamera>): void {
