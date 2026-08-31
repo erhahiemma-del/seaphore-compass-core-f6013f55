@@ -16,7 +16,12 @@ export interface EarthCameraPreset {
   readonly center: LonLat;
   /** Web-mercator zoom, translated to camera height by the adapter. */
   readonly zoom: number;
-  /** Degrees from the horizon convention used by `MapCamera`. */
+  /**
+   * Tilt in the `MapCamera` convention both renderers share: 0 looks
+   * straight down, larger values lean towards the horizon. Wide scales
+   * stay near 0 so the whole earth is in frame; port scales lean over so
+   * relief and quay structure read as depth.
+   */
   readonly pitch: number;
   readonly bearing: number;
 }
@@ -28,24 +33,24 @@ export interface EarthCameraPreset {
  * a berth, and a list that mixed scales would make the descent a search.
  */
 export const EARTH_CAMERA_PRESETS: readonly EarthCameraPreset[] = [
-  { id: "global", label: "Global", center: [10, 5], zoom: 1.2, pitch: 90, bearing: 0 },
-  { id: "africa", label: "Africa", center: [18, 3], zoom: 3, pitch: 85, bearing: 0 },
-  { id: "west-africa", label: "West Africa", center: [3, 5], zoom: 4.6, pitch: 80, bearing: 0 },
-  { id: "nigeria", label: "Nigeria", center: [8.1, 8.6], zoom: 5.8, pitch: 75, bearing: 0 },
-  { id: "lagos", label: "Lagos", center: [3.39, 6.45], zoom: 10.5, pitch: 62, bearing: 0 },
-  { id: "apapa", label: "Apapa Port", center: [3.363, 6.446], zoom: 14.2, pitch: 55, bearing: 20 },
+  { id: "global", label: "Global", center: [10, 5], zoom: 1.2, pitch: 0, bearing: 0 },
+  { id: "africa", label: "Africa", center: [18, 3], zoom: 3, pitch: 5, bearing: 0 },
+  { id: "west-africa", label: "West Africa", center: [3, 5], zoom: 4.6, pitch: 12, bearing: 0 },
+  { id: "nigeria", label: "Nigeria", center: [8.1, 8.6], zoom: 5.8, pitch: 20, bearing: 0 },
+  { id: "lagos", label: "Lagos", center: [3.39, 6.45], zoom: 10.5, pitch: 35, bearing: 0 },
+  { id: "apapa", label: "Apapa Port", center: [3.363, 6.446], zoom: 14.2, pitch: 50, bearing: 20 },
   {
     id: "tin-can-island",
     label: "Tin Can Island",
     center: [3.341, 6.436],
     zoom: 14.2,
-    pitch: 55,
+    pitch: 50,
     bearing: 340,
   },
-  { id: "onne", label: "Onne", center: [7.157, 4.674], zoom: 14, pitch: 55, bearing: 0 },
-  { id: "bonny", label: "Bonny", center: [7.171, 4.427], zoom: 13.4, pitch: 55, bearing: 0 },
-  { id: "warri", label: "Warri", center: [5.741, 5.532], zoom: 13.4, pitch: 55, bearing: 0 },
-  { id: "calabar", label: "Calabar", center: [8.322, 4.965], zoom: 13.4, pitch: 55, bearing: 0 },
+  { id: "onne", label: "Onne", center: [7.157, 4.674], zoom: 14, pitch: 50, bearing: 0 },
+  { id: "bonny", label: "Bonny", center: [7.171, 4.427], zoom: 13.4, pitch: 50, bearing: 0 },
+  { id: "warri", label: "Warri", center: [5.741, 5.532], zoom: 13.4, pitch: 50, bearing: 0 },
+  { id: "calabar", label: "Calabar", center: [8.322, 4.965], zoom: 13.4, pitch: 50, bearing: 0 },
 ];
 
 export function earthPreset(id: string): EarthCameraPreset | undefined {
