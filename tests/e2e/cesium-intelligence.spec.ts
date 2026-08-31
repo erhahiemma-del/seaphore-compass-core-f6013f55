@@ -18,32 +18,23 @@ import { isAuthInjected, restoreSupabaseSession } from "./support/auth";
 
 const BASE = (process.env.SEAPHORE_HEALTH_URL ?? "http://localhost:8080").replace(/\/$/, "");
 /** Simulated feed, asked for explicitly — never depend on a live provider. */
-const MAP_URL = `${BASE}/maritime?vesselSource=simulated`;
+const MAP_URL = `${BASE}/maritime?sources=simulated&simSpeed=120`;
 
 interface MapSnapshot {
   rendererId: string | null;
   rendererStatus: string;
   rendererDraws: boolean;
   vesselCount: number;
-  lastError: string | null;
 }
 
+/** Read the deployed map's own health probe — no renderer handle needed. */
 async function snapshot(page: Page): Promise<MapSnapshot> {
   return page.evaluate(() => {
-    const store = (
-      window as unknown as {
-        __SEAPHORE_MAP_SESSION__?: { getState(): MapSnapshot };
-      }
-    ).__SEAPHORE_MAP_SESSION__;
-    return (
-      store?.getState() ?? {
-        rendererId: null,
-        rendererStatus: "idle",
-        rendererDraws: false,
-        vesselCount: 0,
-        lastError: null,
-      }
-    );
+    const probe = (
+      window as typeof window & { __seaphoreMapHealth?: () => MapSnapshot }
+    ).__seaphoreMapHealth;
+    if (!probe) throw new Error("map health probe absent");
+    return probe();
   });
 }
 
@@ -103,6 +94,7 @@ test.describe("3D Intelligence (Cesium Ion)", () => {
       const still = await snapshot(page);
       expect(still.rendererId).toBe("maplibre");
       expect(still.rendererStatus).toBe("ready");
+      expect(still.vesselCount).toBeGreaterThan(0);
       return;
     }
 
