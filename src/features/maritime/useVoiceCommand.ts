@@ -33,7 +33,11 @@ import { eezRingIfLoaded } from "@/services/geospatial/eez-ring";
 import type { Place } from "@/services/geospatial/places";
 
 import { requestVesselScreening } from "@/lib/sanctions/screen-request";
-import { executeCopilotAction, type CopilotAction } from "@/services/copilot/copilot-actions";
+import {
+  type ActionExecutionOptions,
+  executeCopilotAction,
+  type CopilotAction,
+} from "@/services/copilot/copilot-actions";
 import {
   EMPTY_CONTEXT,
   type ConversationContext,
