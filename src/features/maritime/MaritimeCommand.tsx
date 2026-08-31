@@ -811,6 +811,12 @@ export function MaritimeCommand() {
           </div>
         ) : null}
 
+        {/* Shown only while the terrain lens is mounted: controls for an
+            engine that is not running would be controls over nothing. */}
+        {terrain.active ? <IntelligenceEarthPanel renderer={terrain.renderer} /> : null}
+
+
+
         <div className="flex min-h-0 flex-1">
           {/*
             No permanent layer panel.
