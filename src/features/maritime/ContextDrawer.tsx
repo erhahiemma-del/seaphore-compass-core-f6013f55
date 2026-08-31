@@ -384,7 +384,6 @@ function SelectionPanel({
       );
     }
 
-
     default:
       return (
         <Unresolved
@@ -505,13 +504,7 @@ function VesselTabs({
  * reporting, not a berth allocation record, which no connected source
  * publishes.
  */
-function InfrastructurePanel({
-  asset,
-  fleet,
-}: {
-  asset: PortTwinAsset;
-  fleet: readonly Vessel[];
-}) {
+function InfrastructurePanel({ asset, fleet }: { asset: PortTwinAsset; fleet: readonly Vessel[] }) {
   const layer = portTwinLayer(asset.layer);
   /*
    * Proximity radius: the asset's own indicative extent when it has one,
@@ -522,10 +515,10 @@ function InfrastructurePanel({
   const radiusKm = asset.radiusKm ?? 2;
   const nearby = fleet.filter(
     (vessel) =>
-      distanceKm([vessel.position.lon, vessel.position.lat], [
-        asset.position[0],
-        asset.position[1],
-      ]) <= radiusKm,
+      distanceKm(
+        [vessel.position.lon, vessel.position.lat],
+        [asset.position[0], asset.position[1]],
+      ) <= radiusKm,
   );
 
   const rows: readonly { label: string; value: string }[] = [

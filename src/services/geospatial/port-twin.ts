@@ -272,7 +272,7 @@ export interface PortTwinLayerCoverage {
 export interface PortDigitalTwin {
   /** UN/LOCODE — the identity every other Seaphore surface already uses. */
   readonly id: string;
-  readonly name: string
+  readonly name: string;
   readonly shortName: string;
   readonly state: string;
   /** Camera preset in `earth-presets.ts` that frames this twin. */
