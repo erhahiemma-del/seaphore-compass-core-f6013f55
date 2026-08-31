@@ -492,6 +492,130 @@ function VesselTabs({
  * officer can see what will appear once a source connects — and cannot
  * mistake an unconnected section for a checked-and-empty one.
  */
+/**
+ * One piece of port infrastructure, from the Digital Twin model.
+ *
+ * Every field is either sourced or explicitly absent. `Not published`
+ * appears wherever no custodian states a value — an officer must be able
+ * to tell an unpublished capacity from a capacity of zero, and an
+ * unassessed compliance state from a clean one.
+ *
+ * Connected vessels are counted from the loaded fleet by proximity, and
+ * the panel says so: this is an observation about where vessels are
+ * reporting, not a berth allocation record, which no connected source
+ * publishes.
+ */
+function InfrastructurePanel({
+  asset,
+  fleet,
+}: {
+  asset: PortTwinAsset;
+  fleet: readonly Vessel[];
+}) {
+  const layer = portTwinLayer(asset.layer);
+  /*
+   * Proximity radius: the asset's own indicative extent when it has one,
+   * otherwise 2 km around the reference point. Deliberately generous —
+   * the position is a reference, so a tight radius would report zero
+   * vessels at a visibly busy quay.
+   */
+  const radiusKm = asset.radiusKm ?? 2;
+  const nearby = fleet.filter(
+    (vessel) =>
+      distanceKm([vessel.position.lon, vessel.position.lat], [
+        asset.position[0],
+        asset.position[1],
+      ]) <= radiusKm,
+  );
+
+  const rows: readonly { label: string; value: string }[] = [
+    { label: "Layer", value: layer ? layer.label : asset.layer },
+    { label: "Operator", value: asset.operator ?? "Not published" },
+    {
+      label: "Coordinates",
+      value: `${asset.position[1].toFixed(4)}°N, ${asset.position[0].toFixed(4)}°E`,
+    },
+    { label: "Position precision", value: asset.precision },
+    { label: "Capacity", value: asset.capacity ?? "Not published" },
+    ...(asset.radiusKm
+      ? [{ label: "Indicative extent", value: `${asset.radiusKm} km radius` }]
+      : []),
+  ];
+
+  return (
+    <div className="flex flex-col gap-3 p-3">
+      <div>
+        <h3 className="text-[13px] font-semibold text-foreground">{asset.name}</h3>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">{asset.twinId}</p>
+      </div>
+
+      <dl className="grid grid-cols-[minmax(0,7rem)_1fr] gap-x-3 gap-y-1.5 text-[11.5px]">
+        {rows.map((row) => (
+          <div key={row.label} className="col-span-2 grid grid-cols-subgrid">
+            <dt className="text-muted-foreground">{row.label}</dt>
+            <dd className="font-medium text-foreground">{row.value}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <section className="rounded-md border border-border/70 bg-muted/20 p-3">
+        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Connected vessels
+        </h4>
+        <p className="mt-1 text-[12px] font-medium text-foreground">
+          {nearby.length} in the loaded fleet within {radiusKm} km
+        </p>
+        {nearby.length > 0 ? (
+          <ul className="mt-1.5 flex flex-col gap-0.5">
+            {nearby.slice(0, 8).map((vessel) => (
+              <li key={vessel.identity.imo} className="text-[11.5px] text-foreground">
+                {vessel.identity.name}
+                <span className="ml-1.5 text-muted-foreground">IMO {vessel.identity.imo}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <p className="mt-1.5 text-[11px] text-muted-foreground">
+          Counted by proximity from the loaded fleet, not from a berth allocation record. No
+          connected source publishes berth-level assignment.
+        </p>
+      </section>
+
+      <section className="rounded-md border border-border/70 bg-muted/20 p-3">
+        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Compliance status
+        </h4>
+        <p className="mt-1 text-[12px] font-medium text-foreground">
+          {asset.compliance.state === "NOT_ASSESSED" ? "Not assessed" : asset.compliance.state}
+          <span className="ml-1.5 text-muted-foreground">({asset.compliance.authority})</span>
+        </p>
+        <p className="mt-1 text-[11px] text-muted-foreground">{asset.compliance.note}</p>
+      </section>
+
+      <section>
+        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Intelligence notes
+        </h4>
+        <ul className="mt-1 flex flex-col gap-1">
+          {asset.notes.map((note) => (
+            <li key={note} className="text-[11.5px] text-muted-foreground">
+              {note}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="rounded-md border border-dashed border-border/60 p-3">
+        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Provenance
+        </h4>
+        <p className="mt-1 text-[11.5px] text-foreground">{asset.provenance.source}</p>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">{asset.provenance.note}</p>
+      </section>
+    </div>
+  );
+}
+
 function PendingPanel({
   title,
   sections,
