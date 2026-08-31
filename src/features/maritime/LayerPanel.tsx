@@ -8,6 +8,11 @@
  * disagree.
  */
 import { useMemo, useState } from "react";
+
+import { CAPABILITY_LABELS, isDrawing } from "@/services/geospatial/capability";
+import type { RegistryCapability } from "@/services/registry/registry-capability";
+
+import { useLayerCapabilities } from "./use-layer-capabilities";
 import { Layers, Search } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -156,6 +161,12 @@ interface LayerGroupSectionProps {
 }
 
 function LayerGroupSection({ group, layers, active, opacity, service }: LayerGroupSectionProps) {
+  /*
+   * Derived status for the registry-backed layers, resolved where the
+   * rows are rendered. Layers whose obstacle is a licence or a credential
+   * keep their declared status, because no code can observe an agreement.
+   */
+  const { byLayer: capabilities } = useLayerCapabilities();
   const allOn = layers.every((layer) => active.has(layer.id));
   const noneOn = layers.every((layer) => !active.has(layer.id));
 
@@ -203,6 +214,7 @@ function LayerGroupSection({ group, layers, active, opacity, service }: LayerGro
             opacity={opacity.get(layer.id) ?? 1}
             onToggle={() => service.toggleLayer(layer.id)}
             onOpacity={(value) => service.setLayerOpacity(layer.id, value)}
+            capability={capabilities.get(layer.id) ?? null}
           />
         ))}
       </ul>
@@ -211,6 +223,8 @@ function LayerGroupSection({ group, layers, active, opacity, service }: LayerGro
 }
 
 interface LayerRowProps {
+  /** Derived capability, when this layer has one. Declared status otherwise. */
+  readonly capability: RegistryCapability | null;
   readonly layer: LayerDefinition;
   readonly checked: boolean;
   readonly opacity: number;
@@ -218,7 +232,7 @@ interface LayerRowProps {
   readonly onOpacity: (value: number) => void;
 }
 
-function LayerRow({ layer, checked, opacity, onToggle, onOpacity }: LayerRowProps) {
+function LayerRow({ layer, capability, checked, opacity, onToggle, onOpacity }: LayerRowProps) {
   /*
    * Three states, not two.
    *
@@ -229,9 +243,33 @@ function LayerRow({ layer, checked, opacity, onToggle, onOpacity }: LayerRowProp
    * was merely unbuilt, and let a stale status survive unnoticed for as
    * long as nobody re-checked it.
    */
-  const unavailable = layer.status === "pending-source";
-  const notDrawn = layer.status === "data-available";
-  const pending = unavailable || notDrawn;
+  /*
+   * A derived capability wins over the declared one.
+   *
+   * The declared status is a field somebody typed; the derived status is
+   * counted from the dataset and the renderer's install list. Where both
+   * exist the derived one is the only one that cannot go stale, so it is
+   * the one an officer sees.
+   */
+  const derived = capability?.status ?? null;
+  const badge = derived
+    ? isDrawing(derived)
+      ? null
+      : CAPABILITY_LABELS[derived]
+    : layer.status === "data-available"
+      ? "Not yet drawn"
+      : layer.status === "pending-source"
+        ? "Unavailable"
+        : null;
+
+  /* The explanation follows the same precedence as the badge. */
+  const explanation = derived
+    ? isDrawing(derived)
+      ? layer.description
+      : (capability?.detail ?? layer.description)
+    : layer.status === "pending-source" || layer.status === "data-available"
+      ? (layer.pendingReason ?? layer.description)
+      : layer.description;
   return (
     <li className="flex items-start gap-3">
       <Switch
@@ -245,9 +283,9 @@ function LayerRow({ layer, checked, opacity, onToggle, onOpacity }: LayerRowProp
           <label htmlFor={`layer-${layer.id}`} className="cursor-pointer text-sm font-medium">
             {layer.label}
           </label>
-          {pending ? (
+          {badge ? (
             <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-normal">
-              {notDrawn ? "Not yet drawn" : "Unavailable"}
+              {badge}
             </Badge>
           ) : null}
         </div>
@@ -255,8 +293,8 @@ function LayerRow({ layer, checked, opacity, onToggle, onOpacity }: LayerRowProp
           id={`layer-${layer.id}-description`}
           className="text-xs leading-snug text-muted-foreground"
         >
-          {/* A pending layer explains itself rather than silently drawing nothing. */}
-          {pending ? (layer.pendingReason ?? layer.description) : layer.description}
+          {/* A layer that is not drawing explains itself rather than sitting silent. */}
+          {explanation}
         </p>
         {checked ? (
           <div className="mt-1.5 flex items-center gap-2">
