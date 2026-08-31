@@ -99,12 +99,13 @@ export function useTerrainPerspective(): TerrainPerspective {
   /** Persist the lens choice. Never the credential. */
   const remember = useCallback(
     (next: boolean) => {
+      if (!authenticated) return;
       void writePreference({ data: { terrain3d: next } }).catch(() => {
         // A preference that will not store is a lost convenience, not a
         // failed capability — the officer keeps the view they asked for.
       });
     },
-    [writePreference],
+    [authenticated, writePreference],
   );
 
   const activate = useCallback(
