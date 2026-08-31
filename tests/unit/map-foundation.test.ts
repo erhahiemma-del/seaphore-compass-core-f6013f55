@@ -184,7 +184,14 @@ describe("the layer catalogue is complete and honest", () => {
   });
 
   it("declares a status for every layer", () => {
-    const valid = new Set(["ready", "pending-source", "unavailable"]);
+    /*
+     * Four states. `data-available` was added because the panel could not
+     * previously tell "no source holds this" apart from "Seaphore holds
+     * it and has not drawn it" — and collapsing the two let a stale
+     * Unavailable sit on a capability that already worked, which is
+     * exactly what happened to observed tracks.
+     */
+    const valid = new Set(["ready", "pending-source", "data-available", "unavailable"]);
     for (const layer of layers) {
       expect(`${layer.id}: ${layer.status}`).toBe(`${layer.id}: ${layer.status}`);
       expect(valid.has(layer.status), `${layer.id} has status "${layer.status}"`).toBe(true);

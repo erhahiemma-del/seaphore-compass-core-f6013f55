@@ -141,7 +141,27 @@ export interface LayerRuntimeState {
  * Neither draws anything. A catalogue entry with no source is a statement
  * about Seaphore's collection, never about the sea.
  */
-export type LayerStatus = "ready" | "pending-source" | "unavailable";
+export type LayerStatus =
+  /** Installed, fed, and drawing. */
+  | "ready"
+  /**
+   * No source holds the data. The layer cannot be built.
+   *
+   * This is a statement about the world, not about Seaphore's backlog.
+   */
+  | "pending-source"
+  /**
+   * Seaphore holds the data; nothing draws it yet.
+   *
+   * The distinction this adds is one an officer needs and the panel could
+   * not previously express. "No source publishes berth geometry" and "we
+   * have 301 port calls and have not built the layer" are different
+   * answers to the same toggle, and collapsing both into Unavailable told
+   * officers a capability was impossible when it was merely unbuilt —
+   * which is how a stale status survives for months.
+   */
+  | "data-available"
+  | "unavailable";
 
 /** A logical layer an officer can switch on or off. */
 export interface LayerDefinition {
@@ -756,13 +776,23 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     id: "aisTrack",
     label: "Observed tracks",
     description:
-      "Where a vessel was actually observed to go, from AIS history. Distinct from voyage relationships, which record only origin and destination.",
+      "Where the selected vessel was actually observed to go, from AIS history. Distinct from voyage relationships, which record only origin and destination.",
     group: "VESSELS",
-    renderLayerIds: [LAYER_IDS.aisTrack, LAYER_IDS.aisTrackDark],
+    /*
+     * Was `pending-source`, claiming two render layers that no renderer
+     * has ever installed, with the reason "Awaiting AIS history connector
+     * (G4)". That connector arrived: `DatalasticVesselSource.history()`
+     * calls the verified `/vessel_history` endpoint, `useVesselTrack`
+     * resolves it per selection, and `vessel-track-layer` draws it.
+     *
+     * So the panel was reporting a working capability as Unavailable, and
+     * `vessel-track-layer` was installed with no registry entry claiming
+     * it — the two halves of one stale status.
+     */
+    renderLayerIds: [LAYER_IDS.vesselTrack],
     defaultVisible: false,
-    status: "pending-source",
+    status: "ready",
     order: 30,
-    pendingReason: "Awaiting AIS history connector (G4).",
   },
   {
     id: "vesselClusters",
@@ -935,10 +965,10 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     group: "OPERATIONAL",
     renderLayerIds: [],
     defaultVisible: false,
-    status: "pending-source",
+    status: "data-available",
     order: 20,
     pendingReason:
-      "Requires AIS track history. Voyage endpoints are known; the path between them is not, and each voyage says so through pathKnown.",
+      "AIS track history is reachable through the vessel-history endpoint. Deriving repeated corridors from it has not been built.",
   },
   {
     id: "port-calls",
@@ -947,10 +977,10 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     group: "OPERATIONAL",
     renderLayerIds: [],
     defaultVisible: false,
-    status: "pending-source",
+    status: "data-available",
     order: 21,
     pendingReason:
-      "No port-call feed is connected. NPA SHIPPOS is the Tier 1 source and has no machine-readable route configured.",
+      "301 NPA port calls are ingested and queryable, and the port panel shows them. No map layer draws them yet: a port call has no position of its own beyond the port it names.",
   },
   {
     id: "traffic-density",
@@ -987,10 +1017,10 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     group: "OPERATIONAL",
     renderLayerIds: [],
     defaultVisible: false,
-    status: "pending-source",
+    status: "data-available",
     order: 24,
     pendingReason:
-      "Declared arrival times exist on voyages; no feed publishes them as an arrival board.",
+      "NPA publishes 21 expected arrivals and they are ingested. Not drawn: an expected vessel has not arrived, and a marker would put a ship in a port it has not reached.",
   },
   {
     id: "port-congestion",
@@ -999,10 +1029,10 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     group: "OPERATIONAL",
     renderLayerIds: [],
     defaultVisible: false,
-    status: "pending-source",
+    status: "data-available",
     order: 25,
     pendingReason:
-      "No port operations provider is connected, so berth occupancy and congestion cannot be observed.",
+      "Berth occupancy is ingested from NPA and appears in the port panel. Congestion as a layer needs a definition Seaphore has not agreed: occupancy is not congestion.",
   },
   {
     id: "cargo-activity",
@@ -1011,10 +1041,10 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     group: "TRADE_LOGISTICS",
     renderLayerIds: [],
     defaultVisible: false,
-    status: "pending-source",
+    status: "data-available",
     order: 30,
     pendingReason:
-      "Cargo records exist per manifest; none carries a position, so there is nothing to place on a map.",
+      "151 NPA cargo records are ingested, each attached to a port call and so to a port. Aggregating by port is possible; nothing draws it. Units are never summed together.",
   },
   {
     id: "container-activity",
@@ -1091,10 +1121,10 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     group: "RISK_INTELLIGENCE",
     renderLayerIds: [],
     defaultVisible: false,
-    status: "pending-source",
+    status: "data-available",
     order: 43,
     pendingReason:
-      "A gap is the absence of a signal over time. Deriving one requires track history, which is not collected.",
+      "Track history is reachable, so gaps are derivable. Not built. A gap would mean a gap in observation and nothing more.",
   },
   {
     id: "watch-zones",
@@ -1292,9 +1322,10 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     group: "INVESTIGATIONS",
     renderLayerIds: [],
     defaultVisible: false,
-    status: "pending-source",
+    status: "data-available",
     order: 73,
-    pendingReason: "Requires an activity archive. Nothing retains historical positions.",
+    pendingReason:
+      "Two archives now exist: NPA port calls with observation times, and vessel history for tracked hulls. Combining them into a layer has not been built.",
   },
   {
     id: "anomaly-density",

@@ -219,7 +219,19 @@ interface LayerRowProps {
 }
 
 function LayerRow({ layer, checked, opacity, onToggle, onOpacity }: LayerRowProps) {
-  const pending = layer.status === "pending-source";
+  /*
+   * Three states, not two.
+   *
+   * "Unavailable" means no source holds the data — a statement about the
+   * world. "Not yet drawn" means Seaphore has the data and has not built
+   * the layer — a statement about the backlog. Both used to render as
+   * Unavailable, which told officers a capability was impossible when it
+   * was merely unbuilt, and let a stale status survive unnoticed for as
+   * long as nobody re-checked it.
+   */
+  const unavailable = layer.status === "pending-source";
+  const notDrawn = layer.status === "data-available";
+  const pending = unavailable || notDrawn;
   return (
     <li className="flex items-start gap-3">
       <Switch
@@ -235,7 +247,7 @@ function LayerRow({ layer, checked, opacity, onToggle, onOpacity }: LayerRowProp
           </label>
           {pending ? (
             <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-normal">
-              Unavailable
+              {notDrawn ? "Not yet drawn" : "Unavailable"}
             </Badge>
           ) : null}
         </div>

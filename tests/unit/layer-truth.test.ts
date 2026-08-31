@@ -73,7 +73,7 @@ describe("declared ready equals actually renderable", () => {
     }
   });
 
-  it("keeps observed tracks separate from voyage relationships", () => {
+  it("keeps observed tracks separate from voyage relationships", async () => {
     // The M2 distinction, enforced. A voyage layer is renderable
     // because the voyages table is real; an observed track is not,
     // because no AIS history provider is connected. Marking the track
@@ -86,9 +86,32 @@ describe("declared ready equals actually renderable", () => {
     // a line between two ports reads as a route whatever it is called.
     expect(voyages.renderLayerIds).not.toContain("voyage-arcs-layer");
 
+    /*
+     * This used to assert the track layer stayed `pending-source`, on the
+     * grounds that marking it ready would make "no track drawn" read as
+     * "the vessel did not move".
+     *
+     * The connector it was waiting for arrived — history() calls the
+     * verified vessel-history endpoint and `vessel-track-layer` draws the
+     * result — so the guard now asserts the protection instead of the
+     * absence. The concern was always the misreading, and what prevents
+     * it is that the track model reports *why* there is no track rather
+     * than rendering an empty path.
+     */
     const tracks = layerRegistry.require("aisTrack");
-    expect(tracks.status).toBe("pending-source");
-    expect(tracks.pendingReason).toBeTruthy();
+    expect(tracks.status).toBe("ready");
+    expect(tracks.renderLayerIds).toEqual([LAYER_IDS.vesselTrack]);
+
+    const { TRACK_UNAVAILABLE_LABEL } = await import("@/services/geospatial/vessel-track");
+    // Three distinct absences, none of which says the vessel stayed put.
+    expect(Object.keys(TRACK_UNAVAILABLE_LABEL)).toEqual([
+      "SOURCE_HAS_NO_HISTORY",
+      "NO_RECORDS_FOR_VESSEL",
+      "LOOKUP_FAILED",
+    ]);
+    for (const label of Object.values(TRACK_UNAVAILABLE_LABEL)) {
+      expect(label).not.toMatch(/did not move|stationary|no movement\b/i);
+    }
   });
 
   it("keeps vessel clustering honest", () => {
