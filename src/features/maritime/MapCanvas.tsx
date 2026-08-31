@@ -69,6 +69,9 @@ import {
   type MapRenderer,
   type MapStylePaletteName,
   type MapScopeId,
+  scopeSupport,
+  declaresGeographicCoverage,
+  type ScopeSupport,
   type SharedGeospatialService,
   type Vessel,
   type VesselSource,
@@ -271,6 +274,22 @@ export interface VesselFeedState {
   readonly sourceId: string | null;
   /** When the last successful response was applied. */
   readonly lastAppliedAt: string | null;
+  /*
+   * Geographic honesty, carried with the feed rather than re-derived by
+   * each consumer.
+   *
+   * Without these an empty result is indistinguishable from an unqueried
+   * one, and every surface downstream drew the world view as "0 vessels".
+   * The provider states its own extent; nothing here assumes it.
+   */
+  /** The scope the feed was read for. */
+  readonly scope?: MapScopeId;
+  /** The provider's declared answer for that scope. */
+  readonly support?: ScopeSupport;
+  /** Extent the provider declared, when it declared one. */
+  readonly extentLabel?: string | null;
+  /** The provider's reason for its extent. */
+  readonly extentNote?: string | null;
 }
 
 export function MapCanvas({
@@ -701,6 +720,15 @@ export function MapCanvas({
   useEffect(() => {
     let disposed = false;
 
+    /*
+     * Asked of the provider once per feed, not assumed and not looked up
+     * by id. An undeclared extent stays undeclared — the resolver refuses
+     * to call an empty result an empty sea in that case, which is the
+     * conservative direction.
+     */
+    const declared = declaresGeographicCoverage(source) ? source.geographicCoverage() : null;
+    const support: ScopeSupport = scopeSupport(source, scope);
+
     // Reported alongside the vessels so a consumer can tell an empty
     // fleet apart from a feed that has not answered or has failed.
     let feed: VesselFeedState = {
@@ -708,6 +736,10 @@ export function MapCanvas({
       error: null,
       sourceId: source.id,
       lastAppliedAt: null,
+      scope,
+      support,
+      extentLabel: declared?.extentLabel ?? null,
+      extentNote: declared?.note ?? null,
     };
     /*
      * The displayed set comes from the engine; the live set is whatever
@@ -804,7 +836,10 @@ export function MapCanvas({
       clearInterval(interval);
       unsubscribe?.();
     };
-  }, [source, engine, recorder, bus, setVesselCount, onVesselsChanged]);
+    // `scope` joins the dependencies because the feed now reports the
+    // provider's support for the scope being viewed; without it, switching
+    // to the world view would keep reporting the regional verdict.
+  }, [source, engine, recorder, bus, setVesselCount, onVesselsChanged, scope]);
 
   /*
    * One clock for every attention ring, driven from here because this is

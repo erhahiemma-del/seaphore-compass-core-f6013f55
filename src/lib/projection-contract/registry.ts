@@ -1837,8 +1837,22 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: "2026-09-06",
   },
+  {
+    id: "geospatial.vessel-geographic-coverage",
+    name: "Vessel geographic coverage state",
+    producer: "CAPABILITY",
+    description:
+      "Per-scope honesty about the vessel feed: LOADING, AVAILABLE (LIVE or HISTORICAL), EMPTY, UNAVAILABLE and ERROR, resolved from the provider's own declared extent rather than from the record count. An unsupported or undeclared scope can never render as a count — the world view states that global vessel data is unavailable from the current source instead of showing zero vessels. The seam stays open for a future global AIS provider, which declares `global` and needs no UI change.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Live Command Map · vessel feed notice and status bar vessel figure",
+      location: "src/features/maritime/MaritimeCommand.tsx",
+      component: "src/services/geospatial/vessel-coverage.ts",
+      interaction: "passive-display",
+    },
+    reviewedAt: "2026-09-07",
+  },
 ];
-
 
 export function getContractEntry(id: string): ProjectionContractEntry | undefined {
   return PROJECTION_CONTRACT.find((e) => e.id === id);

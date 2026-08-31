@@ -31,6 +31,8 @@ import {
   MAP_SCOPES,
   getVesselSource,
   resolveMapDataState,
+  resolveVesselCoverage,
+  type VesselCoverageResult,
   mapEventBus,
   type MapScopeId,
   sgs,
@@ -289,6 +291,33 @@ export function MaritimeCommand() {
    * LIVE over a historical picture.
    */
   const replayOwner = displayOwner(replay.status);
+
+  /*
+   * Coverage, resolved once and read by every surface that would
+   * otherwise invent its own reading of an empty fleet.
+   *
+   * The count comes from the live set, and `historical` from the replay
+   * player's own state — so a replayed frame can never be presented as
+   * current coverage. The scope comes from the feed when the feed has
+   * answered, because a verdict computed against a scope the officer has
+   * since left is a verdict about the wrong ocean.
+   */
+  const coverage = useMemo(
+    () =>
+      resolveVesselCoverage({
+        loading: feed.loading,
+        error: feed.error,
+        sourceId: feed.sourceId,
+        lastAppliedAt: feed.lastAppliedAt,
+        recordCount: liveVessels.length,
+        scope: feed.scope ?? scope,
+        support: feed.support ?? "UNDECLARED",
+        extentLabel: feed.extentLabel ?? null,
+        extentNote: feed.extentNote ?? null,
+        historical: replayOwner !== "LIVE",
+      }),
+    [feed, liveVessels.length, scope, replayOwner],
+  );
 
   /*
    * Continuous approach assessment.
@@ -1004,7 +1033,7 @@ export function MaritimeCommand() {
                 empty list. Saying so here is what stops an officer
                 reading a collection gap as an empty sea.
               */}
-              <VesselFeedNotice feed={feed} count={liveVessels.length} />
+              <VesselFeedNotice feed={feed} count={liveVessels.length} coverage={coverage} />
               <VoyageFeedNotice feed={voyageFeed} />
             </div>
           </main>
@@ -1098,7 +1127,7 @@ export function MaritimeCommand() {
           onScrub={replay.scrub}
         />
 
-        <MapStatusBar />
+        <MapStatusBar coverage={coverage} />
       </div>
     </AppShell>
   );
@@ -1281,7 +1310,7 @@ function ToolButton({
   );
 }
 
-function MapStatusBar() {
+function MapStatusBar({ coverage }: { coverage: VesselCoverageResult }) {
   const vesselCount = useMapSessionStore((s) => s.vesselCount);
   const rendererId = useMapSessionStore((s) => s.rendererId);
   const rendererStatus = useMapSessionStore((s) => s.rendererStatus);
@@ -1291,7 +1320,15 @@ function MapStatusBar() {
 
   return (
     <footer className="flex shrink-0 items-center gap-4 border-t border-border px-4 py-1.5 text-[11px] text-muted-foreground">
-      <Stat label="vessels" value={String(vesselCount)} />
+      {/*
+       * A count is only printed when it means something. An unsupported or
+       * undeclared scope gets the state word instead: "0" next to the word
+       * vessels is a claim about the sea, and the provider has not made it.
+       */}
+      <Stat
+        label="vessels"
+        value={coverage.countIsMeaningful ? String(vesselCount) : coverage.label}
+      />
       <Stat label="layers" value={String(activeLayerCount)} />
       <Stat label="fps" value={fps === null ? "—" : String(fps)} />
       <span className="ml-auto font-mono">
@@ -1365,11 +1402,26 @@ function ScopeToggle({
 /**
  * What the vessel feed itself claims, in an officer's terms.
  *
- * Derived from the canonical `resolveMapDataState` rather than a local
- * judgement, so the map cannot say LIVE while the drawer says stale.
- * Silent only when the picture is genuinely live and populated.
+ * Two resolvers, deliberately. `resolveMapDataState` answers whether the
+ * picture may be called live — a freshness question. `resolveVesselCoverage`
+ * answers whether the area was queried at all — a coverage question. The
+ * second is the one the world view turns on: it is the difference between
+ * "no vessels reported" and "this provider never looked here", and the
+ * previous single-resolver notice could only say NO DATA for both.
+ *
+ * Freshness wins the badge when the feed is stale, because a delayed
+ * regional picture is a more urgent caveat than a coverage footnote.
+ * Coverage wins whenever it is the reason the map is empty.
  */
-function VesselFeedNotice({ feed, count }: { feed: VesselFeedState; count: number }) {
+function VesselFeedNotice({
+  feed,
+  count,
+  coverage,
+}: {
+  feed: VesselFeedState;
+  count: number;
+  coverage: VesselCoverageResult;
+}) {
   const state = resolveMapDataState({
     loading: feed.loading,
     error: feed.error,
@@ -1377,18 +1429,26 @@ function VesselFeedNotice({ feed, count }: { feed: VesselFeedState; count: numbe
     lastAppliedAt: feed.lastAppliedAt,
     recordCount: count,
   });
-  if (state.isLive && count > 0) return null;
+  // Silent only when the picture is live, populated and fully covered.
+  if (state.isLive && count > 0 && coverage.countIsMeaningful) return null;
+
+  const showDelayed = state.state === "DELAYED";
+  const label = showDelayed ? state.label : coverage.label;
+  const reason = showDelayed ? state.reason : coverage.reason;
 
   return (
     <div
       data-testid="vessel-feed-notice"
       data-feed-state={state.state}
+      data-coverage-state={coverage.state}
+      data-coverage-mode={coverage.mode}
+      data-scope-unsupported={coverage.scopeUnsupported ? "true" : "false"}
       className="pointer-events-auto w-full rounded-md border border-border/60 bg-background/92 px-2.5 py-1.5 backdrop-blur-sm"
     >
       <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-        Vessels · {state.label}
+        Vessels · {label}
       </div>
-      <p className="text-[11px] leading-relaxed text-muted-foreground">{state.reason}</p>
+      <p className="text-[11px] leading-relaxed text-muted-foreground">{reason}</p>
     </div>
   );
 }
