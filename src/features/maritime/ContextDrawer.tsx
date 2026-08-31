@@ -48,6 +48,8 @@ import type { VesselTrack } from "@/services/geospatial/vessel-track";
 import { VoyagePanel } from "./VoyagePanel";
 import { PortIntelligencePanel } from "./PortIntelligencePanel";
 import { useFacilityRegistry, useNpaDataset } from "./use-npa-context";
+import { FacilityIntelligencePanel } from "./FacilityIntelligencePanel";
+import { findFacility } from "./facility-presentation";
 import { portIntelligence } from "@/services/government/npa/port-intelligence";
 import { sgs } from "@/services/geospatial";
 
@@ -305,6 +307,14 @@ function SelectionPanel({
         />
       );
 
+    /*
+     * A facility from the registry. Its own case rather than a fall
+     * through to the port panel: a jetty is not a port, and the registry
+     * holds a different set of fields for each.
+     */
+    case "infrastructure":
+      return <FacilityContext selection={selection} />;
+
     case "investigation":
       return (
         <PendingPanel
@@ -522,6 +532,51 @@ function PortContext({ selection }: { selection: MapSelection }) {
        * clicked on the map — same URL key, same drawer, same camera.
        */
       onOpenVessel={(imo) => sgs.select({ kind: "vessel", id: imo, imo })}
+    />
+  );
+}
+
+/**
+ * Resolve an infrastructure selection into its registry record.
+ *
+ * A component because it needs the registry, and the drawer's renderer is
+ * a plain switch that cannot hold hooks — the same reason `PortContext`
+ * exists next door.
+ */
+function FacilityContext({ selection }: { selection: MapSelection }) {
+  const { registry, pending } = useFacilityRegistry();
+  const found = useMemo(() => findFacility(registry, selection.id), [registry, selection.id]);
+
+  if (pending) {
+    return (
+      <div className="p-3">
+        <p className="text-[11px] italic text-muted-foreground">
+          Reading the facility registry&hellip;
+        </p>
+      </div>
+    );
+  }
+
+  if (!found) {
+    /*
+     * Selected but unknown to the registry. Stated rather than shown as
+     * an empty panel, because "we hold no record" and "the record is
+     * empty" are different answers.
+     */
+    return (
+      <Unresolved
+        title="Facility not in the registry"
+        detail={`Nothing in the facility registry carries the id ${selection.id}. The marker was selected, but no record backs it.`}
+      />
+    );
+  }
+
+  return (
+    <FacilityIntelligencePanel
+      record={found.record}
+      kind={found.kind}
+      registry={registry}
+      onOpenPort={(locode) => sgs.select({ kind: "port", id: locode })}
     />
   );
 }

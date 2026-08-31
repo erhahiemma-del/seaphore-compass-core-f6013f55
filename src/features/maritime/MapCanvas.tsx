@@ -635,6 +635,23 @@ export function MapCanvas({
     const offPortClick = bus.on("port:click", ({ locode, position }) => {
       service.select({ kind: "port", id: locode, focus: position });
     });
+    /*
+     * A facility marker opens the facility, not its port.
+     *
+     * Routed through the one canonical selection, so a facility opened
+     * from the map is the same selection as one reached from a panel or a
+     * shared URL. `infrastructure` is the existing selection kind for a
+     * fixed asset; the registry id is its identifier and the kind travels
+     * as `assetType`.
+     */
+    const offFacilityClick = bus.on("facility:click", ({ facilityId, kind, position }) => {
+      service.select({
+        kind: "infrastructure",
+        id: facilityId,
+        assetType: kind,
+        focus: position,
+      });
+    });
     const offAnchorageClick = bus.on("anchorage:click", ({ anchorageId, portId, position }) => {
       service.select({
         kind: "anchorage",
@@ -651,6 +668,7 @@ export function MapCanvas({
       offClick();
       offVoyageClick();
       offPortClick();
+      offFacilityClick();
       offAnchorageClick();
       offMapClick();
     };

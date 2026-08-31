@@ -2786,6 +2786,47 @@ export class MapLibreRenderer implements MapRenderer {
         position: [event.lngLat.lng, event.lngLat.lat],
       });
     });
+    /*
+     * Facility clicks, one handler per tier layer.
+     *
+     * Bound per layer rather than by a global `queryRenderedFeatures`
+     * sweep so the hit stays scoped to infrastructure — a sweep would
+     * also catch the vessel beneath and make the click order decide which
+     * entity opened.
+     */
+    for (const layerId of [
+      LAYER_IDS.facilitiesT1,
+      LAYER_IDS.facilitiesT2,
+      LAYER_IDS.facilitiesT3,
+    ]) {
+      map.on("click", layerId, (event: MapLibreLayerMouseEvent) => {
+        const feature = event.features?.[0];
+        const facilityId = feature?.properties?.id;
+        if (typeof facilityId !== "string" || facilityId === "") return;
+        const kind = feature?.properties?.kind;
+        this.bus?.emit("facility:click", {
+          facilityId,
+          kind: (typeof kind === "string" ? kind : "TERMINAL") as
+            | "PORT"
+            | "TERMINAL"
+            | "JETTY"
+            | "OFFSHORE"
+            | "LNG_GAS",
+          name: typeof feature?.properties?.name === "string" ? feature.properties.name : null,
+          portId:
+            typeof feature?.properties?.portId === "string" ? feature.properties.portId : null,
+          position: [event.lngLat.lng, event.lngLat.lat],
+        });
+      });
+      // The cursor is the only affordance saying a marker is clickable.
+      map.on("mouseenter", layerId, () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", layerId, () => {
+        map.getCanvas().style.cursor = "";
+      });
+    }
+
     map.on("click", LAYER_IDS.anchorages, (event: MapLibreLayerMouseEvent) => {
       const feature = event.features?.[0];
       const anchorageId = feature?.properties?.anchorageId;

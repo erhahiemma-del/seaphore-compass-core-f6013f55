@@ -99,6 +99,25 @@ export interface VoyageClickEvent {
  * gazetteer, the voyage records and the reference collection — not by a
  * database row id, which only one of those three would recognise.
  */
+/**
+ * A facility from the registry was clicked.
+ *
+ * Its own event rather than a reuse of `port:click`, because the id is a
+ * registry facility id — `NG-TIN-T02` — not a UN/LOCODE, and the two
+ * would be indistinguishable once inside a handler. The same reason
+ * voyages and anchorages have their own events.
+ */
+export interface FacilityClickEvent {
+  /** Registry facility id, the key the source promotes. */
+  readonly facilityId: string;
+  /** Which master the facility came from. */
+  readonly kind: "PORT" | "TERMINAL" | "JETTY" | "OFFSHORE" | "LNG_GAS";
+  readonly name: string | null;
+  /** The parent port's registry id, when the record names one. */
+  readonly portId: string | null;
+  readonly position: LonLat;
+}
+
 export interface PortClickEvent {
   readonly locode: string;
   /** Display name as the reference collection carries it, when it does. */
@@ -154,6 +173,7 @@ export interface MapEventMap {
   "voyage:click": VoyageClickEvent;
   "port:click": PortClickEvent;
   "anchorage:click": AnchorageClickEvent;
+  "facility:click": FacilityClickEvent;
   "vessel:hover": VesselHoverEvent;
   "layer:visibility": LayerVisibilityEvent;
   "vessels:applied": VesselsAppliedEvent;
