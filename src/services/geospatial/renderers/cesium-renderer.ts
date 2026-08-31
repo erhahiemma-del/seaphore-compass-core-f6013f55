@@ -62,7 +62,6 @@ export interface CesiumRendererDependencies {
   readonly baseUrl?: string;
   /** Initial earth presentation. Defaults to the Intelligence Earth look. */
   readonly earth?: Partial<EarthSettings>;
-
 }
 
 const CESIUM_VERSION = "1.144.0";
@@ -81,6 +80,27 @@ type Group = "vessels" | "vesselLabels" | "findings" | "track";
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- Cesium is loaded dynamically; its types are not in the SSR graph. */
 type Cesium = any;
+
+/**
+ * The shape of the port-twin projection, restated structurally.
+ *
+ * Mirrors `PortTwinFeatureCollection` without importing it: the engine
+ * adapter stays ignorant of the port domain, exactly as it does for
+ * findings and voyages.
+ */
+interface PortInfrastructureLike {
+  readonly features: readonly {
+    readonly geometry: { readonly coordinates: readonly [number, number] };
+    readonly properties: {
+      readonly assetId: string;
+      readonly twinId: string;
+      readonly layer: string;
+      readonly name: string;
+      readonly colour: string;
+      readonly radiusKm: number | null;
+    };
+  }[];
+}
 
 interface FindingIndicatorLike {
   readonly features: readonly {
@@ -114,6 +134,14 @@ export class CesiumRenderer implements MapRenderer {
   /** Entities by IMO. The only per-vessel state, and it is render state. */
   private readonly vesselEntities = new Map<string, Cesium>();
   private readonly findingEntities = new Map<string, Cesium>();
+  /**
+   * Port Digital Twin infrastructure, by asset id.
+   *
+   * Kept apart from vessels and findings because it answers a different
+   * question — what the estate *is*, not what is moving through it — and
+   * because its visibility is decided by the twin's own layer registry.
+   */
+  private readonly infrastructureEntities = new Map<string, Cesium>();
   private trackEntity: Cesium | null = null;
   private readonly visible: Record<Group, boolean> = {
     vessels: true,
@@ -203,7 +231,6 @@ export class CesiumRenderer implements MapRenderer {
     this.applyPerformanceBudget();
     this.applyEarthSettings(this.earth);
 
-
     this.setCamera({
       center: options.center,
       zoom: options.zoom,
@@ -231,6 +258,17 @@ export class CesiumRenderer implements MapRenderer {
         });
         return;
       }
+      if (entityId?.startsWith("twin:") && position) {
+        const props = picked.id.properties?.getValue?.(cesium.JulianDate.now()) ?? {};
+        this.bus.emit("infrastructure:click", {
+          assetId: entityId.slice("twin:".length),
+          twinId: String(props["twinId"] ?? ""),
+          layer: String(props["layer"] ?? ""),
+          position,
+        });
+        return;
+      }
+
       if (position) this.bus.emit("map:click", { position });
     }, cesium.ScreenSpaceEventType.LEFT_CLICK);
 
@@ -255,6 +293,7 @@ export class CesiumRenderer implements MapRenderer {
     this.ready = false;
     this.vesselEntities.clear();
     this.findingEntities.clear();
+    this.infrastructureEntities.clear();
     this.trackEntity = null;
     try {
       this.viewer?.destroy();
@@ -599,8 +638,6 @@ export class CesiumRenderer implements MapRenderer {
     return true;
   }
 
-
-
   private removeVessel(imo: string): void {
     const entity = this.vesselEntities.get(imo);
     if (!entity) return;
@@ -640,6 +677,71 @@ export class CesiumRenderer implements MapRenderer {
         },
       });
       this.findingEntities.set(props.findingId, entity);
+    }
+  }
+
+  // ── Port Digital Twins — the estate, not the fleet ──────────────────
+
+  /**
+   * Replace the open twin's infrastructure overlay.
+   *
+   * Full replacement rather than a diff: a twin holds tens of assets, not
+   * thousands of moving vessels, and it changes only when an officer opens
+   * a different port or toggles a layer. Diffing would buy nothing and
+   * risk leaving a stale asset behind under a switched-off layer.
+   *
+   * Assets with an indicative extent get a translucent ellipse *and* a
+   * point: the ellipse carries the scale honestly (a chart-derived radius,
+   * not a surveyed boundary) while the point stays pickable at any camera
+   * distance, so a click always resolves to the asset rather than the
+   * terrain beneath it.
+   */
+  setPortInfrastructure(features: unknown): void {
+    const cesium = this.cesium;
+    const viewer = this.viewer;
+    if (!cesium || !viewer) return;
+    const collection = features as PortInfrastructureLike | null;
+    for (const entity of this.infrastructureEntities.values()) viewer.entities.remove(entity);
+    this.infrastructureEntities.clear();
+    for (const feature of collection?.features ?? []) {
+      const [lon, lat] = feature.geometry.coordinates;
+      const props = feature.properties;
+      const colour = cesium.Color.fromCssColorString(props.colour);
+      const entity = viewer.entities.add({
+        id: `twin:${props.assetId}`,
+        position: cesium.Cartesian3.fromDegrees(lon, lat, 0),
+        properties: { twinId: props.twinId, layer: props.layer },
+        point: {
+          pixelSize: 13,
+          color: colour.withAlpha(0.9),
+          outlineColor: cesium.Color.WHITE.withAlpha(0.85),
+          outlineWidth: 2,
+          disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        },
+        label: {
+          text: props.name,
+          font: "500 12px Inter, system-ui, sans-serif",
+          fillColor: cesium.Color.WHITE,
+          outlineColor: colour,
+          outlineWidth: 3,
+          style: cesium.LabelStyle.FILL_AND_OUTLINE,
+          pixelOffset: new cesium.Cartesian2(0, -20),
+          disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        },
+        ...(props.radiusKm !== null && props.radiusKm > 0
+          ? {
+              ellipse: {
+                semiMinorAxis: props.radiusKm * 1000,
+                semiMajorAxis: props.radiusKm * 1000,
+                material: colour.withAlpha(0.16),
+                outline: true,
+                outlineColor: colour.withAlpha(0.7),
+                height: 0,
+              },
+            }
+          : {}),
+      });
+      this.infrastructureEntities.set(props.assetId, entity);
     }
   }
 

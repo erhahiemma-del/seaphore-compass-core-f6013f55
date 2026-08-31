@@ -142,6 +142,22 @@ export interface AnchorageClickEvent {
  * lifecycle and a subject, and the surface that opens it needs the finding
  * id, not only the hull the marker happened to sit beside.
  */
+/**
+ * A piece of port infrastructure in a Digital Twin was clicked.
+ *
+ * Its own channel rather than `port:click`: a berth group, an anchorage
+ * or a terminal is an asset *within* a port, and the drawer needs the
+ * asset's identity to resolve it — a LOCODE would only reopen the port.
+ */
+export interface InfrastructureClickEvent {
+  readonly assetId: string;
+  /** UN/LOCODE of the twin the asset belongs to. */
+  readonly twinId: string;
+  /** Port twin layer the asset was drawn on. */
+  readonly layer: string;
+  readonly position: LonLat;
+}
+
 export interface FindingClickEvent {
   readonly findingId: string;
   readonly subjectType: string;
@@ -169,6 +185,7 @@ export interface MapEventMap {
   "port:click": PortClickEvent;
   "anchorage:click": AnchorageClickEvent;
   "finding:click": FindingClickEvent;
+  "infrastructure:click": InfrastructureClickEvent;
   "vessel:hover": VesselHoverEvent;
   "layer:visibility": LayerVisibilityEvent;
   "vessels:applied": VesselsAppliedEvent;

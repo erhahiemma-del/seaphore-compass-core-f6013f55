@@ -207,6 +207,20 @@ export interface MapRenderer {
   setFindingIndicators?(features: unknown): void;
 
   /**
+   * Replace the port Digital Twin infrastructure overlay.
+   *
+   * Optional and additive (Phase 4B), like every other seam here. The
+   * collection arrives already decided: which twin is open, and which of
+   * its layers the officer has switched on, are domain questions answered
+   * in `port-twin.ts`. A renderer with no twin support simply omits the
+   * method and the officer keeps the flat operational map.
+   *
+   * Typed as `unknown` for the same reason as the voyage seam — naming the
+   * collection would pull the port domain into the engine contract.
+   */
+  setPortInfrastructure?(features: unknown): void;
+
+  /**
    * Mark one port as selected, or clear the selection with `null`.
    *
    * Optional and additive (M2.5), like everything else at this seam.
