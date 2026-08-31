@@ -102,6 +102,7 @@ export function ContextDrawer({
   selection,
   vessel,
   voyage,
+  fleet,
   onClose,
   onOpenPort,
   onAskCopilot,
