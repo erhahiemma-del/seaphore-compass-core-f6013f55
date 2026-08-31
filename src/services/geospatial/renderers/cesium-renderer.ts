@@ -345,6 +345,8 @@ export class CesiumRenderer implements MapRenderer {
     this.alertingImos.clear();
     this.findingEntities.clear();
     this.infrastructureEntities.clear();
+    this.corridorEntities.clear();
+    this.transitEntities.clear();
     this.trackEntity = null;
     try {
       this.viewer?.destroy();
