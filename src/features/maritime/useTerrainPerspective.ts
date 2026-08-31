@@ -115,6 +115,17 @@ export function useTerrainPerspective(): TerrainPerspective {
         if (options.persist) remember(true);
         return;
       }
+      /*
+       * The credential is an officer capability. Without a session there is
+       * no one to hand it to, so the request is never made — an Unauthorized
+       * throw here would blank the map for a question nobody asked.
+       */
+      if (!authenticated) {
+        setUnavailableReason(
+          "Sign in as an officer to activate the 3D Terrain Perspective. The 2D operational map is still live.",
+        );
+        return;
+      }
       setLoading(true);
       void readToken({ data: undefined })
         .then((result) => {
