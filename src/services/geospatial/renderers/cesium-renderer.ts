@@ -231,6 +231,17 @@ export class CesiumRenderer implements MapRenderer {
         });
         return;
       }
+      if (entityId?.startsWith("twin:") && position) {
+        const props = picked.id.properties?.getValue?.(cesium.JulianDate.now()) ?? {};
+        this.bus.emit("infrastructure:click", {
+          assetId: entityId.slice("twin:".length),
+          twinId: String(props["twinId"] ?? ""),
+          layer: String(props["layer"] ?? ""),
+          position,
+        });
+        return;
+      }
+
       if (position) this.bus.emit("map:click", { position });
     }, cesium.ScreenSpaceEventType.LEFT_CLICK);
 
