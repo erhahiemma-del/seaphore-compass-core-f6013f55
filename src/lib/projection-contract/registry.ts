@@ -1822,6 +1822,21 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: "2026-08-31",
   },
+  {
+    id: "geospatial.port-digital-twins",
+    name: "Nigerian port Digital Twins",
+    producer: "CAPABILITY",
+    description:
+      "Six port estates (Apapa, Tin Can, Onne, Bonny, Warri, Calabar) as interactive 3D twins over satellite imagery and terrain, with an eleven-layer infrastructure registry, per-asset context (operator, coordinates, capacity, connected vessels from the canonical fleet, compliance state, intelligence notes) and per-layer coverage naming the custodian dataset each unavailable layer needs. Holds no vessel state and no second selection.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Live Command Map · Port digital twin control strip and Context Drawer",
+      location: "src/features/maritime/PortTwinPanel.tsx",
+      component: "src/services/geospatial/port-twin.ts",
+      interaction: "action",
+    },
+    reviewedAt: "2026-09-06",
+  },
 ];
 
 
