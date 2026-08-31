@@ -37,10 +37,20 @@ vi.mock("@/lib/officer-map-preferences.functions", () => ({
   setOfficerTerrainPreference: "setOfficerTerrainPreference",
 }));
 
+/*
+ * `useServerFn` returns a stable callback in the real implementation, and
+ * the hook's effects depend on that identity. The stub caches per id for
+ * the same reason — a fresh function each render would re-fire the
+ * credential effect forever.
+ */
+const serverFnStubs = new Map<string, (payload: { data: unknown }) => Promise<unknown>>();
+
 vi.mock("@tanstack/react-start", () => ({
   useServerFn: (fn: unknown) => {
     const id = String(fn);
-    return async (payload: { data: unknown }) => {
+    const cached = serverFnStubs.get(id);
+    if (cached) return cached;
+    const stub = async (payload: { data: unknown }) => {
       if (id === "getCesiumIonStatus") {
         calls.status += 1;
         return { configured: tokenResult.token !== null, message: null };
@@ -56,6 +66,8 @@ vi.mock("@tanstack/react-start", () => ({
       calls.writes.push((payload.data as { terrain3d: boolean }).terrain3d);
       return { ok: true };
     };
+    serverFnStubs.set(id, stub);
+    return stub;
   },
 }));
 
