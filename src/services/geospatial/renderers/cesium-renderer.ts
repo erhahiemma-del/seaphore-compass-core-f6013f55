@@ -127,6 +127,7 @@ export class CesiumRenderer implements MapRenderer {
     this.cesium = cesium;
     cesium.Ion.defaultAccessToken = this.ionToken;
 
+    ensureWidgetStylesheet(this.baseUrl);
     const viewer = new cesium.Viewer(options.container, {
       animation: false,
       timeline: false,
@@ -488,6 +489,23 @@ export class CesiumRenderer implements MapRenderer {
   }
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
+
+/**
+ * Cesium's widget stylesheet, added once.
+ *
+ * Injected rather than `import`ed so the MapLibre path never loads it and
+ * SSR never evaluates a browser-only asset.
+ */
+function ensureWidgetStylesheet(baseUrl: string): void {
+  if (typeof document === "undefined") return;
+  const id = "cesium-widgets-css";
+  if (document.getElementById(id)) return;
+  const link = document.createElement("link");
+  link.id = id;
+  link.rel = "stylesheet";
+  link.href = `${baseUrl}Widgets/widgets.css`;
+  document.head.appendChild(link);
+}
 
 /** Web-mercator zoom ↔ camera height, so one camera model serves both engines. */
 function zoomToHeight(zoom: number): number {
