@@ -581,21 +581,19 @@ export function executeCopilotAction(
           reason: `Available views are ${EARTH_CAMERA_PRESETS.map((p) => p.label).join(", ")}.`,
         };
       }
+      /*
+       * Tilt and heading travel with the navigation rather than being
+       * applied afterwards: the framing is part of the view, and a second
+       * camera write here would be a second camera writer.
+       */
       const result = navigateToCoordinates(
         preset.center,
-        { zoom: preset.zoom, source: "voice" },
+        { zoom: preset.zoom, pitch: preset.pitch, bearing: preset.bearing, source: "voice" },
         service,
       );
-      if (!result.ok) {
-        return { ok: false, summary: "Could not move there.", reason: result.reason ?? undefined };
-      }
-      /*
-       * Framing after the scope change, through the same shared state the
-       * renderer already reads — the pitch and bearing are what make a
-       * preset a view rather than a coordinate.
-       */
-      service.setCamera({ pitch: preset.pitch, bearing: preset.bearing });
-      return { ok: true, summary: `Moved to ${preset.label}.` };
+      return result.ok
+        ? { ok: true, summary: `Moved to ${preset.label}.` }
+        : { ok: false, summary: "Could not move there.", reason: result.reason ?? undefined };
     }
 
     case "FILTER_VESSELS": {

@@ -38,6 +38,16 @@ export interface NavigationRequest {
   readonly coordinates?: LonLat;
   /** Overrides the place's declared framing. */
   readonly zoom?: number;
+  /**
+   * Framing that comes with a view, not with a point.
+   *
+   * An Intelligence Earth preset is a viewpoint — tilt and heading are
+   * part of what makes "Apapa Port" different from its coordinates. They
+   * travel with the navigation so the one camera writer stays the only
+   * one; a caller setting them afterwards would be the second.
+   */
+  readonly pitch?: number;
+  readonly bearing?: number;
   readonly level?: NavigationLevel;
   readonly source: NavigationSource;
 }
@@ -121,7 +131,12 @@ export function navigateTo(
     service.setScope("global");
   }
 
-  service.setCamera({ center, zoom });
+  service.setCamera({
+    center,
+    zoom,
+    ...(request.pitch === undefined ? {} : { pitch: request.pitch }),
+    ...(request.bearing === undefined ? {} : { bearing: request.bearing }),
+  });
 
   return {
     ok: true,
@@ -141,13 +156,20 @@ export function navigateTo(
  */
 export function navigateToCoordinates(
   coordinates: LonLat,
-  options: { readonly zoom?: number; readonly source?: NavigationSource } = {},
+  options: {
+    readonly zoom?: number;
+    readonly pitch?: number;
+    readonly bearing?: number;
+    readonly source?: NavigationSource;
+  } = {},
   service: SharedGeospatialService = sgs,
 ): NavigationResult {
   return navigateTo(
     {
       coordinates,
       zoom: options.zoom ?? 12,
+      pitch: options.pitch,
+      bearing: options.bearing,
       level: "LOCAL",
       source: options.source ?? "coordinates",
     },
