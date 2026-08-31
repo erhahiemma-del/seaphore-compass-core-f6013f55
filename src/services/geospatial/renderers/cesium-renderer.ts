@@ -62,7 +62,6 @@ export interface CesiumRendererDependencies {
   readonly baseUrl?: string;
   /** Initial earth presentation. Defaults to the Intelligence Earth look. */
   readonly earth?: Partial<EarthSettings>;
-
 }
 
 const CESIUM_VERSION = "1.144.0";
@@ -231,7 +230,6 @@ export class CesiumRenderer implements MapRenderer {
 
     this.applyPerformanceBudget();
     this.applyEarthSettings(this.earth);
-
 
     this.setCamera({
       center: options.center,
@@ -640,8 +638,6 @@ export class CesiumRenderer implements MapRenderer {
     return true;
   }
 
-
-
   private removeVessel(imo: string): void {
     const entity = this.vesselEntities.get(imo);
     if (!entity) return;
@@ -748,8 +744,6 @@ export class CesiumRenderer implements MapRenderer {
       this.infrastructureEntities.set(props.assetId, entity);
     }
   }
-
-
 
   /** The selected vessel's recorded movement, drawn as a polyline. */
   setVesselTrack(collection: unknown): void {

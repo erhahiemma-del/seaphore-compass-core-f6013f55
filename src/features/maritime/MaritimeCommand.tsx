@@ -852,8 +852,6 @@ export function MaritimeCommand() {
           />
         ) : null}
 
-
-
         <div className="flex min-h-0 flex-1">
           {/*
             No permanent layer panel.

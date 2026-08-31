@@ -174,7 +174,10 @@ export interface MapCanvasProps {
    * port-twin domain, not here — the canvas only pushes what it is given.
    * Absent means no twin overlay, which leaves the fleet untouched.
    */
-  readonly portInfrastructure?: { readonly type: "FeatureCollection"; readonly features: readonly unknown[] };
+  readonly portInfrastructure?: {
+    readonly type: "FeatureCollection";
+    readonly features: readonly unknown[];
+  };
   /**
    * Intelligence domain this map is serving.
    *
