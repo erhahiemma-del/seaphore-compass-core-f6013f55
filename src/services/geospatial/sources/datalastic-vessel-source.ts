@@ -64,6 +64,7 @@ import {
   type VesselQuery,
   type VesselSourceDescriptor,
 } from "../vessel-source";
+import type { GeographicCoverage } from "../vessel-coverage";
 
 export const DATALASTIC_SOURCE_ID = "datalastic";
 export const DATALASTIC_SOURCE_LABEL = "Datalastic";
@@ -453,9 +454,8 @@ export class DatalasticVesselSource implements DescribableVesselSource {
       sourceId: this.id,
       scopes: ["regional"],
       extentLabel: `${NIGERIA_COVERAGE_ZONES.length} Nigerian coastal and offshore zones`,
-      extentNote:
-        "the provider answers one 50km circle per request, so coverage is the declared Nigerian zone set",
-    } as GeographicCoverage;
+      note: "the provider answers one 50km circle per request, so coverage is the declared Nigerian zone set",
+    };
   }
 
   async list(query?: VesselQuery): Promise<readonly Vessel[]> {
