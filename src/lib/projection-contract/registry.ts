@@ -1807,7 +1807,23 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: "2026-09-06",
   },
+  {
+    id: "geospatial.intelligence-earth",
+    name: "Intelligence Earth presentation",
+    producer: "CAPABILITY",
+    description:
+      "World terrain, satellite imagery, atmosphere, ocean shading, day/night lighting, relief exaggeration, globe/flat mode and named camera presets for the 3D lens. Presentation of the canonical picture — it holds no vessel, finding or provenance state of its own.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Live Command Map · Intelligence Earth control strip (3D lens only)",
+      location: "src/features/maritime/IntelligenceEarthPanel.tsx",
+      component: "src/services/geospatial/earth-presets.ts",
+      interaction: "action",
+    },
+    reviewedAt: "2026-08-31",
+  },
 ];
+
 
 export function getContractEntry(id: string): ProjectionContractEntry | undefined {
   return PROJECTION_CONTRACT.find((e) => e.id === id);
