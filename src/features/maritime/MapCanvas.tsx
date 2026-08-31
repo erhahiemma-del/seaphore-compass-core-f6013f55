@@ -130,6 +130,9 @@ const MODE_CONTROLS: Readonly<Record<MapCanvasMode, MapControlOptions>> = {
 /** Empty overlay. Clears the layer without a special case. */
 const EMPTY_FINDINGS: FindingIndicatorCollection = { type: "FeatureCollection", features: [] };
 
+/** Cleared overlay, hoisted so the effect's identity check stays stable. */
+const EMPTY_PORT_INFRASTRUCTURE = { type: "FeatureCollection" as const, features: [] };
+
 export interface MapCanvasProps {
   /** Presentation mode. Defaults to the full command surface. */
   readonly mode?: MapCanvasMode;
@@ -164,6 +167,14 @@ export interface MapCanvasProps {
    * exactly as it is.
    */
   readonly findingIndicators?: FindingIndicatorCollection;
+  /**
+   * Port Digital Twin infrastructure to draw, already projected.
+   *
+   * Which twin is open and which of its layers are on are decided in the
+   * port-twin domain, not here — the canvas only pushes what it is given.
+   * Absent means no twin overlay, which leaves the fleet untouched.
+   */
+  readonly portInfrastructure?: { readonly type: "FeatureCollection"; readonly features: readonly unknown[] };
   /**
    * Intelligence domain this map is serving.
    *
@@ -264,6 +275,7 @@ export function MapCanvas({
   scope: scopeOverride,
   voyages,
   findingIndicators,
+  portInfrastructure,
   domain,
   palette = "maritime",
   basemapStyle,
@@ -538,6 +550,19 @@ export function MapCanvas({
     if (!renderer.setFindingIndicators || !renderer.isReady()) return;
     renderer.setFindingIndicators(findingIndicators ?? EMPTY_FINDINGS);
   }, [renderer, findingIndicators, rendererDraws]);
+
+  /*
+   * ── Port Digital Twin infrastructure ──────────────────────────────
+   *
+   * The same already-decided push. An empty collection clears the
+   * overlay, so closing a twin or switching every layer off removes the
+   * estate without a second code path — and a renderer that does not
+   * implement the seam keeps the flat operational map unchanged.
+   */
+  useEffect(() => {
+    if (!renderer.setPortInfrastructure || !renderer.isReady()) return;
+    renderer.setPortInfrastructure(portInfrastructure ?? EMPTY_PORT_INFRASTRUCTURE);
+  }, [renderer, portInfrastructure, rendererDraws]);
 
   /*
    * ── Selected vessel track ─────────────────────────────────────────
