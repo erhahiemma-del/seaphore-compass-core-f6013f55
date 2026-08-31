@@ -1838,6 +1838,21 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     reviewedAt: "2026-09-06",
   },
   {
+    id: "geospatial.maritime-corridors",
+    name: "Global maritime corridor intelligence",
+    producer: "CAPABILITY",
+    description:
+      "Ten country-to-country corridors (Shanghai→Lagos, Singapore→Onne, Rotterdam→Apapa, Houston→Bonny, the Delta export lanes and Gulf of Guinea regional traffic) drawn as raised great-circle arcs in the 3D lens, with eight officer-selectable layers (global lanes, cargo flow, oil & gas, container, regional, trade, density band, piracy risk zones), published risk-zone polygons, and animated indicative transit markers carrying previous port, next port and a derived ETA. Corridors are published lane geography, never observed tracks; distance and transit time are derived from the coordinates and a stated service speed. Transit markers carry no IMO, never enter VesselUpdateEngine and create no vessel state.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Live Command Map · Maritime corridor control strip (3D lens only)",
+      location: "src/features/maritime/CorridorPanel.tsx",
+      component: "src/services/geospatial/maritime-corridors.ts",
+      interaction: "action",
+    },
+    reviewedAt: "2026-09-13",
+  },
+  {
     id: "geospatial.vessel-geographic-coverage",
     name: "Vessel geographic coverage state",
     producer: "CAPABILITY",

@@ -20,6 +20,8 @@ interface Entity {
   position: unknown;
   show: boolean;
   point?: Record<string, unknown>;
+  polyline?: Record<string, unknown>;
+  polygon?: Record<string, unknown>;
   label?: Record<string, unknown>;
   properties?: Record<string, unknown>;
 }
@@ -34,6 +36,8 @@ const state = {
   ionToken: null as string | null,
   /** How many times the ocean normal map was handed to the globe. */
   oceanAssignments: 0,
+  /** Frames explicitly requested — requestRenderMode makes this necessary. */
+  renderRequests: 0,
 };
 
 vi.mock("cesium", () => {
@@ -73,6 +77,9 @@ vi.mock("cesium", () => {
       morphTo2D: () => state.morphs.push("2D"),
       morphTo3D: () => state.morphs.push("3D"),
       canvas: {},
+      requestRender: () => {
+        state.renderRequests += 1;
+      },
       pick: (_: unknown) => pickResult,
     };
     imageryLayers = {
@@ -137,7 +144,15 @@ vi.mock("cesium", () => {
         public y: number,
       ) {}
     },
-    Cartesian3: { fromDegrees: (lon: number, lat: number) => ({ lon, lat }) },
+    Cartesian3: {
+      fromDegrees: (lon: number, lat: number, height?: number) => ({ lon, lat, height }),
+      fromDegreesArray: (values: number[]) => ({ ring: values }),
+      fromDegreesArrayHeights: (values: number[]) => ({ heights: values }),
+    },
+    ArcType: { NONE: 0 },
+    PolylineGlowMaterialProperty: class {
+      constructor(public options: unknown) {}
+    },
     Cartographic: { fromCartesian: () => ({ longitude: 0.1, latitude: 0.1, height: 100_000 }) },
     Rectangle: { fromDegrees: () => ({}) },
     Color: {
@@ -219,6 +234,7 @@ describe("Cesium 3D Terrain Perspective", () => {
     state.entities = [];
     state.clickHandler = null;
     state.ionToken = null;
+    state.renderRequests = 0;
   });
 
   it("mounts, reports readiness on the shared bus, and applies the injected token", async () => {
@@ -444,5 +460,52 @@ describe("Intelligence Earth", () => {
     for (const terminal of EARTH_CAMERA_PRESETS.slice(5)) {
       expect(terminal.zoom, `${terminal.id} is not at terminal scale`).toBeGreaterThanOrEqual(13);
     }
+  });
+});
+
+describe("Cesium maritime corridors", () => {
+  beforeEach(() => {
+    state.entities = [];
+    state.renderRequests = 0;
+  });
+
+  it("draws corridor arcs and risk zones, and clears them when the layers go off", async () => {
+    const { bus } = makeBus();
+    const renderer = await mount(bus);
+    const { corridorProjection } = await import("@/services/geospatial/maritime-corridors");
+    renderer.setMaritimeCorridors(corridorProjection(["shipping-lanes", "piracy-risk-zones"]));
+
+    const ids = state.entities.map((entity) => entity.id);
+    expect(ids.some((id) => id.startsWith("corridor:"))).toBe(true);
+    expect(ids.some((id) => id.startsWith("corridor-zone:"))).toBe(true);
+    // A frame is requested explicitly: requestRenderMode is on.
+    expect(state.renderRequests).toBeGreaterThan(0);
+
+    renderer.setMaritimeCorridors(corridorProjection([]));
+    expect(state.entities.filter((entity) => entity.id.startsWith("corridor"))).toHaveLength(0);
+  });
+
+  it("moves transit markers without rebuilding them, and keeps them out of vessel state", async () => {
+    const { bus } = makeBus();
+    const renderer = await mount(bus);
+    const { corridorTransits } = await import("@/services/geospatial/maritime-corridors");
+
+    renderer.setCorridorTransits(corridorTransits(["cargo-flow"], 0));
+    const first = state.entities.filter((entity) => entity.id.startsWith("corridor-transit:"));
+    expect(first.length).toBeGreaterThan(0);
+    // Never a vessel entity, so nothing can reach the vessel maps.
+    expect(state.entities.some((entity) => entity.id.startsWith("vessel:"))).toBe(false);
+
+    const identity = first[0];
+    renderer.setCorridorTransits(corridorTransits(["cargo-flow"], 0.3));
+    const second = state.entities.filter((entity) => entity.id.startsWith("corridor-transit:"));
+    expect(second).toHaveLength(first.length);
+    // The same entity object, repositioned — not a rebuilt one.
+    expect(second[0]).toBe(identity);
+
+    renderer.setCorridorTransits([]);
+    expect(state.entities.filter((entity) => entity.id.startsWith("corridor-transit:"))).toHaveLength(
+      0,
+    );
   });
 });

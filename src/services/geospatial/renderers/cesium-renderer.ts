@@ -116,6 +116,35 @@ interface FindingIndicatorLike {
   }[];
 }
 
+/**
+ * The corridor projection, restated structurally.
+ *
+ * Mirrors `CorridorProjection` without importing it, for the same reason
+ * the twin estate is restated: the engine adapter draws geometry and stays
+ * ignorant of the corridor domain.
+ */
+interface CorridorProjectionLike {
+  readonly arcs: readonly {
+    readonly corridorId: string;
+    readonly colour: string;
+    readonly positions: readonly (readonly [number, number, number])[];
+    readonly band: boolean;
+  }[];
+  readonly zones: readonly {
+    readonly zoneId: string;
+    readonly colour: string;
+    readonly ring: readonly (readonly [number, number])[];
+  }[];
+}
+
+interface CorridorTransitLike {
+  readonly corridorId: string;
+  readonly label: string;
+  readonly colour: string;
+  readonly position: readonly [number, number, number];
+  readonly etaLabel: string;
+}
+
 export class CesiumRenderer implements MapRenderer {
   readonly id = "cesium";
 
@@ -142,6 +171,15 @@ export class CesiumRenderer implements MapRenderer {
    * because its visibility is decided by the twin's own layer registry.
    */
   private readonly infrastructureEntities = new Map<string, Cesium>();
+  /**
+   * Corridor arcs, density bands and risk zones, by entity id.
+   *
+   * Lane geography. Deliberately not keyed by IMO and deliberately not in
+   * the vessel maps — a corridor is a published route, not a hull.
+   */
+  private readonly corridorEntities = new Map<string, Cesium>();
+  /** Indicative transit markers, by corridor id. Not vessels. */
+  private readonly transitEntities = new Map<string, Cesium>();
   private trackEntity: Cesium | null = null;
   private readonly visible: Record<Group, boolean> = {
     vessels: true,
@@ -307,6 +345,8 @@ export class CesiumRenderer implements MapRenderer {
     this.alertingImos.clear();
     this.findingEntities.clear();
     this.infrastructureEntities.clear();
+    this.corridorEntities.clear();
+    this.transitEntities.clear();
     this.trackEntity = null;
     try {
       this.viewer?.destroy();
@@ -821,6 +861,144 @@ export class CesiumRenderer implements MapRenderer {
     }
   }
 
+  // ── Maritime corridors — lane geography, not tracks ─────────────────
+
+  /**
+   * Replace the corridor overlay: arcs, density bands and risk zones.
+   *
+   * Full replacement, like the twin estate: a projection holds tens of
+   * lanes, changes only when an officer toggles a corridor layer, and a
+   * diff would risk leaving an arc behind under a switched-off layer.
+   *
+   * The arcs are drawn raised off the globe because a corridor is not a
+   * course over ground that a vessel followed — the lift is the visual
+   * grammar that keeps it from reading as an observed track, which is the
+   * one thing a line between two ports must never be mistaken for.
+   */
+  setMaritimeCorridors(projection: unknown): void {
+    const cesium = this.cesium;
+    const viewer = this.viewer;
+    if (!cesium || !viewer) return;
+    const value = projection as CorridorProjectionLike | null;
+    for (const entity of this.corridorEntities.values()) viewer.entities.remove(entity);
+    this.corridorEntities.clear();
+
+    for (const arc of value?.arcs ?? []) {
+      const colour = cesium.Color.fromCssColorString(arc.colour);
+      const flat: number[] = [];
+      for (const [lon, lat, height] of arc.positions) flat.push(lon, lat, height);
+      if (flat.length < 6) continue;
+      const entity = viewer.entities.add({
+        id: `corridor:${arc.corridorId}`,
+        polyline: {
+          positions: cesium.Cartesian3.fromDegreesArrayHeights(flat),
+          width: arc.band ? 16 : 3,
+          material: arc.band
+            ? colour.withAlpha(0.16)
+            : (glowMaterial(cesium, colour) ?? colour.withAlpha(0.9)),
+          arcType: cesium.ArcType?.NONE,
+        },
+      });
+      this.corridorEntities.set(`corridor:${arc.corridorId}`, entity);
+    }
+
+    for (const zone of value?.zones ?? []) {
+      const colour = cesium.Color.fromCssColorString(zone.colour);
+      const flat: number[] = [];
+      for (const [lon, lat] of zone.ring) flat.push(lon, lat);
+      if (flat.length < 6) continue;
+      const entity = viewer.entities.add({
+        id: `corridor-zone:${zone.zoneId}`,
+        polygon: {
+          hierarchy: cesium.Cartesian3.fromDegreesArray(flat),
+          material: colour.withAlpha(0.14),
+          outline: true,
+          outlineColor: colour.withAlpha(0.75),
+          height: 0,
+        },
+      });
+      this.corridorEntities.set(`corridor-zone:${zone.zoneId}`, entity);
+    }
+    this.requestRender();
+  }
+
+  /**
+   * Move the indicative transit markers to the current phase.
+   *
+   * Kept apart from the arcs so the animation clock never rebuilds the
+   * lane geometry: positions are written onto existing entities, and only
+   * a corridor entering or leaving the set adds or removes one.
+   *
+   * These markers are never keyed by IMO and never enter the vessel maps.
+   * They are lane indicators, and their label says so.
+   */
+  setCorridorTransits(transits: unknown): void {
+    const cesium = this.cesium;
+    const viewer = this.viewer;
+    if (!cesium || !viewer) return;
+    const list = (transits as readonly CorridorTransitLike[] | null) ?? [];
+    const incoming = new Set<string>();
+
+    for (const transit of list) {
+      incoming.add(transit.corridorId);
+      const [lon, lat, height] = transit.position;
+      const position = cesium.Cartesian3.fromDegrees(lon, lat, height);
+      const colour = cesium.Color.fromCssColorString(transit.colour);
+      const text = `${transit.label} · ${transit.etaLabel}`;
+      const existing = this.transitEntities.get(transit.corridorId);
+      if (existing) {
+        existing.position = position;
+        if (existing.label) existing.label.text = text;
+        continue;
+      }
+      const entity = viewer.entities.add({
+        id: `corridor-transit:${transit.corridorId}`,
+        position,
+        point: {
+          pixelSize: 9,
+          color: colour.withAlpha(0.95),
+          outlineColor: cesium.Color.WHITE.withAlpha(0.85),
+          outlineWidth: 1.5,
+          disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        },
+        label: {
+          text,
+          font: "500 11px Inter, system-ui, sans-serif",
+          fillColor: cesium.Color.WHITE,
+          outlineColor: colour,
+          outlineWidth: 3,
+          style: cesium.LabelStyle.FILL_AND_OUTLINE,
+          pixelOffset: new cesium.Cartesian2(0, -16),
+          disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        },
+      });
+      this.transitEntities.set(transit.corridorId, entity);
+    }
+
+    for (const [corridorId, entity] of [...this.transitEntities.entries()]) {
+      if (incoming.has(corridorId)) continue;
+      viewer.entities.remove(entity);
+      this.transitEntities.delete(corridorId);
+    }
+    this.requestRender();
+  }
+
+  /**
+   * Ask for a frame.
+   *
+   * `requestRenderMode` is on for the performance budget, so an entity
+   * written outside Cesium's own event path would otherwise not appear
+   * until something else moved the camera.
+   */
+  private requestRender(): void {
+    try {
+      this.viewer?.scene?.requestRender?.();
+    } catch {
+      // A scene that refuses the request is still rendering on its own
+      // schedule; the overlay appears on the next frame.
+    }
+  }
+
   /** The selected vessel's recorded movement, drawn as a polyline. */
   setVesselTrack(collection: unknown): void {
     const cesium = this.cesium;
@@ -888,4 +1066,21 @@ function extractTrackPositions(collection: unknown): [number, number][] {
     }
   }
   return out;
+}
+
+/**
+ * A glowing polyline material, when the build offers one.
+ *
+ * Guarded rather than assumed: a Cesium build without the property should
+ * cost the corridor its glow, never its line. Returns null so the caller
+ * falls back to a flat colour.
+ */
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- Cesium is loaded dynamically. */
+function glowMaterial(cesium: any, colour: any): unknown | null {
+  try {
+    if (!cesium?.PolylineGlowMaterialProperty) return null;
+    return new cesium.PolylineGlowMaterialProperty({ color: colour, glowPower: 0.18, taperPower: 1 });
+  } catch {
+    return null;
+  }
 }

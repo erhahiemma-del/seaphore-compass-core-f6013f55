@@ -136,6 +136,10 @@ const EMPTY_FINDINGS: FindingIndicatorCollection = { type: "FeatureCollection", 
 /** Cleared overlay, hoisted so the effect's identity check stays stable. */
 const EMPTY_PORT_INFRASTRUCTURE = { type: "FeatureCollection" as const, features: [] };
 
+/** Cleared corridor overlay. Same reason: a stable identity for the effect. */
+const EMPTY_CORRIDORS = { arcs: [], zones: [], drawn: 0, held: 0 };
+const EMPTY_CORRIDOR_TRANSITS: readonly unknown[] = [];
+
 export interface MapCanvasProps {
   /** Presentation mode. Defaults to the full command surface. */
   readonly mode?: MapCanvasMode;
@@ -181,6 +185,22 @@ export interface MapCanvasProps {
     readonly type: "FeatureCollection";
     readonly features: readonly unknown[];
   };
+  /**
+   * Maritime corridor geography to draw, already projected.
+   *
+   * Which corridor layers are on is decided in the corridor domain, not
+   * here. Absent means no corridor overlay. A renderer that cannot draw
+   * lane geography leaves the flat operational map exactly as it is.
+   */
+  readonly corridors?: unknown;
+  /**
+   * Indicative corridor transit markers at the caller's current phase.
+   *
+   * Pushed separately from the arcs so the animation clock never rebuilds
+   * lane geometry. These are lane indicators, never vessels: they carry no
+   * IMO and never reach the vessel source or the update engine.
+   */
+  readonly corridorTransits?: unknown;
   /**
    * Intelligence domain this map is serving.
    *
@@ -298,6 +318,8 @@ export function MapCanvas({
   voyages,
   findingIndicators,
   portInfrastructure,
+  corridors,
+  corridorTransits: corridorTransitMarkers,
   domain,
   palette = "maritime",
   basemapStyle,
@@ -619,6 +641,27 @@ export function MapCanvas({
     if (!sink.setPortInfrastructure || !renderer.isReady()) return;
     sink.setPortInfrastructure(portInfrastructure ?? EMPTY_PORT_INFRASTRUCTURE);
   }, [renderer, portInfrastructure, rendererDraws]);
+
+  /*
+   * ── Maritime corridors ────────────────────────────────────────────
+   *
+   * Two pushes, read structurally like the twin estate above: the lane
+   * geometry, and the transit markers on their own clock. An absent
+   * projection clears both, so switching every corridor layer off removes
+   * the overlay without a second code path.
+   */
+  useEffect(() => {
+    const sink = renderer as { setMaritimeCorridors?: (projection: unknown) => void };
+    if (!sink.setMaritimeCorridors || !renderer.isReady()) return;
+    sink.setMaritimeCorridors(corridors ?? EMPTY_CORRIDORS);
+  }, [renderer, corridors, rendererDraws]);
+
+  useEffect(() => {
+    const sink = renderer as { setCorridorTransits?: (transits: unknown) => void };
+    if (!sink.setCorridorTransits || !renderer.isReady()) return;
+    sink.setCorridorTransits(corridorTransitMarkers ?? EMPTY_CORRIDOR_TRANSITS);
+  }, [renderer, corridorTransitMarkers, rendererDraws]);
+
 
   /*
    * ── Selected vessel track ─────────────────────────────────────────
