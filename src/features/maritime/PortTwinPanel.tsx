@@ -109,7 +109,6 @@ export function PortTwinPanel({
                   >
                     {pending ? "unavailable" : `${coverage.integrity} ${coverage.assetCount}`}
                   </span>
-
                 </button>
               );
             })}

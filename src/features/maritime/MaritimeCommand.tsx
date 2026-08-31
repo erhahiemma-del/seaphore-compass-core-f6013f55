@@ -803,7 +803,12 @@ export function MaritimeCommand() {
             screen from the navigation model. What stays is what acts on
             the map.
           */}
-          <MaritimeSearch onApplied={setLastPlan} vessels={vessels} actionBridge={copilotBridge} className="w-full max-w-md" />
+          <MaritimeSearch
+            onApplied={setLastPlan}
+            vessels={vessels}
+            actionBridge={copilotBridge}
+            className="w-full max-w-md"
+          />
 
           {/*
             The attention count sits in the command bar rather than in a

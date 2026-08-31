@@ -283,10 +283,7 @@ export interface ActionExecutionOptions {
     readonly stop: () => void;
   };
   /** How to compile a briefing, supplied by the surface that has one. */
-  readonly generateBrief?: (request: {
-    readonly imo?: string;
-    readonly subject?: string;
-  }) => void;
+  readonly generateBrief?: (request: { readonly imo?: string; readonly subject?: string }) => void;
   /** How to open a comparison, supplied by a surface that has one. */
   readonly compareEntities?: (imos: readonly string[]) => void;
 }
@@ -556,9 +553,7 @@ export function executeCopilotAction(
        * checking would let a sentence name a dataset Seaphore does not
        * hold and receive a confirmation for it.
        */
-      const definition = layerRegistry
-        .list()
-        .find((layer) => layer.id === action.layerId);
+      const definition = layerRegistry.list().find((layer) => layer.id === action.layerId);
       if (!definition) {
         return {
           ok: false,

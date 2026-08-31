@@ -29,7 +29,9 @@ function actionFor(text: string, imo: string | null = null): CopilotAction | nul
 
 describe("reading map-control instructions", () => {
   it("does not read an ordinary question as a map instruction", () => {
-    expect(readMapControl({ text: "why is this vessel high risk?", contextVesselImo: "IMO-1" })).toBeNull();
+    expect(
+      readMapControl({ text: "why is this vessel high risk?", contextVesselImo: "IMO-1" }),
+    ).toBeNull();
     expect(readMapControl({ text: "who owns the Ocean Star", contextVesselImo: null })).toBeNull();
   });
 
@@ -94,7 +96,10 @@ describe("carrying the actions out", () => {
   });
 
   it("toggles layer visibility through the canonical state", () => {
-    const shown = executeCopilotAction({ type: "SHOW_LAYER", layerId: "weather" }, { service: sgs });
+    const shown = executeCopilotAction(
+      { type: "SHOW_LAYER", layerId: "weather" },
+      { service: sgs },
+    );
     expect(shown.ok).toBe(true);
     expect(sgs.get().activeLayers).toContain("weather");
 

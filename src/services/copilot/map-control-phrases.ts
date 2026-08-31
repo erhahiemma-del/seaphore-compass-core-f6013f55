@@ -136,7 +136,10 @@ function layerInstruction(lower: string): MapControlReading {
 
 function resolveLayer(lower: string): { readonly id: string; readonly label: string } | null {
   for (const definition of layerRegistry.list()) {
-    if (lower.includes(definition.label.toLowerCase()) || lower.includes(definition.id.toLowerCase()))
+    if (
+      lower.includes(definition.label.toLowerCase()) ||
+      lower.includes(definition.id.toLowerCase())
+    )
       return { id: definition.id, label: definition.label };
   }
   for (const [word, id] of Object.entries(LAYER_ALIASES)) {
