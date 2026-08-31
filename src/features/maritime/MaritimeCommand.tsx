@@ -56,6 +56,8 @@ import { useVoyages, type VoyageFeed } from "./useVoyages";
 import { MapCanvas, type VesselFeedState } from "./MapCanvas";
 import { useFindingRecords } from "./useFindingRecords";
 import { useTerrainPerspective } from "./useTerrainPerspective";
+import { IntelligenceEarthPanel } from "./IntelligenceEarthPanel";
+
 import { CesiumTokenModal } from "@/components/admin/CesiumTokenModal";
 import { FindingPanel } from "@/components/intelligence/FindingPanel";
 import { toFindingIndicatorCollection } from "@/services/findings/map-features";
@@ -810,6 +812,12 @@ export function MaritimeCommand() {
             {lastPlan.explanation}
           </div>
         ) : null}
+
+        {/* Shown only while the terrain lens is mounted: controls for an
+            engine that is not running would be controls over nothing. */}
+        {terrain.active ? <IntelligenceEarthPanel renderer={terrain.renderer} /> : null}
+
+
 
         <div className="flex min-h-0 flex-1">
           {/*

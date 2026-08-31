@@ -26,6 +26,9 @@ interface Entity {
 
 const state = {
   terrainRejects: false,
+  imageryRejects: false,
+  flights: [] as unknown[],
+  morphs: [] as string[],
   entities: [] as Entity[],
   clickHandler: null as ((movement: unknown) => void) | null,
   ionToken: null as string | null,
@@ -34,17 +37,41 @@ const state = {
 vi.mock("cesium", () => {
   class Viewer {
     scene = {
-      globe: { enableLighting: false, pick: () => ({}) },
+      globe: {
+        enableLighting: false,
+        dynamicAtmosphereLighting: false,
+        showGroundAtmosphere: false,
+        oceanNormalMapUrl: undefined as string | undefined,
+        baseColor: null as unknown,
+        maximumScreenSpaceError: 0,
+        tileCacheSize: 0,
+        cullWithChildrenBounds: false,
+        preloadSiblings: true,
+        preloadAncestors: false,
+        pick: () => ({}),
+      },
       skyAtmosphere: { show: false },
+      fog: { enabled: false },
+      sun: { show: false },
+      moon: { show: false },
+      verticalExaggeration: 1,
+      requestRenderMode: false,
+      maximumRenderTimeChange: 0,
+      morphTo2D: () => state.morphs.push("2D"),
+      morphTo3D: () => state.morphs.push("3D"),
       canvas: {},
       pick: (_: unknown) => pickResult,
     };
+    imageryLayers = {
+      addImageryProvider: (_: unknown) => ({ show: true }),
+    };
+    resolutionScale = 1;
     camera = {
       positionWC: {},
       pitch: 0,
       heading: 0,
       setView: () => {},
-      flyTo: () => {},
+      flyTo: (options: unknown) => state.flights.push(options),
       getPickRay: () => ({}),
       moveEnd: { addEventListener: () => {} },
     };
@@ -80,6 +107,11 @@ vi.mock("cesium", () => {
       if (state.terrainRejects) throw new Error("Ion rejected the token");
       return { terrain: true };
     },
+    createWorldImageryAsync: async () => {
+      if (state.imageryRejects) throw new Error("Ion rejected the imagery request");
+      return { imagery: true };
+    },
+    EasingFunction: { QUADRATIC_IN_OUT: "ease" },
     ScreenSpaceEventHandler: class {
       setInputAction(handler: (movement: unknown) => void) {
         state.clickHandler = handler;
@@ -168,6 +200,9 @@ async function mount(bus: unknown) {
 describe("Cesium 3D Terrain Perspective", () => {
   beforeEach(() => {
     state.terrainRejects = false;
+    state.imageryRejects = false;
+    state.flights = [];
+    state.morphs = [];
     state.entities = [];
     state.clickHandler = null;
     state.ionToken = null;
@@ -237,5 +272,121 @@ describe("Cesium 3D Terrain Perspective", () => {
       features: [vessel("9333333", 3.4, 6.4)],
     } as never);
     expect(state.entities).toHaveLength(0);
+  });
+});
+
+/**
+ * Intelligence Earth (Phase 4A).
+ *
+ * The globe's *presentation*: terrain, imagery, atmosphere, water, light,
+ * relief, mode and camera presets. What matters in CI is that each control
+ * reaches the live scene, that the relief slider cannot leave its range,
+ * that a preset produces one animated flight rather than a jump, and that
+ * a missing Ion asset is stated rather than shown as an empty world.
+ */
+describe("Intelligence Earth", () => {
+  beforeEach(() => {
+    state.terrainRejects = false;
+    state.imageryRejects = false;
+    state.flights = [];
+    state.morphs = [];
+    state.entities = [];
+    state.clickHandler = null;
+    state.ionToken = null;
+  });
+
+  it("applies world terrain, satellite imagery, atmosphere, ocean and lighting at mount", async () => {
+    const { bus, events } = makeBus();
+    const renderer = (await mount(bus)) as never as {
+      getEarthSettings(): Record<string, unknown>;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      viewerForTest?: any;
+    };
+    expect(events.some((e) => e.event === "map:error")).toBe(false);
+    const settings = renderer.getEarthSettings();
+    expect(settings["satelliteImagery"]).toBe(true);
+    expect(settings["atmosphere"]).toBe(true);
+    expect(settings["ocean"]).toBe(true);
+    expect(settings["dayNightLighting"]).toBe(true);
+    expect(settings["mode"]).toBe("GLOBE");
+    expect(state.morphs).toContain("3D");
+  });
+
+  it("states an imagery failure instead of showing a bare globe silently", async () => {
+    state.imageryRejects = true;
+    const { bus, events } = makeBus();
+    const renderer = await mount(bus);
+    const error = events.find((e) => e.event === "map:error");
+    expect((error?.payload as { message: string }).message).toMatch(/imagery unavailable/i);
+    expect(renderer.isReady()).toBe(true);
+  });
+
+  it("clamps terrain exaggeration to 0–3", async () => {
+    const { bus } = makeBus();
+    const renderer = (await mount(bus)) as never as {
+      applyEarthSettings(next: Record<string, unknown>): { terrainExaggeration: number };
+    };
+    expect(renderer.applyEarthSettings({ terrainExaggeration: 9 }).terrainExaggeration).toBe(3);
+    expect(renderer.applyEarthSettings({ terrainExaggeration: -4 }).terrainExaggeration).toBe(0);
+    expect(renderer.applyEarthSettings({ terrainExaggeration: 1.5 }).terrainExaggeration).toBe(1.5);
+    expect(renderer.applyEarthSettings({ terrainExaggeration: NaN }).terrainExaggeration).toBe(1);
+  });
+
+  it("morphs between globe and flat earth without remounting", async () => {
+    const { bus } = makeBus();
+    const renderer = (await mount(bus)) as never as {
+      applyEarthSettings(next: Record<string, unknown>): { mode: string };
+      isReady(): boolean;
+    };
+    expect(renderer.applyEarthSettings({ mode: "FLAT" }).mode).toBe("FLAT");
+    expect(state.morphs.at(-1)).toBe("2D");
+    expect(renderer.applyEarthSettings({ mode: "GLOBE" }).mode).toBe("GLOBE");
+    expect(state.morphs.at(-1)).toBe("3D");
+    expect(renderer.isReady()).toBe(true);
+  });
+
+  it("flies smoothly to every named preset and refuses an unknown one", async () => {
+    const { EARTH_CAMERA_PRESETS } = await import("@/services/geospatial/earth-presets");
+    const { bus } = makeBus();
+    const renderer = (await mount(bus)) as never as { flyToPreset(id: string): boolean };
+
+    for (const preset of EARTH_CAMERA_PRESETS) {
+      expect(renderer.flyToPreset(preset.id), `preset ${preset.id} did not fly`).toBe(true);
+    }
+    expect(state.flights).toHaveLength(EARTH_CAMERA_PRESETS.length);
+    // Animated, not a cut: every flight carries a duration and an easing.
+    for (const flight of state.flights as { duration?: number; easingFunction?: unknown }[]) {
+      expect(flight.duration).toBeGreaterThan(0);
+      expect(flight.easingFunction).toBeDefined();
+    }
+    expect(renderer.flyToPreset("atlantis")).toBe(false);
+  });
+
+  it("offers the operational descent global → national → terminal", async () => {
+    const { EARTH_CAMERA_PRESETS } = await import("@/services/geospatial/earth-presets");
+    const ids = EARTH_CAMERA_PRESETS.map((p) => p.id);
+    expect(ids).toEqual([
+      "global",
+      "africa",
+      "west-africa",
+      "nigeria",
+      "lagos",
+      "apapa",
+      "tin-can-island",
+      "onne",
+      "bonny",
+      "warri",
+      "calabar",
+    ]);
+    // The scales descend: global → national → port. The terminals are
+    // peers of one another, so they are checked as a band rather than a
+    // ranking — Onne is not "further out" than Tin Can Island.
+    const scales = EARTH_CAMERA_PRESETS.slice(0, 5);
+    for (let i = 1; i < scales.length; i++) {
+      expect(scales[i].zoom).toBeGreaterThan(scales[i - 1].zoom);
+    }
+    for (const terminal of EARTH_CAMERA_PRESETS.slice(5)) {
+      expect(terminal.zoom, `${terminal.id} is not at terminal scale`).toBeGreaterThanOrEqual(13);
+    }
   });
 });
