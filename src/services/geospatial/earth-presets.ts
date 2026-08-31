@@ -33,9 +33,9 @@ export interface EarthCameraPreset {
  * a berth, and a list that mixed scales would make the descent a search.
  */
 export const EARTH_CAMERA_PRESETS: readonly EarthCameraPreset[] = [
-  { id: "global", label: "Global", center: [10, 5], zoom: 1.2, pitch: 0, bearing: 0 },
-  { id: "africa", label: "Africa", center: [18, 3], zoom: 3, pitch: 5, bearing: 0 },
-  { id: "west-africa", label: "West Africa", center: [3, 5], zoom: 4.6, pitch: 12, bearing: 0 },
+  { id: "global", label: "Global", center: [10, 5], zoom: 0.5, pitch: 0, bearing: 0 },
+  { id: "africa", label: "Africa", center: [18, 3], zoom: 2.1, pitch: 5, bearing: 0 },
+  { id: "west-africa", label: "West Africa", center: [3, 5], zoom: 4.1, pitch: 12, bearing: 0 },
   { id: "nigeria", label: "Nigeria", center: [8.1, 8.6], zoom: 5.8, pitch: 20, bearing: 0 },
   { id: "lagos", label: "Lagos", center: [3.39, 6.45], zoom: 10.5, pitch: 35, bearing: 0 },
   { id: "apapa", label: "Apapa Port", center: [3.363, 6.446], zoom: 14.2, pitch: 50, bearing: 20 },
