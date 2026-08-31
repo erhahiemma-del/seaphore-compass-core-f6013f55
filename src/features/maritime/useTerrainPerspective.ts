@@ -12,7 +12,7 @@
  * and kept in memory only. It is never written to storage, never placed
  * in a URL, and never bundled.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 
 import {
@@ -109,41 +109,32 @@ export function useTerrainPerspective(): TerrainPerspective {
   /*
    * Constructed lazily, and only once per token.
    *
-   * The Cesium module is dynamically imported inside `mount`, so nothing
-   * about the 3D engine is evaluated — on the server or in the browser —
-   * until an officer actually asks for the terrain view.
+   * The Cesium module is dynamically imported inside the adapter, so
+   * nothing about the 3D engine is evaluated — on the server or in the
+   * browser — until an officer actually asks for the terrain view.
    */
-  const renderer = useMemo<MapRenderer | undefined>(() => {
-    if (!wanted || !token) return undefined;
-    if (rendererRef.current) return rendererRef.current;
-    return undefined;
-  }, [wanted, token]);
-
-  const [built, setBuilt] = useState<MapRenderer | undefined>(undefined);
+  const [renderer, setRenderer] = useState<MapRenderer | undefined>(undefined);
   useEffect(() => {
     if (!wanted || !token) {
-      setBuilt(undefined);
+      setRenderer(undefined);
       return;
     }
     let cancelled = false;
     void import("@/services/geospatial/renderers/cesium-renderer").then(({ CesiumRenderer }) => {
       if (cancelled) return;
-      const instance = new CesiumRenderer({ bus: mapEventBus, ionToken: token });
-      rendererRef.current = instance;
-      setBuilt(instance);
+      setRenderer(new CesiumRenderer({ bus: mapEventBus, ionToken: token }));
     });
     return () => {
       cancelled = true;
-      rendererRef.current = null;
     };
   }, [wanted, token]);
 
   return {
-    active: Boolean(wanted && built),
+    active: Boolean(wanted && renderer),
     loading,
     status,
     unavailableReason,
-    renderer: built ?? renderer,
+    renderer,
     requestActivation,
     toggle,
     disable,
