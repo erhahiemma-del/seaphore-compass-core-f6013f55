@@ -720,6 +720,15 @@ export function MapCanvas({
   useEffect(() => {
     let disposed = false;
 
+    /*
+     * Asked of the provider once per feed, not assumed and not looked up
+     * by id. An undeclared extent stays undeclared — the resolver refuses
+     * to call an empty result an empty sea in that case, which is the
+     * conservative direction.
+     */
+    const declared = declaresGeographicCoverage(source) ? source.geographicCoverage() : null;
+    const support: ScopeSupport = scopeSupport(source, scope);
+
     // Reported alongside the vessels so a consumer can tell an empty
     // fleet apart from a feed that has not answered or has failed.
     let feed: VesselFeedState = {
@@ -727,6 +736,10 @@ export function MapCanvas({
       error: null,
       sourceId: source.id,
       lastAppliedAt: null,
+      scope,
+      support,
+      extentLabel: declared?.extentLabel ?? null,
+      extentNote: declared?.note ?? null,
     };
     /*
      * The displayed set comes from the engine; the live set is whatever
