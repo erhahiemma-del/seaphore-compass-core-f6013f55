@@ -153,20 +153,6 @@ describe("logged out", () => {
 });
 
 describe("authenticated with a valid token", () => {
-  it("debug", async () => {
-    const { result } = renderHook(() => useTerrainPerspective());
-    await act(async () => {
-      result.current.toggle();
-    });
-    console.log("DBG", JSON.stringify({
-      active: result.current.active,
-      loading: result.current.loading,
-      reason: result.current.unavailableReason,
-      renderer: Boolean(result.current.renderer),
-      calls,
-    }));
-  }, 8000);
-
   it("mounts Cesium as the injected renderer", async () => {
     const { result } = renderHook(() => useTerrainPerspective());
     await act(async () => {
