@@ -1853,7 +1853,7 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     reviewedAt: "2026-09-07",
   },
   {
-    id: "copilot-map-orchestration",
+    id: "copilot.map-orchestration",
     name: "Copilot map orchestration actions",
     producer: "CAPABILITY",
     description:
