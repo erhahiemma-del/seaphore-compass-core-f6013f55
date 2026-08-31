@@ -82,6 +82,27 @@ type Group = "vessels" | "vesselLabels" | "findings" | "track";
 /* eslint-disable @typescript-eslint/no-explicit-any -- Cesium is loaded dynamically; its types are not in the SSR graph. */
 type Cesium = any;
 
+/**
+ * The shape of the port-twin projection, restated structurally.
+ *
+ * Mirrors `PortTwinFeatureCollection` without importing it: the engine
+ * adapter stays ignorant of the port domain, exactly as it does for
+ * findings and voyages.
+ */
+interface PortInfrastructureLike {
+  readonly features: readonly {
+    readonly geometry: { readonly coordinates: readonly [number, number] };
+    readonly properties: {
+      readonly assetId: string;
+      readonly twinId: string;
+      readonly layer: string;
+      readonly name: string;
+      readonly colour: string;
+      readonly radiusKm: number | null;
+    };
+  }[];
+}
+
 interface FindingIndicatorLike {
   readonly features: readonly {
     readonly geometry: { readonly coordinates: readonly [number, number] };
