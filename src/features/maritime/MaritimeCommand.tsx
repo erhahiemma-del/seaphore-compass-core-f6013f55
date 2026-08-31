@@ -55,6 +55,8 @@ import { MAP_ZONE } from "./map-zones";
 import { useVoyages, type VoyageFeed } from "./useVoyages";
 import { MapCanvas, type VesselFeedState } from "./MapCanvas";
 import { useFindingRecords } from "./useFindingRecords";
+import { useTerrainPerspective } from "./useTerrainPerspective";
+import { CesiumTokenModal } from "@/components/admin/CesiumTokenModal";
 import { FindingPanel } from "@/components/intelligence/FindingPanel";
 import { toFindingIndicatorCollection } from "@/services/findings/map-features";
 import type { FindingDecisionKind, PersistedFinding } from "@/services/findings/record";
@@ -323,6 +325,11 @@ export function MaritimeCommand() {
    */
   const records = useFindingRecords();
   const [openFindingId, setOpenFindingId] = useState<string | null>(null);
+  /*
+   * The 3D lens. Holds a renderer and a credential state, nothing else —
+   * vessels, selection, camera and provenance stay canonical.
+   */
+  const terrain = useTerrainPerspective();
   const openFindingRecord = openFindingId ? records.byId(openFindingId) : undefined;
 
   /*
@@ -793,7 +800,6 @@ export function MaritimeCommand() {
           </Button>
         </header>
 
-
         {/* One quiet line saying what a search just did. Not a toast: the
           officer should be able to read it at leisure, or ignore it. */}
         {lastPlan ? (
@@ -847,6 +853,7 @@ export function MaritimeCommand() {
                   engineRef.current = engine;
                 }}
                 replayOwnsDisplay={replayOwnsDisplay(replayOwner)}
+                renderer={terrain.renderer}
               />
             }
 
@@ -858,6 +865,20 @@ export function MaritimeCommand() {
             <div className={cn(MAP_ZONE.BOTTOM_RIGHT, "flex justify-end")}>
               <OperationalLegend />
             </div>
+
+            {/* Activation, not a silent failure: an administrator can supply
+                the Ion credential the moment the view is asked for. */}
+            <CesiumTokenModal
+              open={terrain.requestActivation}
+              onOpenChange={(next) => {
+                if (!next) terrain.dismissActivation();
+              }}
+              status={terrain.status}
+              onActivated={() => {
+                terrain.refresh();
+                terrain.dismissActivation();
+              }}
+            />
 
             {/*
               The finding panel opens over map, not over the context
