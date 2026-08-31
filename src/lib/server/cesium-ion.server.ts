@@ -40,10 +40,17 @@ function hintOf(token: string): string {
 }
 
 function envToken(): string | null {
-  const raw = process.env["CESIUM_ION_TOKEN"] ?? process.env["VITE_CESIUM_ION_TOKEN"] ?? "";
-  const token = raw.trim();
+  /*
+   * Server variable only, deliberately.
+   *
+   * A `VITE_`-prefixed alias would be inlined into the client bundle by
+   * the build, which is exactly the disclosure this module exists to
+   * prevent — and `security-no-client-secrets` fails the build for it.
+   */
+  const token = (process.env["CESIUM_ION_TOKEN"] ?? "").trim();
   return token.length > 0 ? token : null;
 }
+
 
 interface StoredRow {
   secret: string;
