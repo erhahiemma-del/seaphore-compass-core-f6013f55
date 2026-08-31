@@ -924,6 +924,17 @@ export const LAYER_IDS = {
   vesselLabels: "vessel-labels-layer",
   vesselClusters: "vessel-clusters-layer",
   clusterCount: "cluster-count-layer",
+  /*
+   * Traffic density — where vessels are, and nothing else.
+   *
+   * Its own layer rather than a mode of `riskHeatmap`, because the two
+   * answer different questions and share no input. Risk weights on
+   * `attentionScore`; this weights on one vessel, one unit. A busy
+   * anchorage is dense and unremarkable, and a single dark hull can be
+   * the most important thing on the map — collapsing them into one
+   * gradient would make both unreadable.
+   */
+  trafficDensity: "traffic-density-layer",
   ports: "ports-layer",
   portLabels: "port-labels-layer",
   portAnchorage: "port-anchorage-layer",

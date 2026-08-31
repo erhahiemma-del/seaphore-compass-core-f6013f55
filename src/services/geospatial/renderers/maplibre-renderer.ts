@@ -233,6 +233,21 @@ const SOURCE_IDS = {
   vesselTrack: "vessel-track",
   investigationArea: "investigation-area",
   facilities: "facilities",
+  /*
+   * Two more views of the same fleet, kept as separate sources.
+   *
+   * The primary vessel source carries `promoteId: "imo"` so `updateData`
+   * can address one hull, which is what the 60fps path depends on.
+   * MapLibre clustering re-indexes a source and is incompatible with
+   * that, so clustering gets its own source rather than a flag on the
+   * one that must stay individually addressable.
+   *
+   * Density is a third source rather than a layer on the clustered one,
+   * because a clustered source yields cluster points, not vessels — a
+   * heatmap over it would weight by cluster rather than by ship.
+   */
+  vesselClusters: "vessel-clusters",
+  trafficDensity: "traffic-density",
 } as const;
 
 /**
@@ -344,6 +359,9 @@ export const INSTALLED_RENDER_LAYERS: readonly string[] = [
   LAYER_IDS.portSelection,
   LAYER_IDS.ports,
   LAYER_IDS.portLabels,
+  LAYER_IDS.trafficDensity,
+  LAYER_IDS.vesselClusters,
+  LAYER_IDS.clusterCount,
   LAYER_IDS.riskHeatmap,
   LAYER_IDS.vesselConfidence,
   LAYER_IDS.vesselAlertRing,
@@ -1056,11 +1074,41 @@ export class MapLibreRenderer implements MapRenderer {
   }
 
   private writeVesselSource(): void {
+    const features = [...this.features.values()].map(toMapLibreFeature);
     const source = this.vesselSource();
-    source?.setData({
-      type: "FeatureCollection",
-      features: [...this.features.values()].map(toMapLibreFeature),
-    });
+    source?.setData({ type: "FeatureCollection", features });
+
+    /*
+     * Clusters and density are written from the same array, in the same
+     * call, so neither can drift from what the map is drawing. A separate
+     * refresh path for either would eventually show a cluster count that
+     * disagrees with the vessels underneath it.
+     *
+     * Positions only. The cluster and heatmap sources need a coordinate
+     * and a type, and carrying the full vessel payload into two more
+     * sources would triple the memory for properties nothing reads.
+     */
+    const positions = {
+      type: "FeatureCollection" as const,
+      features: features.map((feature) => ({
+        type: "Feature" as const,
+        geometry: feature.geometry,
+        properties: {
+          imo: feature.properties?.imo,
+          category: feature.properties?.category ?? "unknown",
+        },
+      })),
+    };
+
+    const clusters = this.map?.getSource(SOURCE_IDS.vesselClusters) as
+      | { setData?: (data: unknown) => void }
+      | undefined;
+    clusters?.setData?.(positions);
+
+    const density = this.map?.getSource(SOURCE_IDS.trafficDensity) as
+      | { setData?: (data: unknown) => void }
+      | undefined;
+    density?.setData?.(positions);
   }
 
   /**
@@ -2093,6 +2141,121 @@ export class MapLibreRenderer implements MapRenderer {
       promoteId: "imo",
     });
 
+    /*
+     * ── Traffic density ──
+     *
+     * Where vessels are, weighted one unit per hull. Deliberately not
+     * `attentionScore`, which is what `riskHeatmap` below weights on: a
+     * crowded anchorage is dense and entirely unremarkable, while one
+     * dark hull offshore can be the most important thing on the map.
+     * Sharing a gradient between the two would make each unreadable, so
+     * they are separate layers over separate sources and only one can be
+     * on at a time by the officer's choice, never by accident.
+     *
+     * Hidden by default and capped at zoom 12 — past that the individual
+     * vessels are legible and a heat blob only obscures them.
+     */
+    map.addSource(SOURCE_IDS.trafficDensity, {
+      type: "geojson",
+      data: { type: "FeatureCollection", features: [] },
+    });
+    map.addLayer({
+      id: LAYER_IDS.trafficDensity,
+      type: "heatmap",
+      source: SOURCE_IDS.trafficDensity,
+      maxzoom: 12,
+      layout: { visibility: "none" },
+      paint: {
+        // One vessel, one unit. No per-feature weighting at all, so the
+        // layer cannot silently acquire a risk axis later.
+        "heatmap-weight": 1,
+        "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 4, 0.6, 9, 1.6, 12, 2.4],
+        /*
+         * A cool teal-to-blue ramp, chosen because the risk heatmap is
+         * amber-to-red. An officer glancing at the map must be able to
+         * tell "busy" from "concerning" without reading the legend.
+         */
+        "heatmap-color": [
+          "interpolate",
+          ["linear"],
+          ["heatmap-density"],
+          0,
+          "rgba(0,0,0,0)",
+          0.25,
+          "rgba(14,124,123,0.35)",
+          0.55,
+          "rgba(31,111,111,0.55)",
+          1,
+          "rgba(31,48,87,0.75)",
+        ],
+        "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 4, 12, 9, 26, 12, 40],
+        "heatmap-opacity": 0.7,
+      },
+    });
+
+    /*
+     * ── Vessel clusters ──
+     *
+     * A second source over the same positions, because MapLibre's
+     * clustering re-indexes the source it is enabled on and cannot
+     * coexist with the `promoteId: "imo"` addressing the primary vessel
+     * source needs for single-hull updates.
+     *
+     * The consequence to keep in mind: a cluster is not a vessel. Its
+     * feature has a `cluster_id`, not an IMO, so clicking one zooms
+     * rather than selecting — canonical vessel selection stays with the
+     * primary source and the individual hulls it draws.
+     */
+    map.addSource(SOURCE_IDS.vesselClusters, {
+      type: "geojson",
+      data: { type: "FeatureCollection", features: [] },
+      cluster: true,
+      // Past this the individual vessels carry the picture themselves.
+      clusterMaxZoom: 11,
+      clusterRadius: 45,
+    });
+    map.addLayer({
+      id: LAYER_IDS.vesselClusters,
+      type: "circle",
+      source: SOURCE_IDS.vesselClusters,
+      filter: ["has", "point_count"],
+      layout: { visibility: "none" },
+      paint: {
+        /*
+         * Radius by count, in three steps rather than a continuous ramp:
+         * an officer reads "bigger means more" from a step change far
+         * more reliably than from a smooth interpolation, and the steps
+         * make two adjacent clusters comparable at a glance.
+         */
+        "circle-radius": ["step", ["get", "point_count"], 14, 25, 20, 100, 28],
+        "circle-color": [
+          "step",
+          ["get", "point_count"],
+          "rgba(14,124,123,0.75)",
+          25,
+          "rgba(31,111,111,0.8)",
+          100,
+          "rgba(31,48,87,0.85)",
+        ],
+        "circle-stroke-color": "#FFFFFF",
+        "circle-stroke-width": 1.5,
+      },
+    });
+    map.addLayer({
+      id: LAYER_IDS.clusterCount,
+      type: "symbol",
+      source: SOURCE_IDS.vesselClusters,
+      filter: ["has", "point_count"],
+      layout: {
+        visibility: "none",
+        "text-field": ["get", "point_count_abbreviated"],
+        "text-size": ["step", ["get", "point_count"], 11, 25, 12, 100, 13],
+        "text-allow-overlap": true,
+        "text-ignore-placement": true,
+      },
+      paint: { "text-color": "#FFFFFF" },
+    });
+
     map.addLayer({
       id: LAYER_IDS.riskHeatmap,
       type: "heatmap",
@@ -2826,6 +2989,40 @@ export class MapLibreRenderer implements MapRenderer {
         map.getCanvas().style.cursor = "";
       });
     }
+
+    /*
+     * A cluster expands; it never selects.
+     *
+     * Clicking one asks the source for the zoom at which it breaks apart
+     * and flies there, which is the only honest response — a cluster has
+     * a `cluster_id`, not an IMO, and there is no single vessel behind it
+     * to select. Canonical vessel selection stays with the individual
+     * hulls the primary source draws.
+     */
+    map.on("click", LAYER_IDS.vesselClusters, (event: MapLibreLayerMouseEvent) => {
+      const feature = event.features?.[0];
+      const clusterId = feature?.properties?.cluster_id;
+      if (typeof clusterId !== "number") return;
+      const source = map.getSource(SOURCE_IDS.vesselClusters) as MapLibreGeoJSONSource;
+      void source
+        ?.getClusterExpansionZoom?.(clusterId)
+        .then((zoom: number) => {
+          map.easeTo({ center: event.lngLat, zoom });
+        })
+        .catch(() => {
+          /*
+           * A cluster that cannot report its expansion zoom is one the
+           * source has already re-indexed past. Doing nothing is correct:
+           * the officer's next zoom will break it apart anyway.
+           */
+        });
+    });
+    map.on("mouseenter", LAYER_IDS.vesselClusters, () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
+    map.on("mouseleave", LAYER_IDS.vesselClusters, () => {
+      map.getCanvas().style.cursor = "";
+    });
 
     map.on("click", LAYER_IDS.anchorages, (event: MapLibreLayerMouseEvent) => {
       const feature = event.features?.[0];

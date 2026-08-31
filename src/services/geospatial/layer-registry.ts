@@ -767,23 +767,24 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
   {
     id: "vesselClusters",
     label: "Vessel Clusters",
-    description: "Cluster vessels at low zoom to keep the picture readable.",
+    description: "Group vessels at low zoom so a busy anchorage stays readable.",
     group: "VESSELS",
     renderLayerIds: [LAYER_IDS.vesselClusters, LAYER_IDS.clusterCount],
     defaultVisible: false,
-    // Was `ready`, and no renderer has ever installed either layer — so
-    // the Layer Panel offered a toggle that did nothing at all.
-    //
-    // Clustering is not a small change here. MapLibre clusters at the
-    // source, and the vessel source is declared with `promoteId: "imo"`
-    // so that `updateData` can address one vessel by IMO. A clustered
-    // source cannot do that, so clustering means a second source, a
-    // second write path, and a rule for which one owns selection. That
-    // is its own sprint; until then this says so.
-    status: "pending-source",
+    /*
+     * Previously `pending-source`, and the reason it stayed that way is
+     * worth keeping: MapLibre clusters at the source, and the vessel
+     * source is declared `promoteId: "imo"` so `updateData` can address
+     * one hull. A clustered source cannot do that.
+     *
+     * Resolved by giving clustering its own source over the same
+     * positions, written in the same call as the vessel source so the two
+     * cannot drift. The primary source keeps `promoteId` and keeps
+     * ownership of selection — a cluster carries a `cluster_id`, not an
+     * IMO, so clicking one expands it rather than selecting anything.
+     */
+    status: "ready",
     order: 10,
-    pendingReason:
-      "No renderer implementation. MapLibre clusters at the source, which is incompatible with the promoteId-addressed incremental updates the vessel source relies on; clustering needs a second source and a selection rule.",
   },
   {
     id: "sarDetections",
@@ -954,14 +955,19 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
   {
     id: "traffic-density",
     label: "Traffic Density",
-    description: "Where traffic concentrates, over a chosen period.",
+    description: "Where vessels are concentrated, weighted one unit per hull.",
     group: "OPERATIONAL",
-    renderLayerIds: [],
+    renderLayerIds: [LAYER_IDS.trafficDensity],
     defaultVisible: false,
-    status: "pending-source",
-    order: 22,
-    pendingReason:
-      "Requires AIS history to aggregate. The live source publishes recent events, not a track archive.",
+    /*
+     * Independent of risk, and it must stay that way. `riskHeatmap`
+     * weights on `attentionScore`; this weights on presence alone and
+     * carries no per-feature weight at all, so it cannot quietly acquire
+     * a risk axis. A crowded anchorage is dense and unremarkable; one
+     * dark hull offshore can be the most important thing on the map.
+     */
+    status: "ready",
+    order: 11,
   },
   {
     id: "anchorage-activity",

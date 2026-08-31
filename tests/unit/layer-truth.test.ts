@@ -92,12 +92,73 @@ describe("declared ready equals actually renderable", () => {
   });
 
   it("keeps vessel clustering honest", () => {
-    // It was `ready` and no renderer has ever drawn it. Clustering needs
-    // a second source, because MapLibre clusters at the source and the
-    // vessel source is promoteId-addressed for incremental updates.
+    /*
+     * This guard used to assert clustering stayed `pending-source`,
+     * because it was declared ready while no renderer drew it — a toggle
+     * that did nothing. Clustering now exists, so the guard asserts the
+     * constraint that made it hard instead of the fact that it was
+     * missing: MapLibre clusters at the source, and the primary vessel
+     * source is `promoteId`-addressed so `updateData` can reach one hull.
+     * Clustering therefore has to live on a *different* source.
+     */
     const clusters = layerRegistry.require("vesselClusters");
-    expect(clusters.status).toBe("pending-source");
-    expect(clusters.pendingReason).toMatch(/promoteId|second source/i);
+    expect(clusters.status).toBe("ready");
+    expect(clusters.renderLayerIds).toContain(LAYER_IDS.vesselClusters);
+    expect(clusters.renderLayerIds).toContain(LAYER_IDS.clusterCount);
+
+    /*
+     * Clustering must be enabled on its own source. Scoped to that
+     * `addSource` call for the same reason as the promoteId check below.
+     */
+    const clusterSourceCall = RENDERER_SOURCE.slice(
+      RENDERER_SOURCE.indexOf("map.addSource(SOURCE_IDS.vesselClusters,"),
+    ).slice(0, 400);
+    expect(clusterSourceCall).toMatch(/cluster:\s*true/);
+    for (const id of [LAYER_IDS.vesselClusters, LAYER_IDS.clusterCount]) {
+      const declaration = RENDERER_SOURCE.slice(
+        RENDERER_SOURCE.indexOf(
+          `id: LAYER_IDS.${id === LAYER_IDS.vesselClusters ? "vesselClusters" : "clusterCount"},`,
+        ),
+      );
+      expect(declaration.slice(0, 240)).toContain("SOURCE_IDS.vesselClusters");
+    }
+
+    /*
+     * And the primary source keeps its promoteId. Losing it would break
+     * single-vessel updates silently — the map would still draw, just
+     * with a full re-write per position report.
+     *
+     * Scoped to the `addSource` call, not the whole file. The first
+     * version searched everywhere and passed even with the real
+     * declaration renamed, because the prose above and the comments in
+     * the renderer both contain the literal `promoteId: "imo"`. A guard
+     * that its own explanation satisfies is checking nothing.
+     */
+    const vesselSourceCall = RENDERER_SOURCE.slice(
+      RENDERER_SOURCE.indexOf("map.addSource(SOURCE_IDS.vessels,"),
+    ).slice(0, 300);
+    expect(vesselSourceCall).toMatch(/promoteId:\s*"imo"/);
+    // And clustering is emphatically not on it.
+    expect(vesselSourceCall).not.toMatch(/cluster:\s*true/);
+  });
+
+  it("keeps traffic density independent of risk", () => {
+    /*
+     * Density is presence; risk is assessment. They share no input, and
+     * a density layer that weighted on `attentionScore` would make a busy
+     * anchorage look dangerous and a lone dark hull look quiet.
+     */
+    const density = layerRegistry.require("traffic-density");
+    expect(density.status).toBe("ready");
+    expect(density.renderLayerIds).toEqual([LAYER_IDS.trafficDensity]);
+    expect(density.renderLayerIds).not.toContain(LAYER_IDS.riskHeatmap);
+
+    // The density layer carries a constant weight — no feature drives it.
+    const block = RENDERER_SOURCE.slice(
+      RENDERER_SOURCE.indexOf("id: LAYER_IDS.trafficDensity,"),
+    ).slice(0, 900);
+    expect(block).toContain('"heatmap-weight": 1');
+    expect(block).not.toContain("attentionScore");
   });
 
   it("names no render layer that does not exist", () => {
