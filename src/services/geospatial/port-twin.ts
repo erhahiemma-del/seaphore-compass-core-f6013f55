@@ -303,7 +303,7 @@ function berthGroup(locode: keyof typeof NIMASA_PORTS, twinId: string): PortTwin
     name: `${port.shortName} berth group`,
     operator: "Nigerian Ports Authority",
     position: [port.lon, port.lat],
-    precision: "approximate",
+    precision: "unspecified",
     capacity: `${port.berths} declared berths`,
     compliance: NOT_ASSESSED,
     notes: [
