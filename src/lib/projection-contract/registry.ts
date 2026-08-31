@@ -1852,6 +1852,20 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: "2026-09-07",
   },
+  {
+    name: "Copilot map orchestration actions",
+    producer: "CAPABILITY",
+    description:
+      "Eleven natural-language map controls — SHOW_LAYER, HIDE_LAYER, FLY_TO, SELECT_ENTITY, FILTER_VESSELS, START_REPLAY, STOP_REPLAY, SHOW_EVIDENCE, COMPARE_ENTITIES, OPEN_INVESTIGATION, GENERATE_BRIEF — read from officer wording by deterministic rule and carried out by the single `executeCopilotAction` dispatcher. The model proposes; it never mutates map state. Layer ids are validated against the layer registry, views against the Intelligence Earth presets, and filters against the dimensions `MapFilters` actually carries, so a sentence cannot invent a dataset and receive a confirmation for it. Capabilities the surface does not own — comparison has no surface yet — are refused honestly instead of appearing to run, and state-changing actions (briefing, screening, investigation, source switch) pass the confirmation gate first.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Live Command Map · search box and voice control",
+      location: "src/features/maritime/MaritimeCommand.tsx",
+      component: "src/services/copilot/map-control-phrases.ts",
+      interaction: "officer-initiated",
+    },
+    reviewedAt: "2026-09-07",
+  },
 ];
 
 export function getContractEntry(id: string): ProjectionContractEntry | undefined {
