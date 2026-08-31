@@ -136,6 +136,10 @@ const EMPTY_FINDINGS: FindingIndicatorCollection = { type: "FeatureCollection", 
 /** Cleared overlay, hoisted so the effect's identity check stays stable. */
 const EMPTY_PORT_INFRASTRUCTURE = { type: "FeatureCollection" as const, features: [] };
 
+/** Cleared corridor overlay. Same reason: a stable identity for the effect. */
+const EMPTY_CORRIDORS = { arcs: [], zones: [], drawn: 0, held: 0 };
+const EMPTY_CORRIDOR_TRANSITS: readonly unknown[] = [];
+
 export interface MapCanvasProps {
   /** Presentation mode. Defaults to the full command surface. */
   readonly mode?: MapCanvasMode;
