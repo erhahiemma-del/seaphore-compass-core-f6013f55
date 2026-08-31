@@ -1809,7 +1809,6 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
   },
 ];
 
-
 export function getContractEntry(id: string): ProjectionContractEntry | undefined {
   return PROJECTION_CONTRACT.find((e) => e.id === id);
 }

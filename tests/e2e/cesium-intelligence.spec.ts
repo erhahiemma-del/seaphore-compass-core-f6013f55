@@ -30,9 +30,8 @@ interface MapSnapshot {
 /** Read the deployed map's own health probe — no renderer handle needed. */
 async function snapshot(page: Page): Promise<MapSnapshot> {
   return page.evaluate(() => {
-    const probe = (
-      window as typeof window & { __seaphoreMapHealth?: () => MapSnapshot }
-    ).__seaphoreMapHealth;
+    const probe = (window as typeof window & { __seaphoreMapHealth?: () => MapSnapshot })
+      .__seaphoreMapHealth;
     if (!probe) throw new Error("map health probe absent");
     return probe();
   });

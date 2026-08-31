@@ -43,10 +43,9 @@ export const setOfficerTerrainPreference = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<OfficerMapPreferences> => {
     const { error } = await (context.supabase as unknown as Db)
       .from("officer_map_preferences")
-      .upsert(
-        { user_id: context.userId, terrain_3d: data.terrain3d } as never,
-        { onConflict: "user_id" },
-      );
+      .upsert({ user_id: context.userId, terrain_3d: data.terrain3d } as never, {
+        onConflict: "user_id",
+      });
     // A preference that could not be stored must not break the lens the
     // officer just asked for — it simply will not survive the session.
     if (error) return { terrain3d: data.terrain3d };
