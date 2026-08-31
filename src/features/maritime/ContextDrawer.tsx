@@ -340,6 +340,32 @@ function SelectionPanel({
         />
       );
 
+    case "infrastructure": {
+      /*
+       * Resolved from the port-twin model by asset id, exactly as a port
+       * is resolved from the canonical registry. An asset the model does
+       * not hold is a real selection of something unrecorded, so it falls
+       * through to the pending panel rather than rendering an empty card.
+       */
+      const asset = findPortTwinAsset(selection.id);
+      return asset ? (
+        <InfrastructurePanel asset={asset} fleet={fleet ?? []} />
+      ) : (
+        <PendingPanel
+          title="Port infrastructure"
+          sections={["Asset", "Capacity", "Connected vessels", "Compliance"]}
+          pending={[
+            {
+              label: `Asset record (${selection.assetType})`,
+              reason:
+                "This asset is not in the port Digital Twin model. No connected custodian dataset describes it.",
+            },
+          ]}
+        />
+      );
+    }
+
+
     default:
       return (
         <Unresolved
