@@ -1848,7 +1848,7 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
       surface: "Live Command Map · vessel feed notice and status bar vessel figure",
       location: "src/features/maritime/MaritimeCommand.tsx",
       component: "src/services/geospatial/vessel-coverage.ts",
-      interaction: "read",
+      interaction: "passive-display",
     },
     reviewedAt: "2026-09-07",
   },
