@@ -836,7 +836,10 @@ export function MapCanvas({
       clearInterval(interval);
       unsubscribe?.();
     };
-  }, [source, engine, recorder, bus, setVesselCount, onVesselsChanged]);
+    // `scope` joins the dependencies because the feed now reports the
+    // provider's support for the scope being viewed; without it, switching
+    // to the world view would keep reporting the regional verdict.
+  }, [source, engine, recorder, bus, setVesselCount, onVesselsChanged, scope]);
 
   /*
    * One clock for every attention ring, driven from here because this is
