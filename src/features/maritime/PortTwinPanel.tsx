@@ -100,13 +100,16 @@ export function PortTwinPanel({
                   )}
                 >
                   {layer.label}
-                  {pending ? (
-                    <span className="ml-1 text-[9.5px] uppercase tracking-wider">no source</span>
-                  ) : (
-                    <span className="ml-1 text-[9.5px] text-muted-foreground">
-                      {coverage.assetCount}
-                    </span>
-                  )}
+                  <span
+                    className={cn(
+                      "ml-1 text-[9.5px] uppercase tracking-wider",
+                      pending ? "" : "text-muted-foreground",
+                    )}
+                    data-testid={`port-twin-integrity-${layer.id}`}
+                  >
+                    {pending ? "unavailable" : `${coverage.integrity} ${coverage.assetCount}`}
+                  </span>
+
                 </button>
               );
             })}

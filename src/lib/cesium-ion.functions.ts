@@ -58,6 +58,51 @@ export const getCesiumIonRuntimeToken = createServerFn({ method: "POST" })
   );
 
 /**
+ * Development-only token hand-off, for the Lovable preview.
+ *
+ * In preview and local development there is often no officer session —
+ * the 3D lens would then be untestable for the very people building it.
+ * This path exists for that case alone and is gated twice: the caller
+ * only reaches it under `import.meta.env.DEV`, and the handler itself
+ * refuses outside a development server process. In production the
+ * function returns nothing at all, so the officer-authenticated route
+ * above stays the only way a credential leaves the server.
+ *
+ * The response carries the same shape as the authenticated route and the
+ * same rules apply downstream: memory only, never stored, never logged.
+ */
+export const getCesiumIonDevToken = createServerFn({ method: "POST" }).handler(
+  async (): Promise<{
+    token: string | null;
+    origin: "environment" | "stored" | "none";
+    message: string | null;
+  }> => {
+    const production =
+      process.env["NODE_ENV"] === "production" || process.env["SEAPHORE_ENV"] === "production";
+    if (production) {
+      return {
+        token: null,
+        origin: "none",
+        message: "Sign in as an officer to activate the 3D Terrain Perspective.",
+      };
+    }
+    const { resolveCesiumToken } = await import("@/lib/server/cesium-ion.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const resolved = await resolveCesiumToken(supabaseAdmin as unknown as Db);
+    if (!resolved) {
+      return {
+        token: null,
+        origin: "none",
+        message:
+          "Cesium credential required. Configure a Cesium Ion token to use the 3D intelligence view in development.",
+      };
+    }
+    return { token: resolved.token, origin: resolved.origin, message: null };
+  },
+);
+
+
+/**
  * Activate a token an administrator pasted into the modal.
  *
  * Validated upstream before it is stored, and rejected tokens are

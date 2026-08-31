@@ -293,6 +293,44 @@ export function MaritimeCommand() {
   const replayOwner = displayOwner(replay.status);
 
   /*
+   * What the Copilot may reach on this surface.
+   *
+   * Injected into the one dispatcher rather than imported by it, so
+   * speech and typed text both drive the timeline the officer is
+   * watching and the briefing engine that already exists. Capabilities
+   * absent here are refused honestly by the dispatcher rather than
+   * appearing to run: there is no comparison surface yet, so no
+   * `compareEntities` is supplied.
+   */
+  const copilotBridge = useMemo(
+    () => ({
+      replay: {
+        start: (): boolean => {
+          if (replay.availability !== "READY") return false;
+          replay.restart();
+          replay.play();
+          return true;
+        },
+        stop: () => replay.pause(),
+      },
+      generateBrief: (request: { readonly imo?: string; readonly subject?: string }) => {
+        /*
+         * The briefing centre owns compilation. Navigating there is the
+         * honest action: nothing here claims findings the engine has not
+         * produced yet.
+         */
+        toast.info(
+          request.subject
+            ? `Opening the briefing centre for ${request.subject}.`
+            : "Opening the briefing centre.",
+        );
+        void navigate({ to: "/briefing-centre" });
+      },
+    }),
+    [replay, navigate],
+  );
+
+  /*
    * Coverage, resolved once and read by every surface that would
    * otherwise invent its own reading of an empty fleet.
    *
@@ -763,7 +801,7 @@ export function MaritimeCommand() {
             screen from the navigation model. What stays is what acts on
             the map.
           */}
-          <MaritimeSearch onApplied={setLastPlan} vessels={vessels} className="w-full max-w-md" />
+          <MaritimeSearch onApplied={setLastPlan} vessels={vessels} actionBridge={copilotBridge} className="w-full max-w-md" />
 
           {/*
             The attention count sits in the command bar rather than in a
@@ -1028,7 +1066,7 @@ export function MaritimeCommand() {
               speaks a place, a position or the global view; every
               outcome goes through the same navigation path a click does.
             */}
-            <VoiceCommand vessels={vessels} fleet={vessels} />
+            <VoiceCommand vessels={vessels} fleet={vessels} actionBridge={copilotBridge} />
 
             <div
               className={cn(

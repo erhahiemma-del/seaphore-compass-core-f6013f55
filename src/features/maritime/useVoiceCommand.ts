@@ -52,6 +52,12 @@ export interface VoiceCommandOptions {
   readonly fleet?: readonly Vessel[];
   /** How to open a case, when the surface has a workflow. */
   readonly openInvestigation?: (imo: string) => void;
+  /** Replay controls owned by the map surface. */
+  readonly replay?: ActionExecutionOptions["replay"];
+  /** How to compile a briefing, when the surface has one. */
+  readonly generateBrief?: ActionExecutionOptions["generateBrief"];
+  /** How to open a comparison, when the surface has one. */
+  readonly compareEntities?: ActionExecutionOptions["compareEntities"];
 }
 
 /**
@@ -252,6 +258,13 @@ export function useVoiceCommand(
             boundaryRing: eezRingIfLoaded() ?? undefined,
             openInvestigation: options.openInvestigation,
             /*
+             * Replay, briefing and comparison are owned by the map
+             * surface; the voice path only asks for them.
+             */
+            replay: options.replay,
+            generateBrief: options.generateBrief,
+            compareEntities: options.compareEntities,
+            /*
              * Screening runs in the drawer panel that owns the canonical
              * call; the voice path only asks for it.
              */
@@ -276,7 +289,16 @@ export function useVoiceCommand(
         }
       }
     },
-    [service, options.vessels, options.fleet, options.openInvestigation, respond],
+    [
+      service,
+      options.vessels,
+      options.fleet,
+      options.openInvestigation,
+      options.replay,
+      options.generateBrief,
+      options.compareEntities,
+      respond,
+    ],
   );
 
   /*

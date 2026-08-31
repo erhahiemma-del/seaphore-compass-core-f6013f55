@@ -26,7 +26,10 @@ import { Anchor, Search, Ship, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { executeCopilotAction } from "@/services/copilot/copilot-actions";
+import {
+  executeCopilotAction,
+  type ActionExecutionOptions,
+} from "@/services/copilot/copilot-actions";
 import type { ResolvableVessel } from "@/services/copilot/copilot-conversation";
 import {
   layerRegistry,
@@ -61,6 +64,18 @@ export interface MaritimeSearchProps {
   readonly vessels?: readonly ResolvableVessel[];
   /** Notified after a question is applied, for the explanation strip. */
   readonly onApplied?: (plan: IntelligenceMapPlan) => void;
+  /**
+   * Capabilities this surface can reach, supplied by the surface that owns
+   * them — replay, investigation, briefing, comparison.
+   *
+   * Injected rather than imported so the search box never acquires a
+   * second replay recorder or briefing path, and so a surface without one
+   * reports that honestly instead of appearing to act.
+   */
+  readonly actionBridge?: Pick<
+    ActionExecutionOptions,
+    "replay" | "openInvestigation" | "generateBrief" | "compareEntities"
+  >;
   readonly className?: string;
 }
 
@@ -68,6 +83,7 @@ export function MaritimeSearch({
   service = sgs,
   vessels = [],
   onApplied,
+  actionBridge,
   className,
 }: MaritimeSearchProps) {
   const [query, setQuery] = useState("");
@@ -109,6 +125,7 @@ export function MaritimeSearch({
            */
           fleet: vessels as readonly Vessel[],
           boundaryRing: eezRingIfLoaded() ?? undefined,
+          ...actionBridge,
         });
         setOutcome(
           result.ok
@@ -156,7 +173,7 @@ export function MaritimeSearch({
       setOutcome(plan.explanation);
       setRecent(rememberSearch(text));
     },
-    [service, vessels, category, onApplied],
+    [service, vessels, category, onApplied, actionBridge],
   );
 
   const choose = useCallback(

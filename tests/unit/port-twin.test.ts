@@ -75,8 +75,44 @@ describe("coverage honesty", () => {
     const coverage = twinCoverage("NGNOPE");
     expect(coverage).toHaveLength(11);
     expect(coverage.every((entry) => entry.status === "pending-source")).toBe(true);
+    expect(coverage.every((entry) => entry.integrity === "UNAVAILABLE")).toBe(true);
+  });
+
+  it("classifies every layer of every twin as one of the four integrity states", () => {
+    const allowed = new Set(["VERIFIED", "AVAILABLE", "UNAVAILABLE", "PROVISIONAL"]);
+    for (const twin of PORT_TWINS) {
+      for (const entry of twinCoverage(twin.id)) {
+        expect(allowed.has(entry.integrity), `${twin.id}/${entry.layer}`).toBe(true);
+        // UNAVAILABLE and "draws nothing" are the same fact stated twice;
+        // they must never disagree.
+        expect(entry.integrity === "UNAVAILABLE").toBe(entry.assetCount === 0);
+      }
+    }
+  });
+
+  it("claims VERIFIED nowhere, because no surveyed custodian geometry is connected", () => {
+    for (const twin of PORT_TWINS) {
+      for (const entry of twinCoverage(twin.id)) {
+        expect(entry.integrity, `${twin.id}/${entry.layer}`).not.toBe("VERIFIED");
+      }
+    }
+  });
+
+  it("reads a layer at the integrity of its weakest asset", () => {
+    // Berth groups are PROVISIONAL (published count, indicative position);
+    // anchorages are AVAILABLE (published reference drawn as published).
+    for (const twin of PORT_TWINS) {
+      const coverage = twinCoverage(twin.id);
+      const berths = coverage.find((entry) => entry.layer === "berths");
+      if (berths?.status === "ready") expect(berths.integrity).toBe("PROVISIONAL");
+      const anchorage = coverage.find((entry) => entry.layer === "anchorage");
+      if (anchorage?.status === "ready") expect(anchorage.integrity).toBe("AVAILABLE");
+    }
   });
 });
+
+
+
 
 describe("asset honesty", () => {
   it("leaves capacity and operator explicitly null rather than inventing them", () => {

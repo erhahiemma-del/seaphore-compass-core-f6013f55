@@ -17,6 +17,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const calls = {
   status: 0,
   token: 0,
+  devToken: 0,
   preference: 0,
   writes: [] as boolean[],
 };
@@ -30,6 +31,7 @@ let tokenResult: { token: string | null; message: string | null } = {
 vi.mock("@/lib/cesium-ion.functions", () => ({
   getCesiumIonStatus: "getCesiumIonStatus",
   getCesiumIonRuntimeToken: "getCesiumIonRuntimeToken",
+  getCesiumIonDevToken: "getCesiumIonDevToken",
 }));
 
 vi.mock("@/lib/officer-map-preferences.functions", () => ({
@@ -57,6 +59,10 @@ vi.mock("@tanstack/react-start", () => ({
       }
       if (id === "getCesiumIonRuntimeToken") {
         calls.token += 1;
+        return tokenResult;
+      }
+      if (id === "getCesiumIonDevToken") {
+        calls.devToken += 1;
         return tokenResult;
       }
       if (id === "getOfficerMapPreferences") {
@@ -95,6 +101,7 @@ const { useMapSessionStore } = await import("@/services/geospatial/store");
 beforeEach(() => {
   calls.status = 0;
   calls.token = 0;
+  calls.devToken = 0;
   calls.preference = 0;
   calls.writes = [];
   rendererConstructions.length = 0;
@@ -110,9 +117,15 @@ afterEach(() => {
   sessionStorage.clear();
 });
 
-describe("logged out", () => {
+describe("logged out in production", () => {
   beforeEach(() => {
     authenticated = false;
+    // Production build: the development credential path does not exist.
+    vi.stubEnv("DEV", false);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it("never requests the credential", async () => {
@@ -121,6 +134,7 @@ describe("logged out", () => {
       result.current.toggle();
     });
     expect(calls.token).toBe(0);
+    expect(calls.devToken).toBe(0);
     expect(calls.status).toBe(0);
     expect(calls.preference).toBe(0);
   });
@@ -148,6 +162,64 @@ describe("logged out", () => {
     await act(async () => {
       result.current.toggle();
     });
+    expect(calls.writes).toEqual([]);
+  });
+});
+
+describe("logged out in development", () => {
+  beforeEach(() => {
+    authenticated = false;
+    vi.stubEnv("DEV", true);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("mounts Cesium through the development credential route", async () => {
+    const { result } = renderHook(() => useTerrainPerspective());
+    await act(async () => {
+      result.current.toggle();
+    });
+    await waitFor(() => expect(result.current.renderer).toBeDefined());
+    expect(calls.devToken).toBe(1);
+    // The officer-authenticated route is never called without a session.
+    expect(calls.token).toBe(0);
+  });
+
+  it("states the credential requirement when none is configured", async () => {
+    tokenResult = {
+      token: null,
+      message:
+        "Cesium credential required. Configure a Cesium Ion token to use the 3D intelligence view in development.",
+    };
+    const { result } = renderHook(() => useTerrainPerspective());
+    await act(async () => {
+      result.current.toggle();
+    });
+    await waitFor(() =>
+      expect(result.current.unavailableReason).toContain("Cesium credential required"),
+    );
+    expect(result.current.renderer).toBeUndefined();
+  });
+
+  it("keeps the credential out of storage and off the URL", async () => {
+    const { result } = renderHook(() => useTerrainPerspective());
+    await act(async () => {
+      result.current.toggle();
+    });
+    await waitFor(() => expect(rendererConstructions).toHaveLength(1));
+    expect(JSON.stringify(localStorage)).not.toContain("ion-secret-token");
+    expect(JSON.stringify(sessionStorage)).not.toContain("ion-secret-token");
+    expect(window.location.href).not.toContain("ion-secret-token");
+  });
+
+  it("persists no lens preference without an officer row to write to", async () => {
+    const { result } = renderHook(() => useTerrainPerspective());
+    await act(async () => {
+      result.current.toggle();
+    });
+    await waitFor(() => expect(result.current.renderer).toBeDefined());
     expect(calls.writes).toEqual([]);
   });
 });

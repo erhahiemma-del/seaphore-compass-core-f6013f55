@@ -504,7 +504,9 @@ function InfrastructurePanel({ asset, fleet }: { asset: PortTwinAsset; fleet: re
       value: `${asset.position[1].toFixed(4)}°N, ${asset.position[0].toFixed(4)}°E`,
     },
     { label: "Position precision", value: asset.precision },
+    { label: "Data integrity", value: asset.integrity },
     { label: "Capacity", value: asset.capacity ?? "Not published" },
+
     ...(asset.radiusKm
       ? [{ label: "Indicative extent", value: `${asset.radiusKm} km radius` }]
       : []),

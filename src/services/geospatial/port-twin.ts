@@ -241,6 +241,27 @@ export interface PortTwinProvenance {
   readonly note: string;
 }
 
+/**
+ * How far a piece of twin data can be trusted, in one word.
+ *
+ * The four states are a *data-integrity* classification, not a quality
+ * score, and they are declared per asset rather than inferred from how
+ * good the picture looks:
+ *
+ *   - `VERIFIED`    — surveyed geometry from the named custodian, checked
+ *                     against that custodian's own record. Nothing
+ *                     Seaphore holds today qualifies, and satellite
+ *                     plausibility never promotes a layer to this state.
+ *   - `AVAILABLE`   — a published reference Seaphore holds and draws as
+ *                     published (chart anchorage references, port
+ *                     reference positions), with its stated precision.
+ *   - `PROVISIONAL` — a real published attribute placed on an indicative
+ *                     position, e.g. a berth count drawn at the complex
+ *                     reference point because no quay geometry exists.
+ *   - `UNAVAILABLE` — no connected custodian dataset. Draws nothing.
+ */
+export type PortTwinDataIntegrity = "VERIFIED" | "AVAILABLE" | "PROVISIONAL" | "UNAVAILABLE";
+
 /** One clickable piece of port infrastructure. */
 export interface PortTwinAsset {
   readonly id: string;
@@ -255,6 +276,8 @@ export interface PortTwinAsset {
   readonly radiusKm?: number;
   /** Capacity as the source states it, or null when unpublished. */
   readonly capacity: string | null;
+  /** Declared integrity of this asset's geometry and attributes. */
+  readonly integrity: Exclude<PortTwinDataIntegrity, "UNAVAILABLE">;
   readonly compliance: PortTwinCompliance;
   /** Officer-facing intelligence notes. Never inferred as fact. */
   readonly notes: readonly string[];
@@ -265,9 +288,16 @@ export interface PortTwinLayerCoverage {
   readonly layer: PortTwinLayerId;
   readonly status: "ready" | "pending-source";
   readonly assetCount: number;
+  /**
+   * Layer-level integrity: the weakest of its assets' declarations, so a
+   * layer can never read stronger than the softest thing it draws.
+   * `UNAVAILABLE` exactly when the layer holds nothing.
+   */
+  readonly integrity: PortTwinDataIntegrity;
   /** Present when `status` is `pending-source`. */
   readonly reason?: string;
 }
+
 
 export interface PortDigitalTwin {
   /** UN/LOCODE — the identity every other Seaphore surface already uses. */
@@ -305,6 +335,13 @@ function berthGroup(locode: keyof typeof NIMASA_PORTS, twinId: string): PortTwin
     position: [port.lon, port.lat],
     precision: "unspecified",
     capacity: `${port.berths} declared berths`,
+    /*
+     * PROVISIONAL, not AVAILABLE: the count is a published NPA attribute,
+     * but it is drawn at the complex reference point because no quay
+     * geometry exists. The number is real; the place is indicative.
+     */
+    integrity: "PROVISIONAL",
+
     compliance: NOT_ASSESSED,
     notes: [
       "Aggregate, not a berth outline: the count is published, the individual quay geometry is not.",
@@ -331,7 +368,14 @@ function anchorageAssets(twinId: string, portIds: readonly string[]): PortTwinAs
       precision: "degree-minute" as PositionPrecision,
       radiusKm: area.radiusKm,
       capacity: null,
+      /*
+       * AVAILABLE: the position is the published pilotage reference,
+       * drawn exactly as published at its stated precision. Not VERIFIED
+       * — the radius is indicative and no surveyed boundary is held.
+       */
+      integrity: "AVAILABLE" as const,
       compliance: NOT_ASSESSED,
+
       notes: [
         `${area.district}.`,
         "Indicative extent from a chart reference, not a surveyed boundary.",
@@ -426,27 +470,48 @@ export function findPortTwinAsset(assetId: string): PortTwinAsset | null {
   return null;
 }
 
+/** Integrity ranked weakest-first, so a layer reads as its softest asset. */
+const INTEGRITY_RANK: Readonly<Record<PortTwinDataIntegrity, number>> = {
+  UNAVAILABLE: 0,
+  PROVISIONAL: 1,
+  AVAILABLE: 2,
+  VERIFIED: 3,
+};
+
 /**
  * Layer-by-layer coverage for one twin.
  *
  * Derived from the assets rather than declared beside them, so a layer
- * cannot claim to be connected while holding nothing.
+ * cannot claim to be connected while holding nothing, and cannot read
+ * stronger than the weakest asset it draws.
  */
 export function twinCoverage(twinId: string): readonly PortTwinLayerCoverage[] {
   const twin = portTwin(twinId);
   return PORT_TWIN_LAYERS.map((layer) => {
-    const assetCount = twin ? twin.assets.filter((asset) => asset.layer === layer.id).length : 0;
-    if (assetCount > 0) {
-      return { layer: layer.id, status: "ready" as const, assetCount };
+    const assets = twin ? twin.assets.filter((asset) => asset.layer === layer.id) : [];
+    if (assets.length > 0) {
+      const integrity = assets.reduce<PortTwinDataIntegrity>(
+        (weakest, asset) =>
+          INTEGRITY_RANK[asset.integrity] < INTEGRITY_RANK[weakest] ? asset.integrity : weakest,
+        "VERIFIED",
+      );
+      return {
+        layer: layer.id,
+        status: "ready" as const,
+        assetCount: assets.length,
+        integrity,
+      };
     }
     return {
       layer: layer.id,
       status: "pending-source" as const,
       assetCount: 0,
+      integrity: "UNAVAILABLE" as const,
       reason: PENDING_REASON[layer.id],
     };
   });
 }
+
 
 export function twinLayerCoverage(
   twinId: string,

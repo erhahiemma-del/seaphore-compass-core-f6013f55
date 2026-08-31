@@ -27,6 +27,7 @@ import type { QueryUnderstanding } from "@/services/orchestration";
 import { approachWindowFor } from "@/services/orchestration/understanding/approach-window";
 
 import type { CopilotAction } from "./copilot-actions";
+import { readMapControl } from "./map-control-phrases";
 import { type ResolvableVessel, resolveVesselEntity } from "./copilot-conversation";
 
 export type Translation =
@@ -58,6 +59,23 @@ export interface TranslationInput {
 }
 
 export function translateUnderstanding(input: TranslationInput): Translation {
+  /*
+   * Map-control wording is read first, by rule.
+   *
+   * Layers, views, filters, replay, evidence, comparison and briefings
+   * are instructions the intent classifier has no categories for, and
+   * inventing seven intents to carry them would make the same sentence
+   * classify two ways. `readMapControl` returns null for anything that is
+   * not one of those instructions, so ordinary questions fall through to
+   * the classifier untouched.
+   */
+  const control = readMapControl({
+    text: input.text,
+    contextVesselImo: input.contextVesselImo,
+    contextVesselName: input.contextVesselName,
+  });
+  if (control) return control;
+
   switch (input.understanding.intent) {
     case "map-zoom":
       return {

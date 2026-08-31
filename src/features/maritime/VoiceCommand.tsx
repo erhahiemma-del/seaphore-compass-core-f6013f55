@@ -23,6 +23,7 @@
 import { Loader2, Mic, MicOff, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import type { ActionExecutionOptions } from "@/services/copilot/copilot-actions";
 import { sgs, type SharedGeospatialService } from "@/services/geospatial";
 
 import { describeIntent } from "./voice-intent";
@@ -55,6 +56,7 @@ export function VoiceCommand({
   service = sgs,
   vessels,
   fleet,
+  actionBridge,
   className,
 }: {
   readonly service?: SharedGeospatialService;
@@ -66,9 +68,18 @@ export function VoiceCommand({
   readonly vessels?: readonly ResolvableVessel[];
   /** The full fleet, for assessments that read every vessel. */
   readonly fleet?: readonly Vessel[];
+  /**
+   * Capabilities the map surface owns — replay, investigation, briefing,
+   * comparison. Injected so speech reaches the one replay recorder and
+   * the one briefing engine rather than growing its own.
+   */
+  readonly actionBridge?: Pick<
+    ActionExecutionOptions,
+    "replay" | "openInvestigation" | "generateBrief" | "compareEntities"
+  >;
   readonly className?: string;
 }) {
-  const voice = useVoiceCommand(service, { vessels, fleet });
+  const voice = useVoiceCommand(service, { vessels, fleet, ...actionBridge });
   const { state, reading, candidates, unavailable, issue, spoken, stopSpeaking } = voice;
 
   const listening = state === "listening";

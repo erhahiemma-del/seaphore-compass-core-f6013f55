@@ -23,6 +23,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 
 import {
+  getCesiumIonDevToken,
   getCesiumIonRuntimeToken,
   getCesiumIonStatus,
   type CesiumIonStatus,
@@ -32,9 +33,25 @@ import {
   setOfficerTerrainPreference,
 } from "@/lib/officer-map-preferences.functions";
 import { useProtectedQueriesEnabled } from "@/hooks/use-auth";
+import { DEV_AUTH_ENABLED } from "@/lib/dev/env";
 import { mapEventBus } from "@/services/geospatial/event-bus";
 import type { MapRenderer } from "@/services/geospatial/renderer";
 import { useMapSessionStore } from "@/services/geospatial/store";
+
+/**
+ * Development preview may mount the globe without an officer session.
+ *
+ * An explicit development-only condition — not an auth bypass. Nothing
+ * else in the app changes behaviour, and the server-side gate is the
+ * real boundary: a production build returns no credential on this path
+ * regardless of what the client believes.
+ */
+function devAccess(): boolean {
+  // The project's own single source of truth for "this is a development or
+  // preview host", not a general auth bypass: production builds constant-fold
+  // it to false, and the server refuses the dev credential route regardless.
+  return DEV_AUTH_ENABLED && Boolean(import.meta.env.DEV);
+}
 
 export interface TerrainPerspective {
   /** True when the Cesium adapter should be the mounted renderer. */
@@ -56,6 +73,7 @@ export interface TerrainPerspective {
 export function useTerrainPerspective(): TerrainPerspective {
   const readStatus = useServerFn(getCesiumIonStatus);
   const readToken = useServerFn(getCesiumIonRuntimeToken);
+  const readDevToken = useServerFn(getCesiumIonDevToken);
   const readPreference = useServerFn(getOfficerMapPreferences);
   const writePreference = useServerFn(setOfficerTerrainPreference);
 
@@ -121,14 +139,20 @@ export function useTerrainPerspective(): TerrainPerspective {
        * no one to hand it to, so the request is never made — an Unauthorized
        * throw here would blank the map for a question nobody asked.
        */
-      if (!authenticated) {
+      if (!authenticated && !devAccess()) {
         setUnavailableReason(
           "Sign in as an officer to activate the 3D Terrain Perspective. The 2D operational map is still live.",
         );
         return;
       }
       setLoading(true);
-      void readToken({ data: undefined })
+      /*
+       * Development preview without a session uses the dev-only route,
+       * which the server refuses outside a development process. Signed-in
+       * sessions always take the authenticated route, in every environment.
+       */
+      const fetchToken = authenticated ? readToken : readDevToken;
+      void fetchToken({ data: undefined })
         .then((result) => {
           const value = (result as { token: string | null; message: string | null }) ?? null;
           if (value?.token) {
@@ -147,7 +171,7 @@ export function useTerrainPerspective(): TerrainPerspective {
         })
         .finally(() => setLoading(false));
     },
-    [authenticated, readToken, remember, token],
+    [authenticated, readDevToken, readToken, remember, token],
   );
 
   const toggle = useCallback(() => {

@@ -62,10 +62,23 @@ export function usePortTwin(): PortTwinState {
 
   const openPortTwin = useCallback((twinId: string) => {
     setOpenTwinId((current) => (current === twinId ? null : twinId));
-    // Seed the twin's layers the first time it is opened, and leave them
-    // alone afterwards so a re-open restores the officer's own choices.
+    /*
+     * Seed the twin's layers the first time it is opened, and leave them
+     * alone afterwards so a re-open restores the officer's own choices.
+     *
+     * A default-visible layer this twin holds nothing for is seeded off:
+     * a switched-on toggle drawing nothing reads as "empty here", which
+     * is a different claim from "no connected source".
+     */
+    const ready = new Set(
+      twinCoverage(twinId)
+        .filter((entry) => entry.status === "ready")
+        .map((entry) => entry.layer),
+    );
     setLayersByTwin((current) =>
-      current[twinId] ? current : { ...current, [twinId]: defaultTwinLayers() },
+      current[twinId]
+        ? current
+        : { ...current, [twinId]: defaultTwinLayers().filter((layer) => ready.has(layer)) },
     );
   }, []);
 
