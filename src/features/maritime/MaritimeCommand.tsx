@@ -31,6 +31,8 @@ import {
   MAP_SCOPES,
   getVesselSource,
   resolveMapDataState,
+  resolveVesselCoverage,
+  type VesselCoverageResult,
   mapEventBus,
   type MapScopeId,
   sgs,
