@@ -398,6 +398,8 @@ export function MapCanvas({
     () =>
       installMapHealthProbe(() => ({
         rendererDraws,
+        rendererId: useMapSessionStore.getState().rendererId,
+        rendererStatus: useMapSessionStore.getState().rendererStatus,
         zoom: service.get().zoom,
         vesselCount: engine.snapshot().length,
         sources: service.get().enabledSources,
