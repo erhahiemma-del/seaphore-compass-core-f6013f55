@@ -182,6 +182,22 @@ export interface MapCanvasProps {
     readonly features: readonly unknown[];
   };
   /**
+   * Maritime corridor geography to draw, already projected.
+   *
+   * Which corridor layers are on is decided in the corridor domain, not
+   * here. Absent means no corridor overlay. A renderer that cannot draw
+   * lane geography leaves the flat operational map exactly as it is.
+   */
+  readonly corridors?: unknown;
+  /**
+   * Indicative corridor transit markers at the caller's current phase.
+   *
+   * Pushed separately from the arcs so the animation clock never rebuilds
+   * lane geometry. These are lane indicators, never vessels: they carry no
+   * IMO and never reach the vessel source or the update engine.
+   */
+  readonly corridorTransits?: unknown;
+  /**
    * Intelligence domain this map is serving.
    *
    * Selects a layer preset, so the same engine shows a vessel's
