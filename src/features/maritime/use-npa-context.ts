@@ -16,7 +16,11 @@ import { useEffect, useState } from "react";
 
 import { getVesselSource } from "@/services/geospatial";
 import type { UnifiedVessel } from "@/services/government/npa/unified-fleet";
-import { NpaAugmentedVesselSource } from "@/services/geospatial/sources/npa-augmented-source";
+import {
+  loadCommittedNpaDataset,
+  NpaAugmentedVesselSource,
+} from "@/services/geospatial/sources/npa-augmented-source";
+import type { NpaOperationalDataset } from "@/services/government/npa/workbook-ingest";
 
 /**
  * The union, if a source that computes one is registered.
@@ -87,6 +91,43 @@ export function useNpaContext(imo: string | null): NpaContextState {
       clearTimeout(giveUp);
     };
   }, [imo]);
+
+  return state;
+}
+
+/**
+ * The ingested NPA workbook itself, for panels that need more than the
+ * per-vessel union.
+ *
+ * The port panel needs berths, terminals and every call at a port, none
+ * of which the unified fleet carries — it is keyed by vessel. Loaded
+ * through the same lazy import the vessel source uses, so the 380 KB
+ * chunk is fetched once and shared rather than pulled twice.
+ */
+export function useNpaDataset(): {
+  readonly dataset: NpaOperationalDataset | null;
+  readonly pending: boolean;
+} {
+  const [state, setState] = useState<{
+    dataset: NpaOperationalDataset | null;
+    pending: boolean;
+  }>({ dataset: null, pending: true });
+
+  useEffect(() => {
+    let cancelled = false;
+    void loadCommittedNpaDataset()
+      .then((dataset) => {
+        if (!cancelled) setState({ dataset, pending: false });
+      })
+      .catch(() => {
+        // A dataset that will not load leaves the panel able to say so,
+        // rather than showing an empty port as though it were quiet.
+        if (!cancelled) setState({ dataset: null, pending: false });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return state;
 }

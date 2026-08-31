@@ -209,13 +209,31 @@ describe("context drawer", () => {
     expect(screen.getByText(/beyond the movement data currently available/)).toBeInTheDocument();
   });
 
-  it("shows port sections with NPA stated as pending, never fabricated", () => {
+  /*
+   * This used to assert the placeholder panel, which said NPA integration
+   * was "awaiting data access". The workbook is now ingested and the port
+   * panel shows it, so the placeholder is gone — but the property that
+   * test was really protecting is not, and it is asserted here instead:
+   * the drawer must never present anything about a port it has not read.
+   *
+   * The panel loads the dataset asynchronously, so this covers the state
+   * before it arrives. What a loaded port renders is covered against real
+   * records in `npa-port-intelligence.test.ts`.
+   */
+  it("says it is reading the port record rather than showing an empty port", () => {
     renderWithQuery(
       <ContextDrawer selection={{ kind: "port", id: "NGAPAPA" }} onClose={() => {}} />,
     );
 
-    expect(screen.getByText("Schedule")).toBeInTheDocument();
-    expect(screen.getByText(/NPA SHIPPOS integration awaiting data access/)).toBeInTheDocument();
+    expect(screen.getByText(/Reading the NPA operational schedule/)).toBeInTheDocument();
+
+    /*
+     * Nothing numeric before the records are in. A count rendered here
+     * would be a claim about the quay drawn from an unloaded file, and
+     * a zero would read as an empty port rather than an unread one.
+     */
+    expect(screen.queryByText(/vessels at berth/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/occupied/i)).not.toBeInTheDocument();
   });
 
   it("shows a SAR detection panel that admits no detector is configured", () => {

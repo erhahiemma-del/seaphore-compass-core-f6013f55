@@ -24,7 +24,7 @@
  * detections. Nothing is cached here, so the drawer cannot show a staler
  * copy than the map.
  */
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,10 @@ import { useMarineWeather } from "./use-marine-weather";
 import { useVesselEnrichment } from "./use-vessel-enrichment";
 import type { VesselTrack } from "@/services/geospatial/vessel-track";
 import { VoyagePanel } from "./VoyagePanel";
+import { PortIntelligencePanel } from "./PortIntelligencePanel";
+import { useNpaDataset } from "./use-npa-context";
+import { portIntelligence } from "@/services/government/npa/port-intelligence";
+import { sgs } from "@/services/geospatial";
 
 export interface ContextDrawerProps {
   readonly selection: MapSelection | null;
@@ -240,50 +244,22 @@ function SelectionPanel({
       // carries a reference, never the record.
       return <VoyagePanel voyage={voyage ?? null} loading={voyage === undefined} />;
 
+    /*
+     * A port now has an answer rather than a list of things we could not
+     * show. Every item the old pending panel apologised for — expected
+     * vessels, the schedule, berth and terminal detail — is in the
+     * ingested NPA workbook, so the panel shows it and attributes it.
+     *
+     * Terminal, berth and anchorage still fall through to the port: the
+     * workbook names those facilities but publishes no geometry for any
+     * of them, so the port is the finest thing that can be opened. They
+     * are listed inside the port panel with their geometry state.
+     */
     case "port":
     case "terminal":
     case "berth":
-    case "anchorage": {
-      /*
-       * Resolved through the canonical model, never by display name.
-       *
-       * The selection carries a UN/LOCODE; this turns it into the port's
-       * identity and its geographic status. A port the model does not
-       * recognise still renders the pending panel — it is a real
-       * selection of something we simply hold no estate record for.
-       */
-      const canonical = selection.kind === "port" ? findNigerianPort(selection.id) : null;
-      return (
-        <PendingPanel
-          title={canonical ? canonical.name : "Port intelligence"}
-          sections={["Overview", "Activity", "Vessels", "Schedule", "Intelligence"]}
-          pending={[
-            /*
-             * A port with no coordinate says so here, first.
-             * Otherwise an officer who selected Rivers from the card
-             * list and saw nothing appear on the map would be left to
-             * conclude the selection failed.
-             */
-            ...(canonical && !hasDrawablePosition(canonical)
-              ? [
-                  {
-                    label: "Geographic position",
-                    reason: positionUnavailableReason(canonical),
-                  },
-                ]
-              : []),
-            {
-              label: "Expected vessels & schedule",
-              reason: "NPA SHIPPOS integration awaiting data access.",
-            },
-            {
-              label: "Berth and terminal detail",
-              reason: "No connected source publishes berth-level state.",
-            },
-          ]}
-        />
-      );
-    }
+    case "anchorage":
+      return <PortContext selection={selection} />;
 
     case "sar-detection":
       return (
@@ -488,6 +464,56 @@ function PendingPanel({
         ))}
       </ul>
     </div>
+  );
+}
+
+/**
+ * Resolve a port selection into its operational picture.
+ *
+ * A component rather than an inline branch because it needs the NPA
+ * dataset, and the drawer's renderer is a plain switch that cannot hold
+ * hooks. The selection carries a UN/LOCODE in either register's spelling;
+ * `portIntelligence` reconciles them.
+ */
+function PortContext({ selection }: { selection: MapSelection }) {
+  const { dataset, pending } = useNpaDataset();
+
+  /*
+   * A terminal or berth selection carries its parent port, so the panel
+   * opens on the port that facility belongs to rather than failing. Both
+   * are listed inside it — neither has geometry of its own to open.
+   */
+  const locode =
+    selection.kind === "terminal"
+      ? selection.portId
+      : selection.kind === "berth"
+        ? selection.terminalId
+        : selection.kind === "anchorage"
+          ? selection.portId
+          : selection.id;
+
+  const intelligence = useMemo(() => portIntelligence(locode, dataset), [locode, dataset]);
+
+  if (pending) {
+    return (
+      <div className="p-3">
+        <p className="text-[11px] italic text-muted-foreground">
+          Reading the NPA operational schedule&hellip;
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <PortIntelligencePanel
+      intelligence={intelligence}
+      /*
+       * Vessel navigation goes through the one canonical selection, so a
+       * vessel opened from a port list is the same selection as one
+       * clicked on the map — same URL key, same drawer, same camera.
+       */
+      onOpenVessel={(imo) => sgs.select({ kind: "vessel", id: imo, imo })}
+    />
   );
 }
 
