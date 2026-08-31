@@ -1365,11 +1365,26 @@ function ScopeToggle({
 /**
  * What the vessel feed itself claims, in an officer's terms.
  *
- * Derived from the canonical `resolveMapDataState` rather than a local
- * judgement, so the map cannot say LIVE while the drawer says stale.
- * Silent only when the picture is genuinely live and populated.
+ * Two resolvers, deliberately. `resolveMapDataState` answers whether the
+ * picture may be called live — a freshness question. `resolveVesselCoverage`
+ * answers whether the area was queried at all — a coverage question. The
+ * second is the one the world view turns on: it is the difference between
+ * "no vessels reported" and "this provider never looked here", and the
+ * previous single-resolver notice could only say NO DATA for both.
+ *
+ * Freshness wins the badge when the feed is stale, because a delayed
+ * regional picture is a more urgent caveat than a coverage footnote.
+ * Coverage wins whenever it is the reason the map is empty.
  */
-function VesselFeedNotice({ feed, count }: { feed: VesselFeedState; count: number }) {
+function VesselFeedNotice({
+  feed,
+  count,
+  coverage,
+}: {
+  feed: VesselFeedState;
+  count: number;
+  coverage: VesselCoverageResult;
+}) {
   const state = resolveMapDataState({
     loading: feed.loading,
     error: feed.error,
@@ -1377,18 +1392,26 @@ function VesselFeedNotice({ feed, count }: { feed: VesselFeedState; count: numbe
     lastAppliedAt: feed.lastAppliedAt,
     recordCount: count,
   });
-  if (state.isLive && count > 0) return null;
+  // Silent only when the picture is live, populated and fully covered.
+  if (state.isLive && count > 0 && coverage.countIsMeaningful) return null;
+
+  const showDelayed = state.state === "DELAYED";
+  const label = showDelayed ? state.label : coverage.label;
+  const reason = showDelayed ? state.reason : coverage.reason;
 
   return (
     <div
       data-testid="vessel-feed-notice"
       data-feed-state={state.state}
+      data-coverage-state={coverage.state}
+      data-coverage-mode={coverage.mode}
+      data-scope-unsupported={coverage.scopeUnsupported ? "true" : "false"}
       className="pointer-events-auto w-full rounded-md border border-border/60 bg-background/92 px-2.5 py-1.5 backdrop-blur-sm"
     >
       <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-        Vessels · {state.label}
+        Vessels · {label}
       </div>
-      <p className="text-[11px] leading-relaxed text-muted-foreground">{state.reason}</p>
+      <p className="text-[11px] leading-relaxed text-muted-foreground">{reason}</p>
     </div>
   );
 }
