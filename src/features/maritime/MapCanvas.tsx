@@ -314,6 +314,8 @@ export function MapCanvas({
   voyages,
   findingIndicators,
   portInfrastructure,
+  corridors,
+  corridorTransits: corridorTransitMarkers,
   domain,
   palette = "maritime",
   basemapStyle,
