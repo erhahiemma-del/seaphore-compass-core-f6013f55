@@ -32,6 +32,7 @@ import { cn } from "@/lib/utils";
 import type { ReplayDrawerContext } from "./replay-drawer-state";
 import {
   describeSelection,
+  distanceKm,
   type MapSelection,
   type Vessel,
   type Voyage,
@@ -39,6 +40,11 @@ import {
   hasDrawablePosition,
   positionUnavailableReason,
 } from "@/services/geospatial";
+import {
+  findPortTwinAsset,
+  portTwinLayer,
+  type PortTwinAsset,
+} from "@/services/geospatial/port-twin";
 import type { VesselCamera } from "./useVesselCamera";
 
 import { VesselIntelligenceCard, type VesselTabId } from "./VesselIntelligenceCard";
