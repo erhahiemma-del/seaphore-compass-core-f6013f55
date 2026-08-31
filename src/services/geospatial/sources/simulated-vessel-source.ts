@@ -56,6 +56,7 @@ import {
   type VesselQuery,
   type VesselSourceDescriptor,
 } from "../vessel-source";
+import type { GeographicCoverage } from "../vessel-coverage";
 
 /**
  * How often the simulated provider "reports".
