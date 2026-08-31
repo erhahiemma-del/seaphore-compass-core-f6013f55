@@ -142,6 +142,15 @@ export class CesiumRenderer implements MapRenderer {
    * because its visibility is decided by the twin's own layer registry.
    */
   private readonly infrastructureEntities = new Map<string, Cesium>();
+  /**
+   * Corridor arcs, density bands and risk zones, by entity id.
+   *
+   * Lane geography. Deliberately not keyed by IMO and deliberately not in
+   * the vessel maps — a corridor is a published route, not a hull.
+   */
+  private readonly corridorEntities = new Map<string, Cesium>();
+  /** Indicative transit markers, by corridor id. Not vessels. */
+  private readonly transitEntities = new Map<string, Cesium>();
   private trackEntity: Cesium | null = null;
   private readonly visible: Record<Group, boolean> = {
     vessels: true,
