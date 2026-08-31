@@ -114,6 +114,14 @@ export class CesiumRenderer implements MapRenderer {
   /** Entities by IMO. The only per-vessel state, and it is render state. */
   private readonly vesselEntities = new Map<string, Cesium>();
   private readonly findingEntities = new Map<string, Cesium>();
+  /**
+   * Port Digital Twin infrastructure, by asset id.
+   *
+   * Kept apart from vessels and findings because it answers a different
+   * question — what the estate *is*, not what is moving through it — and
+   * because its visibility is decided by the twin's own layer registry.
+   */
+  private readonly infrastructureEntities = new Map<string, Cesium>();
   private trackEntity: Cesium | null = null;
   private readonly visible: Record<Group, boolean> = {
     vessels: true,
