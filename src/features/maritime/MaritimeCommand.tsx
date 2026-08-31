@@ -293,6 +293,33 @@ export function MaritimeCommand() {
   const replayOwner = displayOwner(replay.status);
 
   /*
+   * Coverage, resolved once and read by every surface that would
+   * otherwise invent its own reading of an empty fleet.
+   *
+   * The count comes from the live set, and `historical` from the replay
+   * player's own state — so a replayed frame can never be presented as
+   * current coverage. The scope comes from the feed when the feed has
+   * answered, because a verdict computed against a scope the officer has
+   * since left is a verdict about the wrong ocean.
+   */
+  const coverage = useMemo(
+    () =>
+      resolveVesselCoverage({
+        loading: feed.loading,
+        error: feed.error,
+        sourceId: feed.sourceId,
+        lastAppliedAt: feed.lastAppliedAt,
+        recordCount: liveVessels.length,
+        scope: feed.scope ?? scope,
+        support: feed.support ?? "UNDECLARED",
+        extentLabel: feed.extentLabel ?? null,
+        extentNote: feed.extentNote ?? null,
+        historical: replayOwner !== "LIVE",
+      }),
+    [feed, liveVessels.length, scope, replayOwner],
+  );
+
+  /*
    * Continuous approach assessment.
    *
    * The alert domain existed and produced nothing because nothing ran
