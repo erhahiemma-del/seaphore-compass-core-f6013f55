@@ -1762,6 +1762,36 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: "2026-08-30",
   },
+  {
+    id: "geospatial.cesium-ion-credential",
+    name: "Cesium Ion credential state",
+    producer: "CAPABILITY",
+    description:
+      "Whether a Cesium Ion token exists, where it came from (environment or activated), its last-four hint and last upstream validation. The token value itself never leaves the server boundary.",
+    state: "PROJECTED",
+    projection: {
+      surface: "3D Intelligence control and administrator activation modal",
+      location: "src/components/admin/CesiumTokenModal.tsx",
+      component: "src/lib/cesium-ion.functions.ts",
+      interaction: "action",
+    },
+    reviewedAt: "2026-09-06",
+  },
+  {
+    id: "geospatial.terrain-perspective",
+    name: "3D terrain perspective (Cesium)",
+    producer: "CAPABILITY",
+    description:
+      "Second rendering engine for the canonical geospatial picture: the same vessels, findings, selection and camera drawn over Cesium Ion terrain. Holds no separate vessel state.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Live Command Map · 3D Intelligence toggle",
+      location: "src/features/maritime/MaritimeCommand.tsx",
+      component: "src/services/geospatial/renderers/cesium-renderer.ts",
+      interaction: "action",
+    },
+    reviewedAt: "2026-09-06",
+  },
 ];
 
 export function getContractEntry(id: string): ProjectionContractEntry | undefined {
