@@ -99,12 +99,13 @@ export function useTerrainPerspective(): TerrainPerspective {
   /** Persist the lens choice. Never the credential. */
   const remember = useCallback(
     (next: boolean) => {
+      if (!authenticated) return;
       void writePreference({ data: { terrain3d: next } }).catch(() => {
         // A preference that will not store is a lost convenience, not a
         // failed capability — the officer keeps the view they asked for.
       });
     },
-    [writePreference],
+    [authenticated, writePreference],
   );
 
   const activate = useCallback(
@@ -113,6 +114,17 @@ export function useTerrainPerspective(): TerrainPerspective {
       if (token) {
         setWanted(true);
         if (options.persist) remember(true);
+        return;
+      }
+      /*
+       * The credential is an officer capability. Without a session there is
+       * no one to hand it to, so the request is never made — an Unauthorized
+       * throw here would blank the map for a question nobody asked.
+       */
+      if (!authenticated) {
+        setUnavailableReason(
+          "Sign in as an officer to activate the 3D Terrain Perspective. The 2D operational map is still live.",
+        );
         return;
       }
       setLoading(true);
@@ -135,7 +147,7 @@ export function useTerrainPerspective(): TerrainPerspective {
         })
         .finally(() => setLoading(false));
     },
-    [readToken, remember, token],
+    [authenticated, readToken, remember, token],
   );
 
   const toggle = useCallback(() => {
