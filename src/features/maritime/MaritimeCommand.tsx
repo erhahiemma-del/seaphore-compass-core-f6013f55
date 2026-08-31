@@ -10,6 +10,7 @@
  * the camera has exactly one owner and the URL stays in step.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import {
   Compass,
   Crosshair,
@@ -278,6 +279,7 @@ export function MaritimeCommand() {
   // ── Canonical replay ───────────────────────────────────────────
   // The sink is the engine MapCanvas draws from, so replaying moves the
   // vessels on screen rather than a private copy.
+  const navigate = useNavigate();
   const engineRef = useRef<ReplaySink | null>(null);
   const replay = useReplayTimeline({
     sink: engineRef.current,
