@@ -433,6 +433,31 @@ export class DatalasticVesselSource implements DescribableVesselSource {
     return this.lastCoverage;
   }
 
+  /**
+   * Where this provider actually looks.
+   *
+   * Derived from the zone table that `multiZone` runs, not asserted
+   * separately — so the statement cannot drift from the circles the
+   * gateway is really asked about. Declaring `regional` only is not a
+   * limitation being admitted reluctantly; it is the fact that makes an
+   * empty global map readable as "not queried" rather than "no ships".
+   *
+   * The provider's `/vessel_inarea` endpoint answers one 50km circle per
+   * request. Global coverage would mean tens of thousands of circles per
+   * pass, which is an entitlement question and a cost question, not a
+   * rendering one. A future global AIS source declares `global` here and
+   * no UI changes.
+   */
+  geographicCoverage(): GeographicCoverage {
+    return {
+      sourceId: this.id,
+      scopes: ["regional"],
+      extentLabel: `${NIGERIA_COVERAGE_ZONES.length} Nigerian coastal and offshore zones`,
+      extentNote:
+        "the provider answers one 50km circle per request, so coverage is the declared Nigerian zone set",
+    } as GeographicCoverage;
+  }
+
   async list(query?: VesselQuery): Promise<readonly Vessel[]> {
     /*
      * A caller asking for a specific box gets that box; otherwise the
