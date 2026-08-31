@@ -36,7 +36,6 @@ const state = {
   oceanAssignments: 0,
 };
 
-
 vi.mock("cesium", () => {
   class Viewer {
     scene = {
@@ -351,7 +350,6 @@ describe("Intelligence Earth", () => {
     expect(() => renderer.setAlertPulse(4)).not.toThrow();
     expect(ring("vessel:9111111")?.["outlineWidth"]).toBeLessThanOrEqual(6);
   });
-
 
   it("applies world terrain, satellite imagery, atmosphere, ocean and lighting at mount", async () => {
     const { bus, events } = makeBus();
