@@ -32,6 +32,13 @@ import type {
   VesselRenderBatch,
 } from "../renderer";
 import type { BoundingBox, LonLat, ViewMode } from "../types";
+import {
+  DEFAULT_EARTH_SETTINGS,
+  clampExaggeration,
+  earthPreset,
+  type EarthSettings,
+} from "../earth-presets";
+
 import type { VesselFeature } from "../vessel";
 
 /** Everything the adapter needs that is not part of the shared contract. */
