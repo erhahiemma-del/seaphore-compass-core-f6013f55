@@ -185,6 +185,7 @@ export interface MapEventMap {
   "port:click": PortClickEvent;
   "anchorage:click": AnchorageClickEvent;
   "finding:click": FindingClickEvent;
+  "infrastructure:click": InfrastructureClickEvent;
   "vessel:hover": VesselHoverEvent;
   "layer:visibility": LayerVisibilityEvent;
   "vessels:applied": VesselsAppliedEvent;
