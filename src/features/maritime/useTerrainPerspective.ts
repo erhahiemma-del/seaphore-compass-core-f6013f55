@@ -146,7 +146,7 @@ export function useTerrainPerspective(): TerrainPerspective {
         })
         .finally(() => setLoading(false));
     },
-    [readToken, remember, token],
+    [authenticated, readToken, remember, token],
   );
 
   const toggle = useCallback(() => {
