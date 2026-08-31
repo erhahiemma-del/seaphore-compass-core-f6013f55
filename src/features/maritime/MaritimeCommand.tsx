@@ -864,6 +864,23 @@ export function MaritimeCommand() {
           </div>
         ) : null}
 
+        {/*
+          A refused 3D lens is stated on screen, not only in a tooltip.
+          A control that appears to do nothing when clicked reads as a
+          broken build; the reason — no session, no credential, or an
+          engine that failed and handed the map back to MapLibre — is the
+          answer the officer needs.
+        */}
+        {!terrain.active && terrain.unavailableReason ? (
+          <div
+            data-testid="terrain-unavailable"
+            role="status"
+            className="shrink-0 border-b border-amber-200 bg-amber-50 px-3 py-1 text-[11px] text-amber-900"
+          >
+            3D Intelligence unavailable · {terrain.unavailableReason}
+          </div>
+        ) : null}
+
         {/* Shown only while the terrain lens is mounted: controls for an
             engine that is not running would be controls over nothing. */}
         {terrain.active ? <IntelligenceEarthPanel renderer={terrain.renderer} /> : null}

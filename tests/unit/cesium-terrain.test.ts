@@ -32,7 +32,10 @@ const state = {
   entities: [] as Entity[],
   clickHandler: null as ((movement: unknown) => void) | null,
   ionToken: null as string | null,
+  /** How many times the ocean normal map was handed to the globe. */
+  oceanAssignments: 0,
 };
+
 
 vi.mock("cesium", () => {
   class Viewer {
@@ -41,7 +44,18 @@ vi.mock("cesium", () => {
         enableLighting: false,
         dynamicAtmosphereLighting: false,
         showGroundAtmosphere: false,
-        oceanNormalMapUrl: undefined as string | undefined,
+        // Cesium re-fetches the asset on every assignment, and a second
+        // assignment while the first is in flight throws. The mock counts
+        // assignments so the guard can be asserted.
+        _oceanNormalMapUrl: undefined as string | undefined,
+        get oceanNormalMapUrl() {
+          return this._oceanNormalMapUrl;
+        },
+        set oceanNormalMapUrl(value: string | undefined) {
+          state.oceanAssignments += 1;
+          this._oceanNormalMapUrl = value;
+        },
+
         baseColor: null as unknown,
         maximumScreenSpaceError: 0,
         tileCacheSize: 0,
@@ -293,7 +307,51 @@ describe("Intelligence Earth", () => {
     state.entities = [];
     state.clickHandler = null;
     state.ionToken = null;
+    state.oceanAssignments = 0;
   });
+
+  it("requests the ocean normal map once, so a repeated settings pass cannot stall the globe", async () => {
+    const { bus, events } = makeBus();
+    const renderer = (await mount(bus)) as never as {
+      applyEarthSettings(next: Record<string, unknown>): unknown;
+    };
+    expect(state.oceanAssignments).toBe(1);
+    renderer.applyEarthSettings({ terrainExaggeration: 2 });
+    renderer.applyEarthSettings({ dayNightLighting: false });
+    expect(state.oceanAssignments).toBe(1);
+    // Turning the ocean off and on again is a real change, so exactly one
+    // further request each way — never one per settings pass.
+    renderer.applyEarthSettings({ ocean: false });
+    renderer.applyEarthSettings({ ocean: true });
+    expect(state.oceanAssignments).toBe(3);
+    expect(events.some((e) => e.event === "map:error")).toBe(false);
+  });
+
+  it("breathes the attention ring on alerting vessels only, and never throws", async () => {
+    const { bus } = makeBus();
+    const renderer = (await mount(bus)) as never as {
+      setVesselData(collection: unknown): void;
+      setAlertPulse(phase: number): void;
+    };
+    const alerting = vessel("9111111", 3.4, 6.4);
+    (alerting.properties as Record<string, unknown>)["alertVisual"] = "ARRIVING";
+    const quiet = vessel("9222222", 3.5, 6.5);
+    (quiet.properties as Record<string, unknown>)["alertVisual"] = "CLEARED";
+    renderer.setVesselData({ type: "FeatureCollection", features: [alerting, quiet] });
+
+    const ring = (id: string) =>
+      state.entities.find((e) => e.id === id)?.point as Record<string, number> | undefined;
+    const quietBefore = ring("vessel:9222222")?.["outlineWidth"];
+    expect(() => renderer.setAlertPulse(1)).not.toThrow();
+    expect(ring("vessel:9111111")?.["outlineWidth"]).toBeGreaterThan(2);
+    expect(ring("vessel:9222222")?.["outlineWidth"]).toBe(quietBefore);
+
+    // A phase outside 0–1 is clamped rather than rejected: the ring is an
+    // emphasis, so it can never be the reason a frame fails.
+    expect(() => renderer.setAlertPulse(4)).not.toThrow();
+    expect(ring("vessel:9111111")?.["outlineWidth"]).toBeLessThanOrEqual(6);
+  });
+
 
   it("applies world terrain, satellite imagery, atmosphere, ocean and lighting at mount", async () => {
     const { bus, events } = makeBus();

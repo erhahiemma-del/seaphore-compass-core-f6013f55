@@ -151,9 +151,21 @@ export class CesiumRenderer implements MapRenderer {
   };
   private labelsRequested = true;
 
+  /**
+   * Which vessels carry an unresolved alert, and the current breath.
+   *
+   * The phase is a property of the whole attention set, driven by the one
+   * clock in `useAlertPulse` — exactly as on the flat map. Held here only
+   * as render state; the alert itself is owned by shared state.
+   */
+  private readonly alertingImos = new Set<string>();
+  private alertPhase = 1;
+
   /** How the earth is drawn. Presentation state, and the only copy of it. */
   private earth: EarthSettings = DEFAULT_EARTH_SETTINGS;
   private satelliteLayer: Cesium | null = null;
+  /** Last ocean normal map URL handed to the globe. See applyEarthSettings. */
+  private oceanNormalMapUrl: string | undefined = undefined;
 
   constructor(deps: CesiumRendererDependencies) {
     this.bus = deps.bus;
@@ -292,6 +304,7 @@ export class CesiumRenderer implements MapRenderer {
     this.destroyed = true;
     this.ready = false;
     this.vesselEntities.clear();
+    this.alertingImos.clear();
     this.findingEntities.clear();
     this.infrastructureEntities.clear();
     this.trackEntity = null;
@@ -468,6 +481,17 @@ export class CesiumRenderer implements MapRenderer {
     ).withAlpha(props.opacity);
     const position = cesium.Cartesian3.fromDegrees(lon, lat, 0);
 
+    /*
+     * Alert membership is read from the canonical feature, never from a
+     * second alert store: `alertVisual` is projected by the same vessel
+     * projection MapLibre reads.
+     */
+    const alerting =
+      typeof (props as { alertVisual?: unknown }).alertVisual === "string" &&
+      (props as { alertVisual?: string }).alertVisual !== "CLEARED";
+    if (alerting) this.alertingImos.add(props.imo);
+    else this.alertingImos.delete(props.imo);
+
     const existing = this.vesselEntities.get(props.imo);
     if (existing) {
       existing.position = position;
@@ -476,6 +500,7 @@ export class CesiumRenderer implements MapRenderer {
       existing.label.text = props.name;
       existing.label.show = this.visible.vessels && this.labelsRequested;
       existing.show = this.visible.vessels;
+      if (alerting) this.paintAlert(props.imo, existing);
       return;
     }
 
@@ -503,6 +528,42 @@ export class CesiumRenderer implements MapRenderer {
       },
     });
     this.vesselEntities.set(props.imo, entity);
+    if (alerting) this.paintAlert(props.imo, entity);
+  }
+
+  /**
+   * Drive the attention ring, one phase for the whole alerting set.
+   *
+   * Cesium has no data-driven paint expression, so the breath is applied
+   * to the alerting entities only — the cost tracks the number of alerts,
+   * not the size of the fleet. Reduced motion arrives here as a single
+   * call at full strength, so the ring stays exactly as visible and
+   * simply stops moving.
+   */
+  setAlertPulse(phase: number): void {
+    this.alertPhase = Math.min(1, Math.max(0, phase));
+    if (!this.isReady()) return;
+    for (const imo of this.alertingImos) {
+      const entity = this.vesselEntities.get(imo);
+      if (entity) this.paintAlert(imo, entity);
+    }
+  }
+
+  /** One alerting vessel, drawn at the current breath. */
+  private paintAlert(imo: string, entity: Cesium): void {
+    const cesium = this.cesium;
+    if (!cesium || !entity?.point) return;
+    try {
+      // Radius and stroke both carry the phase, so the ring reads at a
+      // glance without relying on colour alone.
+      entity.point.outlineWidth = 2 + this.alertPhase * 4;
+      entity.point.outlineColor = cesium.Color.fromCssColorString("#F59E0B").withAlpha(
+        0.45 + this.alertPhase * 0.55,
+      );
+    } catch {
+      // A pulse that cannot be painted is a missing emphasis, never a
+      // missing vessel: the entity stays on the globe as drawn.
+    }
   }
 
   // ── Intelligence Earth — presentation of the globe itself ───────────
@@ -541,9 +602,23 @@ export class CesiumRenderer implements MapRenderer {
         globe.showGroundAtmosphere = settings.atmosphere;
         // Water is shaded from the terrain's own mask; without a normal
         // map Cesium draws still water, which reads as a painted sea.
-        globe.oceanNormalMapUrl = settings.ocean
+        /*
+         * Assigned only on change.
+         *
+         * Cesium re-fetches the normal map on every assignment, and a
+         * second assignment while the first fetch is in flight throws
+         * "The Resource is already being fetched" out of the render loop
+         * — which stops rendering altogether and leaves a dead globe.
+         * Earth settings are applied at mount and again from the panel,
+         * so the same URL was being set twice within one frame.
+         */
+        const oceanUrl = settings.ocean
           ? `${this.baseUrl}Assets/Textures/waterNormalsSmall.jpg`
           : undefined;
+        if (oceanUrl !== this.oceanNormalMapUrl) {
+          this.oceanNormalMapUrl = oceanUrl;
+          globe.oceanNormalMapUrl = oceanUrl;
+        }
         if (cesium.Color?.fromCssColorString) {
           globe.baseColor = cesium.Color.fromCssColorString("#0B2A4A");
         }
@@ -643,7 +718,9 @@ export class CesiumRenderer implements MapRenderer {
     if (!entity) return;
     this.viewer?.entities.remove(entity);
     this.vesselEntities.delete(imo);
+    this.alertingImos.delete(imo);
   }
+
 
   async loadVesselIcons(): Promise<void> {
     // Cesium draws vessels as depth-tested points; no sprite atlas needed.
