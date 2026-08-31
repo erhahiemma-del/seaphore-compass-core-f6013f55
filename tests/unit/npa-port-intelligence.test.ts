@@ -33,7 +33,28 @@ import type {
   NpaTerminalRecord,
 } from "@/services/government/npa/workbook-ingest";
 
-const SOURCE = { file: "NPA Database (1).xlsx", sheet: "Sheet1 (17)", sheetTitle: null, row: 4 };
+/*
+ * The full provenance shape, including the file hash and import run.
+ * Spelled out rather than partially filled because tests are outside
+ * `tsconfig`'s `include`, so a field added to `SourceRef` will not fail
+ * typecheck here — the fixture has to carry the real shape deliberately.
+ */
+const SOURCE = {
+  file: "NPA Database - Seaphore.xlsx",
+  fileHash: "99a284c2d19465756c77b58bd53a8bd20b073720387573a381c256ea660cf4c7",
+  importRunId: "run-99a284c2d194",
+  sheet: "Sheet1 (17)",
+  sheetTitle: null,
+  row: 4,
+};
+
+/** One row as the spreadsheet held it, keyed by NPA's own headers. */
+const RAW_ROW = {
+  Berth: "ABTL-Berth 1",
+  "Vessel Name": "DESERT GRACE",
+  "IMO Number": "9849502",
+  "Berth Date": "15/08/26 09:10 AM",
+};
 
 function call(overrides: Partial<NpaPortCall> = {}): NpaPortCall {
   return {
@@ -63,6 +84,7 @@ function call(overrides: Partial<NpaPortCall> = {}): NpaPortCall {
       quantity: null,
     },
     source: SOURCE,
+    raw: RAW_ROW,
     observedAt: "2026-08-15T09:10:00.000Z",
     ingestedAt: "2026-08-30T02:36:00.000Z",
     confidence: "HIGH",
@@ -81,6 +103,7 @@ function berth(overrides: Partial<NpaBerthRecord> = {}): NpaBerthRecord {
     status: "OCCUPIED",
     portCallId: "call-1",
     source: SOURCE,
+    rawRow: RAW_ROW,
     ...overrides,
   };
 }
@@ -99,7 +122,9 @@ function terminal(overrides: Partial<NpaTerminalRecord> = {}): NpaTerminalRecord
 
 function dataset(parts: Partial<NpaOperationalDataset> = {}): NpaOperationalDataset {
   return {
-    sourceFile: "NPA Database (1).xlsx",
+    sourceFile: "NPA Database - Seaphore.xlsx",
+    sourceFileHash: SOURCE.fileHash,
+    importRunId: SOURCE.importRunId,
     ingestedAt: "2026-08-30T02:36:00.000Z",
     vessels: [],
     portCalls: [],
@@ -417,7 +442,7 @@ describe("provenance and freshness", () => {
   it("names the source file the records came from", () => {
     const view = portIntelligence("NGAPAPA", dataset({ portCalls: [call()] }));
 
-    expect(view.sourceFile).toBe("NPA Database (1).xlsx");
+    expect(view.sourceFile).toBe("NPA Database - Seaphore.xlsx");
     expect(view.ingestedAt).toBe("2026-08-30T02:36:00.000Z");
   });
 

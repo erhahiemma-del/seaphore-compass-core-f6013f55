@@ -59,6 +59,25 @@ export interface IngestOptions {
   readonly sourceFile: string;
   /** When Seaphore read the file — never confused with when NPA observed it. */
   readonly ingestedAt: string;
+  /**
+   * SHA-256 of the file's bytes.
+   *
+   * The name is what a person calls the publication; this is what
+   * identifies the exact bytes behind it. Two workbooks can share a name
+   * and differ, which is precisely the case that would otherwise make an
+   * ingestion report irreproducible — the answer to "what did NPA report"
+   * has to be pinned to a file, not to a filename.
+   */
+  readonly sourceFileHash?: string;
+  /**
+   * Identifier for this ingestion run.
+   *
+   * Derived from the file hash by default rather than generated, so
+   * re-ingesting the same bytes reproduces the same run identifier and
+   * the output stays byte-identical. A random id here would make every
+   * re-run look like new evidence.
+   */
+  readonly importRunId?: string;
 }
 
 /**
@@ -73,12 +92,26 @@ export type RecordConfidence = "HIGH" | "MEDIUM" | "LOW";
 
 export interface SourceRef {
   readonly file: string;
+  /** SHA-256 of the file, when the caller supplied one. */
+  readonly fileHash: string | null;
+  /** Which ingestion run produced this record. */
+  readonly importRunId: string | null;
   readonly sheet: string;
   /** The sheet's title row, which is where the port and status are stated. */
   readonly sheetTitle: string | null;
   /** 1-based row number as it appears in the spreadsheet. */
   readonly row: number;
 }
+
+/**
+ * The row exactly as the spreadsheet held it, keyed by its own headers.
+ *
+ * Kept beside every normalised record so an officer can be shown what NPA
+ * actually wrote, not only what Seaphore made of it. Normalisation is a
+ * reading of the source, and a reading that cannot be checked against the
+ * original is an assertion.
+ */
+export type RawRow = Readonly<Record<string, string>>;
 
 /** A quantity NPA reported, with the unit still attached. */
 export interface NpaQuantity {
@@ -145,6 +178,8 @@ export interface NpaPortCall {
   readonly cargo: NpaCargoEvidence | null;
 
   readonly source: SourceRef;
+  /** The source row verbatim, so the reading can always be checked. */
+  readonly raw: RawRow;
   /**
    * The most specific time NPA stated for this call.
    *
@@ -177,6 +212,15 @@ export interface NpaBerthRecord {
   /** The port call occupying it, when occupied. */
   readonly portCallId: string | null;
   readonly source: SourceRef;
+  /**
+   * The whole source row verbatim.
+   *
+   * Named `rawRow` rather than `raw` because this record already uses
+   * `raw` for the berth cell itself — `ABTL-Berth 1`. Two different
+   * verbatim values on one record is exactly the pair that gets swapped
+   * by accident, so they do not share a name.
+   */
+  readonly rawRow: RawRow;
 }
 
 /** A terminal, known only by the code NPA prefixed to a berth. */
@@ -227,6 +271,8 @@ export interface NpaIngestSummary {
 
 export interface NpaOperationalDataset {
   readonly sourceFile: string;
+  readonly sourceFileHash: string | null;
+  readonly importRunId: string | null;
   readonly ingestedAt: string;
   readonly vessels: readonly NpaVesselRecord[];
   readonly portCalls: readonly NpaPortCall[];
@@ -421,6 +467,158 @@ function confidenceFor(
   return portResolved ? "HIGH" : "MEDIUM";
 }
 
+/**
+ * The row as the spreadsheet held it, keyed by its own header text.
+ *
+ * Keyed by NPA's wording rather than Seaphore's column names, because the
+ * point is to record what the source said. A cell under a header this
+ * ingest does not recognise is kept too — an unmapped column is exactly
+ * the thing a later reader will need to see.
+ */
+export function rawRow(headerRow: readonly unknown[], row: readonly unknown[]): RawRow {
+  const out: Record<string, string> = {};
+  const width = Math.max(headerRow.length, row.length);
+  for (let column = 0; column < width; column += 1) {
+    const value = text(row[column]);
+    if (value === null) continue;
+    const heading = text(headerRow[column]);
+    // Positional fallback so a value under a blank header is still kept
+    // rather than dropped for want of a name.
+    out[heading ?? `column_${column + 1}`] = value;
+  }
+  return out;
+}
+
+/** What the audit found about one sheet, before anything is persisted. */
+export interface SheetAudit {
+  readonly sheet: string;
+  readonly title: string | null;
+  /** The operational state this sheet was classified as. */
+  readonly status: NpaOperationalStatus;
+  /** How the classification was reached, for the audit trail. */
+  readonly classifiedBy: "TITLE" | "COLUMNS" | "UNCLASSIFIED";
+  readonly portLabel: string | null;
+  readonly portLocode: string | null;
+  /** 0-based index of the header row, or null when none was found. */
+  readonly headerRow: number | null;
+  readonly headers: readonly string[];
+  /** Columns this ingest recognised, and those it did not. */
+  readonly mappedColumns: readonly string[];
+  readonly unmappedColumns: readonly string[];
+  readonly dataRows: number;
+  readonly vacantRows: number;
+  /** True only when the sheet could not be read at all. */
+  readonly requiresReview: boolean;
+  readonly note: string | null;
+}
+
+export interface WorkbookAudit {
+  readonly sheets: readonly SheetAudit[];
+  readonly totalSheets: number;
+  readonly classified: number;
+  readonly requiresReview: number;
+  readonly totalDataRows: number;
+}
+
+/**
+ * Classify every sheet without persisting anything.
+ *
+ * Runs the same title and column classifiers the ingest uses, so an audit
+ * cannot report a classification the ingest would not reach. A second
+ * classifier written for reporting would eventually disagree with the one
+ * that decides what gets stored, and the report is precisely the thing
+ * that is supposed to be trustworthy.
+ *
+ * A sheet that cannot be classified is reported as requiring review. It is
+ * never guessed at and never silently skipped.
+ */
+export function auditWorkbook(sheets: readonly RawSheet[]): WorkbookAudit {
+  const audited = sheets.map((sheet): SheetAudit => {
+    const title = readSheetTitle(sheet.rows);
+    const header = readHeader(sheet.rows);
+    const portLabel = portLabelFromTitle(title);
+    const port = resolvePort(portLabel);
+
+    if (!header) {
+      return {
+        sheet: sheet.name,
+        title,
+        status: "UNKNOWN",
+        classifiedBy: "UNCLASSIFIED",
+        portLabel,
+        portLocode: port.unlocode,
+        headerRow: null,
+        headers: [],
+        mappedColumns: [],
+        unmappedColumns: [],
+        dataRows: 0,
+        vacantRows: 0,
+        requiresReview: true,
+        note: "No header row naming both a vessel and an IMO column. UNKNOWN — REQUIRES REVIEW.",
+      };
+    }
+
+    const headerRow = sheet.rows[header.index] ?? [];
+    const headers = headerRow.map((cell) => String(cell ?? "").trim()).filter(Boolean);
+
+    const byTitle = classifyByTitle(title);
+    const status =
+      byTitle === "UNKNOWN"
+        ? classifyByColumns(headerRow.map((cell) => String(cell ?? "")))
+        : byTitle;
+    const classifiedBy = byTitle === "UNKNOWN" ? "COLUMNS" : "TITLE";
+
+    const mapped = new Set<string>();
+    const unmapped: string[] = [];
+    for (const cell of headerRow) {
+      const heading = String(cell ?? "").trim();
+      if (!heading) continue;
+      if (HEADER_ALIASES[squash(heading)]) mapped.add(heading);
+      else unmapped.push(heading);
+    }
+
+    let dataRows = 0;
+    let vacantRows = 0;
+    const vesselColumn = header.columns.get("vessel");
+    for (let index = header.index + 1; index < sheet.rows.length; index += 1) {
+      const row = sheet.rows[index] ?? [];
+      if (!row.some((value) => text(value) !== null)) continue;
+      dataRows += 1;
+      if (vesselColumn !== undefined && isVacantBerth(row[vesselColumn])) vacantRows += 1;
+    }
+
+    return {
+      sheet: sheet.name,
+      title,
+      status,
+      classifiedBy: status === "UNKNOWN" ? "UNCLASSIFIED" : classifiedBy,
+      portLabel,
+      portLocode: port.unlocode,
+      headerRow: header.index,
+      headers,
+      mappedColumns: [...mapped],
+      unmappedColumns: unmapped,
+      dataRows,
+      vacantRows,
+      requiresReview: status === "UNKNOWN",
+      note:
+        status === "UNKNOWN"
+          ? "Neither the title nor the columns established an operational state. UNKNOWN — REQUIRES REVIEW."
+          : port.unlocode
+            ? null
+            : port.note,
+    };
+  });
+
+  return {
+    sheets: audited,
+    totalSheets: audited.length,
+    classified: audited.filter((sheet) => !sheet.requiresReview).length,
+    requiresReview: audited.filter((sheet) => sheet.requiresReview).length,
+    totalDataRows: audited.reduce((total, sheet) => total + sheet.dataRows, 0),
+  };
+}
+
 interface MutableTerminal {
   code: string;
   portLocode: string | null;
@@ -439,6 +637,15 @@ export function ingestWorkbook(
   sheets: readonly RawSheet[],
   options: IngestOptions,
 ): NpaOperationalDataset {
+  const fileHash = options.sourceFileHash ?? null;
+  /*
+   * Derived, not generated. Re-ingesting identical bytes must reproduce
+   * an identical dataset, and a random run id would change every record
+   * on every run — turning a no-op re-ingest into a diff that looks like
+   * new evidence.
+   */
+  const runId = options.importRunId ?? (fileHash ? `run-${fileHash.slice(0, 12)}` : null);
+
   const portCalls: NpaPortCall[] = [];
   const berths: NpaBerthRecord[] = [];
   const rejections: IngestRejection[] = [];
@@ -457,7 +664,14 @@ export function ingestWorkbook(
 
     if (!header) {
       rejections.push({
-        source: { file: options.sourceFile, sheet: sheet.name, sheetTitle: title, row: 0 },
+        source: {
+          file: options.sourceFile,
+          fileHash,
+          importRunId: runId,
+          sheet: sheet.name,
+          sheetTitle: title,
+          row: 0,
+        },
         reason:
           "No header row naming both a vessel and an IMO column. The sheet was not read, rather than read as empty.",
       });
@@ -506,10 +720,18 @@ export function ingestWorkbook(
       const rowNumber = index + 1;
       const source: SourceRef = {
         file: options.sourceFile,
+        fileHash,
+        importRunId: runId,
         sheet: sheet.name,
         sheetTitle: title,
         row: rowNumber,
       };
+
+      /*
+       * Captured before anything is read out of the row, so the record of
+       * what NPA wrote cannot be affected by how Seaphore read it.
+       */
+      const raw = rawRow(headerRow, row);
 
       const vesselName = text(cell(row, "vessel"));
       const berthCell = text(cell(row, "berth"));
@@ -540,6 +762,7 @@ export function ingestWorkbook(
           status: "VACANT",
           portCallId: null,
           source,
+          rawRow: raw,
         });
         portEntry.berths.push(berthId);
         if (berthReading.terminalCode) {
@@ -619,6 +842,7 @@ export function ingestWorkbook(
         lengthM: decimal(cell(row, "length")),
         cargo,
         source,
+        raw,
         observedAt: observationFor(status, { eta, arrivalAt, berthAt, departureAt }),
         ingestedAt: options.ingestedAt,
         confidence: confidenceFor(imoReading.status, port.unlocode !== null, status),
@@ -665,6 +889,7 @@ export function ingestWorkbook(
           status: "OCCUPIED",
           portCallId: callId,
           source,
+          rawRow: raw,
         });
         portEntry.berths.push(berthId);
         if (berthReading.terminalCode) {
@@ -708,6 +933,8 @@ export function ingestWorkbook(
 
   return {
     sourceFile: options.sourceFile,
+    sourceFileHash: fileHash,
+    importRunId: runId,
     ingestedAt: options.ingestedAt,
     vessels: vesselRecords,
     portCalls,

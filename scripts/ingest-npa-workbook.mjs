@@ -26,6 +26,7 @@
  * is the idempotence check.
  */
 import { readFileSync, writeFileSync, mkdirSync, statSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { dirname, basename, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { tmpdir } from "node:os";
@@ -54,15 +55,59 @@ await esbuild.build({
   alias: { "@": resolve(ROOT, "src") },
 });
 
-const { ingestWorkbook } = await import(pathToFileURL(bundlePath).href);
+const { ingestWorkbook, auditWorkbook } = await import(pathToFileURL(bundlePath).href);
 
-const workbook = XLSX.read(readFileSync(workbookPath), { type: "buffer" });
+const bytes = readFileSync(workbookPath);
+/*
+ * The file's bytes identify the publication; its name does not. Two
+ * workbooks can share a name and differ, which is exactly the case that
+ * makes an ingestion report irreproducible.
+ */
+const sourceFileHash = createHash("sha256").update(bytes).digest("hex");
+
+const workbook = XLSX.read(bytes, { type: "buffer" });
 const sheets = workbook.SheetNames.map((name) => ({
   name,
   rows: XLSX.utils.sheet_to_json(workbook.Sheets[name], { header: 1, defval: null, raw: false }),
 }));
 
+/*
+ * Audit before persistence. Every sheet is classified and reported —
+ * including any that cannot be — so nothing is silently ignored, and the
+ * audit uses the ingest's own classifiers rather than a second set that
+ * could disagree with what actually gets stored.
+ */
+const audit = auditWorkbook(sheets);
+
+console.log(`
+WORKBOOK AUDIT — ${basename(workbookPath)}`);
+console.log(`sha256 ${sourceFileHash}`);
+console.table(
+  audit.sheets.map((sheet) => ({
+    sheet: sheet.sheet,
+    status: sheet.status,
+    via: sheet.classifiedBy,
+    port: sheet.portLocode ?? (sheet.portLabel || "—"),
+    hdr: sheet.headerRow ?? "—",
+    rows: sheet.dataRows,
+    vacant: sheet.vacantRows,
+    unmapped: sheet.unmappedColumns.join(", ") || "—",
+    review: sheet.requiresReview ? "REVIEW" : "",
+  })),
+);
+console.log(
+  `${audit.classified}/${audit.totalSheets} sheets classified · ${audit.totalDataRows} data rows · ${audit.requiresReview} requiring review`,
+);
+
+if (audit.requiresReview > 0) {
+  console.log("\nUNKNOWN — REQUIRES REVIEW:");
+  for (const sheet of audit.sheets.filter((entry) => entry.requiresReview)) {
+    console.log(`  ${sheet.sheet}: ${sheet.note}`);
+  }
+}
+
 const dataset = ingestWorkbook(sheets, {
+  sourceFileHash,
   /*
    * The file's name, not its path. The path is one machine's directory
    * layout and would put a home directory into a committed artefact;
@@ -81,10 +126,18 @@ mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, `${JSON.stringify(dataset, null, 2)}\n`, "utf8");
 
 const { summary } = dataset;
-console.log(`Wrote ${OUT}`);
+console.log(`
+Wrote ${OUT}`);
+console.log(`import run ${dataset.importRunId}`);
 console.table({
   sheets: summary.sheets,
   "data rows": summary.dataRows,
+  "valid IMOs": dataset.portCalls.filter((c) => c.imoStatus === "VALID").length,
+  "invalid IMOs": dataset.portCalls.filter(
+    (c) => c.imoStatus !== "VALID" && (c.raw["IMO Number"] || c.raw["IMO NUMBER"]),
+  ).length,
+  "missing IMOs": dataset.portCalls.filter((c) => c.imo === null).length,
+  "cargo records": dataset.portCalls.filter((c) => c.cargo !== null).length,
   "port calls": summary.portCalls,
   vessels: summary.vessels,
   berths: summary.berths,

@@ -25,6 +25,21 @@ import type {
 } from "@/services/government/npa/workbook-ingest";
 import type { Vessel } from "@/services/geospatial";
 
+const SOURCE = {
+  file: "NPA Database - Seaphore.xlsx",
+  fileHash: "99a284c2d19465756c77b58bd53a8bd20b073720387573a381c256ea660cf4c7",
+  importRunId: "run-99a284c2d194",
+  sheet: "Sheet1 (17)",
+  sheetTitle: null,
+  row: 4,
+};
+
+const RAW_ROW = {
+  Berth: "ABTL-Berth 1",
+  "Vessel Name": "DESERT GRACE",
+  "IMO Number": "9849502",
+};
+
 function tracked(imo: string, name: string, mmsi = "636092837"): Vessel {
   return {
     identity: { imo, name, mmsi },
@@ -63,7 +78,8 @@ function call(overrides: Partial<NpaPortCall> = {}): NpaPortCall {
     rotation: "B11621",
     lengthM: 199,
     cargo: null,
-    source: { file: "npa.xlsx", sheet: "Sheet1 (17)", sheetTitle: null, row: 4 },
+    source: SOURCE,
+    raw: RAW_ROW,
     observedAt: "2026-08-15T09:10:00.000Z",
     ingestedAt: "2026-08-30T02:36:00.000Z",
     confidence: "HIGH",
@@ -88,7 +104,9 @@ function dataset(
   portCalls: readonly NpaPortCall[],
 ): NpaOperationalDataset {
   return {
-    sourceFile: "npa.xlsx",
+    sourceFile: "NPA Database - Seaphore.xlsx",
+    sourceFileHash: SOURCE.fileHash,
+    importRunId: SOURCE.importRunId,
     ingestedAt: "2026-08-30T02:36:00.000Z",
     vessels,
     portCalls,
