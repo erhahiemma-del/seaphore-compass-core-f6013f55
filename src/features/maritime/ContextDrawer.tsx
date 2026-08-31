@@ -57,6 +57,15 @@ export interface ContextDrawerProps {
   readonly selection: MapSelection | null;
   /** Resolved vessel, when the selection is a vessel the engine holds. */
   readonly vessel?: Vessel | null;
+  /**
+   * The canonical fleet currently loaded.
+   *
+   * Used only to count vessels standing at a selected piece of port
+   * infrastructure. Passed in rather than fetched so the drawer can never
+   * show a different fleet from the map — and so "no vessels here" is
+   * always a statement about the loaded set, never about the world.
+   */
+  readonly fleet?: readonly Vessel[];
   /** Whether the active vessel source keeps an archive. Passed through. */
   readonly sourceSupportsHistory?: boolean;
   /** The selected vessel's resolved track, when one has been asked for. */
@@ -168,6 +177,7 @@ export function ContextDrawer({
       <div className="min-h-0 flex-1 overflow-auto">
         <SelectionPanel
           onOpenPort={onOpenPort}
+          fleet={fleet}
           selection={selection}
           vessel={vessel ?? null}
           voyage={voyage}
@@ -193,6 +203,7 @@ export function ContextDrawer({
 function SelectionPanel({
   selection,
   vessel,
+  fleet,
   voyage,
   onClose,
   onOpenPort,
@@ -206,6 +217,7 @@ function SelectionPanel({
   selection: MapSelection;
   vesselTrack?: VesselTrack | null;
   vessel: Vessel | null;
+  fleet?: readonly Vessel[];
   sourceSupportsHistory?: boolean;
   camera?: VesselCamera;
   onReplay?: () => void;
