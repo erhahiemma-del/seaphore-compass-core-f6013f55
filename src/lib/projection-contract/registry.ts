@@ -1792,7 +1792,23 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     },
     reviewedAt: "2026-09-06",
   },
+  {
+    id: "geospatial.terrain-preference",
+    name: "Officer 3D lens preference",
+    producer: "CAPABILITY",
+    description:
+      "Durable per-officer record of whether the 3D Terrain Perspective was the last lens chosen, so the choice follows the officer across sessions and devices. Stores no credential, hint or provider state.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Live Command Map · 3D Intelligence toggle state on arrival",
+      location: "src/features/maritime/useTerrainPerspective.ts",
+      component: "src/lib/officer-map-preferences.functions.ts",
+      interaction: "passive-display",
+    },
+    reviewedAt: "2026-09-06",
+  },
 ];
+
 
 export function getContractEntry(id: string): ProjectionContractEntry | undefined {
   return PROJECTION_CONTRACT.find((e) => e.id === id);
