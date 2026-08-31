@@ -60,6 +60,8 @@ import { useFindingRecords } from "./useFindingRecords";
 import { useTerrainPerspective } from "./useTerrainPerspective";
 import { IntelligenceEarthPanel, asEarthController } from "./IntelligenceEarthPanel";
 import { PortTwinPanel } from "./PortTwinPanel";
+import { CorridorPanel } from "./CorridorPanel";
+import { useMaritimeCorridors } from "./useMaritimeCorridors";
 import { usePortTwin } from "./usePortTwin";
 
 import { CesiumTokenModal } from "@/components/admin/CesiumTokenModal";
@@ -369,6 +371,14 @@ export function MaritimeCommand() {
    * the vessels shown against it are the canonical fleet below.
    */
   const portTwin = usePortTwin();
+  /*
+   * Corridor lens.
+   *
+   * Driven by whether the 3D lens is mounted, because the Cesium adapter
+   * is what draws lane geography — a corridor clock ticking behind the
+   * flat map would be an animation nobody can see.
+   */
+  const corridors = useMaritimeCorridors(terrain.active);
 
   const openFindingRecord = openFindingId ? records.byId(openFindingId) : undefined;
 
@@ -891,6 +901,8 @@ export function MaritimeCommand() {
           by the Cesium renderer, so offering it over the flat map would be
           a control that changes nothing an officer can see.
         */}
+        {terrain.active ? <CorridorPanel corridors={corridors} /> : null}
+
         {terrain.active ? (
           <PortTwinPanel
             twin={portTwin}
@@ -933,6 +945,8 @@ export function MaritimeCommand() {
                 voyages={voyageFeed.voyages}
                 findingIndicators={findingFeatures}
                 portInfrastructure={portTwin.features}
+                corridors={corridors.projection}
+                corridorTransits={corridors.transits}
                 onVesselSelected={handleSelected}
                 onVesselsChanged={handleVessels}
                 onRecorderReady={replay.attachRecorder}
