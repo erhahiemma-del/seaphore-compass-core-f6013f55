@@ -271,6 +271,22 @@ export interface VesselFeedState {
   readonly sourceId: string | null;
   /** When the last successful response was applied. */
   readonly lastAppliedAt: string | null;
+  /*
+   * Geographic honesty, carried with the feed rather than re-derived by
+   * each consumer.
+   *
+   * Without these an empty result is indistinguishable from an unqueried
+   * one, and every surface downstream drew the world view as "0 vessels".
+   * The provider states its own extent; nothing here assumes it.
+   */
+  /** The scope the feed was read for. */
+  readonly scope?: MapScopeId;
+  /** The provider's declared answer for that scope. */
+  readonly support?: ScopeSupport;
+  /** Extent the provider declared, when it declared one. */
+  readonly extentLabel?: string | null;
+  /** The provider's reason for its extent. */
+  readonly extentNote?: string | null;
 }
 
 export function MapCanvas({
