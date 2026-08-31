@@ -639,6 +639,27 @@ export function MapCanvas({
   }, [renderer, portInfrastructure, rendererDraws]);
 
   /*
+   * ── Maritime corridors ────────────────────────────────────────────
+   *
+   * Two pushes, read structurally like the twin estate above: the lane
+   * geometry, and the transit markers on their own clock. An absent
+   * projection clears both, so switching every corridor layer off removes
+   * the overlay without a second code path.
+   */
+  useEffect(() => {
+    const sink = renderer as { setMaritimeCorridors?: (projection: unknown) => void };
+    if (!sink.setMaritimeCorridors || !renderer.isReady()) return;
+    sink.setMaritimeCorridors(corridors ?? EMPTY_CORRIDORS);
+  }, [renderer, corridors, rendererDraws]);
+
+  useEffect(() => {
+    const sink = renderer as { setCorridorTransits?: (transits: unknown) => void };
+    if (!sink.setCorridorTransits || !renderer.isReady()) return;
+    sink.setCorridorTransits(corridorTransitMarkers ?? EMPTY_CORRIDOR_TRANSITS);
+  }, [renderer, corridorTransitMarkers, rendererDraws]);
+
+
+  /*
    * ── Selected vessel track ─────────────────────────────────────────
    *
    * Same shape as the voyage push above: the collection arrives already
