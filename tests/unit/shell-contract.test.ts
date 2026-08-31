@@ -27,12 +27,25 @@ describe("there is one shell", () => {
     expect(SOURCE).toContain("export function AppShell(");
   });
 
+  /*
+   * A wider time budget than the 5s default, and only that.
+   *
+   * This guard reads every source file in the repository — around 1,320
+   * of them, nine megabytes. That takes well under a second on a quiet
+   * machine, and comfortably over five when the pre-commit hook is also
+   * running vitest and a dev server is holding the disk. It timed out
+   * three times that way, which is the failure mode that teaches people
+   * to re-run a security guard until it goes green.
+   *
+   * Not a single assertion is relaxed. The check is identical; it is
+   * merely allowed to finish.
+   */
   it("leaves no file importing the old path", () => {
     const stale = sourceFiles()
       .filter((f) => f !== "tests/unit/shell-contract.test.ts")
       .filter((f) => read(f).includes("layout/IntelligenceCentreShell"));
     expect(stale).toEqual([]);
-  });
+  }, 30_000);
 
   it("mounts the global chrome exactly once", () => {
     for (const part of ["<AppSidebar />", "<TopBar ", "<GoToPalette />", "<AppFooter />"]) {

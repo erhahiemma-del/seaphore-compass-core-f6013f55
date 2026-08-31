@@ -124,6 +124,19 @@ describe("no provider secret is inlined into the client bundle", () => {
    * Vite replaces `import.meta.env.VITE_X` at build time, so a VITE_ alias
    * of a secret is in every visitor's browser.
    */
+  /*
+   * A wider time budget than the 5s default, and only that.
+   *
+   * This guard reads every source file in the repository — around 1,320
+   * of them, nine megabytes. That takes well under a second on a quiet
+   * machine, and comfortably over five when the pre-commit hook is also
+   * running vitest and a dev server is holding the disk. It timed out
+   * three times that way, which is the failure mode that teaches people
+   * to re-run a security guard until it goes green.
+   *
+   * Not a single assertion is relaxed. The check is identical; it is
+   * merely allowed to finish.
+   */
   it("declares no VITE_ alias of any provider secret", () => {
     const leaks: Array<{ file: string; token: string; line: string }> = [];
     for (const file of ALL_FILES) {
@@ -141,7 +154,7 @@ describe("no provider secret is inlined into the client bundle", () => {
     expect(leaks, `VITE_ aliases of provider secrets:\n${JSON.stringify(leaks, null, 2)}`).toEqual(
       [],
     );
-  });
+  }, 30_000);
 
   /*
    * The generic form, which catches a secret this file does not know

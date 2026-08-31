@@ -38,6 +38,19 @@ describe("every source file is text", () => {
     expect(FILES.length).toBeGreaterThan(200);
   });
 
+  /*
+   * A wider time budget than the 5s default, and only that.
+   *
+   * This guard reads every source file in the repository — around 1,320
+   * of them, nine megabytes. That takes well under a second on a quiet
+   * machine, and comfortably over five when the pre-commit hook is also
+   * running vitest and a dev server is holding the disk. It timed out
+   * three times that way, which is the failure mode that teaches people
+   * to re-run a security guard until it goes green.
+   *
+   * Not a single assertion is relaxed. The check is identical; it is
+   * merely allowed to finish.
+   */
   it("contains no control bytes outside tab, newline and carriage return", () => {
     /*
      * Tab (0x09), line feed (0x0a) and carriage return (0x0d) are the
@@ -67,5 +80,5 @@ describe("every source file is text", () => {
     }
     expect(offenders).toEqual([]);
     expect(scanned).toBeGreaterThan(200);
-  });
+  }, 30_000);
 });
