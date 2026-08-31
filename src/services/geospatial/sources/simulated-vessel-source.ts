@@ -492,6 +492,23 @@ export class SimulatedVesselSource implements DescribableVesselSource {
   }
 
   /**
+   * Where the generator draws.
+   *
+   * `regional` only, and deliberately so: the fleet is generated inside
+   * the Nigerian operating area. Declaring `global` would make the world
+   * view claim covered-and-empty, which is the exact confusion the
+   * coverage model exists to prevent — and from fixtures, no less.
+   */
+  geographicCoverage(): GeographicCoverage {
+    return {
+      sourceId: this.id,
+      scopes: ["regional"],
+      extentLabel: "generated Nigerian approaches",
+      note: "simulated traffic is generated inside the Nigerian operating area and is not an observation anywhere",
+    };
+  }
+
+  /**
    * Health, reported honestly for something that cannot be unhealthy.
    *
    * A generator has no upstream to fail, so most of the diagnostic
