@@ -24,8 +24,17 @@ import { useEffect } from "react";
 const PERIOD_MS = 2_600;
 
 export interface AlertPulseTarget {
-  /** Paint the ring at a phase between 0 and 1. */
-  setAlertPulse(phase: number): void;
+  /**
+   * Paint the ring at a phase between 0 and 1.
+   *
+   * Optional, because the attention ring is a renderer *capability* like
+   * every other optional hook on the seam (`setVoyageData`,
+   * `setPortInfrastructure`, `setLayerOpacity`). A renderer that cannot
+   * pulse must degrade to "the ring does not breathe" — calling a method
+   * it never claimed threw a TypeError out of the animation frame, which
+   * tore down the map the moment a second engine was mounted.
+   */
+  setAlertPulse?(phase: number): void;
 }
 
 export interface UseAlertPulseOptions {
@@ -50,7 +59,8 @@ export function useAlertPulse({
   prefersReducedMotion,
 }: UseAlertPulseOptions): void {
   useEffect(() => {
-    if (!target) return;
+    if (!target?.setAlertPulse) return;
+    const paint = target.setAlertPulse.bind(target);
 
     const reduced =
       prefersReducedMotion ??
@@ -63,7 +73,7 @@ export function useAlertPulse({
        * frame happened to stop. A ring frozen mid-fade would read as a
        * fading alert, which is the one thing it must never look like.
        */
-      target.setAlertPulse(1);
+      paint(1);
       return;
     }
 
@@ -78,7 +88,7 @@ export function useAlertPulse({
        */
       const elapsed = (now - started) % PERIOD_MS;
       const phase = (1 - Math.cos((elapsed / PERIOD_MS) * Math.PI * 2)) / 2;
-      target.setAlertPulse(phase);
+      paint(phase);
       frame = requestAnimationFrame(step);
     };
 
