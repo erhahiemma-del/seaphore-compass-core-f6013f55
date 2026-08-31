@@ -365,6 +365,26 @@ export {
   type MapDataStateResult,
 } from "./data-state";
 
+/**
+ * Coverage state. Sits beside `data-state` rather than inside it because
+ * "may this say LIVE?" and "was this area queried at all?" are different
+ * questions, and the second one is the one an empty map turns on.
+ */
+export {
+  COVERAGE_STATE_LABELS,
+  GLOBAL_COVERAGE_UNAVAILABLE,
+  declaresGeographicCoverage,
+  resolveVesselCoverage,
+  scopeSupport,
+  type GeographicCoverage,
+  type GeographicallyScopedSource,
+  type ScopeSupport,
+  type VesselCoverageInput,
+  type VesselCoverageMode,
+  type VesselCoverageResult,
+  type VesselCoverageState,
+} from "./vessel-coverage";
+
 export {
   REPLAY_SPEEDS,
   ReplayPlayer,
