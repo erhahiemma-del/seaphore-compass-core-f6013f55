@@ -1028,6 +1028,17 @@ export const LAYER_IDS = {
   riskHeatmap: "risk-heatmap-layer",
   revenueHeat: "revenue-heatmap-layer",
   incidentReports: "incident-reports-layer",
+  /**
+   * Intelligence findings, as their own layer over the fleet.
+   *
+   * Deliberately not a vessel property: vessel colour and silhouette are
+   * vessel-type semantics, and recolouring a hull because a finding exists
+   * would destroy the only channel that says what the ship is. A finding
+   * is an item of officer work drawn beside its subject, and it is
+   * switchable independently of the fleet.
+   */
+  findingIndicators: "finding-indicators-layer",
+  findingIndicatorLabels: "finding-indicator-labels-layer",
   investigArea: "investigation-area-layer",
   weatherOverlay: "weather-layer",
   /** Non-cooperative SAR detections, and the scene footprints they came from. */

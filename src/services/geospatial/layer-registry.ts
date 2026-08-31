@@ -740,6 +740,17 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     pendingReason: "Awaiting weather connector (post-G5.5.1).",
   },
   {
+    id: "intelligenceFindings",
+    label: "Intelligence findings",
+    description:
+      "Persisted intelligence findings drawn beside their subject. Attention, warning, critical finding and investigation are distinguished; vessel colour and silhouette are untouched.",
+    group: "RISK_INTELLIGENCE",
+    renderLayerIds: [LAYER_IDS.findingIndicators, LAYER_IDS.findingIndicatorLabels],
+    defaultVisible: true,
+    status: "ready",
+    order: 4,
+  },
+  {
     id: "incidents",
     label: "Incidents",
     description: "Environmental and maritime incident reports as warning symbols.",

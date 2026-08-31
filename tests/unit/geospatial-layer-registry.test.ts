@@ -233,6 +233,17 @@ describe("default layer catalogue", () => {
        */
       "geographic-context",
       "graticule",
+      /*
+       * Intelligence findings, added with `defaultVisible: true` without
+       * this list being updated — so the assertion failed on the branch
+       * that introduced it, not on the merge that brought it here.
+       *
+       * Recorded rather than removed: findings on by default is a product
+       * decision, and the point of pinning the exact set is that turning
+       * a layer on by default is a decision somebody makes deliberately
+       * rather than a line that slips in unnoticed.
+       */
+      "intelligenceFindings",
     ]);
   });
 

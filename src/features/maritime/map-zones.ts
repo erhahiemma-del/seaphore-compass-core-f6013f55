@@ -28,6 +28,19 @@ export const MAP_ZONE = {
   LEFT_RAIL: "absolute left-3 top-3 z-30",
   /** Scope, feed notices — anything explaining the current picture. */
   LEFT_CONTEXT: "absolute left-16 top-3 z-20",
+  /**
+   * A panel opened over the chart on the left — a finding, for now.
+   *
+   * Its own zone rather than a reuse of LEFT_CONTEXT, which is a strip of
+   * short notices this would sit on top of, and emphatically not the
+   * left gutter, which belongs to the rail alone. The finding panel first
+   * claimed `left-3 top-3` and so opened underneath the rail it shares an
+   * edge with — the collision this table exists to make impossible.
+   *
+   * Below the notice strip, so both can be open without either hiding
+   * the other.
+   */
+  LEFT_PANEL: "absolute left-16 top-20 z-20",
   /** Overview and selected-entity intelligence. */
   RIGHT_CONTEXT: "absolute right-3 top-3 z-20",
   /** Coordinate and scale readouts. */

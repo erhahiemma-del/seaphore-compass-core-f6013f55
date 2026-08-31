@@ -177,7 +177,38 @@ export {
   type VesselClickEvent,
   type VesselHoverEvent,
   type VesselsAppliedEvent,
+  type InfrastructureClickEvent,
 } from "./event-bus";
+
+/**
+ * Port Digital Twins (Phase 4B).
+ *
+ * Exported from the geospatial barrel because a twin is part of the estate
+ * model, not a feature of one surface: the drawer resolves assets, the
+ * panel reads coverage, and the renderers consume the projection.
+ */
+export {
+  EMPTY_PORT_TWIN_COLLECTION,
+  PORT_TWINS,
+  PORT_TWIN_LAYERS,
+  PORT_TWIN_LAYER_IDS,
+  defaultTwinLayers,
+  findPortTwinAsset,
+  portTwin,
+  portTwinFeatures,
+  portTwinLayer,
+  twinCoverage,
+  twinLayerCoverage,
+  type PortDigitalTwin,
+  type PortTwinAsset,
+  type PortTwinCompliance,
+  type PortTwinComplianceState,
+  type PortTwinFeature,
+  type PortTwinFeatureCollection,
+  type PortTwinLayerCoverage,
+  type PortTwinLayerDefinition,
+  type PortTwinLayerId,
+} from "./port-twin";
 
 export {
   createDefaultLayerRegistry,
@@ -333,6 +364,26 @@ export {
   type MapDataStateInput,
   type MapDataStateResult,
 } from "./data-state";
+
+/**
+ * Coverage state. Sits beside `data-state` rather than inside it because
+ * "may this say LIVE?" and "was this area queried at all?" are different
+ * questions, and the second one is the one an empty map turns on.
+ */
+export {
+  COVERAGE_STATE_LABELS,
+  GLOBAL_COVERAGE_UNAVAILABLE,
+  declaresGeographicCoverage,
+  resolveVesselCoverage,
+  scopeSupport,
+  type GeographicCoverage,
+  type GeographicallyScopedSource,
+  type ScopeSupport,
+  type VesselCoverageInput,
+  type VesselCoverageMode,
+  type VesselCoverageResult,
+  type VesselCoverageState,
+} from "./vessel-coverage";
 
 export {
   REPLAY_SPEEDS,

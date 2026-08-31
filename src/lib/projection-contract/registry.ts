@@ -1687,6 +1687,37 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
     reviewedAt: "2026-08-30",
   },
   {
+    id: "findings.persisted-records",
+    name: "Persisted intelligence findings and officer decisions",
+    producer: "CAPABILITY",
+    description:
+      "Durable findings with status (NEW, UNDER_REVIEW, CONFIRMED, DISMISSED, INVESTIGATION_OPEN, RESOLVED), evidence references and an append-only officer decision trail. Dismissal requires a reason; no status is derived client-side.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Finding panel · read the finding, confirm, dismiss with reason, open a case",
+      location: "src/components/intelligence/FindingPanel.tsx",
+      component: "src/lib/server/finding-records.server.ts",
+      interaction: "action",
+    },
+    reviewedAt: "2026-08-30",
+  },
+  {
+    id: "findings.map-indicators",
+    name: "Finding indicators on the national map",
+    producer: "CAPABILITY",
+    description:
+      "Independent map overlay drawing a finding beside its subject, coloured by indicator class and quieted once decided. A finding whose subject has no observed position is not drawn and stays in the attention list.",
+    state: "PROJECTED",
+    projection: {
+      surface: "National maritime map · intelligence findings layer",
+      location: "src/services/findings/map-features.ts",
+      component: "src/services/geospatial/renderers/maplibre-renderer.ts",
+      interaction: "drill-in",
+    },
+    reviewedAt: "2026-08-30",
+  },
+
+  {
     id: "findings.sanctions-indicator",
     name: "Vessel sanctions indicator",
     producer: "CAPABILITY",
@@ -1730,6 +1761,96 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
       interaction: "passive-display",
     },
     reviewedAt: "2026-08-30",
+  },
+  {
+    id: "geospatial.cesium-ion-credential",
+    name: "Cesium Ion credential state",
+    producer: "CAPABILITY",
+    description:
+      "Whether a Cesium Ion token exists, where it came from (environment or activated), its last-four hint and last upstream validation. The token value itself never leaves the server boundary.",
+    state: "PROJECTED",
+    projection: {
+      surface: "3D Intelligence control and administrator activation modal",
+      location: "src/components/admin/CesiumTokenModal.tsx",
+      component: "src/lib/cesium-ion.functions.ts",
+      interaction: "action",
+    },
+    reviewedAt: "2026-09-06",
+  },
+  {
+    id: "geospatial.terrain-perspective",
+    name: "3D terrain perspective (Cesium)",
+    producer: "CAPABILITY",
+    description:
+      "Second rendering engine for the canonical geospatial picture: the same vessels, findings, selection and camera drawn over Cesium Ion terrain. Holds no separate vessel state.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Live Command Map · 3D Intelligence toggle",
+      location: "src/features/maritime/MaritimeCommand.tsx",
+      component: "src/services/geospatial/renderers/cesium-renderer.ts",
+      interaction: "action",
+    },
+    reviewedAt: "2026-09-06",
+  },
+  {
+    id: "geospatial.terrain-preference",
+    name: "Officer 3D lens preference",
+    producer: "CAPABILITY",
+    description:
+      "Durable per-officer record of whether the 3D Terrain Perspective was the last lens chosen, so the choice follows the officer across sessions and devices. Stores no credential, hint or provider state.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Live Command Map · 3D Intelligence toggle state on arrival",
+      location: "src/features/maritime/useTerrainPerspective.ts",
+      component: "src/lib/officer-map-preferences.functions.ts",
+      interaction: "passive-display",
+    },
+    reviewedAt: "2026-09-06",
+  },
+  {
+    id: "geospatial.intelligence-earth",
+    name: "Intelligence Earth presentation",
+    producer: "CAPABILITY",
+    description:
+      "World terrain, satellite imagery, atmosphere, ocean shading, day/night lighting, relief exaggeration, globe/flat mode and named camera presets for the 3D lens. Presentation of the canonical picture — it holds no vessel, finding or provenance state of its own.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Live Command Map · Intelligence Earth control strip (3D lens only)",
+      location: "src/features/maritime/IntelligenceEarthPanel.tsx",
+      component: "src/services/geospatial/earth-presets.ts",
+      interaction: "action",
+    },
+    reviewedAt: "2026-08-31",
+  },
+  {
+    id: "geospatial.port-digital-twins",
+    name: "Nigerian port Digital Twins",
+    producer: "CAPABILITY",
+    description:
+      "Six port estates (Apapa, Tin Can, Onne, Bonny, Warri, Calabar) as interactive 3D twins over satellite imagery and terrain, with an eleven-layer infrastructure registry, per-asset context (operator, coordinates, capacity, connected vessels from the canonical fleet, compliance state, intelligence notes) and per-layer coverage naming the custodian dataset each unavailable layer needs. Holds no vessel state and no second selection.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Live Command Map · Port digital twin control strip and Context Drawer",
+      location: "src/features/maritime/PortTwinPanel.tsx",
+      component: "src/services/geospatial/port-twin.ts",
+      interaction: "action",
+    },
+    reviewedAt: "2026-09-06",
+  },
+  {
+    id: "geospatial.vessel-geographic-coverage",
+    name: "Vessel geographic coverage state",
+    producer: "CAPABILITY",
+    description:
+      "Per-scope honesty about the vessel feed: LOADING, AVAILABLE (LIVE or HISTORICAL), EMPTY, UNAVAILABLE and ERROR, resolved from the provider's own declared extent rather than from the record count. An unsupported or undeclared scope can never render as a count — the world view states that global vessel data is unavailable from the current source instead of showing zero vessels. The seam stays open for a future global AIS provider, which declares `global` and needs no UI change.",
+    state: "PROJECTED",
+    projection: {
+      surface: "Live Command Map · vessel feed notice and status bar vessel figure",
+      location: "src/features/maritime/MaritimeCommand.tsx",
+      component: "src/services/geospatial/vessel-coverage.ts",
+      interaction: "passive-display",
+    },
+    reviewedAt: "2026-09-07",
   },
 ];
 

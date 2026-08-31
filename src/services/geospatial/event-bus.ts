@@ -154,6 +154,36 @@ export interface AnchorageClickEvent {
   readonly position: LonLat;
 }
 
+/**
+ * An intelligence finding indicator was clicked.
+ *
+ * Its own channel rather than `vessel:click`: a finding is a record with a
+ * lifecycle and a subject, and the surface that opens it needs the finding
+ * id, not only the hull the marker happened to sit beside.
+ */
+/**
+ * A piece of port infrastructure in a Digital Twin was clicked.
+ *
+ * Its own channel rather than `port:click`: a berth group, an anchorage
+ * or a terminal is an asset *within* a port, and the drawer needs the
+ * asset's identity to resolve it — a LOCODE would only reopen the port.
+ */
+export interface InfrastructureClickEvent {
+  readonly assetId: string;
+  /** UN/LOCODE of the twin the asset belongs to. */
+  readonly twinId: string;
+  /** Port twin layer the asset was drawn on. */
+  readonly layer: string;
+  readonly position: LonLat;
+}
+
+export interface FindingClickEvent {
+  readonly findingId: string;
+  readonly subjectType: string;
+  readonly subjectId: string;
+  readonly position: LonLat;
+}
+
 export interface MapEventMap {
   "map:ready": MapReadyEvent;
   "map:perspective": MapPerspectiveEvent;
@@ -173,7 +203,19 @@ export interface MapEventMap {
   "voyage:click": VoyageClickEvent;
   "port:click": PortClickEvent;
   "anchorage:click": AnchorageClickEvent;
+  /*
+   * Three distinct click events, deliberately not merged into one.
+   *
+   * `facility:click` carries a registry facility id (NG-TIN-T02);
+   * `infrastructure:click` carries a port-twin asset and the twin it
+   * belongs to. They look alike and identify different things, and a
+   * single event would force every handler to branch on which id shape
+   * it received — the ambiguity the tagged selection union exists to
+   * prevent.
+   */
   "facility:click": FacilityClickEvent;
+  "finding:click": FindingClickEvent;
+  "infrastructure:click": InfrastructureClickEvent;
   "vessel:hover": VesselHoverEvent;
   "layer:visibility": LayerVisibilityEvent;
   "vessels:applied": VesselsAppliedEvent;

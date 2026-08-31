@@ -32,6 +32,7 @@ import { cn } from "@/lib/utils";
 import type { ReplayDrawerContext } from "./replay-drawer-state";
 import {
   describeSelection,
+  distanceKm,
   type MapSelection,
   type Vessel,
   type Voyage,
@@ -39,6 +40,11 @@ import {
   hasDrawablePosition,
   positionUnavailableReason,
 } from "@/services/geospatial";
+import {
+  findPortTwinAsset,
+  portTwinLayer,
+  type PortTwinAsset,
+} from "@/services/geospatial/port-twin";
 import type { VesselCamera } from "./useVesselCamera";
 
 import { VesselIntelligenceCard, type VesselTabId } from "./VesselIntelligenceCard";
@@ -57,6 +63,15 @@ export interface ContextDrawerProps {
   readonly selection: MapSelection | null;
   /** Resolved vessel, when the selection is a vessel the engine holds. */
   readonly vessel?: Vessel | null;
+  /**
+   * The canonical fleet currently loaded.
+   *
+   * Used only to count vessels standing at a selected piece of port
+   * infrastructure. Passed in rather than fetched so the drawer can never
+   * show a different fleet from the map — and so "no vessels here" is
+   * always a statement about the loaded set, never about the world.
+   */
+  readonly fleet?: readonly Vessel[];
   /** Whether the active vessel source keeps an archive. Passed through. */
   readonly sourceSupportsHistory?: boolean;
   /** The selected vessel's resolved track, when one has been asked for. */
@@ -93,6 +108,7 @@ export function ContextDrawer({
   selection,
   vessel,
   voyage,
+  fleet,
   onClose,
   onOpenPort,
   onAskCopilot,
@@ -168,6 +184,7 @@ export function ContextDrawer({
       <div className="min-h-0 flex-1 overflow-auto">
         <SelectionPanel
           onOpenPort={onOpenPort}
+          fleet={fleet}
           selection={selection}
           vessel={vessel ?? null}
           voyage={voyage}
@@ -193,6 +210,7 @@ export function ContextDrawer({
 function SelectionPanel({
   selection,
   vessel,
+  fleet,
   voyage,
   onClose,
   onOpenPort,
@@ -206,6 +224,7 @@ function SelectionPanel({
   selection: MapSelection;
   vesselTrack?: VesselTrack | null;
   vessel: Vessel | null;
+  fleet?: readonly Vessel[];
   sourceSupportsHistory?: boolean;
   camera?: VesselCamera;
   onReplay?: () => void;
@@ -312,9 +331,6 @@ function SelectionPanel({
      * through to the port panel: a jetty is not a port, and the registry
      * holds a different set of fields for each.
      */
-    case "infrastructure":
-      return <FacilityContext selection={selection} />;
-
     case "investigation":
       return (
         <PendingPanel
@@ -325,6 +341,23 @@ function SelectionPanel({
           ]}
         />
       );
+
+    /*
+     * One case for two models, because both resolve the same selection
+     * kind from different registers.
+     *
+     * The facility registry identifies terminals, jetties, offshore and
+     * gas facilities by its own ids (NG-TIN-T02); the port Digital Twin
+     * identifies quay assets by asset id. The namespaces are disjoint, so
+     * the id is resolved against each in turn rather than trusting
+     * `assetType` — a feature property is one refactor away from stale,
+     * and the two vocabularies were written independently.
+     *
+     * Registry first: it is the larger register and the one an officer
+     * reaches by clicking the infrastructure layer.
+     */
+    case "infrastructure":
+      return <InfrastructureContext selection={selection} fleet={fleet ?? []} />;
 
     default:
       return (
@@ -433,6 +466,124 @@ function VesselTabs({
  * officer can see what will appear once a source connects — and cannot
  * mistake an unconnected section for a checked-and-empty one.
  */
+/**
+ * One piece of port infrastructure, from the Digital Twin model.
+ *
+ * Every field is either sourced or explicitly absent. `Not published`
+ * appears wherever no custodian states a value — an officer must be able
+ * to tell an unpublished capacity from a capacity of zero, and an
+ * unassessed compliance state from a clean one.
+ *
+ * Connected vessels are counted from the loaded fleet by proximity, and
+ * the panel says so: this is an observation about where vessels are
+ * reporting, not a berth allocation record, which no connected source
+ * publishes.
+ */
+function InfrastructurePanel({ asset, fleet }: { asset: PortTwinAsset; fleet: readonly Vessel[] }) {
+  const layer = portTwinLayer(asset.layer);
+  /*
+   * Proximity radius: the asset's own indicative extent when it has one,
+   * otherwise 2 km around the reference point. Deliberately generous —
+   * the position is a reference, so a tight radius would report zero
+   * vessels at a visibly busy quay.
+   */
+  const radiusKm = asset.radiusKm ?? 2;
+  const nearby = fleet.filter(
+    (vessel) =>
+      distanceKm(
+        [vessel.position.lon, vessel.position.lat],
+        [asset.position[0], asset.position[1]],
+      ) <= radiusKm,
+  );
+
+  const rows: readonly { label: string; value: string }[] = [
+    { label: "Layer", value: layer ? layer.label : asset.layer },
+    { label: "Operator", value: asset.operator ?? "Not published" },
+    {
+      label: "Coordinates",
+      value: `${asset.position[1].toFixed(4)}°N, ${asset.position[0].toFixed(4)}°E`,
+    },
+    { label: "Position precision", value: asset.precision },
+    { label: "Capacity", value: asset.capacity ?? "Not published" },
+    ...(asset.radiusKm
+      ? [{ label: "Indicative extent", value: `${asset.radiusKm} km radius` }]
+      : []),
+  ];
+
+  return (
+    <div className="flex flex-col gap-3 p-3">
+      <div>
+        <h3 className="text-[13px] font-semibold text-foreground">{asset.name}</h3>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">{asset.twinId}</p>
+      </div>
+
+      <dl className="grid grid-cols-[minmax(0,7rem)_1fr] gap-x-3 gap-y-1.5 text-[11.5px]">
+        {rows.map((row) => (
+          <div key={row.label} className="col-span-2 grid grid-cols-subgrid">
+            <dt className="text-muted-foreground">{row.label}</dt>
+            <dd className="font-medium text-foreground">{row.value}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <section className="rounded-md border border-border/70 bg-muted/20 p-3">
+        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Connected vessels
+        </h4>
+        <p className="mt-1 text-[12px] font-medium text-foreground">
+          {nearby.length} in the loaded fleet within {radiusKm} km
+        </p>
+        {nearby.length > 0 ? (
+          <ul className="mt-1.5 flex flex-col gap-0.5">
+            {nearby.slice(0, 8).map((vessel) => (
+              <li key={vessel.identity.imo} className="text-[11.5px] text-foreground">
+                {vessel.identity.name}
+                <span className="ml-1.5 text-muted-foreground">IMO {vessel.identity.imo}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <p className="mt-1.5 text-[11px] text-muted-foreground">
+          Counted by proximity from the loaded fleet, not from a berth allocation record. No
+          connected source publishes berth-level assignment.
+        </p>
+      </section>
+
+      <section className="rounded-md border border-border/70 bg-muted/20 p-3">
+        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Compliance status
+        </h4>
+        <p className="mt-1 text-[12px] font-medium text-foreground">
+          {asset.compliance.state === "NOT_ASSESSED" ? "Not assessed" : asset.compliance.state}
+          <span className="ml-1.5 text-muted-foreground">({asset.compliance.authority})</span>
+        </p>
+        <p className="mt-1 text-[11px] text-muted-foreground">{asset.compliance.note}</p>
+      </section>
+
+      <section>
+        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Intelligence notes
+        </h4>
+        <ul className="mt-1 flex flex-col gap-1">
+          {asset.notes.map((note) => (
+            <li key={note} className="text-[11.5px] text-muted-foreground">
+              {note}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="rounded-md border border-dashed border-border/60 p-3">
+        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Provenance
+        </h4>
+        <p className="mt-1 text-[11.5px] text-foreground">{asset.provenance.source}</p>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">{asset.provenance.note}</p>
+      </section>
+    </div>
+  );
+}
+
 function PendingPanel({
   title,
   sections,
@@ -543,7 +694,13 @@ function PortContext({ selection }: { selection: MapSelection }) {
  * a plain switch that cannot hold hooks — the same reason `PortContext`
  * exists next door.
  */
-function FacilityContext({ selection }: { selection: MapSelection }) {
+function InfrastructureContext({
+  selection,
+  fleet,
+}: {
+  selection: MapSelection;
+  fleet: readonly Vessel[];
+}) {
   const { registry, pending } = useFacilityRegistry();
   const found = useMemo(() => findFacility(registry, selection.id), [registry, selection.id]);
 
@@ -559,14 +716,29 @@ function FacilityContext({ selection }: { selection: MapSelection }) {
 
   if (!found) {
     /*
-     * Selected but unknown to the registry. Stated rather than shown as
-     * an empty panel, because "we hold no record" and "the record is
-     * empty" are different answers.
+     * Not a registry facility. Try the port Digital Twin before giving
+     * up — the two registers cover different things and a selection can
+     * legitimately come from either.
+     */
+    const asset = findPortTwinAsset(selection.id);
+    if (asset) return <InfrastructurePanel asset={asset} fleet={fleet} />;
+
+    /*
+     * Selected and held by neither. Stated rather than shown as an empty
+     * panel, because "we hold no record" and "the record is empty" are
+     * different answers.
      */
     return (
-      <Unresolved
-        title="Facility not in the registry"
-        detail={`Nothing in the facility registry carries the id ${selection.id}. The marker was selected, but no record backs it.`}
+      <PendingPanel
+        title="Infrastructure"
+        sections={["Asset", "Capacity", "Connected vessels", "Compliance"]}
+        pending={[
+          {
+            label: `Asset record (${"assetType" in selection ? selection.assetType : "unknown"})`,
+            reason:
+              "Neither the facility registry nor the port Digital Twin holds this id. The marker was selected; no record backs it.",
+          },
+        ]}
       />
     );
   }

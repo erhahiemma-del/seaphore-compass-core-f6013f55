@@ -16,6 +16,8 @@ import { MapPinOff } from "lucide-react";
 import { prefersReducedMotion } from "@/hooks/use-reduced-motion";
 import { AssetPopup } from "./AssetPopup";
 import { EMPTY_TRACK, type TrackCollection } from "@/services/geospatial/vessel-track";
+import type { FindingIndicatorCollection } from "@/services/findings/map-features";
+
 import { useAlertPulse } from "./useAlertPulse";
 import { installMapHealthProbe } from "./health-probe";
 import { feedErrorFromSource } from "./feed-error";
@@ -67,6 +69,9 @@ import {
   type MapRenderer,
   type MapStylePaletteName,
   type MapScopeId,
+  scopeSupport,
+  declaresGeographicCoverage,
+  type ScopeSupport,
   type SharedGeospatialService,
   type Vessel,
   type VesselSource,
@@ -125,6 +130,12 @@ const MODE_CONTROLS: Readonly<Record<MapCanvasMode, MapControlOptions>> = {
   context: { navigation: true, compass: false, scale: true },
 };
 
+/** Empty overlay. Clears the layer without a special case. */
+const EMPTY_FINDINGS: FindingIndicatorCollection = { type: "FeatureCollection", features: [] };
+
+/** Cleared overlay, hoisted so the effect's identity check stays stable. */
+const EMPTY_PORT_INFRASTRUCTURE = { type: "FeatureCollection" as const, features: [] };
+
 export interface MapCanvasProps {
   /** Presentation mode. Defaults to the full command surface. */
   readonly mode?: MapCanvasMode;
@@ -149,6 +160,27 @@ export interface MapCanvasProps {
    * every pre-M2 surface wants.
    */
   readonly voyages?: readonly Voyage[];
+  /**
+   * Intelligence findings to draw as an independent overlay.
+   *
+   * Already projected by the caller, because deciding whether a finding
+   * may be placed at all is a domain judgement — a finding whose subject
+   * has no observed position is not drawn rather than placed somewhere
+   * plausible. Absent means no finding overlay, which leaves the fleet
+   * exactly as it is.
+   */
+  readonly findingIndicators?: FindingIndicatorCollection;
+  /**
+   * Port Digital Twin infrastructure to draw, already projected.
+   *
+   * Which twin is open and which of its layers are on are decided in the
+   * port-twin domain, not here — the canvas only pushes what it is given.
+   * Absent means no twin overlay, which leaves the fleet untouched.
+   */
+  readonly portInfrastructure?: {
+    readonly type: "FeatureCollection";
+    readonly features: readonly unknown[];
+  };
   /**
    * Intelligence domain this map is serving.
    *
@@ -242,12 +274,30 @@ export interface VesselFeedState {
   readonly sourceId: string | null;
   /** When the last successful response was applied. */
   readonly lastAppliedAt: string | null;
+  /*
+   * Geographic honesty, carried with the feed rather than re-derived by
+   * each consumer.
+   *
+   * Without these an empty result is indistinguishable from an unqueried
+   * one, and every surface downstream drew the world view as "0 vessels".
+   * The provider states its own extent; nothing here assumes it.
+   */
+  /** The scope the feed was read for. */
+  readonly scope?: MapScopeId;
+  /** The provider's declared answer for that scope. */
+  readonly support?: ScopeSupport;
+  /** Extent the provider declared, when it declared one. */
+  readonly extentLabel?: string | null;
+  /** The provider's reason for its extent. */
+  readonly extentNote?: string | null;
 }
 
 export function MapCanvas({
   mode = "command",
   scope: scopeOverride,
   voyages,
+  findingIndicators,
+  portInfrastructure,
   domain,
   palette = "maritime",
   basemapStyle,
@@ -382,6 +432,8 @@ export function MapCanvas({
     () =>
       installMapHealthProbe(() => ({
         rendererDraws,
+        rendererId: useMapSessionStore.getState().rendererId,
+        rendererStatus: useMapSessionStore.getState().rendererStatus,
         zoom: service.get().zoom,
         vesselCount: engine.snapshot().length,
         sources: service.get().enabledSources,
@@ -535,6 +587,40 @@ export function MapCanvas({
   }, [renderer, voyages, rendererDraws]);
 
   /*
+   * ── Intelligence findings overlay ─────────────────────────────────
+   *
+   * Same shape as the voyage push: an already-decided collection handed
+   * to an independent source. An empty collection clears the overlay, so
+   * a signed-out or empty estate removes the indicators without a second
+   * code path, and the vessel source is never touched.
+   */
+  useEffect(() => {
+    if (!renderer.setFindingIndicators || !renderer.isReady()) return;
+    renderer.setFindingIndicators(findingIndicators ?? EMPTY_FINDINGS);
+  }, [renderer, findingIndicators, rendererDraws]);
+
+  /*
+   * ── Port Digital Twin infrastructure ──────────────────────────────
+   *
+   * The same already-decided push. An empty collection clears the
+   * overlay, so closing a twin or switching every layer off removes the
+   * estate without a second code path — and a renderer that does not
+   * implement the seam keeps the flat operational map unchanged.
+   */
+  useEffect(() => {
+    /*
+     * Read structurally rather than off the union: `MapLibreRenderer` is
+     * referenced here as a concrete class, and a concrete class that does
+     * not implement an optional seam narrows the property away entirely.
+     * Asking the instance is the honest question — "can you draw this?" —
+     * and keeps MapLibre free of a twin method it has no use for.
+     */
+    const sink = renderer as { setPortInfrastructure?: (features: unknown) => void };
+    if (!sink.setPortInfrastructure || !renderer.isReady()) return;
+    sink.setPortInfrastructure(portInfrastructure ?? EMPTY_PORT_INFRASTRUCTURE);
+  }, [renderer, portInfrastructure, rendererDraws]);
+
+  /*
    * ── Selected vessel track ─────────────────────────────────────────
    *
    * Same shape as the voyage push above: the collection arrives already
@@ -678,6 +764,15 @@ export function MapCanvas({
   useEffect(() => {
     let disposed = false;
 
+    /*
+     * Asked of the provider once per feed, not assumed and not looked up
+     * by id. An undeclared extent stays undeclared — the resolver refuses
+     * to call an empty result an empty sea in that case, which is the
+     * conservative direction.
+     */
+    const declared = declaresGeographicCoverage(source) ? source.geographicCoverage() : null;
+    const support: ScopeSupport = scopeSupport(source, scope);
+
     // Reported alongside the vessels so a consumer can tell an empty
     // fleet apart from a feed that has not answered or has failed.
     let feed: VesselFeedState = {
@@ -685,6 +780,10 @@ export function MapCanvas({
       error: null,
       sourceId: source.id,
       lastAppliedAt: null,
+      scope,
+      support,
+      extentLabel: declared?.extentLabel ?? null,
+      extentNote: declared?.note ?? null,
     };
     /*
      * The displayed set comes from the engine; the live set is whatever
@@ -781,7 +880,10 @@ export function MapCanvas({
       clearInterval(interval);
       unsubscribe?.();
     };
-  }, [source, engine, recorder, bus, setVesselCount, onVesselsChanged]);
+    // `scope` joins the dependencies because the feed now reports the
+    // provider's support for the scope being viewed; without it, switching
+    // to the world view would keep reporting the regional verdict.
+  }, [source, engine, recorder, bus, setVesselCount, onVesselsChanged, scope]);
 
   /*
    * One clock for every attention ring, driven from here because this is

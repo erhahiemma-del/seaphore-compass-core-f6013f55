@@ -878,6 +878,56 @@ export type Database = {
           },
         ];
       };
+      finding_decisions: {
+        Row: {
+          decided_at: string;
+          decision: string;
+          evidence_ref: string | null;
+          finding_id: string;
+          id: string;
+          investigation_id: string | null;
+          new_status: string;
+          note: string | null;
+          officer_id: string;
+          previous_status: string;
+          reason: string | null;
+        };
+        Insert: {
+          decided_at?: string;
+          decision: string;
+          evidence_ref?: string | null;
+          finding_id: string;
+          id?: string;
+          investigation_id?: string | null;
+          new_status: string;
+          note?: string | null;
+          officer_id: string;
+          previous_status: string;
+          reason?: string | null;
+        };
+        Update: {
+          decided_at?: string;
+          decision?: string;
+          evidence_ref?: string | null;
+          finding_id?: string;
+          id?: string;
+          investigation_id?: string | null;
+          new_status?: string;
+          note?: string | null;
+          officer_id?: string;
+          previous_status?: string;
+          reason?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "finding_decisions_finding_id_fkey";
+            columns: ["finding_id"];
+            isOneToOne: false;
+            referencedRelation: "intelligence_findings";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       finding_investigation_links: {
         Row: {
           created_at: string;
@@ -1424,6 +1474,78 @@ export type Database = {
           },
         ];
       };
+      intelligence_findings: {
+        Row: {
+          confidence: string | null;
+          created_at: string;
+          created_by: string | null;
+          data_state: string | null;
+          description: string;
+          detected_at: string;
+          evidence_refs: Json;
+          finding_type: string;
+          id: string;
+          latitude: number | null;
+          longitude: number | null;
+          related: Json;
+          severity: string;
+          source: string;
+          source_record_id: string | null;
+          status: string;
+          subject_id: string;
+          subject_name: string | null;
+          subject_type: string;
+          updated_at: string;
+          why_attention: string;
+        };
+        Insert: {
+          confidence?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          data_state?: string | null;
+          description: string;
+          detected_at?: string;
+          evidence_refs?: Json;
+          finding_type: string;
+          id?: string;
+          latitude?: number | null;
+          longitude?: number | null;
+          related?: Json;
+          severity?: string;
+          source: string;
+          source_record_id?: string | null;
+          status?: string;
+          subject_id: string;
+          subject_name?: string | null;
+          subject_type: string;
+          updated_at?: string;
+          why_attention: string;
+        };
+        Update: {
+          confidence?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          data_state?: string | null;
+          description?: string;
+          detected_at?: string;
+          evidence_refs?: Json;
+          finding_type?: string;
+          id?: string;
+          latitude?: number | null;
+          longitude?: number | null;
+          related?: Json;
+          severity?: string;
+          source?: string;
+          source_record_id?: string | null;
+          status?: string;
+          subject_id?: string;
+          subject_name?: string | null;
+          subject_type?: string;
+          updated_at?: string;
+          why_attention?: string;
+        };
+        Relationships: [];
+      };
       intelligence_reports: {
         Row: {
           classification: string;
@@ -1591,6 +1713,27 @@ export type Database = {
           count?: number;
           officer_id?: string;
           window_day?: string;
+        };
+        Relationships: [];
+      };
+      officer_map_preferences: {
+        Row: {
+          created_at: string;
+          terrain_3d: boolean;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          terrain_3d?: boolean;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          terrain_3d?: boolean;
+          updated_at?: string;
+          user_id?: string;
         };
         Relationships: [];
       };

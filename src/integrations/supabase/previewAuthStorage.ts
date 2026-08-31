@@ -51,21 +51,6 @@ export function brokeredPreviewStorage() {
     new Promise((resolve) => {
       const requestId = newId();
       let done = false;
-      /*
-       * `let`, declared before it is assigned, and it cannot become `const`.
-       *
-       * `finish` closes over `timer` to clear it, and `finish` can run
-       * before the timeout is ever created — a reply arriving on the
-       * first tick calls it straight from `onMessage`. Declaring
-       * `const timer` at the assignment below would put that read in the
-       * temporal dead zone and throw a ReferenceError on exactly the
-       * fast path this code exists to handle.
-       *
-       * This note has now been lost twice to regenerations of this file.
-       * If it disappears again, lint fails on `prefer-const` and the fix
-       * is to restore the comment, not to satisfy the rule.
-       */
-      // eslint-disable-next-line prefer-const -- see above: read before assignment
       let timer: ReturnType<typeof setTimeout>;
       const finish = (r: { ok: boolean; value?: string | null } | null) => {
         if (done) return;

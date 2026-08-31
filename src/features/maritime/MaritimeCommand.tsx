@@ -31,6 +31,8 @@ import {
   MAP_SCOPES,
   getVesselSource,
   resolveMapDataState,
+  resolveVesselCoverage,
+  type VesselCoverageResult,
   mapEventBus,
   type MapScopeId,
   sgs,
@@ -54,6 +56,16 @@ import { VoiceCommand } from "./VoiceCommand";
 import { MAP_ZONE } from "./map-zones";
 import { useVoyages, type VoyageFeed } from "./useVoyages";
 import { MapCanvas, type VesselFeedState } from "./MapCanvas";
+import { useFindingRecords } from "./useFindingRecords";
+import { useTerrainPerspective } from "./useTerrainPerspective";
+import { IntelligenceEarthPanel, asEarthController } from "./IntelligenceEarthPanel";
+import { PortTwinPanel } from "./PortTwinPanel";
+import { usePortTwin } from "./usePortTwin";
+
+import { CesiumTokenModal } from "@/components/admin/CesiumTokenModal";
+import { FindingPanel } from "@/components/intelligence/FindingPanel";
+import { toFindingIndicatorCollection } from "@/services/findings/map-features";
+import type { FindingDecisionKind, PersistedFinding } from "@/services/findings/record";
 import { useReplayTimeline } from "./useReplayTimeline";
 import { useVesselCamera } from "./useVesselCamera";
 import { OperationalLegend } from "./OperationalLegend";
@@ -281,6 +293,33 @@ export function MaritimeCommand() {
   const replayOwner = displayOwner(replay.status);
 
   /*
+   * Coverage, resolved once and read by every surface that would
+   * otherwise invent its own reading of an empty fleet.
+   *
+   * The count comes from the live set, and `historical` from the replay
+   * player's own state — so a replayed frame can never be presented as
+   * current coverage. The scope comes from the feed when the feed has
+   * answered, because a verdict computed against a scope the officer has
+   * since left is a verdict about the wrong ocean.
+   */
+  const coverage = useMemo(
+    () =>
+      resolveVesselCoverage({
+        loading: feed.loading,
+        error: feed.error,
+        sourceId: feed.sourceId,
+        lastAppliedAt: feed.lastAppliedAt,
+        recordCount: liveVessels.length,
+        scope: feed.scope ?? scope,
+        support: feed.support ?? "UNDECLARED",
+        extentLabel: feed.extentLabel ?? null,
+        extentNote: feed.extentNote ?? null,
+        historical: replayOwner !== "LIVE",
+      }),
+    [feed, liveVessels.length, scope, replayOwner],
+  );
+
+  /*
    * Continuous approach assessment.
    *
    * The alert domain existed and produced nothing because nothing ran
@@ -310,6 +349,146 @@ export function MaritimeCommand() {
    * already stored. Nothing is screened here and no provider is called.
    */
   const findings = useIntelligenceFindings();
+
+  /*
+   * The persisted findings, which are a different thing from the
+   * projection above: these carry a status an officer set and a decision
+   * trail, so they are what the map indicators and the finding panel read.
+   * The projection stays as the mixed attention list it always was.
+   */
+  const records = useFindingRecords();
+  const [openFindingId, setOpenFindingId] = useState<string | null>(null);
+  /*
+   * The 3D lens. Holds a renderer and a credential state, nothing else —
+   * vessels, selection, camera and provenance stay canonical.
+   */
+  const terrain = useTerrainPerspective();
+
+  /*
+   * Port Digital Twins. State only — the estate geometry is derived, and
+   * the vessels shown against it are the canonical fleet below.
+   */
+  const portTwin = usePortTwin();
+
+  const openFindingRecord = openFindingId ? records.byId(openFindingId) : undefined;
+
+  /*
+   * Where a finding may be drawn.
+   *
+   * The subject's last observed position, from the fleet already on
+   * screen — never a position invented for the finding. A subject the map
+   * cannot locate is left out of the overlay and stays in the attention
+   * list, which is the honest outcome: the finding exists, its location
+   * does not.
+   */
+  const findingFeatures = useMemo(() => {
+    const byImo = new Map(vessels.map((vessel) => [vessel.identity.imo, vessel]));
+    return toFindingIndicatorCollection(records.findings, (finding) => {
+      if (finding.subjectType !== "vessel") return null;
+      const vessel = byImo.get(finding.subjectId);
+      if (!vessel) return null;
+      return { lat: vessel.position.lat, lng: vessel.position.lon };
+    });
+  }, [records.findings, vessels]);
+
+  /*
+   * Clicking an indicator opens the finding, and the finding opens the
+   * subject through the same `sgs.select` every other route uses. The map
+   * gains no second selection path from this layer.
+   */
+  /*
+   * Clicking port infrastructure opens it through the same `sgs.select`
+   * every other object uses, so the twin adds no second selection path
+   * and the drawer resolves the asset from the port-twin model.
+   */
+  useEffect(
+    () =>
+      mapEventBus.on("infrastructure:click", ({ assetId, layer, position }) => {
+        sgs.select({ kind: "infrastructure", id: assetId, assetType: layer, focus: position });
+      }),
+    [],
+  );
+
+  useEffect(
+    () =>
+      mapEventBus.on("finding:click", ({ findingId, subjectType, subjectId }) => {
+        setOpenFindingId(findingId);
+        if (subjectType === "vessel" && subjectId !== "") {
+          sgs.select({ kind: "vessel", id: subjectId, imo: subjectId });
+        }
+      }),
+    [],
+  );
+
+  const decideFindingRecord = useCallback(
+    async (
+      finding: PersistedFinding,
+      decision: FindingDecisionKind,
+      reason?: string,
+      note?: string,
+    ) => {
+      try {
+        await records.decide({ findingId: finding.id, decision, reason, note });
+        toast.success(
+          decision === "CONFIRM"
+            ? "Observation confirmed and recorded against your name."
+            : "Finding dismissed with your reason on file.",
+        );
+      } catch (error) {
+        // Nothing is shown as decided that was not written.
+        toast.error(
+          error instanceof Error
+            ? `The decision was not recorded: ${error.message}`
+            : "The decision was not recorded.",
+        );
+      }
+    },
+    [records],
+  );
+
+  /*
+   * Opening a case from a persisted finding does both halves or reports
+   * the failure: the case link, then the finding's own status. The status
+   * is only moved after the link is written, so a finding never claims a
+   * case that does not exist.
+   */
+  const openCaseForRecord = useCallback(
+    async (finding: PersistedFinding) => {
+      try {
+        const result = await openInvestigationForFinding({
+          data: {
+            findingId: finding.id,
+            findingType: finding.findingType,
+            subjectType: finding.subjectType,
+            subjectId: finding.subjectId,
+            subjectLabel: finding.subjectName ?? undefined,
+            source: finding.source,
+            sourceRecordId: finding.sourceRecordId ?? undefined,
+            summary: finding.description,
+            evidenceRef: finding.evidenceRefs[0]?.ref ?? undefined,
+          },
+        });
+        await records.decide({
+          findingId: finding.id,
+          decision: "OPEN_INVESTIGATION",
+          investigationId: result.investigationId,
+          note: `Case ${result.caseNumber}`,
+        });
+        toast.success(
+          result.created
+            ? `Case ${result.caseNumber} opened from this finding.`
+            : `Finding attached to case ${result.caseNumber}.`,
+        );
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? `Could not open a case for this finding: ${error.message}`
+            : "Could not open a case for this finding.",
+        );
+      }
+    },
+    [records],
+  );
 
   /*
    * A finding leads to the same canonical context as everything else.
@@ -647,6 +826,31 @@ export function MaritimeCommand() {
               </Button>
             ))}
           </div>
+
+          {/*
+            Cesium is an additional lens, not a replacement.
+
+            Its own control beside the projection group, because it is a
+            different engine drawing the same canonical picture rather
+            than a fourth projection of the operational map. When no Ion
+            credential is configured the control says so and offers
+            activation — an unconfigured credential is never allowed to
+            look like an empty sea.
+          */}
+          <Button
+            size="sm"
+            variant={terrain.active ? "default" : "outline"}
+            className="h-7 shrink-0 text-xs"
+            aria-pressed={terrain.active}
+            title={
+              terrain.unavailableReason ??
+              "3D intelligence view — Cesium Ion terrain, same vessels, ports, findings and selection"
+            }
+            onClick={terrain.toggle}
+            disabled={terrain.loading}
+          >
+            {terrain.active ? "Exit 3D Intelligence" : "3D Intelligence"}
+          </Button>
         </header>
 
         {/* One quiet line saying what a search just did. Not a toast: the
@@ -658,6 +862,23 @@ export function MaritimeCommand() {
           >
             {lastPlan.explanation}
           </div>
+        ) : null}
+
+        {/* Shown only while the terrain lens is mounted: controls for an
+            engine that is not running would be controls over nothing. */}
+        {terrain.active ? <IntelligenceEarthPanel renderer={terrain.renderer} /> : null}
+
+        {/*
+          Twin controls sit beside the Earth controls and are offered only
+          while the 3D lens is mounted: the infrastructure overlay is drawn
+          by the Cesium renderer, so offering it over the flat map would be
+          a control that changes nothing an officer can see.
+        */}
+        {terrain.active ? (
+          <PortTwinPanel
+            twin={portTwin}
+            onOpenTwin={(presetId) => asEarthController(terrain.renderer)?.flyToPreset(presetId)}
+          />
         ) : null}
 
         <div className="flex min-h-0 flex-1">
@@ -693,6 +914,8 @@ export function MaritimeCommand() {
               <MapCanvas
                 scope={scope}
                 voyages={voyageFeed.voyages}
+                findingIndicators={findingFeatures}
+                portInfrastructure={portTwin.features}
                 onVesselSelected={handleSelected}
                 onVesselsChanged={handleVessels}
                 onRecorderReady={replay.attachRecorder}
@@ -701,6 +924,7 @@ export function MaritimeCommand() {
                   engineRef.current = engine;
                 }}
                 replayOwnsDisplay={replayOwnsDisplay(replayOwner)}
+                renderer={terrain.renderer}
               />
             }
 
@@ -712,6 +936,52 @@ export function MaritimeCommand() {
             <div className={cn(MAP_ZONE.BOTTOM_RIGHT, "flex justify-end")}>
               <OperationalLegend />
             </div>
+
+            {/* Activation, not a silent failure: an administrator can supply
+                the Ion credential the moment the view is asked for. */}
+            <CesiumTokenModal
+              open={terrain.requestActivation}
+              onOpenChange={(next) => {
+                if (!next) terrain.dismissActivation();
+              }}
+              status={terrain.status}
+              onActivated={() => {
+                terrain.refresh();
+                terrain.dismissActivation();
+              }}
+            />
+
+            {/*
+              The finding panel opens over map, not over the context
+              drawer: an officer ruling on a finding is reading the
+              vessel identity next to it, so covering that would remove
+              the evidence the decision rests on.
+            */}
+            {openFindingRecord ? (
+              /*
+                Zoned rather than positioned by hand. This claimed
+                `left-3 top-3` — the control rail's own anchor, which the
+                zone table reserves — so the panel opened underneath the
+                rail it shares an edge with. `LEFT_CONTEXT` is the zone
+                for exactly this: on the left, over the map, clear of the
+                rail's gutter.
+              */
+              <div className={cn("pointer-events-auto w-[22rem]", MAP_ZONE.LEFT_PANEL)}>
+                <FindingPanel
+                  finding={openFindingRecord}
+                  onClose={() => setOpenFindingId(null)}
+                  onOpenSubject={(finding) => {
+                    if (finding.subjectType !== "vessel") return;
+                    sgs.select({ kind: "vessel", id: finding.subjectId, imo: finding.subjectId });
+                  }}
+                  onConfirm={(finding) => decideFindingRecord(finding, "CONFIRM")}
+                  onDismiss={(finding, reason, note) =>
+                    decideFindingRecord(finding, "DISMISS", reason, note)
+                  }
+                  onOpenInvestigation={openCaseForRecord}
+                />
+              </div>
+            ) : null}
 
             {/*
             Scope control and the voyage feed's own state, together.
@@ -771,7 +1041,7 @@ export function MaritimeCommand() {
                 empty list. Saying so here is what stops an officer
                 reading a collection gap as an empty sea.
               */}
-              <VesselFeedNotice feed={feed} count={liveVessels.length} />
+              <VesselFeedNotice feed={feed} count={liveVessels.length} coverage={coverage} />
               <VoyageFeedNotice feed={voyageFeed} />
             </div>
           </main>
@@ -780,6 +1050,7 @@ export function MaritimeCommand() {
           <ContextDrawer
             selection={selection}
             vessel={selectedVessel}
+            fleet={vessels}
             voyage={selectedVoyage}
             sourceSupportsHistory={sourceSupportsHistory}
             vesselTrack={vesselTrack}
@@ -864,7 +1135,7 @@ export function MaritimeCommand() {
           onScrub={replay.scrub}
         />
 
-        <MapStatusBar />
+        <MapStatusBar coverage={coverage} />
       </div>
     </AppShell>
   );
@@ -1047,7 +1318,7 @@ function ToolButton({
   );
 }
 
-function MapStatusBar() {
+function MapStatusBar({ coverage }: { coverage: VesselCoverageResult }) {
   const vesselCount = useMapSessionStore((s) => s.vesselCount);
   const rendererId = useMapSessionStore((s) => s.rendererId);
   const rendererStatus = useMapSessionStore((s) => s.rendererStatus);
@@ -1057,7 +1328,15 @@ function MapStatusBar() {
 
   return (
     <footer className="flex shrink-0 items-center gap-4 border-t border-border px-4 py-1.5 text-[11px] text-muted-foreground">
-      <Stat label="vessels" value={String(vesselCount)} />
+      {/*
+       * A count is only printed when it means something. An unsupported or
+       * undeclared scope gets the state word instead: "0" next to the word
+       * vessels is a claim about the sea, and the provider has not made it.
+       */}
+      <Stat
+        label="vessels"
+        value={coverage.countIsMeaningful ? String(vesselCount) : coverage.label}
+      />
       <Stat label="layers" value={String(activeLayerCount)} />
       <Stat label="fps" value={fps === null ? "—" : String(fps)} />
       <span className="ml-auto font-mono">
@@ -1131,11 +1410,26 @@ function ScopeToggle({
 /**
  * What the vessel feed itself claims, in an officer's terms.
  *
- * Derived from the canonical `resolveMapDataState` rather than a local
- * judgement, so the map cannot say LIVE while the drawer says stale.
- * Silent only when the picture is genuinely live and populated.
+ * Two resolvers, deliberately. `resolveMapDataState` answers whether the
+ * picture may be called live — a freshness question. `resolveVesselCoverage`
+ * answers whether the area was queried at all — a coverage question. The
+ * second is the one the world view turns on: it is the difference between
+ * "no vessels reported" and "this provider never looked here", and the
+ * previous single-resolver notice could only say NO DATA for both.
+ *
+ * Freshness wins the badge when the feed is stale, because a delayed
+ * regional picture is a more urgent caveat than a coverage footnote.
+ * Coverage wins whenever it is the reason the map is empty.
  */
-function VesselFeedNotice({ feed, count }: { feed: VesselFeedState; count: number }) {
+function VesselFeedNotice({
+  feed,
+  count,
+  coverage,
+}: {
+  feed: VesselFeedState;
+  count: number;
+  coverage: VesselCoverageResult;
+}) {
   const state = resolveMapDataState({
     loading: feed.loading,
     error: feed.error,
@@ -1143,18 +1437,26 @@ function VesselFeedNotice({ feed, count }: { feed: VesselFeedState; count: numbe
     lastAppliedAt: feed.lastAppliedAt,
     recordCount: count,
   });
-  if (state.isLive && count > 0) return null;
+  // Silent only when the picture is live, populated and fully covered.
+  if (state.isLive && count > 0 && coverage.countIsMeaningful) return null;
+
+  const showDelayed = state.state === "DELAYED";
+  const label = showDelayed ? state.label : coverage.label;
+  const reason = showDelayed ? state.reason : coverage.reason;
 
   return (
     <div
       data-testid="vessel-feed-notice"
       data-feed-state={state.state}
+      data-coverage-state={coverage.state}
+      data-coverage-mode={coverage.mode}
+      data-scope-unsupported={coverage.scopeUnsupported ? "true" : "false"}
       className="pointer-events-auto w-full rounded-md border border-border/60 bg-background/92 px-2.5 py-1.5 backdrop-blur-sm"
     >
       <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-        Vessels · {state.label}
+        Vessels · {label}
       </div>
-      <p className="text-[11px] leading-relaxed text-muted-foreground">{state.reason}</p>
+      <p className="text-[11px] leading-relaxed text-muted-foreground">{reason}</p>
     </div>
   );
 }

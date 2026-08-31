@@ -22,6 +22,16 @@ import { MAX_CAMERA_ZOOM } from "@/services/geospatial/constants";
 export interface MapHealthSnapshot {
   /** True once a real drawing engine is attached (not the empty stub). */
   readonly rendererDraws: boolean;
+  /**
+   * Which adapter is mounted — `"maplibre"`, `"cesium"`, or null.
+   *
+   * Reported because "the 3D view mounted" is otherwise only checkable by
+   * eye, and a fallback to the 2D map is indistinguishable from a 3D view
+   * that never started. An id and a status, never a renderer handle.
+   */
+  readonly rendererId: string | null;
+  /** `idle` | `mounting` | `ready` | `error`, as the session holds it. */
+  readonly rendererStatus: string;
   /** Current camera zoom, as the shared geospatial service holds it. */
   readonly zoom: number;
   /** The camera ceiling this build was compiled with. */

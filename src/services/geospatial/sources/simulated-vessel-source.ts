@@ -56,6 +56,7 @@ import {
   type VesselQuery,
   type VesselSourceDescriptor,
 } from "../vessel-source";
+import type { GeographicCoverage } from "../vessel-coverage";
 
 /**
  * How often the simulated provider "reports".
@@ -489,6 +490,23 @@ export class SimulatedVesselSource implements DescribableVesselSource {
 
   describe(): VesselSourceDescriptor {
     return this.descriptor;
+  }
+
+  /**
+   * Where the generator draws.
+   *
+   * `regional` only, and deliberately so: the fleet is generated inside
+   * the Nigerian operating area. Declaring `global` would make the world
+   * view claim covered-and-empty, which is the exact confusion the
+   * coverage model exists to prevent — and from fixtures, no less.
+   */
+  geographicCoverage(): GeographicCoverage {
+    return {
+      sourceId: this.id,
+      scopes: ["regional"],
+      extentLabel: "generated Nigerian approaches",
+      note: "simulated traffic is generated inside the Nigerian operating area and is not an observation anywhere",
+    };
   }
 
   /**
