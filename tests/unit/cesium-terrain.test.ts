@@ -26,6 +26,9 @@ interface Entity {
 
 const state = {
   terrainRejects: false,
+  imageryRejects: false,
+  flights: [] as unknown[],
+  morphs: [] as string[],
   entities: [] as Entity[],
   clickHandler: null as ((movement: unknown) => void) | null,
   ionToken: null as string | null,
@@ -34,17 +37,41 @@ const state = {
 vi.mock("cesium", () => {
   class Viewer {
     scene = {
-      globe: { enableLighting: false, pick: () => ({}) },
+      globe: {
+        enableLighting: false,
+        dynamicAtmosphereLighting: false,
+        showGroundAtmosphere: false,
+        oceanNormalMapUrl: undefined as string | undefined,
+        baseColor: null as unknown,
+        maximumScreenSpaceError: 0,
+        tileCacheSize: 0,
+        cullWithChildrenBounds: false,
+        preloadSiblings: true,
+        preloadAncestors: false,
+        pick: () => ({}),
+      },
       skyAtmosphere: { show: false },
+      fog: { enabled: false },
+      sun: { show: false },
+      moon: { show: false },
+      verticalExaggeration: 1,
+      requestRenderMode: false,
+      maximumRenderTimeChange: 0,
+      morphTo2D: () => state.morphs.push("2D"),
+      morphTo3D: () => state.morphs.push("3D"),
       canvas: {},
       pick: (_: unknown) => pickResult,
     };
+    imageryLayers = {
+      addImageryProvider: (_: unknown) => ({ show: true }),
+    };
+    resolutionScale = 1;
     camera = {
       positionWC: {},
       pitch: 0,
       heading: 0,
       setView: () => {},
-      flyTo: () => {},
+      flyTo: (options: unknown) => state.flights.push(options),
       getPickRay: () => ({}),
       moveEnd: { addEventListener: () => {} },
     };
@@ -80,6 +107,11 @@ vi.mock("cesium", () => {
       if (state.terrainRejects) throw new Error("Ion rejected the token");
       return { terrain: true };
     },
+    createWorldImageryAsync: async () => {
+      if (state.imageryRejects) throw new Error("Ion rejected the imagery request");
+      return { imagery: true };
+    },
+    EasingFunction: { QUADRATIC_IN_OUT: "ease" },
     ScreenSpaceEventHandler: class {
       setInputAction(handler: (movement: unknown) => void) {
         state.clickHandler = handler;
@@ -168,6 +200,9 @@ async function mount(bus: unknown) {
 describe("Cesium 3D Terrain Perspective", () => {
   beforeEach(() => {
     state.terrainRejects = false;
+    state.imageryRejects = false;
+    state.flights = [];
+    state.morphs = [];
     state.entities = [];
     state.clickHandler = null;
     state.ionToken = null;
