@@ -1065,3 +1065,20 @@ function extractTrackPositions(collection: unknown): [number, number][] {
   }
   return out;
 }
+
+/**
+ * A glowing polyline material, when the build offers one.
+ *
+ * Guarded rather than assumed: a Cesium build without the property should
+ * cost the corridor its glow, never its line. Returns null so the caller
+ * falls back to a flat colour.
+ */
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- Cesium is loaded dynamically. */
+function glowMaterial(cesium: any, colour: any): unknown | null {
+  try {
+    if (!cesium?.PolylineGlowMaterialProperty) return null;
+    return new cesium.PolylineGlowMaterialProperty({ color: colour, glowPower: 0.18, taperPower: 1 });
+  } catch {
+    return null;
+  }
+}
