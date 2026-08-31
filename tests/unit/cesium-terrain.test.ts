@@ -378,11 +378,15 @@ describe("Intelligence Earth", () => {
       "warri",
       "calabar",
     ]);
-    // Each step is closer than the last, which is what makes it a descent.
-    for (let i = 1; i < EARTH_CAMERA_PRESETS.length; i++) {
-      expect(EARTH_CAMERA_PRESETS[i].zoom).toBeGreaterThanOrEqual(
-        EARTH_CAMERA_PRESETS[i - 1].zoom,
-      );
+    // The scales descend: global → national → port. The terminals are
+    // peers of one another, so they are checked as a band rather than a
+    // ranking — Onne is not "further out" than Tin Can Island.
+    const scales = EARTH_CAMERA_PRESETS.slice(0, 5);
+    for (let i = 1; i < scales.length; i++) {
+      expect(scales[i].zoom).toBeGreaterThan(scales[i - 1].zoom);
+    }
+    for (const terminal of EARTH_CAMERA_PRESETS.slice(5)) {
+      expect(terminal.zoom, `${terminal.id} is not at terminal scale`).toBeGreaterThanOrEqual(13);
     }
   });
 });
