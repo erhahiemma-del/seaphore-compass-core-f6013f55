@@ -60,6 +60,9 @@ export interface CesiumRendererDependencies {
    * without extra configuration.
    */
   readonly baseUrl?: string;
+  /** Initial earth presentation. Defaults to the Intelligence Earth look. */
+  readonly earth?: Partial<EarthSettings>;
+
 }
 
 const CESIUM_VERSION = "1.144.0";
