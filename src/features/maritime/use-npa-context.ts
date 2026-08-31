@@ -21,6 +21,7 @@ import {
   NpaAugmentedVesselSource,
 } from "@/services/geospatial/sources/npa-augmented-source";
 import type { NpaOperationalDataset } from "@/services/government/npa/workbook-ingest";
+import type { FacilityRegistry } from "@/services/registry/registry-ingest";
 
 /**
  * The union, if a source that computes one is registered.
@@ -123,6 +124,49 @@ export function useNpaDataset(): {
         // A dataset that will not load leaves the panel able to say so,
         // rather than showing an empty port as though it were quiet.
         if (!cancelled) setState({ dataset: null, pending: false });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return state;
+}
+
+/**
+ * The facility registry — what a terminal *is*, as opposed to what is
+ * happening at it.
+ *
+ * Loaded separately from the NPA dataset and lazily, for the same reason:
+ * it is a quarter of a megabyte that only the panels which show
+ * infrastructure need. A page that never opens a port never fetches it.
+ */
+export function useFacilityRegistry(): {
+  readonly registry: FacilityRegistry | null;
+  readonly pending: boolean;
+} {
+  const [state, setState] = useState<{ registry: FacilityRegistry | null; pending: boolean }>({
+    registry: null,
+    pending: true,
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    void import("@/services/registry/data/facility-registry.json")
+      .then((module) => {
+        if (cancelled) return;
+        setState({
+          registry: (module.default ?? module) as unknown as FacilityRegistry,
+          pending: false,
+        });
+      })
+      .catch(() => {
+        /*
+         * A registry that will not load leaves the port panel working on
+         * NPA alone — terminals keep their codes and berth counts, and
+         * simply gain no operator or geometry.
+         */
+        if (!cancelled) setState({ registry: null, pending: false });
       });
     return () => {
       cancelled = true;

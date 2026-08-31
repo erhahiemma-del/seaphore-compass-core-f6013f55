@@ -234,22 +234,67 @@ export function PortIntelligencePanel({ intelligence, onOpenVessel }: PortIntell
             {intelligence.terminals.map((terminal) => (
               <li key={terminal.id} className="border-b border-border/40 py-1.5 last:border-0">
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="truncate text-[12px] font-medium">{terminal.code}</span>
+                  <span className="truncate text-[12px] font-medium">
+                    {/*
+                      The registry's fuller name where it matched, with
+                      NPA's code beside it — an officer reading a berth
+                      cell sees the code, and the panel has to be findable
+                      from it.
+                    */}
+                    {terminal.registry ? terminal.registry.name : terminal.code}
+                  </span>
                   <span className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">
                     {terminal.occupiedBerths}/{terminal.berthCount} berths
                   </span>
                 </div>
-                {/*
-                  The geometry state, in words, on every terminal. Without
-                  it an officer would reasonably assume a terminal listed
-                  under a port is drawn somewhere on the map.
-                */}
-                <p className="mt-0.5 text-[10px] leading-tight text-muted-foreground/80">
-                  {terminal.geometry === "PORT_ANCHORED"
-                    ? "Terminal location not yet verified"
-                    : terminal.geometryNote}
-                  {" · Operator not published by NPA"}
-                </p>
+
+                {terminal.registry ? (
+                  <>
+                    <p className="mt-0.5 text-[10px] leading-tight text-muted-foreground">
+                      {terminal.registry.operator ?? "Operator not recorded"}
+                      {terminal.registry.primaryCargo ? ` · ${terminal.registry.primaryCargo}` : ""}
+                    </p>
+                    <p className="mt-0.5 text-[10px] leading-tight text-muted-foreground/80">
+                      {[
+                        `NPA code ${terminal.code}`,
+                        terminal.registry.berthDesignations
+                          ? `berths ${terminal.registry.berthDesignations}`
+                          : null,
+                        terminal.registry.maxDraftM !== null
+                          ? `${terminal.registry.maxDraftM} m draft`
+                          : null,
+                        terminal.registry.concessionId
+                          ? `concession ${terminal.registry.concessionId}`
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                    {/*
+                      Geometry and confidence, in the registry's own
+                      words. `PORT_ANCHORED` here means the coordinate on
+                      file is the port's, which is the one thing about
+                      this data that must never be misread.
+                    */}
+                    <p className="mt-0.5 text-[10px] leading-tight text-muted-foreground/80">
+                      {terminal.geometry === "VERIFIED_GEOMETRY"
+                        ? "Facility position on file"
+                        : "Terminal location not yet verified"}
+                      {` · ${terminal.registry.dataState.replace(/_/g, " ").toLowerCase()}`}
+                      {` · matched: ${terminal.registry.matchMethod.replace(/_/g, " ").toLowerCase()}`}
+                    </p>
+                  </>
+                ) : (
+                  /*
+                    No registry match. NPA states the code and nothing
+                    else, and nothing is inferred from it — `APMT` looks
+                    like APM Terminals and the registry never says so.
+                  */
+                  <p className="mt-0.5 text-[10px] leading-tight text-muted-foreground/80">
+                    Terminal location not yet verified · No facility-registry match for this NPA
+                    code, so no operator or concession is claimed
+                  </p>
+                )}
               </li>
             ))}
           </ul>

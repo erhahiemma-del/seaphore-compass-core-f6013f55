@@ -47,7 +47,7 @@ import { useVesselEnrichment } from "./use-vessel-enrichment";
 import type { VesselTrack } from "@/services/geospatial/vessel-track";
 import { VoyagePanel } from "./VoyagePanel";
 import { PortIntelligencePanel } from "./PortIntelligencePanel";
-import { useNpaDataset } from "./use-npa-context";
+import { useFacilityRegistry, useNpaDataset } from "./use-npa-context";
 import { portIntelligence } from "@/services/government/npa/port-intelligence";
 import { sgs } from "@/services/geospatial";
 
@@ -477,6 +477,12 @@ function PendingPanel({
  */
 function PortContext({ selection }: { selection: MapSelection }) {
   const { dataset, pending } = useNpaDataset();
+  /*
+   * The infrastructure register, joined to the operational records. Two
+   * sources, one panel: NPA says what is happening at a terminal, the
+   * registry says what the terminal is.
+   */
+  const { registry, pending: registryPending } = useFacilityRegistry();
 
   /*
    * A terminal or berth selection carries its parent port, so the panel
@@ -492,9 +498,12 @@ function PortContext({ selection }: { selection: MapSelection }) {
           ? selection.portId
           : selection.id;
 
-  const intelligence = useMemo(() => portIntelligence(locode, dataset), [locode, dataset]);
+  const intelligence = useMemo(
+    () => portIntelligence(locode, dataset, registry),
+    [locode, dataset, registry],
+  );
 
-  if (pending) {
+  if (pending || registryPending) {
     return (
       <div className="p-3">
         <p className="text-[11px] italic text-muted-foreground">

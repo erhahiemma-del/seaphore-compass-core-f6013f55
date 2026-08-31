@@ -33,6 +33,13 @@ import {
 } from "@/services/geospatial/nigerian-ports";
 
 import type {
+  DataState,
+  FacilityRegistry,
+  RegistryPoint,
+} from "@/services/registry/registry-ingest";
+import { crosswalkTerminals, type MatchMethod } from "@/services/registry/terminal-crosswalk";
+
+import type {
   NpaBerthRecord,
   NpaOperationalDataset,
   NpaPortCall,
@@ -70,13 +77,44 @@ export interface TerminalView {
   readonly occupiedBerths: number;
   readonly vacantBerths: number;
   /**
-   * Nothing but the code is claimed.
+   * The operator, when the facility registry names one.
    *
-   * NPA publishes the prefix and no more — no operator, no concession,
-   * no capacity, no cargo capability. Those are absent here rather than
-   * filled from a plausible-looking source.
+   * NPA publishes only the code it prefixes to a berth — no operator, no
+   * concession, no capacity. Everything below therefore comes from the
+   * facility registry via {@link TerminalView.registry}, and is null
+   * whenever the crosswalk found no match. It is never inferred from the
+   * code, however suggestive `APMT` looks.
    */
-  readonly operator: null;
+  readonly operator: string | null;
+  /** The matched registry record, when the crosswalk joined one. */
+  readonly registry: RegistryTerminalLink | null;
+}
+
+/**
+ * What the facility registry adds to an NPA terminal code.
+ *
+ * Carried as its own object rather than flattened onto the terminal, so
+ * the join stays visible: an officer reading an operator can see which
+ * register it came from and by what rule the two were matched.
+ */
+export interface RegistryTerminalLink {
+  readonly id: string;
+  readonly name: string;
+  readonly operator: string | null;
+  readonly facilityClass: string | null;
+  readonly primaryCargo: string | null;
+  readonly berthDesignations: string | null;
+  readonly quayLengthM: number | null;
+  readonly maxDraftM: number | null;
+  readonly annualCapacity: string | null;
+  readonly concessionId: string | null;
+  readonly companyId: string | null;
+  readonly point: RegistryPoint;
+  readonly dataState: DataState;
+  readonly brief: string | null;
+  /** How the two registers were matched, in words. */
+  readonly matchNote: string;
+  readonly matchMethod: MatchMethod;
 }
 
 export interface BerthView {
@@ -217,6 +255,7 @@ function sameCanonicalPort(left: string | null, right: string | null): boolean {
 export function portIntelligence(
   locode: string,
   dataset: NpaOperationalDataset | null,
+  registry: FacilityRegistry | null = null,
 ): PortIntelligence {
   const canonicalId = canonicalPortId(locode);
   const canonical = canonicalId ? findNigerianPort(canonicalId) : null;
@@ -255,19 +294,63 @@ export function portIntelligence(
     };
   });
 
+  /*
+   * Crosswalked once for the whole port rather than per terminal: the
+   * join needs every candidate at the port in view to prefer an exact
+   * name over a weaker rule, and doing it per row would make that
+   * preference depend on iteration order.
+   */
+  const crosswalk = crosswalkTerminals(
+    terminalRecords.map((terminal) => ({
+      code: terminal.code,
+      portLocode: terminal.portLocode,
+    })),
+    registry,
+  );
+  const linkByCode = new Map(crosswalk.matches.map((match) => [match.npaCode, match]));
+
   const terminals: TerminalView[] = terminalRecords.map((terminal) => {
     const own = berths.filter((berth) => matchesTerminal(berth, terminal));
-    const geometry = geometryStateFor(terminal.portLocode);
+    const match = linkByCode.get(terminal.code) ?? null;
+
+    /*
+     * The registry's judgement wins where it has one, because it is the
+     * only source that states a position at all. Where the crosswalk
+     * found nothing, the terminal stays anchored to its port — which is
+     * still true, just less precise.
+     */
+    const geometry = match ? match.registry.point.geometry : geometryStateFor(terminal.portLocode);
+
     return {
       id: terminal.id,
       code: terminal.code,
       portLocode: terminal.portLocode,
       geometry,
-      geometryNote: GEOMETRY_NOTES[geometry],
+      geometryNote: match ? match.registry.point.note : GEOMETRY_NOTES[geometry],
       berthCount: own.length,
       occupiedBerths: own.filter((berth) => berth.status === "OCCUPIED").length,
       vacantBerths: own.filter((berth) => berth.status === "VACANT").length,
-      operator: null,
+      operator: match?.registry.operator ?? null,
+      registry: match
+        ? {
+            id: match.registry.id,
+            name: match.registry.name,
+            operator: match.registry.operator,
+            facilityClass: match.registry.facilityClass,
+            primaryCargo: match.registry.primaryCargo,
+            berthDesignations: match.registry.berthDesignations,
+            quayLengthM: match.registry.quayLengthM,
+            maxDraftM: match.registry.maxDraftM,
+            annualCapacity: match.registry.annualCapacity,
+            concessionId: match.registry.concessionId,
+            companyId: match.registry.companyId,
+            point: match.registry.point,
+            dataState: match.registry.dataState,
+            brief: match.registry.brief,
+            matchNote: match.note,
+            matchMethod: match.method,
+          }
+        : null,
     };
   });
 
