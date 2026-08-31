@@ -10,9 +10,16 @@
  *
  * The token is fetched per session from an authenticated server function
  * and kept in memory only. It is never written to storage, never placed
- * in a URL, and never bundled.
+ * in a URL, and never bundled. What *is* persisted is the officer's lens
+ * choice — a single boolean on their own row — so the perspective follows
+ * them across sessions and devices without the credential doing the same.
+ *
+ * Failure is never allowed to become a blank map. A Cesium mount or
+ * runtime error is reported by the renderer through the map session
+ * store, and this hook reads it and drops back to MapLibre with the
+ * reason stated rather than leaving a dead canvas on screen.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 
 import {
@@ -20,8 +27,13 @@ import {
   getCesiumIonStatus,
   type CesiumIonStatus,
 } from "@/lib/cesium-ion.functions";
+import {
+  getOfficerMapPreferences,
+  setOfficerTerrainPreference,
+} from "@/lib/officer-map-preferences.functions";
 import { mapEventBus } from "@/services/geospatial/event-bus";
 import type { MapRenderer } from "@/services/geospatial/renderer";
+import { useMapSessionStore } from "@/services/geospatial/store";
 
 export interface TerrainPerspective {
   /** True when the Cesium adapter should be the mounted renderer. */
@@ -43,6 +55,8 @@ export interface TerrainPerspective {
 export function useTerrainPerspective(): TerrainPerspective {
   const readStatus = useServerFn(getCesiumIonStatus);
   const readToken = useServerFn(getCesiumIonRuntimeToken);
+  const readPreference = useServerFn(getOfficerMapPreferences);
+  const writePreference = useServerFn(setOfficerTerrainPreference);
 
   const [status, setStatus] = useState<CesiumIonStatus | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -72,38 +86,81 @@ export function useTerrainPerspective(): TerrainPerspective {
     };
   }, [readStatus, nonce]);
 
+  /** Persist the lens choice. Never the credential. */
+  const remember = useCallback(
+    (next: boolean) => {
+      void writePreference({ data: { terrain3d: next } }).catch(() => {
+        // A preference that will not store is a lost convenience, not a
+        // failed capability — the officer keeps the view they asked for.
+      });
+    },
+    [writePreference],
+  );
+
+  const activate = useCallback(
+    (options: { readonly persist: boolean; readonly offerActivation: boolean }) => {
+      setUnavailableReason(null);
+      if (token) {
+        setWanted(true);
+        if (options.persist) remember(true);
+        return;
+      }
+      setLoading(true);
+      void readToken({ data: undefined })
+        .then((result) => {
+          const value = (result as { token: string | null; message: string | null }) ?? null;
+          if (value?.token) {
+            setToken(value.token);
+            setWanted(true);
+            if (options.persist) remember(true);
+            return;
+          }
+          // No credential is a configuration state, not a data outage —
+          // so the officer is offered activation rather than an empty globe.
+          setUnavailableReason(value?.message ?? "No Cesium Ion token is configured.");
+          if (options.offerActivation) setRequestActivation(true);
+        })
+        .catch(() => {
+          setUnavailableReason("The 3D credential could not be retrieved for this session.");
+        })
+        .finally(() => setLoading(false));
+    },
+    [readToken, remember, token],
+  );
+
   const toggle = useCallback(() => {
     if (wanted) {
       setWanted(false);
+      remember(false);
       return;
     }
-    setUnavailableReason(null);
-    if (token) {
-      setWanted(true);
-      return;
-    }
-    setLoading(true);
-    void readToken({ data: undefined })
-      .then((result) => {
-        const value = (result as { token: string | null; message: string | null }) ?? null;
-        if (value?.token) {
-          setToken(value.token);
-          setWanted(true);
-          return;
-        }
-        // No credential is a configuration state, not a data outage —
-        // so the officer is offered activation rather than an empty globe.
-        setUnavailableReason(value?.message ?? "No Cesium Ion token is configured.");
-        setRequestActivation(true);
-      })
-      .catch(() => {
-        setUnavailableReason("The 3D credential could not be retrieved for this session.");
-      })
-      .finally(() => setLoading(false));
-  }, [readToken, token, wanted]);
+    activate({ persist: true, offerActivation: true });
+  }, [activate, remember, wanted]);
 
   const disable = useCallback(() => setWanted(false), []);
   const dismissActivation = useCallback(() => setRequestActivation(false), []);
+
+  /*
+   * Restore the officer's own lens, once per session.
+   *
+   * Restoration is silent about missing credentials: an officer returning
+   * to a deployment whose token was revoked should get the operational
+   * map, not a modal they did not ask for.
+   */
+  const restored = useRef(false);
+  useEffect(() => {
+    if (restored.current) return;
+    restored.current = true;
+    void readPreference({ data: undefined })
+      .then((result) => {
+        if ((result as { terrain3d?: boolean } | null)?.terrain3d) {
+          activate({ persist: false, offerActivation: false });
+        }
+      })
+      .catch(() => {
+        // No stored preference reachable: the 2D operational map stands.
+      });
+  }, [activate, readPreference]);
 
   /*
    * Constructed lazily, and only once per token.
@@ -119,14 +176,44 @@ export function useTerrainPerspective(): TerrainPerspective {
       return;
     }
     let cancelled = false;
-    void import("@/services/geospatial/renderers/cesium-renderer").then(({ CesiumRenderer }) => {
-      if (cancelled) return;
-      setRenderer(new CesiumRenderer({ bus: mapEventBus, ionToken: token }));
-    });
+    void import("@/services/geospatial/renderers/cesium-renderer")
+      .then(({ CesiumRenderer }) => {
+        if (cancelled) return;
+        setRenderer(new CesiumRenderer({ bus: mapEventBus, ionToken: token }));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        // The engine itself could not be loaded. MapLibre stays mounted.
+        setWanted(false);
+        setUnavailableReason(
+          "The 3D engine could not be loaded in this browser. The 2D operational map is still live.",
+        );
+      });
     return () => {
       cancelled = true;
     };
   }, [wanted, token]);
+
+  /*
+   * Fallback, read from the renderer's own session state.
+   *
+   * `MapCanvas` records the mounted adapter and its status; a Cesium
+   * mount that throws, or a runtime error the adapter reports, lands here
+   * as `error`. Dropping `wanted` unmounts the adapter and returns the
+   * MapLibre default, so the officer never faces a blank canvas.
+   */
+  const rendererId = useMapSessionStore((s) => s.rendererId);
+  const rendererStatus = useMapSessionStore((s) => s.rendererStatus);
+  const lastError = useMapSessionStore((s) => s.lastError);
+  useEffect(() => {
+    if (!wanted || rendererId !== "cesium" || rendererStatus !== "error") return;
+    setWanted(false);
+    setUnavailableReason(
+      `The 3D view failed and the 2D operational map has been restored${
+        lastError ? `: ${lastError}` : "."
+      }`,
+    );
+  }, [lastError, rendererId, rendererStatus, wanted]);
 
   return {
     active: Boolean(wanted && renderer),
