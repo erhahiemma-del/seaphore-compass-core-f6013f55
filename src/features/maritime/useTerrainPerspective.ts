@@ -31,6 +31,7 @@ import {
   getOfficerMapPreferences,
   setOfficerTerrainPreference,
 } from "@/lib/officer-map-preferences.functions";
+import { useProtectedQueriesEnabled } from "@/hooks/use-auth";
 import { mapEventBus } from "@/services/geospatial/event-bus";
 import type { MapRenderer } from "@/services/geospatial/renderer";
 import { useMapSessionStore } from "@/services/geospatial/store";
@@ -66,10 +67,19 @@ export function useTerrainPerspective(): TerrainPerspective {
   const [requestActivation, setRequestActivation] = useState(false);
   const [nonce, setNonce] = useState(0);
 
+  /*
+   * The credential and the officer's own preference are both protected
+   * reads. Asking for them before a session exists produces an
+   * Unauthorized throw for a question nobody asked — so the terrain
+   * capability simply stays dormant until the officer is authenticated.
+   */
+  const authenticated = useProtectedQueriesEnabled();
+
   const refresh = useCallback(() => setNonce((n) => n + 1), []);
 
   // Credential state is read once per session, and again after activation.
   useEffect(() => {
+    if (!authenticated) return;
     let cancelled = false;
     void readStatus({ data: undefined })
       .then((next) => {
@@ -84,7 +94,7 @@ export function useTerrainPerspective(): TerrainPerspective {
     return () => {
       cancelled = true;
     };
-  }, [readStatus, nonce]);
+  }, [authenticated, readStatus, nonce]);
 
   /** Persist the lens choice. Never the credential. */
   const remember = useCallback(
@@ -149,7 +159,7 @@ export function useTerrainPerspective(): TerrainPerspective {
    */
   const restored = useRef(false);
   useEffect(() => {
-    if (restored.current) return;
+    if (!authenticated || restored.current) return;
     restored.current = true;
     void readPreference({ data: undefined })
       .then((result) => {
@@ -160,7 +170,7 @@ export function useTerrainPerspective(): TerrainPerspective {
       .catch(() => {
         // No stored preference reachable: the 2D operational map stands.
       });
-  }, [activate, readPreference]);
+  }, [activate, authenticated, readPreference]);
 
   /*
    * Constructed lazily, and only once per token.
