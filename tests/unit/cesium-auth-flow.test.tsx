@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * The three states of the 3D credential.
  *
