@@ -428,6 +428,32 @@ export function MapCanvas({
       .then(() => {
         if (cancelled) return;
         engine.attachRenderer(renderer);
+
+        /*
+         * Maritime infrastructure, once the registry chunk arrives.
+         *
+         * Loaded here rather than at module scope so a page that never
+         * mounts a map never fetches a quarter-megabyte of facility
+         * records. The renderer installs its layers empty at mount, so a
+         * late arrival fills them rather than adding a layer above the
+         * vessels.
+         */
+        void Promise.all([
+          import("@/services/registry/data/facility-registry.json"),
+          import("@/services/registry/facility-features"),
+        ])
+          .then(([data, module]) => {
+            if (cancelled) return;
+            const registry = (data.default ?? data) as never;
+            renderer.setFacilityData?.(module.facilityFeatures(registry));
+          })
+          .catch(() => {
+            /*
+             * The map keeps working without infrastructure. An empty
+             * facility layer is the honest outcome of a failed load, and
+             * the vessels — the operational picture — are unaffected.
+             */
+          });
         /*
          * Apply layer state once the style is live.
          *

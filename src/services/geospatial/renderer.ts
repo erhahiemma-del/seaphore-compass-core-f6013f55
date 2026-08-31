@@ -52,6 +52,8 @@ export interface MapControlOptions {
   readonly scale?: boolean;
 }
 
+import type { FacilityFeatureCollection } from "@/services/registry/facility-features";
+
 export interface MapRendererMountOptions {
   /** Element the map attaches to. Must be laid out before mounting. */
   readonly container: HTMLElement;
@@ -164,6 +166,16 @@ export interface MapRenderer {
 
   /** Replace the entire vessel source. Used for the periodic full refresh. */
   setVesselData(collection: VesselFeatureCollection): void;
+
+  /**
+   * Replace the maritime infrastructure drawn from the facility registry.
+   *
+   * Optional because the registry loads lazily and a renderer built
+   * before it arrives is still a valid renderer — the stub implementation
+   * has nothing to draw on. Callers must tolerate its absence rather than
+   * assume a facility layer exists.
+   */
+  setFacilityData?(collection: FacilityFeatureCollection): void;
 
   /**
    * Apply an incremental batch without replacing the whole source.

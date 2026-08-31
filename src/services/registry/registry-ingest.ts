@@ -216,6 +216,37 @@ export function readPoint(row: Record<string, unknown>): RegistryPoint {
   };
 }
 
+/**
+ * The registry's own rendering directives, carried per row.
+ *
+ * The workbook ships a MAP CONFIG sheet and repeats its decisions on
+ * every facility: which category it belongs to, which layer it draws on,
+ * the zoom tier at which it should appear, and a pre-composed one-line
+ * popup summary. Those are the source's judgement about its own data —
+ * an FPSO is Tier 1 and a private jetty is Tier 3 because the registry
+ * says so, not because a rule here guessed from the facility class.
+ *
+ * Carried rather than interpreted, so a future registry can change what
+ * appears at which zoom without a code change.
+ */
+export interface RegistryPresentation {
+  readonly mapCategory: string | null;
+  readonly mapLayer: string | null;
+  /** 1 = national view, 2 = port-level, 3 = facility-level. */
+  readonly zoomTier: number | null;
+  /** One line, pre-composed by the registry for the map popup. */
+  readonly popupSummary: string | null;
+}
+
+export function readPresentation(row: Record<string, unknown>): RegistryPresentation {
+  return {
+    mapCategory: readCell(row["Map Category"]),
+    mapLayer: readCell(row["Map Layer"]),
+    zoomTier: readNumber(row["Zoom Tier"]),
+    popupSummary: readCell(row["Popup Summary"]),
+  };
+}
+
 /** Provenance carried by every registry record. */
 export interface RegistrySource {
   readonly file: string;
@@ -227,6 +258,7 @@ export interface RegistrySource {
 }
 
 export interface RegistryPort {
+  readonly presentation: RegistryPresentation;
   readonly id: string;
   readonly name: string;
   readonly parentType: string | null;
@@ -244,6 +276,7 @@ export interface RegistryPort {
 }
 
 export interface RegistryTerminal {
+  readonly presentation: RegistryPresentation;
   readonly id: string;
   readonly portId: string | null;
   readonly name: string;
@@ -272,6 +305,7 @@ export interface RegistryTerminal {
 }
 
 export interface RegistryFacility {
+  readonly presentation: RegistryPresentation;
   readonly id: string;
   readonly portId: string | null;
   readonly name: string;
@@ -288,6 +322,7 @@ export interface RegistryFacility {
 }
 
 export interface RegistryOffshore {
+  readonly presentation: RegistryPresentation;
   readonly id: string;
   readonly name: string;
   readonly facilityClass: string | null;
@@ -458,6 +493,7 @@ export function ingestRegistry(
             principalFunction: readCell(row["Principal Function"]),
             unlocode: readCell(row["UN/LOCODE"]),
             point,
+            presentation: readPresentation(row),
             dataState: readDataState(row["Data State"]),
             brief: readCell(row["INDUSTRY BRIEF"]),
             notes: readCell(row.Notes),
@@ -485,6 +521,7 @@ export function ingestRegistry(
             annualCapacity: readCell(row["Annual Capacity"]),
             concessionId: readCell(row["Concession ID"]),
             point,
+            presentation: readPresentation(row),
             dataState: readDataState(row["Data State"]),
             brief: readCell(row["INDUSTRY BRIEF"]),
             notes: readCell(row.Notes),
@@ -509,6 +546,7 @@ export function ingestRegistry(
             maxDraftM: readNumber(row["Max Draft (m)"]),
             status: readCell(row.Status),
             point,
+            presentation: readPresentation(row),
             dataState: readDataState(row["Data State"]),
             brief: readCell(row["INDUSTRY BRIEF"]),
             source: src(index),
@@ -539,6 +577,7 @@ export function ingestRegistry(
             loadingSystem: readCell(row["Loading System"]),
             coordinateSource: readCell(row["Coordinate Source"]),
             point,
+            presentation: readPresentation(row),
             dataState: readDataState(row["Data State"]),
             brief: readCell(row["INDUSTRY BRIEF"]),
             notes: readCell(row.Notes),

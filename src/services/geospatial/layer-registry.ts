@@ -852,6 +852,34 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     order: 5,
   },
   {
+    /*
+     * One layer for all located infrastructure, not one per facility
+     * kind. Ports, terminals, jetties, offshore and gas facilities share
+     * a single source and a single set of render layers, so separate
+     * toggles would hide each other — switching "terminals" off would
+     * take the FPSOs with it.
+     */
+    id: "maritime-infrastructure",
+    label: "Maritime Infrastructure",
+    description:
+      "Ports, terminals, jetties, offshore and gas facilities the registry locates in their own right.",
+    group: "PORTS_INFRASTRUCTURE",
+    renderLayerIds: [
+      LAYER_IDS.facilityRingT1,
+      LAYER_IDS.facilityRingT2,
+      LAYER_IDS.facilityRingT3,
+      LAYER_IDS.facilitiesT1,
+      LAYER_IDS.facilitiesT2,
+      LAYER_IDS.facilitiesT3,
+      LAYER_IDS.facilityLabelsT1,
+      LAYER_IDS.facilityLabelsT2,
+      LAYER_IDS.facilityLabelsT3,
+    ],
+    defaultVisible: false,
+    status: "ready",
+    order: 12,
+  },
+  {
     id: "terminals",
     label: "Terminals",
     description: "Terminal footprints inside each port complex.",
@@ -859,9 +887,9 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     renderLayerIds: [],
     defaultVisible: false,
     status: "pending-source",
-    order: 12,
+    order: 12.5,
     pendingReason:
-      "The ports table records terminal names as text; no geometry exists to draw them from.",
+      "Terminals with a published position draw on the Maritime Infrastructure layer. A separate terminal layer awaits footprint geometry — the registry gives points, not outlines.",
   },
   {
     id: "berths",
@@ -873,7 +901,7 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     status: "pending-source",
     order: 13,
     pendingReason:
-      "No berth register with positions is connected. Occupancy would have to be observed, and nothing observes it.",
+      "The facility registry names berth designations but publishes no berth coordinates, so there is nothing to draw. Occupancy is available from NPA and appears in the port panel.",
   },
   {
     id: "aids-to-navigation",
@@ -896,7 +924,8 @@ export const DEFAULT_LAYERS: readonly LayerDefinition[] = [
     defaultVisible: false,
     status: "pending-source",
     order: 15,
-    pendingReason: "No offshore asset register is connected.",
+    pendingReason:
+      "Offshore terminals, FPSOs, FSOs and SPMs with a published position draw on the Maritime Infrastructure layer. A dedicated offshore layer awaits subsea and platform geometry beyond point positions.",
   },
   {
     id: "routes",

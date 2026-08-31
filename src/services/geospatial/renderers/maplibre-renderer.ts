@@ -47,6 +47,7 @@ import {
   MAX_CAMERA_ZOOM,
   ZOOM_BANDS,
 } from "../constants";
+import type { FacilityFeatureCollection } from "@/services/registry/facility-features";
 import {
   CONFIDENCE_RING_STYLES,
   CONFIDENCE_TIERS,
@@ -231,6 +232,7 @@ const SOURCE_IDS = {
   voyageEndpoints: "voyage-endpoints",
   vesselTrack: "vessel-track",
   investigationArea: "investigation-area",
+  facilities: "facilities",
 } as const;
 
 /**
@@ -329,6 +331,15 @@ export const INSTALLED_RENDER_LAYERS: readonly string[] = [
   LAYER_IDS.anchorageExtent,
   LAYER_IDS.anchorages,
   LAYER_IDS.anchorageLabels,
+  LAYER_IDS.facilityRingT1,
+  LAYER_IDS.facilityRingT2,
+  LAYER_IDS.facilityRingT3,
+  LAYER_IDS.facilitiesT1,
+  LAYER_IDS.facilitiesT2,
+  LAYER_IDS.facilitiesT3,
+  LAYER_IDS.facilityLabelsT1,
+  LAYER_IDS.facilityLabelsT2,
+  LAYER_IDS.facilityLabelsT3,
   LAYER_IDS.portHalo,
   LAYER_IDS.portSelection,
   LAYER_IDS.ports,
@@ -400,6 +411,10 @@ export class MapLibreRenderer implements MapRenderer {
   readonly id = "maplibre";
 
   private map: MapLibreMap | null = null;
+
+  /** Last facility collection supplied, replayed on every style build. */
+
+  private facilities: FacilityFeatureCollection = { type: "FeatureCollection", features: [] };
   private popup: MapLibrePopup | null = null;
   private readonly bus: MapEventBus | null;
 
@@ -885,6 +900,32 @@ export class MapLibreRenderer implements MapRenderer {
       "circle-stroke-opacity",
       alertPulseExpression(clamped) as never,
     );
+  }
+
+  /**
+   * Draw the facility registry.
+   *
+   * A whole-collection replace rather than a patch: infrastructure is
+   * static between imports, so there is no incremental case to optimise
+   * for, and 71 points is well inside what a single `setData` handles.
+   */
+  setFacilityData(collection: FacilityFeatureCollection): void {
+    /*
+     * Held as well as applied.
+     *
+     * The registry arrives on its own schedule — a lazily imported chunk
+     * resolving whenever the network allows — and the style can be
+     * rebuilt after it lands, which drops every source with it. Keeping
+     * the last collection lets `installSourcesAndLayers` restore it, the
+     * same way `attachRenderer` re-pushes the vessel set. Without this the
+     * facilities appear or not depending on which of two async events
+     * happened to finish first.
+     */
+    this.facilities = collection;
+    const source = this.map?.getSource(SOURCE_IDS.facilities) as
+      | { setData?: (data: unknown) => void }
+      | undefined;
+    source?.setData?.(collection);
   }
 
   setVesselData(collection: VesselFeatureCollection): void {
@@ -1402,6 +1443,247 @@ export class MapLibreRenderer implements MapRenderer {
       type: "geojson",
       data: anchorageFeatureCollection() as unknown as GeoJsonFeatureCollection,
       promoteId: "anchorageId",
+    });
+
+    /*
+     * ── Maritime infrastructure ──
+     *
+     * Starts empty and is filled by `setFacilityData` once the registry
+     * has loaded. It is a quarter-megabyte of JSON fetched lazily, so the
+     * map must install its layers before the data exists rather than
+     * waiting — a layer added later would sit above the vessels.
+     */
+    map.addSource(SOURCE_IDS.facilities, {
+      type: "geojson",
+      // Whatever the registry last supplied, so a style rebuild does not
+      // silently empty the infrastructure layer.
+      data: this.facilities as unknown as GeoJsonFeatureCollection,
+      promoteId: "id",
+    });
+
+    /*
+     * ── Maritime infrastructure, one trio per zoom tier ──
+     *
+     * The registry assigns every facility a tier: 1 national, 2
+     * port-level, 3 facility-level. That gate is each layer's static
+     * `minzoom`, because MapLibre accepts `["zoom"]` only as the direct
+     * input to an outer `interpolate` or `step`. Nested inside a `case`
+     * test it rejects the layer outright — it did exactly that here, and
+     * `verifyInstalledLayers` reported three declined layers rather than
+     * the map merely looking empty.
+     *
+     * Written out per tier rather than looped, for two reasons: every
+     * installed id appears literally, which is what `layer-truth` reads
+     * to prove the declared install list matches the code; and MapLibre's
+     * style types only narrow correctly on an inline object literal.
+     *
+     * The ring states how well a position is known. MAP CONFIG asks for a
+     * thin halo on an approximate position and a distinct treatment for
+     * an offshore estimate; MapLibre cannot dash a circle stroke, so the
+     * two differ by weight and opacity — a distinction that survives a
+     * colour-vision deficiency as a dash pattern would not. An exact
+     * position gets no ring, so the ring's presence carries the meaning.
+     */
+
+    map.addLayer({
+      id: LAYER_IDS.facilityRingT1,
+      type: "circle",
+      source: SOURCE_IDS.facilities,
+      minzoom: 3,
+      filter: ["all", ["==", ["get", "zoomTier"], 1], ["!=", ["get", "precisionStyle"], "SOLID"]],
+      paint: {
+        "circle-radius": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          4,
+          ["case", ["==", ["get", "precisionStyle"], "ESTIMATED"], 7, 5],
+          12,
+          ["case", ["==", ["get", "precisionStyle"], "ESTIMATED"], 16, 11],
+        ],
+        "circle-color": "transparent",
+        "circle-stroke-color": ["get", "color"],
+        "circle-stroke-width": ["case", ["==", ["get", "precisionStyle"], "ESTIMATED"], 1, 1.25],
+        "circle-stroke-opacity": [
+          "case",
+          ["==", ["get", "precisionStyle"], "ESTIMATED"],
+          0.35,
+          0.55,
+        ],
+      },
+    });
+    map.addLayer({
+      id: LAYER_IDS.facilitiesT1,
+      type: "circle",
+      source: SOURCE_IDS.facilities,
+      minzoom: 3,
+      filter: ["==", ["get", "zoomTier"], 1],
+      paint: {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 2.5, 9, 4.5, 14, 6.5],
+        "circle-color": ["get", "color"],
+        "circle-stroke-color": "#FFFFFF",
+        "circle-stroke-width": 1,
+        "circle-opacity": 0.92,
+      },
+    });
+    map.addLayer({
+      id: LAYER_IDS.facilityLabelsT1,
+      type: "symbol",
+      source: SOURCE_IDS.facilities,
+      // Two levels past the marker, so a facility appears before it is
+      // named rather than arriving as a wall of text.
+      minzoom: 5,
+      filter: ["==", ["get", "zoomTier"], 1],
+      layout: {
+        "text-field": ["get", "name"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 8, 9, 13, 11.5],
+        "text-offset": [0, 1.1],
+        "text-anchor": "top",
+        "text-max-width": 9,
+        // Never overlap: an infrastructure label covering a vessel is
+        // worse than an unlabelled facility.
+        "text-allow-overlap": false,
+        "text-optional": true,
+      },
+      paint: {
+        "text-color": ["get", "color"],
+        "text-halo-color": "#FFFFFF",
+        "text-halo-width": 1.2,
+      },
+    });
+
+    map.addLayer({
+      id: LAYER_IDS.facilityRingT2,
+      type: "circle",
+      source: SOURCE_IDS.facilities,
+      minzoom: 8,
+      filter: ["all", ["==", ["get", "zoomTier"], 2], ["!=", ["get", "precisionStyle"], "SOLID"]],
+      paint: {
+        "circle-radius": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          4,
+          ["case", ["==", ["get", "precisionStyle"], "ESTIMATED"], 7, 5],
+          12,
+          ["case", ["==", ["get", "precisionStyle"], "ESTIMATED"], 16, 11],
+        ],
+        "circle-color": "transparent",
+        "circle-stroke-color": ["get", "color"],
+        "circle-stroke-width": ["case", ["==", ["get", "precisionStyle"], "ESTIMATED"], 1, 1.25],
+        "circle-stroke-opacity": [
+          "case",
+          ["==", ["get", "precisionStyle"], "ESTIMATED"],
+          0.35,
+          0.55,
+        ],
+      },
+    });
+    map.addLayer({
+      id: LAYER_IDS.facilitiesT2,
+      type: "circle",
+      source: SOURCE_IDS.facilities,
+      minzoom: 8,
+      filter: ["==", ["get", "zoomTier"], 2],
+      paint: {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 2.5, 9, 4.5, 14, 6.5],
+        "circle-color": ["get", "color"],
+        "circle-stroke-color": "#FFFFFF",
+        "circle-stroke-width": 1,
+        "circle-opacity": 0.92,
+      },
+    });
+    map.addLayer({
+      id: LAYER_IDS.facilityLabelsT2,
+      type: "symbol",
+      source: SOURCE_IDS.facilities,
+      // Two levels past the marker, so a facility appears before it is
+      // named rather than arriving as a wall of text.
+      minzoom: 10,
+      filter: ["==", ["get", "zoomTier"], 2],
+      layout: {
+        "text-field": ["get", "name"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 8, 9, 13, 11.5],
+        "text-offset": [0, 1.1],
+        "text-anchor": "top",
+        "text-max-width": 9,
+        // Never overlap: an infrastructure label covering a vessel is
+        // worse than an unlabelled facility.
+        "text-allow-overlap": false,
+        "text-optional": true,
+      },
+      paint: {
+        "text-color": ["get", "color"],
+        "text-halo-color": "#FFFFFF",
+        "text-halo-width": 1.2,
+      },
+    });
+
+    map.addLayer({
+      id: LAYER_IDS.facilityRingT3,
+      type: "circle",
+      source: SOURCE_IDS.facilities,
+      minzoom: 11,
+      filter: ["all", ["==", ["get", "zoomTier"], 3], ["!=", ["get", "precisionStyle"], "SOLID"]],
+      paint: {
+        "circle-radius": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          4,
+          ["case", ["==", ["get", "precisionStyle"], "ESTIMATED"], 7, 5],
+          12,
+          ["case", ["==", ["get", "precisionStyle"], "ESTIMATED"], 16, 11],
+        ],
+        "circle-color": "transparent",
+        "circle-stroke-color": ["get", "color"],
+        "circle-stroke-width": ["case", ["==", ["get", "precisionStyle"], "ESTIMATED"], 1, 1.25],
+        "circle-stroke-opacity": [
+          "case",
+          ["==", ["get", "precisionStyle"], "ESTIMATED"],
+          0.35,
+          0.55,
+        ],
+      },
+    });
+    map.addLayer({
+      id: LAYER_IDS.facilitiesT3,
+      type: "circle",
+      source: SOURCE_IDS.facilities,
+      minzoom: 11,
+      filter: ["==", ["get", "zoomTier"], 3],
+      paint: {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 2.5, 9, 4.5, 14, 6.5],
+        "circle-color": ["get", "color"],
+        "circle-stroke-color": "#FFFFFF",
+        "circle-stroke-width": 1,
+        "circle-opacity": 0.92,
+      },
+    });
+    map.addLayer({
+      id: LAYER_IDS.facilityLabelsT3,
+      type: "symbol",
+      source: SOURCE_IDS.facilities,
+      // Two levels past the marker, so a facility appears before it is
+      // named rather than arriving as a wall of text.
+      minzoom: 13,
+      filter: ["==", ["get", "zoomTier"], 3],
+      layout: {
+        "text-field": ["get", "name"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 8, 9, 13, 11.5],
+        "text-offset": [0, 1.1],
+        "text-anchor": "top",
+        "text-max-width": 9,
+        // Never overlap: an infrastructure label covering a vessel is
+        // worse than an unlabelled facility.
+        "text-allow-overlap": false,
+        "text-optional": true,
+      },
+      paint: {
+        "text-color": ["get", "color"],
+        "text-halo-color": "#FFFFFF",
+        "text-halo-width": 1.2,
+      },
     });
 
     /*

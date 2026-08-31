@@ -964,6 +964,29 @@ export const LAYER_IDS = {
   /** Elevation halo drawn beneath a major port symbol. */
   portHalo: "port-halo-layer",
   /** Verified anchorage areas: indicative extent, symbol and label. */
+  /*
+   * Maritime infrastructure from the facility registry — ports,
+   * terminals, jetties, offshore and gas facilities the registry locates
+   * in its own right. Three layers, because precision is drawn rather
+   * than described: a ring beneath states how well the position is
+   * known, the point states what the facility is, and the label names it.
+   */
+  /*
+   * One trio per zoom tier, because the tier gate has to live in each
+   * layer's static `minzoom`. MapLibre accepts `["zoom"]` only as the
+   * direct input to an outer `interpolate` or `step` — nested inside a
+   * `case` test it rejects the whole layer, which is how the first
+   * attempt at this silently drew nothing.
+   */
+  facilityRingT1: "facility-ring-t1-layer",
+  facilityRingT2: "facility-ring-t2-layer",
+  facilityRingT3: "facility-ring-t3-layer",
+  facilitiesT1: "facilities-t1-layer",
+  facilitiesT2: "facilities-t2-layer",
+  facilitiesT3: "facilities-t3-layer",
+  facilityLabelsT1: "facility-labels-t1-layer",
+  facilityLabelsT2: "facility-labels-t2-layer",
+  facilityLabelsT3: "facility-labels-t3-layer",
   anchorageExtent: "anchorage-extent-layer",
   anchorages: "anchorages-layer",
   anchorageLabels: "anchorage-labels-layer",
