@@ -56,6 +56,8 @@ import { useVoyages, type VoyageFeed } from "./useVoyages";
 import { MapCanvas, type VesselFeedState } from "./MapCanvas";
 import { useFindingRecords } from "./useFindingRecords";
 import { useTerrainPerspective } from "./useTerrainPerspective";
+import { IntelligenceEarthPanel } from "./IntelligenceEarthPanel";
+
 import { CesiumTokenModal } from "@/components/admin/CesiumTokenModal";
 import { FindingPanel } from "@/components/intelligence/FindingPanel";
 import { toFindingIndicatorCollection } from "@/services/findings/map-features";
