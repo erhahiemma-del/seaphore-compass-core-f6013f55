@@ -116,6 +116,35 @@ interface FindingIndicatorLike {
   }[];
 }
 
+/**
+ * The corridor projection, restated structurally.
+ *
+ * Mirrors `CorridorProjection` without importing it, for the same reason
+ * the twin estate is restated: the engine adapter draws geometry and stays
+ * ignorant of the corridor domain.
+ */
+interface CorridorProjectionLike {
+  readonly arcs: readonly {
+    readonly corridorId: string;
+    readonly colour: string;
+    readonly positions: readonly (readonly [number, number, number])[];
+    readonly band: boolean;
+  }[];
+  readonly zones: readonly {
+    readonly zoneId: string;
+    readonly colour: string;
+    readonly ring: readonly (readonly [number, number])[];
+  }[];
+}
+
+interface CorridorTransitLike {
+  readonly corridorId: string;
+  readonly label: string;
+  readonly colour: string;
+  readonly position: readonly [number, number, number];
+  readonly etaLabel: string;
+}
+
 export class CesiumRenderer implements MapRenderer {
   readonly id = "cesium";
 
