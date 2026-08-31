@@ -560,8 +560,16 @@ export function MapCanvas({
    * implement the seam keeps the flat operational map unchanged.
    */
   useEffect(() => {
-    if (!renderer.setPortInfrastructure || !renderer.isReady()) return;
-    renderer.setPortInfrastructure(portInfrastructure ?? EMPTY_PORT_INFRASTRUCTURE);
+    /*
+     * Read structurally rather than off the union: `MapLibreRenderer` is
+     * referenced here as a concrete class, and a concrete class that does
+     * not implement an optional seam narrows the property away entirely.
+     * Asking the instance is the honest question — "can you draw this?" —
+     * and keeps MapLibre free of a twin method it has no use for.
+     */
+    const sink = renderer as { setPortInfrastructure?: (features: unknown) => void };
+    if (!sink.setPortInfrastructure || !renderer.isReady()) return;
+    sink.setPortInfrastructure(portInfrastructure ?? EMPTY_PORT_INFRASTRUCTURE);
   }, [renderer, portInfrastructure, rendererDraws]);
 
   /*
