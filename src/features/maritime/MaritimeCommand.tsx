@@ -55,6 +55,8 @@ import { MAP_ZONE } from "./map-zones";
 import { useVoyages, type VoyageFeed } from "./useVoyages";
 import { MapCanvas, type VesselFeedState } from "./MapCanvas";
 import { useFindingRecords } from "./useFindingRecords";
+import { useTerrainPerspective } from "./useTerrainPerspective";
+import { CesiumTokenModal } from "@/components/admin/CesiumTokenModal";
 import { FindingPanel } from "@/components/intelligence/FindingPanel";
 import { toFindingIndicatorCollection } from "@/services/findings/map-features";
 import type { FindingDecisionKind, PersistedFinding } from "@/services/findings/record";
@@ -323,6 +325,11 @@ export function MaritimeCommand() {
    */
   const records = useFindingRecords();
   const [openFindingId, setOpenFindingId] = useState<string | null>(null);
+  /*
+   * The 3D lens. Holds a renderer and a credential state, nothing else —
+   * vessels, selection, camera and provenance stay canonical.
+   */
+  const terrain = useTerrainPerspective();
   const openFindingRecord = openFindingId ? records.byId(openFindingId) : undefined;
 
   /*
@@ -766,6 +773,31 @@ export function MaritimeCommand() {
               </Button>
             ))}
           </div>
+
+          {/*
+            Cesium is an additional lens, not a replacement.
+
+            Its own control beside the projection group, because it is a
+            different engine drawing the same canonical picture rather
+            than a fourth projection of the operational map. When no Ion
+            credential is configured the control says so and offers
+            activation — an unconfigured credential is never allowed to
+            look like an empty sea.
+          */}
+          <Button
+            size="sm"
+            variant={terrain.active ? "default" : "outline"}
+            className="h-7 shrink-0 text-xs"
+            aria-pressed={terrain.active}
+            title={
+              terrain.unavailableReason ??
+              "3D intelligence view — Cesium Ion terrain, same vessels, ports, findings and selection"
+            }
+            onClick={terrain.toggle}
+            disabled={terrain.loading}
+          >
+            {terrain.active ? "Exit 3D Intelligence" : "3D Intelligence"}
+          </Button>
         </header>
 
         {/* One quiet line saying what a search just did. Not a toast: the
@@ -821,6 +853,7 @@ export function MaritimeCommand() {
                   engineRef.current = engine;
                 }}
                 replayOwnsDisplay={replayOwnsDisplay(replayOwner)}
+                renderer={terrain.renderer}
               />
             }
 
@@ -832,6 +865,20 @@ export function MaritimeCommand() {
             <div className={cn(MAP_ZONE.BOTTOM_RIGHT, "flex justify-end")}>
               <OperationalLegend />
             </div>
+
+            {/* Activation, not a silent failure: an administrator can supply
+                the Ion credential the moment the view is asked for. */}
+            <CesiumTokenModal
+              open={terrain.requestActivation}
+              onOpenChange={(next) => {
+                if (!next) terrain.dismissActivation();
+              }}
+              status={terrain.status}
+              onActivated={() => {
+                terrain.refresh();
+                terrain.dismissActivation();
+              }}
+            />
 
             {/*
               The finding panel opens over map, not over the context
