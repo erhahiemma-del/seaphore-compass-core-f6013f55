@@ -1862,7 +1862,7 @@ export const PROJECTION_CONTRACT: ReadonlyArray<ProjectionContractEntry> = [
       surface: "Live Command Map · search box and voice control",
       location: "src/features/maritime/MaritimeCommand.tsx",
       component: "src/services/copilot/map-control-phrases.ts",
-      interaction: "officer-initiated",
+      interaction: "action",
     },
     reviewedAt: "2026-09-07",
   },
