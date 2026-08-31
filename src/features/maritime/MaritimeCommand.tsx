@@ -56,7 +56,9 @@ import { useVoyages, type VoyageFeed } from "./useVoyages";
 import { MapCanvas, type VesselFeedState } from "./MapCanvas";
 import { useFindingRecords } from "./useFindingRecords";
 import { useTerrainPerspective } from "./useTerrainPerspective";
-import { IntelligenceEarthPanel } from "./IntelligenceEarthPanel";
+import { IntelligenceEarthPanel, asEarthController } from "./IntelligenceEarthPanel";
+import { PortTwinPanel } from "./PortTwinPanel";
+import { usePortTwin } from "./usePortTwin";
 
 import { CesiumTokenModal } from "@/components/admin/CesiumTokenModal";
 import { FindingPanel } from "@/components/intelligence/FindingPanel";
@@ -332,6 +334,13 @@ export function MaritimeCommand() {
    * vessels, selection, camera and provenance stay canonical.
    */
   const terrain = useTerrainPerspective();
+
+  /*
+   * Port Digital Twins. State only — the estate geometry is derived, and
+   * the vessels shown against it are the canonical fleet below.
+   */
+  const portTwin = usePortTwin();
+
   const openFindingRecord = openFindingId ? records.byId(openFindingId) : undefined;
 
   /*
@@ -358,6 +367,19 @@ export function MaritimeCommand() {
    * subject through the same `sgs.select` every other route uses. The map
    * gains no second selection path from this layer.
    */
+  /*
+   * Clicking port infrastructure opens it through the same `sgs.select`
+   * every other object uses, so the twin adds no second selection path
+   * and the drawer resolves the asset from the port-twin model.
+   */
+  useEffect(
+    () =>
+      mapEventBus.on("infrastructure:click", ({ assetId, layer, position }) => {
+        sgs.select({ kind: "infrastructure", id: assetId, assetType: layer, focus: position });
+      }),
+    [],
+  );
+
   useEffect(
     () =>
       mapEventBus.on("finding:click", ({ findingId, subjectType, subjectId }) => {
@@ -817,6 +839,19 @@ export function MaritimeCommand() {
             engine that is not running would be controls over nothing. */}
         {terrain.active ? <IntelligenceEarthPanel renderer={terrain.renderer} /> : null}
 
+        {/*
+          Twin controls sit beside the Earth controls and are offered only
+          while the 3D lens is mounted: the infrastructure overlay is drawn
+          by the Cesium renderer, so offering it over the flat map would be
+          a control that changes nothing an officer can see.
+        */}
+        {terrain.active ? (
+          <PortTwinPanel
+            twin={portTwin}
+            onOpenTwin={(presetId) => asEarthController(terrain.renderer)?.flyToPreset(presetId)}
+          />
+        ) : null}
+
 
 
         <div className="flex min-h-0 flex-1">
@@ -853,6 +888,7 @@ export function MaritimeCommand() {
                 scope={scope}
                 voyages={voyageFeed.voyages}
                 findingIndicators={findingFeatures}
+                portInfrastructure={portTwin.features}
                 onVesselSelected={handleSelected}
                 onVesselsChanged={handleVessels}
                 onRecorderReady={replay.attachRecorder}
@@ -979,6 +1015,7 @@ export function MaritimeCommand() {
           <ContextDrawer
             selection={selection}
             vessel={selectedVessel}
+            fleet={vessels}
             voyage={selectedVoyage}
             sourceSupportsHistory={sourceSupportsHistory}
             vesselTrack={vesselTrack}
