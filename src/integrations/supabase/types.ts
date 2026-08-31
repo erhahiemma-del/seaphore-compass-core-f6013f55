@@ -1722,6 +1722,27 @@ export type Database = {
         }
         Relationships: []
       }
+      officer_map_preferences: {
+        Row: {
+          created_at: string
+          terrain_3d: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          terrain_3d?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          terrain_3d?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       okl_ingests: {
         Row: {
           briefing_id: string | null
